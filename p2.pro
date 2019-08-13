@@ -25,13 +25,15 @@ SOURCES += \
 		csv.cpp \
 		main.cpp \
 		mainwindow.cpp \
-		propeller2.cpp
+		p2cog.cpp \
+		p2hub.cpp
 
 HEADERS += \
 		csv.h \
 		mainwindow.h \
-		propeller2.h \
-		propeller2_defs.h
+		p2_defs.h \
+		p2cog.h \
+		p2hub.h
 
 FORMS += \
 		mainwindow.ui

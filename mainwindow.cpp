@@ -36,7 +36,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "csv.h"
-#include "propeller2.h"
+#include "p2cog.h"
 
 #if CREATE_SOURCE
 //! field #0 in the CSV data
@@ -97,7 +97,7 @@ MainWindow::MainWindow(QWidget *parent) :
     csv2source();
 #endif
 
-    Propeller2 p;
+    P2Cog p;
     p2_opword_t w = {0};
 
     w.op.inst = p2_add;

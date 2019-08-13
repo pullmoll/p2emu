@@ -38,22 +38,22 @@
  * @brief Enumeration of the 16 conditional execution modes
  */
 typedef enum {
-    cond__ret_,
-    cond_nc_and_nz,
-    cond_nc_and_z,
-    cond_nc,
-    cond_c_and_nz,
-    cond_nz,
-    cond_c_ne_z,
-    cond_nc_or_nz,
-    cond_c_and_z,
-    cond_c_eq_z,
-    cond_z,
-    cond_nc_or_z,
-    cond_c,
-    cond_c_or_nz,
-    cond_c_or_z,
-    cond_never
+    cond__ret_,             //!< execute always; if no branch is taken, return
+    cond_nc_and_nz,         //!< execute if C == 0 and Z == 0
+    cond_nc_and_z,          //!< execute if C == 0 and Z == 1
+    cond_nc,                //!< execute if C == 0
+    cond_c_and_nz,          //!< execute if C == 1 and Z == 0
+    cond_nz,                //!< execute if Z == 0
+    cond_c_ne_z,            //!< execute if C != Z
+    cond_nc_or_nz,          //!< execute if C == 0 or Z == 0
+    cond_c_and_z,           //!< execute if C == 1 and Z == 1
+    cond_c_eq_z,            //!< execute if C == Z
+    cond_z,                 //!< execute if Z == 1
+    cond_nc_or_z,           //!< execute if C == 0 or Z == 1
+    cond_c,                 //!< execute if C == 1
+    cond_c_or_nz,           //!< execute if C == 1 or Z == 0
+    cond_c_or_z,            //!< execute if C == 1 or Z == 1
+    cond_never              //!< actually execute always (?)
 }   p2_cond_e;
 
 /**

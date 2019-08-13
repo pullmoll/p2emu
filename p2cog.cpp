@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * P2 emulator implementation
+ * P2 emulator Cog implementation
  *
  * Function bodies and comments generated from ":/P2 instruction set.csv"
  *
@@ -33,10 +33,11 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
-#include "propeller2.h"
+#include "p2cog.h"
 
-Propeller2::Propeller2(uchar cog_id)
+P2Cog::P2Cog(uchar cog_id, P2Hub* parent)
     : xoro_s()
+    , HUB(parent)
     , ID(cog_id)
     , PC(0)
     , IR()
@@ -50,10 +51,13 @@ Propeller2::Propeller2(uchar cog_id)
     , D_aug()
     , COG()
     , MEM(nullptr)
+    , MEMSIZE(0)
 {
     // Initialize the PRNG
     xoro_s[0] = 1;
     xoro_s[1] = 0;
+    MEM = HUB->mem();
+    MEMSIZE = HUB->memsize();
 }
 
 /**
@@ -61,7 +65,7 @@ Propeller2::Propeller2(uchar cog_id)
  * @param cond condition
  * @return true if met, false otherwise
  */
-bool Propeller2::conditional(p2_cond_e cond)
+bool P2Cog::conditional(p2_cond_e cond)
 {
     switch (cond) {
     case cond__ret_:        // execute always
@@ -105,7 +109,7 @@ bool Propeller2::conditional(p2_cond_e cond)
  * @param cond condition (0 ... 15)
  * @return true if met, false otherwise
  */
-bool Propeller2::conditional(unsigned cond)
+bool P2Cog::conditional(unsigned cond)
 {
     return conditional(static_cast<p2_cond_e>(cond));
 }
@@ -115,7 +119,7 @@ bool Propeller2::conditional(unsigned cond)
  * @param val value
  * @return position of top most 1 bit
  */
-uchar Propeller2::msbit(quint32 val)
+uchar P2Cog::msbit(quint32 val)
 {
     if (val == 0)
         return 0;
@@ -132,7 +136,7 @@ uchar Propeller2::msbit(quint32 val)
  * @param val 32 bit value
  * @return number of 1 bits
  */
-uchar Propeller2::ones(quint32 val)
+uchar P2Cog::ones(quint32 val)
 {
     val = val - ((val >> 1) & 0x55555555);
     val = (val & 0x33333333) + ((val >> 2) & 0x33333333);
@@ -145,7 +149,7 @@ uchar Propeller2::ones(quint32 val)
  * @param val 32 bit value
  * @return 1 for odd parity, 0 for even parity
  */
-uchar Propeller2::parity(quint32 val)
+uchar P2Cog::parity(quint32 val)
 {
     val ^= val >> 16;
     val ^= val >> 8;
@@ -160,7 +164,7 @@ uchar Propeller2::parity(quint32 val)
  * @param shift number of bits (0 .. 63)
  * @return rotated value
  */
-quint64 Propeller2::rotl(quint64 val, uchar shift)
+quint64 P2Cog::rotl(quint64 val, uchar shift)
 {
     return (val << shift) | (val >> (64 - shift));
 }
@@ -169,7 +173,7 @@ quint64 Propeller2::rotl(quint64 val, uchar shift)
  * @brief Return the next PRNG value
  * @return pseudo random value
  */
-quint64 Propeller2::rnd()
+quint64 P2Cog::rnd()
 {
     const quint64 s0 = xoro_s[0];
     quint64 s1 = xoro_s[1];
@@ -185,7 +189,7 @@ quint64 Propeller2::rnd()
  * @brief Read and decode the next Propeller2 opcode
  * @return number of cycles
  */
-quint32 Propeller2::decode()
+quint32 P2Cog::decode()
 {
     quint32 cycles = 2;
 
@@ -516,20 +520,25 @@ quint32 Propeller2::decode()
 
     case p2_1001001:
         if (IR.op.uc == 0) {
-            cycles = (IR.op.dst == 0 && IR.op.uz == 0) ? op_setword_altsw() : op_setword();
+            cycles = (IR.op.dst == 0 && IR.op.uz == 0) ? op_setword_altsw()
+                                                       : op_setword();
         } else {
-            cycles = (IR.op.src == 0 && IR.op.uz == 0) ? op_getword_altgw() : op_getword();
+            cycles = (IR.op.src == 0 && IR.op.uz == 0) ? op_getword_altgw()
+                                                       : op_getword();
         }
         break;
 
     case p2_1001010:
         if (IR.op.uc == 0) {
-            cycles = (IR.op.src == 0 && IR.op.uz == 0) ? op_rolword_altgw() : op_rolword();
+            cycles = (IR.op.src == 0 && IR.op.uz == 0) ? op_rolword_altgw()
+                                                       : op_rolword();
         } else {
             if (IR.op.uz == 0) {
-                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altsn_d() : op_altsn();
+                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altsn_d()
+                                                            : op_altsn();
             } else {
-                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altgn_d() : op_altgn();
+                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altgn_d()
+                                                            : op_altgn();
             }
         }
         break;
@@ -1469,7 +1478,7 @@ quint32 Propeller2::decode()
  * NOP
  *
  */
-uint Propeller2::op_nop()
+uint P2Cog::op_nop()
 {
     return 2;
 }
@@ -1485,7 +1494,7 @@ uint Propeller2::op_nop()
  * C = last bit shifted out if S[4:0] > 0, else D[0].
  * Z = (result == 0).
  */
-uint Propeller2::op_ror()
+uint P2Cog::op_ror()
 {
     if (0 == IR.word)
         return op_nop();
@@ -1510,7 +1519,7 @@ uint Propeller2::op_ror()
  * C = last bit shifted out if S[4:0] > 0, else D[31].
  * Z = (result == 0).
  */
-uint Propeller2::op_rol()
+uint P2Cog::op_rol()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -1533,7 +1542,7 @@ uint Propeller2::op_rol()
  * C = last bit shifted out if S[4:0] > 0, else D[0].
  * Z = (result == 0).
  */
-uint Propeller2::op_shr()
+uint P2Cog::op_shr()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -1556,7 +1565,7 @@ uint Propeller2::op_shr()
  * C = last bit shifted out if S[4:0] > 0, else D[31].
  * Z = (result == 0).
  */
-uint Propeller2::op_shl()
+uint P2Cog::op_shl()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -1579,7 +1588,7 @@ uint Propeller2::op_shl()
  * C = last bit shifted out if S[4:0] > 0, else D[0].
  * Z = (result == 0).
  */
-uint Propeller2::op_rcr()
+uint P2Cog::op_rcr()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -1602,7 +1611,7 @@ uint Propeller2::op_rcr()
  * C = last bit shifted out if S[4:0] > 0, else D[31].
  * Z = (result == 0).
  */
-uint Propeller2::op_rcl()
+uint P2Cog::op_rcl()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -1625,7 +1634,7 @@ uint Propeller2::op_rcl()
  * C = last bit shifted out if S[4:0] > 0, else D[0].
  * Z = (result == 0).
  */
-uint Propeller2::op_sar()
+uint P2Cog::op_sar()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -1648,7 +1657,7 @@ uint Propeller2::op_sar()
  * C = last bit shifted out if S[4:0] > 0, else D[31].
  * Z = (result == 0).
  */
-uint Propeller2::op_sal()
+uint P2Cog::op_sal()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -1671,7 +1680,7 @@ uint Propeller2::op_sal()
  * C = carry of (D + S).
  * Z = (result == 0).
  */
-uint Propeller2::op_add()
+uint P2Cog::op_add()
 {
     augmentS(IR.op.imm);
     const quint64 accu = U64(D) + U64(S);
@@ -1693,7 +1702,7 @@ uint Propeller2::op_add()
  * C = carry of (D + S + C).
  * Z = Z AND (result == 0).
  */
-uint Propeller2::op_addx()
+uint P2Cog::op_addx()
 {
     augmentS(IR.op.imm);
     const quint64 accu = U64(D) + U64(S) + C;
@@ -1715,7 +1724,7 @@ uint Propeller2::op_addx()
  * C = correct sign of (D + S).
  * Z = (result == 0).
  */
-uint Propeller2::op_adds()
+uint P2Cog::op_adds()
 {
     augmentS(IR.op.imm);
     const bool sign = (S32(D) ^ S32(S)) < 0;
@@ -1738,7 +1747,7 @@ uint Propeller2::op_adds()
  * C = correct sign of (D + S + C).
  * Z = Z AND (result == 0).
  */
-uint Propeller2::op_addsx()
+uint P2Cog::op_addsx()
 {
     augmentS(IR.op.imm);
     const uchar sign = (D ^ (S + C)) >> 31;
@@ -1761,7 +1770,7 @@ uint Propeller2::op_addsx()
  * C = borrow of (D - S).
  * Z = (result == 0).
  */
-uint Propeller2::op_sub()
+uint P2Cog::op_sub()
 {
     augmentS(IR.op.imm);
     const quint64 accu = U64(D) - U64(S);
@@ -1783,7 +1792,7 @@ uint Propeller2::op_sub()
  * C = borrow of (D - (S + C)).
  * Z = Z AND (result == 0).
  */
-uint Propeller2::op_subx()
+uint P2Cog::op_subx()
 {
     augmentS(IR.op.imm);
     const quint64 accu = U64(D) - (U64(S) + C);
@@ -1805,7 +1814,7 @@ uint Propeller2::op_subx()
  * C = correct sign of (D - S).
  * Z = (result == 0).
  */
-uint Propeller2::op_subs()
+uint P2Cog::op_subs()
 {
     augmentS(IR.op.imm);
     const bool sign = (S32(D) ^ S32(S)) < 0;
@@ -1828,7 +1837,7 @@ uint Propeller2::op_subs()
  * C = correct sign of (D - (S + C)).
  * Z = Z AND (result == 0).
  */
-uint Propeller2::op_subsx()
+uint P2Cog::op_subsx()
 {
     augmentS(IR.op.imm);
     const uchar sign = (D ^ (S + C)) >> 31;
@@ -1850,7 +1859,7 @@ uint Propeller2::op_subsx()
  * C = borrow of (D - S).
  * Z = (D == S).
  */
-uint Propeller2::op_cmp()
+uint P2Cog::op_cmp()
 {
     augmentS(IR.op.imm);
     const quint64 accu = U64(D) - U64(S);
@@ -1870,7 +1879,7 @@ uint Propeller2::op_cmp()
  * C = borrow of (D - (S + C)).
  * Z = Z AND (D == S + C).
  */
-uint Propeller2::op_cmpx()
+uint P2Cog::op_cmpx()
 {
     augmentS(IR.op.imm);
     const quint64 accu = U64(D) - (U64(S) + C);
@@ -1890,7 +1899,7 @@ uint Propeller2::op_cmpx()
  * C = correct sign of (D - S).
  * Z = (D == S).
  */
-uint Propeller2::op_cmps()
+uint P2Cog::op_cmps()
 {
     augmentS(IR.op.imm);
     const bool sign = (S32(D) ^ S32(S)) < 0;
@@ -1911,7 +1920,7 @@ uint Propeller2::op_cmps()
  * C = correct sign of (D - (S + C)).
  * Z = Z AND (D == S + C).
  */
-uint Propeller2::op_cmpsx()
+uint P2Cog::op_cmpsx()
 {
     augmentS(IR.op.imm);
     const uchar sign = (D ^ (S + C)) >> 31;
@@ -1932,7 +1941,7 @@ uint Propeller2::op_cmpsx()
  * C = borrow of (S - D).
  * Z = (D == S).
  */
-uint Propeller2::op_cmpr()
+uint P2Cog::op_cmpr()
 {
     augmentS(IR.op.imm);
     const quint64 accu = U64(S) - U64(D);
@@ -1952,7 +1961,7 @@ uint Propeller2::op_cmpr()
  * C = MSB of (D - S).
  * Z = (D == S).
  */
-uint Propeller2::op_cmpm()
+uint P2Cog::op_cmpm()
 {
     augmentS(IR.op.imm);
     const quint64 accu = U64(D) - U64(S);
@@ -1973,7 +1982,7 @@ uint Propeller2::op_cmpm()
  * C = borrow of (S - D).
  * Z = (result == 0).
  */
-uint Propeller2::op_subr()
+uint P2Cog::op_subr()
 {
     augmentS(IR.op.imm);
     const quint64 accu = U64(S) - U64(D);
@@ -1994,7 +2003,7 @@ uint Propeller2::op_subr()
  * If D => S then D = D - S and C = 1, else D same and C = 0.
  * Z = (result == 0).
  */
-uint Propeller2::op_cmpsub()
+uint P2Cog::op_cmpsub()
 {
     augmentS(IR.op.imm);
     if (D < S) {
@@ -2023,7 +2032,7 @@ uint Propeller2::op_cmpsub()
  * If D < S then D = S and C = 1, else D same and C = 0.
  * Z = (result == 0).
  */
-uint Propeller2::op_fge()
+uint P2Cog::op_fge()
 {
     augmentS(IR.op.imm);
     if (D < S) {
@@ -2049,7 +2058,7 @@ uint Propeller2::op_fge()
  * If D > S then D = S and C = 1, else D same and C = 0.
  * Z = (result == 0).
  */
-uint Propeller2::op_fle()
+uint P2Cog::op_fle()
 {
     augmentS(IR.op.imm);
     if (D > S) {
@@ -2075,7 +2084,7 @@ uint Propeller2::op_fle()
  * If D < S then D = S and C = 1, else D same and C = 0.
  * Z = (result == 0).
  */
-uint Propeller2::op_fges()
+uint P2Cog::op_fges()
 {
     augmentS(IR.op.imm);
     if (S32(D) < S32(S)) {
@@ -2101,7 +2110,7 @@ uint Propeller2::op_fges()
  * If D > S then D = S and C = 1, else D same and C = 0.
  * Z = (result == 0).
  */
-uint Propeller2::op_fles()
+uint P2Cog::op_fles()
 {
     augmentS(IR.op.imm);
     if (S32(D) > S32(S)) {
@@ -2128,7 +2137,7 @@ uint Propeller2::op_fles()
  * C = correct sign of (D +/- S).
  * Z = (result == 0).
  */
-uint Propeller2::op_sumc()
+uint P2Cog::op_sumc()
 {
     augmentS(IR.op.imm);
     const bool sign = (S32(D) ^ S32(S)) < 0;
@@ -2151,7 +2160,7 @@ uint Propeller2::op_sumc()
  * C = correct sign of (D +/- S).
  * Z = (result == 0).
  */
-uint Propeller2::op_sumnc()
+uint P2Cog::op_sumnc()
 {
     augmentS(IR.op.imm);
     const bool sign = (S32(D) ^ S32(S)) < 0;
@@ -2174,7 +2183,7 @@ uint Propeller2::op_sumnc()
  * C = correct sign of (D +/- S).
  * Z = (result == 0).
  */
-uint Propeller2::op_sumz()
+uint P2Cog::op_sumz()
 {
     augmentS(IR.op.imm);
     const bool sign = (S32(D) ^ S32(S)) < 0;
@@ -2197,7 +2206,7 @@ uint Propeller2::op_sumz()
  * C = correct sign of (D +/- S).
  * Z = (result == 0).
  */
-uint Propeller2::op_sumnz()
+uint P2Cog::op_sumnz()
 {
     augmentS(IR.op.imm);
     const bool sign = (S32(D) ^ S32(S)) < 0;
@@ -2218,7 +2227,7 @@ uint Propeller2::op_sumnz()
  *
  * C/Z =          D[S[4:0]].
  */
-uint Propeller2::op_testb_w()
+uint P2Cog::op_testb_w()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2237,7 +2246,7 @@ uint Propeller2::op_testb_w()
  *
  * C/Z =         !D[S[4:0]].
  */
-uint Propeller2::op_testbn_w()
+uint P2Cog::op_testbn_w()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2256,7 +2265,7 @@ uint Propeller2::op_testbn_w()
  *
  * C/Z = C/Z AND  D[S[4:0]].
  */
-uint Propeller2::op_testb_and()
+uint P2Cog::op_testb_and()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2275,7 +2284,7 @@ uint Propeller2::op_testb_and()
  *
  * C/Z = C/Z AND !D[S[4:0]].
  */
-uint Propeller2::op_testbn_and()
+uint P2Cog::op_testbn_and()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2294,7 +2303,7 @@ uint Propeller2::op_testbn_and()
  *
  * C/Z = C/Z OR   D[S[4:0]].
  */
-uint Propeller2::op_testb_or()
+uint P2Cog::op_testb_or()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2313,7 +2322,7 @@ uint Propeller2::op_testb_or()
  *
  * C/Z = C/Z OR  !D[S[4:0]].
  */
-uint Propeller2::op_testbn_or()
+uint P2Cog::op_testbn_or()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2332,7 +2341,7 @@ uint Propeller2::op_testbn_or()
  *
  * C/Z = C/Z XOR  D[S[4:0]].
  */
-uint Propeller2::op_testb_xor()
+uint P2Cog::op_testb_xor()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2351,7 +2360,7 @@ uint Propeller2::op_testb_xor()
  *
  * C/Z = C/Z XOR !D[S[4:0]].
  */
-uint Propeller2::op_testbn_xor()
+uint P2Cog::op_testbn_xor()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2369,7 +2378,7 @@ uint Propeller2::op_testbn_xor()
  * BITL    D,{#}S         {WCZ}
  *
  */
-uint Propeller2::op_bitl()
+uint P2Cog::op_bitl()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2388,7 +2397,7 @@ uint Propeller2::op_bitl()
  * BITH    D,{#}S         {WCZ}
  *
  */
-uint Propeller2::op_bith()
+uint P2Cog::op_bith()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2407,7 +2416,7 @@ uint Propeller2::op_bith()
  * BITC    D,{#}S         {WCZ}
  *
  */
-uint Propeller2::op_bitc()
+uint P2Cog::op_bitc()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2426,7 +2435,7 @@ uint Propeller2::op_bitc()
  * BITNC   D,{#}S         {WCZ}
  *
  */
-uint Propeller2::op_bitnc()
+uint P2Cog::op_bitnc()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2445,7 +2454,7 @@ uint Propeller2::op_bitnc()
  * BITZ    D,{#}S         {WCZ}
  *
  */
-uint Propeller2::op_bitz()
+uint P2Cog::op_bitz()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2464,7 +2473,7 @@ uint Propeller2::op_bitz()
  * BITNZ   D,{#}S         {WCZ}
  *
  */
-uint Propeller2::op_bitnz()
+uint P2Cog::op_bitnz()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2483,7 +2492,7 @@ uint Propeller2::op_bitnz()
  * BITRND  D,{#}S         {WCZ}
  *
  */
-uint Propeller2::op_bitrnd()
+uint P2Cog::op_bitrnd()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2502,7 +2511,7 @@ uint Propeller2::op_bitrnd()
  * BITNOT  D,{#}S         {WCZ}
  *
  */
-uint Propeller2::op_bitnot()
+uint P2Cog::op_bitnot()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2524,7 +2533,7 @@ uint Propeller2::op_bitnot()
  * C = parity of result.
  * Z = (result == 0).
  */
-uint Propeller2::op_and()
+uint P2Cog::op_and()
 {
     augmentS(IR.op.imm);
     const quint32 result = D & S;
@@ -2544,7 +2553,7 @@ uint Propeller2::op_and()
  * C = parity of result.
  * Z = (result == 0).
  */
-uint Propeller2::op_andn()
+uint P2Cog::op_andn()
 {
     augmentS(IR.op.imm);
     const quint32 result = D & ~S;
@@ -2564,7 +2573,7 @@ uint Propeller2::op_andn()
  * C = parity of result.
  * Z = (result == 0).
  */
-uint Propeller2::op_or()
+uint P2Cog::op_or()
 {
     augmentS(IR.op.imm);
     const quint32 result = D | S;
@@ -2584,7 +2593,7 @@ uint Propeller2::op_or()
  * C = parity of result.
  * Z = (result == 0).
  */
-uint Propeller2::op_xor()
+uint P2Cog::op_xor()
 {
     augmentS(IR.op.imm);
     const quint32 result = D ^ S;
@@ -2604,7 +2613,7 @@ uint Propeller2::op_xor()
  * C = parity of result.
  * Z = (result == 0).
  */
-uint Propeller2::op_muxc()
+uint P2Cog::op_muxc()
 {
     augmentS(IR.op.imm);
     const quint32 result = (D & ~S) | (C ? S : 0);
@@ -2624,7 +2633,7 @@ uint Propeller2::op_muxc()
  * C = parity of result.
  * Z = (result == 0).
  */
-uint Propeller2::op_muxnc()
+uint P2Cog::op_muxnc()
 {
     augmentS(IR.op.imm);
     const quint32 result = (D & ~S) | (!C ? S : 0);
@@ -2644,7 +2653,7 @@ uint Propeller2::op_muxnc()
  * C = parity of result.
  * Z = (result == 0).
  */
-uint Propeller2::op_muxz()
+uint P2Cog::op_muxz()
 {
     augmentS(IR.op.imm);
     const quint32 result = (D & ~S) | (Z ? S : 0);
@@ -2664,7 +2673,7 @@ uint Propeller2::op_muxz()
  * C = parity of result.
  * Z = (result == 0).
  */
-uint Propeller2::op_muxnz()
+uint P2Cog::op_muxnz()
 {
     augmentS(IR.op.imm);
     const quint32 result = (D & ~S) | (!Z ? S : 0);
@@ -2684,7 +2693,7 @@ uint Propeller2::op_muxnz()
  * C = S[31].
  * Z = (result == 0).
  */
-uint Propeller2::op_mov()
+uint P2Cog::op_mov()
 {
     augmentS(IR.op.imm);
     const quint32 result = S;
@@ -2705,7 +2714,7 @@ uint Propeller2::op_mov()
  * C = !S[31].
  * Z = (result == 0).
  */
-uint Propeller2::op_not()
+uint P2Cog::op_not()
 {
     augmentS(IR.op.imm);
     const quint32 result = ~S;
@@ -2726,7 +2735,7 @@ uint Propeller2::op_not()
  * C = S[31].
  * Z = (result == 0).
  */
-uint Propeller2::op_abs()
+uint P2Cog::op_abs()
 {
     augmentS(IR.op.imm);
     const qint32 result = qAbs(S32(S));
@@ -2747,7 +2756,7 @@ uint Propeller2::op_abs()
  * C = MSB of result.
  * Z = (result == 0).
  */
-uint Propeller2::op_neg()
+uint P2Cog::op_neg()
 {
     augmentS(IR.op.imm);
     const qint32 result = 0 - S32(S);
@@ -2768,7 +2777,7 @@ uint Propeller2::op_neg()
  * C = MSB of result.
  * Z = (result == 0).
  */
-uint Propeller2::op_negc()
+uint P2Cog::op_negc()
 {
     augmentS(IR.op.imm);
     const qint32 result = C ? 0 - S32(S) : S32(32);
@@ -2789,7 +2798,7 @@ uint Propeller2::op_negc()
  * C = MSB of result.
  * Z = (result == 0).
  */
-uint Propeller2::op_negnc()
+uint P2Cog::op_negnc()
 {
     augmentS(IR.op.imm);
     const qint32 result = !C ? 0 - S32(S) : S32(32);
@@ -2810,7 +2819,7 @@ uint Propeller2::op_negnc()
  * C = MSB of result.
  * Z = (result == 0).
  */
-uint Propeller2::op_negz()
+uint P2Cog::op_negz()
 {
     augmentS(IR.op.imm);
     const qint32 result = Z ? 0 - S32(S) : S32(32);
@@ -2831,7 +2840,7 @@ uint Propeller2::op_negz()
  * C = MSB of result.
  * Z = (result == 0).
  */
-uint Propeller2::op_negnz()
+uint P2Cog::op_negnz()
 {
     augmentS(IR.op.imm);
     const qint32 result = !Z ? 0 - S32(S) : S32(32);
@@ -2851,7 +2860,7 @@ uint Propeller2::op_negnz()
  * If D = S then D = 0 and C = 1, else D = D + 1 and C = 0.
  * Z = (result == 0).
  */
-uint Propeller2::op_incmod()
+uint P2Cog::op_incmod()
 {
     augmentS(IR.op.imm);
     const quint32 result = (D == S) ? 0 : D + 1;
@@ -2871,7 +2880,7 @@ uint Propeller2::op_incmod()
  * If D = 0 then D = S and C = 1, else D = D - 1 and C = 0.
  * Z = (result == 0).
  */
-uint Propeller2::op_decmod()
+uint P2Cog::op_decmod()
 {
     augmentS(IR.op.imm);
     const quint32 result = (D == 0) ? S : D - 1;
@@ -2891,7 +2900,7 @@ uint Propeller2::op_decmod()
  * C = MSB of result.
  * Z = (result == 0).
  */
-uint Propeller2::op_zerox()
+uint P2Cog::op_zerox()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2914,7 +2923,7 @@ uint Propeller2::op_zerox()
  * C = MSB of result.
  * Z = (result == 0).
  */
-uint Propeller2::op_signx()
+uint P2Cog::op_signx()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2938,7 +2947,7 @@ uint Propeller2::op_signx()
  * C = (S != 0).
  * Z = (result == 0).
  */
-uint Propeller2::op_encod()
+uint P2Cog::op_encod()
 {
     augmentS(IR.op.imm);
     const quint32 result = msbit(S);
@@ -2959,7 +2968,7 @@ uint Propeller2::op_encod()
  * C = LSB of result.
  * Z = (result == 0).
  */
-uint Propeller2::op_ones()
+uint P2Cog::op_ones()
 {
     augmentS(IR.op.imm);
     const quint32 result = ones(S);
@@ -2978,7 +2987,7 @@ uint Propeller2::op_ones()
  * C = parity of (D & S).
  * Z = ((D & S) == 0).
  */
-uint Propeller2::op_test()
+uint P2Cog::op_test()
 {
     augmentS(IR.op.imm);
     const quint32 result = D & S;
@@ -2997,7 +3006,7 @@ uint Propeller2::op_test()
  * C = parity of (D & !S).
  * Z = ((D & !S) == 0).
  */
-uint Propeller2::op_testn()
+uint P2Cog::op_testn()
 {
     augmentS(IR.op.imm);
     const quint32 result = D & ~S;
@@ -3014,7 +3023,7 @@ uint Propeller2::op_testn()
  * SETNIB  D,{#}S,#N
  *
  */
-uint Propeller2::op_setnib()
+uint P2Cog::op_setnib()
 {
     augmentS(IR.op.imm);
     const uchar shift = static_cast<uchar>((IR.word >> 19) & 7) * 4;
@@ -3032,7 +3041,7 @@ uint Propeller2::op_setnib()
  * SETNIB  {#}S
  *
  */
-uint Propeller2::op_setnib_altsn()
+uint P2Cog::op_setnib_altsn()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3048,7 +3057,7 @@ uint Propeller2::op_setnib_altsn()
  * D = {28'b0, S.
  * NIBBLE[N]).
  */
-uint Propeller2::op_getnib()
+uint P2Cog::op_getnib()
 {
     augmentS(IR.op.imm);
     const uchar shift = static_cast<uchar>((IR.word >> 19) & 7) * 4;
@@ -3065,7 +3074,7 @@ uint Propeller2::op_getnib()
  * GETNIB  D
  *
  */
-uint Propeller2::op_getnib_altgn()
+uint P2Cog::op_getnib_altgn()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3080,7 +3089,7 @@ uint Propeller2::op_getnib_altgn()
  *
  * D = {D[27:0], S.NIBBLE[N]).
  */
-uint Propeller2::op_rolnib()
+uint P2Cog::op_rolnib()
 {
     augmentS(IR.op.imm);
     const uchar shift = static_cast<uchar>((IR.word >> 19) & 7) * 4;
@@ -3097,7 +3106,7 @@ uint Propeller2::op_rolnib()
  * ROLNIB  D
  *
  */
-uint Propeller2::op_rolnib_altgn()
+uint P2Cog::op_rolnib_altgn()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3111,7 +3120,7 @@ uint Propeller2::op_rolnib_altgn()
  * SETBYTE D,{#}S,#N
  *
  */
-uint Propeller2::op_setbyte()
+uint P2Cog::op_setbyte()
 {
     augmentS(IR.op.imm);
     const uchar shift = static_cast<uchar>((IR.word >> 19) & 3) * 8;
@@ -3129,7 +3138,7 @@ uint Propeller2::op_setbyte()
  * SETBYTE {#}S
  *
  */
-uint Propeller2::op_setbyte_altsb()
+uint P2Cog::op_setbyte_altsb()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3144,7 +3153,7 @@ uint Propeller2::op_setbyte_altsb()
  *
  * D = {24'b0, S.BYTE[N]).
  */
-uint Propeller2::op_getbyte()
+uint P2Cog::op_getbyte()
 {
     augmentS(IR.op.imm);
     const uchar shift = static_cast<uchar>((IR.word >> 19) & 3) * 8;
@@ -3161,7 +3170,7 @@ uint Propeller2::op_getbyte()
  * GETBYTE D
  *
  */
-uint Propeller2::op_getbyte_altgb()
+uint P2Cog::op_getbyte_altgb()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3176,7 +3185,7 @@ uint Propeller2::op_getbyte_altgb()
  *
  * D = {D[23:0], S.BYTE[N]).
  */
-uint Propeller2::op_rolbyte()
+uint P2Cog::op_rolbyte()
 {
     augmentS(IR.op.imm);
     const uchar shift = static_cast<uchar>((IR.word >> 19) & 3) * 8;
@@ -3193,7 +3202,7 @@ uint Propeller2::op_rolbyte()
  * ROLBYTE D
  *
  */
-uint Propeller2::op_rolbyte_altgb()
+uint P2Cog::op_rolbyte_altgb()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3207,7 +3216,7 @@ uint Propeller2::op_rolbyte_altgb()
  * SETWORD D,{#}S,#N
  *
  */
-uint Propeller2::op_setword()
+uint P2Cog::op_setword()
 {
     if (D == 0 && IR.op.uz == 0)
         return op_setword_altsw();
@@ -3227,7 +3236,7 @@ uint Propeller2::op_setword()
  * SETWORD {#}S
  *
  */
-uint Propeller2::op_setword_altsw()
+uint P2Cog::op_setword_altsw()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3242,7 +3251,7 @@ uint Propeller2::op_setword_altsw()
  *
  * D = {16'b0, S.WORD[N]).
  */
-uint Propeller2::op_getword()
+uint P2Cog::op_getword()
 {
     if (S == 0 && IR.op.uz == 0)
         return op_getword_altgw();
@@ -3261,7 +3270,7 @@ uint Propeller2::op_getword()
  * GETWORD D
  *
  */
-uint Propeller2::op_getword_altgw()
+uint P2Cog::op_getword_altgw()
 {
     return 2;
 }
@@ -3275,7 +3284,7 @@ uint Propeller2::op_getword_altgw()
  *
  * D = {D[15:0], S.WORD[N]).
  */
-uint Propeller2::op_rolword()
+uint P2Cog::op_rolword()
 {
     augmentS(IR.op.imm);
     const uchar shift = IR.op.uz * 16;
@@ -3292,7 +3301,7 @@ uint Propeller2::op_rolword()
  * ROLWORD D
  *
  */
-uint Propeller2::op_rolword_altgw()
+uint P2Cog::op_rolword_altgw()
 {
     return 2;
 }
@@ -3307,7 +3316,7 @@ uint Propeller2::op_rolword_altgw()
  * Next D field = (D[11:3] + S) & $1FF, N field = D[2:0].
  * D += sign-extended S[17:9].
  */
-uint Propeller2::op_altsn()
+uint P2Cog::op_altsn()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3322,7 +3331,7 @@ uint Propeller2::op_altsn()
  *
  * Next D field = D[11:3], N field = D[2:0].
  */
-uint Propeller2::op_altsn_d()
+uint P2Cog::op_altsn_d()
 {
     return 2;
 }
@@ -3337,7 +3346,7 @@ uint Propeller2::op_altsn_d()
  * Next S field = (D[11:3] + S) & $1FF, N field = D[2:0].
  * D += sign-extended S[17:9].
  */
-uint Propeller2::op_altgn()
+uint P2Cog::op_altgn()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3352,7 +3361,7 @@ uint Propeller2::op_altgn()
  *
  * Next S field = D[11:3], N field = D[2:0].
  */
-uint Propeller2::op_altgn_d()
+uint P2Cog::op_altgn_d()
 {
     return 2;
 }
@@ -3367,7 +3376,7 @@ uint Propeller2::op_altgn_d()
  * Next D field = (D[10:2] + S) & $1FF, N field = D[1:0].
  * D += sign-extended S[17:9].
  */
-uint Propeller2::op_altsb()
+uint P2Cog::op_altsb()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3382,7 +3391,7 @@ uint Propeller2::op_altsb()
  *
  * Next D field = D[10:2], N field = D[1:0].
  */
-uint Propeller2::op_altsb_d()
+uint P2Cog::op_altsb_d()
 {
     return 2;
 }
@@ -3397,7 +3406,7 @@ uint Propeller2::op_altsb_d()
  * Next S field = (D[10:2] + S) & $1FF, N field = D[1:0].
  * D += sign-extended S[17:9].
  */
-uint Propeller2::op_altgb()
+uint P2Cog::op_altgb()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3412,7 +3421,7 @@ uint Propeller2::op_altgb()
  *
  * Next S field = D[10:2], N field = D[1:0].
  */
-uint Propeller2::op_altgb_d()
+uint P2Cog::op_altgb_d()
 {
     return 2;
 }
@@ -3427,7 +3436,7 @@ uint Propeller2::op_altgb_d()
  * Next D field = (D[9:1] + S) & $1FF, N field = D[0].
  * D += sign-extended S[17:9].
  */
-uint Propeller2::op_altsw()
+uint P2Cog::op_altsw()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3442,7 +3451,7 @@ uint Propeller2::op_altsw()
  *
  * Next D field = D[9:1], N field = D[0].
  */
-uint Propeller2::op_altsw_d()
+uint P2Cog::op_altsw_d()
 {
     return 2;
 }
@@ -3457,7 +3466,7 @@ uint Propeller2::op_altsw_d()
  * Next S field = ((D[9:1] + S) & $1FF), N field = D[0].
  * D += sign-extended S[17:9].
  */
-uint Propeller2::op_altgw()
+uint P2Cog::op_altgw()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3472,7 +3481,7 @@ uint Propeller2::op_altgw()
  *
  * Next S field = D[9:1], N field = D[0].
  */
-uint Propeller2::op_altgw_d()
+uint P2Cog::op_altgw_d()
 {
     return 2;
 }
@@ -3486,7 +3495,7 @@ uint Propeller2::op_altgw_d()
  *
  * D += sign-extended S[17:9].
  */
-uint Propeller2::op_altr()
+uint P2Cog::op_altr()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3500,7 +3509,7 @@ uint Propeller2::op_altr()
  * ALTR    D
  *
  */
-uint Propeller2::op_altr_d()
+uint P2Cog::op_altr_d()
 {
     return 2;
 }
@@ -3514,7 +3523,7 @@ uint Propeller2::op_altr_d()
  *
  * D += sign-extended S[17:9].
  */
-uint Propeller2::op_altd()
+uint P2Cog::op_altd()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3528,7 +3537,7 @@ uint Propeller2::op_altd()
  * ALTD    D
  *
  */
-uint Propeller2::op_altd_d()
+uint P2Cog::op_altd_d()
 {
     return 2;
 }
@@ -3542,7 +3551,7 @@ uint Propeller2::op_altd_d()
  *
  * D += sign-extended S[17:9].
  */
-uint Propeller2::op_alts()
+uint P2Cog::op_alts()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3556,7 +3565,7 @@ uint Propeller2::op_alts()
  * ALTS    D
  *
  */
-uint Propeller2::op_alts_d()
+uint P2Cog::op_alts_d()
 {
     return 2;
 }
@@ -3570,7 +3579,7 @@ uint Propeller2::op_alts_d()
  *
  * D += sign-extended S[17:9].
  */
-uint Propeller2::op_altb()
+uint P2Cog::op_altb()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3584,7 +3593,7 @@ uint Propeller2::op_altb()
  * ALTB    D
  *
  */
-uint Propeller2::op_altb_d()
+uint P2Cog::op_altb_d()
 {
     return 2;
 }
@@ -3598,7 +3607,7 @@ uint Propeller2::op_altb_d()
  *
  * Modify D per S.
  */
-uint Propeller2::op_alti()
+uint P2Cog::op_alti()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3613,7 +3622,7 @@ uint Propeller2::op_alti()
  *
  * D stays same.
  */
-uint Propeller2::op_alti_d()
+uint P2Cog::op_alti_d()
 {
     return 2;
 }
@@ -3627,7 +3636,7 @@ uint Propeller2::op_alti_d()
  *
  * D = {D[31:28], S[8:0], D[18:0]}.
  */
-uint Propeller2::op_setr()
+uint P2Cog::op_setr()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3642,7 +3651,7 @@ uint Propeller2::op_setr()
  *
  * D = {D[31:18], S[8:0], D[8:0]}.
  */
-uint Propeller2::op_setd()
+uint P2Cog::op_setd()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3657,7 +3666,7 @@ uint Propeller2::op_setd()
  *
  * D = {D[31:9], S[8:0]}.
  */
-uint Propeller2::op_sets()
+uint P2Cog::op_sets()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3672,7 +3681,7 @@ uint Propeller2::op_sets()
  *
  * D = 1 << S[4:0].
  */
-uint Propeller2::op_decod()
+uint P2Cog::op_decod()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -3690,7 +3699,7 @@ uint Propeller2::op_decod()
  *
  * D = 1 << D[4:0].
  */
-uint Propeller2::op_decod_d()
+uint P2Cog::op_decod_d()
 {
     return 2;
 }
@@ -3704,7 +3713,7 @@ uint Propeller2::op_decod_d()
  *
  * D = ($0000_0002 << S[4:0]) - 1.
  */
-uint Propeller2::op_bmask()
+uint P2Cog::op_bmask()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3719,7 +3728,7 @@ uint Propeller2::op_bmask()
  *
  * D = ($0000_0002 << D[4:0]) - 1.
  */
-uint Propeller2::op_bmask_d()
+uint P2Cog::op_bmask_d()
 {
     return 2;
 }
@@ -3733,7 +3742,7 @@ uint Propeller2::op_bmask_d()
  *
  * If (C XOR D[0]) then D = (D >> 1) XOR S, else D = (D >> 1).
  */
-uint Propeller2::op_crcbit()
+uint P2Cog::op_crcbit()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3750,7 +3759,7 @@ uint Propeller2::op_crcbit()
  * Q = Q << 4.
  * Use SETQ+CRCNIB+CRCNIB+CRCNIB.
  */
-uint Propeller2::op_crcnib()
+uint P2Cog::op_crcnib()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3764,7 +3773,7 @@ uint Propeller2::op_crcnib()
  * MUXNITS D,{#}S
  *
  */
-uint Propeller2::op_muxnits()
+uint P2Cog::op_muxnits()
 {
     augmentS(IR.op.imm);
     const quint32 mask = S | ((S & 0xaaaaaaaa) >> 1) | ((S & 0x55555555) << 1);
@@ -3781,7 +3790,7 @@ uint Propeller2::op_muxnits()
  * MUXNIBS D,{#}S
  *
  */
-uint Propeller2::op_muxnibs()
+uint P2Cog::op_muxnibs()
 {
     augmentS(IR.op.imm);
     const quint32 mask0 = S | ((S & 0xaaaaaaaa) >> 1) | ((S & 0x55555555) << 1);
@@ -3801,7 +3810,7 @@ uint Propeller2::op_muxnibs()
  * For each '1' bit in Q, copy the corresponding bit in S into D.
  * D = (D & !Q) | (S & Q).
  */
-uint Propeller2::op_muxq()
+uint P2Cog::op_muxq()
 {
     augmentS(IR.op.imm);
     const quint32 result = (D & ~Q) | (S & Q);
@@ -3818,7 +3827,7 @@ uint Propeller2::op_muxq()
  *
  * D = {D.BYTE[S[7:6]], D.BYTE[S[5:4]], D.BYTE[S[3:2]], D.BYTE[S[1:0]]}.
  */
-uint Propeller2::op_movbyts()
+uint P2Cog::op_movbyts()
 {
     augmentS(IR.op.imm);
     union {
@@ -3843,7 +3852,7 @@ uint Propeller2::op_movbyts()
  *
  * Z = (S == 0) | (D == 0).
  */
-uint Propeller2::op_mul()
+uint P2Cog::op_mul()
 {
     augmentS(IR.op.imm);
     const quint32 result = U16(D) * U16(S);
@@ -3861,7 +3870,7 @@ uint Propeller2::op_mul()
  *
  * Z = (S == 0) | (D == 0).
  */
-uint Propeller2::op_muls()
+uint P2Cog::op_muls()
 {
     augmentS(IR.op.imm);
     const qint32 result = S16(D) * S16(S);
@@ -3879,7 +3888,7 @@ uint Propeller2::op_muls()
  *
  * Z = (result == 0).
  */
-uint Propeller2::op_sca()
+uint P2Cog::op_sca()
 {
     augmentS(IR.op.imm);
     const quint32 result = (U16(D) * U16(S)) >> 16;
@@ -3898,7 +3907,7 @@ uint Propeller2::op_sca()
  * In this scheme, $4000 = 1.0 and $C000 = -1.0.
  * Z = (result == 0).
  */
-uint Propeller2::op_scas()
+uint P2Cog::op_scas()
 {
     augmentS(IR.op.imm);
     const qint32 result = (S16(D) * S16(S)) >> 14;
@@ -3915,7 +3924,7 @@ uint Propeller2::op_scas()
  * ADDPIX  D,{#}S
  *
  */
-uint Propeller2::op_addpix()
+uint P2Cog::op_addpix()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3930,7 +3939,7 @@ uint Propeller2::op_addpix()
  *
  * 0.
  */
-uint Propeller2::op_mulpix()
+uint P2Cog::op_mulpix()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3944,7 +3953,7 @@ uint Propeller2::op_mulpix()
  * BLNPIX  D,{#}S
  *
  */
-uint Propeller2::op_blnpix()
+uint P2Cog::op_blnpix()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3958,7 +3967,7 @@ uint Propeller2::op_blnpix()
  * MIXPIX  D,{#}S
  *
  */
-uint Propeller2::op_mixpix()
+uint P2Cog::op_mixpix()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3973,7 +3982,7 @@ uint Propeller2::op_mixpix()
  *
  * Adds S into D.
  */
-uint Propeller2::op_addct1()
+uint P2Cog::op_addct1()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3988,7 +3997,7 @@ uint Propeller2::op_addct1()
  *
  * Adds S into D.
  */
-uint Propeller2::op_addct2()
+uint P2Cog::op_addct2()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4003,7 +4012,7 @@ uint Propeller2::op_addct2()
  *
  * Adds S into D.
  */
-uint Propeller2::op_addct3()
+uint P2Cog::op_addct3()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4018,7 +4027,7 @@ uint Propeller2::op_addct3()
  *
  * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  */
-uint Propeller2::op_wmlong()
+uint P2Cog::op_wmlong()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4033,7 +4042,7 @@ uint Propeller2::op_wmlong()
  *
  * C = modal result.
  */
-uint Propeller2::op_rqpin()
+uint P2Cog::op_rqpin()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4048,7 +4057,7 @@ uint Propeller2::op_rqpin()
  *
  * C = modal result.
  */
-uint Propeller2::op_rdpin()
+uint P2Cog::op_rdpin()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4064,7 +4073,7 @@ uint Propeller2::op_rdpin()
  * C = MSB of data.
  * Z = (result == 0).
  */
-uint Propeller2::op_rdlut()
+uint P2Cog::op_rdlut()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4080,7 +4089,7 @@ uint Propeller2::op_rdlut()
  * C = MSB of byte.
  * Z = (result == 0).
  */
-uint Propeller2::op_rdbyte()
+uint P2Cog::op_rdbyte()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4096,7 +4105,7 @@ uint Propeller2::op_rdbyte()
  * C = MSB of word.
  * Z = (result == 0).
  */
-uint Propeller2::op_rdword()
+uint P2Cog::op_rdword()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4112,7 +4121,7 @@ uint Propeller2::op_rdword()
  * C = MSB of long.
  * *   Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  */
-uint Propeller2::op_rdlong()
+uint P2Cog::op_rdlong()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4128,7 +4137,7 @@ uint Propeller2::op_rdlong()
  * C = MSB of long.
  * Z = (result == 0).
  */
-uint Propeller2::op_popa()
+uint P2Cog::op_popa()
 {
     return 2;
 }
@@ -4143,7 +4152,7 @@ uint Propeller2::op_popa()
  * C = MSB of long.
  * Z = (result == 0).
  */
-uint Propeller2::op_popb()
+uint P2Cog::op_popb()
 {
     return 2;
 }
@@ -4157,7 +4166,7 @@ uint Propeller2::op_popb()
  *
  * C = S[31], Z = S[30].
  */
-uint Propeller2::op_calld()
+uint P2Cog::op_calld()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4172,7 +4181,7 @@ uint Propeller2::op_calld()
  *
  * (CALLD $1F0,$1F1 WC,WZ).
  */
-uint Propeller2::op_resi3()
+uint P2Cog::op_resi3()
 {
     return 2;
 }
@@ -4186,7 +4195,7 @@ uint Propeller2::op_resi3()
  *
  * (CALLD $1F2,$1F3 WC,WZ).
  */
-uint Propeller2::op_resi2()
+uint P2Cog::op_resi2()
 {
     return 2;
 }
@@ -4200,7 +4209,7 @@ uint Propeller2::op_resi2()
  *
  * (CALLD $1F4,$1F5 WC,WZ).
  */
-uint Propeller2::op_resi1()
+uint P2Cog::op_resi1()
 {
     return 2;
 }
@@ -4214,7 +4223,7 @@ uint Propeller2::op_resi1()
  *
  * (CALLD $1FE,$1FF WC,WZ).
  */
-uint Propeller2::op_resi0()
+uint P2Cog::op_resi0()
 {
     return 2;
 }
@@ -4228,7 +4237,7 @@ uint Propeller2::op_resi0()
  *
  * (CALLD $1FF,$1F1 WC,WZ).
  */
-uint Propeller2::op_reti3()
+uint P2Cog::op_reti3()
 {
     return 2;
 }
@@ -4242,7 +4251,7 @@ uint Propeller2::op_reti3()
  *
  * (CALLD $1FF,$1F3 WC,WZ).
  */
-uint Propeller2::op_reti2()
+uint P2Cog::op_reti2()
 {
     return 2;
 }
@@ -4256,7 +4265,7 @@ uint Propeller2::op_reti2()
  *
  * (CALLD $1FF,$1F5 WC,WZ).
  */
-uint Propeller2::op_reti1()
+uint P2Cog::op_reti1()
 {
     return 2;
 }
@@ -4270,7 +4279,7 @@ uint Propeller2::op_reti1()
  *
  * (CALLD $1FF,$1FF WC,WZ).
  */
-uint Propeller2::op_reti0()
+uint P2Cog::op_reti0()
 {
     return 2;
 }
@@ -4283,7 +4292,7 @@ uint Propeller2::op_reti0()
  * CALLPA  {#}D,{#}S
  *
  */
-uint Propeller2::op_callpa()
+uint P2Cog::op_callpa()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -4298,7 +4307,7 @@ uint Propeller2::op_callpa()
  * CALLPB  {#}D,{#}S
  *
  */
-uint Propeller2::op_callpb()
+uint P2Cog::op_callpb()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -4313,7 +4322,7 @@ uint Propeller2::op_callpb()
  * DJZ     D,{#}S
  *
  */
-uint Propeller2::op_djz()
+uint P2Cog::op_djz()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4327,7 +4336,7 @@ uint Propeller2::op_djz()
  * DJNZ    D,{#}S
  *
  */
-uint Propeller2::op_djnz()
+uint P2Cog::op_djnz()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4341,7 +4350,7 @@ uint Propeller2::op_djnz()
  * DJF     D,{#}S
  *
  */
-uint Propeller2::op_djf()
+uint P2Cog::op_djf()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4355,7 +4364,7 @@ uint Propeller2::op_djf()
  * DJNF    D,{#}S
  *
  */
-uint Propeller2::op_djnf()
+uint P2Cog::op_djnf()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4369,7 +4378,7 @@ uint Propeller2::op_djnf()
  * IJZ     D,{#}S
  *
  */
-uint Propeller2::op_ijz()
+uint P2Cog::op_ijz()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4383,7 +4392,7 @@ uint Propeller2::op_ijz()
  * IJNZ    D,{#}S
  *
  */
-uint Propeller2::op_ijnz()
+uint P2Cog::op_ijnz()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4397,7 +4406,7 @@ uint Propeller2::op_ijnz()
  * TJZ     D,{#}S
  *
  */
-uint Propeller2::op_tjz()
+uint P2Cog::op_tjz()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4411,7 +4420,7 @@ uint Propeller2::op_tjz()
  * TJNZ    D,{#}S
  *
  */
-uint Propeller2::op_tjnz()
+uint P2Cog::op_tjnz()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4425,7 +4434,7 @@ uint Propeller2::op_tjnz()
  * TJF     D,{#}S
  *
  */
-uint Propeller2::op_tjf()
+uint P2Cog::op_tjf()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4439,7 +4448,7 @@ uint Propeller2::op_tjf()
  * TJNF    D,{#}S
  *
  */
-uint Propeller2::op_tjnf()
+uint P2Cog::op_tjnf()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4453,7 +4462,7 @@ uint Propeller2::op_tjnf()
  * TJS     D,{#}S
  *
  */
-uint Propeller2::op_tjs()
+uint P2Cog::op_tjs()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4467,7 +4476,7 @@ uint Propeller2::op_tjs()
  * TJNS    D,{#}S
  *
  */
-uint Propeller2::op_tjns()
+uint P2Cog::op_tjns()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4481,7 +4490,7 @@ uint Propeller2::op_tjns()
  * TJV     D,{#}S
  *
  */
-uint Propeller2::op_tjv()
+uint P2Cog::op_tjv()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4495,7 +4504,7 @@ uint Propeller2::op_tjv()
  * JINT    {#}S
  *
  */
-uint Propeller2::op_jint()
+uint P2Cog::op_jint()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4509,7 +4518,7 @@ uint Propeller2::op_jint()
  * JCT1    {#}S
  *
  */
-uint Propeller2::op_jct1()
+uint P2Cog::op_jct1()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4523,7 +4532,7 @@ uint Propeller2::op_jct1()
  * JCT2    {#}S
  *
  */
-uint Propeller2::op_jct2()
+uint P2Cog::op_jct2()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4537,7 +4546,7 @@ uint Propeller2::op_jct2()
  * JCT3    {#}S
  *
  */
-uint Propeller2::op_jct3()
+uint P2Cog::op_jct3()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4551,7 +4560,7 @@ uint Propeller2::op_jct3()
  * JSE1    {#}S
  *
  */
-uint Propeller2::op_jse1()
+uint P2Cog::op_jse1()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4565,7 +4574,7 @@ uint Propeller2::op_jse1()
  * JSE2    {#}S
  *
  */
-uint Propeller2::op_jse2()
+uint P2Cog::op_jse2()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4579,7 +4588,7 @@ uint Propeller2::op_jse2()
  * JSE3    {#}S
  *
  */
-uint Propeller2::op_jse3()
+uint P2Cog::op_jse3()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4593,7 +4602,7 @@ uint Propeller2::op_jse3()
  * JSE4    {#}S
  *
  */
-uint Propeller2::op_jse4()
+uint P2Cog::op_jse4()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4607,7 +4616,7 @@ uint Propeller2::op_jse4()
  * JPAT    {#}S
  *
  */
-uint Propeller2::op_jpat()
+uint P2Cog::op_jpat()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4621,7 +4630,7 @@ uint Propeller2::op_jpat()
  * JFBW    {#}S
  *
  */
-uint Propeller2::op_jfbw()
+uint P2Cog::op_jfbw()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4635,7 +4644,7 @@ uint Propeller2::op_jfbw()
  * JXMT    {#}S
  *
  */
-uint Propeller2::op_jxmt()
+uint P2Cog::op_jxmt()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4649,7 +4658,7 @@ uint Propeller2::op_jxmt()
  * JXFI    {#}S
  *
  */
-uint Propeller2::op_jxfi()
+uint P2Cog::op_jxfi()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4663,7 +4672,7 @@ uint Propeller2::op_jxfi()
  * JXRO    {#}S
  *
  */
-uint Propeller2::op_jxro()
+uint P2Cog::op_jxro()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4677,7 +4686,7 @@ uint Propeller2::op_jxro()
  * JXRL    {#}S
  *
  */
-uint Propeller2::op_jxrl()
+uint P2Cog::op_jxrl()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4691,7 +4700,7 @@ uint Propeller2::op_jxrl()
  * JATN    {#}S
  *
  */
-uint Propeller2::op_jatn()
+uint P2Cog::op_jatn()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4705,7 +4714,7 @@ uint Propeller2::op_jatn()
  * JQMT    {#}S
  *
  */
-uint Propeller2::op_jqmt()
+uint P2Cog::op_jqmt()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4719,7 +4728,7 @@ uint Propeller2::op_jqmt()
  * JNINT   {#}S
  *
  */
-uint Propeller2::op_jnint()
+uint P2Cog::op_jnint()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4733,7 +4742,7 @@ uint Propeller2::op_jnint()
  * JNCT1   {#}S
  *
  */
-uint Propeller2::op_jnct1()
+uint P2Cog::op_jnct1()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4747,7 +4756,7 @@ uint Propeller2::op_jnct1()
  * JNCT2   {#}S
  *
  */
-uint Propeller2::op_jnct2()
+uint P2Cog::op_jnct2()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4761,7 +4770,7 @@ uint Propeller2::op_jnct2()
  * JNCT3   {#}S
  *
  */
-uint Propeller2::op_jnct3()
+uint P2Cog::op_jnct3()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4775,7 +4784,7 @@ uint Propeller2::op_jnct3()
  * JNSE1   {#}S
  *
  */
-uint Propeller2::op_jnse1()
+uint P2Cog::op_jnse1()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4789,7 +4798,7 @@ uint Propeller2::op_jnse1()
  * JNSE2   {#}S
  *
  */
-uint Propeller2::op_jnse2()
+uint P2Cog::op_jnse2()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4803,7 +4812,7 @@ uint Propeller2::op_jnse2()
  * JNSE3   {#}S
  *
  */
-uint Propeller2::op_jnse3()
+uint P2Cog::op_jnse3()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4817,7 +4826,7 @@ uint Propeller2::op_jnse3()
  * JNSE4   {#}S
  *
  */
-uint Propeller2::op_jnse4()
+uint P2Cog::op_jnse4()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4831,7 +4840,7 @@ uint Propeller2::op_jnse4()
  * JNPAT   {#}S
  *
  */
-uint Propeller2::op_jnpat()
+uint P2Cog::op_jnpat()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4845,7 +4854,7 @@ uint Propeller2::op_jnpat()
  * JNFBW   {#}S
  *
  */
-uint Propeller2::op_jnfbw()
+uint P2Cog::op_jnfbw()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4859,7 +4868,7 @@ uint Propeller2::op_jnfbw()
  * JNXMT   {#}S
  *
  */
-uint Propeller2::op_jnxmt()
+uint P2Cog::op_jnxmt()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4873,7 +4882,7 @@ uint Propeller2::op_jnxmt()
  * JNXFI   {#}S
  *
  */
-uint Propeller2::op_jnxfi()
+uint P2Cog::op_jnxfi()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4887,7 +4896,7 @@ uint Propeller2::op_jnxfi()
  * JNXRO   {#}S
  *
  */
-uint Propeller2::op_jnxro()
+uint P2Cog::op_jnxro()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4901,7 +4910,7 @@ uint Propeller2::op_jnxro()
  * JNXRL   {#}S
  *
  */
-uint Propeller2::op_jnxrl()
+uint P2Cog::op_jnxrl()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4915,7 +4924,7 @@ uint Propeller2::op_jnxrl()
  * JNATN   {#}S
  *
  */
-uint Propeller2::op_jnatn()
+uint P2Cog::op_jnatn()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4929,7 +4938,7 @@ uint Propeller2::op_jnatn()
  * JNQMT   {#}S
  *
  */
-uint Propeller2::op_jnqmt()
+uint P2Cog::op_jnqmt()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4943,7 +4952,7 @@ uint Propeller2::op_jnqmt()
  * <empty> {#}D,{#}S
  *
  */
-uint Propeller2::op_1011110_1()
+uint P2Cog::op_1011110_1()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -4958,7 +4967,7 @@ uint Propeller2::op_1011110_1()
  * <empty> {#}D,{#}S
  *
  */
-uint Propeller2::op_1011111_0()
+uint P2Cog::op_1011111_0()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -4974,7 +4983,7 @@ uint Propeller2::op_1011111_0()
  *
  * C selects INA/INB, Z selects =/!=, D provides mask value, S provides match value.
  */
-uint Propeller2::op_setpat()
+uint P2Cog::op_setpat()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -4989,7 +4998,7 @@ uint Propeller2::op_setpat()
  * WRPIN   {#}D,{#}S
  *
  */
-uint Propeller2::op_wrpin()
+uint P2Cog::op_wrpin()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -5004,7 +5013,7 @@ uint Propeller2::op_wrpin()
  * AKPIN   {#}S
  *
  */
-uint Propeller2::op_akpin()
+uint P2Cog::op_akpin()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -5018,7 +5027,7 @@ uint Propeller2::op_akpin()
  * WXPIN   {#}D,{#}S
  *
  */
-uint Propeller2::op_wxpin()
+uint P2Cog::op_wxpin()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -5033,7 +5042,7 @@ uint Propeller2::op_wxpin()
  * WYPIN   {#}D,{#}S
  *
  */
-uint Propeller2::op_wypin()
+uint P2Cog::op_wypin()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -5048,7 +5057,7 @@ uint Propeller2::op_wypin()
  * WRLUT   {#}D,{#}S
  *
  */
-uint Propeller2::op_wrlut()
+uint P2Cog::op_wrlut()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -5063,7 +5072,7 @@ uint Propeller2::op_wrlut()
  * WRBYTE  {#}D,{#}S/P
  *
  */
-uint Propeller2::op_wrbyte()
+uint P2Cog::op_wrbyte()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -5078,7 +5087,7 @@ uint Propeller2::op_wrbyte()
  * WRWORD  {#}D,{#}S/P
  *
  */
-uint Propeller2::op_wrword()
+uint P2Cog::op_wrword()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -5094,7 +5103,7 @@ uint Propeller2::op_wrword()
  *
  * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  */
-uint Propeller2::op_wrlong()
+uint P2Cog::op_wrlong()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -5109,7 +5118,7 @@ uint Propeller2::op_wrlong()
  * PUSHA   {#}D
  *
  */
-uint Propeller2::op_pusha()
+uint P2Cog::op_pusha()
 {
     augmentD(IR.op.uz);
     return 2;
@@ -5123,7 +5132,7 @@ uint Propeller2::op_pusha()
  * PUSHB   {#}D
  *
  */
-uint Propeller2::op_pushb()
+uint P2Cog::op_pushb()
 {
     augmentD(IR.op.uz);
     return 2;
@@ -5138,7 +5147,7 @@ uint Propeller2::op_pushb()
  *
  * D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
  */
-uint Propeller2::op_rdfast()
+uint P2Cog::op_rdfast()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -5154,7 +5163,7 @@ uint Propeller2::op_rdfast()
  *
  * D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
  */
-uint Propeller2::op_wrfast()
+uint P2Cog::op_wrfast()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -5170,7 +5179,7 @@ uint Propeller2::op_wrfast()
  *
  * D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
  */
-uint Propeller2::op_fblock()
+uint P2Cog::op_fblock()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -5185,7 +5194,7 @@ uint Propeller2::op_fblock()
  * XINIT   {#}D,{#}S
  *
  */
-uint Propeller2::op_xinit()
+uint P2Cog::op_xinit()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -5200,7 +5209,7 @@ uint Propeller2::op_xinit()
  * XSTOP
  *
  */
-uint Propeller2::op_xstop()
+uint P2Cog::op_xstop()
 {
     return 2;
 }
@@ -5213,7 +5222,7 @@ uint Propeller2::op_xstop()
  * XZERO   {#}D,{#}S
  *
  */
-uint Propeller2::op_xzero()
+uint P2Cog::op_xzero()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -5228,7 +5237,7 @@ uint Propeller2::op_xzero()
  * XCONT   {#}D,{#}S
  *
  */
-uint Propeller2::op_xcont()
+uint P2Cog::op_xcont()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -5245,7 +5254,7 @@ uint Propeller2::op_xcont()
  * If S = 0, repeat infinitely.
  * If D[8:0] = 0, nothing repeats.
  */
-uint Propeller2::op_rep()
+uint P2Cog::op_rep()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -5262,7 +5271,7 @@ uint Propeller2::op_rep()
  * S[19:0] sets hub startup address and PTRB of cog.
  * Prior SETQ sets PTRA of cog.
  */
-uint Propeller2::op_coginit()
+uint P2Cog::op_coginit()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -5278,7 +5287,7 @@ uint Propeller2::op_coginit()
  *
  * GETQX/GETQY retrieves lower/upper product.
  */
-uint Propeller2::op_qmul()
+uint P2Cog::op_qmul()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -5294,7 +5303,7 @@ uint Propeller2::op_qmul()
  *
  * GETQX/GETQY retrieves quotient/remainder.
  */
-uint Propeller2::op_qdiv()
+uint P2Cog::op_qdiv()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -5310,7 +5319,7 @@ uint Propeller2::op_qdiv()
  *
  * GETQX/GETQY retrieves quotient/remainder.
  */
-uint Propeller2::op_qfrac()
+uint P2Cog::op_qfrac()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -5326,7 +5335,7 @@ uint Propeller2::op_qfrac()
  *
  * GETQX retrieves root.
  */
-uint Propeller2::op_qsqrt()
+uint P2Cog::op_qsqrt()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -5342,7 +5351,7 @@ uint Propeller2::op_qsqrt()
  *
  * GETQX/GETQY retrieves X/Y.
  */
-uint Propeller2::op_qrotate()
+uint P2Cog::op_qrotate()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -5358,7 +5367,7 @@ uint Propeller2::op_qrotate()
  *
  * GETQX/GETQY retrieves length/angle.
  */
-uint Propeller2::op_qvector()
+uint P2Cog::op_qvector()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.uz);
@@ -5373,7 +5382,7 @@ uint Propeller2::op_qvector()
  * HUBSET  {#}D
  *
  */
-uint Propeller2::op_hubset()
+uint P2Cog::op_hubset()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -5388,7 +5397,7 @@ uint Propeller2::op_hubset()
  *
  * If WC, check status of cog D[3:0], C = 1 if on.
  */
-uint Propeller2::op_cogid()
+uint P2Cog::op_cogid()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -5402,7 +5411,7 @@ uint Propeller2::op_cogid()
  * COGSTOP {#}D
  *
  */
-uint Propeller2::op_cogstop()
+uint P2Cog::op_cogstop()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -5418,7 +5427,7 @@ uint Propeller2::op_cogstop()
  * D will be written with the LOCK number (0 to 15).
  * C = 1 if no LOCK available.
  */
-uint Propeller2::op_locknew()
+uint P2Cog::op_locknew()
 {
     return 2;
 }
@@ -5431,7 +5440,7 @@ uint Propeller2::op_locknew()
  * LOCKRET {#}D
  *
  */
-uint Propeller2::op_lockret()
+uint P2Cog::op_lockret()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -5448,7 +5457,7 @@ uint Propeller2::op_lockret()
  * LOCKREL releases LOCK.
  * LOCK is also released if owner cog stops or restarts.
  */
-uint Propeller2::op_locktry()
+uint P2Cog::op_locktry()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -5463,7 +5472,7 @@ uint Propeller2::op_locktry()
  *
  * If D is a register and WC, get current/last cog id of LOCK owner into D and LOCK status into C.
  */
-uint Propeller2::op_lockrel()
+uint P2Cog::op_lockrel()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -5478,7 +5487,7 @@ uint Propeller2::op_lockrel()
  *
  * GETQX retrieves log {5'whole_exponent, 27'fractional_exponent}.
  */
-uint Propeller2::op_qlog()
+uint P2Cog::op_qlog()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -5493,7 +5502,7 @@ uint Propeller2::op_qlog()
  *
  * GETQX retrieves number.
  */
-uint Propeller2::op_qexp()
+uint P2Cog::op_qexp()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -5510,7 +5519,7 @@ uint Propeller2::op_qexp()
  * C = MSB of byte.
  * Z = (result == 0).
  */
-uint Propeller2::op_rfbyte()
+uint P2Cog::op_rfbyte()
 {
     return 2;
 }
@@ -5526,7 +5535,7 @@ uint Propeller2::op_rfbyte()
  * C = MSB of word.
  * Z = (result == 0).
  */
-uint Propeller2::op_rfword()
+uint P2Cog::op_rfword()
 {
     return 2;
 }
@@ -5542,7 +5551,7 @@ uint Propeller2::op_rfword()
  * C = MSB of long.
  * Z = (result == 0).
  */
-uint Propeller2::op_rflong()
+uint P2Cog::op_rflong()
 {
     return 2;
 }
@@ -5559,7 +5568,7 @@ uint Propeller2::op_rflong()
  * C = 0.
  * Z = (result == 0).
  */
-uint Propeller2::op_rfvar()
+uint P2Cog::op_rfvar()
 {
     return 2;
 }
@@ -5576,7 +5585,7 @@ uint Propeller2::op_rfvar()
  * C = MSB of value.
  * Z = (result == 0).
  */
-uint Propeller2::op_rfvars()
+uint P2Cog::op_rfvars()
 {
     return 2;
 }
@@ -5590,7 +5599,7 @@ uint Propeller2::op_rfvars()
  *
  * Write byte in D[7:0] into FIFO.
  */
-uint Propeller2::op_wfbyte()
+uint P2Cog::op_wfbyte()
 {
     return 2;
 }
@@ -5604,7 +5613,7 @@ uint Propeller2::op_wfbyte()
  *
  * Write word in D[15:0] into FIFO.
  */
-uint Propeller2::op_wfword()
+uint P2Cog::op_wfword()
 {
     return 2;
 }
@@ -5618,7 +5627,7 @@ uint Propeller2::op_wfword()
  *
  * Write long in D[31:0] into FIFO.
  */
-uint Propeller2::op_wflong()
+uint P2Cog::op_wflong()
 {
     return 2;
 }
@@ -5636,7 +5645,7 @@ uint Propeller2::op_wflong()
  * C = X[31].
  * Z = (result == 0).
  */
-uint Propeller2::op_getqx()
+uint P2Cog::op_getqx()
 {
     return 2;
 }
@@ -5654,7 +5663,7 @@ uint Propeller2::op_getqx()
  * C = Y[31].
  * Z = (result == 0).
  */
-uint Propeller2::op_getqy()
+uint P2Cog::op_getqy()
 {
     return 2;
 }
@@ -5668,7 +5677,7 @@ uint Propeller2::op_getqy()
  *
  * CT is the free-running 32-bit system counter that increments on every clock.
  */
-uint Propeller2::op_getct()
+uint P2Cog::op_getct()
 {
     return 2;
 }
@@ -5683,7 +5692,7 @@ uint Propeller2::op_getct()
  * RND is the PRNG that updates on every clock.
  * D = RND[31:0], C = RND[31], Z = RND[30], unique per cog.
  */
-uint Propeller2::op_getrnd()
+uint P2Cog::op_getrnd()
 {
     return 2;
 }
@@ -5697,7 +5706,7 @@ uint Propeller2::op_getrnd()
  *
  * C = RND[31], Z = RND[30], unique per cog.
  */
-uint Propeller2::op_getrnd_cz()
+uint P2Cog::op_getrnd_cz()
 {
     return 2;
 }
@@ -5710,7 +5719,7 @@ uint Propeller2::op_getrnd_cz()
  * SETDACS {#}D
  *
  */
-uint Propeller2::op_setdacs()
+uint P2Cog::op_setdacs()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -5724,7 +5733,7 @@ uint Propeller2::op_setdacs()
  * SETXFRQ {#}D
  *
  */
-uint Propeller2::op_setxfrq()
+uint P2Cog::op_setxfrq()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -5738,7 +5747,7 @@ uint Propeller2::op_setxfrq()
  * GETXACC D
  *
  */
-uint Propeller2::op_getxacc()
+uint P2Cog::op_getxacc()
 {
     return 2;
 }
@@ -5753,7 +5762,7 @@ uint Propeller2::op_getxacc()
  * If WC/WZ/WCZ, wait 2 + (D & RND) clocks.
  * C/Z = 0.
  */
-uint Propeller2::op_waitx()
+uint P2Cog::op_waitx()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -5767,7 +5776,7 @@ uint Propeller2::op_waitx()
  * SETSE1  {#}D
  *
  */
-uint Propeller2::op_setse1()
+uint P2Cog::op_setse1()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -5781,7 +5790,7 @@ uint Propeller2::op_setse1()
  * SETSE2  {#}D
  *
  */
-uint Propeller2::op_setse2()
+uint P2Cog::op_setse2()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -5795,7 +5804,7 @@ uint Propeller2::op_setse2()
  * SETSE3  {#}D
  *
  */
-uint Propeller2::op_setse3()
+uint P2Cog::op_setse3()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -5809,7 +5818,7 @@ uint Propeller2::op_setse3()
  * SETSE4  {#}D
  *
  */
-uint Propeller2::op_setse4()
+uint P2Cog::op_setse4()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -5823,7 +5832,7 @@ uint Propeller2::op_setse4()
  * POLLINT          {WC/WZ/WCZ}
  *
  */
-uint Propeller2::op_pollint()
+uint P2Cog::op_pollint()
 {
     return 2;
 }
@@ -5836,7 +5845,7 @@ uint Propeller2::op_pollint()
  * POLLCT1          {WC/WZ/WCZ}
  *
  */
-uint Propeller2::op_pollct1()
+uint P2Cog::op_pollct1()
 {
     return 2;
 }
@@ -5849,7 +5858,7 @@ uint Propeller2::op_pollct1()
  * POLLCT2          {WC/WZ/WCZ}
  *
  */
-uint Propeller2::op_pollct2()
+uint P2Cog::op_pollct2()
 {
     return 2;
 }
@@ -5862,7 +5871,7 @@ uint Propeller2::op_pollct2()
  * POLLCT3          {WC/WZ/WCZ}
  *
  */
-uint Propeller2::op_pollct3()
+uint P2Cog::op_pollct3()
 {
     return 2;
 }
@@ -5875,7 +5884,7 @@ uint Propeller2::op_pollct3()
  * POLLSE1          {WC/WZ/WCZ}
  *
  */
-uint Propeller2::op_pollse1()
+uint P2Cog::op_pollse1()
 {
     return 2;
 }
@@ -5888,7 +5897,7 @@ uint Propeller2::op_pollse1()
  * POLLSE2          {WC/WZ/WCZ}
  *
  */
-uint Propeller2::op_pollse2()
+uint P2Cog::op_pollse2()
 {
     return 2;
 }
@@ -5901,7 +5910,7 @@ uint Propeller2::op_pollse2()
  * POLLSE3          {WC/WZ/WCZ}
  *
  */
-uint Propeller2::op_pollse3()
+uint P2Cog::op_pollse3()
 {
     return 2;
 }
@@ -5914,7 +5923,7 @@ uint Propeller2::op_pollse3()
  * POLLSE4          {WC/WZ/WCZ}
  *
  */
-uint Propeller2::op_pollse4()
+uint P2Cog::op_pollse4()
 {
     return 2;
 }
@@ -5927,7 +5936,7 @@ uint Propeller2::op_pollse4()
  * POLLPAT          {WC/WZ/WCZ}
  *
  */
-uint Propeller2::op_pollpat()
+uint P2Cog::op_pollpat()
 {
     return 2;
 }
@@ -5940,7 +5949,7 @@ uint Propeller2::op_pollpat()
  * POLLFBW          {WC/WZ/WCZ}
  *
  */
-uint Propeller2::op_pollfbw()
+uint P2Cog::op_pollfbw()
 {
     return 2;
 }
@@ -5953,7 +5962,7 @@ uint Propeller2::op_pollfbw()
  * POLLXMT          {WC/WZ/WCZ}
  *
  */
-uint Propeller2::op_pollxmt()
+uint P2Cog::op_pollxmt()
 {
     return 2;
 }
@@ -5966,7 +5975,7 @@ uint Propeller2::op_pollxmt()
  * POLLXFI          {WC/WZ/WCZ}
  *
  */
-uint Propeller2::op_pollxfi()
+uint P2Cog::op_pollxfi()
 {
     return 2;
 }
@@ -5979,7 +5988,7 @@ uint Propeller2::op_pollxfi()
  * POLLXRO          {WC/WZ/WCZ}
  *
  */
-uint Propeller2::op_pollxro()
+uint P2Cog::op_pollxro()
 {
     return 2;
 }
@@ -5992,7 +6001,7 @@ uint Propeller2::op_pollxro()
  * POLLXRL          {WC/WZ/WCZ}
  *
  */
-uint Propeller2::op_pollxrl()
+uint P2Cog::op_pollxrl()
 {
     return 2;
 }
@@ -6005,7 +6014,7 @@ uint Propeller2::op_pollxrl()
  * POLLATN          {WC/WZ/WCZ}
  *
  */
-uint Propeller2::op_pollatn()
+uint P2Cog::op_pollatn()
 {
     return 2;
 }
@@ -6018,7 +6027,7 @@ uint Propeller2::op_pollatn()
  * POLLQMT          {WC/WZ/WCZ}
  *
  */
-uint Propeller2::op_pollqmt()
+uint P2Cog::op_pollqmt()
 {
     return 2;
 }
@@ -6033,7 +6042,7 @@ uint Propeller2::op_pollqmt()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint Propeller2::op_waitint()
+uint P2Cog::op_waitint()
 {
     return 2;
 }
@@ -6048,7 +6057,7 @@ uint Propeller2::op_waitint()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint Propeller2::op_waitct1()
+uint P2Cog::op_waitct1()
 {
     return 2;
 }
@@ -6063,7 +6072,7 @@ uint Propeller2::op_waitct1()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint Propeller2::op_waitct2()
+uint P2Cog::op_waitct2()
 {
     return 2;
 }
@@ -6078,7 +6087,7 @@ uint Propeller2::op_waitct2()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint Propeller2::op_waitct3()
+uint P2Cog::op_waitct3()
 {
     return 2;
 }
@@ -6093,7 +6102,7 @@ uint Propeller2::op_waitct3()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint Propeller2::op_waitse1()
+uint P2Cog::op_waitse1()
 {
     return 2;
 }
@@ -6108,7 +6117,7 @@ uint Propeller2::op_waitse1()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint Propeller2::op_waitse2()
+uint P2Cog::op_waitse2()
 {
     return 2;
 }
@@ -6123,7 +6132,7 @@ uint Propeller2::op_waitse2()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint Propeller2::op_waitse3()
+uint P2Cog::op_waitse3()
 {
     return 2;
 }
@@ -6138,7 +6147,7 @@ uint Propeller2::op_waitse3()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint Propeller2::op_waitse4()
+uint P2Cog::op_waitse4()
 {
     return 2;
 }
@@ -6153,7 +6162,7 @@ uint Propeller2::op_waitse4()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint Propeller2::op_waitpat()
+uint P2Cog::op_waitpat()
 {
     return 2;
 }
@@ -6168,7 +6177,7 @@ uint Propeller2::op_waitpat()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint Propeller2::op_waitfbw()
+uint P2Cog::op_waitfbw()
 {
     return 2;
 }
@@ -6183,7 +6192,7 @@ uint Propeller2::op_waitfbw()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint Propeller2::op_waitxmt()
+uint P2Cog::op_waitxmt()
 {
     return 2;
 }
@@ -6198,7 +6207,7 @@ uint Propeller2::op_waitxmt()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint Propeller2::op_waitxfi()
+uint P2Cog::op_waitxfi()
 {
     return 2;
 }
@@ -6213,7 +6222,7 @@ uint Propeller2::op_waitxfi()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint Propeller2::op_waitxro()
+uint P2Cog::op_waitxro()
 {
     return 2;
 }
@@ -6228,7 +6237,7 @@ uint Propeller2::op_waitxro()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint Propeller2::op_waitxrl()
+uint P2Cog::op_waitxrl()
 {
     return 2;
 }
@@ -6243,7 +6252,7 @@ uint Propeller2::op_waitxrl()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint Propeller2::op_waitatn()
+uint P2Cog::op_waitatn()
 {
     return 2;
 }
@@ -6256,7 +6265,7 @@ uint Propeller2::op_waitatn()
  * ALLOWI
  *
  */
-uint Propeller2::op_allowi()
+uint P2Cog::op_allowi()
 {
     return 2;
 }
@@ -6269,7 +6278,7 @@ uint Propeller2::op_allowi()
  * STALLI
  *
  */
-uint Propeller2::op_stalli()
+uint P2Cog::op_stalli()
 {
     return 2;
 }
@@ -6282,7 +6291,7 @@ uint Propeller2::op_stalli()
  * TRGINT1
  *
  */
-uint Propeller2::op_trgint1()
+uint P2Cog::op_trgint1()
 {
     return 2;
 }
@@ -6295,7 +6304,7 @@ uint Propeller2::op_trgint1()
  * TRGINT2
  *
  */
-uint Propeller2::op_trgint2()
+uint P2Cog::op_trgint2()
 {
     return 2;
 }
@@ -6308,7 +6317,7 @@ uint Propeller2::op_trgint2()
  * TRGINT3
  *
  */
-uint Propeller2::op_trgint3()
+uint P2Cog::op_trgint3()
 {
     return 2;
 }
@@ -6321,7 +6330,7 @@ uint Propeller2::op_trgint3()
  * NIXINT1
  *
  */
-uint Propeller2::op_nixint1()
+uint P2Cog::op_nixint1()
 {
     return 2;
 }
@@ -6334,7 +6343,7 @@ uint Propeller2::op_nixint1()
  * NIXINT2
  *
  */
-uint Propeller2::op_nixint2()
+uint P2Cog::op_nixint2()
 {
     return 2;
 }
@@ -6347,7 +6356,7 @@ uint Propeller2::op_nixint2()
  * NIXINT3
  *
  */
-uint Propeller2::op_nixint3()
+uint P2Cog::op_nixint3()
 {
     return 2;
 }
@@ -6360,7 +6369,7 @@ uint Propeller2::op_nixint3()
  * SETINT1 {#}D
  *
  */
-uint Propeller2::op_setint1()
+uint P2Cog::op_setint1()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6374,7 +6383,7 @@ uint Propeller2::op_setint1()
  * SETINT2 {#}D
  *
  */
-uint Propeller2::op_setint2()
+uint P2Cog::op_setint2()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6388,7 +6397,7 @@ uint Propeller2::op_setint2()
  * SETINT3 {#}D
  *
  */
-uint Propeller2::op_setint3()
+uint P2Cog::op_setint3()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6404,7 +6413,7 @@ uint Propeller2::op_setint3()
  * Use before RDLONG/WRLONG/WMLONG to set block transfer.
  * Also used before MUXQ/COGINIT/QDIV/QFRAC/QROTATE/WAITxxx.
  */
-uint Propeller2::op_setq()
+uint P2Cog::op_setq()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6419,7 +6428,7 @@ uint Propeller2::op_setq()
  *
  * Use before RDLONG/WRLONG/WMLONG to set LUT block transfer.
  */
-uint Propeller2::op_setq2()
+uint P2Cog::op_setq2()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6433,7 +6442,7 @@ uint Propeller2::op_setq2()
  * PUSH    {#}D
  *
  */
-uint Propeller2::op_push()
+uint P2Cog::op_push()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6448,7 +6457,7 @@ uint Propeller2::op_push()
  *
  * C = K[31], Z = K[30], D = K.
  */
-uint Propeller2::op_pop()
+uint P2Cog::op_pop()
 {
     return 2;
 }
@@ -6462,7 +6471,7 @@ uint Propeller2::op_pop()
  *
  * C = D[31], Z = D[30], PC = D[19:0].
  */
-uint Propeller2::op_jmp()
+uint P2Cog::op_jmp()
 {
     return 2;
 }
@@ -6476,7 +6485,7 @@ uint Propeller2::op_jmp()
  *
  * C = D[31], Z = D[30], PC = D[19:0].
  */
-uint Propeller2::op_call()
+uint P2Cog::op_call()
 {
     return 2;
 }
@@ -6490,7 +6499,7 @@ uint Propeller2::op_call()
  *
  * C = K[31], Z = K[30], PC = K[19:0].
  */
-uint Propeller2::op_ret()
+uint P2Cog::op_ret()
 {
     return 2;
 }
@@ -6504,7 +6513,7 @@ uint Propeller2::op_ret()
  *
  * C = D[31], Z = D[30], PC = D[19:0].
  */
-uint Propeller2::op_calla()
+uint P2Cog::op_calla()
 {
     return 2;
 }
@@ -6518,7 +6527,7 @@ uint Propeller2::op_calla()
  *
  * C = L[31], Z = L[30], PC = L[19:0].
  */
-uint Propeller2::op_reta()
+uint P2Cog::op_reta()
 {
     return 2;
 }
@@ -6532,7 +6541,7 @@ uint Propeller2::op_reta()
  *
  * C = D[31], Z = D[30], PC = D[19:0].
  */
-uint Propeller2::op_callb()
+uint P2Cog::op_callb()
 {
     return 2;
 }
@@ -6546,7 +6555,7 @@ uint Propeller2::op_callb()
  *
  * C = L[31], Z = L[30], PC = L[19:0].
  */
-uint Propeller2::op_retb()
+uint P2Cog::op_retb()
 {
     return 2;
 }
@@ -6561,7 +6570,7 @@ uint Propeller2::op_retb()
  * For cogex, PC += D[19:0].
  * For hubex, PC += D[17:0] << 2.
  */
-uint Propeller2::op_jmprel()
+uint P2Cog::op_jmprel()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6578,7 +6587,7 @@ uint Propeller2::op_jmprel()
  * 31 get cancelled for each '1' bit in D[0].
  * D[31].
  */
-uint Propeller2::op_skip()
+uint P2Cog::op_skip()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6593,7 +6602,7 @@ uint Propeller2::op_skip()
  *
  * Like SKIP, but instead of cancelling instructions, the PC leaps over them.
  */
-uint Propeller2::op_skipf()
+uint P2Cog::op_skipf()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6608,7 +6617,7 @@ uint Propeller2::op_skipf()
  *
  * PC = {10'b0, D[9:0]}.
  */
-uint Propeller2::op_execf()
+uint P2Cog::op_execf()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6622,7 +6631,7 @@ uint Propeller2::op_execf()
  * GETPTR  D
  *
  */
-uint Propeller2::op_getptr()
+uint P2Cog::op_getptr()
 {
     return 2;
 }
@@ -6637,7 +6646,7 @@ uint Propeller2::op_getptr()
  * C = 0.
  * Z = 0.
  */
-uint Propeller2::op_getbrk()
+uint P2Cog::op_getbrk()
 {
     return 2;
 }
@@ -6651,7 +6660,7 @@ uint Propeller2::op_getbrk()
  *
  * Cog D[3:0] must have asynchronous breakpoint enabled.
  */
-uint Propeller2::op_cogbrk()
+uint P2Cog::op_cogbrk()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6666,7 +6675,7 @@ uint Propeller2::op_cogbrk()
  *
  * Else, trigger break if enabled, conditionally write break code to D[7:0].
  */
-uint Propeller2::op_brk()
+uint P2Cog::op_brk()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6680,7 +6689,7 @@ uint Propeller2::op_brk()
  * SETLUTS {#}D
  *
  */
-uint Propeller2::op_setluts()
+uint P2Cog::op_setluts()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6694,7 +6703,7 @@ uint Propeller2::op_setluts()
  * SETCY   {#}D
  *
  */
-uint Propeller2::op_setcy()
+uint P2Cog::op_setcy()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6708,7 +6717,7 @@ uint Propeller2::op_setcy()
  * SETCI   {#}D
  *
  */
-uint Propeller2::op_setci()
+uint P2Cog::op_setci()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6722,7 +6731,7 @@ uint Propeller2::op_setci()
  * SETCQ   {#}D
  *
  */
-uint Propeller2::op_setcq()
+uint P2Cog::op_setcq()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6736,7 +6745,7 @@ uint Propeller2::op_setcq()
  * SETCFRQ {#}D
  *
  */
-uint Propeller2::op_setcfrq()
+uint P2Cog::op_setcfrq()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6750,7 +6759,7 @@ uint Propeller2::op_setcfrq()
  * SETCMOD {#}D
  *
  */
-uint Propeller2::op_setcmod()
+uint P2Cog::op_setcmod()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6764,7 +6773,7 @@ uint Propeller2::op_setcmod()
  * SETPIV  {#}D
  *
  */
-uint Propeller2::op_setpiv()
+uint P2Cog::op_setpiv()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6778,7 +6787,7 @@ uint Propeller2::op_setpiv()
  * SETPIX  {#}D
  *
  */
-uint Propeller2::op_setpix()
+uint P2Cog::op_setpix()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6792,7 +6801,7 @@ uint Propeller2::op_setpix()
  * COGATN  {#}D
  *
  */
-uint Propeller2::op_cogatn()
+uint P2Cog::op_cogatn()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6807,7 +6816,7 @@ uint Propeller2::op_cogatn()
  *
  * C/Z =          IN[D[5:0]].
  */
-uint Propeller2::op_testp_w()
+uint P2Cog::op_testp_w()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6822,7 +6831,7 @@ uint Propeller2::op_testp_w()
  *
  * C/Z =         !IN[D[5:0]].
  */
-uint Propeller2::op_testpn_w()
+uint P2Cog::op_testpn_w()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6837,7 +6846,7 @@ uint Propeller2::op_testpn_w()
  *
  * C/Z = C/Z AND  IN[D[5:0]].
  */
-uint Propeller2::op_testp_and()
+uint P2Cog::op_testp_and()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6852,7 +6861,7 @@ uint Propeller2::op_testp_and()
  *
  * C/Z = C/Z AND !IN[D[5:0]].
  */
-uint Propeller2::op_testpn_and()
+uint P2Cog::op_testpn_and()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6867,7 +6876,7 @@ uint Propeller2::op_testpn_and()
  *
  * C/Z = C/Z OR   IN[D[5:0]].
  */
-uint Propeller2::op_testp_or()
+uint P2Cog::op_testp_or()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6882,7 +6891,7 @@ uint Propeller2::op_testp_or()
  *
  * C/Z = C/Z OR  !IN[D[5:0]].
  */
-uint Propeller2::op_testpn_or()
+uint P2Cog::op_testpn_or()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6897,7 +6906,7 @@ uint Propeller2::op_testpn_or()
  *
  * C/Z = C/Z XOR  IN[D[5:0]].
  */
-uint Propeller2::op_testp_xor()
+uint P2Cog::op_testp_xor()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6912,7 +6921,7 @@ uint Propeller2::op_testp_xor()
  *
  * C/Z = C/Z XOR !IN[D[5:0]].
  */
-uint Propeller2::op_testpn_xor()
+uint P2Cog::op_testpn_xor()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6927,7 +6936,7 @@ uint Propeller2::op_testpn_xor()
  *
  * C,Z = DIR bit.
  */
-uint Propeller2::op_dirl()
+uint P2Cog::op_dirl()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6942,7 +6951,7 @@ uint Propeller2::op_dirl()
  *
  * C,Z = DIR bit.
  */
-uint Propeller2::op_dirh()
+uint P2Cog::op_dirh()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6957,7 +6966,7 @@ uint Propeller2::op_dirh()
  *
  * C,Z = DIR bit.
  */
-uint Propeller2::op_dirc()
+uint P2Cog::op_dirc()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6972,7 +6981,7 @@ uint Propeller2::op_dirc()
  *
  * C,Z = DIR bit.
  */
-uint Propeller2::op_dirnc()
+uint P2Cog::op_dirnc()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6987,7 +6996,7 @@ uint Propeller2::op_dirnc()
  *
  * C,Z = DIR bit.
  */
-uint Propeller2::op_dirz()
+uint P2Cog::op_dirz()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7002,7 +7011,7 @@ uint Propeller2::op_dirz()
  *
  * C,Z = DIR bit.
  */
-uint Propeller2::op_dirnz()
+uint P2Cog::op_dirnz()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7017,7 +7026,7 @@ uint Propeller2::op_dirnz()
  *
  * C,Z = DIR bit.
  */
-uint Propeller2::op_dirrnd()
+uint P2Cog::op_dirrnd()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7032,7 +7041,7 @@ uint Propeller2::op_dirrnd()
  *
  * C,Z = DIR bit.
  */
-uint Propeller2::op_dirnot()
+uint P2Cog::op_dirnot()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7047,7 +7056,7 @@ uint Propeller2::op_dirnot()
  *
  * C,Z = OUT bit.
  */
-uint Propeller2::op_outl()
+uint P2Cog::op_outl()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7062,7 +7071,7 @@ uint Propeller2::op_outl()
  *
  * C,Z = OUT bit.
  */
-uint Propeller2::op_outh()
+uint P2Cog::op_outh()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7077,7 +7086,7 @@ uint Propeller2::op_outh()
  *
  * C,Z = OUT bit.
  */
-uint Propeller2::op_outc()
+uint P2Cog::op_outc()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7092,7 +7101,7 @@ uint Propeller2::op_outc()
  *
  * C,Z = OUT bit.
  */
-uint Propeller2::op_outnc()
+uint P2Cog::op_outnc()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7107,7 +7116,7 @@ uint Propeller2::op_outnc()
  *
  * C,Z = OUT bit.
  */
-uint Propeller2::op_outz()
+uint P2Cog::op_outz()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7122,7 +7131,7 @@ uint Propeller2::op_outz()
  *
  * C,Z = OUT bit.
  */
-uint Propeller2::op_outnz()
+uint P2Cog::op_outnz()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7137,7 +7146,7 @@ uint Propeller2::op_outnz()
  *
  * C,Z = OUT bit.
  */
-uint Propeller2::op_outrnd()
+uint P2Cog::op_outrnd()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7152,7 +7161,7 @@ uint Propeller2::op_outrnd()
  *
  * C,Z = OUT bit.
  */
-uint Propeller2::op_outnot()
+uint P2Cog::op_outnot()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7168,7 +7177,7 @@ uint Propeller2::op_outnot()
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-uint Propeller2::op_fltl()
+uint P2Cog::op_fltl()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7184,7 +7193,7 @@ uint Propeller2::op_fltl()
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-uint Propeller2::op_flth()
+uint P2Cog::op_flth()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7200,7 +7209,7 @@ uint Propeller2::op_flth()
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-uint Propeller2::op_fltc()
+uint P2Cog::op_fltc()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7216,7 +7225,7 @@ uint Propeller2::op_fltc()
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-uint Propeller2::op_fltnc()
+uint P2Cog::op_fltnc()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7232,7 +7241,7 @@ uint Propeller2::op_fltnc()
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-uint Propeller2::op_fltz()
+uint P2Cog::op_fltz()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7248,7 +7257,7 @@ uint Propeller2::op_fltz()
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-uint Propeller2::op_fltnz()
+uint P2Cog::op_fltnz()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7264,7 +7273,7 @@ uint Propeller2::op_fltnz()
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-uint Propeller2::op_fltrnd()
+uint P2Cog::op_fltrnd()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7280,7 +7289,7 @@ uint Propeller2::op_fltrnd()
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-uint Propeller2::op_fltnot()
+uint P2Cog::op_fltnot()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7296,7 +7305,7 @@ uint Propeller2::op_fltnot()
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-uint Propeller2::op_drvl()
+uint P2Cog::op_drvl()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7312,7 +7321,7 @@ uint Propeller2::op_drvl()
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-uint Propeller2::op_drvh()
+uint P2Cog::op_drvh()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7328,7 +7337,7 @@ uint Propeller2::op_drvh()
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-uint Propeller2::op_drvc()
+uint P2Cog::op_drvc()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7344,7 +7353,7 @@ uint Propeller2::op_drvc()
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-uint Propeller2::op_drvnc()
+uint P2Cog::op_drvnc()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7360,7 +7369,7 @@ uint Propeller2::op_drvnc()
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-uint Propeller2::op_drvz()
+uint P2Cog::op_drvz()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7376,7 +7385,7 @@ uint Propeller2::op_drvz()
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-uint Propeller2::op_drvnz()
+uint P2Cog::op_drvnz()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7392,7 +7401,7 @@ uint Propeller2::op_drvnz()
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-uint Propeller2::op_drvrnd()
+uint P2Cog::op_drvrnd()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7408,7 +7417,7 @@ uint Propeller2::op_drvrnd()
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-uint Propeller2::op_drvnot()
+uint P2Cog::op_drvnot()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7423,7 +7432,7 @@ uint Propeller2::op_drvnot()
  *
  * D = {S[31], S[27], S[23], S[19], ... S[12], S[8], S[4], S[0]}.
  */
-uint Propeller2::op_splitb()
+uint P2Cog::op_splitb()
 {
     return 2;
 }
@@ -7437,7 +7446,7 @@ uint Propeller2::op_splitb()
  *
  * D = {S[31], S[23], S[15], S[7], ... S[24], S[16], S[8], S[0]}.
  */
-uint Propeller2::op_mergeb()
+uint P2Cog::op_mergeb()
 {
     return 2;
 }
@@ -7451,7 +7460,7 @@ uint Propeller2::op_mergeb()
  *
  * D = {S[31], S[29], S[27], S[25], ... S[6], S[4], S[2], S[0]}.
  */
-uint Propeller2::op_splitw()
+uint P2Cog::op_splitw()
 {
     return 2;
 }
@@ -7465,7 +7474,7 @@ uint Propeller2::op_splitw()
  *
  * D = {S[31], S[15], S[30], S[14], ... S[17], S[1], S[16], S[0]}.
  */
-uint Propeller2::op_mergew()
+uint P2Cog::op_mergew()
 {
     return 2;
 }
@@ -7480,7 +7489,7 @@ uint Propeller2::op_mergew()
  * Returns to original value on 32nd iteration.
  * Forward pattern.
  */
-uint Propeller2::op_seussf()
+uint P2Cog::op_seussf()
 {
     return 2;
 }
@@ -7495,7 +7504,7 @@ uint Propeller2::op_seussf()
  * Returns to original value on 32nd iteration.
  * Reverse pattern.
  */
-uint Propeller2::op_seussr()
+uint P2Cog::op_seussr()
 {
     return 2;
 }
@@ -7509,7 +7518,7 @@ uint Propeller2::op_seussr()
  *
  * D = {15'b0, S[31:27], S[23:18], S[15:11]}.
  */
-uint Propeller2::op_rgbsqz()
+uint P2Cog::op_rgbsqz()
 {
     return 2;
 }
@@ -7523,7 +7532,7 @@ uint Propeller2::op_rgbsqz()
  *
  * D = {S[15:11,15:13], S[10:5,10:9], S[4:0,4:2], 8'b0}.
  */
-uint Propeller2::op_rgbexp()
+uint P2Cog::op_rgbexp()
 {
     return 2;
 }
@@ -7536,7 +7545,7 @@ uint Propeller2::op_rgbexp()
  * XORO32  D
  *
  */
-uint Propeller2::op_xoro32()
+uint P2Cog::op_xoro32()
 {
     return 2;
 }
@@ -7550,7 +7559,7 @@ uint Propeller2::op_xoro32()
  *
  * D = D[0:31].
  */
-uint Propeller2::op_rev()
+uint P2Cog::op_rev()
 {
     return 2;
 }
@@ -7565,7 +7574,7 @@ uint Propeller2::op_rev()
  * D = {C, Z, D[31:2]}.
  * C = D[1],  Z = D[0].
  */
-uint Propeller2::op_rczr()
+uint P2Cog::op_rczr()
 {
     return 2;
 }
@@ -7580,7 +7589,7 @@ uint Propeller2::op_rczr()
  * D = {D[29:0], C, Z}.
  * C = D[31], Z = D[30].
  */
-uint Propeller2::op_rczl()
+uint P2Cog::op_rczl()
 {
     return 2;
 }
@@ -7594,7 +7603,7 @@ uint Propeller2::op_rczl()
  *
  * D = {31'b0,  C).
  */
-uint Propeller2::op_wrc()
+uint P2Cog::op_wrc()
 {
     return 2;
 }
@@ -7608,7 +7617,7 @@ uint Propeller2::op_wrc()
  *
  * D = {31'b0, !C).
  */
-uint Propeller2::op_wrnc()
+uint P2Cog::op_wrnc()
 {
     return 2;
 }
@@ -7622,7 +7631,7 @@ uint Propeller2::op_wrnc()
  *
  * D = {31'b0,  Z).
  */
-uint Propeller2::op_wrz()
+uint P2Cog::op_wrz()
 {
     return 2;
 }
@@ -7636,7 +7645,7 @@ uint Propeller2::op_wrz()
  *
  * D = {31'b0, !Z).
  */
-uint Propeller2::op_wrnz()
+uint P2Cog::op_wrnz()
 {
     return 2;
 }
@@ -7650,7 +7659,7 @@ uint Propeller2::op_wrnz()
  *
  * C = cccc[{C,Z}], Z = zzzz[{C,Z}].
  */
-uint Propeller2::op_modcz()
+uint P2Cog::op_modcz()
 {
     return 2;
 }
@@ -7664,7 +7673,7 @@ uint Propeller2::op_modcz()
  *
  * If R = 1, PC += A, else PC = A.
  */
-uint Propeller2::op_jmp_abs()
+uint P2Cog::op_jmp_abs()
 {
     return 2;
 }
@@ -7678,7 +7687,7 @@ uint Propeller2::op_jmp_abs()
  *
  * If R = 1, PC += A, else PC = A.
  */
-uint Propeller2::op_call_abs()
+uint P2Cog::op_call_abs()
 {
     return 2;
 }
@@ -7692,7 +7701,7 @@ uint Propeller2::op_call_abs()
  *
  * If R = 1, PC += A, else PC = A.
  */
-uint Propeller2::op_calla_abs()
+uint P2Cog::op_calla_abs()
 {
     return 2;
 }
@@ -7706,7 +7715,7 @@ uint Propeller2::op_calla_abs()
  *
  * If R = 1, PC += A, else PC = A.
  */
-uint Propeller2::op_callb_abs()
+uint P2Cog::op_callb_abs()
 {
     return 2;
 }
@@ -7720,7 +7729,7 @@ uint Propeller2::op_callb_abs()
  *
  * If R = 1, PC += A, else PC = A.
  */
-uint Propeller2::op_calld_abs()
+uint P2Cog::op_calld_abs()
 {
     return 2;
 }
@@ -7734,8 +7743,24 @@ uint Propeller2::op_calld_abs()
  *
  * If R = 1, address = PC + A, else address = A.
  */
-uint Propeller2::op_loc()
+uint P2Cog::op_loc()
 {
+    const quint32 A = IR.word & ADDR;
+    const quint32 addr = IR.op.uc ? PC + A : A;
+    switch (IR.op.inst) {
+    case p2_loc_pa:
+        updatePA(addr);
+        break;
+    case p2_loc_pb:
+        updatePB(addr);
+        break;
+    case p2_loc_ptra:
+        updatePTRA(addr);
+        break;
+    case p2_loc_ptrb:
+        updatePTRB(addr);
+        break;
+    }
     return 2;
 }
 
@@ -7747,9 +7772,9 @@ uint Propeller2::op_loc()
  * AUGS    #N
  *
  */
-uint Propeller2::op_augs()
+uint P2Cog::op_augs()
 {
-    S_aug = (IR.word << 9) & 0xfffffe00;
+    S_aug = (IR.word << 9) & AUG;
     return 2;
 }
 
@@ -7761,8 +7786,8 @@ uint Propeller2::op_augs()
  * AUGD    #N
  *
  */
-uint Propeller2::op_augd()
+uint P2Cog::op_augd()
 {
-    D_aug = (IR.word << 9) & 0xfffffe00;
+    D_aug = (IR.word << 9) & AUG;
     return 2;
 }

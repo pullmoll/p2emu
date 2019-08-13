@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * P2 emulator class
+ * P2 emulator Cog class
  *
  * Copyright (C) 2019 Jürgen Buchmüller <pullmoll@t-online.de>
  *
@@ -33,12 +33,13 @@
  ****************************************************************************/
 #pragma once
 #include <QtCore>
-#include "propeller2_defs.h"
+#include "p2_defs.h"
+#include "p2hub.h"
 
-class Propeller2
+class P2Cog
 {
 public:
-    Propeller2(uchar cog_id = 0);
+    P2Cog(uchar cog_id = 0, P2Hub* parent = nullptr);
 
     quint32 decode();
     p2_opword_t ir() const { return IR; }
@@ -48,15 +49,18 @@ public:
     quint32 q() const { return Q; }
     quint32 c() const { return C; }
     quint32 z() const { return Z; }
-    quint32 rd_cog(quint32 addr) const { return COG[addr & 0x3ff]; }
-    void wr_cog(quint32 addr, quint32 val) { COG[addr & 0x3ff] = val; }
+    quint32 rd_cog(quint32 addr) const { return COG[addr & 0x1ff]; }
+    void wr_cog(quint32 addr, quint32 val) { COG[addr & 0x1ff] = val; }
+    quint32 rd_lut(quint32 addr) const { return LUT[addr & 0x1ff]; }
+    void wr_lut(quint32 addr, quint32 val) { LUT[addr & 0x1ff] = val; }
     quint32 mem(quint32 addr) const { return MEM ? MEM[addr] : 0; }
 
 private:
-    quint64 xoro_s[2];
+    quint64 xoro_s[2];      //!< Xoroshiro128 PRNG state
+    P2Hub* HUB;             //!< pointer to the HUB, i.e. the parent of the Propeller2 cog
     quint32 ID;             //!< this COG's ID
     quint32 PC;             //!< program counter
-    p2_opword_t IR;         //!< instruction regiszer
+    p2_opword_t IR;         //!< instruction register
     quint32 S;              //!< value of S
     quint32 D;              //!< value of D
     quint32 Q;              //!< value of Q
@@ -68,20 +72,28 @@ private:
 
     quint32 COG[0x200];     //!< COG memory (512 longs)
     quint32 LUT[0x200];     //!< LUT memory (512 longs)
-    quint32 *MEM;           //!< HUB memory pointer
+    uchar *MEM;             //!< HUB memory pointer
     quint32 MEMSIZE;        //!< HUB memory size
 
     //! update C if the WC flag bit is set
     template <typename T>
-    void updateC(T c) { if (IR.op.uc) C = static_cast<quint32>(c) & 1; }
+    void updateC(T c) {
+        if (IR.op.uc)
+            C = static_cast<quint32>(c) & 1;
+    }
 
     //! update Z if the WC flag bit is set
     template <typename T>
-    void updateZ(T z) { if (IR.op.uz) Z = static_cast<quint32>(z) & 1; }
+    void updateZ(T z) {
+        if (IR.op.uz)
+            Z = static_cast<quint32>(z) & 1;
+    }
 
     //! update D, i.e. write result to COG
     template <typename T>
-    void updateD(T d) { COG[IR.op.dst] = static_cast<quint32>(d); }
+    void updateD(T d) {
+        COG[IR.op.dst] = static_cast<quint32>(d);
+    }
 
     //! augment #S or use #S, if the flag bit is set, then possibly set S from next_S
     template <typename T>
@@ -114,43 +126,87 @@ private:
         }
     }
 
+    //! update PA, i.e. write result to port A
+    template <typename T>
+    void updatePA(T d) {
+        if (HUB)
+            HUB->wr_PA(static_cast<quint32>(d));
+    }
+
+    //! update PB, i.e. write result to port A
+    template <typename T>
+    void updatePB(T d) {
+        if (HUB)
+            HUB->wr_PB(static_cast<quint32>(d));
+    }
+
+    //! update PTRA, i.e. write result to pointer A
+    template <typename T>
+    void updatePTRA(T d) {
+        // TODO: implement
+        Q_UNUSED(d)
+    }
+
+    //! update PTRB, i.e. write result to pointer B
+    template <typename T>
+    void updatePTRB(T d) {
+        // TODO: implement
+        Q_UNUSED(d)
+    }
+
     //! return a signed 32 bit value for val[15:0]
     template <typename T>
-    qint32 S16(T val) { return static_cast<qint32>(static_cast<qint16>(val)); }
+    qint32 S16(T val) {
+        return static_cast<qint32>(static_cast<qint16>(val));
+    }
 
     //! return the usigned 32 bit value for val[15:0]
     template <typename T>
-    quint32 U16(T val) { return static_cast<quint32>(static_cast<quint16>(val)); }
+    quint32 U16(T val) {
+        return static_cast<quint32>(static_cast<quint16>(val));
+    }
 
     //! return the signed 32 bit value for val[31:0]
     template <typename T>
-    qint32 S32(T val) { return static_cast<qint32>(val); }
+    qint32 S32(T val) {
+        return static_cast<qint32>(val);
+    }
 
     //! return the usigned 32 bit value for val[31:0]
     template <typename T>
-    quint32 U32(T val) { return static_cast<quint32>(val); }
+    quint32 U32(T val) {
+        return static_cast<quint32>(val);
+    }
 
     //! return the 64 bit sign extended value
     template <typename T>
-    qint64 SX64(T val) { return static_cast<qint64>(static_cast<qint32>(val)); }
+    qint64 SX64(T val) {
+        return static_cast<qint64>(static_cast<qint32>(val));
+    }
 
     //! return the usigned 64 bit value
     template <typename T>
-    quint64 U64(T val) { return static_cast<quint64>(val); }
+    quint64 U64(T val) {
+        return static_cast<quint64>(val);
+    }
 
     //! return the upper half of a 64 bit value as 32 bit unsigned
     template <typename T>
-    quint32 U32H(T val) { return static_cast<quint32>(val >> 32); }
+    quint32 U32H(T val) {
+        return static_cast<quint32>(static_cast<quint64>(val) >> 32);
+    }
 
     //! return the lower half of a 64 bit value as 32 bit unsigned
     template <typename T>
-    quint32 U32L(T val) { return static_cast<quint32>(val); }
+    quint32 U32L(T val) {
+        return static_cast<quint32>(val);
+    }
 
     //! most significant bit in a 32 bit word
-    static const quint32 MSB = 0x80000000u;
+    static const quint32 MSB = 1u << 31;
 
     //! least significant bit in a 32 bit word
-    static const quint32 LSB = 0x00000001u;
+    static const quint32 LSB = 1u;
 
     //! least significant nibble in a 32 bit word
     static const quint32 LNIBBLE = 0x0000000fu;
@@ -166,6 +222,12 @@ private:
 
     //! bits without sign bit in a 32 bit word
     static const quint32 IMAX = 0x7fffffffu;
+
+    //! least significant 20 bits for an address value
+    static const quint32 ADDR = (1u << 20) - 1;
+
+    //! most significant 23 bits for an augmentation value
+    static const quint32 AUG = 0xfffffe00;
 
     //! upper word max / mask in a 64 bit unsigned
     static const quint64 HMAX = Q_UINT64_C(0xffffffff00000000);
