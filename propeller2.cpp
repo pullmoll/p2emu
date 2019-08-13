@@ -567,7 +567,7 @@ quint32 Propeller2::decode()
             }
         } else {
             cycles = (IR.op.uz == 0) ? op_setd()
-                                        : op_sets();
+                                     : op_sets();
         }
         break;
 
@@ -738,7 +738,7 @@ quint32 Propeller2::decode()
             if (IR.op.uz == 0) {
                 cycles = op_tjv();
             } else {
-                switch (D) {
+                switch (IR.op.dst) {
                 case 0x00:
                     cycles = op_jint();
                     break;
@@ -943,7 +943,7 @@ quint32 Propeller2::decode()
         break;
 
     case p2_1101011:
-        switch (S) {
+        switch (IR.op.src) {
         case 0x00:
             cycles = op_hubset();
             break;
@@ -1033,7 +1033,7 @@ quint32 Propeller2::decode()
             cycles = op_setse4();
             break;
         case 0x24:
-            switch (D) {
+            switch (IR.op.dst) {
             case 0x00:
                 cycles = op_pollint();
                 break;
