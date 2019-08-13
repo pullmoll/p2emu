@@ -1,7 +1,7 @@
-#### Parallax Inc. Propeller2 emulator
+## Parallax Inc. Propeller2 emulator
 
 The project is a try to write an emulator for the Parallax Inc. Propeller2
-processor in C++, using the Qt5 framework to make it platform indipendent.
+processor in C++, using the Qt5 framework to make it platform independent.
 
 In it's current state, the code does next to nothing. Only (part of) the
 constants and structures to be used are defined. There is an opcode decoder
