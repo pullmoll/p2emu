@@ -147,13 +147,25 @@ private:
     quint32 U32L(T val) { return static_cast<quint32>(val); }
 
     //! most significant bit in a 32 bit word
-    static const quint32 MSB = 0x80000000ul;
+    static const quint32 MSB = 0x80000000u;
 
     //! least significant bit in a 32 bit word
-    static const quint32 LSB = 0x00000001ul;
+    static const quint32 LSB = 0x00000001u;
+
+    //! least significant nibble in a 32 bit word
+    static const quint32 LNIBBLE = 0x0000000fu;
+
+    //! least significant byte in a 32 bit word
+    static const quint32 LBYTE = 0x000000ffu;
+
+    //! least significant word in a 32 bit word
+    static const quint32 LWORD = 0x0000ffffu;
+
+    //! most significant word in a 32 bit word
+    static const quint32 HWORD = 0xffff0000u;
 
     //! bits without sign bit in a 32 bit word
-    static const quint32 IMAX = 0x7ffffffful;
+    static const quint32 IMAX = 0x7fffffffu;
 
     //! upper word max / mask in a 64 bit unsigned
     static const quint64 HMAX = Q_UINT64_C(0xffffffff00000000);
@@ -163,8 +175,10 @@ private:
 
     bool conditional(p2_cond_e cond);
     bool conditional(unsigned cond);
+    uchar msbit(quint32 val);
     uchar ones(quint32 val);
     uchar parity(quint32 val);
+    quint64 rotl(quint64 val, uchar shift);
     quint64 rnd();
 
     uint op_nop();

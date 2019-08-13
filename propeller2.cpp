@@ -111,6 +111,23 @@ bool Propeller2::conditional(unsigned cond)
 }
 
 /**
+ * @brief Find the most significant 1 bit in value %val
+ * @param val value
+ * @return position of top most 1 bit
+ */
+uchar Propeller2::msbit(quint32 val)
+{
+    if (val == 0)
+        return 0;
+    uchar pos;
+    for (pos = 31; pos > 0; pos--, val <<= 1) {
+        if (val & MSB)
+            return pos;
+    }
+    return pos;
+}
+
+/**
  * @brief Return the number of ones (1) in a 32 bit value
  * @param val 32 bit value
  * @return number of 1 bits
@@ -143,7 +160,7 @@ uchar Propeller2::parity(quint32 val)
  * @param shift number of bits (0 .. 63)
  * @return rotated value
  */
-static quint64 rotl(quint64 val, uchar shift)
+quint64 Propeller2::rotl(quint64 val, uchar shift)
 {
     return (val << shift) | (val >> (64 - shift));
 }
@@ -499,20 +516,20 @@ quint32 Propeller2::decode()
 
     case p2_1001001:
         if (IR.op.uc == 0) {
-            cycles = (D == 0 && IR.op.uz == 0) ? op_setword_altsw() : op_setword();
+            cycles = (IR.op.dst == 0 && IR.op.uz == 0) ? op_setword_altsw() : op_setword();
         } else {
-            cycles = (S == 0 && IR.op.uz == 0) ? op_getword_altgw() : op_getword();
+            cycles = (IR.op.src == 0 && IR.op.uz == 0) ? op_getword_altgw() : op_getword();
         }
         break;
 
     case p2_1001010:
         if (IR.op.uc == 0) {
-            cycles = (S == 0 && IR.op.uz == 0) ? op_rolword_altgw() : op_rolword();
+            cycles = (IR.op.src == 0 && IR.op.uz == 0) ? op_rolword_altgw() : op_rolword();
         } else {
             if (IR.op.uz == 0) {
-                cycles = (S == 0 && IR.op.imm == 1) ? op_altsn_d() : op_altsn();
+                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altsn_d() : op_altsn();
             } else {
-                cycles = (S == 0 && IR.op.imm == 1) ? op_altgn_d() : op_altgn();
+                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altgn_d() : op_altgn();
             }
         }
         break;
@@ -520,19 +537,19 @@ quint32 Propeller2::decode()
     case p2_1001011:
         if (IR.op.uc == 0) {
             if (IR.op.uz == 0) {
-                cycles = (S == 0 && IR.op.imm == 1) ? op_altsb_d()
-                                                    : op_altsb();
+                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altsb_d()
+                                                            : op_altsb();
             } else {
-                cycles = (S == 0 && IR.op.imm == 1) ? op_altgb_d()
-                                                    : op_altgb();
+                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altgb_d()
+                                                            : op_altgb();
             }
         } else {
             if (IR.op.uz == 0) {
-                cycles = (S == 0 && IR.op.imm == 1) ? op_altsw_d()
-                                                    : op_altsw();
+                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altsw_d()
+                                                            : op_altsw();
             } else {
-                cycles = (S == 0 && IR.op.imm == 1) ? op_altgw_d()
-                                                    : op_altgw();
+                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altgw_d()
+                                                            : op_altgw();
             }
         }
         break;
@@ -540,19 +557,19 @@ quint32 Propeller2::decode()
     case p2_1001100:
         if (IR.op.uc == 0) {
             if (IR.op.uz == 0) {
-                cycles = (S == 0 && IR.op.imm == 1) ? op_altr_d()
-                                                    : op_altr();
+                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altr_d()
+                                                            : op_altr();
             } else {
-                cycles = (S == 0 && IR.op.imm == 1) ? op_altd_d()
-                                                    : op_altd();
+                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altd_d()
+                                                            : op_altd();
             }
         } else {
             if (IR.op.uz == 0) {
-                cycles = (S == 0 && IR.op.imm == 1) ? op_alts_d()
-                                                    : op_alts();
+                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_alts_d()
+                                                            : op_alts();
             } else {
-                cycles = (S == 0 && IR.op.imm == 1) ? op_altb_d()
-                                                    : op_altb();
+                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altb_d()
+                                                            : op_altb();
             }
         }
         break;
@@ -560,8 +577,8 @@ quint32 Propeller2::decode()
     case p2_1001101:
         if (IR.op.uc == 0) {
             if (IR.op.uz == 0) {
-                cycles = (IR.op.imm == 1 && S == 0x164 /* 101100100 */) ? op_alti_d()
-                                                                        : op_alti();
+                cycles = (IR.op.imm == 1 && IR.op.src == 0x164 /* 101100100 */) ? op_alti_d()
+                                                                                : op_alti();
             } else {
                 cycles = op_setr();
             }
@@ -574,11 +591,11 @@ quint32 Propeller2::decode()
     case p2_1001110:
         if (IR.op.uc == 0) {
             if (IR.op.uz == 0) {
-                cycles = (IR.op.imm == 0 && S == D) ? op_decod_d()
-                                                    : op_decod();
+                cycles = (IR.op.imm == 0 && IR.op.src == IR.op.dst) ? op_decod_d()
+                                                                    : op_decod();
             } else {
-                cycles = (IR.op.imm == 0 && S == D) ? op_bmask_d()
-                                                    : op_bmask();
+                cycles = (IR.op.imm == 0 && IR.op.src == IR.op.dst) ? op_bmask_d()
+                                                                    : op_bmask();
             }
         } else {
             if (IR.op.uz == 0) {
@@ -855,8 +872,8 @@ quint32 Propeller2::decode()
 
     case p2_1100000:
         if (IR.op.uc == 0) {
-            cycles = (IR.op.uz == 1 && D == 1) ? op_akpin()
-                                               : op_wrpin();
+            cycles = (IR.op.uz == 1 && IR.op.dst == 1) ? op_akpin()
+                                                       : op_wrpin();
         } else {
             cycles = op_wxpin();
         }
@@ -896,7 +913,7 @@ quint32 Propeller2::decode()
 
     case p2_1100101:
         if (IR.op.uc == 0) {
-            if (IR.op.uz == 1 && IR.op.imm == 1 && S == 0 && D == 0) {
+            if (IR.op.uz == 1 && IR.op.imm == 1 && IR.op.src == 0 && IR.op.dst == 0) {
                 cycles = op_xstop();
             } else {
                 cycles = op_xinit();
@@ -1005,8 +1022,8 @@ quint32 Propeller2::decode()
             cycles = op_getct();
             break;
         case 0x1b:
-            cycles = (D == 0) ? op_getrnd_cz()
-                              : op_getrnd();
+            cycles = (IR.op.dst == 0) ? op_getrnd_cz()
+                                      : op_getrnd();
             break;
         case 0x1c:
             cycles = op_setdacs();
@@ -2837,6 +2854,10 @@ uint Propeller2::op_negnz()
 uint Propeller2::op_incmod()
 {
     augmentS(IR.op.imm);
+    const quint32 result = (D == S) ? 0 : D + 1;
+    updateC(result == 0);
+    updateZ(result == 0);
+    updateD(result);
     return 2;
 }
 
@@ -2853,6 +2874,10 @@ uint Propeller2::op_incmod()
 uint Propeller2::op_decmod()
 {
     augmentS(IR.op.imm);
+    const quint32 result = (D == 0) ? S : D - 1;
+    updateC(result == S);
+    updateZ(result == 0);
+    updateD(result);
     return 2;
 }
 
@@ -2869,6 +2894,13 @@ uint Propeller2::op_decmod()
 uint Propeller2::op_zerox()
 {
     augmentS(IR.op.imm);
+    const uchar shift = S & 31;
+    const quint32 msb = (D >> (shift - 1)) & 1;
+    const quint32 mask = 0xffffffffu << shift;
+    const quint32 result = D & ~mask;
+    updateC(msb);
+    updateZ(result == 0);
+    updateD(result);
     return 2;
 }
 
@@ -2885,6 +2917,13 @@ uint Propeller2::op_zerox()
 uint Propeller2::op_signx()
 {
     augmentS(IR.op.imm);
+    const uchar shift = S & 31;
+    const quint32 msb = (D >> (shift - 1)) & 1;
+    const quint32 mask = 0xffffffffu << shift;
+    const quint32 result = msb ? D | mask : D & ~mask;
+    updateC(msb);
+    updateZ(result == 0);
+    updateD(result);
     return 2;
 }
 
@@ -2895,14 +2934,17 @@ uint Propeller2::op_signx()
  *
  * ENCOD   D,{#}S   {WC/WZ/WCZ}
  *
- * D = position of top '1' in S (0.
- * 31).
+ * D = position of top '1' in S (0..31).
  * C = (S != 0).
  * Z = (result == 0).
  */
 uint Propeller2::op_encod()
 {
     augmentS(IR.op.imm);
+    const quint32 result = msbit(S);
+    updateC(S != 0);
+    updateZ(result == 0);
+    updateD(result);
     return 2;
 }
 
@@ -2976,8 +3018,8 @@ uint Propeller2::op_setnib()
 {
     augmentS(IR.op.imm);
     const uchar shift = static_cast<uchar>((IR.word >> 19) & 7) * 4;
-    const quint32 mask = 0x0000000fu << shift;
-    const quint32 result = (D & ~mask) | ((S & 0x0000000fu) << shift);
+    const quint32 mask = LNIBBLE << shift;
+    const quint32 result = (D & ~mask) | ((S << shift) & mask);
     updateD(result);
     return 2;
 }
@@ -3010,7 +3052,7 @@ uint Propeller2::op_getnib()
 {
     augmentS(IR.op.imm);
     const uchar shift = static_cast<uchar>((IR.word >> 19) & 7) * 4;
-    const quint32 result = (S >> shift) & 0x0000000fu;
+    const quint32 result = (S >> shift) & LNIBBLE;
     updateD(result);
     return 2;
 }
@@ -3042,7 +3084,7 @@ uint Propeller2::op_rolnib()
 {
     augmentS(IR.op.imm);
     const uchar shift = static_cast<uchar>((IR.word >> 19) & 7) * 4;
-    const quint32 result = (D << 4) | ((S >> shift) & 0x0000000fu);
+    const quint32 result = (D << 4) | ((S >> shift) & LNIBBLE);
     updateD(result);
     return 2;
 }
@@ -3073,8 +3115,8 @@ uint Propeller2::op_setbyte()
 {
     augmentS(IR.op.imm);
     const uchar shift = static_cast<uchar>((IR.word >> 19) & 3) * 8;
-    const quint32 mask = 0x000000ffu << shift;
-    const quint32 result = (D & ~mask) | ((S & 0x000000ffu) << shift);
+    const quint32 mask = LBYTE << shift;
+    const quint32 result = (D & ~mask) | ((S << shift) & mask);
     updateD(result);
     return 2;
 }
@@ -3106,7 +3148,7 @@ uint Propeller2::op_getbyte()
 {
     augmentS(IR.op.imm);
     const uchar shift = static_cast<uchar>((IR.word >> 19) & 3) * 8;
-    const quint32 result = (S >> shift) & 0x000000ffu;
+    const quint32 result = (S >> shift) & LBYTE;
     updateD(result);
     return 2;
 }
@@ -3138,7 +3180,7 @@ uint Propeller2::op_rolbyte()
 {
     augmentS(IR.op.imm);
     const uchar shift = static_cast<uchar>((IR.word >> 19) & 3) * 8;
-    const quint32 result = (D << 8) | ((S >> shift) & 0x000000ffu);
+    const quint32 result = (D << 8) | ((S >> shift) & LBYTE);
     updateD(result);
     return 2;
 }
@@ -3171,8 +3213,8 @@ uint Propeller2::op_setword()
         return op_setword_altsw();
     augmentS(IR.op.imm);
     const uchar shift = IR.op.uz ? 16 : 0;
-    const quint32 mask = 0x0000ffffu << shift;
-    const quint32 result = (D & ~mask) | (S >> shift);
+    const quint32 mask = LWORD << shift;
+    const quint32 result = (D & ~mask) | ((S >> shift) & mask);
     updateD(result);
     return 2;
 }
@@ -3206,7 +3248,7 @@ uint Propeller2::op_getword()
         return op_getword_altgw();
     augmentS(IR.op.imm);
     const uchar shift = IR.op.uz * 16;
-    const quint32 result = (S >> shift) & 0x0000ffffu;
+    const quint32 result = (S >> shift) & LWORD;
     updateD(result);
     return 2;
 }
@@ -3237,7 +3279,7 @@ uint Propeller2::op_rolword()
 {
     augmentS(IR.op.imm);
     const uchar shift = IR.op.uz * 16;
-    const quint32 result = (D << 16) & ((S >> shift) & 0x0000ffffu);
+    const quint32 result = (D << 16) & ((S >> shift) & LWORD);
     updateD(result);
     return 2;
 }
