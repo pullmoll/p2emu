@@ -49,11 +49,12 @@ public:
     quint32 q() const { return Q; }
     quint32 c() const { return C; }
     quint32 z() const { return Z; }
-    quint32 rd_cog(quint32 addr) const { return COG[addr & 0x1ff]; }
-    void wr_cog(quint32 addr, quint32 val) { COG[addr & 0x1ff] = val; }
-    quint32 rd_lut(quint32 addr) const { return LUT[addr & 0x1ff]; }
-    void wr_lut(quint32 addr, quint32 val) { LUT[addr & 0x1ff] = val; }
-    quint32 mem(quint32 addr) const { return MEM ? MEM[addr] : 0; }
+    quint32 rd_cog(quint32 addr) const;
+    void wr_cog(quint32 addr, quint32 val);
+    quint32 rd_lut(quint32 addr) const;
+    void wr_lut(quint32 addr, quint32 val);
+    quint32 rd_mem(quint32 addr) const;
+    void wr_mem(quint32 addr, quint32 val);
 
 private:
     quint64 xoro_s[2];      //!< Xoroshiro128 PRNG state
@@ -70,8 +71,8 @@ private:
     QVariant S_aug;         //!< augment next S with this value, if set
     QVariant D_aug;         //!< augment next D with this value, if set
 
-    quint32 COG[0x200];     //!< COG memory (512 longs)
-    quint32 LUT[0x200];     //!< LUT memory (512 longs)
+    quint32 COG[512];       //!< COG memory (512 longs)
+    p2_lut_t LUT;           //!< LUT memory (512 longs)
     uchar *MEM;             //!< HUB memory pointer
     quint32 MEMSIZE;        //!< HUB memory size
 
@@ -129,29 +130,31 @@ private:
     //! update PA, i.e. write result to port A
     template <typename T>
     void updatePA(T d) {
+        LUT.REG.PA = static_cast<quint32>(d);
         if (HUB)
-            HUB->wr_PA(static_cast<quint32>(d));
+            HUB->wr_PA(LUT.REG.PA);
     }
 
     //! update PB, i.e. write result to port A
     template <typename T>
     void updatePB(T d) {
+        LUT.REG.PB = static_cast<quint32>(d);
         if (HUB)
-            HUB->wr_PB(static_cast<quint32>(d));
+            HUB->wr_PB(LUT.REG.PA);
     }
 
     //! update PTRA, i.e. write result to pointer A
     template <typename T>
     void updatePTRA(T d) {
-        // TODO: implement
-        Q_UNUSED(d)
+        if (HUB)
+            HUB->wr_LONG(LUT.REG.PTRA, static_cast<quint32>(d));
     }
 
     //! update PTRB, i.e. write result to pointer B
     template <typename T>
     void updatePTRB(T d) {
-        // TODO: implement
-        Q_UNUSED(d)
+        if (HUB)
+            HUB->wr_LONG(LUT.REG.PTRB, static_cast<quint32>(d));
     }
 
     //! return a signed 32 bit value for val[15:0]
@@ -678,7 +681,10 @@ private:
     uint op_calla_abs();
     uint op_callb_abs();
     uint op_calld_abs();
-    uint op_loc();
+    uint op_loc_pa();
+    uint op_loc_pb();
+    uint op_loc_ptra();
+    uint op_loc_ptrb();
 
     uint op_augs();
     uint op_augd();

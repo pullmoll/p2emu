@@ -247,3 +247,31 @@ typedef union {
     unsigned int word;          //!< opcode as 32 bit word
     p2_opcode_t op;             //!< ocpode as bit fields
 }   p2_opword_t;
+
+typedef struct {
+    quint32 RAM[512-16];        //!< general-use code/data registers
+    quint32 IJMP3;              //!< interrupt call address for INT3
+    quint32 IRET3;              //!< interrupt return address for INT3
+    quint32 IJMP2;              //!< interrupt call address for INT2
+    quint32 IRET2;              //!< interrupt return address for INT2
+    quint32 IJMP1;              //!< interrupt call address for INT1
+    quint32 IRET1;              //!< interrupt return address for INT1
+    quint32 PA;                 //!< CALLD-imm return, CALLPA parameter, or LOC address
+    quint32 PB;                 //!< CALLD-imm return, CALLPB parameter, or LOC address
+    quint32 PTRA;               //!< pointer A to hub RAM
+    quint32 PTRB;               //!< pointer B to hub RAM
+    quint32 DIRA;               //!< output enables for P31 ... P0
+    quint32 DIRB;               //!< output enables for P63 ... P32
+    quint32 OUTA;               //!< output states for P31 ... P0
+    quint32 OUTB;               //!< output states for P63 ... P32
+    quint32 INA;                //!< input states for P31 ... P0
+    quint32 INB;                //!< input states for P63 ... P32
+}   p2_lutregs_t;
+
+/**
+ * @brief union of the COG / LUT memory and shadow registers
+ */
+typedef union {
+    quint32 RAM[512];
+    p2_lutregs_t REG;
+}   p2_lut_t;

@@ -26,14 +26,18 @@ SOURCES += \
 		main.cpp \
 		mainwindow.cpp \
 		p2cog.cpp \
-		p2hub.cpp
+		p2dasm.cpp \
+		p2hub.cpp \
+		p2token.cpp
 
 HEADERS += \
 		csv.h \
 		mainwindow.h \
 		p2_defs.h \
 		p2cog.h \
-		p2hub.h
+		p2dasm.h \
+		p2hub.h \
+		p2token.h
 
 FORMS += \
 		mainwindow.ui

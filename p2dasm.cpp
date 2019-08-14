@@ -1,576 +1,405 @@
-/****************************************************************************
- *
- * P2 emulator Cog implementation
- *
- * Function bodies and comments generated from ":/P2 instruction set.csv"
- *
- * Copyright (C) 2019 Jürgen Buchmüller <pullmoll@t-online.de>
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- * notice, this list of conditions and the following disclaimer in the
- * documentation and/or other materials provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- ****************************************************************************/
+#include "p2_defs.h"
 #include "p2cog.h"
+#include "p2dasm.h"
 
-P2Cog::P2Cog(uchar cog_id, P2Hub* parent)
-    : xoro_s()
-    , HUB(parent)
-    , ID(cog_id)
-    , PC(0)
-    , IR()
-    , S(0)
-    , D(0)
-    , Q(0)
-    , C(0)
-    , Z(0)
-    , S_next()
-    , S_aug()
-    , D_aug()
-    , COG()
-    , MEM(nullptr)
-    , MEMSIZE(0)
+P2Dasm::P2Dasm()
+    : p2Token(new P2Token(false))
 {
-    // Initialize the PRNG
-    xoro_s[0] = 1;
-    xoro_s[1] = 0;
-    MEM = HUB->mem();
-    MEMSIZE = HUB->memsize();
 }
 
-quint32 P2Cog::rd_cog(quint32 addr) const
+P2Dasm::~P2Dasm()
 {
-    return COG[addr & 0x1ff];
+    delete p2Token;
 }
 
-void P2Cog::wr_cog(quint32 addr, quint32 val)
-{
-    COG[addr & 0x1ff] = val;
-}
-
-quint32 P2Cog::rd_lut(quint32 addr) const
-{
-    return LUT.RAM[addr & 0x1ff];
-}
-
-void P2Cog::wr_lut(quint32 addr, quint32 val)
-{
-    LUT.RAM[addr & 0x1ff] = val;
-}
-
-quint32 P2Cog::rd_mem(quint32 addr) const
-{
-    if (HUB)
-        return HUB->rd_LONG(addr);
-    return 0x00000000u;
-}
-
-void P2Cog::wr_mem(quint32 addr, quint32 val)
-{
-    if (HUB)
-        HUB->wr_LONG(addr, val);
-}
-
-/**
- * @brief return conditional execution status for condition %cond
- * @param cond condition
- * @return true if met, false otherwise
- */
-bool P2Cog::conditional(p2_cond_e cond)
+p2_token_e P2Dasm::conditional(p2_cond_e cond)
 {
     switch (cond) {
     case cond__ret_:        // execute always
-        return true;
+        return t__RET_;
     case cond_nc_and_nz:    // execute if C = 0 and Z = 0
-        return C == 0 && Z == 0;
+        return t_IF_NC_AND_NZ;
     case cond_nc_and_z:     // execute if C = 0 and Z = 1
-        return C == 0 && Z == 1;
+        return t_IF_NC_AND_Z;
     case cond_nc:           // execute if C = 0
-        return C == 0;
+        return t_IF_NC;
     case cond_c_and_nz:     // execute if C = 1 and Z = 0
-        return C == 1 && Z == 0;
+        return t_IF_C_AND_NZ;
     case cond_nz:           // execute if Z = 0
-        return Z == 0;
+        return t_IF_NZ;
     case cond_c_ne_z:       // execute if C != Z
-        return C != Z;
+        return t_IF_C_NE_Z;
     case cond_nc_or_nz:     // execute if C = 0 or Z = 0
-        return C == 0 || Z == 0;
+        return t_IF_NC_OR_NZ;
     case cond_c_and_z:      // execute if C = 1 and Z = 1
-        return C == 1 && Z == 1;
+        return t_IF_C_AND_Z;
     case cond_c_eq_z:       // execute if C = Z
-        return C == Z;
+        return t_IF_C_EQ_Z;
     case cond_z:            // execute if Z = 1
-        return Z == 1;
+        return t_IF_Z;
     case cond_nc_or_z:      // execute if C = 0 or Z = 1
-        return C == 0 || Z == 1;
+        return t_IF_NC_OR_Z;
     case cond_c:            // execute if C = 1
-        return C == 1;
+        return t_IF_C;
     case cond_c_or_nz:      // execute if C = 1 or Z = 0
-        return C == 1 || Z == 0;
+        return t_IF_C_OR_NZ;
     case cond_c_or_z:       // execute if C = 1 or Z = 1
-        return C == 1 || Z == 1;
+        return t_IF_C_OR_Z;
     case cond_never:
-        return false;
+        return t_NEVER;
     }
-    return false;
+    return t_invalid;
 }
 
-/**
- * @brief Alias for conditional() with an unsigned parameter
- * @param cond condition (0 ... 15)
- * @return true if met, false otherwise
- */
-bool P2Cog::conditional(unsigned cond)
+p2_token_e P2Dasm::conditional(unsigned cond)
 {
     return conditional(static_cast<p2_cond_e>(cond));
 }
 
-/**
- * @brief Find the most significant 1 bit in value %val
- * @param val value
- * @return position of top most 1 bit
- */
-uchar P2Cog::msbit(quint32 val)
+QString P2Dasm::dasm(P2Cog *COG, quint32 PC)
 {
-    if (val == 0)
-        return 0;
-    uchar pos;
-    for (pos = 31; pos > 0; pos--, val <<= 1) {
-        if (val & MSB)
-            return pos;
-    }
-    return pos;
-}
-
-/**
- * @brief Return the number of ones (1) in a 32 bit value
- * @param val 32 bit value
- * @return number of 1 bits
- */
-uchar P2Cog::ones(quint32 val)
-{
-    val = val - ((val >> 1) & 0x55555555);
-    val = (val & 0x33333333) + ((val >> 2) & 0x33333333);
-    val = (((val + (val >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
-    return static_cast<uchar>(val);
-}
-
-/**
- * @brief Return the parity of a 32 bit value
- * @param val 32 bit value
- * @return 1 for odd parity, 0 for even parity
- */
-uchar P2Cog::parity(quint32 val)
-{
-    val ^= val >> 16;
-    val ^= val >> 8;
-    val ^= val >> 4;
-    val &= 15;
-    return (0x6996 >> val) & 1;
-}
-
-/**
- * @brief Rotate a 64 bit value %val left by %shift bits
- * @param val value to rotate
- * @param shift number of bits (0 .. 63)
- * @return rotated value
- */
-quint64 P2Cog::rotl(quint64 val, uchar shift)
-{
-    return (val << shift) | (val >> (64 - shift));
-}
-
-/**
- * @brief Return the next PRNG value
- * @return pseudo random value
- */
-quint64 P2Cog::rnd()
-{
-    const quint64 s0 = xoro_s[0];
-    quint64 s1 = xoro_s[1];
-    const quint64 result = s0 + s1;
-
-    s1 ^= s0;
-    xoro_s[0] = rotl(s0, 55) ^ s1 ^ (s1 << 14); // a, b
-    xoro_s[1] = rotl(s1, 36); // c
-    return result;
-}
-
-/**
- * @brief Read and decode the next Propeller2 opcode
- * @return number of cycles
- */
-quint32 P2Cog::decode()
-{
-    quint32 cycles = 2;
+    QString str;
 
     if (PC < 0x0200) {
         // cogexec
-        IR.word = COG[PC];
+        IR.word = COG->rd_cog(PC);
     } else if (PC < 0x0400) {
         // lutexec
-        IR.word = LUT.RAM[PC - 0x200];
-    } else if (MEM != nullptr && PC < MEMSIZE) {
-        // hubexec
-        // FIXME: use FIFO ?
-        IR.word = HUB->rd_LONG(PC);
+        IR.word = COG->rd_lut(PC);
     } else {
-        // no memory here
-        IR.word = 0;
+        // hubexec
+        IR.word = COG->rd_mem(PC);
     }
 
     PC++;               // increment PC
-    S = COG[IR.op.src]; // set S to COG[src]
-    D = COG[IR.op.dst]; // set D to COG[dst]
+    S = COG->rd_cog(IR.op.src);
+    D = COG->rd_cog(IR.op.dst);
 
     // check for the condition
-    if (!conditional(IR.op.cond))
-        return cycles;
+    str = p2Token->str(conditional(IR.op.cond));
 
-    // Dispatch to op_xxx() functions
+    // Dispatch to dasm_xxx() functions
     switch (IR.op.inst) {
     case p2_ror:
-        cycles = op_ror();
+        str = dasm_ror();
         break;
 
     case p2_rol:
-        cycles = op_rol();
+        str = dasm_rol();
         break;
 
     case p2_shr:
-        cycles = op_shr();
+        str = dasm_shr();
         break;
 
     case p2_shl:
-        cycles = op_shl();
+        str = dasm_shl();
         break;
 
     case p2_rcr:
-        cycles = op_rcr();
+        str = dasm_rcr();
         break;
 
     case p2_rcl:
-        cycles = op_rcl();
+        str = dasm_rcl();
         break;
 
     case p2_sar:
-        cycles = op_sar();
+        str = dasm_sar();
         break;
 
     case p2_sal:
-        cycles = op_sal();
+        str = dasm_sal();
         break;
 
     case p2_add:
-        cycles = op_add();
+        str = dasm_add();
         break;
 
     case p2_addx:
-        cycles = op_addx();
+        str = dasm_addx();
         break;
 
     case p2_adds:
-        cycles = op_adds();
+        str = dasm_adds();
         break;
 
     case p2_addsx:
-        cycles = op_addsx();
+        str = dasm_addsx();
         break;
 
     case p2_sub:
-        cycles = op_sub();
+        str = dasm_sub();
         break;
 
     case p2_subx:
-        cycles = op_subx();
+        str = dasm_subx();
         break;
 
     case p2_subs:
-        cycles = op_subs();
+        str = dasm_subs();
         break;
 
     case p2_subsx:
-        cycles = op_subsx();
+        str = dasm_subsx();
         break;
 
     case p2_cmp:
-        cycles = op_cmp();
+        str = dasm_cmp();
         break;
 
     case p2_cmpx:
-        cycles = op_cmpx();
+        str = dasm_cmpx();
         break;
 
     case p2_cmps:
-        cycles = op_cmps();
+        str = dasm_cmps();
         break;
 
     case p2_cmpsx:
-        cycles = op_cmpsx();
+        str = dasm_cmpsx();
         break;
 
     case p2_cmpr:
-        cycles = op_cmpr();
+        str = dasm_cmpr();
         break;
 
     case p2_cmpm:
-        cycles = op_cmpm();
+        str = dasm_cmpm();
         break;
 
     case p2_subr:
-        cycles = op_subr();
+        str = dasm_subr();
         break;
 
     case p2_cmpsub:
-        cycles = op_cmpsub();
+        str = dasm_cmpsub();
         break;
 
     case p2_fge:
-        cycles = op_fge();
+        str = dasm_fge();
         break;
 
     case p2_fle:
-        cycles = op_fle();
+        str = dasm_fle();
         break;
 
     case p2_fges:
-        cycles = op_fges();
+        str = dasm_fges();
         break;
 
     case p2_fles:
-        cycles = op_fles();
+        str = dasm_fles();
         break;
 
     case p2_sumc:
-        cycles = op_sumc();
+        str = dasm_sumc();
         break;
 
     case p2_sumnc:
-        cycles = op_sumnc();
+        str = dasm_sumnc();
         break;
 
     case p2_sumz:
-        cycles = op_sumz();
+        str = dasm_sumz();
         break;
 
     case p2_sumnz:
-        cycles = op_sumnz();
+        str = dasm_sumnz();
         break;
 
     case p2_testb_w:
-    // case p2_bitl:
-        cycles = (IR.op.uc != IR.op.uz) ? op_testb_w()
-                                        : op_bitl();
+        // case p2_bitl:
+        str = (IR.op.uc != IR.op.uz) ? dasm_testb_w()
+                                        : dasm_bitl();
         break;
 
     case p2_testbn_w:
-    // case p2_bith:
-        cycles = (IR.op.uc != IR.op.uz) ? op_testbn_w()
-                                        : op_bith();
+        // case p2_bith:
+        str = (IR.op.uc != IR.op.uz) ? dasm_testbn_w()
+                                        : dasm_bith();
         break;
 
     case p2_testb_and:
-    // case p2_bitc:
-        cycles = (IR.op.uc != IR.op.uz) ? op_testb_and()
-                                        : op_bitc();
+        // case p2_bitc:
+        str = (IR.op.uc != IR.op.uz) ? dasm_testb_and()
+                                        : dasm_bitc();
         break;
 
     case p2_testbn_and:
-    // case p2_bitnc:
-        cycles = (IR.op.uc != IR.op.uz) ? op_testbn_and()
-                                        : op_bitnc();
+        // case p2_bitnc:
+        str = (IR.op.uc != IR.op.uz) ? dasm_testbn_and()
+                                        : dasm_bitnc();
         break;
 
     case p2_testb_or:
-    // case p2_bitz:
-        cycles = (IR.op.uc != IR.op.uz) ? op_testb_or()
-                                        : op_bitz();
+        // case p2_bitz:
+        str = (IR.op.uc != IR.op.uz) ? dasm_testb_or()
+                                        : dasm_bitz();
         break;
 
     case p2_testbn_or:
-    // case p2_bitnz:
-        cycles = (IR.op.uc != IR.op.uz) ? op_testbn_or()
-                                        : op_bitnz();
+        // case p2_bitnz:
+        str = (IR.op.uc != IR.op.uz) ? dasm_testbn_or()
+                                        : dasm_bitnz();
         break;
 
     case p2_testb_xor:
-    // case p2_bitrnd:
-        cycles = (IR.op.uc != IR.op.uz) ? op_testb_xor()
-                                        : op_bitrnd();
+        // case p2_bitrnd:
+        str = (IR.op.uc != IR.op.uz) ? dasm_testb_xor()
+                                        : dasm_bitrnd();
         break;
 
     case p2_testbn_xor:
-    // case p2_bitnot:
-        cycles = (IR.op.uc != IR.op.uz) ? op_testbn_xor()
-                                        : op_bitnot();
+        // case p2_bitnot:
+        str = (IR.op.uc != IR.op.uz) ? dasm_testbn_xor()
+                                        : dasm_bitnot();
         break;
 
     case p2_and:
-        cycles = op_and();
+        str = dasm_and();
         break;
 
     case p2_andn:
-        cycles = op_andn();
+        str = dasm_andn();
         break;
 
     case p2_or:
-        cycles = op_or();
+        str = dasm_or();
         break;
 
     case p2_xor:
-        cycles = op_xor();
+        str = dasm_xor();
         break;
 
     case p2_muxc:
-        cycles = op_muxc();
+        str = dasm_muxc();
         break;
 
     case p2_muxnc:
-        cycles = op_muxnc();
+        str = dasm_muxnc();
         break;
 
     case p2_muxz:
-        cycles = op_muxz();
+        str = dasm_muxz();
         break;
 
     case p2_muxnz:
-        cycles = op_muxnz();
+        str = dasm_muxnz();
         break;
 
     case p2_mov:
-        cycles = op_mov();
+        str = dasm_mov();
         break;
 
     case p2_not:
-        cycles = op_not();
+        str = dasm_not();
         break;
 
     case p2_abs:
-        cycles = op_abs();
+        str = dasm_abs();
         break;
 
     case p2_neg:
-        cycles = op_neg();
+        str = dasm_neg();
         break;
 
     case p2_negc:
-        cycles = op_negc();
+        str = dasm_negc();
         break;
 
     case p2_negnc:
-        cycles = op_negnc();
+        str = dasm_negnc();
         break;
 
     case p2_negz:
-        cycles = op_negz();
+        str = dasm_negz();
         break;
 
     case p2_negnz:
-        cycles = op_negnz();
+        str = dasm_negnz();
         break;
 
     case p2_incmod:
-        cycles = op_incmod();
+        str = dasm_incmod();
         break;
 
     case p2_decmod:
-        cycles = op_decmod();
+        str = dasm_decmod();
         break;
 
     case p2_zerox:
-        cycles = op_zerox();
+        str = dasm_zerox();
         break;
 
     case p2_signx:
-        cycles = op_signx();
+        str = dasm_signx();
         break;
 
     case p2_encod:
-        cycles = op_encod();
+        str = dasm_encod();
         break;
 
     case p2_ones:
-        cycles = op_ones();
+        str = dasm_ones();
         break;
 
     case p2_test:
-        cycles = op_test();
+        str = dasm_test();
         break;
 
     case p2_testn:
-        cycles = op_testn();
+        str = dasm_testn();
         break;
 
     case p2_setnib_0:
     case p2_setnib_1:
-        cycles = op_setnib();
+        str = dasm_setnib();
         break;
 
     case p2_getnib_0:
     case p2_getnib_1:
-        cycles = op_getnib();
+        str = dasm_getnib();
         break;
 
     case p2_rolnib_0:
     case p2_rolnib_1:
-        cycles = op_rolnib();
+        str = dasm_rolnib();
         break;
 
     case p2_setbyte:
-        cycles = op_setbyte();
+        str = dasm_setbyte();
         break;
 
     case p2_getbyte:
-        cycles = op_getbyte();
+        str = dasm_getbyte();
         break;
 
     case p2_rolbyte:
-        cycles = op_rolbyte();
+        str = dasm_rolbyte();
         break;
 
     case p2_1001001:
         if (IR.op.uc == 0) {
-            cycles = (IR.op.dst == 0 && IR.op.uz == 0) ? op_setword_altsw()
-                                                       : op_setword();
+            str = (IR.op.dst == 0 && IR.op.uz == 0) ? dasm_setword_altsw()
+                                                       : dasm_setword();
         } else {
-            cycles = (IR.op.src == 0 && IR.op.uz == 0) ? op_getword_altgw()
-                                                       : op_getword();
+            str = (IR.op.src == 0 && IR.op.uz == 0) ? dasm_getword_altgw()
+                                                       : dasm_getword();
         }
         break;
 
     case p2_1001010:
         if (IR.op.uc == 0) {
-            cycles = (IR.op.src == 0 && IR.op.uz == 0) ? op_rolword_altgw()
-                                                       : op_rolword();
+            str = (IR.op.src == 0 && IR.op.uz == 0) ? dasm_rolword_altgw()
+                                                       : dasm_rolword();
         } else {
             if (IR.op.uz == 0) {
-                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altsn_d()
-                                                            : op_altsn();
+                str = (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altsn_d()
+                                                            : dasm_altsn();
             } else {
-                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altgn_d()
-                                                            : op_altgn();
+                str = (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altgn_d()
+                                                            : dasm_altgn();
             }
         }
         break;
@@ -578,19 +407,19 @@ quint32 P2Cog::decode()
     case p2_1001011:
         if (IR.op.uc == 0) {
             if (IR.op.uz == 0) {
-                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altsb_d()
-                                                            : op_altsb();
+                str = (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altsb_d()
+                                                            : dasm_altsb();
             } else {
-                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altgb_d()
-                                                            : op_altgb();
+                str = (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altgb_d()
+                                                            : dasm_altgb();
             }
         } else {
             if (IR.op.uz == 0) {
-                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altsw_d()
-                                                            : op_altsw();
+                str = (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altsw_d()
+                                                            : dasm_altsw();
             } else {
-                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altgw_d()
-                                                            : op_altgw();
+                str = (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altgw_d()
+                                                            : dasm_altgw();
             }
         }
         break;
@@ -598,19 +427,19 @@ quint32 P2Cog::decode()
     case p2_1001100:
         if (IR.op.uc == 0) {
             if (IR.op.uz == 0) {
-                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altr_d()
-                                                            : op_altr();
+                str = (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altr_d()
+                                                            : dasm_altr();
             } else {
-                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altd_d()
-                                                            : op_altd();
+                str = (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altd_d()
+                                                            : dasm_altd();
             }
         } else {
             if (IR.op.uz == 0) {
-                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_alts_d()
-                                                            : op_alts();
+                str = (IR.op.src == 0 && IR.op.imm == 1) ? dasm_alts_d()
+                                                            : dasm_alts();
             } else {
-                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altb_d()
-                                                            : op_altb();
+                str = (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altb_d()
+                                                            : dasm_altb();
             }
         }
         break;
@@ -618,31 +447,31 @@ quint32 P2Cog::decode()
     case p2_1001101:
         if (IR.op.uc == 0) {
             if (IR.op.uz == 0) {
-                cycles = (IR.op.imm == 1 && IR.op.src == 0x164 /* 101100100 */) ? op_alti_d()
-                                                                                : op_alti();
+                str = (IR.op.imm == 1 && IR.op.src == 0x164 /* 101100100 */) ? dasm_alti_d()
+                                                                                : dasm_alti();
             } else {
-                cycles = op_setr();
+                str = dasm_setr();
             }
         } else {
-            cycles = (IR.op.uz == 0) ? op_setd()
-                                     : op_sets();
+            str = (IR.op.uz == 0) ? dasm_setd()
+                                     : dasm_sets();
         }
         break;
 
     case p2_1001110:
         if (IR.op.uc == 0) {
             if (IR.op.uz == 0) {
-                cycles = (IR.op.imm == 0 && IR.op.src == IR.op.dst) ? op_decod_d()
-                                                                    : op_decod();
+                str = (IR.op.imm == 0 && IR.op.src == IR.op.dst) ? dasm_decod_d()
+                                                                    : dasm_decod();
             } else {
-                cycles = (IR.op.imm == 0 && IR.op.src == IR.op.dst) ? op_bmask_d()
-                                                                    : op_bmask();
+                str = (IR.op.imm == 0 && IR.op.src == IR.op.dst) ? dasm_bmask_d()
+                                                                    : dasm_bmask();
             }
         } else {
             if (IR.op.uz == 0) {
-                cycles = op_crcbit();
+                str = dasm_crcbit();
             } else {
-                cycles = op_crcnib();
+                str = dasm_crcnib();
             }
         }
         break;
@@ -650,47 +479,47 @@ quint32 P2Cog::decode()
     case p2_1001111:
         if (IR.op.uc == 0) {
             if (IR.op.uz == 0) {
-                cycles = op_muxnits();
+                str = dasm_muxnits();
             } else {
-                cycles = op_muxnibs();
+                str = dasm_muxnibs();
             }
         } else {
             if (IR.op.uz == 0) {
-                cycles = op_muxq();
+                str = dasm_muxq();
             } else {
-                cycles = op_movbyts();
+                str = dasm_movbyts();
             }
         }
         break;
 
     case p2_1010000:
         if (IR.op.uc == 0) {
-            cycles = op_mul();
+            str = dasm_mul();
         } else {
-            cycles = op_muls();
+            str = dasm_muls();
         }
         break;
 
     case p2_1010001:
         if (IR.op.uc == 0) {
-            cycles = op_sca();
+            str = dasm_sca();
         } else {
-            cycles = op_scas();
+            str = dasm_scas();
         }
         break;
 
     case p2_1010010:
         if (IR.op.uc == 0) {
             if (IR.op.uz == 0) {
-                cycles = op_addpix();
+                str = dasm_addpix();
             } else {
-                cycles = op_mulpix();
+                str = dasm_mulpix();
             }
         } else {
             if (IR.op.uz == 0) {
-                cycles = op_blnpix();
+                str = dasm_blnpix();
             } else {
-                cycles = op_mixpix();
+                str = dasm_mixpix();
             }
         }
         break;
@@ -698,63 +527,63 @@ quint32 P2Cog::decode()
     case p2_1010011:
         if (IR.op.uc == 0) {
             if (IR.op.uz == 0) {
-                cycles = op_addct1();
+                str = dasm_addct1();
             } else {
-                cycles = op_addct2();
+                str = dasm_addct2();
             }
         } else {
             if (IR.op.uz == 0) {
-                cycles = op_addct3();
+                str = dasm_addct3();
             } else {
-                cycles = op_wmlong();
+                str = dasm_wmlong();
             }
         }
         break;
 
     case p2_1010100:
         if (IR.op.uz == 0) {
-            cycles = op_rqpin();
+            str = dasm_rqpin();
         } else {
 
         }
         break;
 
     case p2_rdlut:
-        cycles = op_rdlut();
+        str = dasm_rdlut();
         break;
 
     case p2_rdbyte:
-        cycles = op_rdbyte();
+        str = dasm_rdbyte();
         break;
 
     case p2_rdword:
-        cycles = op_rdword();
+        str = dasm_rdword();
         break;
 
     case p2_rdlong:
-        cycles = op_rdlong();
+        str = dasm_rdlong();
         break;
 
     case p2_calld:
-        cycles = op_calld();
+        str = dasm_calld();
         break;
 
     case p2_callp:
-        cycles = (IR.op.uc == 0) ? op_callpa() : op_callpb();
+        str = (IR.op.uc == 0) ? dasm_callpa() : dasm_callpb();
         break;
 
     case p2_1011011:
         if (IR.op.uc == 0) {
             if (IR.op.uz == 0) {
-                cycles = op_djz();
+                str = dasm_djz();
             } else {
-                cycles = op_djnz();
+                str = dasm_djnz();
             }
         } else {
             if (IR.op.uz == 0) {
-                cycles = op_djf();
+                str = dasm_djf();
             } else {
-                cycles = op_djnf();
+                str = dasm_djnf();
             }
         }
         break;
@@ -762,15 +591,15 @@ quint32 P2Cog::decode()
     case p2_1011100:
         if (IR.op.uc == 0) {
             if (IR.op.uz == 0) {
-                cycles = op_ijz();
+                str = dasm_ijz();
             } else {
-                cycles = op_ijnz();
+                str = dasm_ijnz();
             }
         } else {
             if (IR.op.uz == 0) {
-                cycles = op_tjz();
+                str = dasm_tjz();
             } else {
-                cycles = op_tjnz();
+                str = dasm_tjnz();
             }
         }
         break;
@@ -778,15 +607,15 @@ quint32 P2Cog::decode()
     case p2_1011101:
         if (IR.op.uc == 0) {
             if (IR.op.uz == 0) {
-                cycles = op_tjf();
+                str = dasm_tjf();
             } else {
-                cycles = op_tjnf();
+                str = dasm_tjnf();
             }
         } else {
             if (IR.op.uz == 0) {
-                cycles = op_tjs();
+                str = dasm_tjs();
             } else {
-                cycles = op_tjns();
+                str = dasm_tjns();
             }
         }
         break;
@@ -794,104 +623,104 @@ quint32 P2Cog::decode()
     case p2_1011110:
         if (IR.op.uc == 0) {
             if (IR.op.uz == 0) {
-                cycles = op_tjv();
+                str = dasm_tjv();
             } else {
                 switch (IR.op.dst) {
                 case 0x00:
-                    cycles = op_jint();
+                    str = dasm_jint();
                     break;
                 case 0x01:
-                    cycles = op_jct1();
+                    str = dasm_jct1();
                     break;
                 case 0x02:
-                    cycles = op_jct2();
+                    str = dasm_jct2();
                     break;
                 case 0x03:
-                    cycles = op_jct3();
+                    str = dasm_jct3();
                     break;
                 case 0x04:
-                    cycles = op_jse1();
+                    str = dasm_jse1();
                     break;
                 case 0x05:
-                    cycles = op_jse2();
+                    str = dasm_jse2();
                     break;
                 case 0x06:
-                    cycles = op_jse3();
+                    str = dasm_jse3();
                     break;
                 case 0x07:
-                    cycles = op_jse4();
+                    str = dasm_jse4();
                     break;
                 case 0x08:
-                    cycles = op_jpat();
+                    str = dasm_jpat();
                     break;
                 case 0x09:
-                    cycles = op_jfbw();
+                    str = dasm_jfbw();
                     break;
                 case 0x0a:
-                    cycles = op_jxmt();
+                    str = dasm_jxmt();
                     break;
                 case 0x0b:
-                    cycles = op_jxfi();
+                    str = dasm_jxfi();
                     break;
                 case 0x0c:
-                    cycles = op_jxro();
+                    str = dasm_jxro();
                     break;
                 case 0x0d:
-                    cycles = op_jxrl();
+                    str = dasm_jxrl();
                     break;
                 case 0x0e:
-                    cycles = op_jatn();
+                    str = dasm_jatn();
                     break;
                 case 0x0f:
-                    cycles = op_jqmt();
+                    str = dasm_jqmt();
                     break;
                 case 0x10:
-                    cycles = op_jnint();
+                    str = dasm_jnint();
                     break;
                 case 0x11:
-                    cycles = op_jnct1();
+                    str = dasm_jnct1();
                     break;
                 case 0x12:
-                    cycles = op_jnct2();
+                    str = dasm_jnct2();
                     break;
                 case 0x13:
-                    cycles = op_jnct3();
+                    str = dasm_jnct3();
                     break;
                 case 0x14:
-                    cycles = op_jnse1();
+                    str = dasm_jnse1();
                     break;
                 case 0x15:
-                    cycles = op_jnse2();
+                    str = dasm_jnse2();
                     break;
                 case 0x16:
-                    cycles = op_jnse3();
+                    str = dasm_jnse3();
                     break;
                 case 0x17:
-                    cycles = op_jnse4();
+                    str = dasm_jnse4();
                     break;
                 case 0x18:
-                    cycles = op_jnpat();
+                    str = dasm_jnpat();
                     break;
                 case 0x19:
-                    cycles = op_jnfbw();
+                    str = dasm_jnfbw();
                     break;
                 case 0x1a:
-                    cycles = op_jnxmt();
+                    str = dasm_jnxmt();
                     break;
                 case 0x1b:
-                    cycles = op_jnxfi();
+                    str = dasm_jnxfi();
                     break;
                 case 0x1c:
-                    cycles = op_jnxro();
+                    str = dasm_jnxro();
                     break;
                 case 0x1d:
-                    cycles = op_jnxrl();
+                    str = dasm_jnxrl();
                     break;
                 case 0x1e:
-                    cycles = op_jnatn();
+                    str = dasm_jnatn();
                     break;
                 case 0x1f:
-                    cycles = op_jnqmt();
+                    str = dasm_jnqmt();
                     break;
                 default:
                     // TODO: invalid D value
@@ -899,616 +728,1055 @@ quint32 P2Cog::decode()
                 }
             }
         } else {
-            cycles = op_1011110_1();
+            str = dasm_1011110_1();
         }
         break;
 
     case p2_1011111:
         if (IR.op.uc == 0) {
-            cycles = op_1011111_0();
+            str = dasm_1011111_0();
         } else {
-            cycles = op_setpat();
+            str = dasm_setpat();
         }
         break;
 
     case p2_1100000:
         if (IR.op.uc == 0) {
-            cycles = (IR.op.uz == 1 && IR.op.dst == 1) ? op_akpin()
-                                                       : op_wrpin();
+            str = (IR.op.uz == 1 && IR.op.dst == 1) ? dasm_akpin()
+                                                       : dasm_wrpin();
         } else {
-            cycles = op_wxpin();
+            str = dasm_wxpin();
         }
         break;
 
     case p2_1100001:
         if (IR.op.uc == 0) {
-            cycles = op_wypin();
+            str = dasm_wypin();
         } else {
-            cycles = op_wrlut();
+            str = dasm_wrlut();
         }
         break;
 
     case p2_1100010:
         if (IR.op.uc == 0) {
-            cycles = op_wrbyte();
+            str = dasm_wrbyte();
         } else {
-            cycles = op_wrword();
+            str = dasm_wrword();
         }
         break;
 
     case p2_1100011:
         if (IR.op.uc == 0) {
-            cycles = op_wrlong();
+            str = dasm_wrlong();
         } else {
-            cycles = op_rdfast();
+            str = dasm_rdfast();
         }
         break;
 
     case p2_1100100:
         if (IR.op.uc == 0) {
-            cycles = op_wrfast();
+            str = dasm_wrfast();
         } else {
-            cycles = op_fblock();
+            str = dasm_fblock();
         }
         break;
 
     case p2_1100101:
         if (IR.op.uc == 0) {
             if (IR.op.uz == 1 && IR.op.imm == 1 && IR.op.src == 0 && IR.op.dst == 0) {
-                cycles = op_xstop();
+                str = dasm_xstop();
             } else {
-                cycles = op_xinit();
+                str = dasm_xinit();
             }
         } else {
-            cycles = op_xzero();
+            str = dasm_xzero();
         }
         break;
 
     case p2_1100110:
         if (IR.op.uc == 0) {
-            cycles = op_xcont();
+            str = dasm_xcont();
         } else {
-            cycles = op_rep();
+            str = dasm_rep();
         }
         break;
 
     case p2_coginit:
-        cycles = op_coginit();
+        str = dasm_coginit();
         break;
 
     case p2_1101000:
         if (IR.op.uc == 0) {
-            cycles = op_qmul();
+            str = dasm_qmul();
         } else {
-            cycles = op_qdiv();
+            str = dasm_qdiv();
         }
         break;
 
     case p2_1101001:
         if (IR.op.uc == 0) {
-            cycles = op_qfrac();
+            str = dasm_qfrac();
         } else {
-            cycles = op_qsqrt();
+            str = dasm_qsqrt();
         }
         break;
 
     case p2_1101010:
         if (IR.op.uc == 0) {
-            cycles = op_qrotate();
+            str = dasm_qrotate();
         } else {
-            cycles = op_qvector();
+            str = dasm_qvector();
         }
         break;
 
     case p2_1101011:
         switch (IR.op.src) {
         case 0x00:
-            cycles = op_hubset();
+            str = dasm_hubset();
             break;
         case 0x01:
-            cycles = op_cogid();
+            str = dasm_cogid();
             break;
         case 0x03:
-            cycles = op_cogstop();
+            str = dasm_cogstop();
             break;
         case 0x04:
-            cycles = op_locknew();
+            str = dasm_locknew();
             break;
         case 0x05:
-            cycles = op_lockret();
+            str = dasm_lockret();
             break;
         case 0x06:
-            cycles = op_locktry();
+            str = dasm_locktry();
             break;
         case 0x07:
-            cycles = op_lockrel();
+            str = dasm_lockrel();
             break;
         case 0x0e:
-            cycles = op_qlog();
+            str = dasm_qlog();
             break;
         case 0x0f:
-            cycles = op_qexp();
+            str = dasm_qexp();
             break;
         case 0x10:
-            cycles = op_rfbyte();
+            str = dasm_rfbyte();
             break;
         case 0x11:
-            cycles = op_rfword();
+            str = dasm_rfword();
             break;
         case 0x12:
-            cycles = op_rflong();
+            str = dasm_rflong();
             break;
         case 0x13:
-            cycles = op_rfvar();
+            str = dasm_rfvar();
             break;
         case 0x14:
-            cycles = op_rfvars();
+            str = dasm_rfvars();
             break;
         case 0x15:
-            cycles = op_wfbyte();
+            str = dasm_wfbyte();
             break;
         case 0x16:
-            cycles = op_wfword();
+            str = dasm_wfword();
             break;
         case 0x17:
-            cycles = op_wflong();
+            str = dasm_wflong();
             break;
         case 0x18:
-            cycles = op_getqx();
+            str = dasm_getqx();
             break;
         case 0x19:
-            cycles = op_getqy();
+            str = dasm_getqy();
             break;
         case 0x1a:
-            cycles = op_getct();
+            str = dasm_getct();
             break;
         case 0x1b:
-            cycles = (IR.op.dst == 0) ? op_getrnd_cz()
-                                      : op_getrnd();
+            str = (IR.op.dst == 0) ? dasm_getrnd_cz()
+                                      : dasm_getrnd();
             break;
         case 0x1c:
-            cycles = op_setdacs();
+            str = dasm_setdacs();
             break;
         case 0x1d:
-            cycles = op_setxfrq();
+            str = dasm_setxfrq();
             break;
         case 0x1e:
-            cycles = op_getxacc();
+            str = dasm_getxacc();
             break;
         case 0x1f:
-            cycles = op_waitx();
+            str = dasm_waitx();
             break;
         case 0x20:
-            cycles = op_setse1();
+            str = dasm_setse1();
             break;
         case 0x21:
-            cycles = op_setse2();
+            str = dasm_setse2();
             break;
         case 0x22:
-            cycles = op_setse3();
+            str = dasm_setse3();
             break;
         case 0x23:
-            cycles = op_setse4();
+            str = dasm_setse4();
             break;
         case 0x24:
             switch (IR.op.dst) {
             case 0x00:
-                cycles = op_pollint();
+                str = dasm_pollint();
                 break;
             case 0x01:
-                cycles = op_pollct1();
+                str = dasm_pollct1();
                 break;
             case 0x02:
-                cycles = op_pollct2();
+                str = dasm_pollct2();
                 break;
             case 0x03:
-                cycles = op_pollct3();
+                str = dasm_pollct3();
                 break;
             case 0x04:
-                cycles = op_pollse1();
+                str = dasm_pollse1();
                 break;
             case 0x05:
-                cycles = op_pollse2();
+                str = dasm_pollse2();
                 break;
             case 0x06:
-                cycles = op_pollse3();
+                str = dasm_pollse3();
                 break;
             case 0x07:
-                cycles = op_pollse4();
+                str = dasm_pollse4();
                 break;
             case 0x08:
-                cycles = op_pollpat();
+                str = dasm_pollpat();
                 break;
             case 0x09:
-                cycles = op_pollfbw();
+                str = dasm_pollfbw();
                 break;
             case 0x0a:
-                cycles = op_pollxmt();
+                str = dasm_pollxmt();
                 break;
             case 0x0b:
-                cycles = op_pollxfi();
+                str = dasm_pollxfi();
                 break;
             case 0x0c:
-                cycles = op_pollxro();
+                str = dasm_pollxro();
                 break;
             case 0x0d:
-                cycles = op_pollxrl();
+                str = dasm_pollxrl();
                 break;
             case 0x0e:
-                cycles = op_pollatn();
+                str = dasm_pollatn();
                 break;
             case 0x0f:
-                cycles = op_pollqmt();
+                str = dasm_pollqmt();
                 break;
             case 0x10:
-                cycles = op_waitint();
+                str = dasm_waitint();
                 break;
             case 0x11:
-                cycles = op_waitct1();
+                str = dasm_waitct1();
                 break;
             case 0x12:
-                cycles = op_waitct2();
+                str = dasm_waitct2();
                 break;
             case 0x13:
-                cycles = op_waitct3();
+                str = dasm_waitct3();
                 break;
             case 0x14:
-                cycles = op_waitse1();
+                str = dasm_waitse1();
                 break;
             case 0x15:
-                cycles = op_waitse2();
+                str = dasm_waitse2();
                 break;
             case 0x16:
-                cycles = op_waitse3();
+                str = dasm_waitse3();
                 break;
             case 0x17:
-                cycles = op_waitse4();
+                str = dasm_waitse4();
                 break;
             case 0x18:
-                cycles = op_waitpat();
+                str = dasm_waitpat();
                 break;
             case 0x19:
-                cycles = op_waitfbw();
+                str = dasm_waitfbw();
                 break;
             case 0x1a:
-                cycles = op_waitxmt();
+                str = dasm_waitxmt();
                 break;
             case 0x1b:
-                cycles = op_waitxfi();
+                str = dasm_waitxfi();
                 break;
             case 0x1c:
-                cycles = op_waitxro();
+                str = dasm_waitxro();
                 break;
             case 0x1d:
-                cycles = op_waitxrl();
+                str = dasm_waitxrl();
                 break;
             case 0x1e:
-                cycles = op_waitatn();
+                str = dasm_waitatn();
                 break;
             case 0x20:
-                cycles = op_allowi();
+                str = dasm_allowi();
                 break;
             case 0x21:
-                cycles = op_stalli();
+                str = dasm_stalli();
                 break;
             case 0x22:
-                cycles = op_trgint1();
+                str = dasm_trgint1();
                 break;
             case 0x23:
-                cycles = op_trgint2();
+                str = dasm_trgint2();
                 break;
             case 0x24:
-                cycles = op_trgint3();
+                str = dasm_trgint3();
                 break;
             case 0x25:
-                cycles = op_nixint1();
+                str = dasm_nixint1();
                 break;
             case 0x26:
-                cycles = op_nixint2();
+                str = dasm_nixint2();
                 break;
             case 0x27:
-                cycles = op_nixint3();
+                str = dasm_nixint3();
                 break;
             }
             break;
         case 0x25:
-            cycles = op_setint1();
+            str = dasm_setint1();
             break;
         case 0x26:
-            cycles = op_setint2();
+            str = dasm_setint2();
             break;
         case 0x27:
-            cycles = op_setint3();
+            str = dasm_setint3();
             break;
         case 0x28:
-            cycles = op_setq();
+            str = dasm_setq();
             break;
         case 0x29:
-            cycles = op_setq2();
+            str = dasm_setq2();
             break;
         case 0x2a:
-            cycles = op_push();
+            str = dasm_push();
             break;
         case 0x2b:
-            cycles = op_pop();
+            str = dasm_pop();
             break;
         case 0x2c:
-            cycles = op_jmp();
+            str = dasm_jmp();
             break;
         case 0x2d:
-            cycles = (IR.op.imm == 0) ? op_call()
-                                      : op_ret();
+            str = (IR.op.imm == 0) ? dasm_call()
+                                      : dasm_ret();
             break;
         case 0x2e:
-            cycles = (IR.op.imm == 0) ? op_calla()
-                                      : op_reta();
+            str = (IR.op.imm == 0) ? dasm_calla()
+                                      : dasm_reta();
             break;
         case 0x2f:
-            cycles = (IR.op.imm == 0) ? op_callb()
-                                      : op_retb();
+            str = (IR.op.imm == 0) ? dasm_callb()
+                                      : dasm_retb();
             break;
         case 0x30:
-            cycles = op_jmprel();
+            str = dasm_jmprel();
             break;
         case 0x31:
-            cycles = op_skip();
+            str = dasm_skip();
             break;
         case 0x32:
-            cycles = op_skipf();
+            str = dasm_skipf();
             break;
         case 0x33:
-            cycles = op_execf();
+            str = dasm_execf();
             break;
         case 0x34:
-            cycles = op_getptr();
+            str = dasm_getptr();
             break;
         case 0x35:
-            cycles = (IR.op.uc == 0 && IR.op.uz == 0) ? op_cogbrk()
-                                                      : op_getbrk();
+            str = (IR.op.uc == 0 && IR.op.uz == 0) ? dasm_cogbrk()
+                                                      : dasm_getbrk();
             break;
         case 0x36:
-            cycles = op_brk();
+            str = dasm_brk();
             break;
         case 0x37:
-            cycles = op_setluts();
+            str = dasm_setluts();
             break;
         case 0x38:
-            cycles = op_setcy();
+            str = dasm_setcy();
             break;
         case 0x39:
-            cycles = op_setci();
+            str = dasm_setci();
             break;
         case 0x3a:
-            cycles = op_setcq();
+            str = dasm_setcq();
             break;
         case 0x3b:
-            cycles = op_setcfrq();
+            str = dasm_setcfrq();
             break;
         case 0x3c:
-            cycles = op_setcmod();
+            str = dasm_setcmod();
             break;
         case 0x3d:
-            cycles = op_setpiv();
+            str = dasm_setpiv();
             break;
         case 0x3e:
-            cycles = op_setpix();
+            str = dasm_setpix();
             break;
         case 0x3f:
-            cycles = op_cogatn();
+            str = dasm_cogatn();
             break;
         case 0x40:
-            cycles = (IR.op.uc == IR.op.uz) ? op_testp_w()
-                                            : op_dirl();
+            str = (IR.op.uc == IR.op.uz) ? dasm_testp_w()
+                                            : dasm_dirl();
             break;
         case 0x41:
-            cycles = (IR.op.uc == IR.op.uz) ? op_testpn_w()
-                                            : op_dirh();
+            str = (IR.op.uc == IR.op.uz) ? dasm_testpn_w()
+                                            : dasm_dirh();
             break;
         case 0x42:
-            cycles = (IR.op.uc == IR.op.uz) ? op_testp_and()
-                                            : op_dirc();
+            str = (IR.op.uc == IR.op.uz) ? dasm_testp_and()
+                                            : dasm_dirc();
             break;
         case 0x43:
-            cycles = (IR.op.uc == IR.op.uz) ? op_testpn_and()
-                                            : op_dirnc();
+            str = (IR.op.uc == IR.op.uz) ? dasm_testpn_and()
+                                            : dasm_dirnc();
             break;
         case 0x44:
-            cycles = (IR.op.uc == IR.op.uz) ? op_testp_or()
-                                            : op_dirz();
+            str = (IR.op.uc == IR.op.uz) ? dasm_testp_or()
+                                            : dasm_dirz();
             break;
         case 0x45:
-            cycles = (IR.op.uc == IR.op.uz) ? op_testpn_or()
-                                            : op_dirnz();
+            str = (IR.op.uc == IR.op.uz) ? dasm_testpn_or()
+                                            : dasm_dirnz();
             break;
         case 0x46:
-            cycles = (IR.op.uc == IR.op.uz) ? op_testp_xor()
-                                            : op_dirrnd();
+            str = (IR.op.uc == IR.op.uz) ? dasm_testp_xor()
+                                            : dasm_dirrnd();
             break;
         case 0x47:
-            cycles = (IR.op.uc == IR.op.uz) ? op_testpn_xor()
-                                            : op_dirnot();
+            str = (IR.op.uc == IR.op.uz) ? dasm_testpn_xor()
+                                            : dasm_dirnot();
             break;
         case 0x48:
-            cycles = op_outl();
+            str = dasm_outl();
             break;
         case 0x49:
-            cycles = op_outh();
+            str = dasm_outh();
             break;
         case 0x4a:
-            cycles = op_outc();
+            str = dasm_outc();
             break;
         case 0x4b:
-            cycles = op_outnc();
+            str = dasm_outnc();
             break;
         case 0x4c:
-            cycles = op_outz();
+            str = dasm_outz();
             break;
         case 0x4d:
-            cycles = op_outnz();
+            str = dasm_outnz();
             break;
         case 0x4e:
-            cycles = op_outrnd();
+            str = dasm_outrnd();
             break;
         case 0x4f:
-            cycles = op_outnot();
+            str = dasm_outnot();
             break;
         case 0x50:
-            cycles = op_fltl();
+            str = dasm_fltl();
             break;
         case 0x51:
-            cycles = op_flth();
+            str = dasm_flth();
             break;
         case 0x52:
-            cycles = op_fltc();
+            str = dasm_fltc();
             break;
         case 0x53:
-            cycles = op_fltnc();
+            str = dasm_fltnc();
             break;
         case 0x54:
-            cycles = op_fltz();
+            str = dasm_fltz();
             break;
         case 0x55:
-            cycles = op_fltnz();
+            str = dasm_fltnz();
             break;
         case 0x56:
-            cycles = op_fltrnd();
+            str = dasm_fltrnd();
             break;
         case 0x57:
-            cycles = op_fltnot();
+            str = dasm_fltnot();
             break;
         case 0x58:
-            cycles = op_drvl();
+            str = dasm_drvl();
             break;
         case 0x59:
-            cycles = op_drvh();
+            str = dasm_drvh();
             break;
         case 0x5a:
-            cycles = op_drvc();
+            str = dasm_drvc();
             break;
         case 0x5b:
-            cycles = op_drvnc();
+            str = dasm_drvnc();
             break;
         case 0x5c:
-            cycles = op_drvz();
+            str = dasm_drvz();
             break;
         case 0x5d:
-            cycles = op_drvnz();
+            str = dasm_drvnz();
             break;
         case 0x5e:
-            cycles = op_drvrnd();
+            str = dasm_drvrnd();
             break;
         case 0x5f:
-            cycles = op_drvnot();
+            str = dasm_drvnot();
             break;
         case 0x60:
-            cycles = op_splitb();
+            str = dasm_splitb();
             break;
         case 0x61:
-            cycles = op_mergeb();
+            str = dasm_mergeb();
             break;
         case 0x62:
-            cycles = op_splitw();
+            str = dasm_splitw();
             break;
         case 0x63:
-            cycles = op_mergew();
+            str = dasm_mergew();
             break;
         case 0x64:
-            cycles = op_seussf();
+            str = dasm_seussf();
             break;
         case 0x65:
-            cycles = op_seussr();
+            str = dasm_seussr();
             break;
         case 0x66:
-            cycles = op_rgbsqz();
+            str = dasm_rgbsqz();
             break;
         case 0x67:
-            cycles = op_rgbexp();
+            str = dasm_rgbexp();
             break;
         case 0x68:
-            cycles = op_xoro32();
+            str = dasm_xoro32();
             break;
         case 0x69:
-            cycles = op_rev();
+            str = dasm_rev();
             break;
         case 0x6a:
-            cycles = op_rczr();
+            str = dasm_rczr();
             break;
         case 0x6b:
-            cycles = op_rczl();
+            str = dasm_rczl();
             break;
         case 0x6c:
-            cycles = op_wrc();
+            str = dasm_wrc();
             break;
         case 0x6d:
-            cycles = op_wrnc();
+            str = dasm_wrnc();
             break;
         case 0x6e:
-            cycles = op_wrz();
+            str = dasm_wrz();
             break;
         case 0x6f:
-            cycles = op_wrnz();
+            str = dasm_wrnz();
             break;
         case 0x7f:
-            cycles = op_modcz();
+            str = dasm_modcz();
             break;
         }
         break;
 
     case p2_jmp_abs:
-        cycles = op_jmp_abs();
+        str = dasm_jmp_abs();
         break;
 
     case p2_call_abs:
-        cycles = op_call_abs();
+        str = dasm_call_abs();
         break;
 
     case p2_calla_abs:
-        cycles = op_calla_abs();
+        str = dasm_calla_abs();
         break;
 
     case p2_callb_abs:
-        cycles = op_callb_abs();
+        str = dasm_callb_abs();
         break;
 
     case p2_calld_pa_abs:
     case p2_calld_pb_abs:
     case p2_calld_ptra_abs:
     case p2_calld_ptrb_abs:
-        cycles = op_calld_abs();
+        str = dasm_calld_abs();
         break;
 
     case p2_loc_pa:
-        cycles = op_loc_pa();
+        str = dasm_loc_pa();
         break;
 
     case p2_loc_pb:
-        cycles = op_loc_pb();
+        str = dasm_loc_pb();
         break;
 
     case p2_loc_ptra:
-        cycles = op_loc_ptra();
+        str = dasm_loc_ptra();
         break;
 
     case p2_loc_ptrb:
-        cycles = op_loc_ptrb();
+        str = dasm_loc_ptrb();
         break;
 
     case p2_augs_00:
     case p2_augs_01:
     case p2_augs_10:
     case p2_augs_11:
-        cycles = op_augs();
+        str = dasm_augs();
         break;
 
     case p2_augd_00:
     case p2_augd_01:
     case p2_augd_10:
     case p2_augd_11:
-        cycles = op_augd();
+        str = dasm_augd();
         break;
     }
 
-    return cycles;
+    return str;
+}
+
+/**
+ * @brief format string for: EEEE xxxxxxx CZI DDDDDDDDD SSSSSSSSS
+ *
+ * @param inst instruction token (mnemonic)
+ * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
+ * @return formatted string
+ */
+QString P2Dasm::format_d_imm_s_cz(p2_token_e inst, p2_token_e with)
+{
+    const int pad_inst = -16;
+    const int pad_dst = -3;
+    const int pad_src = (IR.op.uc || IR.op.uz) ? -8 : -3;
+
+    QString str = QString("%1$%2, %3$%4")
+                  .arg(p2Token->str(inst), pad_inst)
+                  .arg(IR.op.dst, pad_dst, 16, QChar('0'))
+                  .arg(IR.op.imm ? "#" : "")
+                  .arg(IR.op.src, pad_src, 16, QChar('0'));
+
+    if (IR.op.uc || IR.op.uz) {
+        if (IR.op.uc && IR.op.uz) {
+            str += QString("%1%2")
+                   .arg(p2Token->str(with))
+                   .arg(p2Token->str(t_CZ));
+        } else if (IR.op.uz) {
+            str += QString("%1%2")
+                   .arg(p2Token->str(with))
+                   .arg(p2Token->str(t_Z));
+        } else {
+            str += QString("%1%2")
+                   .arg(p2Token->str(with))
+                   .arg(p2Token->str(t_C));
+        }
+    }
+    return str;
+}
+
+/**
+ * @brief format string for: EEEE xxxxxxx C0I DDDDDDDDD SSSSSSSSS
+ *
+ * @param inst instruction token (mnemonic)
+ * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
+ * @return formatted string
+ */
+QString P2Dasm::format_d_imm_s_c(p2_token_e inst, p2_token_e with)
+{
+    const int pad_inst = -16;
+    const int pad_dst = -3;
+    const int pad_src = IR.op.uc ? -8 : -3;
+    QString str = QString("%1$%2, %3$%4")
+                  .arg(p2Token->str(inst), pad_inst)
+                  .arg(IR.op.dst, pad_dst, 16, QChar('0'))
+                  .arg(IR.op.imm ? "#" : "")
+                  .arg(IR.op.src, pad_src, 16, QChar('0'));
+
+    if (IR.op.uc) {
+        str += QString(" %1%2")
+               .arg(p2Token->str(with))
+               .arg(p2Token->str(t_C));
+    }
+    return str;
+}
+
+/**
+ * @brief format string for: EEEE xxxxxxx 0ZI DDDDDDDDD SSSSSSSSS
+ *
+ * @param inst instruction token (mnemonic)
+ * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
+ * @return formatted string
+ */
+QString P2Dasm::format_d_imm_s_z(p2_token_e inst, p2_token_e with)
+{
+    const int pad_inst = -16;
+    const int pad_dst = -3;
+    const int pad_src = IR.op.uz ? -8 : -3;
+    QString str = QString("%1$%2, %3$%4")
+                  .arg(p2Token->str(inst), pad_inst)
+                  .arg(IR.op.dst, pad_dst, 16, QChar('0'))
+                  .arg(IR.op.imm ? "#" : "")                // I
+                  .arg(IR.op.src, pad_src, 16, QChar('0'));
+
+    if (IR.op.uz) {
+        str += QString(" %1%2")
+               .arg(p2Token->str(with))
+               .arg(p2Token->str(t_Z));
+    }
+    return str;
+}
+
+/**
+ * @brief format string for: EEEE xxxxxxx 0LI DDDDDDDDD SSSSSSSSS
+ *
+ * @param inst instruction token (mnemonic)
+ * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
+ * @return formatted string
+ */
+QString P2Dasm::format_wz_d_imm_s(p2_token_e inst)
+{
+    const int pad_inst = -16;
+    const int pad_dst = -3;
+    const int pad_src = -3;
+    QString str = QString("%1%2$%3, %4$%5")
+                  .arg(p2Token->str(inst), pad_inst)
+                  .arg(IR.op.uz ? "#" : "")                   // L
+                  .arg(IR.op.dst, pad_dst, 16, QChar('0'))
+                  .arg(IR.op.imm ? "#" : "")                  // I
+                  .arg(IR.op.src, pad_src, 16, QChar('0'));
+    return str;
+}
+
+/**
+ * @brief format string for: EEEE xxxxxxN NNI DDDDDDDDD SSSSSSSSS
+ *
+ * @param inst instruction token (mnemonic)
+ * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
+ * @return formatted string
+ */
+QString P2Dasm::format_d_imm_s_nnn(p2_token_e inst)
+{
+    const int pad_inst = -16;
+    const int pad_dst = -3;
+    const int pad_src = -3;
+    QString str = QString("%1$%2, %3$%4, #%5")
+                  .arg(p2Token->str(inst), pad_inst)
+                  .arg(IR.op.dst, pad_dst, 16, QChar('0'))
+                  .arg(IR.op.imm ? "#" : "")
+                  .arg(IR.op.src, pad_src, 16, QChar('0'))
+                  .arg((IR.op.inst & 1) * 4 + IR.op.uc * 2 + IR.op.uz);
+    return str;
+}
+
+/**
+ * @brief format string for: EEEE xxxxxxx 0NI DDDDDDDDD SSSSSSSSS
+ *
+ * @param inst instruction token (mnemonic)
+ * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
+ * @return formatted string
+ */
+QString P2Dasm::format_d_imm_s_n(p2_token_e inst)
+{
+    const int pad_inst = -16;
+    const int pad_dst = -3;
+    const int pad_src = -3;
+    QString str = QString("%1$%2, %3$%4, #%5")
+                  .arg(p2Token->str(inst), pad_inst)
+                  .arg(IR.op.dst, pad_dst, 16, QChar('0'))
+                  .arg(IR.op.imm ? "#" : "")
+                  .arg(IR.op.src, pad_src, 16, QChar('0'))
+                  .arg(IR.op.uz);
+    return str;
+}
+
+/**
+ * @brief format string for: EEEE xxxxxxx xxI DDDDDDDDD SSSSSSSSS
+ *
+ * @param inst instruction token (mnemonic)
+ * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
+ * @return formatted string
+ */
+QString P2Dasm::format_d_imm_s(p2_token_e inst)
+{
+    const int pad_inst = -16;
+    const int pad_dst = -3;
+    const int pad_src = -3;
+    QString str = QString("%1$%2, %3$%4")
+                  .arg(p2Token->str(inst), pad_inst)
+                  .arg(IR.op.dst, pad_dst, 16, QChar('0'))
+                  .arg(IR.op.imm ? "#" : "")
+                  .arg(IR.op.src, pad_src, 16, QChar('0'));
+    return str;
+}
+
+/**
+ * @brief format string for: EEEE xxxxxxx CZ0 DDDDDDDDD xxxxxxxxx
+ *
+ * @param inst instruction token (mnemonic)
+ * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
+ * @return formatted string
+ */
+QString P2Dasm::format_d_cz(p2_token_e inst, p2_token_e with)
+{
+    const int pad_inst = -16;
+    const int pad_dst = (IR.op.uc || IR.op.uz) ? -8 : -3;
+    QString str = QString("%1$%2, %3$%4")
+                  .arg(p2Token->str(inst), pad_inst)
+                  .arg(IR.op.dst, pad_dst, 16, QChar('0'));
+
+    if (IR.op.uc || IR.op.uz) {
+        if (IR.op.uc && IR.op.uz) {
+            str += QString("%1%2")
+                   .arg(p2Token->str(with))
+                   .arg(p2Token->str(t_CZ));
+        } else if (IR.op.uz) {
+            str += QString("%1%2")
+                   .arg(p2Token->str(with))
+                   .arg(p2Token->str(t_Z));
+        } else {
+            str += QString("%1%2")
+                   .arg(p2Token->str(with))
+                   .arg(p2Token->str(t_C));
+        }
+    }
+    return str;
+}
+
+/**
+ * @brief format string for: EEEE xxxxxxx CZx xxxxxxxxx xxxxxxxxx
+ *
+ * @param inst instruction token (mnemonic)
+ * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
+ * @return formatted string
+ */
+QString P2Dasm::format_cz(p2_token_e inst, p2_token_e with)
+{
+    const int pad_inst = -16;
+    QString str = QString("%1 ")
+                  .arg(p2Token->str(inst), pad_inst);
+
+    if (IR.op.uc || IR.op.uz) {
+        if (IR.op.uc && IR.op.uz) {
+            str += QString("%1%2")
+                   .arg(p2Token->str(with))
+                   .arg(p2Token->str(t_CZ));
+        } else if (IR.op.uz) {
+            str += QString("%1%2")
+                   .arg(p2Token->str(with))
+                   .arg(p2Token->str(t_Z));
+        } else {
+            str += QString("%1%2")
+                   .arg(p2Token->str(with))
+                   .arg(p2Token->str(t_C));
+        }
+    }
+    return str;
+}
+
+
+/**
+ * @brief format string for: EEEE xxxxxxx CZx 0cccczzzz xxxxxxxxx
+ *
+ * @param inst instruction token (mnemonic)
+ * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
+ * @return formatted string
+ */
+QString P2Dasm::format_cz_cz(p2_token_e inst, p2_token_e with)
+{
+    const int pad_inst = -16;
+    const int pad_cmod = -8;
+    const int pad_zmod = -8;
+
+    QString str = QString("%1 %2,%3")
+                  .arg(p2Token->str(inst), pad_inst)
+                  .arg(conditional((IR.op.dst >> 4) & 15), pad_cmod)
+                  .arg(conditional((IR.op.dst >> 0) & 15), pad_zmod);
+
+    if (IR.op.uc || IR.op.uz) {
+        if (IR.op.uc && IR.op.uz) {
+            str += QString("%1%2")
+                   .arg(p2Token->str(with))
+                   .arg(p2Token->str(t_CZ));
+        } else if (IR.op.uz) {
+            str += QString("%1%2")
+                   .arg(p2Token->str(with))
+                   .arg(p2Token->str(t_Z));
+        } else {
+            str += QString("%1%2")
+                   .arg(p2Token->str(with))
+                   .arg(p2Token->str(t_C));
+        }
+    }
+    return str;
+}
+
+/**
+ * @brief format string for: EEEE xxxxxxx xxx DDDDDDDDD xxxxxxxxx
+ *
+ * @param inst instruction token (mnemonic)
+ * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
+ * @return formatted string
+ */
+QString P2Dasm::format_d(p2_token_e inst)
+{
+    const int pad_inst = -16;
+    const int pad_dst = -3;
+    QString str = QString("%1%2$%3")
+                  .arg(p2Token->str(inst), pad_inst)
+                  .arg(IR.op.dst, pad_dst, 16, QChar('0'));
+    return str;
+}
+
+/**
+ * @brief format string for: EEEE xxxxxxx xLx DDDDDDDDD xxxxxxxxx
+ *
+ * @param inst instruction token (mnemonic)
+ * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
+ * @return formatted string
+ */
+QString P2Dasm::format_wz_d(p2_token_e inst)
+{
+    const int pad_inst = -16;
+    const int pad_dst = -3;
+    QString str = QString("%1%2$%3")
+                  .arg(p2Token->str(inst), pad_inst)
+                  .arg(IR.op.uz ? "#" : "")
+                  .arg(IR.op.dst, pad_dst, 16, QChar('0'));
+    return str;
+}
+
+/**
+ * @brief format string for: EEEE xxxxxxx xxL DDDDDDDDD xxxxxxxxx
+ *
+ * @param inst instruction token (mnemonic)
+ * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
+ * @return formatted string
+ */
+QString P2Dasm::format_imm_d(p2_token_e inst)
+{
+    const int pad_inst = -16;
+    const int pad_dst = -3;
+    QString str = QString("%1%2$%3")
+                  .arg(p2Token->str(inst), pad_inst)
+                  .arg(IR.op.imm ? "#" : "")
+                  .arg(IR.op.dst, pad_dst, 16, QChar('0'));
+    return str;
+}
+
+/**
+ * @brief format string for: EEEE xxxxxxx CZL DDDDDDDDD xxxxxxxxx
+ *
+ * @param inst instruction token (mnemonic)
+ * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
+ * @return formatted string
+ */
+QString P2Dasm::format_imm_d_cz(p2_token_e inst, p2_token_e with)
+{
+    const int pad_inst = -16;
+    const int pad_dst = (IR.op.uc || IR.op.uz) ? -8 : -3;
+    QString str = QString("%1%2$%3")
+                  .arg(p2Token->str(inst), pad_inst)
+                  .arg(IR.op.imm ? "#" : "")
+                  .arg(IR.op.dst, pad_dst, 16, QChar('0'));
+
+    if (IR.op.uc || IR.op.uz) {
+        if (IR.op.uc && IR.op.uz) {
+            str += QString("%1%2")
+                   .arg(p2Token->str(with))
+                   .arg(p2Token->str(t_CZ));
+        } else if (IR.op.uz) {
+            str += QString("%1%2")
+                   .arg(p2Token->str(with))
+                   .arg(p2Token->str(t_Z));
+        } else {
+            str += QString("%1%2")
+                   .arg(p2Token->str(with))
+                   .arg(p2Token->str(t_C));
+        }
+    }
+    return str;
+}
+
+/**
+ * @brief format string for: EEEE xxxxxxx CxL DDDDDDDDD xxxxxxxxx
+ *
+ * @param inst instruction token (mnemonic)
+ * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
+ * @return formatted string
+ */
+QString P2Dasm::format_imm_d_c(p2_token_e inst)
+{
+    const int pad_inst = -16;
+    const int pad_dst = IR.op.uc ? -8 : -3;
+    QString str = QString("%1%2$%3")
+                  .arg(p2Token->str(inst), pad_inst)
+                  .arg(IR.op.imm ? "#" : "")
+                  .arg(IR.op.dst, pad_dst, 16, QChar('0'));
+
+    if (IR.op.uc) {
+        str += p2Token->str(t_W);
+        str += p2Token->str(t_C);
+    }
+    return str;
+}
+
+/**
+ * @brief format string for: EEEE xxxxxxx xxL xxxxxxxxx SSSSSSSSS
+ *
+ * @param inst instruction token (mnemonic)
+ * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
+ * @return formatted string
+ */
+QString P2Dasm::format_imm_s(p2_token_e inst)
+{
+    const int pad_inst = -16;
+    const int pad_src = -3;
+    QString str = QString("%1%2$%3")
+            .arg(inst, pad_inst)
+            .arg(IR.op.imm ? "#" : "")
+            .arg(IR.op.src, pad_src, 16, QChar('0'));
+    return str;
+}
+
+/**
+ * @brief format string for: EEEE xxxxxxx RAA AAAAAAAAA AAAAAAAAA
+ *
+ * @param inst instruction token (mnemonic)
+ * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
+ * @return formatted string
+ */
+QString P2Dasm::format_pc_abs(p2_token_e inst, p2_token_e dst)
+{
+    const int pad_inst = -16;
+    const int pad_src = -14;
+    const quint32 addr = IR.word & ((1u << 20) - 1);
+    QString str = QString("%1%2%3$%4")
+                  .arg(inst, pad_inst)
+                  .arg(p2Token->str(dst))
+                  .arg(IR.op.uc ? "PC+" : "")
+                  .arg(addr, pad_src, 16, QChar('0'));
+    return str;
+}
+
+/**
+ * @brief format string for: EEEE xxxxxNN NNN NNNNNNNNN NNNNNNNNN
+ *
+ * @param inst instruction token (mnemonic)
+ * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
+ * @return formatted string
+ */
+QString P2Dasm::format_imm23(p2_token_e inst)
+{
+    const int pad_inst = -16;
+    const int pad_src = -5;
+    const quint32 nnnn = IR.word & ((1u << 23) - 1);
+    QString str = QString("%1#$%2")
+                  .arg(inst, pad_inst)
+                  .arg(nnnn, pad_src, 16, QChar('0'));
+    return str;
 }
 
 /**
@@ -1519,9 +1787,9 @@ quint32 P2Cog::decode()
  * NOP
  *
  */
-uint P2Cog::op_nop()
+QString P2Dasm::dasm_nop()
 {
-    return 2;
+    return p2Token->str(t_NOP);
 }
 
 /**
@@ -1535,18 +1803,11 @@ uint P2Cog::op_nop()
  * C = last bit shifted out if S[4:0] > 0, else D[0].
  * Z = (result == 0).
  */
-uint P2Cog::op_ror()
+QString P2Dasm::dasm_ror()
 {
     if (0 == IR.word)
-        return op_nop();
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const quint64 accu = U64(D) << 32 | U64(D);
-    const quint32 result = U32L(accu >> shift);
-    updateC((D & (LSB << shift)) != 0);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+        return dasm_nop();
+    return format_d_imm_s_cz(t_ROR);
 }
 
 /**
@@ -1560,16 +1821,9 @@ uint P2Cog::op_ror()
  * C = last bit shifted out if S[4:0] > 0, else D[31].
  * Z = (result == 0).
  */
-uint P2Cog::op_rol()
+QString P2Dasm::dasm_rol()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const quint64 accu = U64(D) << 32 | U64(D);
-    const quint32 result = U32H(accu << shift);
-    updateC((D & (MSB >> shift)) != 0);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_ROL);
 }
 
 /**
@@ -1583,16 +1837,9 @@ uint P2Cog::op_rol()
  * C = last bit shifted out if S[4:0] > 0, else D[0].
  * Z = (result == 0).
  */
-uint P2Cog::op_shr()
+QString P2Dasm::dasm_shr()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const quint64 accu = U64(D);
-    const quint32 result = U32L(accu >> shift);
-    updateC((D & (LSB << shift)) != 0);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_SHR);
 }
 
 /**
@@ -1606,16 +1853,9 @@ uint P2Cog::op_shr()
  * C = last bit shifted out if S[4:0] > 0, else D[31].
  * Z = (result == 0).
  */
-uint P2Cog::op_shl()
+QString P2Dasm::dasm_shl()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const quint64 accu = U64(D) << 32;
-    const quint32 result = U32H(accu << shift);
-    updateC((D & (MSB >> shift)) != 0);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_SHL);
 }
 
 /**
@@ -1629,16 +1869,9 @@ uint P2Cog::op_shl()
  * C = last bit shifted out if S[4:0] > 0, else D[0].
  * Z = (result == 0).
  */
-uint P2Cog::op_rcr()
+QString P2Dasm::dasm_rcr()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const quint64 accu = U64(D) | C ? HMAX : 0;
-    const quint32 result = U32L(accu >> shift);
-    updateC((D & (LSB << shift)) != 0);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_RCR);
 }
 
 /**
@@ -1652,16 +1885,9 @@ uint P2Cog::op_rcr()
  * C = last bit shifted out if S[4:0] > 0, else D[31].
  * Z = (result == 0).
  */
-uint P2Cog::op_rcl()
+QString P2Dasm::dasm_rcl()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const quint64 accu = U64(D) << 32 | C ? LMAX : 0;
-    const quint32 result = U32H(accu << shift);
-    updateC((D & (MSB >> shift)) != 0);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_RCL);
 }
 
 /**
@@ -1675,16 +1901,9 @@ uint P2Cog::op_rcl()
  * C = last bit shifted out if S[4:0] > 0, else D[0].
  * Z = (result == 0).
  */
-uint P2Cog::op_sar()
+QString P2Dasm::dasm_sar()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const quint64 accu = U64(D) | (D & MSB) ? HMAX : 0;
-    const quint32 result = U32L(accu >> shift);
-    updateC((D & (LSB << shift)) != 0);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_SAR);
 }
 
 /**
@@ -1698,16 +1917,9 @@ uint P2Cog::op_sar()
  * C = last bit shifted out if S[4:0] > 0, else D[31].
  * Z = (result == 0).
  */
-uint P2Cog::op_sal()
+QString P2Dasm::dasm_sal()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const quint64 accu = U64(D) << 32 | (D & LSB) ? LMAX : 0;
-    const quint32 result = U32H(accu << shift);
-    updateC((D & (MSB >> shift)) != 0);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_SAL);
 }
 
 /**
@@ -1721,15 +1933,9 @@ uint P2Cog::op_sal()
  * C = carry of (D + S).
  * Z = (result == 0).
  */
-uint P2Cog::op_add()
+QString P2Dasm::dasm_add()
 {
-    augmentS(IR.op.imm);
-    const quint64 accu = U64(D) + U64(S);
-    const quint32 result = U32L(accu);
-    updateC((accu >> 32) & 1);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_ADD);
 }
 
 /**
@@ -1743,15 +1949,9 @@ uint P2Cog::op_add()
  * C = carry of (D + S + C).
  * Z = Z AND (result == 0).
  */
-uint P2Cog::op_addx()
+QString P2Dasm::dasm_addx()
 {
-    augmentS(IR.op.imm);
-    const quint64 accu = U64(D) + U64(S) + C;
-    const quint32 result = U32L(accu);
-    updateC((accu >> 32) & 1);
-    updateZ(Z & (result == 0));
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_ADDX);
 }
 
 /**
@@ -1765,16 +1965,9 @@ uint P2Cog::op_addx()
  * C = correct sign of (D + S).
  * Z = (result == 0).
  */
-uint P2Cog::op_adds()
+QString P2Dasm::dasm_adds()
 {
-    augmentS(IR.op.imm);
-    const bool sign = (S32(D) ^ S32(S)) < 0;
-    const qint64 accu = SX64(D) + SX64(S);
-    const quint32 result = U32L(accu);
-    updateC((accu < 0) ^ sign);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_ADDS);
 }
 
 /**
@@ -1788,16 +1981,9 @@ uint P2Cog::op_adds()
  * C = correct sign of (D + S + C).
  * Z = Z AND (result == 0).
  */
-uint P2Cog::op_addsx()
+QString P2Dasm::dasm_addsx()
 {
-    augmentS(IR.op.imm);
-    const uchar sign = (D ^ (S + C)) >> 31;
-    const qint64 accu = SX64(D) + SX64(S) + C;
-    const quint32 result = U32L(accu);
-    updateC((accu < 0) ^ sign);
-    updateZ(Z & (result == 0));
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_ADDSX);
 }
 
 /**
@@ -1811,15 +1997,9 @@ uint P2Cog::op_addsx()
  * C = borrow of (D - S).
  * Z = (result == 0).
  */
-uint P2Cog::op_sub()
+QString P2Dasm::dasm_sub()
 {
-    augmentS(IR.op.imm);
-    const quint64 accu = U64(D) - U64(S);
-    const quint32 result = U32L(accu);
-    updateC((accu >> 32) & 1);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_SUB);
 }
 
 /**
@@ -1833,15 +2013,9 @@ uint P2Cog::op_sub()
  * C = borrow of (D - (S + C)).
  * Z = Z AND (result == 0).
  */
-uint P2Cog::op_subx()
+QString P2Dasm::dasm_subx()
 {
-    augmentS(IR.op.imm);
-    const quint64 accu = U64(D) - (U64(S) + C);
-    const quint32 result = U32L(accu);
-    updateC((accu >> 32) & 1);
-    updateZ(Z & (result == 0));
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_SUBX);
 }
 
 /**
@@ -1855,16 +2029,9 @@ uint P2Cog::op_subx()
  * C = correct sign of (D - S).
  * Z = (result == 0).
  */
-uint P2Cog::op_subs()
+QString P2Dasm::dasm_subs()
 {
-    augmentS(IR.op.imm);
-    const bool sign = (S32(D) ^ S32(S)) < 0;
-    const qint64 accu = SX64(D) - SX64(S);
-    const quint32 result = U32L(accu);
-    updateC((accu < 0) ^ sign);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_SUBS);
 }
 
 /**
@@ -1878,16 +2045,9 @@ uint P2Cog::op_subs()
  * C = correct sign of (D - (S + C)).
  * Z = Z AND (result == 0).
  */
-uint P2Cog::op_subsx()
+QString P2Dasm::dasm_subsx()
 {
-    augmentS(IR.op.imm);
-    const uchar sign = (D ^ (S + C)) >> 31;
-    const qint64 accu = SX64(D) - (SX64(S) + C);
-    const quint32 result = U32L(accu);
-    updateC((accu < 0) ^ sign);
-    updateZ(Z & (result == 0));
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_SUBSX);
 }
 
 /**
@@ -1900,14 +2060,9 @@ uint P2Cog::op_subsx()
  * C = borrow of (D - S).
  * Z = (D == S).
  */
-uint P2Cog::op_cmp()
+QString P2Dasm::dasm_cmp()
 {
-    augmentS(IR.op.imm);
-    const quint64 accu = U64(D) - U64(S);
-    const quint32 result = U32L(accu);
-    updateC((accu >> 32) & 1);
-    updateZ(result == 0);
-    return 2;
+    return format_d_imm_s_cz(t_CMP);
 }
 
 /**
@@ -1920,14 +2075,9 @@ uint P2Cog::op_cmp()
  * C = borrow of (D - (S + C)).
  * Z = Z AND (D == S + C).
  */
-uint P2Cog::op_cmpx()
+QString P2Dasm::dasm_cmpx()
 {
-    augmentS(IR.op.imm);
-    const quint64 accu = U64(D) - (U64(S) + C);
-    const quint32 result = U32L(accu);
-    updateC((accu >> 32) & 1);
-    updateZ(Z & (result == 0));
-    return 2;
+    return format_d_imm_s_cz(t_CMPX);
 }
 
 /**
@@ -1940,15 +2090,9 @@ uint P2Cog::op_cmpx()
  * C = correct sign of (D - S).
  * Z = (D == S).
  */
-uint P2Cog::op_cmps()
+QString P2Dasm::dasm_cmps()
 {
-    augmentS(IR.op.imm);
-    const bool sign = (S32(D) ^ S32(S)) < 0;
-    const qint64 accu = SX64(D) - SX64(S);
-    const quint32 result = U32L(accu);
-    updateC((accu < 0) ^ sign);
-    updateZ(result == 0);
-    return 2;
+    return format_d_imm_s_cz(t_CMPS);
 }
 
 /**
@@ -1961,15 +2105,9 @@ uint P2Cog::op_cmps()
  * C = correct sign of (D - (S + C)).
  * Z = Z AND (D == S + C).
  */
-uint P2Cog::op_cmpsx()
+QString P2Dasm::dasm_cmpsx()
 {
-    augmentS(IR.op.imm);
-    const uchar sign = (D ^ (S + C)) >> 31;
-    const qint64 accu = SX64(D) - (SX64(S) + C);
-    const quint32 result = U32L(accu);
-    updateC((accu < 0) ^ sign);
-    updateZ(Z & (result == 0));
-    return 2;
+    return format_d_imm_s_cz(t_CMPSX);
 }
 
 /**
@@ -1982,14 +2120,9 @@ uint P2Cog::op_cmpsx()
  * C = borrow of (S - D).
  * Z = (D == S).
  */
-uint P2Cog::op_cmpr()
+QString P2Dasm::dasm_cmpr()
 {
-    augmentS(IR.op.imm);
-    const quint64 accu = U64(S) - U64(D);
-    const quint32 result = U32L(accu);
-    updateC((accu >> 32) & 1);
-    updateZ(result == 0);
-    return 2;
+    return format_d_imm_s_cz(t_CMPR);
 }
 
 /**
@@ -2002,14 +2135,9 @@ uint P2Cog::op_cmpr()
  * C = MSB of (D - S).
  * Z = (D == S).
  */
-uint P2Cog::op_cmpm()
+QString P2Dasm::dasm_cmpm()
 {
-    augmentS(IR.op.imm);
-    const quint64 accu = U64(D) - U64(S);
-    const quint32 result = U32L(accu);
-    updateC((accu >> 31) & 1);
-    updateZ(result == 0);
-    return 2;
+    return format_d_imm_s_cz(t_CMPM);
 }
 
 /**
@@ -2023,15 +2151,9 @@ uint P2Cog::op_cmpm()
  * C = borrow of (S - D).
  * Z = (result == 0).
  */
-uint P2Cog::op_subr()
+QString P2Dasm::dasm_subr()
 {
-    augmentS(IR.op.imm);
-    const quint64 accu = U64(S) - U64(D);
-    const quint32 result = U32L(accu);
-    updateC((accu >> 32) & 1);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_SUBR);
 }
 
 /**
@@ -2044,23 +2166,9 @@ uint P2Cog::op_subr()
  * If D => S then D = D - S and C = 1, else D same and C = 0.
  * Z = (result == 0).
  */
-uint P2Cog::op_cmpsub()
+QString P2Dasm::dasm_cmpsub()
 {
-    augmentS(IR.op.imm);
-    if (D < S) {
-        // Do not change D
-        const quint32 result = D;
-        updateC(0);
-        updateZ(result == 0);
-    } else {
-        // Do the subtract and set C = 1, if WC is set
-        const quint64 accu = U64(D) - U64(S);
-        const quint32 result = U32L(accu);
-        updateC(1);
-        updateZ(result == 0);
-        updateD(result);
-    }
-    return 2;
+    return format_d_imm_s_cz(t_CMPSUB);
 }
 
 /**
@@ -2073,20 +2181,9 @@ uint P2Cog::op_cmpsub()
  * If D < S then D = S and C = 1, else D same and C = 0.
  * Z = (result == 0).
  */
-uint P2Cog::op_fge()
+QString P2Dasm::dasm_fge()
 {
-    augmentS(IR.op.imm);
-    if (D < S) {
-        const quint32 result = S;
-        updateC(1);
-        updateZ(result == 0);
-        updateD(result);
-    } else {
-        const quint32 result = D;
-        updateC(0);
-        updateZ(result == 0);
-    }
-    return 2;
+    return format_d_imm_s_cz(t_FGE);
 }
 
 /**
@@ -2099,20 +2196,9 @@ uint P2Cog::op_fge()
  * If D > S then D = S and C = 1, else D same and C = 0.
  * Z = (result == 0).
  */
-uint P2Cog::op_fle()
+QString P2Dasm::dasm_fle()
 {
-    augmentS(IR.op.imm);
-    if (D > S) {
-        const quint32 result = S;
-        updateC(1);
-        updateZ(result == 0);
-        updateD(result);
-    } else {
-        const quint32 result = D;
-        updateC(0);
-        updateZ(result == 0);
-    }
-    return 2;
+    return format_d_imm_s_cz(t_FLE);
 }
 
 /**
@@ -2125,20 +2211,9 @@ uint P2Cog::op_fle()
  * If D < S then D = S and C = 1, else D same and C = 0.
  * Z = (result == 0).
  */
-uint P2Cog::op_fges()
+QString P2Dasm::dasm_fges()
 {
-    augmentS(IR.op.imm);
-    if (S32(D) < S32(S)) {
-        const quint32 result = S;
-        updateC(1);
-        updateZ(result == 0);
-        updateD(result);
-    } else {
-        const quint32 result = D;
-        updateC(0);
-        updateZ(result == 0);
-    }
-    return 2;
+    return format_d_imm_s_cz(t_FGES);
 }
 
 /**
@@ -2151,20 +2226,9 @@ uint P2Cog::op_fges()
  * If D > S then D = S and C = 1, else D same and C = 0.
  * Z = (result == 0).
  */
-uint P2Cog::op_fles()
+QString P2Dasm::dasm_fles()
 {
-    augmentS(IR.op.imm);
-    if (S32(D) > S32(S)) {
-        const quint32 result = S;
-        updateC(1);
-        updateZ(result == 0);
-        updateD(result);
-    } else {
-        const quint32 result = D;
-        updateC(0);
-        updateZ(result == 0);
-    }
-    return 2;
+    return format_d_imm_s_cz(t_FLES);
 }
 
 /**
@@ -2178,16 +2242,9 @@ uint P2Cog::op_fles()
  * C = correct sign of (D +/- S).
  * Z = (result == 0).
  */
-uint P2Cog::op_sumc()
+QString P2Dasm::dasm_sumc()
 {
-    augmentS(IR.op.imm);
-    const bool sign = (S32(D) ^ S32(S)) < 0;
-    const quint64 accu = C ? U64(D) - U64(S) : U64(D) + U64(S);
-    const quint32 result = U32L(accu);
-    updateC(((accu >> 32) & 1) ^ sign);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_SUMC);
 }
 
 /**
@@ -2201,16 +2258,9 @@ uint P2Cog::op_sumc()
  * C = correct sign of (D +/- S).
  * Z = (result == 0).
  */
-uint P2Cog::op_sumnc()
+QString P2Dasm::dasm_sumnc()
 {
-    augmentS(IR.op.imm);
-    const bool sign = (S32(D) ^ S32(S)) < 0;
-    const quint64 accu = !C ? U64(D) - U64(S) : U64(D) + U64(S);
-    const quint32 result = U32L(accu);
-    updateC(((accu >> 32) & 1) ^ sign);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_SUMNC);
 }
 
 /**
@@ -2224,16 +2274,9 @@ uint P2Cog::op_sumnc()
  * C = correct sign of (D +/- S).
  * Z = (result == 0).
  */
-uint P2Cog::op_sumz()
+QString P2Dasm::dasm_sumz()
 {
-    augmentS(IR.op.imm);
-    const bool sign = (S32(D) ^ S32(S)) < 0;
-    const quint64 accu = Z ? U64(D) - U64(S) : U64(D) + U64(S);
-    const quint32 result = U32L(accu);
-    updateC(((accu >> 32) & 1) ^ sign);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_SUMZ);
 }
 
 /**
@@ -2247,16 +2290,9 @@ uint P2Cog::op_sumz()
  * C = correct sign of (D +/- S).
  * Z = (result == 0).
  */
-uint P2Cog::op_sumnz()
+QString P2Dasm::dasm_sumnz()
 {
-    augmentS(IR.op.imm);
-    const bool sign = (S32(D) ^ S32(S)) < 0;
-    const quint64 accu = !Z ? U64(D) - U64(S) : U64(D) + U64(S);
-    const quint32 result = U32L(accu);
-    updateC(((accu >> 32) & 1) ^ sign);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_SUMNZ);
 }
 
 /**
@@ -2268,14 +2304,9 @@ uint P2Cog::op_sumnz()
  *
  * C/Z =          D[S[4:0]].
  */
-uint P2Cog::op_testb_w()
+QString P2Dasm::dasm_testb_w()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const uchar bit = (D >> shift) & 1;
-    updateC(bit);
-    updateZ(bit);
-    return 2;
+    return format_d_imm_s_cz(t_TESTB);
 }
 
 /**
@@ -2287,14 +2318,9 @@ uint P2Cog::op_testb_w()
  *
  * C/Z =         !D[S[4:0]].
  */
-uint P2Cog::op_testbn_w()
+QString P2Dasm::dasm_testbn_w()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const uchar bit = (~D >> shift) & 1;
-    updateC(bit);
-    updateZ(bit);
-    return 2;
+    return format_d_imm_s_cz(t_TESTBN);
 }
 
 /**
@@ -2306,14 +2332,9 @@ uint P2Cog::op_testbn_w()
  *
  * C/Z = C/Z AND  D[S[4:0]].
  */
-uint P2Cog::op_testb_and()
+QString P2Dasm::dasm_testb_and()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const uchar bit = (D >> shift) & 1;
-    updateC(C & bit);
-    updateZ(Z & bit);
-    return 2;
+    return format_d_imm_s_cz(t_TESTB, t_AND);
 }
 
 /**
@@ -2325,14 +2346,9 @@ uint P2Cog::op_testb_and()
  *
  * C/Z = C/Z AND !D[S[4:0]].
  */
-uint P2Cog::op_testbn_and()
+QString P2Dasm::dasm_testbn_and()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const uchar bit = (~D >> shift) & 1;
-    updateC(C & bit);
-    updateZ(Z & bit);
-    return 2;
+    return format_d_imm_s_cz(t_TESTNB, t_AND);
 }
 
 /**
@@ -2344,14 +2360,9 @@ uint P2Cog::op_testbn_and()
  *
  * C/Z = C/Z OR   D[S[4:0]].
  */
-uint P2Cog::op_testb_or()
+QString P2Dasm::dasm_testb_or()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const uchar bit = (D >> shift) & 1;
-    updateC(C | bit);
-    updateZ(Z | bit);
-    return 2;
+    return format_d_imm_s_cz(t_TESTB, t_OR);
 }
 
 /**
@@ -2363,14 +2374,9 @@ uint P2Cog::op_testb_or()
  *
  * C/Z = C/Z OR  !D[S[4:0]].
  */
-uint P2Cog::op_testbn_or()
+QString P2Dasm::dasm_testbn_or()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const uchar bit = (~D >> shift) & 1;
-    updateC(C | bit);
-    updateZ(Z | bit);
-    return 2;
+    return format_d_imm_s_cz(t_TESTNB, t_OR);
 }
 
 /**
@@ -2382,14 +2388,9 @@ uint P2Cog::op_testbn_or()
  *
  * C/Z = C/Z XOR  D[S[4:0]].
  */
-uint P2Cog::op_testb_xor()
+QString P2Dasm::dasm_testb_xor()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const uchar bit = (D >> shift) & 1;
-    updateC(C ^ bit);
-    updateZ(Z ^ bit);
-    return 2;
+    return format_d_imm_s_cz(t_TESTB, t_XOR);
 }
 
 /**
@@ -2401,14 +2402,9 @@ uint P2Cog::op_testb_xor()
  *
  * C/Z = C/Z XOR !D[S[4:0]].
  */
-uint P2Cog::op_testbn_xor()
+QString P2Dasm::dasm_testbn_xor()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const uchar bit = (~D >> shift) & 1;
-    updateC(C ^ bit);
-    updateZ(Z ^ bit);
-    return 2;
+    return format_d_imm_s_cz(t_TESTBN, t_XOR);
 }
 
 /**
@@ -2419,15 +2415,9 @@ uint P2Cog::op_testbn_xor()
  * BITL    D,{#}S         {WCZ}
  *
  */
-uint P2Cog::op_bitl()
+QString P2Dasm::dasm_bitl()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const quint32 bit = LSB << shift;
-    const quint32 result = D & ~bit;
-    updateC((result >> shift) & 1);
-    updateZ((result >> shift) & 1);
-    return 2;
+    return format_d_imm_s_cz(t_BITL);
 }
 
 /**
@@ -2438,15 +2428,9 @@ uint P2Cog::op_bitl()
  * BITH    D,{#}S         {WCZ}
  *
  */
-uint P2Cog::op_bith()
+QString P2Dasm::dasm_bith()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const quint32 bit = LSB << shift;
-    const quint32 result = D | bit;
-    updateC((result >> shift) & 1);
-    updateZ((result >> shift) & 1);
-    return 2;
+    return format_d_imm_s_cz(t_BITH);
 }
 
 /**
@@ -2457,15 +2441,9 @@ uint P2Cog::op_bith()
  * BITC    D,{#}S         {WCZ}
  *
  */
-uint P2Cog::op_bitc()
+QString P2Dasm::dasm_bitc()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const quint32 bit = LSB << shift;
-    const quint32 result = C ? D | bit : D & ~bit;
-    updateC((result >> shift) & 1);
-    updateZ((result >> shift) & 1);
-    return 2;
+    return format_d_imm_s_cz(t_BITC);
 }
 
 /**
@@ -2476,15 +2454,9 @@ uint P2Cog::op_bitc()
  * BITNC   D,{#}S         {WCZ}
  *
  */
-uint P2Cog::op_bitnc()
+QString P2Dasm::dasm_bitnc()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const quint32 bit = LSB << shift;
-    const quint32 result = !C ? D | bit : D & ~bit;
-    updateC((result >> shift) & 1);
-    updateZ((result >> shift) & 1);
-    return 2;
+    return format_d_imm_s_cz(t_BITNC);
 }
 
 /**
@@ -2495,15 +2467,9 @@ uint P2Cog::op_bitnc()
  * BITZ    D,{#}S         {WCZ}
  *
  */
-uint P2Cog::op_bitz()
+QString P2Dasm::dasm_bitz()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const quint32 bit = LSB << shift;
-    const quint32 result = Z ? D | bit : D & ~bit;
-    updateC((result >> shift) & 1);
-    updateZ((result >> shift) & 1);
-    return 2;
+    return format_d_imm_s_cz(t_BITZ);
 }
 
 /**
@@ -2514,15 +2480,9 @@ uint P2Cog::op_bitz()
  * BITNZ   D,{#}S         {WCZ}
  *
  */
-uint P2Cog::op_bitnz()
+QString P2Dasm::dasm_bitnz()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const quint32 bit = LSB << shift;
-    const quint32 result = !Z ? D | bit : D & ~bit;
-    updateC((result >> shift) & 1);
-    updateZ((result >> shift) & 1);
-    return 2;
+    return format_d_imm_s_cz(t_BITNZ);
 }
 
 /**
@@ -2533,15 +2493,9 @@ uint P2Cog::op_bitnz()
  * BITRND  D,{#}S         {WCZ}
  *
  */
-uint P2Cog::op_bitrnd()
+QString P2Dasm::dasm_bitrnd()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const quint32 bit = LSB << shift;
-    const quint32 result = (rnd() & LSB) ? D | bit : D & ~bit;
-    updateC((result >> shift) & 1);
-    updateZ((result >> shift) & 1);
-    return 2;
+    return format_d_imm_s_cz(t_BITRND);
 }
 
 /**
@@ -2552,15 +2506,9 @@ uint P2Cog::op_bitrnd()
  * BITNOT  D,{#}S         {WCZ}
  *
  */
-uint P2Cog::op_bitnot()
+QString P2Dasm::dasm_bitnot()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const quint32 bit = LSB << shift;
-    const quint32 result = D ^ bit;
-    updateC((result >> shift) & 1);
-    updateZ((result >> shift) & 1);
-    return 2;
+    return format_d_imm_s_cz(t_BITNOT);
 }
 
 /**
@@ -2574,13 +2522,9 @@ uint P2Cog::op_bitnot()
  * C = parity of result.
  * Z = (result == 0).
  */
-uint P2Cog::op_and()
+QString P2Dasm::dasm_and()
 {
-    augmentS(IR.op.imm);
-    const quint32 result = D & S;
-    updateC(parity(result));
-    updateZ(result == 0);
-    return 2;
+    return format_d_imm_s_cz(t_AND);
 }
 
 /**
@@ -2594,13 +2538,9 @@ uint P2Cog::op_and()
  * C = parity of result.
  * Z = (result == 0).
  */
-uint P2Cog::op_andn()
+QString P2Dasm::dasm_andn()
 {
-    augmentS(IR.op.imm);
-    const quint32 result = D & ~S;
-    updateC(parity(result));
-    updateZ(result == 0);
-    return 2;
+    return format_d_imm_s_cz(t_ANDN);
 }
 
 /**
@@ -2614,13 +2554,9 @@ uint P2Cog::op_andn()
  * C = parity of result.
  * Z = (result == 0).
  */
-uint P2Cog::op_or()
+QString P2Dasm::dasm_or()
 {
-    augmentS(IR.op.imm);
-    const quint32 result = D | S;
-    updateC(parity(result));
-    updateZ(result == 0);
-    return 2;
+    return format_d_imm_s_cz(t_OR);
 }
 
 /**
@@ -2634,13 +2570,9 @@ uint P2Cog::op_or()
  * C = parity of result.
  * Z = (result == 0).
  */
-uint P2Cog::op_xor()
+QString P2Dasm::dasm_xor()
 {
-    augmentS(IR.op.imm);
-    const quint32 result = D ^ S;
-    updateC(parity(result));
-    updateZ(result == 0);
-    return 2;
+    return format_d_imm_s_cz(t_XOR);
 }
 
 /**
@@ -2654,13 +2586,9 @@ uint P2Cog::op_xor()
  * C = parity of result.
  * Z = (result == 0).
  */
-uint P2Cog::op_muxc()
+QString P2Dasm::dasm_muxc()
 {
-    augmentS(IR.op.imm);
-    const quint32 result = (D & ~S) | (C ? S : 0);
-    updateC(parity(result));
-    updateZ(result == 0);
-    return 2;
+    return format_d_imm_s_cz(t_MUXC);
 }
 
 /**
@@ -2674,13 +2602,9 @@ uint P2Cog::op_muxc()
  * C = parity of result.
  * Z = (result == 0).
  */
-uint P2Cog::op_muxnc()
+QString P2Dasm::dasm_muxnc()
 {
-    augmentS(IR.op.imm);
-    const quint32 result = (D & ~S) | (!C ? S : 0);
-    updateC(parity(result));
-    updateZ(result == 0);
-    return 2;
+    return format_d_imm_s_cz(t_MUXNC);
 }
 
 /**
@@ -2694,13 +2618,9 @@ uint P2Cog::op_muxnc()
  * C = parity of result.
  * Z = (result == 0).
  */
-uint P2Cog::op_muxz()
+QString P2Dasm::dasm_muxz()
 {
-    augmentS(IR.op.imm);
-    const quint32 result = (D & ~S) | (Z ? S : 0);
-    updateC(parity(result));
-    updateZ(result == 0);
-    return 2;
+    return format_d_imm_s_cz(t_MUXZ);
 }
 
 /**
@@ -2714,13 +2634,9 @@ uint P2Cog::op_muxz()
  * C = parity of result.
  * Z = (result == 0).
  */
-uint P2Cog::op_muxnz()
+QString P2Dasm::dasm_muxnz()
 {
-    augmentS(IR.op.imm);
-    const quint32 result = (D & ~S) | (!Z ? S : 0);
-    updateC(parity(result));
-    updateZ(result == 0);
-    return 2;
+    return format_d_imm_s_cz(t_MUXNZ);
 }
 
 /**
@@ -2734,14 +2650,9 @@ uint P2Cog::op_muxnz()
  * C = S[31].
  * Z = (result == 0).
  */
-uint P2Cog::op_mov()
+QString P2Dasm::dasm_mov()
 {
-    augmentS(IR.op.imm);
-    const quint32 result = S;
-    updateC(result >> 31);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_MOV);
 }
 
 /**
@@ -2755,14 +2666,9 @@ uint P2Cog::op_mov()
  * C = !S[31].
  * Z = (result == 0).
  */
-uint P2Cog::op_not()
+QString P2Dasm::dasm_not()
 {
-    augmentS(IR.op.imm);
-    const quint32 result = ~S;
-    updateC(result >> 31);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_NOT);
 }
 
 /**
@@ -2776,14 +2682,9 @@ uint P2Cog::op_not()
  * C = S[31].
  * Z = (result == 0).
  */
-uint P2Cog::op_abs()
+QString P2Dasm::dasm_abs()
 {
-    augmentS(IR.op.imm);
-    const qint32 result = qAbs(S32(S));
-    updateC(S >> 31);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_ABS);
 }
 
 /**
@@ -2797,14 +2698,9 @@ uint P2Cog::op_abs()
  * C = MSB of result.
  * Z = (result == 0).
  */
-uint P2Cog::op_neg()
+QString P2Dasm::dasm_neg()
 {
-    augmentS(IR.op.imm);
-    const qint32 result = 0 - S32(S);
-    updateC(result >> 31);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_NEG);
 }
 
 /**
@@ -2818,14 +2714,9 @@ uint P2Cog::op_neg()
  * C = MSB of result.
  * Z = (result == 0).
  */
-uint P2Cog::op_negc()
+QString P2Dasm::dasm_negc()
 {
-    augmentS(IR.op.imm);
-    const qint32 result = C ? 0 - S32(S) : S32(32);
-    updateC(result >> 31);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_NEGC);
 }
 
 /**
@@ -2839,14 +2730,9 @@ uint P2Cog::op_negc()
  * C = MSB of result.
  * Z = (result == 0).
  */
-uint P2Cog::op_negnc()
+QString P2Dasm::dasm_negnc()
 {
-    augmentS(IR.op.imm);
-    const qint32 result = !C ? 0 - S32(S) : S32(32);
-    updateC(result >> 31);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_NEGNC);
 }
 
 /**
@@ -2860,14 +2746,9 @@ uint P2Cog::op_negnc()
  * C = MSB of result.
  * Z = (result == 0).
  */
-uint P2Cog::op_negz()
+QString P2Dasm::dasm_negz()
 {
-    augmentS(IR.op.imm);
-    const qint32 result = Z ? 0 - S32(S) : S32(32);
-    updateC(result >> 31);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_NEGZ);
 }
 
 /**
@@ -2881,14 +2762,9 @@ uint P2Cog::op_negz()
  * C = MSB of result.
  * Z = (result == 0).
  */
-uint P2Cog::op_negnz()
+QString P2Dasm::dasm_negnz()
 {
-    augmentS(IR.op.imm);
-    const qint32 result = !Z ? 0 - S32(S) : S32(32);
-    updateC(result >> 31);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_NEGNZ);
 }
 
 /**
@@ -2901,14 +2777,9 @@ uint P2Cog::op_negnz()
  * If D = S then D = 0 and C = 1, else D = D + 1 and C = 0.
  * Z = (result == 0).
  */
-uint P2Cog::op_incmod()
+QString P2Dasm::dasm_incmod()
 {
-    augmentS(IR.op.imm);
-    const quint32 result = (D == S) ? 0 : D + 1;
-    updateC(result == 0);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_INCMOD);
 }
 
 /**
@@ -2921,14 +2792,9 @@ uint P2Cog::op_incmod()
  * If D = 0 then D = S and C = 1, else D = D - 1 and C = 0.
  * Z = (result == 0).
  */
-uint P2Cog::op_decmod()
+QString P2Dasm::dasm_decmod()
 {
-    augmentS(IR.op.imm);
-    const quint32 result = (D == 0) ? S : D - 1;
-    updateC(result == S);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_DECMOD);
 }
 
 /**
@@ -2941,17 +2807,9 @@ uint P2Cog::op_decmod()
  * C = MSB of result.
  * Z = (result == 0).
  */
-uint P2Cog::op_zerox()
+QString P2Dasm::dasm_zerox()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const quint32 msb = (D >> (shift - 1)) & 1;
-    const quint32 mask = 0xffffffffu << shift;
-    const quint32 result = D & ~mask;
-    updateC(msb);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_ZEROX);
 }
 
 /**
@@ -2964,17 +2822,9 @@ uint P2Cog::op_zerox()
  * C = MSB of result.
  * Z = (result == 0).
  */
-uint P2Cog::op_signx()
+QString P2Dasm::dasm_signx()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const quint32 msb = (D >> (shift - 1)) & 1;
-    const quint32 mask = 0xffffffffu << shift;
-    const quint32 result = msb ? D | mask : D & ~mask;
-    updateC(msb);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_SIGNX);
 }
 
 /**
@@ -2988,14 +2838,9 @@ uint P2Cog::op_signx()
  * C = (S != 0).
  * Z = (result == 0).
  */
-uint P2Cog::op_encod()
+QString P2Dasm::dasm_encod()
 {
-    augmentS(IR.op.imm);
-    const quint32 result = msbit(S);
-    updateC(S != 0);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_cz(t_ENCOD);
 }
 
 /**
@@ -3009,13 +2854,9 @@ uint P2Cog::op_encod()
  * C = LSB of result.
  * Z = (result == 0).
  */
-uint P2Cog::op_ones()
+QString P2Dasm::dasm_ones()
 {
-    augmentS(IR.op.imm);
-    const quint32 result = ones(S);
-    updateC(result & 1);
-    updateZ(result == 0);
-    return 2;
+    return format_d_imm_s_cz(t_ONES);
 }
 
 /**
@@ -3028,13 +2869,9 @@ uint P2Cog::op_ones()
  * C = parity of (D & S).
  * Z = ((D & S) == 0).
  */
-uint P2Cog::op_test()
+QString P2Dasm::dasm_test()
 {
-    augmentS(IR.op.imm);
-    const quint32 result = D & S;
-    updateC(parity(result));
-    updateZ(result == 0);
-    return 2;
+    return format_d_imm_s_cz(t_TEST);
 }
 
 /**
@@ -3047,13 +2884,9 @@ uint P2Cog::op_test()
  * C = parity of (D & !S).
  * Z = ((D & !S) == 0).
  */
-uint P2Cog::op_testn()
+QString P2Dasm::dasm_testn()
 {
-    augmentS(IR.op.imm);
-    const quint32 result = D & ~S;
-    updateC(parity(result));
-    updateZ(result == 0);
-    return 2;
+    return format_d_imm_s_cz(t_TESTN);
 }
 
 /**
@@ -3064,14 +2897,9 @@ uint P2Cog::op_testn()
  * SETNIB  D,{#}S,#N
  *
  */
-uint P2Cog::op_setnib()
+QString P2Dasm::dasm_setnib()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = static_cast<uchar>((IR.word >> 19) & 7) * 4;
-    const quint32 mask = LNIBBLE << shift;
-    const quint32 result = (D & ~mask) | ((S << shift) & mask);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_nnn(t_SETNIB);
 }
 
 /**
@@ -3082,10 +2910,9 @@ uint P2Cog::op_setnib()
  * SETNIB  {#}S
  *
  */
-uint P2Cog::op_setnib_altsn()
+QString P2Dasm::dasm_setnib_altsn()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_SETNIB);
 }
 
 /**
@@ -3098,13 +2925,9 @@ uint P2Cog::op_setnib_altsn()
  * D = {28'b0, S.
  * NIBBLE[N]).
  */
-uint P2Cog::op_getnib()
+QString P2Dasm::dasm_getnib()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = static_cast<uchar>((IR.word >> 19) & 7) * 4;
-    const quint32 result = (S >> shift) & LNIBBLE;
-    updateD(result);
-    return 2;
+    return format_d_imm_s_nnn(t_GETNIB);
 }
 
 /**
@@ -3115,10 +2938,9 @@ uint P2Cog::op_getnib()
  * GETNIB  D
  *
  */
-uint P2Cog::op_getnib_altgn()
+QString P2Dasm::dasm_getnib_altgn()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_GETNIB);
 }
 
 /**
@@ -3130,13 +2952,9 @@ uint P2Cog::op_getnib_altgn()
  *
  * D = {D[27:0], S.NIBBLE[N]).
  */
-uint P2Cog::op_rolnib()
+QString P2Dasm::dasm_rolnib()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = static_cast<uchar>((IR.word >> 19) & 7) * 4;
-    const quint32 result = (D << 4) | ((S >> shift) & LNIBBLE);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_nnn(t_ROLNIB);
 }
 
 /**
@@ -3147,10 +2965,9 @@ uint P2Cog::op_rolnib()
  * ROLNIB  D
  *
  */
-uint P2Cog::op_rolnib_altgn()
+QString P2Dasm::dasm_rolnib_altgn()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d(t_ROLNIB);
 }
 
 /**
@@ -3161,14 +2978,9 @@ uint P2Cog::op_rolnib_altgn()
  * SETBYTE D,{#}S,#N
  *
  */
-uint P2Cog::op_setbyte()
+QString P2Dasm::dasm_setbyte()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = static_cast<uchar>((IR.word >> 19) & 3) * 8;
-    const quint32 mask = LBYTE << shift;
-    const quint32 result = (D & ~mask) | ((S << shift) & mask);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_nnn(t_SETBYTE);
 }
 
 /**
@@ -3179,10 +2991,9 @@ uint P2Cog::op_setbyte()
  * SETBYTE {#}S
  *
  */
-uint P2Cog::op_setbyte_altsb()
+QString P2Dasm::dasm_setbyte_altsb()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_SETBYTE);
 }
 
 /**
@@ -3194,13 +3005,9 @@ uint P2Cog::op_setbyte_altsb()
  *
  * D = {24'b0, S.BYTE[N]).
  */
-uint P2Cog::op_getbyte()
+QString P2Dasm::dasm_getbyte()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = static_cast<uchar>((IR.word >> 19) & 3) * 8;
-    const quint32 result = (S >> shift) & LBYTE;
-    updateD(result);
-    return 2;
+    return format_d_imm_s_nnn(t_GETBYTE);
 }
 
 /**
@@ -3211,10 +3018,9 @@ uint P2Cog::op_getbyte()
  * GETBYTE D
  *
  */
-uint P2Cog::op_getbyte_altgb()
+QString P2Dasm::dasm_getbyte_altgb()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d(t_GETBYTE);
 }
 
 /**
@@ -3226,13 +3032,9 @@ uint P2Cog::op_getbyte_altgb()
  *
  * D = {D[23:0], S.BYTE[N]).
  */
-uint P2Cog::op_rolbyte()
+QString P2Dasm::dasm_rolbyte()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = static_cast<uchar>((IR.word >> 19) & 3) * 8;
-    const quint32 result = (D << 8) | ((S >> shift) & LBYTE);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_nnn(t_ROLBYTE);
 }
 
 /**
@@ -3243,10 +3045,9 @@ uint P2Cog::op_rolbyte()
  * ROLBYTE D
  *
  */
-uint P2Cog::op_rolbyte_altgb()
+QString P2Dasm::dasm_rolbyte_altgb()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d(t_ROLBYTE);
 }
 
 /**
@@ -3257,14 +3058,9 @@ uint P2Cog::op_rolbyte_altgb()
  * SETWORD D,{#}S,#N
  *
  */
-uint P2Cog::op_setword()
+QString P2Dasm::dasm_setword()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = IR.op.uz ? 16 : 0;
-    const quint32 mask = LWORD << shift;
-    const quint32 result = (D & ~mask) | ((S >> shift) & mask);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_n(t_SETWORD);
 }
 
 /**
@@ -3275,10 +3071,9 @@ uint P2Cog::op_setword()
  * SETWORD {#}S
  *
  */
-uint P2Cog::op_setword_altsw()
+QString P2Dasm::dasm_setword_altsw()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_SETWORD);
 }
 
 /**
@@ -3290,13 +3085,9 @@ uint P2Cog::op_setword_altsw()
  *
  * D = {16'b0, S.WORD[N]).
  */
-uint P2Cog::op_getword()
+QString P2Dasm::dasm_getword()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = IR.op.uz * 16;
-    const quint32 result = (S >> shift) & LWORD;
-    updateD(result);
-    return 2;
+    return format_d_imm_s_n(t_GETWORD);
 }
 
 /**
@@ -3307,9 +3098,9 @@ uint P2Cog::op_getword()
  * GETWORD D
  *
  */
-uint P2Cog::op_getword_altgw()
+QString P2Dasm::dasm_getword_altgw()
 {
-    return 2;
+    return format_imm_s(t_GETWORD);
 }
 
 /**
@@ -3321,13 +3112,9 @@ uint P2Cog::op_getword_altgw()
  *
  * D = {D[15:0], S.WORD[N]).
  */
-uint P2Cog::op_rolword()
+QString P2Dasm::dasm_rolword()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = IR.op.uz * 16;
-    const quint32 result = (D << 16) & ((S >> shift) & LWORD);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_n(t_ROLWORD);
 }
 
 /**
@@ -3338,9 +3125,9 @@ uint P2Cog::op_rolword()
  * ROLWORD D
  *
  */
-uint P2Cog::op_rolword_altgw()
+QString P2Dasm::dasm_rolword_altgw()
 {
-    return 2;
+    return format_d(t_ROLWORD);
 }
 
 /**
@@ -3353,10 +3140,9 @@ uint P2Cog::op_rolword_altgw()
  * Next D field = (D[11:3] + S) & $1FF, N field = D[2:0].
  * D += sign-extended S[17:9].
  */
-uint P2Cog::op_altsn()
+QString P2Dasm::dasm_altsn()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_ALTSN);
 }
 
 /**
@@ -3368,9 +3154,9 @@ uint P2Cog::op_altsn()
  *
  * Next D field = D[11:3], N field = D[2:0].
  */
-uint P2Cog::op_altsn_d()
+QString P2Dasm::dasm_altsn_d()
 {
-    return 2;
+    return format_d(t_ALTSN);
 }
 
 /**
@@ -3383,10 +3169,9 @@ uint P2Cog::op_altsn_d()
  * Next S field = (D[11:3] + S) & $1FF, N field = D[2:0].
  * D += sign-extended S[17:9].
  */
-uint P2Cog::op_altgn()
+QString P2Dasm::dasm_altgn()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_ALTGN);
 }
 
 /**
@@ -3398,9 +3183,9 @@ uint P2Cog::op_altgn()
  *
  * Next S field = D[11:3], N field = D[2:0].
  */
-uint P2Cog::op_altgn_d()
+QString P2Dasm::dasm_altgn_d()
 {
-    return 2;
+    return format_d(t_ALTGN);
 }
 
 /**
@@ -3413,10 +3198,9 @@ uint P2Cog::op_altgn_d()
  * Next D field = (D[10:2] + S) & $1FF, N field = D[1:0].
  * D += sign-extended S[17:9].
  */
-uint P2Cog::op_altsb()
+QString P2Dasm::dasm_altsb()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_ALTSB);
 }
 
 /**
@@ -3428,9 +3212,9 @@ uint P2Cog::op_altsb()
  *
  * Next D field = D[10:2], N field = D[1:0].
  */
-uint P2Cog::op_altsb_d()
+QString P2Dasm::dasm_altsb_d()
 {
-    return 2;
+    return format_d(t_ALTSB);
 }
 
 /**
@@ -3443,10 +3227,9 @@ uint P2Cog::op_altsb_d()
  * Next S field = (D[10:2] + S) & $1FF, N field = D[1:0].
  * D += sign-extended S[17:9].
  */
-uint P2Cog::op_altgb()
+QString P2Dasm::dasm_altgb()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_ALTGB);
 }
 
 /**
@@ -3458,9 +3241,9 @@ uint P2Cog::op_altgb()
  *
  * Next S field = D[10:2], N field = D[1:0].
  */
-uint P2Cog::op_altgb_d()
+QString P2Dasm::dasm_altgb_d()
 {
-    return 2;
+    return format_d(t_ALTGB);
 }
 
 /**
@@ -3473,10 +3256,9 @@ uint P2Cog::op_altgb_d()
  * Next D field = (D[9:1] + S) & $1FF, N field = D[0].
  * D += sign-extended S[17:9].
  */
-uint P2Cog::op_altsw()
+QString P2Dasm::dasm_altsw()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_ALTSW);
 }
 
 /**
@@ -3488,9 +3270,9 @@ uint P2Cog::op_altsw()
  *
  * Next D field = D[9:1], N field = D[0].
  */
-uint P2Cog::op_altsw_d()
+QString P2Dasm::dasm_altsw_d()
 {
-    return 2;
+    return format_d(t_ALTSW);
 }
 
 /**
@@ -3503,10 +3285,9 @@ uint P2Cog::op_altsw_d()
  * Next S field = ((D[9:1] + S) & $1FF), N field = D[0].
  * D += sign-extended S[17:9].
  */
-uint P2Cog::op_altgw()
+QString P2Dasm::dasm_altgw()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_ALTGW);
 }
 
 /**
@@ -3518,9 +3299,9 @@ uint P2Cog::op_altgw()
  *
  * Next S field = D[9:1], N field = D[0].
  */
-uint P2Cog::op_altgw_d()
+QString P2Dasm::dasm_altgw_d()
 {
-    return 2;
+    return format_d(t_ALTGW);
 }
 
 /**
@@ -3532,10 +3313,9 @@ uint P2Cog::op_altgw_d()
  *
  * D += sign-extended S[17:9].
  */
-uint P2Cog::op_altr()
+QString P2Dasm::dasm_altr()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_ALTR);
 }
 
 /**
@@ -3546,9 +3326,9 @@ uint P2Cog::op_altr()
  * ALTR    D
  *
  */
-uint P2Cog::op_altr_d()
+QString P2Dasm::dasm_altr_d()
 {
-    return 2;
+    return format_d(t_ALTD);
 }
 
 /**
@@ -3560,10 +3340,9 @@ uint P2Cog::op_altr_d()
  *
  * D += sign-extended S[17:9].
  */
-uint P2Cog::op_altd()
+QString P2Dasm::dasm_altd()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_ALTD);
 }
 
 /**
@@ -3574,9 +3353,9 @@ uint P2Cog::op_altd()
  * ALTD    D
  *
  */
-uint P2Cog::op_altd_d()
+QString P2Dasm::dasm_altd_d()
 {
-    return 2;
+    return format_d(t_ALTD);
 }
 
 /**
@@ -3588,10 +3367,9 @@ uint P2Cog::op_altd_d()
  *
  * D += sign-extended S[17:9].
  */
-uint P2Cog::op_alts()
+QString P2Dasm::dasm_alts()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_ALTS);
 }
 
 /**
@@ -3602,9 +3380,9 @@ uint P2Cog::op_alts()
  * ALTS    D
  *
  */
-uint P2Cog::op_alts_d()
+QString P2Dasm::dasm_alts_d()
 {
-    return 2;
+    return format_d(t_ALTS);
 }
 
 /**
@@ -3616,10 +3394,9 @@ uint P2Cog::op_alts_d()
  *
  * D += sign-extended S[17:9].
  */
-uint P2Cog::op_altb()
+QString P2Dasm::dasm_altb()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_ALTB);
 }
 
 /**
@@ -3630,9 +3407,9 @@ uint P2Cog::op_altb()
  * ALTB    D
  *
  */
-uint P2Cog::op_altb_d()
+QString P2Dasm::dasm_altb_d()
 {
-    return 2;
+    return format_d(t_ALTB);
 }
 
 /**
@@ -3644,10 +3421,9 @@ uint P2Cog::op_altb_d()
  *
  * Modify D per S.
  */
-uint P2Cog::op_alti()
+QString P2Dasm::dasm_alti()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_ALTI);
 }
 
 /**
@@ -3659,9 +3435,9 @@ uint P2Cog::op_alti()
  *
  * D stays same.
  */
-uint P2Cog::op_alti_d()
+QString P2Dasm::dasm_alti_d()
 {
-    return 2;
+    return format_d(t_ALTI);
 }
 
 /**
@@ -3673,10 +3449,9 @@ uint P2Cog::op_alti_d()
  *
  * D = {D[31:28], S[8:0], D[18:0]}.
  */
-uint P2Cog::op_setr()
+QString P2Dasm::dasm_setr()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_SETR);
 }
 
 /**
@@ -3688,10 +3463,9 @@ uint P2Cog::op_setr()
  *
  * D = {D[31:18], S[8:0], D[8:0]}.
  */
-uint P2Cog::op_setd()
+QString P2Dasm::dasm_setd()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_SETD);
 }
 
 /**
@@ -3703,10 +3477,9 @@ uint P2Cog::op_setd()
  *
  * D = {D[31:9], S[8:0]}.
  */
-uint P2Cog::op_sets()
+QString P2Dasm::dasm_sets()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_SETS);
 }
 
 /**
@@ -3718,13 +3491,9 @@ uint P2Cog::op_sets()
  *
  * D = 1 << S[4:0].
  */
-uint P2Cog::op_decod()
+QString P2Dasm::dasm_decod()
 {
-    augmentS(IR.op.imm);
-    const uchar shift = S & 31;
-    const quint32 result = LSB << shift;
-    updateD(result);
-    return 2;
+    return format_d_imm_s(t_DECOD);
 }
 
 /**
@@ -3736,9 +3505,9 @@ uint P2Cog::op_decod()
  *
  * D = 1 << D[4:0].
  */
-uint P2Cog::op_decod_d()
+QString P2Dasm::dasm_decod_d()
 {
-    return 2;
+    return format_d(t_DECOD);
 }
 
 /**
@@ -3750,10 +3519,9 @@ uint P2Cog::op_decod_d()
  *
  * D = ($0000_0002 << S[4:0]) - 1.
  */
-uint P2Cog::op_bmask()
+QString P2Dasm::dasm_bmask()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_BMASK);
 }
 
 /**
@@ -3765,9 +3533,9 @@ uint P2Cog::op_bmask()
  *
  * D = ($0000_0002 << D[4:0]) - 1.
  */
-uint P2Cog::op_bmask_d()
+QString P2Dasm::dasm_bmask_d()
 {
-    return 2;
+    return format_d(t_BMASK);
 }
 
 /**
@@ -3779,10 +3547,9 @@ uint P2Cog::op_bmask_d()
  *
  * If (C XOR D[0]) then D = (D >> 1) XOR S, else D = (D >> 1).
  */
-uint P2Cog::op_crcbit()
+QString P2Dasm::dasm_crcbit()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_CRCBIT);
 }
 
 /**
@@ -3796,10 +3563,9 @@ uint P2Cog::op_crcbit()
  * Q = Q << 4.
  * Use SETQ+CRCNIB+CRCNIB+CRCNIB.
  */
-uint P2Cog::op_crcnib()
+QString P2Dasm::dasm_crcnib()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_CRCNIB);
 }
 
 /**
@@ -3810,13 +3576,9 @@ uint P2Cog::op_crcnib()
  * MUXNITS D,{#}S
  *
  */
-uint P2Cog::op_muxnits()
+QString P2Dasm::dasm_muxnits()
 {
-    augmentS(IR.op.imm);
-    const quint32 mask = S | ((S & 0xaaaaaaaa) >> 1) | ((S & 0x55555555) << 1);
-    const quint32 result = (D & ~mask) | (S & mask);
-    updateD(result);
-    return 2;
+    return format_d_imm_s(t_MUXNITS);
 }
 
 /**
@@ -3827,14 +3589,9 @@ uint P2Cog::op_muxnits()
  * MUXNIBS D,{#}S
  *
  */
-uint P2Cog::op_muxnibs()
+QString P2Dasm::dasm_muxnibs()
 {
-    augmentS(IR.op.imm);
-    const quint32 mask0 = S | ((S & 0xaaaaaaaa) >> 1) | ((S & 0x55555555) << 1);
-    const quint32 mask1 = ((mask0 & 0xcccccccc) >> 2) | ((mask0 & 0x33333333) << 2);
-    const quint32 result = (D & ~mask1) | (S & mask1);
-    updateD(result);
-    return 2;
+    return format_d_imm_s(t_MUXNIBS);
 }
 
 /**
@@ -3847,12 +3604,9 @@ uint P2Cog::op_muxnibs()
  * For each '1' bit in Q, copy the corresponding bit in S into D.
  * D = (D & !Q) | (S & Q).
  */
-uint P2Cog::op_muxq()
+QString P2Dasm::dasm_muxq()
 {
-    augmentS(IR.op.imm);
-    const quint32 result = (D & ~Q) | (S & Q);
-    updateD(result);
-    return 2;
+    return format_d_imm_s(t_MUXQ);
 }
 
 /**
@@ -3864,20 +3618,9 @@ uint P2Cog::op_muxq()
  *
  * D = {D.BYTE[S[7:6]], D.BYTE[S[5:4]], D.BYTE[S[3:2]], D.BYTE[S[1:0]]}.
  */
-uint P2Cog::op_movbyts()
+QString P2Dasm::dasm_movbyts()
 {
-    augmentS(IR.op.imm);
-    union {
-        quint32 word;
-        quint8 bytes[4];
-    }   s, d;
-    s.word = D;
-    d.bytes[0] = s.bytes[(S >> 0) & 3];
-    d.bytes[1] = s.bytes[(S >> 2) & 3];
-    d.bytes[2] = s.bytes[(S >> 4) & 3];
-    d.bytes[3] = s.bytes[(S >> 6) & 3];
-    updateD(d.word);
-    return 2;
+    return format_d_imm_s(t_MOVBYTS);
 }
 
 /**
@@ -3889,13 +3632,9 @@ uint P2Cog::op_movbyts()
  *
  * Z = (S == 0) | (D == 0).
  */
-uint P2Cog::op_mul()
+QString P2Dasm::dasm_mul()
 {
-    augmentS(IR.op.imm);
-    const quint32 result = U16(D) * U16(S);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_z(t_MUL);
 }
 
 /**
@@ -3907,13 +3646,9 @@ uint P2Cog::op_mul()
  *
  * Z = (S == 0) | (D == 0).
  */
-uint P2Cog::op_muls()
+QString P2Dasm::dasm_muls()
 {
-    augmentS(IR.op.imm);
-    const qint32 result = S16(D) * S16(S);
-    updateZ(result == 0);
-    updateD(result);
-    return 2;
+    return format_d_imm_s_z(t_MULS);
 }
 
 /**
@@ -3925,13 +3660,9 @@ uint P2Cog::op_muls()
  *
  * Z = (result == 0).
  */
-uint P2Cog::op_sca()
+QString P2Dasm::dasm_sca()
 {
-    augmentS(IR.op.imm);
-    const quint32 result = (U16(D) * U16(S)) >> 16;
-    updateZ(result == 0);
-    S_next = result;
-    return 2;
+    return format_d_imm_s_z(t_SCA);
 }
 
 /**
@@ -3944,13 +3675,9 @@ uint P2Cog::op_sca()
  * In this scheme, $4000 = 1.0 and $C000 = -1.0.
  * Z = (result == 0).
  */
-uint P2Cog::op_scas()
+QString P2Dasm::dasm_scas()
 {
-    augmentS(IR.op.imm);
-    const qint32 result = (S16(D) * S16(S)) >> 14;
-    updateZ(result == 0);
-    S_next = result;
-    return 2;
+    return format_d_imm_s_z(t_SCAS);
 }
 
 /**
@@ -3961,10 +3688,9 @@ uint P2Cog::op_scas()
  * ADDPIX  D,{#}S
  *
  */
-uint P2Cog::op_addpix()
+QString P2Dasm::dasm_addpix()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_ADDPIX);
 }
 
 /**
@@ -3976,10 +3702,9 @@ uint P2Cog::op_addpix()
  *
  * 0.
  */
-uint P2Cog::op_mulpix()
+QString P2Dasm::dasm_mulpix()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_MULPIX);
 }
 
 /**
@@ -3990,10 +3715,9 @@ uint P2Cog::op_mulpix()
  * BLNPIX  D,{#}S
  *
  */
-uint P2Cog::op_blnpix()
+QString P2Dasm::dasm_blnpix()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_BLNPIX);
 }
 
 /**
@@ -4004,10 +3728,9 @@ uint P2Cog::op_blnpix()
  * MIXPIX  D,{#}S
  *
  */
-uint P2Cog::op_mixpix()
+QString P2Dasm::dasm_mixpix()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_MIXPIX);
 }
 
 /**
@@ -4019,10 +3742,9 @@ uint P2Cog::op_mixpix()
  *
  * Adds S into D.
  */
-uint P2Cog::op_addct1()
+QString P2Dasm::dasm_addct1()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_ADDCT1);
 }
 
 /**
@@ -4034,10 +3756,9 @@ uint P2Cog::op_addct1()
  *
  * Adds S into D.
  */
-uint P2Cog::op_addct2()
+QString P2Dasm::dasm_addct2()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_ADDCT2);
 }
 
 /**
@@ -4049,10 +3770,9 @@ uint P2Cog::op_addct2()
  *
  * Adds S into D.
  */
-uint P2Cog::op_addct3()
+QString P2Dasm::dasm_addct3()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_ADDCT3);
 }
 
 /**
@@ -4064,10 +3784,9 @@ uint P2Cog::op_addct3()
  *
  * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  */
-uint P2Cog::op_wmlong()
+QString P2Dasm::dasm_wmlong()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_WMLONG);
 }
 
 /**
@@ -4079,10 +3798,9 @@ uint P2Cog::op_wmlong()
  *
  * C = modal result.
  */
-uint P2Cog::op_rqpin()
+QString P2Dasm::dasm_rqpin()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s_c(t_RQPIN);
 }
 
 /**
@@ -4094,10 +3812,9 @@ uint P2Cog::op_rqpin()
  *
  * C = modal result.
  */
-uint P2Cog::op_rdpin()
+QString P2Dasm::dasm_rdpin()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s_c(t_RDPIN);
 }
 
 /**
@@ -4110,10 +3827,9 @@ uint P2Cog::op_rdpin()
  * C = MSB of data.
  * Z = (result == 0).
  */
-uint P2Cog::op_rdlut()
+QString P2Dasm::dasm_rdlut()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s_cz(t_RDLUT);
 }
 
 /**
@@ -4126,10 +3842,9 @@ uint P2Cog::op_rdlut()
  * C = MSB of byte.
  * Z = (result == 0).
  */
-uint P2Cog::op_rdbyte()
+QString P2Dasm::dasm_rdbyte()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s_cz(t_RDBYTE);
 }
 
 /**
@@ -4142,10 +3857,9 @@ uint P2Cog::op_rdbyte()
  * C = MSB of word.
  * Z = (result == 0).
  */
-uint P2Cog::op_rdword()
+QString P2Dasm::dasm_rdword()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s_cz(t_RDWORD);
 }
 
 /**
@@ -4158,10 +3872,9 @@ uint P2Cog::op_rdword()
  * C = MSB of long.
  * *   Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  */
-uint P2Cog::op_rdlong()
+QString P2Dasm::dasm_rdlong()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s_cz(t_RDLONG);
 }
 
 /**
@@ -4174,9 +3887,9 @@ uint P2Cog::op_rdlong()
  * C = MSB of long.
  * Z = (result == 0).
  */
-uint P2Cog::op_popa()
+QString P2Dasm::dasm_popa()
 {
-    return 2;
+    return format_d_imm_s_cz(t_POPA);
 }
 
 /**
@@ -4189,9 +3902,9 @@ uint P2Cog::op_popa()
  * C = MSB of long.
  * Z = (result == 0).
  */
-uint P2Cog::op_popb()
+QString P2Dasm::dasm_popb()
 {
-    return 2;
+    return format_d_imm_s_cz(t_POPB);
 }
 
 /**
@@ -4203,10 +3916,25 @@ uint P2Cog::op_popb()
  *
  * C = S[31], Z = S[30].
  */
-uint P2Cog::op_calld()
+QString P2Dasm::dasm_calld()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    if (IR.op.dst == 0x1f0 && IR.op.src == 0x1f1 && IR.op.uc && IR.op.uz)
+        return dasm_resi3();
+    if (IR.op.dst == 0x1f2 && IR.op.src == 0x1f3 && IR.op.uc && IR.op.uz)
+        return dasm_resi2();
+    if (IR.op.dst == 0x1f4 && IR.op.src == 0x1f5 && IR.op.uc && IR.op.uz)
+        return dasm_resi1();
+    if (IR.op.dst == 0x1fe && IR.op.src == 0x1ff && IR.op.uc && IR.op.uz)
+        return dasm_resi0();
+    if (IR.op.dst == 0x1ff && IR.op.src == 0x1f1 && IR.op.uc && IR.op.uz)
+        return dasm_reti3();
+    if (IR.op.dst == 0x1ff && IR.op.src == 0x1f3 && IR.op.uc && IR.op.uz)
+        return dasm_reti2();
+    if (IR.op.dst == 0x1ff && IR.op.src == 0x1f5 && IR.op.uc && IR.op.uz)
+        return dasm_reti1();
+    if (IR.op.dst == 0x1ff && IR.op.src == 0x1ff && IR.op.uc && IR.op.uz)
+        return dasm_reti0();
+    return format_d_imm_s_cz(t_CALLD);
 }
 
 /**
@@ -4218,9 +3946,9 @@ uint P2Cog::op_calld()
  *
  * (CALLD $1F0,$1F1 WC,WZ).
  */
-uint P2Cog::op_resi3()
+QString P2Dasm::dasm_resi3()
 {
-    return 2;
+    return p2Token->str(t_RESI3);
 }
 
 /**
@@ -4232,9 +3960,9 @@ uint P2Cog::op_resi3()
  *
  * (CALLD $1F2,$1F3 WC,WZ).
  */
-uint P2Cog::op_resi2()
+QString P2Dasm::dasm_resi2()
 {
-    return 2;
+    return p2Token->str(t_RESI2);
 }
 
 /**
@@ -4246,9 +3974,9 @@ uint P2Cog::op_resi2()
  *
  * (CALLD $1F4,$1F5 WC,WZ).
  */
-uint P2Cog::op_resi1()
+QString P2Dasm::dasm_resi1()
 {
-    return 2;
+    return p2Token->str(t_RESI1);
 }
 
 /**
@@ -4260,9 +3988,9 @@ uint P2Cog::op_resi1()
  *
  * (CALLD $1FE,$1FF WC,WZ).
  */
-uint P2Cog::op_resi0()
+QString P2Dasm::dasm_resi0()
 {
-    return 2;
+    return p2Token->str(t_RESI0);
 }
 
 /**
@@ -4274,9 +4002,9 @@ uint P2Cog::op_resi0()
  *
  * (CALLD $1FF,$1F1 WC,WZ).
  */
-uint P2Cog::op_reti3()
+QString P2Dasm::dasm_reti3()
 {
-    return 2;
+    return p2Token->str(t_RETI3);
 }
 
 /**
@@ -4288,9 +4016,9 @@ uint P2Cog::op_reti3()
  *
  * (CALLD $1FF,$1F3 WC,WZ).
  */
-uint P2Cog::op_reti2()
+QString P2Dasm::dasm_reti2()
 {
-    return 2;
+    return p2Token->str(t_RETI2);
 }
 
 /**
@@ -4302,9 +4030,9 @@ uint P2Cog::op_reti2()
  *
  * (CALLD $1FF,$1F5 WC,WZ).
  */
-uint P2Cog::op_reti1()
+QString P2Dasm::dasm_reti1()
 {
-    return 2;
+    return p2Token->str(t_RETI1);
 }
 
 /**
@@ -4316,9 +4044,9 @@ uint P2Cog::op_reti1()
  *
  * (CALLD $1FF,$1FF WC,WZ).
  */
-uint P2Cog::op_reti0()
+QString P2Dasm::dasm_reti0()
 {
-    return 2;
+    return p2Token->str(t_RETI0);
 }
 
 /**
@@ -4329,11 +4057,9 @@ uint P2Cog::op_reti0()
  * CALLPA  {#}D,{#}S
  *
  */
-uint P2Cog::op_callpa()
+QString P2Dasm::dasm_callpa()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_CALLPA);
 }
 
 /**
@@ -4344,11 +4070,9 @@ uint P2Cog::op_callpa()
  * CALLPB  {#}D,{#}S
  *
  */
-uint P2Cog::op_callpb()
+QString P2Dasm::dasm_callpb()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_CALLPB);
 }
 
 /**
@@ -4359,10 +4083,9 @@ uint P2Cog::op_callpb()
  * DJZ     D,{#}S
  *
  */
-uint P2Cog::op_djz()
+QString P2Dasm::dasm_djz()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_DJZ);
 }
 
 /**
@@ -4373,10 +4096,9 @@ uint P2Cog::op_djz()
  * DJNZ    D,{#}S
  *
  */
-uint P2Cog::op_djnz()
+QString P2Dasm::dasm_djnz()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_DJNZ);
 }
 
 /**
@@ -4387,10 +4109,9 @@ uint P2Cog::op_djnz()
  * DJF     D,{#}S
  *
  */
-uint P2Cog::op_djf()
+QString P2Dasm::dasm_djf()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_DJF);
 }
 
 /**
@@ -4401,10 +4122,9 @@ uint P2Cog::op_djf()
  * DJNF    D,{#}S
  *
  */
-uint P2Cog::op_djnf()
+QString P2Dasm::dasm_djnf()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_DJNF);
 }
 
 /**
@@ -4415,10 +4135,9 @@ uint P2Cog::op_djnf()
  * IJZ     D,{#}S
  *
  */
-uint P2Cog::op_ijz()
+QString P2Dasm::dasm_ijz()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_IJZ);
 }
 
 /**
@@ -4429,10 +4148,9 @@ uint P2Cog::op_ijz()
  * IJNZ    D,{#}S
  *
  */
-uint P2Cog::op_ijnz()
+QString P2Dasm::dasm_ijnz()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_IJNZ);
 }
 
 /**
@@ -4443,10 +4161,9 @@ uint P2Cog::op_ijnz()
  * TJZ     D,{#}S
  *
  */
-uint P2Cog::op_tjz()
+QString P2Dasm::dasm_tjz()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_TJZ);
 }
 
 /**
@@ -4457,10 +4174,9 @@ uint P2Cog::op_tjz()
  * TJNZ    D,{#}S
  *
  */
-uint P2Cog::op_tjnz()
+QString P2Dasm::dasm_tjnz()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_TJNZ);
 }
 
 /**
@@ -4471,10 +4187,9 @@ uint P2Cog::op_tjnz()
  * TJF     D,{#}S
  *
  */
-uint P2Cog::op_tjf()
+QString P2Dasm::dasm_tjf()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_TJF);
 }
 
 /**
@@ -4485,10 +4200,9 @@ uint P2Cog::op_tjf()
  * TJNF    D,{#}S
  *
  */
-uint P2Cog::op_tjnf()
+QString P2Dasm::dasm_tjnf()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_TJNF);
 }
 
 /**
@@ -4499,10 +4213,9 @@ uint P2Cog::op_tjnf()
  * TJS     D,{#}S
  *
  */
-uint P2Cog::op_tjs()
+QString P2Dasm::dasm_tjs()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_TJS);
 }
 
 /**
@@ -4513,10 +4226,9 @@ uint P2Cog::op_tjs()
  * TJNS    D,{#}S
  *
  */
-uint P2Cog::op_tjns()
+QString P2Dasm::dasm_tjns()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_TJNS);
 }
 
 /**
@@ -4527,10 +4239,9 @@ uint P2Cog::op_tjns()
  * TJV     D,{#}S
  *
  */
-uint P2Cog::op_tjv()
+QString P2Dasm::dasm_tjv()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_d_imm_s(t_TJV);
 }
 
 /**
@@ -4541,10 +4252,9 @@ uint P2Cog::op_tjv()
  * JINT    {#}S
  *
  */
-uint P2Cog::op_jint()
+QString P2Dasm::dasm_jint()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JINT);
 }
 
 /**
@@ -4555,10 +4265,9 @@ uint P2Cog::op_jint()
  * JCT1    {#}S
  *
  */
-uint P2Cog::op_jct1()
+QString P2Dasm::dasm_jct1()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JCT1);
 }
 
 /**
@@ -4569,10 +4278,9 @@ uint P2Cog::op_jct1()
  * JCT2    {#}S
  *
  */
-uint P2Cog::op_jct2()
+QString P2Dasm::dasm_jct2()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JCT2);
 }
 
 /**
@@ -4583,10 +4291,9 @@ uint P2Cog::op_jct2()
  * JCT3    {#}S
  *
  */
-uint P2Cog::op_jct3()
+QString P2Dasm::dasm_jct3()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JCT3);
 }
 
 /**
@@ -4597,10 +4304,9 @@ uint P2Cog::op_jct3()
  * JSE1    {#}S
  *
  */
-uint P2Cog::op_jse1()
+QString P2Dasm::dasm_jse1()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JSE1);
 }
 
 /**
@@ -4611,10 +4317,9 @@ uint P2Cog::op_jse1()
  * JSE2    {#}S
  *
  */
-uint P2Cog::op_jse2()
+QString P2Dasm::dasm_jse2()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JSE2);
 }
 
 /**
@@ -4625,10 +4330,9 @@ uint P2Cog::op_jse2()
  * JSE3    {#}S
  *
  */
-uint P2Cog::op_jse3()
+QString P2Dasm::dasm_jse3()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JSE3);
 }
 
 /**
@@ -4639,10 +4343,9 @@ uint P2Cog::op_jse3()
  * JSE4    {#}S
  *
  */
-uint P2Cog::op_jse4()
+QString P2Dasm::dasm_jse4()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JSE4);
 }
 
 /**
@@ -4653,10 +4356,9 @@ uint P2Cog::op_jse4()
  * JPAT    {#}S
  *
  */
-uint P2Cog::op_jpat()
+QString P2Dasm::dasm_jpat()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JPAT);
 }
 
 /**
@@ -4667,10 +4369,9 @@ uint P2Cog::op_jpat()
  * JFBW    {#}S
  *
  */
-uint P2Cog::op_jfbw()
+QString P2Dasm::dasm_jfbw()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JFBW);
 }
 
 /**
@@ -4681,10 +4382,9 @@ uint P2Cog::op_jfbw()
  * JXMT    {#}S
  *
  */
-uint P2Cog::op_jxmt()
+QString P2Dasm::dasm_jxmt()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JXMT);
 }
 
 /**
@@ -4695,10 +4395,9 @@ uint P2Cog::op_jxmt()
  * JXFI    {#}S
  *
  */
-uint P2Cog::op_jxfi()
+QString P2Dasm::dasm_jxfi()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JXFI);
 }
 
 /**
@@ -4709,10 +4408,9 @@ uint P2Cog::op_jxfi()
  * JXRO    {#}S
  *
  */
-uint P2Cog::op_jxro()
+QString P2Dasm::dasm_jxro()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JXRO);
 }
 
 /**
@@ -4723,10 +4421,9 @@ uint P2Cog::op_jxro()
  * JXRL    {#}S
  *
  */
-uint P2Cog::op_jxrl()
+QString P2Dasm::dasm_jxrl()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JXRL);
 }
 
 /**
@@ -4737,10 +4434,9 @@ uint P2Cog::op_jxrl()
  * JATN    {#}S
  *
  */
-uint P2Cog::op_jatn()
+QString P2Dasm::dasm_jatn()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JATN);
 }
 
 /**
@@ -4751,10 +4447,9 @@ uint P2Cog::op_jatn()
  * JQMT    {#}S
  *
  */
-uint P2Cog::op_jqmt()
+QString P2Dasm::dasm_jqmt()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JQMT);
 }
 
 /**
@@ -4765,10 +4460,9 @@ uint P2Cog::op_jqmt()
  * JNINT   {#}S
  *
  */
-uint P2Cog::op_jnint()
+QString P2Dasm::dasm_jnint()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JNINT);
 }
 
 /**
@@ -4779,10 +4473,9 @@ uint P2Cog::op_jnint()
  * JNCT1   {#}S
  *
  */
-uint P2Cog::op_jnct1()
+QString P2Dasm::dasm_jnct1()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JNCT1);
 }
 
 /**
@@ -4793,10 +4486,9 @@ uint P2Cog::op_jnct1()
  * JNCT2   {#}S
  *
  */
-uint P2Cog::op_jnct2()
+QString P2Dasm::dasm_jnct2()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JNCT2);
 }
 
 /**
@@ -4807,10 +4499,9 @@ uint P2Cog::op_jnct2()
  * JNCT3   {#}S
  *
  */
-uint P2Cog::op_jnct3()
+QString P2Dasm::dasm_jnct3()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JNCT3);
 }
 
 /**
@@ -4821,10 +4512,9 @@ uint P2Cog::op_jnct3()
  * JNSE1   {#}S
  *
  */
-uint P2Cog::op_jnse1()
+QString P2Dasm::dasm_jnse1()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JNSE1);
 }
 
 /**
@@ -4835,10 +4525,9 @@ uint P2Cog::op_jnse1()
  * JNSE2   {#}S
  *
  */
-uint P2Cog::op_jnse2()
+QString P2Dasm::dasm_jnse2()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JNSE2);
 }
 
 /**
@@ -4849,10 +4538,9 @@ uint P2Cog::op_jnse2()
  * JNSE3   {#}S
  *
  */
-uint P2Cog::op_jnse3()
+QString P2Dasm::dasm_jnse3()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JNSE3);
 }
 
 /**
@@ -4863,10 +4551,9 @@ uint P2Cog::op_jnse3()
  * JNSE4   {#}S
  *
  */
-uint P2Cog::op_jnse4()
+QString P2Dasm::dasm_jnse4()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JNSE4);
 }
 
 /**
@@ -4877,10 +4564,9 @@ uint P2Cog::op_jnse4()
  * JNPAT   {#}S
  *
  */
-uint P2Cog::op_jnpat()
+QString P2Dasm::dasm_jnpat()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JNPAT);
 }
 
 /**
@@ -4891,10 +4577,9 @@ uint P2Cog::op_jnpat()
  * JNFBW   {#}S
  *
  */
-uint P2Cog::op_jnfbw()
+QString P2Dasm::dasm_jnfbw()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JNFBW);
 }
 
 /**
@@ -4905,10 +4590,9 @@ uint P2Cog::op_jnfbw()
  * JNXMT   {#}S
  *
  */
-uint P2Cog::op_jnxmt()
+QString P2Dasm::dasm_jnxmt()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JNXMT);
 }
 
 /**
@@ -4919,10 +4603,9 @@ uint P2Cog::op_jnxmt()
  * JNXFI   {#}S
  *
  */
-uint P2Cog::op_jnxfi()
+QString P2Dasm::dasm_jnxfi()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JNXFI);
 }
 
 /**
@@ -4933,10 +4616,9 @@ uint P2Cog::op_jnxfi()
  * JNXRO   {#}S
  *
  */
-uint P2Cog::op_jnxro()
+QString P2Dasm::dasm_jnxro()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JNXRO);
 }
 
 /**
@@ -4947,10 +4629,9 @@ uint P2Cog::op_jnxro()
  * JNXRL   {#}S
  *
  */
-uint P2Cog::op_jnxrl()
+QString P2Dasm::dasm_jnxrl()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JNXRL);
 }
 
 /**
@@ -4961,10 +4642,9 @@ uint P2Cog::op_jnxrl()
  * JNATN   {#}S
  *
  */
-uint P2Cog::op_jnatn()
+QString P2Dasm::dasm_jnatn()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JNATN);
 }
 
 /**
@@ -4975,10 +4655,9 @@ uint P2Cog::op_jnatn()
  * JNQMT   {#}S
  *
  */
-uint P2Cog::op_jnqmt()
+QString P2Dasm::dasm_jnqmt()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_JNQMT);
 }
 
 /**
@@ -4989,11 +4668,9 @@ uint P2Cog::op_jnqmt()
  * <empty> {#}D,{#}S
  *
  */
-uint P2Cog::op_1011110_1()
+QString P2Dasm::dasm_1011110_1()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_empty);
 }
 
 /**
@@ -5004,11 +4681,9 @@ uint P2Cog::op_1011110_1()
  * <empty> {#}D,{#}S
  *
  */
-uint P2Cog::op_1011111_0()
+QString P2Dasm::dasm_1011111_0()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_empty);
 }
 
 /**
@@ -5020,11 +4695,9 @@ uint P2Cog::op_1011111_0()
  *
  * C selects INA/INB, Z selects =/!=, D provides mask value, S provides match value.
  */
-uint P2Cog::op_setpat()
+QString P2Dasm::dasm_setpat()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_SETPAT);
 }
 
 /**
@@ -5035,11 +4708,9 @@ uint P2Cog::op_setpat()
  * WRPIN   {#}D,{#}S
  *
  */
-uint P2Cog::op_wrpin()
+QString P2Dasm::dasm_wrpin()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_WRPIN);
 }
 
 /**
@@ -5050,10 +4721,9 @@ uint P2Cog::op_wrpin()
  * AKPIN   {#}S
  *
  */
-uint P2Cog::op_akpin()
+QString P2Dasm::dasm_akpin()
 {
-    augmentS(IR.op.imm);
-    return 2;
+    return format_imm_s(t_AKPIN);
 }
 
 /**
@@ -5064,11 +4734,9 @@ uint P2Cog::op_akpin()
  * WXPIN   {#}D,{#}S
  *
  */
-uint P2Cog::op_wxpin()
+QString P2Dasm::dasm_wxpin()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_WXPIN);
 }
 
 /**
@@ -5079,11 +4747,9 @@ uint P2Cog::op_wxpin()
  * WYPIN   {#}D,{#}S
  *
  */
-uint P2Cog::op_wypin()
+QString P2Dasm::dasm_wypin()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_WYPIN);
 }
 
 /**
@@ -5094,11 +4760,9 @@ uint P2Cog::op_wypin()
  * WRLUT   {#}D,{#}S
  *
  */
-uint P2Cog::op_wrlut()
+QString P2Dasm::dasm_wrlut()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_WRLUT);
 }
 
 /**
@@ -5109,11 +4773,9 @@ uint P2Cog::op_wrlut()
  * WRBYTE  {#}D,{#}S/P
  *
  */
-uint P2Cog::op_wrbyte()
+QString P2Dasm::dasm_wrbyte()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_WRBYTE);
 }
 
 /**
@@ -5124,11 +4786,9 @@ uint P2Cog::op_wrbyte()
  * WRWORD  {#}D,{#}S/P
  *
  */
-uint P2Cog::op_wrword()
+QString P2Dasm::dasm_wrword()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_WRWORD);
 }
 
 /**
@@ -5140,11 +4800,9 @@ uint P2Cog::op_wrword()
  *
  * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  */
-uint P2Cog::op_wrlong()
+QString P2Dasm::dasm_wrlong()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_WRLONG);
 }
 
 /**
@@ -5155,10 +4813,9 @@ uint P2Cog::op_wrlong()
  * PUSHA   {#}D
  *
  */
-uint P2Cog::op_pusha()
+QString P2Dasm::dasm_pusha()
 {
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d(t_PUSHA);
 }
 
 /**
@@ -5169,10 +4826,9 @@ uint P2Cog::op_pusha()
  * PUSHB   {#}D
  *
  */
-uint P2Cog::op_pushb()
+QString P2Dasm::dasm_pushb()
 {
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d(t_PUSHB);
 }
 
 /**
@@ -5184,11 +4840,9 @@ uint P2Cog::op_pushb()
  *
  * D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
  */
-uint P2Cog::op_rdfast()
+QString P2Dasm::dasm_rdfast()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_RDFAST);
 }
 
 /**
@@ -5200,11 +4854,9 @@ uint P2Cog::op_rdfast()
  *
  * D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
  */
-uint P2Cog::op_wrfast()
+QString P2Dasm::dasm_wrfast()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_WRFAST);
 }
 
 /**
@@ -5216,11 +4868,9 @@ uint P2Cog::op_wrfast()
  *
  * D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
  */
-uint P2Cog::op_fblock()
+QString P2Dasm::dasm_fblock()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_FBLOCK);
 }
 
 /**
@@ -5231,11 +4881,9 @@ uint P2Cog::op_fblock()
  * XINIT   {#}D,{#}S
  *
  */
-uint P2Cog::op_xinit()
+QString P2Dasm::dasm_xinit()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_XINIT);
 }
 
 /**
@@ -5246,9 +4894,9 @@ uint P2Cog::op_xinit()
  * XSTOP
  *
  */
-uint P2Cog::op_xstop()
+QString P2Dasm::dasm_xstop()
 {
-    return 2;
+    return p2Token->str(t_XSTOP);
 }
 
 /**
@@ -5259,11 +4907,9 @@ uint P2Cog::op_xstop()
  * XZERO   {#}D,{#}S
  *
  */
-uint P2Cog::op_xzero()
+QString P2Dasm::dasm_xzero()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_XZERO);
 }
 
 /**
@@ -5274,11 +4920,9 @@ uint P2Cog::op_xzero()
  * XCONT   {#}D,{#}S
  *
  */
-uint P2Cog::op_xcont()
+QString P2Dasm::dasm_xcont()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_XCONT);
 }
 
 /**
@@ -5291,11 +4935,9 @@ uint P2Cog::op_xcont()
  * If S = 0, repeat infinitely.
  * If D[8:0] = 0, nothing repeats.
  */
-uint P2Cog::op_rep()
+QString P2Dasm::dasm_rep()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_REP);
 }
 
 /**
@@ -5308,11 +4950,9 @@ uint P2Cog::op_rep()
  * S[19:0] sets hub startup address and PTRB of cog.
  * Prior SETQ sets PTRA of cog.
  */
-uint P2Cog::op_coginit()
+QString P2Dasm::dasm_coginit()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_COGINIT);
 }
 
 /**
@@ -5324,11 +4964,9 @@ uint P2Cog::op_coginit()
  *
  * GETQX/GETQY retrieves lower/upper product.
  */
-uint P2Cog::op_qmul()
+QString P2Dasm::dasm_qmul()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_QMUL);
 }
 
 /**
@@ -5340,11 +4978,9 @@ uint P2Cog::op_qmul()
  *
  * GETQX/GETQY retrieves quotient/remainder.
  */
-uint P2Cog::op_qdiv()
+QString P2Dasm::dasm_qdiv()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_QDIV);
 }
 
 /**
@@ -5356,11 +4992,9 @@ uint P2Cog::op_qdiv()
  *
  * GETQX/GETQY retrieves quotient/remainder.
  */
-uint P2Cog::op_qfrac()
+QString P2Dasm::dasm_qfrac()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_QFRAC);
 }
 
 /**
@@ -5372,11 +5006,9 @@ uint P2Cog::op_qfrac()
  *
  * GETQX retrieves root.
  */
-uint P2Cog::op_qsqrt()
+QString P2Dasm::dasm_qsqrt()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_QSQRT);
 }
 
 /**
@@ -5388,11 +5020,9 @@ uint P2Cog::op_qsqrt()
  *
  * GETQX/GETQY retrieves X/Y.
  */
-uint P2Cog::op_qrotate()
+QString P2Dasm::dasm_qrotate()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_QROTATE);
 }
 
 /**
@@ -5404,11 +5034,9 @@ uint P2Cog::op_qrotate()
  *
  * GETQX/GETQY retrieves length/angle.
  */
-uint P2Cog::op_qvector()
+QString P2Dasm::dasm_qvector()
 {
-    augmentS(IR.op.imm);
-    augmentD(IR.op.uz);
-    return 2;
+    return format_wz_d_imm_s(t_QVECTOR);
 }
 
 /**
@@ -5419,10 +5047,9 @@ uint P2Cog::op_qvector()
  * HUBSET  {#}D
  *
  */
-uint P2Cog::op_hubset()
+QString P2Dasm::dasm_hubset()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_HUBSET);
 }
 
 /**
@@ -5434,10 +5061,9 @@ uint P2Cog::op_hubset()
  *
  * If WC, check status of cog D[3:0], C = 1 if on.
  */
-uint P2Cog::op_cogid()
+QString P2Dasm::dasm_cogid()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_c(t_COGID);
 }
 
 /**
@@ -5448,10 +5074,9 @@ uint P2Cog::op_cogid()
  * COGSTOP {#}D
  *
  */
-uint P2Cog::op_cogstop()
+QString P2Dasm::dasm_cogstop()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_COGSTOP);
 }
 
 /**
@@ -5464,9 +5089,9 @@ uint P2Cog::op_cogstop()
  * D will be written with the LOCK number (0 to 15).
  * C = 1 if no LOCK available.
  */
-uint P2Cog::op_locknew()
+QString P2Dasm::dasm_locknew()
 {
-    return 2;
+    return format_imm_d_c(t_LOCKNEW);
 }
 
 /**
@@ -5477,10 +5102,9 @@ uint P2Cog::op_locknew()
  * LOCKRET {#}D
  *
  */
-uint P2Cog::op_lockret()
+QString P2Dasm::dasm_lockret()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_LOCKRET);
 }
 
 /**
@@ -5494,10 +5118,9 @@ uint P2Cog::op_lockret()
  * LOCKREL releases LOCK.
  * LOCK is also released if owner cog stops or restarts.
  */
-uint P2Cog::op_locktry()
+QString P2Dasm::dasm_locktry()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_c(t_LOCKTRY);
 }
 
 /**
@@ -5509,10 +5132,9 @@ uint P2Cog::op_locktry()
  *
  * If D is a register and WC, get current/last cog id of LOCK owner into D and LOCK status into C.
  */
-uint P2Cog::op_lockrel()
+QString P2Dasm::dasm_lockrel()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_c(t_LOCKREL);
 }
 
 /**
@@ -5524,10 +5146,9 @@ uint P2Cog::op_lockrel()
  *
  * GETQX retrieves log {5'whole_exponent, 27'fractional_exponent}.
  */
-uint P2Cog::op_qlog()
+QString P2Dasm::dasm_qlog()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_QLOG);
 }
 
 /**
@@ -5539,10 +5160,9 @@ uint P2Cog::op_qlog()
  *
  * GETQX retrieves number.
  */
-uint P2Cog::op_qexp()
+QString P2Dasm::dasm_qexp()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_QEXP);
 }
 
 /**
@@ -5556,9 +5176,9 @@ uint P2Cog::op_qexp()
  * C = MSB of byte.
  * Z = (result == 0).
  */
-uint P2Cog::op_rfbyte()
+QString P2Dasm::dasm_rfbyte()
 {
-    return 2;
+    return format_d_cz(t_RFBYTE);
 }
 
 /**
@@ -5572,9 +5192,9 @@ uint P2Cog::op_rfbyte()
  * C = MSB of word.
  * Z = (result == 0).
  */
-uint P2Cog::op_rfword()
+QString P2Dasm::dasm_rfword()
 {
-    return 2;
+    return format_d_cz(t_RFWORD);
 }
 
 /**
@@ -5588,9 +5208,9 @@ uint P2Cog::op_rfword()
  * C = MSB of long.
  * Z = (result == 0).
  */
-uint P2Cog::op_rflong()
+QString P2Dasm::dasm_rflong()
 {
-    return 2;
+    return format_d_cz(t_RFLONG);
 }
 
 /**
@@ -5605,9 +5225,9 @@ uint P2Cog::op_rflong()
  * C = 0.
  * Z = (result == 0).
  */
-uint P2Cog::op_rfvar()
+QString P2Dasm::dasm_rfvar()
 {
-    return 2;
+    return format_d_cz(t_RFVAR);
 }
 
 /**
@@ -5622,9 +5242,10 @@ uint P2Cog::op_rfvar()
  * C = MSB of value.
  * Z = (result == 0).
  */
-uint P2Cog::op_rfvars()
+QString P2Dasm::dasm_rfvars()
 {
-    return 2;
+
+    return format_d_cz(t_RFVARS);
 }
 
 /**
@@ -5636,9 +5257,9 @@ uint P2Cog::op_rfvars()
  *
  * Write byte in D[7:0] into FIFO.
  */
-uint P2Cog::op_wfbyte()
+QString P2Dasm::dasm_wfbyte()
 {
-    return 2;
+    return format_imm_d(t_WFBYTE);
 }
 
 /**
@@ -5650,9 +5271,9 @@ uint P2Cog::op_wfbyte()
  *
  * Write word in D[15:0] into FIFO.
  */
-uint P2Cog::op_wfword()
+QString P2Dasm::dasm_wfword()
 {
-    return 2;
+    return format_imm_d(t_WFWORD);
 }
 
 /**
@@ -5664,9 +5285,9 @@ uint P2Cog::op_wfword()
  *
  * Write long in D[31:0] into FIFO.
  */
-uint P2Cog::op_wflong()
+QString P2Dasm::dasm_wflong()
 {
-    return 2;
+    return format_imm_d(t_WFLONG);
 }
 
 /**
@@ -5682,9 +5303,9 @@ uint P2Cog::op_wflong()
  * C = X[31].
  * Z = (result == 0).
  */
-uint P2Cog::op_getqx()
+QString P2Dasm::dasm_getqx()
 {
-    return 2;
+    return format_d_cz(t_GETQX);
 }
 
 /**
@@ -5700,9 +5321,9 @@ uint P2Cog::op_getqx()
  * C = Y[31].
  * Z = (result == 0).
  */
-uint P2Cog::op_getqy()
+QString P2Dasm::dasm_getqy()
 {
-    return 2;
+    return format_d_cz(t_GETQY);
 }
 
 /**
@@ -5714,9 +5335,9 @@ uint P2Cog::op_getqy()
  *
  * CT is the free-running 32-bit system counter that increments on every clock.
  */
-uint P2Cog::op_getct()
+QString P2Dasm::dasm_getct()
 {
-    return 2;
+    return format_d(t_GETCT);
 }
 
 /**
@@ -5729,9 +5350,9 @@ uint P2Cog::op_getct()
  * RND is the PRNG that updates on every clock.
  * D = RND[31:0], C = RND[31], Z = RND[30], unique per cog.
  */
-uint P2Cog::op_getrnd()
+QString P2Dasm::dasm_getrnd()
 {
-    return 2;
+    return format_d_cz(t_GETRND);
 }
 
 /**
@@ -5743,9 +5364,9 @@ uint P2Cog::op_getrnd()
  *
  * C = RND[31], Z = RND[30], unique per cog.
  */
-uint P2Cog::op_getrnd_cz()
+QString P2Dasm::dasm_getrnd_cz()
 {
-    return 2;
+    return format_cz(t_GETRND);
 }
 
 /**
@@ -5756,10 +5377,9 @@ uint P2Cog::op_getrnd_cz()
  * SETDACS {#}D
  *
  */
-uint P2Cog::op_setdacs()
+QString P2Dasm::dasm_setdacs()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_SETDACS);
 }
 
 /**
@@ -5770,10 +5390,9 @@ uint P2Cog::op_setdacs()
  * SETXFRQ {#}D
  *
  */
-uint P2Cog::op_setxfrq()
+QString P2Dasm::dasm_setxfrq()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_SETXFRQ);
 }
 
 /**
@@ -5784,9 +5403,9 @@ uint P2Cog::op_setxfrq()
  * GETXACC D
  *
  */
-uint P2Cog::op_getxacc()
+QString P2Dasm::dasm_getxacc()
 {
-    return 2;
+    return format_d(t_GETXACC);
 }
 
 /**
@@ -5799,10 +5418,9 @@ uint P2Cog::op_getxacc()
  * If WC/WZ/WCZ, wait 2 + (D & RND) clocks.
  * C/Z = 0.
  */
-uint P2Cog::op_waitx()
+QString P2Dasm::dasm_waitx()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_WAITX);
 }
 
 /**
@@ -5813,10 +5431,9 @@ uint P2Cog::op_waitx()
  * SETSE1  {#}D
  *
  */
-uint P2Cog::op_setse1()
+QString P2Dasm::dasm_setse1()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_SETSE1);
 }
 
 /**
@@ -5827,10 +5444,9 @@ uint P2Cog::op_setse1()
  * SETSE2  {#}D
  *
  */
-uint P2Cog::op_setse2()
+QString P2Dasm::dasm_setse2()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_SETSE2);
 }
 
 /**
@@ -5841,10 +5457,9 @@ uint P2Cog::op_setse2()
  * SETSE3  {#}D
  *
  */
-uint P2Cog::op_setse3()
+QString P2Dasm::dasm_setse3()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_SETSE3);
 }
 
 /**
@@ -5855,10 +5470,9 @@ uint P2Cog::op_setse3()
  * SETSE4  {#}D
  *
  */
-uint P2Cog::op_setse4()
+QString P2Dasm::dasm_setse4()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_SETSE4);
 }
 
 /**
@@ -5869,9 +5483,9 @@ uint P2Cog::op_setse4()
  * POLLINT          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollint()
+QString P2Dasm::dasm_pollint()
 {
-    return 2;
+    return format_cz(t_POLLINT);
 }
 
 /**
@@ -5882,9 +5496,9 @@ uint P2Cog::op_pollint()
  * POLLCT1          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollct1()
+QString P2Dasm::dasm_pollct1()
 {
-    return 2;
+    return format_cz(t_POLLCT1);
 }
 
 /**
@@ -5895,9 +5509,9 @@ uint P2Cog::op_pollct1()
  * POLLCT2          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollct2()
+QString P2Dasm::dasm_pollct2()
 {
-    return 2;
+    return format_cz(t_POLLCT2);
 }
 
 /**
@@ -5908,9 +5522,9 @@ uint P2Cog::op_pollct2()
  * POLLCT3          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollct3()
+QString P2Dasm::dasm_pollct3()
 {
-    return 2;
+    return format_cz(t_POLLCT3);
 }
 
 /**
@@ -5921,9 +5535,9 @@ uint P2Cog::op_pollct3()
  * POLLSE1          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollse1()
+QString P2Dasm::dasm_pollse1()
 {
-    return 2;
+    return format_cz(t_POLLSE1);
 }
 
 /**
@@ -5934,9 +5548,9 @@ uint P2Cog::op_pollse1()
  * POLLSE2          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollse2()
+QString P2Dasm::dasm_pollse2()
 {
-    return 2;
+    return format_cz(t_POLLSE2);
 }
 
 /**
@@ -5947,9 +5561,9 @@ uint P2Cog::op_pollse2()
  * POLLSE3          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollse3()
+QString P2Dasm::dasm_pollse3()
 {
-    return 2;
+    return format_cz(t_POLLSE3);
 }
 
 /**
@@ -5960,9 +5574,9 @@ uint P2Cog::op_pollse3()
  * POLLSE4          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollse4()
+QString P2Dasm::dasm_pollse4()
 {
-    return 2;
+    return format_cz(t_POLLSE4);
 }
 
 /**
@@ -5973,9 +5587,9 @@ uint P2Cog::op_pollse4()
  * POLLPAT          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollpat()
+QString P2Dasm::dasm_pollpat()
 {
-    return 2;
+    return format_cz(t_POLLPAT);
 }
 
 /**
@@ -5986,9 +5600,9 @@ uint P2Cog::op_pollpat()
  * POLLFBW          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollfbw()
+QString P2Dasm::dasm_pollfbw()
 {
-    return 2;
+    return format_cz(t_POLLFBW);
 }
 
 /**
@@ -5999,9 +5613,9 @@ uint P2Cog::op_pollfbw()
  * POLLXMT          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollxmt()
+QString P2Dasm::dasm_pollxmt()
 {
-    return 2;
+    return format_cz(t_POLLXMT);
 }
 
 /**
@@ -6012,9 +5626,9 @@ uint P2Cog::op_pollxmt()
  * POLLXFI          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollxfi()
+QString P2Dasm::dasm_pollxfi()
 {
-    return 2;
+    return format_cz(t_POLLXFI);
 }
 
 /**
@@ -6025,9 +5639,9 @@ uint P2Cog::op_pollxfi()
  * POLLXRO          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollxro()
+QString P2Dasm::dasm_pollxro()
 {
-    return 2;
+    return format_cz(t_POLLXRO);
 }
 
 /**
@@ -6038,9 +5652,9 @@ uint P2Cog::op_pollxro()
  * POLLXRL          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollxrl()
+QString P2Dasm::dasm_pollxrl()
 {
-    return 2;
+    return format_cz(t_POLLXRL);
 }
 
 /**
@@ -6051,9 +5665,9 @@ uint P2Cog::op_pollxrl()
  * POLLATN          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollatn()
+QString P2Dasm::dasm_pollatn()
 {
-    return 2;
+    return format_cz(t_POLLATN);
 }
 
 /**
@@ -6064,9 +5678,9 @@ uint P2Cog::op_pollatn()
  * POLLQMT          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollqmt()
+QString P2Dasm::dasm_pollqmt()
 {
-    return 2;
+    return format_cz(t_POLLQMT);
 }
 
 /**
@@ -6079,9 +5693,9 @@ uint P2Cog::op_pollqmt()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitint()
+QString P2Dasm::dasm_waitint()
 {
-    return 2;
+    return format_cz(t_WAITINT);
 }
 
 /**
@@ -6094,9 +5708,9 @@ uint P2Cog::op_waitint()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitct1()
+QString P2Dasm::dasm_waitct1()
 {
-    return 2;
+    return format_cz(t_WAITCT1);
 }
 
 /**
@@ -6109,9 +5723,9 @@ uint P2Cog::op_waitct1()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitct2()
+QString P2Dasm::dasm_waitct2()
 {
-    return 2;
+    return format_cz(t_WAITCT2);
 }
 
 /**
@@ -6124,9 +5738,9 @@ uint P2Cog::op_waitct2()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitct3()
+QString P2Dasm::dasm_waitct3()
 {
-    return 2;
+    return format_cz(t_WAITCT3);
 }
 
 /**
@@ -6139,9 +5753,9 @@ uint P2Cog::op_waitct3()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitse1()
+QString P2Dasm::dasm_waitse1()
 {
-    return 2;
+    return format_cz(t_WAITSE1);
 }
 
 /**
@@ -6154,9 +5768,9 @@ uint P2Cog::op_waitse1()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitse2()
+QString P2Dasm::dasm_waitse2()
 {
-    return 2;
+    return format_cz(t_WAITSE2);
 }
 
 /**
@@ -6169,9 +5783,9 @@ uint P2Cog::op_waitse2()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitse3()
+QString P2Dasm::dasm_waitse3()
 {
-    return 2;
+    return format_cz(t_WAITSE3);
 }
 
 /**
@@ -6184,9 +5798,9 @@ uint P2Cog::op_waitse3()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitse4()
+QString P2Dasm::dasm_waitse4()
 {
-    return 2;
+    return format_cz(t_WAITSE4);
 }
 
 /**
@@ -6199,9 +5813,9 @@ uint P2Cog::op_waitse4()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitpat()
+QString P2Dasm::dasm_waitpat()
 {
-    return 2;
+    return format_cz(t_WAITPAT);
 }
 
 /**
@@ -6214,9 +5828,9 @@ uint P2Cog::op_waitpat()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitfbw()
+QString P2Dasm::dasm_waitfbw()
 {
-    return 2;
+    return format_cz(t_WAITFBW);
 }
 
 /**
@@ -6229,9 +5843,9 @@ uint P2Cog::op_waitfbw()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitxmt()
+QString P2Dasm::dasm_waitxmt()
 {
-    return 2;
+    return format_cz(t_WAITXMT);
 }
 
 /**
@@ -6244,9 +5858,9 @@ uint P2Cog::op_waitxmt()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitxfi()
+QString P2Dasm::dasm_waitxfi()
 {
-    return 2;
+    return format_cz(t_WAITXFI);
 }
 
 /**
@@ -6259,9 +5873,9 @@ uint P2Cog::op_waitxfi()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitxro()
+QString P2Dasm::dasm_waitxro()
 {
-    return 2;
+    return format_cz(t_WAITXRO);
 }
 
 /**
@@ -6274,9 +5888,9 @@ uint P2Cog::op_waitxro()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitxrl()
+QString P2Dasm::dasm_waitxrl()
 {
-    return 2;
+    return format_cz(t_WAITXRL);
 }
 
 /**
@@ -6289,9 +5903,9 @@ uint P2Cog::op_waitxrl()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitatn()
+QString P2Dasm::dasm_waitatn()
 {
-    return 2;
+    return format_cz(t_WAITATN);
 }
 
 /**
@@ -6302,9 +5916,9 @@ uint P2Cog::op_waitatn()
  * ALLOWI
  *
  */
-uint P2Cog::op_allowi()
+QString P2Dasm::dasm_allowi()
 {
-    return 2;
+    return p2Token->str(t_ALLOWI);
 }
 
 /**
@@ -6315,9 +5929,9 @@ uint P2Cog::op_allowi()
  * STALLI
  *
  */
-uint P2Cog::op_stalli()
+QString P2Dasm::dasm_stalli()
 {
-    return 2;
+    return p2Token->str(t_STALLI);
 }
 
 /**
@@ -6328,9 +5942,9 @@ uint P2Cog::op_stalli()
  * TRGINT1
  *
  */
-uint P2Cog::op_trgint1()
+QString P2Dasm::dasm_trgint1()
 {
-    return 2;
+    return p2Token->str(t_TRGINT1);
 }
 
 /**
@@ -6341,9 +5955,9 @@ uint P2Cog::op_trgint1()
  * TRGINT2
  *
  */
-uint P2Cog::op_trgint2()
+QString P2Dasm::dasm_trgint2()
 {
-    return 2;
+    return p2Token->str(t_TRGINT2);
 }
 
 /**
@@ -6354,9 +5968,9 @@ uint P2Cog::op_trgint2()
  * TRGINT3
  *
  */
-uint P2Cog::op_trgint3()
+QString P2Dasm::dasm_trgint3()
 {
-    return 2;
+    return p2Token->str(t_TRGINT3);
 }
 
 /**
@@ -6367,9 +5981,9 @@ uint P2Cog::op_trgint3()
  * NIXINT1
  *
  */
-uint P2Cog::op_nixint1()
+QString P2Dasm::dasm_nixint1()
 {
-    return 2;
+    return p2Token->str(t_NIXINT1);
 }
 
 /**
@@ -6380,9 +5994,9 @@ uint P2Cog::op_nixint1()
  * NIXINT2
  *
  */
-uint P2Cog::op_nixint2()
+QString P2Dasm::dasm_nixint2()
 {
-    return 2;
+    return p2Token->str(t_NIXINT2);
 }
 
 /**
@@ -6393,9 +6007,9 @@ uint P2Cog::op_nixint2()
  * NIXINT3
  *
  */
-uint P2Cog::op_nixint3()
+QString P2Dasm::dasm_nixint3()
 {
-    return 2;
+    return p2Token->str(t_NIXINT3);
 }
 
 /**
@@ -6406,10 +6020,9 @@ uint P2Cog::op_nixint3()
  * SETINT1 {#}D
  *
  */
-uint P2Cog::op_setint1()
+QString P2Dasm::dasm_setint1()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_SETINT1);
 }
 
 /**
@@ -6420,10 +6033,9 @@ uint P2Cog::op_setint1()
  * SETINT2 {#}D
  *
  */
-uint P2Cog::op_setint2()
+QString P2Dasm::dasm_setint2()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_SETINT2);
 }
 
 /**
@@ -6434,10 +6046,9 @@ uint P2Cog::op_setint2()
  * SETINT3 {#}D
  *
  */
-uint P2Cog::op_setint3()
+QString P2Dasm::dasm_setint3()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_SETINT3);
 }
 
 /**
@@ -6450,10 +6061,9 @@ uint P2Cog::op_setint3()
  * Use before RDLONG/WRLONG/WMLONG to set block transfer.
  * Also used before MUXQ/COGINIT/QDIV/QFRAC/QROTATE/WAITxxx.
  */
-uint P2Cog::op_setq()
+QString P2Dasm::dasm_setq()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_SETQ);
 }
 
 /**
@@ -6465,10 +6075,9 @@ uint P2Cog::op_setq()
  *
  * Use before RDLONG/WRLONG/WMLONG to set LUT block transfer.
  */
-uint P2Cog::op_setq2()
+QString P2Dasm::dasm_setq2()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_SETQ2);
 }
 
 /**
@@ -6479,10 +6088,9 @@ uint P2Cog::op_setq2()
  * PUSH    {#}D
  *
  */
-uint P2Cog::op_push()
+QString P2Dasm::dasm_push()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_PUSH);
 }
 
 /**
@@ -6494,9 +6102,9 @@ uint P2Cog::op_push()
  *
  * C = K[31], Z = K[30], D = K.
  */
-uint P2Cog::op_pop()
+QString P2Dasm::dasm_pop()
 {
-    return 2;
+    return format_d_cz(t_POP);
 }
 
 /**
@@ -6508,9 +6116,9 @@ uint P2Cog::op_pop()
  *
  * C = D[31], Z = D[30], PC = D[19:0].
  */
-uint P2Cog::op_jmp()
+QString P2Dasm::dasm_jmp()
 {
-    return 2;
+    return format_d_cz(t_JMP);
 }
 
 /**
@@ -6522,9 +6130,9 @@ uint P2Cog::op_jmp()
  *
  * C = D[31], Z = D[30], PC = D[19:0].
  */
-uint P2Cog::op_call()
+QString P2Dasm::dasm_call()
 {
-    return 2;
+    return format_d_cz(t_CALL);
 }
 
 /**
@@ -6536,9 +6144,9 @@ uint P2Cog::op_call()
  *
  * C = K[31], Z = K[30], PC = K[19:0].
  */
-uint P2Cog::op_ret()
+QString P2Dasm::dasm_ret()
 {
-    return 2;
+    return format_cz(t_RET);
 }
 
 /**
@@ -6550,9 +6158,9 @@ uint P2Cog::op_ret()
  *
  * C = D[31], Z = D[30], PC = D[19:0].
  */
-uint P2Cog::op_calla()
+QString P2Dasm::dasm_calla()
 {
-    return 2;
+    return format_d_cz(t_CALLA);
 }
 
 /**
@@ -6564,9 +6172,9 @@ uint P2Cog::op_calla()
  *
  * C = L[31], Z = L[30], PC = L[19:0].
  */
-uint P2Cog::op_reta()
+QString P2Dasm::dasm_reta()
 {
-    return 2;
+    return format_cz(t_RETA);
 }
 
 /**
@@ -6578,9 +6186,9 @@ uint P2Cog::op_reta()
  *
  * C = D[31], Z = D[30], PC = D[19:0].
  */
-uint P2Cog::op_callb()
+QString P2Dasm::dasm_callb()
 {
-    return 2;
+    return format_d_cz(t_CALLB);
 }
 
 /**
@@ -6592,9 +6200,9 @@ uint P2Cog::op_callb()
  *
  * C = L[31], Z = L[30], PC = L[19:0].
  */
-uint P2Cog::op_retb()
+QString P2Dasm::dasm_retb()
 {
-    return 2;
+    return format_cz(t_RETB);
 }
 
 /**
@@ -6607,10 +6215,9 @@ uint P2Cog::op_retb()
  * For cogex, PC += D[19:0].
  * For hubex, PC += D[17:0] << 2.
  */
-uint P2Cog::op_jmprel()
+QString P2Dasm::dasm_jmprel()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_JMPREL);
 }
 
 /**
@@ -6624,10 +6231,9 @@ uint P2Cog::op_jmprel()
  * 31 get cancelled for each '1' bit in D[0].
  * D[31].
  */
-uint P2Cog::op_skip()
+QString P2Dasm::dasm_skip()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_SKIP);
 }
 
 /**
@@ -6639,10 +6245,9 @@ uint P2Cog::op_skip()
  *
  * Like SKIP, but instead of cancelling instructions, the PC leaps over them.
  */
-uint P2Cog::op_skipf()
+QString P2Dasm::dasm_skipf()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_SKIPF);
 }
 
 /**
@@ -6654,10 +6259,9 @@ uint P2Cog::op_skipf()
  *
  * PC = {10'b0, D[9:0]}.
  */
-uint P2Cog::op_execf()
+QString P2Dasm::dasm_execf()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_EXECF);
 }
 
 /**
@@ -6668,9 +6272,9 @@ uint P2Cog::op_execf()
  * GETPTR  D
  *
  */
-uint P2Cog::op_getptr()
+QString P2Dasm::dasm_getptr()
 {
-    return 2;
+    return format_d(t_GETPTR);
 }
 
 /**
@@ -6683,9 +6287,9 @@ uint P2Cog::op_getptr()
  * C = 0.
  * Z = 0.
  */
-uint P2Cog::op_getbrk()
+QString P2Dasm::dasm_getbrk()
 {
-    return 2;
+    return format_d_cz(t_GETBRK);
 }
 
 /**
@@ -6697,10 +6301,9 @@ uint P2Cog::op_getbrk()
  *
  * Cog D[3:0] must have asynchronous breakpoint enabled.
  */
-uint P2Cog::op_cogbrk()
+QString P2Dasm::dasm_cogbrk()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_COGBRK);
 }
 
 /**
@@ -6712,10 +6315,9 @@ uint P2Cog::op_cogbrk()
  *
  * Else, trigger break if enabled, conditionally write break code to D[7:0].
  */
-uint P2Cog::op_brk()
+QString P2Dasm::dasm_brk()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_BRK);
 }
 
 /**
@@ -6726,10 +6328,9 @@ uint P2Cog::op_brk()
  * SETLUTS {#}D
  *
  */
-uint P2Cog::op_setluts()
+QString P2Dasm::dasm_setluts()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_SETLUTS);
 }
 
 /**
@@ -6740,10 +6341,9 @@ uint P2Cog::op_setluts()
  * SETCY   {#}D
  *
  */
-uint P2Cog::op_setcy()
+QString P2Dasm::dasm_setcy()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_SETCY);
 }
 
 /**
@@ -6754,10 +6354,9 @@ uint P2Cog::op_setcy()
  * SETCI   {#}D
  *
  */
-uint P2Cog::op_setci()
+QString P2Dasm::dasm_setci()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_SETCI);
 }
 
 /**
@@ -6768,10 +6367,9 @@ uint P2Cog::op_setci()
  * SETCQ   {#}D
  *
  */
-uint P2Cog::op_setcq()
+QString P2Dasm::dasm_setcq()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_SETCQ);
 }
 
 /**
@@ -6782,10 +6380,9 @@ uint P2Cog::op_setcq()
  * SETCFRQ {#}D
  *
  */
-uint P2Cog::op_setcfrq()
+QString P2Dasm::dasm_setcfrq()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_SETCFRQ);
 }
 
 /**
@@ -6796,10 +6393,9 @@ uint P2Cog::op_setcfrq()
  * SETCMOD {#}D
  *
  */
-uint P2Cog::op_setcmod()
+QString P2Dasm::dasm_setcmod()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_SETCMOD);
 }
 
 /**
@@ -6810,10 +6406,9 @@ uint P2Cog::op_setcmod()
  * SETPIV  {#}D
  *
  */
-uint P2Cog::op_setpiv()
+QString P2Dasm::dasm_setpiv()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_SETPIV);
 }
 
 /**
@@ -6824,10 +6419,9 @@ uint P2Cog::op_setpiv()
  * SETPIX  {#}D
  *
  */
-uint P2Cog::op_setpix()
+QString P2Dasm::dasm_setpix()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_SETPIX);
 }
 
 /**
@@ -6838,10 +6432,9 @@ uint P2Cog::op_setpix()
  * COGATN  {#}D
  *
  */
-uint P2Cog::op_cogatn()
+QString P2Dasm::dasm_cogatn()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d(t_COGATN);
 }
 
 /**
@@ -6853,10 +6446,9 @@ uint P2Cog::op_cogatn()
  *
  * C/Z =          IN[D[5:0]].
  */
-uint P2Cog::op_testp_w()
+QString P2Dasm::dasm_testp_w()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_TESTP);
 }
 
 /**
@@ -6868,10 +6460,9 @@ uint P2Cog::op_testp_w()
  *
  * C/Z =         !IN[D[5:0]].
  */
-uint P2Cog::op_testpn_w()
+QString P2Dasm::dasm_testpn_w()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_TESTPN);
 }
 
 /**
@@ -6883,10 +6474,9 @@ uint P2Cog::op_testpn_w()
  *
  * C/Z = C/Z AND  IN[D[5:0]].
  */
-uint P2Cog::op_testp_and()
+QString P2Dasm::dasm_testp_and()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_TESTP, t_AND);
 }
 
 /**
@@ -6898,10 +6488,9 @@ uint P2Cog::op_testp_and()
  *
  * C/Z = C/Z AND !IN[D[5:0]].
  */
-uint P2Cog::op_testpn_and()
+QString P2Dasm::dasm_testpn_and()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_TESTPN, t_AND);
 }
 
 /**
@@ -6913,10 +6502,9 @@ uint P2Cog::op_testpn_and()
  *
  * C/Z = C/Z OR   IN[D[5:0]].
  */
-uint P2Cog::op_testp_or()
+QString P2Dasm::dasm_testp_or()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_TESTP, t_OR);
 }
 
 /**
@@ -6928,10 +6516,9 @@ uint P2Cog::op_testp_or()
  *
  * C/Z = C/Z OR  !IN[D[5:0]].
  */
-uint P2Cog::op_testpn_or()
+QString P2Dasm::dasm_testpn_or()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_TESTPN, t_OR);
 }
 
 /**
@@ -6943,10 +6530,9 @@ uint P2Cog::op_testpn_or()
  *
  * C/Z = C/Z XOR  IN[D[5:0]].
  */
-uint P2Cog::op_testp_xor()
+QString P2Dasm::dasm_testp_xor()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_TESTP, t_XOR);
 }
 
 /**
@@ -6958,10 +6544,9 @@ uint P2Cog::op_testp_xor()
  *
  * C/Z = C/Z XOR !IN[D[5:0]].
  */
-uint P2Cog::op_testpn_xor()
+QString P2Dasm::dasm_testpn_xor()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_TESTPN, t_XOR);
 }
 
 /**
@@ -6973,10 +6558,9 @@ uint P2Cog::op_testpn_xor()
  *
  * C,Z = DIR bit.
  */
-uint P2Cog::op_dirl()
+QString P2Dasm::dasm_dirl()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_DIRL);
 }
 
 /**
@@ -6988,10 +6572,9 @@ uint P2Cog::op_dirl()
  *
  * C,Z = DIR bit.
  */
-uint P2Cog::op_dirh()
+QString P2Dasm::dasm_dirh()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_DIRH);
 }
 
 /**
@@ -7003,10 +6586,9 @@ uint P2Cog::op_dirh()
  *
  * C,Z = DIR bit.
  */
-uint P2Cog::op_dirc()
+QString P2Dasm::dasm_dirc()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_DIRC);
 }
 
 /**
@@ -7018,10 +6600,9 @@ uint P2Cog::op_dirc()
  *
  * C,Z = DIR bit.
  */
-uint P2Cog::op_dirnc()
+QString P2Dasm::dasm_dirnc()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_DIRNC);
 }
 
 /**
@@ -7033,10 +6614,9 @@ uint P2Cog::op_dirnc()
  *
  * C,Z = DIR bit.
  */
-uint P2Cog::op_dirz()
+QString P2Dasm::dasm_dirz()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_DIRZ);
 }
 
 /**
@@ -7048,10 +6628,9 @@ uint P2Cog::op_dirz()
  *
  * C,Z = DIR bit.
  */
-uint P2Cog::op_dirnz()
+QString P2Dasm::dasm_dirnz()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_DIRNZ);
 }
 
 /**
@@ -7063,10 +6642,9 @@ uint P2Cog::op_dirnz()
  *
  * C,Z = DIR bit.
  */
-uint P2Cog::op_dirrnd()
+QString P2Dasm::dasm_dirrnd()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_DIRRND);
 }
 
 /**
@@ -7078,10 +6656,9 @@ uint P2Cog::op_dirrnd()
  *
  * C,Z = DIR bit.
  */
-uint P2Cog::op_dirnot()
+QString P2Dasm::dasm_dirnot()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_DIRNOT);
 }
 
 /**
@@ -7093,10 +6670,9 @@ uint P2Cog::op_dirnot()
  *
  * C,Z = OUT bit.
  */
-uint P2Cog::op_outl()
+QString P2Dasm::dasm_outl()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_OUTL);
 }
 
 /**
@@ -7108,10 +6684,9 @@ uint P2Cog::op_outl()
  *
  * C,Z = OUT bit.
  */
-uint P2Cog::op_outh()
+QString P2Dasm::dasm_outh()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_OUTH);
 }
 
 /**
@@ -7123,10 +6698,9 @@ uint P2Cog::op_outh()
  *
  * C,Z = OUT bit.
  */
-uint P2Cog::op_outc()
+QString P2Dasm::dasm_outc()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_OUTC);
 }
 
 /**
@@ -7138,10 +6712,9 @@ uint P2Cog::op_outc()
  *
  * C,Z = OUT bit.
  */
-uint P2Cog::op_outnc()
+QString P2Dasm::dasm_outnc()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_OUTNC);
 }
 
 /**
@@ -7153,10 +6726,9 @@ uint P2Cog::op_outnc()
  *
  * C,Z = OUT bit.
  */
-uint P2Cog::op_outz()
+QString P2Dasm::dasm_outz()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_OUTZ);
 }
 
 /**
@@ -7168,10 +6740,9 @@ uint P2Cog::op_outz()
  *
  * C,Z = OUT bit.
  */
-uint P2Cog::op_outnz()
+QString P2Dasm::dasm_outnz()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_OUTNZ);
 }
 
 /**
@@ -7183,10 +6754,9 @@ uint P2Cog::op_outnz()
  *
  * C,Z = OUT bit.
  */
-uint P2Cog::op_outrnd()
+QString P2Dasm::dasm_outrnd()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_OUTRND);
 }
 
 /**
@@ -7198,10 +6768,9 @@ uint P2Cog::op_outrnd()
  *
  * C,Z = OUT bit.
  */
-uint P2Cog::op_outnot()
+QString P2Dasm::dasm_outnot()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_OUTNOT);
 }
 
 /**
@@ -7214,10 +6783,9 @@ uint P2Cog::op_outnot()
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_fltl()
+QString P2Dasm::dasm_fltl()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_FLTL);
 }
 
 /**
@@ -7230,10 +6798,9 @@ uint P2Cog::op_fltl()
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_flth()
+QString P2Dasm::dasm_flth()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_FLTH);
 }
 
 /**
@@ -7246,10 +6813,9 @@ uint P2Cog::op_flth()
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_fltc()
+QString P2Dasm::dasm_fltc()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_FLTC);
 }
 
 /**
@@ -7262,10 +6828,9 @@ uint P2Cog::op_fltc()
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_fltnc()
+QString P2Dasm::dasm_fltnc()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_FLTNC);
 }
 
 /**
@@ -7278,10 +6843,9 @@ uint P2Cog::op_fltnc()
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_fltz()
+QString P2Dasm::dasm_fltz()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_FLTZ);
 }
 
 /**
@@ -7294,10 +6858,9 @@ uint P2Cog::op_fltz()
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_fltnz()
+QString P2Dasm::dasm_fltnz()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_FLTNZ);
 }
 
 /**
@@ -7310,10 +6873,9 @@ uint P2Cog::op_fltnz()
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_fltrnd()
+QString P2Dasm::dasm_fltrnd()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_FLTRND);
 }
 
 /**
@@ -7326,10 +6888,9 @@ uint P2Cog::op_fltrnd()
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_fltnot()
+QString P2Dasm::dasm_fltnot()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_FLTNOT);
 }
 
 /**
@@ -7342,10 +6903,9 @@ uint P2Cog::op_fltnot()
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_drvl()
+QString P2Dasm::dasm_drvl()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_DRVL);
 }
 
 /**
@@ -7358,10 +6918,9 @@ uint P2Cog::op_drvl()
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_drvh()
+QString P2Dasm::dasm_drvh()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_DRVH);
 }
 
 /**
@@ -7374,10 +6933,9 @@ uint P2Cog::op_drvh()
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_drvc()
+QString P2Dasm::dasm_drvc()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_DRVC);
 }
 
 /**
@@ -7390,10 +6948,9 @@ uint P2Cog::op_drvc()
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_drvnc()
+QString P2Dasm::dasm_drvnc()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_DRVNC);
 }
 
 /**
@@ -7406,10 +6963,9 @@ uint P2Cog::op_drvnc()
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_drvz()
+QString P2Dasm::dasm_drvz()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_DRVZ);
 }
 
 /**
@@ -7422,10 +6978,9 @@ uint P2Cog::op_drvz()
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_drvnz()
+QString P2Dasm::dasm_drvnz()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_DRVNZ);
 }
 
 /**
@@ -7438,10 +6993,9 @@ uint P2Cog::op_drvnz()
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_drvrnd()
+QString P2Dasm::dasm_drvrnd()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_DRVRND);
 }
 
 /**
@@ -7454,10 +7008,9 @@ uint P2Cog::op_drvrnd()
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_drvnot()
+QString P2Dasm::dasm_drvnot()
 {
-    augmentD(IR.op.imm);
-    return 2;
+    return format_imm_d_cz(t_DRVNOT);
 }
 
 /**
@@ -7469,9 +7022,9 @@ uint P2Cog::op_drvnot()
  *
  * D = {S[31], S[27], S[23], S[19], ... S[12], S[8], S[4], S[0]}.
  */
-uint P2Cog::op_splitb()
+QString P2Dasm::dasm_splitb()
 {
-    return 2;
+    return format_d(t_SPLITB);
 }
 
 /**
@@ -7483,9 +7036,9 @@ uint P2Cog::op_splitb()
  *
  * D = {S[31], S[23], S[15], S[7], ... S[24], S[16], S[8], S[0]}.
  */
-uint P2Cog::op_mergeb()
+QString P2Dasm::dasm_mergeb()
 {
-    return 2;
+    return format_d(t_MERGEB);
 }
 
 /**
@@ -7497,9 +7050,9 @@ uint P2Cog::op_mergeb()
  *
  * D = {S[31], S[29], S[27], S[25], ... S[6], S[4], S[2], S[0]}.
  */
-uint P2Cog::op_splitw()
+QString P2Dasm::dasm_splitw()
 {
-    return 2;
+    return format_d(t_SPLITW);
 }
 
 /**
@@ -7511,9 +7064,9 @@ uint P2Cog::op_splitw()
  *
  * D = {S[31], S[15], S[30], S[14], ... S[17], S[1], S[16], S[0]}.
  */
-uint P2Cog::op_mergew()
+QString P2Dasm::dasm_mergew()
 {
-    return 2;
+    return format_d(t_MERGEW);
 }
 
 /**
@@ -7526,9 +7079,9 @@ uint P2Cog::op_mergew()
  * Returns to original value on 32nd iteration.
  * Forward pattern.
  */
-uint P2Cog::op_seussf()
+QString P2Dasm::dasm_seussf()
 {
-    return 2;
+    return format_d(t_SEUSSF);
 }
 
 /**
@@ -7541,9 +7094,9 @@ uint P2Cog::op_seussf()
  * Returns to original value on 32nd iteration.
  * Reverse pattern.
  */
-uint P2Cog::op_seussr()
+QString P2Dasm::dasm_seussr()
 {
-    return 2;
+    return format_d(t_SEUSSR);
 }
 
 /**
@@ -7555,9 +7108,9 @@ uint P2Cog::op_seussr()
  *
  * D = {15'b0, S[31:27], S[23:18], S[15:11]}.
  */
-uint P2Cog::op_rgbsqz()
+QString P2Dasm::dasm_rgbsqz()
 {
-    return 2;
+    return format_d(t_RGBSQZ);
 }
 
 /**
@@ -7569,9 +7122,9 @@ uint P2Cog::op_rgbsqz()
  *
  * D = {S[15:11,15:13], S[10:5,10:9], S[4:0,4:2], 8'b0}.
  */
-uint P2Cog::op_rgbexp()
+QString P2Dasm::dasm_rgbexp()
 {
-    return 2;
+    return format_d(t_RGBEXP);
 }
 
 /**
@@ -7582,9 +7135,9 @@ uint P2Cog::op_rgbexp()
  * XORO32  D
  *
  */
-uint P2Cog::op_xoro32()
+QString P2Dasm::dasm_xoro32()
 {
-    return 2;
+    return format_d(t_XORO32);
 }
 
 /**
@@ -7596,9 +7149,9 @@ uint P2Cog::op_xoro32()
  *
  * D = D[0:31].
  */
-uint P2Cog::op_rev()
+QString P2Dasm::dasm_rev()
 {
-    return 2;
+    return format_d(t_REV);
 }
 
 /**
@@ -7611,9 +7164,9 @@ uint P2Cog::op_rev()
  * D = {C, Z, D[31:2]}.
  * C = D[1],  Z = D[0].
  */
-uint P2Cog::op_rczr()
+QString P2Dasm::dasm_rczr()
 {
-    return 2;
+    return format_d_cz(t_RCZR);
 }
 
 /**
@@ -7626,9 +7179,9 @@ uint P2Cog::op_rczr()
  * D = {D[29:0], C, Z}.
  * C = D[31], Z = D[30].
  */
-uint P2Cog::op_rczl()
+QString P2Dasm::dasm_rczl()
 {
-    return 2;
+    return format_d_cz(t_RCZL);
 }
 
 /**
@@ -7640,9 +7193,9 @@ uint P2Cog::op_rczl()
  *
  * D = {31'b0,  C).
  */
-uint P2Cog::op_wrc()
+QString P2Dasm::dasm_wrc()
 {
-    return 2;
+    return format_d(t_WRC);
 }
 
 /**
@@ -7654,9 +7207,9 @@ uint P2Cog::op_wrc()
  *
  * D = {31'b0, !C).
  */
-uint P2Cog::op_wrnc()
+QString P2Dasm::dasm_wrnc()
 {
-    return 2;
+    return format_d(t_WRNC);
 }
 
 /**
@@ -7668,9 +7221,9 @@ uint P2Cog::op_wrnc()
  *
  * D = {31'b0,  Z).
  */
-uint P2Cog::op_wrz()
+QString P2Dasm::dasm_wrz()
 {
-    return 2;
+    return format_d(t_WRZ);
 }
 
 /**
@@ -7682,9 +7235,9 @@ uint P2Cog::op_wrz()
  *
  * D = {31'b0, !Z).
  */
-uint P2Cog::op_wrnz()
+QString P2Dasm::dasm_wrnz()
 {
-    return 2;
+    return format_d(t_WRNZ);
 }
 
 /**
@@ -7696,9 +7249,9 @@ uint P2Cog::op_wrnz()
  *
  * C = cccc[{C,Z}], Z = zzzz[{C,Z}].
  */
-uint P2Cog::op_modcz()
+QString P2Dasm::dasm_modcz()
 {
-    return 2;
+    return format_cz_cz(t_MODCZ);
 }
 
 /**
@@ -7710,9 +7263,9 @@ uint P2Cog::op_modcz()
  *
  * If R = 1, PC += A, else PC = A.
  */
-uint P2Cog::op_jmp_abs()
+QString P2Dasm::dasm_jmp_abs()
 {
-    return 2;
+    return format_pc_abs(t_JMP);
 }
 
 /**
@@ -7724,9 +7277,9 @@ uint P2Cog::op_jmp_abs()
  *
  * If R = 1, PC += A, else PC = A.
  */
-uint P2Cog::op_call_abs()
+QString P2Dasm::dasm_call_abs()
 {
-    return 2;
+    return format_pc_abs(t_CALL);
 }
 
 /**
@@ -7738,9 +7291,9 @@ uint P2Cog::op_call_abs()
  *
  * If R = 1, PC += A, else PC = A.
  */
-uint P2Cog::op_calla_abs()
+QString P2Dasm::dasm_calla_abs()
 {
-    return 2;
+    return format_pc_abs(t_CALLA);
 }
 
 /**
@@ -7752,9 +7305,9 @@ uint P2Cog::op_calla_abs()
  *
  * If R = 1, PC += A, else PC = A.
  */
-uint P2Cog::op_callb_abs()
+QString P2Dasm::dasm_callb_abs()
 {
-    return 2;
+    return format_pc_abs(t_CALLB);
 }
 
 /**
@@ -7766,9 +7319,9 @@ uint P2Cog::op_callb_abs()
  *
  * If R = 1, PC += A, else PC = A.
  */
-uint P2Cog::op_calld_abs()
+QString P2Dasm::dasm_calld_abs()
 {
-    return 2;
+    return format_pc_abs(t_CALLD);
 }
 
 /**
@@ -7780,12 +7333,9 @@ uint P2Cog::op_calld_abs()
  *
  * If R = 1, address = PC + A, else address = A.
  */
-uint P2Cog::op_loc_pa()
+QString P2Dasm::dasm_loc_pa()
 {
-    const quint32 A = IR.word & ADDR;
-    const quint32 addr = IR.op.uc ? PC + A : A;
-    updatePA(addr);
-    return 2;
+    return format_pc_abs(t_LOC, t_PA);
 }
 
 /**
@@ -7797,12 +7347,9 @@ uint P2Cog::op_loc_pa()
  *
  * If R = 1, address = PC + A, else address = A.
  */
-uint P2Cog::op_loc_pb()
+QString P2Dasm::dasm_loc_pb()
 {
-    const quint32 A = IR.word & ADDR;
-    const quint32 addr = IR.op.uc ? PC + A : A;
-    updatePB(addr);
-    return 2;
+    return format_pc_abs(t_LOC, t_PB);
 }
 
 /**
@@ -7814,12 +7361,9 @@ uint P2Cog::op_loc_pb()
  *
  * If R = 1, address = PC + A, else address = A.
  */
-uint P2Cog::op_loc_ptra()
+QString P2Dasm::dasm_loc_ptra()
 {
-    const quint32 A = IR.word & ADDR;
-    const quint32 addr = IR.op.uc ? PC + A : A;
-    updatePTRA(addr);
-    return 2;
+    return format_pc_abs(t_LOC, t_PTRA);
 }
 
 /**
@@ -7831,12 +7375,9 @@ uint P2Cog::op_loc_ptra()
  *
  * If R = 1, address = PC + A, else address = A.
  */
-uint P2Cog::op_loc_ptrb()
+QString P2Dasm::dasm_loc_ptrb()
 {
-    const quint32 A = IR.word & ADDR;
-    const quint32 addr = IR.op.uc ? PC + A : A;
-    updatePTRB(addr);
-    return 2;
+    return format_pc_abs(t_LOC, t_PTRB);
 }
 
 /**
@@ -7847,10 +7388,9 @@ uint P2Cog::op_loc_ptrb()
  * AUGS    #N
  *
  */
-uint P2Cog::op_augs()
+QString P2Dasm::dasm_augs()
 {
-    S_aug = (IR.word << 9) & AUG;
-    return 2;
+    return format_imm23(t_AUGS);
 }
 
 /**
@@ -7861,8 +7401,7 @@ uint P2Cog::op_augs()
  * AUGD    #N
  *
  */
-uint P2Cog::op_augd()
+QString P2Dasm::dasm_augd()
 {
-    D_aug = (IR.word << 9) & AUG;
-    return 2;
+    return format_imm23(t_AUGD);
 }
