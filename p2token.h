@@ -33,6 +33,7 @@
  ****************************************************************************/
 #pragma once
 #include <QString>
+#include <QMap>
 #include "p2_defs.h"
 
 /**
@@ -433,4 +434,5 @@ public:
 
 private:
     bool m_lowercase;
+    QMap<p2_token_e, QString> m_token;
 };

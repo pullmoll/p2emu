@@ -37,6 +37,7 @@
 #include "ui_mainwindow.h"
 #include "csv.h"
 #include "p2cog.h"
+#include "p2dasm.h"
 
 #if CREATE_SOURCE
 //! field #0 in the CSV data
@@ -97,20 +98,32 @@ MainWindow::MainWindow(QWidget *parent) :
     csv2source();
 #endif
 
-    P2Cog p;
-    p2_opword_t w = {0};
+    P2Hub hub;
+    P2Dasm da;
 
-    w.op.inst = p2_add;
-    w.op.imm = 1;
-    w.op.dst = 0x040;
-    w.op.src = 0x0fc;
-    p.wr_cog(0x000, w.word);
+    QFile bin(":/TACHYON5r4.binary");
+    if (bin.open(QIODevice::ReadOnly)) {
+        quint32 addr = 0x000;
+        bin.seek(0x200);
+        while (!bin.atEnd()) {
+            union {
+                char bytes[4];
+                quint32 word;
+            }   data;
+            if (4 == bin.read(data.bytes, 4)) {
+                hub.wr_COG(0, addr++, data.word);
+            }
+        }
+    }
 
-    do {
-        p.decode();
-        qDebug("%06x: %08x", p.pc(), p.ir().word);
+    P2Cog* cog = hub.cog(0);
+    for (quint32 addr = 0; addr < 32768/4; addr++) {
+        QString opcode;
+        QString string = da.dasm(cog, addr, opcode);
+        opcode.resize(40, QChar::Space);
+        qDebug("%06x: %s %s", addr, qPrintable(opcode), qPrintable(string));
         loop.processEvents();
-    } while (isVisible());
+    }
 }
 
 MainWindow::~MainWindow()

@@ -60,6 +60,9 @@ public:
     quint32 rd_LONG(quint32 addr) const;
     void wr_LONG(quint32 addr, quint32 val);
 
+    quint32 rd_COG(uint cog, quint32 addr) const;
+    void wr_COG(uint cog, quint32 addr, quint32 val);
+
     quint32 rd_PA();
     void wr_PA(quint32 val);
 

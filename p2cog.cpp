@@ -82,8 +82,12 @@ void P2Cog::wr_lut(quint32 addr, quint32 val)
 
 quint32 P2Cog::rd_mem(quint32 addr) const
 {
+    if (addr < 0x200)
+        return rd_cog(addr);
+    if (addr < 0x400)
+        return rd_lut(addr - 0x200);
     if (HUB)
-        return HUB->rd_LONG(addr);
+        return HUB->rd_LONG(addr * 4);
     return 0x00000000u;
 }
 

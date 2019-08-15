@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file>P2 instruction set.csv</file>
+        <file>TACHYON5r4.binary</file>
     </qresource>
 </RCC>

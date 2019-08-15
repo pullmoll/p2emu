@@ -66,6 +66,13 @@ P2Hub::P2Hub()
 #endif
 }
 
+P2Cog* P2Hub::cog(uint id)
+{
+    if (id < NUM_COGS)
+        return COGS[id];
+    return nullptr;
+}
+
 /**
  * @brief Return a pointer to the HUB memory
  * @return pointer to MEM
@@ -155,6 +162,36 @@ void P2Hub::wr_LONG(quint32 addr, quint32 val)
     addr &= ~3u;
     if (addr*4 < sizeof(MEM))
         MEM.L[addr/4] = val;
+}
+
+/**
+ * @brief Read long from COG %cog for %addr < $400, or HUB memory otherwise
+ * @param cog COG number (0 … 15)
+ * @param addr 20 bit address
+ * @return long from that address
+ */
+quint32 P2Hub::rd_COG(uint cog, quint32 addr) const
+{
+    if (cog >= NUM_COGS)
+        return 0;
+    if (addr < 0x400)
+        return COGS[cog]->rd_cog(addr);
+    return rd_LONG(addr * 4);
+}
+
+/**
+ * @brief Write long to COG %cog for %addr < $400, or HUB memory otherwise
+ * @param cog COG number (0 … 15)
+ * @param addr 20 bit address
+ * @param val long value to write
+ */
+void P2Hub::wr_COG(uint cog, quint32 addr, quint32 val)
+{
+    if (cog >= NUM_COGS)
+        return;
+    if (addr < 0x400)
+        COGS[cog]->wr_cog(addr, val);
+    wr_LONG(addr * 4, val);
 }
 
 /**
