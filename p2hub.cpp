@@ -47,6 +47,8 @@ P2Hub::P2Hub(int ncogs, QObject* parent)
     , pin_mode(64, 0)
     , pin_X(64, 0)
     , pin_Y(64, 0)
+    , scope_pin0(0)
+    , scope_enable(false)
     , MEM()
 {
     Q_ASSERT(ncogs <= 16);
@@ -391,6 +393,27 @@ void P2Hub::wr_OUT(p2_LONG port, p2_LONG val)
     const quint64 mask = Q_UINT64_C(1) << port;
     const quint64 bit = static_cast<quint64>(val & 1) << port;
     OUT = (OUT & ~mask) | bit;
+}
+
+/**
+ * @brief Read scope MUX lower bytes.
+ * @return four lower bytes of scope MUX.
+ */
+p2_LONG P2Hub::rd_SCP()
+{
+    // TODO: implement scope MUX
+    return scope_enable ? MUX : 0xffffffffu;
+}
+
+/**
+ * @brief Write scope MUX pin0 and enable flag.
+ * @param n pin number and enable flag
+ */
+void P2Hub::wr_SCP(p2_LONG n)
+{
+    // TODO: implement scope MUX
+    scope_pin0 = n & ~3u;
+    scope_enable = (n >> 6) & 1;
 }
 
 /**

@@ -1517,10 +1517,14 @@ p2_LONG P2Cog::decode()
             cycles = op_wrz();
             break;
         case 0x6f:
-            cycles = op_wrnz();
+            cycles = (IR.op.wc || IR.op.wz) ? op_modcz()
+                                            : op_wrnz();
             break;
-        case 0x7f:
-            cycles = op_modcz();
+        case 0x70:
+            cycles = op_setscp();
+            break;
+        case 0x71:
+            cycles = op_getscp();
             break;
         }
         break;
@@ -8284,6 +8288,45 @@ uint P2Cog::op_modcz()
     const p2_cond_e zzzz = static_cast<p2_cond_e>((IR.op.dst >> 0) & 15);
     updateC(conditional(cccc));
     updateZ(conditional(zzzz));
+    return 2;
+}
+
+/**
+ * @brief Set scope mode.
+ *
+ * EEEE 1101011 00L DDDDDDDDD 001110000
+ *
+ * SETSCP  {#}D
+ *
+ *
+ * SETSCP points the scope mux to a set of four pins starting
+ * at (D[5:0] AND $3C), with D[6]=1 to enable scope operation.
+ *
+ * Set pins D[5:2] (0,4,8,12,...,60)
+ * Enable if D[6]=1.
+ */
+uint P2Cog::op_setscp()
+{
+    augmentD(IR.op.imm);
+    HUB->wr_SCP(D);
+    return 2;
+}
+
+/**
+ * @brief Get scope values.
+ *
+ * EEEE 1101011 000 DDDDDDDDD 001110001
+ *
+ * Any time GETSCP is executed, the lower bytes of those four pins' RDPIN values are returned in D.
+ *
+ * GETSCP  D
+ *
+ * Pins D[5:2].
+ */
+uint P2Cog::op_getscp()
+{
+    const p2_LONG result = HUB->rd_SCP();
+    updateD(result);
     return 2;
 }
 

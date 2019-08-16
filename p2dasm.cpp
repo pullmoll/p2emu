@@ -8130,7 +8130,7 @@ void P2Dasm::dasm_setscp(QString& instruction, QString* description)
 void P2Dasm::dasm_getscp(QString& instruction, QString* description)
 {
     if (description)
-        *description = tr("Get scope values.");
+        *description = tr("Get four scope values into bytes of D.");
     format_d(instruction, t_GETSCP);
 }
 

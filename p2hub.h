@@ -87,6 +87,9 @@ public:
     p2_LONG rd_OUT(p2_LONG port);
     void wr_OUT(p2_LONG port, p2_LONG val);
 
+    p2_LONG rd_SCP();
+    void wr_SCP(p2_LONG n);
+
     bool rd_PIN(p2_LONG n);
 
 private:
@@ -97,14 +100,17 @@ private:
     quint64 XORO128_s1;     //!< Xoroshiro128 PRNG state[1]
     quint64 CNT;            //!< cycle counter
     quint64 RND;            //!< pseudo random value
-    quint64 PIN;           //!< 64 pins (0 … 31 on PA, 32 … 63 on PB)
-    quint64 DIR;           //!< 64 direction bits (0 … 31 on PA, 32 … 63 on PB)
-    quint64 OUT;           //!< 64 output bits (0 … 31 on PA, 32 … 63 on PB)
+    quint64 PIN;            //!< 64 pins (0 … 31 on PA, 32 … 63 on PB)
+    quint64 DIR;            //!< 64 direction bits (0 … 31 on PA, 32 … 63 on PB)
+    quint64 OUT;            //!< 64 output bits (0 … 31 on PA, 32 … 63 on PB)
+    p2_LONG MUX;            //!< scope input MUX (TODO: how is it defined?)
     QVector<P2Cog*> COGS;   //!< vector of available COGs
     int NCOGS;              //!< number of available COGs (1 … 16)
     QVector<p2_LONG> pin_mode;
     QVector<p2_LONG> pin_X;
     QVector<p2_LONG> pin_Y;
+    p2_LONG scope_pin0;
+    p2_LONG scope_enable;
     union {
         p2_BYTE B[MEM_SIZE];
         p2_WORD W[MEM_SIZE/2];

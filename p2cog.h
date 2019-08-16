@@ -738,6 +738,8 @@ private:
     uint op_wrz();
     uint op_wrnz();
     uint op_modcz();
+    uint op_setscp();
+    uint op_getscp();
 
     uint op_jmp_abs();
     uint op_call_abs();
