@@ -33,46 +33,16 @@
  ****************************************************************************/
 #pragma once
 #include <QMainWindow>
-
-#define CREATE_SOURCE   0   //!< define to 1 to create the inital source for propeller2.cpp
+#include <QLabel>
+#include <QLineEdit>
+#include <QPushButton>
+#include "p2hub.h"
+#include "p2cog.h"
+#include "p2dasmmodel.h"
 
 namespace Ui {
 class MainWindow;
 }
-
-#if CREATE_SOURCE
-class Decoder
-{
-public:
-    Decoder(const QString& mask, const QString& match, const QString& op)
-        : m_mask(fromBin(mask))
-        , m_match(fromBin(match))
-        , m_op(op)
-    {}
-    quint32 mask() const { return m_mask; }
-    quint32 match() const { return m_match; }
-    QString op() const { return m_op; }
-
-private:
-    static quint32 fromBin(const QString& s)
-    {
-        quint32 res = 0;
-        foreach(QChar ch, s) {
-            if (ch.toLatin1() == '0')
-                res = res << 1;
-            if (ch.toLatin1() == '1')
-                res = res << 1 | 1u;
-        }
-        return res;
-    }
-
-    quint32 m_mask;
-    quint32 m_match;
-    QString m_op;
-};
-
-typedef QMultiMap<QString,Decoder> DecoderMap;
-#endif
 
 class MainWindow : public QMainWindow
 {
@@ -82,11 +52,13 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+private slots:
+    void about();
+    void aboutQt5();
+
 private:
     Ui::MainWindow *ui;
-
-#if CREATE_SOURCE
-    void csv2source();
-    QString opfunc(const QVariantMap& map, DecoderMap& decoder);
-#endif
+    P2Hub m_hub;
+    P2Dasm* m_dasm;
+    P2DasmModel* m_model;
 };

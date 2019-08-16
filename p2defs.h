@@ -34,6 +34,28 @@
 #pragma once
 #include <QtEndian>
 
+typedef quint8 p2_BYTE;
+typedef quint16 p2_WORD;
+typedef quint32 p2_LONG;
+
+typedef union {
+#if (Q_BYTE_ORDER == Q_LITTLE_ENDIAN)
+    p2_BYTE b0,b1,b2,b3;
+    p2_BYTE b[4];
+    p2_WORD w0, w1;
+    p2_WORD w[2];
+    p2_LONG l;
+#elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
+    p2_BYTE b3,b2,b1,b0;
+    p2_BYTE b[4];
+    p2_WORD w1, w0;
+    p2_WORD w[2];
+    p2_LONG l;
+#else
+#error "Unknown byte order!"
+#endif
+}   p2_BWL;
+
 /**
  * @brief Enumeration of the 16 conditional execution modes
  */
@@ -53,7 +75,7 @@ typedef enum {
     cond_c,                 //!< execute if C == 1
     cond_c_or_nz,           //!< execute if C == 1 or Z == 0
     cond_c_or_z,            //!< execute if C == 1 or Z == 1
-    cond_never              //!< actually execute always (?)
+    cond_always             //!< execute always (default)
 }   p2_cond_e;
 
 /**
@@ -223,8 +245,8 @@ typedef struct {
     unsigned src:9;             //!< source (S or #S)
     unsigned dst:9;             //!< destination (D or #D)
     bool imm:1;                 //!< immediate flag
-    bool uz:1;                  //!< update Z flag
-    bool uc:1;                  //!< update C flag
+    bool wz:1;                  //!< update Z flag
+    bool wc:1;                  //!< update C flag
     unsigned inst:7;            //!< instruction type
     unsigned cond:4;            //!< conditional execution
 #elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
@@ -249,29 +271,76 @@ typedef union {
 }   p2_opword_t;
 
 typedef struct {
-    quint32 RAM[512-16];        //!< general-use code/data registers
-    quint32 IJMP3;              //!< interrupt call address for INT3
-    quint32 IRET3;              //!< interrupt return address for INT3
-    quint32 IJMP2;              //!< interrupt call address for INT2
-    quint32 IRET2;              //!< interrupt return address for INT2
-    quint32 IJMP1;              //!< interrupt call address for INT1
-    quint32 IRET1;              //!< interrupt return address for INT1
-    quint32 PA;                 //!< CALLD-imm return, CALLPA parameter, or LOC address
-    quint32 PB;                 //!< CALLD-imm return, CALLPB parameter, or LOC address
-    quint32 PTRA;               //!< pointer A to hub RAM
-    quint32 PTRB;               //!< pointer B to hub RAM
-    quint32 DIRA;               //!< output enables for P31 ... P0
-    quint32 DIRB;               //!< output enables for P63 ... P32
-    quint32 OUTA;               //!< output states for P31 ... P0
-    quint32 OUTB;               //!< output states for P63 ... P32
-    quint32 INA;                //!< input states for P31 ... P0
-    quint32 INB;                //!< input states for P63 ... P32
+    p2_LONG RAM[512-16];        //!< general-use code/data registers
+    p2_LONG IJMP3;              //!< interrupt call address for INT3
+    p2_LONG IRET3;              //!< interrupt return address for INT3
+    p2_LONG IJMP2;              //!< interrupt call address for INT2
+    p2_LONG IRET2;              //!< interrupt return address for INT2
+    p2_LONG IJMP1;              //!< interrupt call address for INT1
+    p2_LONG IRET1;              //!< interrupt return address for INT1
+    p2_LONG PA;                 //!< CALLD-imm return, CALLPA parameter, or LOC address
+    p2_LONG PB;                 //!< CALLD-imm return, CALLPB parameter, or LOC address
+    p2_LONG PTRA;               //!< pointer A to hub RAM
+    p2_LONG PTRB;               //!< pointer B to hub RAM
+    p2_LONG DIRA;               //!< output enables for P31 ... P0
+    p2_LONG DIRB;               //!< output enables for P63 ... P32
+    p2_LONG OUTA;               //!< output states for P31 ... P0
+    p2_LONG OUTB;               //!< output states for P63 ... P32
+    p2_LONG INA;                //!< input states for P31 ... P0
+    p2_LONG INB;                //!< input states for P63 ... P32
 }   p2_lutregs_t;
 
+typedef enum {
+    offs_IJMP3 = offsetof(p2_lutregs_t, IJMP3) / sizeof(p2_LONG),
+    offs_IRET3 = offsetof(p2_lutregs_t, IRET3) / sizeof(p2_LONG),
+    offs_IJMP2 = offsetof(p2_lutregs_t, IJMP2) / sizeof(p2_LONG),
+    offs_IRET2 = offsetof(p2_lutregs_t, IRET2) / sizeof(p2_LONG),
+    offs_IJMP1 = offsetof(p2_lutregs_t, IJMP1) / sizeof(p2_LONG),
+    offs_IRET1 = offsetof(p2_lutregs_t, IRET1) / sizeof(p2_LONG),
+    offs_PA    = offsetof(p2_lutregs_t,    PA) / sizeof(p2_LONG),
+    offs_PB    = offsetof(p2_lutregs_t,    PB) / sizeof(p2_LONG),
+    offs_PTRA  = offsetof(p2_lutregs_t,  PTRA) / sizeof(p2_LONG),
+    offs_PTRB  = offsetof(p2_lutregs_t,  PTRB) / sizeof(p2_LONG),
+    offs_DIRA  = offsetof(p2_lutregs_t,  DIRA) / sizeof(p2_LONG),
+    offs_DIRB  = offsetof(p2_lutregs_t,  DIRB) / sizeof(p2_LONG),
+    offs_OUTA  = offsetof(p2_lutregs_t,  OUTA) / sizeof(p2_LONG),
+    offs_OUTB  = offsetof(p2_lutregs_t,  OUTB) / sizeof(p2_LONG),
+    offs_INA   = offsetof(p2_lutregs_t,   INA) / sizeof(p2_LONG),
+    offs_INB   = offsetof(p2_lutregs_t,   INB) / sizeof(p2_LONG)
+}   p2_lutregs_e;
+
+Q_STATIC_ASSERT(offs_INB == 0x1ff);
+
 /**
- * @brief union of the COG / LUT memory and shadow registers
+ * @brief union of the COG memory (shadow registers ?)
  */
 typedef union {
-    quint32 RAM[512];
+    p2_LONG RAM[512];
+}   p2_cog_t;
+
+/**
+ * @brief union of the LUT memory and shadow registers
+ */
+typedef union {
+    p2_LONG RAM[512];
     p2_lutregs_t REG;
 }   p2_lut_t;
+
+typedef struct {
+    bool    f_INT:1;            //!< INT interrupt flag
+    bool    f_CT1:1;            //!< CT1 counter 1 flag
+    bool    f_CT2:1;            //!< CT2 counter 2 flag
+    bool    f_CT3:1;            //!< CT3 counter 3 flag
+    bool    f_SE1:1;            //!< SE1 set event 1 flag
+    bool    f_SE2:1;            //!< SE2 set event 2 flag
+    bool    f_SE3:1;            //!< SE3 set event 3 flag
+    bool    f_SE4:1;            //!< SE4 set event 4 flag
+    bool    f_PAT:1;            //!< PAT pattern flag
+    bool    f_FBW:1;            //!< FBW flag
+    bool    f_XMT:1;            //!< XMT flag
+    bool    f_XFI:1;            //!< XFI flag
+    bool    f_XRO:1;            //!< XRO flag
+    bool    f_XRL:1;            //!< XRL flag
+    bool    f_ATN:1;            //!< ATN COG attention flag
+    bool    f_QMT:1;            //!< QMT Q empty flag
+}   p2_flags_t;

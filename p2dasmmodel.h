@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * P2 emulator Hub class
+ * Propeller2 disassembler data model for QItemView
  *
  * Copyright (C) 2019 Jürgen Buchmüller <pullmoll@t-online.de>
  *
@@ -32,60 +32,34 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 #pragma once
-#include <QObject>
-#include "p2defs.h"
+#include <QAbstractTableModel>
+#include <QFont>
+#include <QFontMetrics>
+class P2Dasm;
 
-//! Number of COGs to emulate
-#define NUM_COGS    2
-
-//! Size of the HUB memory in bytes
-#define MEM_SIZE    0x100000
-
-class P2Cog;
-
-class P2Hub : public QObject
+class P2DasmModel : public QAbstractTableModel
 {
     Q_OBJECT
 public:
-    P2Hub(QObject* parent = nullptr);
+    enum column_e {
+        c_Address,
+        c_Opcode,
+        c_Instruction,
+        c_Comment
+    };
 
-    P2Cog* cog(uint id);
-    p2_BYTE* mem();
-    p2_LONG memsize() const;
+    explicit P2DasmModel(P2Dasm* dasm, QObject *parent = nullptr);
 
-    bool load(const QString& filename);
+    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+    int columnCount(const QModelIndex &parent = QModelIndex()) const override;
+    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 
-    p2_BYTE rd_BYTE(p2_LONG addr) const;
-    void wr_BYTE(p2_LONG addr, p2_BYTE val);
-
-    p2_WORD rd_WORD(p2_LONG addr) const;
-    void wr_WORD(p2_LONG addr, p2_WORD val);
-
-    p2_LONG rd_LONG(p2_LONG addr) const;
-    void wr_LONG(p2_LONG addr, p2_LONG val);
-
-    p2_LONG rd_cog(uint cog, p2_LONG offs) const;
-    void wr_cog(uint cog, p2_LONG offs, p2_LONG val);
-
-    p2_LONG rd_lut(uint cog, p2_LONG offs) const;
-    void wr_lut(uint cog, p2_LONG offs, p2_LONG val);
-
-    p2_LONG rd_mem(uint cog, p2_LONG addr) const;
-    void wr_mem(uint cog, p2_LONG addr, p2_LONG val);
-
-    p2_LONG rd_PA();
-    void wr_PA(p2_LONG val);
-
-    p2_LONG rd_PB();
-    void wr_PB(p2_LONG val);
+    Qt::Alignment alignment(column_e column) const;
+    QSize sizeHint(column_e column, bool bold = false) const;
 
 private:
-    P2Cog* COGS[NUM_COGS];
-    quint32 PA;
-    quint32 PB;
-    union {
-        quint8  B[MEM_SIZE];
-        quint16 W[MEM_SIZE/2];
-        quint32 L[MEM_SIZE/8];
-    } MEM;
+    P2Dasm* m_dasm;
+    QFont m_font;
+    QFont m_bold;
 };

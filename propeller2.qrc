@@ -1,6 +1,7 @@
 <RCC>
     <qresource prefix="/">
         <file>P2 instruction set.csv</file>
-        <file>TACHYON5r4.binary</file>
+        <file>instructions_v33g.txt</file>
+        <file>ROM_Booter_v33_01j.bin</file>
     </qresource>
 </RCC>

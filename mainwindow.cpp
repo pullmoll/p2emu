@@ -33,97 +33,39 @@
  ****************************************************************************/
 #include <QFile>
 #include <QTextStream>
+#include <QTimer>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "about.h"
 #include "csv.h"
-#include "p2cog.h"
 #include "p2dasm.h"
 
-#if CREATE_SOURCE
-//! field #0 in the CSV data
-static const QString k_id("id");
-//! field #1 in the CSV data
-static const QString k_alias("alias");
-//! field #2 in the CSV data
-static const QString k_group("group");
-//! field #3 in the CSV data
-static const QString k_encoding("encoding");
-//! field #4 in the CSV data
-static const QString k_syntax("syntax");
-//! field #5 in the CSV data
-static const QString k_description("description");
-//! field #6 in the CSV data
-static const QString k_timing_08_1("timing.8.1");
-//! field #7 in the CSV data
-static const QString k_timing_08_2("timing.8.2");
-//! field #8 in the CSV data
-static const QString k_timing_16_1("timing.16.1");
-//! field #9 in the CSV data
-static const QString k_timing_16_2("timing.16.2");
-//! field #10 in the CSV data
-static const QString k_regwrite("register_write");
-//! field #11 in the CSV data
-static const QString k_hub_r_w("hub_r_w");
-//! field #12 in the CSV data
-static const QString k_stack_r_w("stack_r_w");
-//! field #13 in the CSV data
-static const QString k_spin_methods("spin_methods");
-
-//! list of keys ordered as they appear in the CSV
-static const QStringList k_keys = QStringList()
-    << k_id
-    << k_alias
-    << k_group
-    << k_encoding
-    << k_syntax
-    << k_description
-    << k_timing_08_1
-    << k_timing_08_2
-    << k_timing_16_1
-    << k_timing_16_2
-    << k_regwrite
-    << k_hub_r_w
-    << k_stack_r_w
-    << k_spin_methods;
-#endif
-
-MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::MainWindow)
+MainWindow::MainWindow(QWidget *parent)
+    : QMainWindow(parent)
+    , ui(new Ui::MainWindow)
+    , m_dasm(new P2Dasm(m_hub.cog(0)))
+    , m_model(new P2DasmModel(m_dasm))
 {
     QEventLoop loop(this);
     ui->setupUi(this);
 
-#if CREATE_SOURCE
-    csv2source();
-#endif
+    connect(ui->action_Quit, SIGNAL(triggered(bool)), this, SLOT(close()));
+    connect(ui->action_About, SIGNAL(triggered(bool)), this, SLOT(about()));
+    connect(ui->action_AboutQt5, SIGNAL(triggered(bool)), this, SLOT(aboutQt5()));
 
-    P2Hub hub;
-    P2Dasm da;
+    m_hub.load(":/ROM_Booter_v33_01j.bin");
+    ui->dasm->setModel(m_model);
 
-    QFile bin(":/TACHYON5r4.binary");
-    if (bin.open(QIODevice::ReadOnly)) {
-        quint32 addr = 0x000;
-        bin.seek(0x200);
-        while (!bin.atEnd()) {
-            union {
-                char bytes[4];
-                quint32 word;
-            }   data;
-            if (4 == bin.read(data.bytes, 4)) {
-                hub.wr_COG(0, addr++, data.word);
-            }
-        }
+    // Set column sizes
+    for (int column = 0; column < m_model->columnCount(); column++) {
+        QSize size = m_model->sizeHint(static_cast<P2DasmModel::column_e>(column));
+        ui->dasm->setColumnWidth(column, size.width());
     }
-
-    P2Cog* cog = hub.cog(0);
-    for (quint32 addr = 0; addr < 32768/4; addr++) {
-        QString opcode;
-        QString string = da.dasm(cog, addr, opcode);
-        opcode.resize(40, QChar::Space);
-        qDebug("%06x: %s %s", addr, qPrintable(opcode), qPrintable(string));
-        loop.processEvents();
-    }
+    // Set row sizes to 8 fixed
+    QHeaderView *vh = ui->dasm->verticalHeader();
+    vh->setSectionResizeMode(QHeaderView::Fixed);
+    vh->setDefaultSectionSize(8);
+    ui->dasm->selectRow(0);
 }
 
 MainWindow::~MainWindow()
@@ -131,85 +73,16 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-#if CREATE_SOURCE
-QString MainWindow::opfunc(const QVariantMap& map, DecoderMap& decoder)
+void MainWindow::about()
 {
-    QString syntax = map.value(k_syntax).toString();
-    QString encoding = map.value(k_encoding).toString();
-    QString op = syntax.split(QChar::Space).first().toLower();
-    QString description = map.value(k_description).toString();
-    QStringList desclist = description.split(QChar('.'));
-    QString brief = desclist.first();
-    QString src;
-    QTextStream str(&src, QIODevice::WriteOnly);
-    desclist = desclist.mid(1);
-
-    QString mask, match;
-    foreach(QChar ch, encoding) {
-        switch (ch.toLatin1()) {
-        case ' ':
-            mask += QChar::Space;
-            match += QChar::Space;
-            break;
-        case '0': case '1':
-            mask += QChar('1');
-            match += ch;
-            break;
-        default:
-            mask += QChar('0');
-            match += QChar('0');
-        }
-    }
-
-    str << QStringLiteral("/**\n");
-    str << QStringLiteral(" * @brief ") << brief << QStringLiteral(".\n");
-    str << QStringLiteral(" *\n");
-    str << QStringLiteral(" * ") << encoding << QStringLiteral("\n");
-    str << QStringLiteral(" *\n");
-    str << QStringLiteral(" * ") << syntax << QStringLiteral("\n");
-    str << QStringLiteral(" *\n");
-    foreach(const QString& s, desclist) {
-        if (s.trimmed() == QStringLiteral("*"))
-            str << QStringLiteral(" * Z = (result == 0).\n");
-        else if (!s.trimmed().isEmpty())
-            str << QStringLiteral(" * ") << s.trimmed() << QStringLiteral(".\n");
-    }
-    str << QStringLiteral(" */\n");
-    str << QStringLiteral("void propeller2::op_") << op << QStringLiteral("()\n");
-    str << QStringLiteral("{\n");
-    str << QStringLiteral("}\n");
-    str << QStringLiteral("\n");
-
-    decoder.insertMulti(QString("%1_%2").arg(mask).arg(match), Decoder(mask, match, op));
-
-    return src;
+    About dlg;
+    dlg.setApplicationName(qApp->applicationName());
+    dlg.setApplicationVersion(qApp->applicationVersion());
+    dlg.adjustSize();
+    dlg.exec();
 }
 
-void MainWindow::csv2source()
+void MainWindow::aboutQt5()
 {
-    CSV csv(":/P2 instruction set.csv");
-    QList<QStringList> records;
-    DecoderMap dec;
-    QFile src("propeller2.txt");
-    if (!src.open(QIODevice::WriteOnly))
-        return;
-    if (csv.read(records)) {
-        for (int i = 0; i < records.count(); i++) {
-            QStringList fields = records.at(i);
-
-            QVariantMap map;
-            for (int j = 0; j < k_keys.count(); j++) {
-                map.insert(k_keys[j], fields.value(j));
-                // qDebug("%-20s: %s", qPrintable(k_keys[j]), qPrintable(map.value(k_keys[j]).toString()));
-            }
-            if (i > 0) {
-                QString s = opfunc(map, dec);
-                qDebug("%s", qPrintable(s));
-                src.write(s.toUtf8());
-            }
-        }
-    }
-    foreach(const Decoder& d, dec.values())
-        qDebug("%08x %08x %s", d.mask(), d.match(), qPrintable(d.op()));
+    qApp->aboutQt();
 }
-#endif

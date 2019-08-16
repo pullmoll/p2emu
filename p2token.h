@@ -34,7 +34,7 @@
 #pragma once
 #include <QString>
 #include <QMap>
-#include "p2_defs.h"
+#include "p2defs.h"
 
 /**
  * @brief enumeration of tokens used in mnemonics for the P2 assembler and disassembler
@@ -227,7 +227,7 @@ typedef enum {
     t_NEGNC,
     t_NEGNZ,
     t_NEGZ,
-    t_NEVER,
+    t_ALWAYS,
     t_NIXINT1,
     t_NIXINT2,
     t_NIXINT3,

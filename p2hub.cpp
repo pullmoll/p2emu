@@ -31,11 +31,14 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
+#include <QtEndian>
+#include <QFile>
 #include "p2hub.h"
 #include "p2cog.h"
 
-P2Hub::P2Hub()
-    : COGS()
+P2Hub::P2Hub(QObject* parent)
+    : QObject(parent)
+    , COGS()
     , PA(0)
     , PB(0)
     , MEM()
@@ -77,7 +80,7 @@ P2Cog* P2Hub::cog(uint id)
  * @brief Return a pointer to the HUB memory
  * @return pointer to MEM
  */
-uchar* P2Hub::mem()
+p2_BYTE* P2Hub::mem()
 {
     return MEM.B;
 }
@@ -86,9 +89,24 @@ uchar* P2Hub::mem()
  * @brief Return the size of the HUB memory in bytes
  * @return size of MEM
  */
-quint32 P2Hub::memsize() const
+p2_LONG P2Hub::memsize() const
 {
     return sizeof(MEM);
+}
+
+bool P2Hub::load(const QString& filename)
+{
+    QFile file(filename);
+    if (!file.open(QIODevice::ReadOnly))
+        return false;
+
+    QByteArray bin = file.read(MEM_SIZE);
+    qDebug("%s: file=%s size=0x%06x (%d)", __func__, qPrintable(filename), bin.size(), bin.size());
+    p2_BWL* p = reinterpret_cast<p2_BWL *>(bin.data());
+    for (int i = 0; i < bin.size(); i += 4, p++) {
+        wr_mem(0, static_cast<p2_LONG>(i), p->l);
+    }
+    return true;
 }
 
 /**
@@ -96,7 +114,7 @@ quint32 P2Hub::memsize() const
  * @param addr address
  * @return
  */
-quint8 P2Hub::rd_BYTE(quint32 addr) const
+p2_BYTE P2Hub::rd_BYTE(p2_LONG addr) const
 {
     if (addr < sizeof(MEM))
         return MEM.B[addr];
@@ -108,7 +126,7 @@ quint8 P2Hub::rd_BYTE(quint32 addr) const
  * @param addr address
  * @param val byte value
  */
-void P2Hub::wr_BYTE(quint32 addr, quint8 val)
+void P2Hub::wr_BYTE(p2_LONG addr, p2_BYTE val)
 {
     if (addr < sizeof(MEM))
         MEM.B[addr] = val;
@@ -119,10 +137,10 @@ void P2Hub::wr_BYTE(quint32 addr, quint8 val)
  * @param addr address (bit 0 is ignored, i.e. word aligned)
  * @return
  */
-quint16 P2Hub::rd_WORD(quint32 addr) const
+p2_WORD P2Hub::rd_WORD(p2_LONG addr) const
 {
     addr &= ~1u;
-    if (addr*2 < sizeof(MEM))
+    if (addr/2 < sizeof(MEM))
         return MEM.W[addr/2];
     return 0x0000;
 }
@@ -132,10 +150,10 @@ quint16 P2Hub::rd_WORD(quint32 addr) const
  * @param addr address (bit 0 is ignored, i.e. word aligned)
  * @param val byte value
  */
-void P2Hub::wr_WORD(quint32 addr, quint16 val)
+void P2Hub::wr_WORD(p2_LONG addr, p2_WORD val)
 {
     addr &= ~1u;
-    if (addr*2 < sizeof(MEM))
+    if (addr/2 < sizeof(MEM))
         MEM.W[addr/2] = val;
 }
 
@@ -144,10 +162,10 @@ void P2Hub::wr_WORD(quint32 addr, quint16 val)
  * @param addr address (bits 0+1 are ignored, i.e. long aligned)
  * @return
  */
-quint32 P2Hub::rd_LONG(quint32 addr) const
+p2_LONG P2Hub::rd_LONG(p2_LONG addr) const
 {
     addr &= ~3u;
-    if (addr*4 < sizeof(MEM))
+    if (addr/4 < sizeof(MEM))
         return MEM.L[addr/4];
     return 0x00000000;
 }
@@ -157,48 +175,116 @@ quint32 P2Hub::rd_LONG(quint32 addr) const
  * @param addr address (bits 0+1 are ignored, i.e. long aligned)
  * @param val byte value
  */
-void P2Hub::wr_LONG(quint32 addr, quint32 val)
+void P2Hub::wr_LONG(p2_LONG addr, p2_LONG val)
 {
     addr &= ~3u;
-    if (addr*4 < sizeof(MEM))
+    if (addr/4 < sizeof(MEM))
         MEM.L[addr/4] = val;
 }
 
 /**
- * @brief Read long from COG %cog for %addr < $400, or HUB memory otherwise
+ * @brief Read long from COG %cog COG offset $000 <= %offs < $200
  * @param cog COG number (0 … 15)
- * @param addr 20 bit address
+ * @param offs COG offset (0 … 511)
  * @return long from that address
  */
-quint32 P2Hub::rd_COG(uint cog, quint32 addr) const
+p2_LONG P2Hub::rd_cog(uint cog, p2_LONG offs) const
 {
     if (cog >= NUM_COGS)
         return 0;
-    if (addr < 0x400)
-        return COGS[cog]->rd_cog(addr);
-    return rd_LONG(addr * 4);
+    Q_ASSERT(offs < 0x200);
+    return COGS[cog]->rd_cog(offs);
 }
 
 /**
- * @brief Write long to COG %cog for %addr < $400, or HUB memory otherwise
+ * @brief Write long to COG %cog COG offset $000 <= %offs < $200
  * @param cog COG number (0 … 15)
- * @param addr 20 bit address
+ * @param offs COG offset (0 … 511)
  * @param val long value to write
  */
-void P2Hub::wr_COG(uint cog, quint32 addr, quint32 val)
+void P2Hub::wr_cog(uint cog, p2_LONG offs, p2_LONG val)
 {
     if (cog >= NUM_COGS)
         return;
-    if (addr < 0x400)
-        COGS[cog]->wr_cog(addr, val);
-    wr_LONG(addr * 4, val);
+    Q_ASSERT(offs < 0x200);
+    COGS[cog]->wr_cog(offs, val);
+}
+
+/**
+ * @brief Read long from COG %cog LUT offset $000 <= %offs < $200
+ * @param cog COG number (0 … 15)
+ * @param offs LUT offset (0 … 511)
+ * @return long from that address
+ */
+p2_LONG P2Hub::rd_lut(uint cog, p2_LONG offs) const
+{
+    if (cog >= NUM_COGS)
+        return 0;
+    Q_ASSERT(offs < 0x200);
+    return COGS[cog]->rd_lut(offs);
+}
+
+/**
+ * @brief Write long to COG %cog LUT offset $000 <= %offs < $200
+ * @param cog COG number (0 … 15)
+ * @param offs LUT offset (0 … 511)
+ * @param val long value to write
+ */
+void P2Hub::wr_lut(uint cog, p2_LONG offs, p2_LONG val)
+{
+    if (cog >= NUM_COGS)
+        return;
+    Q_ASSERT(offs < 0x200);
+    COGS[cog]->wr_lut(offs, val);
+}
+
+/**
+ * @brief Read long from COG %cog address $00000 <= %addr <= $fffff
+ * @param cog COG number (0 … 15)
+ * @param offs 20 bit address
+ * @return long from that address
+ */
+p2_LONG P2Hub::rd_mem(uint cog, p2_LONG addr) const
+{
+    p2_LONG data = 0;
+    if (cog >= NUM_COGS)
+        return 0;
+    Q_ASSERT(addr <= 0xfffffu);
+    if (addr < 0x00800) {
+        data = rd_cog(cog, addr/4);
+    } else if (addr < 0x01000) {
+        data = rd_lut(cog, addr/4 - 0x200);
+    } else {
+        data = MEM.L[addr/4];
+    }
+    return data;
+}
+
+/**
+ * @brief Write long to COG %cog for LUT %addr < $200, or HUB memory otherwise
+ * @param cog COG number (0 … 15)
+ * @param offs 20 bit address
+ * @param val long value to write
+ */
+void P2Hub::wr_mem(uint cog, p2_LONG addr, p2_LONG val)
+{
+    if (cog >= NUM_COGS)
+        return;
+    Q_ASSERT(addr <= 0xfffffu);
+    if (addr < 0x00800) {
+        wr_cog(cog, addr/4, val);
+    } else if (addr < 0x01000) {
+        wr_lut(cog, addr/4 - 0x200, val);
+    } else {
+        MEM.L[addr/4] = val;
+    }
 }
 
 /**
  * @brief Return the current status of port A
  * @return bits of port A
  */
-quint32 P2Hub::rd_PA()
+p2_LONG P2Hub::rd_PA()
 {
     return PA;
 }
@@ -207,7 +293,7 @@ quint32 P2Hub::rd_PA()
  * @brief Modify the current status of port A
  * @param val new value for port A
  */
-void P2Hub::wr_PA(quint32 val)
+void P2Hub::wr_PA(p2_LONG val)
 {
     PA = val;
 }
@@ -216,7 +302,7 @@ void P2Hub::wr_PA(quint32 val)
  * @brief Return the current status of port B
  * @return bits of port B
  */
-quint32 P2Hub::rd_PB()
+p2_LONG P2Hub::rd_PB()
 {
     return PB;
 }

@@ -1,9 +1,45 @@
-#include "p2_defs.h"
+/****************************************************************************
+ *
+ * Propeller2 disassembler
+ *
+ * Copyright (C) 2019 Jürgen Buchmüller <pullmoll@t-online.de>
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ ****************************************************************************/
+#include "p2defs.h"
 #include "p2cog.h"
 #include "p2dasm.h"
 
-P2Dasm::P2Dasm()
-    : Token(new P2Token(false))
+P2Dasm::P2Dasm(const P2Cog* cog, QObject* parent)
+    : QObject(parent)
+    , COG(cog)
+    , Token(new P2Token())
+    , pad_opcode(40)
     , pad_inst(-10)
     , pad_wcz(24)
     , m_opcode()
@@ -52,8 +88,8 @@ p2_token_e P2Dasm::conditional(p2_cond_e cond)
         return t_IF_C_OR_NZ;
     case cond_c_or_z:       // execute if C = 1 or Z = 1
         return t_IF_C_OR_Z;
-    case cond_never:
-        return t_NEVER;
+    case cond_always:
+        return t_ALWAYS;
     }
     return t_invalid;
 }
@@ -63,27 +99,27 @@ p2_token_e P2Dasm::conditional(unsigned cond)
     return conditional(static_cast<p2_cond_e>(cond));
 }
 
-QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
+bool P2Dasm::dasm(p2_LONG PC, QString& opcode, QString& instruction)
 {
     QString cond;
 
-    if (PC < 0x0200) {
-        // cogexec
-        IR.word = COG->rd_cog(PC);
-    } else if (PC < 0x0400) {
-        // lutexec
-        IR.word = COG->rd_lut(PC);
-    } else {
-        // hubexec
-        IR.word = COG->rd_mem(PC);
-    }
-
+    IR.word = COG->rd_mem(PC*4);
     PC++;               // increment PC
     S = COG->rd_cog(IR.op.src);
     D = COG->rd_cog(IR.op.dst);
 
     // check for the condition
     cond = Token->str(conditional(IR.op.cond));
+
+    m_opcode = QString("%1_%2_%3%4%5_%6_%7")
+               .arg(format_bin(IR.op.cond, 4))
+               .arg(format_bin(IR.op.inst, 7))
+               .arg(format_bin(IR.op.wc, 1))
+               .arg(format_bin(IR.op.wz, 1))
+               .arg(format_bin(IR.op.imm, 1))
+               .arg(format_bin(IR.op.dst, 9))
+               .arg(format_bin(IR.op.src, 9));
+    m_opcode.resize(pad_opcode, QChar::Space);
 
     // Dispatch to dasm_xxx() functions
     switch (IR.op.inst) {
@@ -217,49 +253,49 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
 
     case p2_testb_w:
         // case p2_bitl:
-        (IR.op.uc != IR.op.uz) ? dasm_testb_w()
+        (IR.op.wc != IR.op.wz) ? dasm_testb_w()
                                         : dasm_bitl();
         break;
 
     case p2_testbn_w:
         // case p2_bith:
-        (IR.op.uc != IR.op.uz) ? dasm_testbn_w()
+        (IR.op.wc != IR.op.wz) ? dasm_testbn_w()
                                         : dasm_bith();
         break;
 
     case p2_testb_and:
         // case p2_bitc:
-        (IR.op.uc != IR.op.uz) ? dasm_testb_and()
+        (IR.op.wc != IR.op.wz) ? dasm_testb_and()
                                         : dasm_bitc();
         break;
 
     case p2_testbn_and:
         // case p2_bitnc:
-        (IR.op.uc != IR.op.uz) ? dasm_testbn_and()
+        (IR.op.wc != IR.op.wz) ? dasm_testbn_and()
                                         : dasm_bitnc();
         break;
 
     case p2_testb_or:
         // case p2_bitz:
-        (IR.op.uc != IR.op.uz) ? dasm_testb_or()
+        (IR.op.wc != IR.op.wz) ? dasm_testb_or()
                                         : dasm_bitz();
         break;
 
     case p2_testbn_or:
         // case p2_bitnz:
-        (IR.op.uc != IR.op.uz) ? dasm_testbn_or()
+        (IR.op.wc != IR.op.wz) ? dasm_testbn_or()
                                         : dasm_bitnz();
         break;
 
     case p2_testb_xor:
         // case p2_bitrnd:
-        (IR.op.uc != IR.op.uz) ? dasm_testb_xor()
+        (IR.op.wc != IR.op.wz) ? dasm_testb_xor()
                                         : dasm_bitrnd();
         break;
 
     case p2_testbn_xor:
         // case p2_bitnot:
-        (IR.op.uc != IR.op.uz) ? dasm_testbn_xor()
+        (IR.op.wc != IR.op.wz) ? dasm_testbn_xor()
                                         : dasm_bitnot();
         break;
 
@@ -387,21 +423,21 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
 
     case p2_1001001:
-        if (IR.op.uc == 0) {
-            (IR.op.dst == 0 && IR.op.uz == 0) ? dasm_setword_altsw()
+        if (IR.op.wc == 0) {
+            (IR.op.dst == 0 && IR.op.wz == 0) ? dasm_setword_altsw()
                                                        : dasm_setword();
         } else {
-            (IR.op.src == 0 && IR.op.uz == 0) ? dasm_getword_altgw()
+            (IR.op.src == 0 && IR.op.wz == 0) ? dasm_getword_altgw()
                                                        : dasm_getword();
         }
         break;
 
     case p2_1001010:
-        if (IR.op.uc == 0) {
-            (IR.op.src == 0 && IR.op.uz == 0) ? dasm_rolword_altgw()
+        if (IR.op.wc == 0) {
+            (IR.op.src == 0 && IR.op.wz == 0) ? dasm_rolword_altgw()
                                                        : dasm_rolword();
         } else {
-            if (IR.op.uz == 0) {
+            if (IR.op.wz == 0) {
                 (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altsn_d()
                                                             : dasm_altsn();
             } else {
@@ -412,8 +448,8 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
 
     case p2_1001011:
-        if (IR.op.uc == 0) {
-            if (IR.op.uz == 0) {
+        if (IR.op.wc == 0) {
+            if (IR.op.wz == 0) {
                 (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altsb_d()
                                                             : dasm_altsb();
             } else {
@@ -421,7 +457,7 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
                                                             : dasm_altgb();
             }
         } else {
-            if (IR.op.uz == 0) {
+            if (IR.op.wz == 0) {
                 (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altsw_d()
                                                             : dasm_altsw();
             } else {
@@ -432,8 +468,8 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
 
     case p2_1001100:
-        if (IR.op.uc == 0) {
-            if (IR.op.uz == 0) {
+        if (IR.op.wc == 0) {
+            if (IR.op.wz == 0) {
                 (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altr_d()
                                                             : dasm_altr();
             } else {
@@ -441,7 +477,7 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
                                                             : dasm_altd();
             }
         } else {
-            if (IR.op.uz == 0) {
+            if (IR.op.wz == 0) {
                 (IR.op.src == 0 && IR.op.imm == 1) ? dasm_alts_d()
                                                             : dasm_alts();
             } else {
@@ -452,22 +488,22 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
 
     case p2_1001101:
-        if (IR.op.uc == 0) {
-            if (IR.op.uz == 0) {
+        if (IR.op.wc == 0) {
+            if (IR.op.wz == 0) {
                 (IR.op.imm == 1 && IR.op.src == 0x164 /* 101100100 */) ? dasm_alti_d()
                                                                                 : dasm_alti();
             } else {
                 dasm_setr();
             }
         } else {
-            (IR.op.uz == 0) ? dasm_setd()
+            (IR.op.wz == 0) ? dasm_setd()
                                      : dasm_sets();
         }
         break;
 
     case p2_1001110:
-        if (IR.op.uc == 0) {
-            if (IR.op.uz == 0) {
+        if (IR.op.wc == 0) {
+            if (IR.op.wz == 0) {
                 (IR.op.imm == 0 && IR.op.src == IR.op.dst) ? dasm_decod_d()
                                                                     : dasm_decod();
             } else {
@@ -475,7 +511,7 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
                                                                     : dasm_bmask();
             }
         } else {
-            if (IR.op.uz == 0) {
+            if (IR.op.wz == 0) {
                 dasm_crcbit();
             } else {
                 dasm_crcnib();
@@ -484,14 +520,14 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
 
     case p2_1001111:
-        if (IR.op.uc == 0) {
-            if (IR.op.uz == 0) {
+        if (IR.op.wc == 0) {
+            if (IR.op.wz == 0) {
                 dasm_muxnits();
             } else {
                 dasm_muxnibs();
             }
         } else {
-            if (IR.op.uz == 0) {
+            if (IR.op.wz == 0) {
                 dasm_muxq();
             } else {
                 dasm_movbyts();
@@ -500,7 +536,7 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
 
     case p2_1010000:
-        if (IR.op.uc == 0) {
+        if (IR.op.wc == 0) {
             dasm_mul();
         } else {
             dasm_muls();
@@ -508,7 +544,7 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
 
     case p2_1010001:
-        if (IR.op.uc == 0) {
+        if (IR.op.wc == 0) {
             dasm_sca();
         } else {
             dasm_scas();
@@ -516,14 +552,14 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
 
     case p2_1010010:
-        if (IR.op.uc == 0) {
-            if (IR.op.uz == 0) {
+        if (IR.op.wc == 0) {
+            if (IR.op.wz == 0) {
                 dasm_addpix();
             } else {
                 dasm_mulpix();
             }
         } else {
-            if (IR.op.uz == 0) {
+            if (IR.op.wz == 0) {
                 dasm_blnpix();
             } else {
                 dasm_mixpix();
@@ -532,14 +568,14 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
 
     case p2_1010011:
-        if (IR.op.uc == 0) {
-            if (IR.op.uz == 0) {
+        if (IR.op.wc == 0) {
+            if (IR.op.wz == 0) {
                 dasm_addct1();
             } else {
                 dasm_addct2();
             }
         } else {
-            if (IR.op.uz == 0) {
+            if (IR.op.wz == 0) {
                 dasm_addct3();
             } else {
                 dasm_wmlong();
@@ -548,7 +584,7 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
 
     case p2_1010100:
-        if (IR.op.uz == 0) {
+        if (IR.op.wz == 0) {
             dasm_rqpin();
         } else {
 
@@ -576,18 +612,18 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
 
     case p2_callp:
-        (IR.op.uc == 0) ? dasm_callpa() : dasm_callpb();
+        (IR.op.wc == 0) ? dasm_callpa() : dasm_callpb();
         break;
 
     case p2_1011011:
-        if (IR.op.uc == 0) {
-            if (IR.op.uz == 0) {
+        if (IR.op.wc == 0) {
+            if (IR.op.wz == 0) {
                 dasm_djz();
             } else {
                 dasm_djnz();
             }
         } else {
-            if (IR.op.uz == 0) {
+            if (IR.op.wz == 0) {
                 dasm_djf();
             } else {
                 dasm_djnf();
@@ -596,14 +632,14 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
 
     case p2_1011100:
-        if (IR.op.uc == 0) {
-            if (IR.op.uz == 0) {
+        if (IR.op.wc == 0) {
+            if (IR.op.wz == 0) {
                 dasm_ijz();
             } else {
                 dasm_ijnz();
             }
         } else {
-            if (IR.op.uz == 0) {
+            if (IR.op.wz == 0) {
                 dasm_tjz();
             } else {
                 dasm_tjnz();
@@ -612,14 +648,14 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
 
     case p2_1011101:
-        if (IR.op.uc == 0) {
-            if (IR.op.uz == 0) {
+        if (IR.op.wc == 0) {
+            if (IR.op.wz == 0) {
                 dasm_tjf();
             } else {
                 dasm_tjnf();
             }
         } else {
-            if (IR.op.uz == 0) {
+            if (IR.op.wz == 0) {
                 dasm_tjs();
             } else {
                 dasm_tjns();
@@ -628,8 +664,8 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
 
     case p2_1011110:
-        if (IR.op.uc == 0) {
-            if (IR.op.uz == 0) {
+        if (IR.op.wc == 0) {
+            if (IR.op.wz == 0) {
                 dasm_tjv();
             } else {
                 switch (IR.op.dst) {
@@ -740,7 +776,7 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
 
     case p2_1011111:
-        if (IR.op.uc == 0) {
+        if (IR.op.wc == 0) {
             dasm_1011111_0();
         } else {
             dasm_setpat();
@@ -748,8 +784,8 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
 
     case p2_1100000:
-        if (IR.op.uc == 0) {
-            (IR.op.uz == 1 && IR.op.dst == 1) ? dasm_akpin()
+        if (IR.op.wc == 0) {
+            (IR.op.wz == 1 && IR.op.dst == 1) ? dasm_akpin()
                                                        : dasm_wrpin();
         } else {
             dasm_wxpin();
@@ -757,7 +793,7 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
 
     case p2_1100001:
-        if (IR.op.uc == 0) {
+        if (IR.op.wc == 0) {
             dasm_wypin();
         } else {
             dasm_wrlut();
@@ -765,7 +801,7 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
 
     case p2_1100010:
-        if (IR.op.uc == 0) {
+        if (IR.op.wc == 0) {
             dasm_wrbyte();
         } else {
             dasm_wrword();
@@ -773,7 +809,7 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
 
     case p2_1100011:
-        if (IR.op.uc == 0) {
+        if (IR.op.wc == 0) {
             dasm_wrlong();
         } else {
             dasm_rdfast();
@@ -781,7 +817,7 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
 
     case p2_1100100:
-        if (IR.op.uc == 0) {
+        if (IR.op.wc == 0) {
             dasm_wrfast();
         } else {
             dasm_fblock();
@@ -789,8 +825,8 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
 
     case p2_1100101:
-        if (IR.op.uc == 0) {
-            if (IR.op.uz == 1 && IR.op.imm == 1 && IR.op.src == 0 && IR.op.dst == 0) {
+        if (IR.op.wc == 0) {
+            if (IR.op.wz == 1 && IR.op.imm == 1 && IR.op.src == 0 && IR.op.dst == 0) {
                 dasm_xstop();
             } else {
                 dasm_xinit();
@@ -801,7 +837,7 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
 
     case p2_1100110:
-        if (IR.op.uc == 0) {
+        if (IR.op.wc == 0) {
             dasm_xcont();
         } else {
             dasm_rep();
@@ -813,7 +849,7 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
 
     case p2_1101000:
-        if (IR.op.uc == 0) {
+        if (IR.op.wc == 0) {
             dasm_qmul();
         } else {
             dasm_qdiv();
@@ -821,7 +857,7 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
 
     case p2_1101001:
-        if (IR.op.uc == 0) {
+        if (IR.op.wc == 0) {
             dasm_qfrac();
         } else {
             dasm_qsqrt();
@@ -829,7 +865,7 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
 
     case p2_1101010:
-        if (IR.op.uc == 0) {
+        if (IR.op.wc == 0) {
             dasm_qrotate();
         } else {
             dasm_qvector();
@@ -1099,7 +1135,7 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
             dasm_getptr();
             break;
         case 0x35:
-            (IR.op.uc == 0 && IR.op.uz == 0) ? dasm_cogbrk()
+            (IR.op.wc == 0 && IR.op.wz == 0) ? dasm_cogbrk()
                                                       : dasm_getbrk();
             break;
         case 0x36:
@@ -1133,35 +1169,35 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
             dasm_cogatn();
             break;
         case 0x40:
-            (IR.op.uc == IR.op.uz) ? dasm_testp_w()
+            (IR.op.wc == IR.op.wz) ? dasm_testp_w()
                                             : dasm_dirl();
             break;
         case 0x41:
-            (IR.op.uc == IR.op.uz) ? dasm_testpn_w()
+            (IR.op.wc == IR.op.wz) ? dasm_testpn_w()
                                             : dasm_dirh();
             break;
         case 0x42:
-            (IR.op.uc == IR.op.uz) ? dasm_testp_and()
+            (IR.op.wc == IR.op.wz) ? dasm_testp_and()
                                             : dasm_dirc();
             break;
         case 0x43:
-            (IR.op.uc == IR.op.uz) ? dasm_testpn_and()
+            (IR.op.wc == IR.op.wz) ? dasm_testpn_and()
                                             : dasm_dirnc();
             break;
         case 0x44:
-            (IR.op.uc == IR.op.uz) ? dasm_testp_or()
+            (IR.op.wc == IR.op.wz) ? dasm_testp_or()
                                             : dasm_dirz();
             break;
         case 0x45:
-            (IR.op.uc == IR.op.uz) ? dasm_testpn_or()
+            (IR.op.wc == IR.op.wz) ? dasm_testpn_or()
                                             : dasm_dirnz();
             break;
         case 0x46:
-            (IR.op.uc == IR.op.uz) ? dasm_testp_xor()
+            (IR.op.wc == IR.op.wz) ? dasm_testp_xor()
                                             : dasm_dirrnd();
             break;
         case 0x47:
-            (IR.op.uc == IR.op.uz) ? dasm_testpn_xor()
+            (IR.op.wc == IR.op.wz) ? dasm_testpn_xor()
                                             : dasm_dirnot();
             break;
         case 0x48:
@@ -1344,9 +1380,19 @@ QString P2Dasm::dasm(P2Cog *COG, quint32 PC, QString& opcode)
         break;
     }
 
+    instruction = QString("%1%2").arg(cond, -16).arg(m_string);
     opcode = m_opcode;
 
-    return QString("%1%2").arg(cond, -16).arg(m_string);
+    // FIXME: return false for invalid instructions?
+    return true;
+}
+
+p2_LONG P2Dasm::memsize() const
+{
+    P2Hub* hub = qobject_cast<P2Hub *>(COG->parent());
+    if (!hub)
+        return MEM_SIZE;
+    return hub->memsize();
 }
 
 /**
@@ -1374,52 +1420,39 @@ QString P2Dasm::format_bin(uint num, int digits)
 
 /**
  * @brief format string for: EEEE xxxxxxx xxx xxxxxxxxx xxxxxxxxx
+ *
+ *  "INSTR"
+ *
  * @param inst instruction token (mnemonic)
  */
 void P2Dasm::format_inst(p2_token_e inst)
 {
-    m_opcode = QString("%1_%2_%3%4%5_%6_%7")
-               .arg(format_bin(IR.op.cond, 4))
-               .arg(format_bin(IR.op.inst, 7))
-               .arg(format_bin(IR.op.uc, 1))
-               .arg(format_bin(IR.op.uz, 1))
-               .arg(format_bin(IR.op.imm, 1))
-               .arg(format_bin(IR.op.dst, 9))
-               .arg(format_bin(IR.op.src, 9));
-
     m_string = Token->str(inst);
 }
 
 /**
  * @brief format string for: EEEE xxxxxxx CZI DDDDDDDDD SSSSSSSSS
  *
+ *  "INSTR  D,{#}S  {WC,WZ,WCZ}"
+ *
  * @param inst instruction token (mnemonic)
  * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
  */
 void P2Dasm::format_d_imm_s_cz(p2_token_e inst, p2_token_e with)
 {
-    m_opcode = QString("%1_%2_%3%4%5_%6_%7")
-               .arg(format_bin(IR.op.cond, 4))
-               .arg(format_bin(IR.op.inst, 7))
-               .arg(IR.op.uc ? "C" : "0")
-               .arg(IR.op.uz ? "Z" : "0")
-               .arg(IR.op.imm ? "I" : "0")
-               .arg(format_bin(IR.op.dst, 9))
-               .arg(format_bin(IR.op.src, 9));
-
     m_string = QString("%1%2,%3%4")
                .arg(Token->str(inst), pad_inst)
                .arg(format_num(IR.op.dst))
                .arg(IR.op.imm ? "#" : "")
                .arg(format_num(IR.op.src));
 
-    if (IR.op.uc || IR.op.uz) {
+    if (IR.op.wc || IR.op.wz) {
         m_string.resize(pad_wcz, QChar::Space);
-        if (IR.op.uc && IR.op.uz) {
+        if (IR.op.wc && IR.op.wz) {
             m_string += QString("%1%2")
                         .arg(Token->str(with))
                         .arg(Token->str(t_CZ));
-        } else if (IR.op.uz) {
+        } else if (IR.op.wz) {
             m_string += QString("%1%2")
                         .arg(Token->str(with))
                         .arg(Token->str(t_Z));
@@ -1434,27 +1467,20 @@ void P2Dasm::format_d_imm_s_cz(p2_token_e inst, p2_token_e with)
 /**
  * @brief format string for: EEEE xxxxxxx C0I DDDDDDDDD SSSSSSSSS
  *
+ *  "INSTR  D,{#}S  {WC}"
+ *
  * @param inst instruction token (mnemonic)
  * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
  */
 void P2Dasm::format_d_imm_s_c(p2_token_e inst, p2_token_e with)
 {
-    m_opcode = QString("%1_%2_%3%4%5_%6_%7")
-               .arg(format_bin(IR.op.cond, 4))
-               .arg(format_bin(IR.op.inst, 7))
-               .arg(IR.op.uc ? "C" : "0")
-               .arg("0")
-               .arg(IR.op.imm ? "I" : "0")
-               .arg(format_bin(IR.op.dst, 9))
-               .arg(format_bin(IR.op.src, 9));
-
     m_string = QString("%1%2,%3%4")
                .arg(Token->str(inst), pad_inst)
                .arg(format_num(IR.op.dst))
                .arg(IR.op.imm ? "#" : "")
                .arg(format_num(IR.op.src));
 
-    if (IR.op.uc) {
+    if (IR.op.wc) {
         m_string.resize(pad_wcz);
         m_string += QString(" %1%2")
                     .arg(Token->str(with))
@@ -1465,27 +1491,20 @@ void P2Dasm::format_d_imm_s_c(p2_token_e inst, p2_token_e with)
 /**
  * @brief format string for: EEEE xxxxxxx 0ZI DDDDDDDDD SSSSSSSSS
  *
+ *  "INSTR  D,{#}S  {WZ}"
+ *
  * @param inst instruction token (mnemonic)
  * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
  */
 void P2Dasm::format_d_imm_s_z(p2_token_e inst, p2_token_e with)
 {
-    m_opcode = QString("%1_%2_%3%4%5_%6_%7")
-               .arg(format_bin(IR.op.cond, 4))
-               .arg(format_bin(IR.op.inst, 7))
-               .arg("0")
-               .arg(IR.op.uz ? "Z" : "0")
-               .arg(IR.op.imm ? "I" : "0")
-               .arg(format_bin(IR.op.dst, 9))
-               .arg(format_bin(IR.op.src, 9));
-
     m_string = QString("%1%2,%3%4")
                .arg(Token->str(inst), pad_inst)
                .arg(format_num(IR.op.dst))
                .arg(IR.op.imm ? "#" : "")                // I
                .arg(format_num(IR.op.src));
 
-    if (IR.op.uz) {
+    if (IR.op.wz) {
         m_string.resize(pad_wcz, QChar::Space);
         m_string += QString(" %1%2")
                     .arg(Token->str(with))
@@ -1496,23 +1515,16 @@ void P2Dasm::format_d_imm_s_z(p2_token_e inst, p2_token_e with)
 /**
  * @brief format string for: EEEE xxxxxxx 0LI DDDDDDDDD SSSSSSSSS
  *
+ *  "INSTR  {#}D,{#}S"
+ *
  * @param inst instruction token (mnemonic)
  * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
  */
 void P2Dasm::format_wz_d_imm_s(p2_token_e inst)
 {
-    m_opcode = QString("%1_%2_%3%4%5_%6_%7")
-               .arg(format_bin(IR.op.cond, 4))
-               .arg(format_bin(IR.op.inst, 7))
-               .arg("0")
-               .arg(IR.op.uz ? "L" : "0")
-               .arg(IR.op.imm ? "I" : "0")
-               .arg(format_bin(IR.op.dst, 9))
-               .arg(format_bin(IR.op.src, 9));
-
     m_string = QString("%1%2%3,%4%5")
                .arg(Token->str(inst), pad_inst)
-               .arg(IR.op.uz ? "#" : "")                   // L
+               .arg(IR.op.wz ? "#" : "")                   // L
                .arg(format_num(IR.op.dst))
                .arg(IR.op.imm ? "#" : "")                  // I
                .arg(format_num(IR.op.src));
@@ -1521,67 +1533,46 @@ void P2Dasm::format_wz_d_imm_s(p2_token_e inst)
 /**
  * @brief format string for: EEEE xxxxxxN NNI DDDDDDDDD SSSSSSSSS
  *
+ *  "INSTR  D,{#}S,#N"
+ *
  * @param inst instruction token (mnemonic)
  */
 void P2Dasm::format_d_imm_s_nnn(p2_token_e inst)
 {
-    m_opcode = QString("%1_%2_%3%4%5_%6_%7")
-               .arg(format_bin(IR.op.cond, 4))
-               .arg(format_bin(IR.op.inst, 7))
-               .arg(IR.op.uc ? "1" : "0")
-               .arg(IR.op.uz ? "1" : "0")
-               .arg(IR.op.imm ? "I" : "0")
-               .arg(format_bin(IR.op.dst, 9))
-               .arg(format_bin(IR.op.src, 9));
-
     m_string = QString("%1%2,%3%4,#%5")
                .arg(Token->str(inst), pad_inst)
                .arg(format_num(IR.op.dst))
                .arg(IR.op.imm ? "#" : "")
                .arg(format_num(IR.op.src))
-               .arg((IR.op.inst & 1) * 4 + IR.op.uc * 2 + IR.op.uz);
+               .arg((IR.op.inst & 1) * 4 + IR.op.wc * 2 + IR.op.wz);
 }
 
 /**
  * @brief format string for: EEEE xxxxxxx 0NI DDDDDDDDD SSSSSSSSS
  *
+ *  "INSTR  D,{#}S,#N"
+ *
  * @param inst instruction token (mnemonic)
  */
 void P2Dasm::format_d_imm_s_n(p2_token_e inst)
 {
-    m_opcode = QString("%1_%2_%3%4%5_%6_%7")
-               .arg(format_bin(IR.op.cond, 4))
-               .arg(format_bin(IR.op.inst, 7))
-               .arg("0")
-               .arg(IR.op.uc ? "1" : "0")
-               .arg(IR.op.imm ? "I" : "0")
-               .arg(format_bin(IR.op.dst, 9))
-               .arg(format_bin(IR.op.src, 9));
-
     m_string = QString("%1%2,%3%4,#%5")
                .arg(Token->str(inst), pad_inst)
                .arg(format_num(IR.op.dst))
                .arg(IR.op.imm ? "#" : "")
                .arg(format_num(IR.op.src))
-               .arg(IR.op.uz);
+               .arg(IR.op.wz);
 }
 
 /**
  * @brief format string for: EEEE xxxxxxx xxI DDDDDDDDD SSSSSSSSS
  *
+ *  "INSTR  D,{#}S"
+ *
  * @param inst instruction token (mnemonic)
  */
 void P2Dasm::format_d_imm_s(p2_token_e inst)
 {
-    m_opcode = QString("%1_%2_%3%4%5_%6_%7")
-               .arg(format_bin(IR.op.cond, 4))
-               .arg(format_bin(IR.op.inst, 7))
-               .arg(format_bin(IR.op.uc, 1))
-               .arg(format_bin(IR.op.uz, 1))
-               .arg(IR.op.imm ? "I" : "0")
-               .arg(format_bin(IR.op.dst, 9))
-               .arg(format_bin(IR.op.src, 9));
-
     m_string = QString("%1%2,%3%4")
                .arg(Token->str(inst), pad_inst)
                .arg(format_num(IR.op.dst))
@@ -1592,31 +1583,24 @@ void P2Dasm::format_d_imm_s(p2_token_e inst)
 /**
  * @brief format string for: EEEE xxxxxxx CZ0 DDDDDDDDD xxxxxxxxx
  *
+ *  "INSTR  D       {WC,WZ,WCZ}"
+ *
  * @param inst instruction token (mnemonic)
  * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
  */
 void P2Dasm::format_d_cz(p2_token_e inst, p2_token_e with)
 {
-    m_opcode = QString("%1_%2_%3%4%5_%6_%7")
-               .arg(format_bin(IR.op.cond, 4))
-               .arg(format_bin(IR.op.inst, 7))
-               .arg(IR.op.uc ? "C" : "0")
-               .arg(IR.op.uz ? "Z" : "0")
-               .arg("0")
-               .arg(format_bin(IR.op.dst, 9))
-               .arg(format_bin(IR.op.src, 9));
-
     m_string = QString("%1%2")
                .arg(Token->str(inst), pad_inst)
                .arg(format_num(IR.op.dst));
 
-    if (IR.op.uc || IR.op.uz) {
+    if (IR.op.wc || IR.op.wz) {
         m_string.resize(pad_wcz, QChar::Space);
-        if (IR.op.uc && IR.op.uz) {
+        if (IR.op.wc && IR.op.wz) {
             m_string += QString("%1%2")
                         .arg(Token->str(with))
                         .arg(Token->str(t_CZ));
-        } else if (IR.op.uz) {
+        } else if (IR.op.wz) {
             m_string += QString("%1%2")
                         .arg(Token->str(with))
                         .arg(Token->str(t_Z));
@@ -1631,30 +1615,23 @@ void P2Dasm::format_d_cz(p2_token_e inst, p2_token_e with)
 /**
  * @brief format string for: EEEE xxxxxxx CZx xxxxxxxxx xxxxxxxxx
  *
+ *  "INSTR          {WC,WZ,WCZ}"
+ *
  * @param inst instruction token (mnemonic)
  * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
  */
 void P2Dasm::format_cz(p2_token_e inst, p2_token_e with)
 {
-    m_opcode = QString("%1_%2_%3%4%5_%6_%7")
-               .arg(format_bin(IR.op.cond, 4))
-               .arg(format_bin(IR.op.inst, 7))
-               .arg(IR.op.uc ? "C" : "0")
-               .arg(IR.op.uz ? "Z" : "0")
-               .arg(format_bin(IR.op.imm, 1))
-               .arg(format_bin(IR.op.dst, 9))
-               .arg(format_bin(IR.op.src, 9));
-
     m_string = QString("%1")
                .arg(Token->str(inst), pad_inst);
 
-    if (IR.op.uc || IR.op.uz) {
+    if (IR.op.wc || IR.op.wz) {
         m_string.resize(pad_wcz, QChar::Space);
-        if (IR.op.uc && IR.op.uz) {
+        if (IR.op.wc && IR.op.wz) {
             m_string += QString("%1%2")
                         .arg(Token->str(with))
                         .arg(Token->str(t_CZ));
-        } else if (IR.op.uz) {
+        } else if (IR.op.wz) {
             m_string += QString("%1%2")
                         .arg(Token->str(with))
                         .arg(Token->str(t_Z));
@@ -1670,6 +1647,8 @@ void P2Dasm::format_cz(p2_token_e inst, p2_token_e with)
 /**
  * @brief format string for: EEEE xxxxxxx CZx 0cccczzzz xxxxxxxxx
  *
+ *  "INSTR  cccc,zzzz {WC,WZ,WCZ}"
+ *
  * @param inst instruction token (mnemonic)
  * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
  */
@@ -1677,29 +1656,19 @@ void P2Dasm::format_cz_cz(p2_token_e inst, p2_token_e with)
 {
     const uint cccc = (IR.op.dst >> 4) & 15;
     const uint zzzz = (IR.op.dst >> 0) & 15;
-    m_opcode = QString("%1_%2_%3%4%5_%6_%7_%8_%9")
-               .arg(format_bin(IR.op.cond, 4))
-               .arg(format_bin(IR.op.inst, 7))
-               .arg(IR.op.uc ? "C" : "0")
-               .arg(IR.op.uz ? "Z" : "0")
-               .arg(format_bin(IR.op.imm, 1))
-               .arg("0")
-               .arg(format_bin(cccc, 4))
-               .arg(format_bin(zzzz, 4))
-               .arg(format_bin(IR.op.src, 9));
 
     m_string = QString("%1%2,%3")
                .arg(Token->str(inst), pad_inst)
                .arg(conditional(cccc))
                .arg(conditional(zzzz));
 
-    if (IR.op.uc || IR.op.uz) {
+    if (IR.op.wc || IR.op.wz) {
         m_string.resize(pad_wcz, QChar::Space);
-        if (IR.op.uc && IR.op.uz) {
+        if (IR.op.wc && IR.op.wz) {
             m_string += QString("%1%2")
                         .arg(Token->str(with))
                         .arg(Token->str(t_CZ));
-        } else if (IR.op.uz) {
+        } else if (IR.op.wz) {
             m_string += QString("%1%2")
                         .arg(Token->str(with))
                         .arg(Token->str(t_Z));
@@ -1714,19 +1683,12 @@ void P2Dasm::format_cz_cz(p2_token_e inst, p2_token_e with)
 /**
  * @brief format string for: EEEE xxxxxxx xxx DDDDDDDDD xxxxxxxxx
  *
+ *  "INSTR  D"
+ *
  * @param inst instruction token (mnemonic)
  */
 void P2Dasm::format_d(p2_token_e inst)
 {
-    m_opcode = QString("%1_%2_%3%4%5_%6_%7")
-               .arg(format_bin(IR.op.cond, 4))
-               .arg(format_bin(IR.op.inst, 7))
-               .arg(format_bin(IR.op.uc, 1))
-               .arg(format_bin(IR.op.uz, 1))
-               .arg(format_bin(IR.op.imm, 1))
-               .arg(format_bin(IR.op.dst, 9))
-               .arg(format_bin(IR.op.src, 9));
-
     m_string = QString("%1%2%3")
                .arg(Token->str(inst), pad_inst)
                .arg(format_num(IR.op.dst));
@@ -1735,41 +1697,27 @@ void P2Dasm::format_d(p2_token_e inst)
 /**
  * @brief format string for: EEEE xxxxxxx xLx DDDDDDDDD xxxxxxxxx
  *
+ *  "INSTR  {#}D"
+ *
  * @param inst instruction token (mnemonic)
  */
 void P2Dasm::format_wz_d(p2_token_e inst)
 {
-    m_opcode = QString("%1_%2_%3%4%5_%6_%7")
-               .arg(format_bin(IR.op.cond, 4))
-               .arg(format_bin(IR.op.inst, 7))
-               .arg(format_bin(IR.op.uc, 1))
-               .arg(IR.op.uz ? "L" : "0")
-               .arg(format_bin(IR.op.imm, 1))
-               .arg(format_bin(IR.op.dst, 9))
-               .arg(format_bin(IR.op.src, 9));
-
     m_string = QString("%1%2%3")
                .arg(Token->str(inst), pad_inst)
-               .arg(IR.op.uz ? "#" : "")
+               .arg(IR.op.wz ? "#" : "")
                .arg(format_num(IR.op.dst));
 }
 
 /**
  * @brief format string for: EEEE xxxxxxx xxL DDDDDDDDD xxxxxxxxx
  *
+ *  "INSTR  {#}D"
+ *
  * @param inst instruction token (mnemonic)
  */
 void P2Dasm::format_imm_d(p2_token_e inst)
 {
-    m_opcode = QString("%1_%2_%3%4%5_%6_%7")
-               .arg(format_bin(IR.op.cond, 4))
-               .arg(format_bin(IR.op.inst, 7))
-               .arg(format_bin(IR.op.uc, 1))
-               .arg(format_bin(IR.op.uz, 1))
-               .arg(IR.op.imm ? "L" : "0")
-               .arg(format_bin(IR.op.dst, 9))
-               .arg(format_bin(IR.op.src, 9));
-
     m_string = QString("%1%2%3")
                .arg(Token->str(inst), pad_inst)
                .arg(IR.op.imm ? "#" : "")
@@ -1779,32 +1727,25 @@ void P2Dasm::format_imm_d(p2_token_e inst)
 /**
  * @brief format string for: EEEE xxxxxxx CZL DDDDDDDDD xxxxxxxxx
  *
+ *  "INSTR  {#}D    {WC,WZ,WCZ}"
+ *
  * @param inst instruction token (mnemonic)
  * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
  */
 void P2Dasm::format_imm_d_cz(p2_token_e inst, p2_token_e with)
 {
-    m_opcode = QString("%1_%2_%3%4%5_%6_%7")
-               .arg(format_bin(IR.op.cond, 4))
-               .arg(format_bin(IR.op.inst, 7))
-               .arg(IR.op.uc ? "C" : "0")
-               .arg(IR.op.uz ? "Z" : "0")
-               .arg(IR.op.imm ? "L" : "0")
-               .arg(format_bin(IR.op.dst, 9))
-               .arg(format_bin(IR.op.src, 9));
-
     m_string = QString("%1%2%3")
                .arg(Token->str(inst), pad_inst)
                .arg(IR.op.imm ? "#" : "")
                .arg(format_num(IR.op.dst));
 
-    if (IR.op.uc || IR.op.uz) {
+    if (IR.op.wc || IR.op.wz) {
         m_string.resize(pad_wcz, QChar::Space);
-        if (IR.op.uc && IR.op.uz) {
+        if (IR.op.wc && IR.op.wz) {
             m_string += QString("%1%2")
                         .arg(Token->str(with))
                         .arg(Token->str(t_CZ));
-        } else if (IR.op.uz) {
+        } else if (IR.op.wz) {
             m_string += QString("%1%2")
                         .arg(Token->str(with))
                         .arg(Token->str(t_Z));
@@ -1819,25 +1760,18 @@ void P2Dasm::format_imm_d_cz(p2_token_e inst, p2_token_e with)
 /**
  * @brief format string for: EEEE xxxxxxx CxL DDDDDDDDD xxxxxxxxx
  *
+ *  "INSTR  {#}D    {WC}"
+ *
  * @param inst instruction token (mnemonic)
  */
 void P2Dasm::format_imm_d_c(p2_token_e inst)
 {
-    m_opcode = QString("%1_%2_%3%4%5_%6_%7")
-               .arg(format_bin(IR.op.cond, 4))
-               .arg(format_bin(IR.op.inst, 7))
-               .arg(IR.op.uc ? "C" : "0")
-               .arg(format_bin(IR.op.uz, 1))
-               .arg(IR.op.imm ? "L" : "0")
-               .arg(format_bin(IR.op.dst, 9))
-               .arg(format_bin(IR.op.src, 9));
-
     m_string = QString("%1%2%3")
                .arg(Token->str(inst), pad_inst)
                .arg(IR.op.imm ? "#" : "")
                .arg(format_num(IR.op.dst));
 
-    if (IR.op.uc) {
+    if (IR.op.wc) {
         m_string.resize(pad_wcz, QChar::Space);
         m_string += Token->str(t_W);
         m_string += Token->str(t_C);
@@ -1847,19 +1781,12 @@ void P2Dasm::format_imm_d_c(p2_token_e inst)
 /**
  * @brief format string for: EEEE xxxxxxx xxI xxxxxxxxx SSSSSSSSS
  *
+ *  "INSTR  {#}S"
+ *
  * @param inst instruction token (mnemonic)
  */
 void P2Dasm::format_imm_s(p2_token_e inst)
 {
-    m_opcode = QString("%1_%2_%3%4%5_%6_%7")
-               .arg(format_bin(IR.op.cond, 4))
-               .arg(format_bin(IR.op.inst, 7))
-               .arg(format_bin(IR.op.uc, 1))
-               .arg(format_bin(IR.op.uz, 1))
-               .arg(IR.op.imm ? "I" : "0")
-               .arg(format_bin(IR.op.dst, 9))
-               .arg(format_bin(IR.op.src, 9));
-
     m_string = QString("%1%2%3")
                .arg(inst, pad_inst)
                .arg(IR.op.imm ? "#" : "")
@@ -1869,6 +1796,8 @@ void P2Dasm::format_imm_s(p2_token_e inst)
 /**
  * @brief format string for: EEEE xxxxxxx RAA AAAAAAAAA AAAAAAAAA
  *
+ *  "INSTR  {PC+}#$AAAAAA"
+ *
  * @param inst instruction token (mnemonic)
  * @param dest destination token (PA, PB, PTRA, PTRB)
  */
@@ -1876,32 +1805,23 @@ void P2Dasm::format_pc_abs(p2_token_e inst, p2_token_e dest)
 {
     const quint32 addr = IR.word & ((1u << 20) - 1);
 
-    m_opcode = QString("%1_%2_%3_%4")
-               .arg(format_bin(IR.op.cond, 4))
-               .arg(format_bin(IR.op.inst, 7))
-               .arg(IR.op.uc ? "R" : "0")
-               .arg(format_bin(addr, 20));
-
-    m_string = QString("%1%2%3$%4")
+    m_string = QString("%1%2%3,$%4")
                .arg(Token->str(inst), pad_inst)
                .arg(Token->str(dest))
-               .arg(IR.op.uc ? "PC+" : "")
+               .arg(IR.op.wc ? "PC+" : "")
                .arg(addr, 0, 16);
 }
 
 /**
  * @brief format string for: EEEE xxxxxNN NNN NNNNNNNNN NNNNNNNNN
  *
+ *  "INSTR  #$NNNNNNNN"
+ *
  * @param inst instruction token (mnemonic)
  */
 void P2Dasm::format_imm23(p2_token_e inst)
 {
     const quint32 nnnn = IR.word & ((1u << 23) - 1);
-
-    m_opcode = QString("%1_%2_%3")
-               .arg(format_bin(IR.op.cond, 4))
-               .arg(format_bin(IR.op.inst >> 2, 5))
-               .arg(format_bin(nnnn, 23));
 
     m_string = QString("%1#$%2")
                .arg(Token->str(inst), pad_inst)
@@ -4048,37 +3968,39 @@ void P2Dasm::dasm_popb()
  */
 void P2Dasm::dasm_calld()
 {
-    if (IR.op.dst == 0x1f0 && IR.op.src == 0x1f1 && IR.op.uc && IR.op.uz) {
-        dasm_resi3();
-        return;
-    }
-    if (IR.op.dst == 0x1f2 && IR.op.src == 0x1f3 && IR.op.uc && IR.op.uz) {
-        dasm_resi2();
-        return;
-    }
-    if (IR.op.dst == 0x1f4 && IR.op.src == 0x1f5 && IR.op.uc && IR.op.uz) {
-        dasm_resi1();
-        return;
-    }
-    if (IR.op.dst == 0x1fe && IR.op.src == 0x1ff && IR.op.uc && IR.op.uz) {
-        dasm_resi0();
-        return;
-    }
-    if (IR.op.dst == 0x1ff && IR.op.src == 0x1f1 && IR.op.uc && IR.op.uz) {
-        dasm_reti3();
-        return;
-    }
-    if (IR.op.dst == 0x1ff && IR.op.src == 0x1f3 && IR.op.uc && IR.op.uz) {
-        dasm_reti2();
-        return;
-    }
-    if (IR.op.dst == 0x1ff && IR.op.src == 0x1f5 && IR.op.uc && IR.op.uz) {
-        dasm_reti1();
-        return;
-    }
-    if (IR.op.dst == 0x1ff && IR.op.src == 0x1ff && IR.op.uc && IR.op.uz) {
-        dasm_reti0();
-        return;
+    if (IR.op.wc && IR.op.wz) {
+        if (IR.op.dst == offs_IJMP3 && IR.op.src == offs_IRET3) {
+            dasm_resi3();
+            return;
+        }
+        if (IR.op.dst == offs_IJMP2 && IR.op.src == offs_IRET2) {
+            dasm_resi2();
+            return;
+        }
+        if (IR.op.dst == offs_IJMP1 && IR.op.src == offs_IRET1) {
+            dasm_resi1();
+            return;
+        }
+        if (IR.op.dst == offs_INA && IR.op.src == offs_INB) {
+            dasm_resi0();
+            return;
+        }
+        if (IR.op.dst == offs_INB && IR.op.src == offs_IRET3) {
+            dasm_reti3();
+            return;
+        }
+        if (IR.op.dst == offs_INB && IR.op.src == offs_IRET2) {
+            dasm_reti2();
+            return;
+        }
+        if (IR.op.dst == offs_INB && IR.op.src == offs_IRET1) {
+            dasm_reti1();
+            return;
+        }
+        if (IR.op.dst == offs_INB && IR.op.src == offs_INB) {
+            dasm_reti0();
+            return;
+        }
     }
     format_d_imm_s_cz(t_CALLD);
 }

@@ -32,68 +32,85 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 #pragma once
-#include <QtCore>
-#include "p2_defs.h"
+#include <QObject>
+#include <QVariant>
+#include "p2defs.h"
 #include "p2hub.h"
 
-class P2Cog
+class P2Cog : public QObject
 {
+    Q_OBJECT
 public:
-    P2Cog(uchar cog_id = 0, P2Hub* parent = nullptr);
+    P2Cog(uchar cog_id = 0, P2Hub* hub = nullptr, QObject* parent = nullptr);
 
-    quint32 decode();
+    p2_LONG decode();
     p2_opword_t ir() const { return IR; }
-    quint32 pc() const { return PC; }
-    quint32 d() const { return D; }
-    quint32 s() const { return S; }
-    quint32 q() const { return Q; }
-    quint32 c() const { return C; }
-    quint32 z() const { return Z; }
-    quint32 rd_cog(quint32 addr) const;
-    void wr_cog(quint32 addr, quint32 val);
-    quint32 rd_lut(quint32 addr) const;
-    void wr_lut(quint32 addr, quint32 val);
-    quint32 rd_mem(quint32 addr) const;
-    void wr_mem(quint32 addr, quint32 val);
+    p2_LONG pc() const { return PC; }
+    p2_LONG d() const { return D; }
+    p2_LONG s() const { return S; }
+    p2_LONG q() const { return Q; }
+    p2_LONG c() const { return C; }
+    p2_LONG z() const { return Z; }
+
+    p2_LONG rd_cog(p2_LONG addr) const;
+    void wr_cog(p2_LONG addr, p2_LONG val);
+    p2_LONG rd_lut(p2_LONG addr) const;
+    void wr_lut(p2_LONG addr, p2_LONG val);
+    p2_LONG rd_mem(p2_LONG addr) const;
+    void wr_mem(p2_LONG addr, p2_LONG val);
 
 private:
-    quint64 xoro_s[2];      //!< Xoroshiro128 PRNG state
     P2Hub* HUB;             //!< pointer to the HUB, i.e. the parent of the Propeller2 cog
-    quint32 ID;             //!< this COG's ID
-    quint32 PC;             //!< program counter
+    quint64 xoro_s[2];      //!< Xoroshiro128 PRNG state
+    p2_LONG ID;             //!< this COG's ID
+    p2_LONG PC;             //!< program counter
+    p2_flags_t FL;          //!< flags register
     p2_opword_t IR;         //!< instruction register
-    quint32 S;              //!< value of S
-    quint32 D;              //!< value of D
-    quint32 Q;              //!< value of Q
-    quint32 C;              //!< current carry flag
-    quint32 Z;              //!< current zero flag
+    p2_LONG S;              //!< value of S
+    p2_LONG D;              //!< value of D
+    p2_LONG Q;              //!< value of Q
+    p2_LONG C;              //!< current carry flag
+    p2_LONG Z;              //!< current zero flag
     QVariant S_next;        //!< next instruction's S value
     QVariant S_aug;         //!< augment next S with this value, if set
     QVariant D_aug;         //!< augment next D with this value, if set
 
-    quint32 COG[512];       //!< COG memory (512 longs)
+    p2_cog_t COG;           //!< COG memory (512 longs)
     p2_lut_t LUT;           //!< LUT memory (512 longs)
     uchar *MEM;             //!< HUB memory pointer
-    quint32 MEMSIZE;        //!< HUB memory size
+    p2_LONG MEMSIZE;        //!< HUB memory size
 
     //! update C if the WC flag bit is set
     template <typename T>
     void updateC(T c) {
-        if (IR.op.uc)
-            C = static_cast<quint32>(c) & 1;
+        if (IR.op.wc)
+            C = static_cast<p2_LONG>(c) & 1;
     }
 
     //! update Z if the WC flag bit is set
     template <typename T>
     void updateZ(T z) {
-        if (IR.op.uz)
-            Z = static_cast<quint32>(z) & 1;
+        if (IR.op.wz)
+            Z = static_cast<p2_LONG>(z) & 1;
     }
 
     //! update D, i.e. write result to COG
     template <typename T>
     void updateD(T d) {
-        COG[IR.op.dst] = static_cast<quint32>(d);
+        COG.RAM[IR.op.dst] = static_cast<p2_LONG>(d);
+    }
+
+    //! update PC (program counter)
+    template <typename T>
+    void updatePC(T d) {
+        // TODO: handle switch between COG, LUT, and HUB ?
+        PC = static_cast<p2_LONG>(d);
+    }
+
+    //! update PC (program counter)
+    template <typename T>
+    void updateLUT(p2_LONG addr, T d) {
+        LUT.RAM[addr & 0x1ff] = static_cast<p2_LONG>(d);
     }
 
     //! augment #S or use #S, if the flag bit is set, then possibly set S from next_S
@@ -130,7 +147,7 @@ private:
     //! update PA, i.e. write result to port A
     template <typename T>
     void updatePA(T d) {
-        LUT.REG.PA = static_cast<quint32>(d);
+        LUT.REG.PA = static_cast<p2_LONG>(d);
         if (HUB)
             HUB->wr_PA(LUT.REG.PA);
     }
@@ -138,7 +155,7 @@ private:
     //! update PB, i.e. write result to port A
     template <typename T>
     void updatePB(T d) {
-        LUT.REG.PB = static_cast<quint32>(d);
+        LUT.REG.PB = static_cast<p2_LONG>(d);
         if (HUB)
             HUB->wr_PB(LUT.REG.PA);
     }
@@ -147,14 +164,14 @@ private:
     template <typename T>
     void updatePTRA(T d) {
         if (HUB)
-            HUB->wr_LONG(LUT.REG.PTRA, static_cast<quint32>(d));
+            HUB->wr_LONG(LUT.REG.PTRA, static_cast<p2_LONG>(d));
     }
 
     //! update PTRB, i.e. write result to pointer B
     template <typename T>
     void updatePTRB(T d) {
         if (HUB)
-            HUB->wr_LONG(LUT.REG.PTRB, static_cast<quint32>(d));
+            HUB->wr_LONG(LUT.REG.PTRB, static_cast<p2_LONG>(d));
     }
 
     //! return a signed 32 bit value for val[15:0]
@@ -165,8 +182,8 @@ private:
 
     //! return the usigned 32 bit value for val[15:0]
     template <typename T>
-    quint32 U16(T val) {
-        return static_cast<quint32>(static_cast<quint16>(val));
+    p2_LONG U16(T val) {
+        return static_cast<p2_LONG>(static_cast<quint16>(val));
     }
 
     //! return the signed 32 bit value for val[31:0]
@@ -177,8 +194,8 @@ private:
 
     //! return the usigned 32 bit value for val[31:0]
     template <typename T>
-    quint32 U32(T val) {
-        return static_cast<quint32>(val);
+    p2_LONG U32(T val) {
+        return static_cast<p2_LONG>(val);
     }
 
     //! return the 64 bit sign extended value
@@ -195,42 +212,45 @@ private:
 
     //! return the upper half of a 64 bit value as 32 bit unsigned
     template <typename T>
-    quint32 U32H(T val) {
-        return static_cast<quint32>(static_cast<quint64>(val) >> 32);
+    p2_LONG U32H(T val) {
+        return static_cast<p2_LONG>(static_cast<quint64>(val) >> 32);
     }
 
     //! return the lower half of a 64 bit value as 32 bit unsigned
     template <typename T>
-    quint32 U32L(T val) {
-        return static_cast<quint32>(val);
+    p2_LONG U32L(T val) {
+        return static_cast<p2_LONG>(val);
     }
 
     //! most significant bit in a 32 bit word
-    static const quint32 MSB = 1u << 31;
+    static const p2_LONG MSB = 1u << 31;
 
     //! least significant bit in a 32 bit word
-    static const quint32 LSB = 1u;
+    static const p2_LONG LSB = 1u;
 
     //! least significant nibble in a 32 bit word
-    static const quint32 LNIBBLE = 0x0000000fu;
+    static const p2_LONG LNIBBLE = 0x0000000fu;
 
     //! least significant byte in a 32 bit word
-    static const quint32 LBYTE = 0x000000ffu;
+    static const p2_LONG LBYTE = 0x000000ffu;
 
     //! least significant word in a 32 bit word
-    static const quint32 LWORD = 0x0000ffffu;
+    static const p2_LONG LWORD = 0x0000ffffu;
 
     //! most significant word in a 32 bit word
-    static const quint32 HWORD = 0xffff0000u;
+    static const p2_LONG HWORD = 0xffff0000u;
 
     //! bits without sign bit in a 32 bit word
-    static const quint32 IMAX = 0x7fffffffu;
+    static const p2_LONG IMAX = 0x7fffffffu;
+
+    //! all bits in a 32 bit word
+    static const p2_LONG UMAX = 0xffffffffu;
 
     //! least significant 20 bits for an address value
-    static const quint32 ADDR = (1u << 20) - 1;
+    static const p2_LONG ADDR = (1u << 20) - 1;
 
     //! most significant 23 bits for an augmentation value
-    static const quint32 AUG = 0xfffffe00;
+    static const p2_LONG AUG = 0xfffffe00;
 
     //! upper word max / mask in a 64 bit unsigned
     static const quint64 HMAX = Q_UINT64_C(0xffffffff00000000);
@@ -240,9 +260,9 @@ private:
 
     bool conditional(p2_cond_e cond);
     bool conditional(unsigned cond);
-    uchar msbit(quint32 val);
-    uchar ones(quint32 val);
-    uchar parity(quint32 val);
+    p2_BYTE msbit(p2_LONG val);
+    p2_BYTE ones(p2_LONG val);
+    p2_BYTE parity(p2_LONG val);
     quint64 rotl(quint64 val, uchar shift);
     quint64 rnd();
 

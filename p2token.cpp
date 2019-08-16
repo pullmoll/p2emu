@@ -191,7 +191,7 @@ P2Token::P2Token(bool lowercase)
     m_token.insert(t_NEGNC,         QStringLiteral("NEGNC"));
     m_token.insert(t_NEGNZ,         QStringLiteral("NEGNZ"));
     m_token.insert(t_NEGZ,          QStringLiteral("NEGZ"));
-    m_token.insert(t_NEVER,         QStringLiteral("NEVER"));
+    m_token.insert(t_ALWAYS,        QStringLiteral(""));        // empty string
     m_token.insert(t_NIXINT1,       QStringLiteral("NIXINT1"));
     m_token.insert(t_NIXINT2,       QStringLiteral("NIXINT2"));
     m_token.insert(t_NIXINT3,       QStringLiteral("NIXINT3"));

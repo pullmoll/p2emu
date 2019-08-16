@@ -22,24 +22,29 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++14
 
 SOURCES += \
+		about.cpp \
 		csv.cpp \
 		main.cpp \
 		mainwindow.cpp \
 		p2cog.cpp \
 		p2dasm.cpp \
+		p2dasmmodel.cpp \
 		p2hub.cpp \
 		p2token.cpp
 
 HEADERS += \
+		about.h \
 		csv.h \
 		mainwindow.h \
-		p2_defs.h \
 		p2cog.h \
 		p2dasm.h \
+		p2dasmmodel.h \
+		p2defs.h \
 		p2hub.h \
 		p2token.h
 
 FORMS += \
+		about.ui \
 		mainwindow.ui
 
 # Default rules for deployment.
