@@ -1482,7 +1482,7 @@ void P2Dasm::format_d_imm_s_c(p2_token_e inst, p2_token_e with)
 
     if (IR.op.wc) {
         m_string.resize(pad_wcz);
-        m_string += QString(" %1%2")
+        m_string += QString("%1%2")
                     .arg(Token->str(with))
                     .arg(Token->str(t_C));
     }
@@ -1506,7 +1506,7 @@ void P2Dasm::format_d_imm_s_z(p2_token_e inst, p2_token_e with)
 
     if (IR.op.wz) {
         m_string.resize(pad_wcz, QChar::Space);
-        m_string += QString(" %1%2")
+        m_string += QString("%1%2")
                     .arg(Token->str(with))
                     .arg(Token->str(t_Z));
     }
@@ -1805,9 +1805,10 @@ void P2Dasm::format_pc_abs(p2_token_e inst, p2_token_e dest)
 {
     const quint32 addr = IR.word & ((1u << 20) - 1);
 
-    m_string = QString("%1%2%3,$%4")
+    m_string = QString("%1%2%3%4$%5")
                .arg(Token->str(inst), pad_inst)
                .arg(Token->str(dest))
+               .arg(dest != t_nothing ? "," : "")
                .arg(IR.op.wc ? "PC+" : "")
                .arg(addr, 0, 16);
 }
@@ -1825,7 +1826,7 @@ void P2Dasm::format_imm23(p2_token_e inst)
 
     m_string = QString("%1#$%2")
                .arg(Token->str(inst), pad_inst)
-               .arg(nnnn, 0, 16, QChar('0'));
+               .arg(nnnn << 9, 0, 16, QChar('0'));
 }
 
 /**
