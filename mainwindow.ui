@@ -86,7 +86,24 @@
     <addaction name="separator"/>
     <addaction name="action_AboutQt5"/>
    </widget>
+   <widget class="QMenu" name="menu_Edit">
+    <property name="title">
+     <string>&amp;Edit</string>
+    </property>
+    <addaction name="action_Go_to_address"/>
+    <addaction name="action_Go_to_COG"/>
+    <addaction name="action_Go_to_LUT"/>
+    <addaction name="action_Go_to_FC000"/>
+   </widget>
+   <widget class="QMenu" name="menu_View">
+    <property name="title">
+     <string>&amp;View</string>
+    </property>
+    <addaction name="action_setLowercase"/>
+   </widget>
    <addaction name="menu_File"/>
+   <addaction name="menu_Edit"/>
+   <addaction name="menu_View"/>
    <addaction name="menu_Help"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
@@ -120,9 +137,74 @@
    <property name="text">
     <string>&amp;Open …</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="action_Go_to_address">
+   <property name="icon">
+    <iconset resource="propeller2.qrc">
+     <normaloff>:/icons/go_to.png</normaloff>:/icons/go_to.png</iconset>
+   </property>
+   <property name="text">
+    <string>Go to &amp;address …</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+A</string>
+   </property>
+  </action>
+  <action name="action_Go_to_COG">
+   <property name="icon">
+    <iconset resource="propeller2.qrc">
+     <normaloff>:/icons/go_to_cog.png</normaloff>:/icons/go_to_cog.png</iconset>
+   </property>
+   <property name="text">
+    <string>Go to &amp;COG</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+C</string>
+   </property>
+  </action>
+  <action name="action_Go_to_LUT">
+   <property name="icon">
+    <iconset resource="propeller2.qrc">
+     <normaloff>:/icons/go_to_lut.png</normaloff>:/icons/go_to_lut.png</iconset>
+   </property>
+   <property name="text">
+    <string>Go to &amp;LUT</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+L</string>
+   </property>
+  </action>
+  <action name="action_Go_to_FC000">
+   <property name="icon">
+    <iconset resource="propeller2.qrc">
+     <normaloff>:/icons/go_to_fc000.png</normaloff>:/icons/go_to_fc000.png</iconset>
+   </property>
+   <property name="text">
+    <string>Go to $&amp;FC000</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+F</string>
+   </property>
+  </action>
+  <action name="action_setLowercase">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="propeller2.qrc">
+     <normaloff>:/icons/lowercase.png</normaloff>:/icons/lowercase.png</iconset>
+   </property>
+   <property name="text">
+    <string>Disassembler &amp;lowercase</string>
+   </property>
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <resources/>
+ <resources>
+  <include location="propeller2.qrc"/>
+ </resources>
  <connections/>
 </ui>

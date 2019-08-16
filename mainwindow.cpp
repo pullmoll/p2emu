@@ -38,7 +38,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "about.h"
-#include "csv.h"
+#include "gotoaddress.h"
 #include "p2dasm.h"
 
 static const QLatin1String key_windowGeometry("windowGeometry");
@@ -51,15 +51,9 @@ MainWindow::MainWindow(QWidget *parent)
     , m_hub(2, this)
     , m_dasm(new P2Dasm(m_hub.cog(0)))
     , m_model(new P2DasmModel(m_dasm))
-    , le_address(nullptr)
-    , pb_go(nullptr)
-    , pb_go_cog(nullptr)
-    , pb_go_lut(nullptr)
-    , pb_go_fc000(nullptr)
-    , cb_lowercase(nullptr)
 {
-    QEventLoop loop(this);
     ui->setupUi(this);
+    setWindowTitle(QString("%1 v%2").arg(qApp->applicationName()).arg(qApp->applicationVersion()));
 
     setupToolbar();
 
@@ -85,7 +79,7 @@ MainWindow::~MainWindow()
 {
     QSettings s;
     s.setValue(key_windowGeometry, saveGeometry());
-    s.setValue(key_lowercase, cb_lowercase->isChecked());
+    s.setValue(key_lowercase, ui->action_setLowercase->isChecked());
     s.setValue(key_current_row, ui->dasm->currentIndex().row());
     delete ui;
 }
@@ -114,7 +108,10 @@ void MainWindow::gotoAddress(const QString& address)
 
 void MainWindow::gotoInputAddress()
 {
-    gotoAddress(le_address->text());
+    GotoAddress dlg;
+    if (QDialog::Accepted == dlg.exec()) {
+        gotoAddress(dlg.address());
+    }
 }
 
 void MainWindow::gotoCog()
@@ -134,7 +131,7 @@ void MainWindow::gotoFC000()
 
 void MainWindow::setLowercase(bool check)
 {
-    cb_lowercase->setChecked(check);
+    ui->action_setLowercase->setChecked(check);
     m_dasm->setLowercase(check);
     int row = ui->dasm->currentIndex().row();
     m_model->invalidate();
@@ -143,33 +140,18 @@ void MainWindow::setLowercase(bool check)
 
 void MainWindow::setupToolbar()
 {
-    QLabel *lbl = new QLabel(tr("Address:"));
-    ui->mainToolBar->addWidget(lbl);
+    connect(ui->action_Go_to_address, SIGNAL(triggered()), SLOT(gotoInputAddress()));
+    ui->mainToolBar->addAction(ui->action_Go_to_address);
 
-    le_address = new QLineEdit(QString("000000"));
-    connect(le_address, SIGNAL(returnPressed()), SLOT(gotoInputAddress()));
-    ui->mainToolBar->addWidget(le_address);
+    connect(ui->action_Go_to_COG, SIGNAL(triggered()), SLOT(gotoCog()));
+    ui->mainToolBar->addAction(ui->action_Go_to_COG);
 
-    pb_go = new QPushButton(tr("Go"));
-    ui->mainToolBar->addWidget(pb_go);
-    connect(pb_go, SIGNAL(clicked()), SLOT(gotoInputAddress()));
-    ui->mainToolBar->addSeparator();
+    connect(ui->action_Go_to_LUT, SIGNAL(triggered()), SLOT(gotoLut()));
+    ui->mainToolBar->addAction(ui->action_Go_to_LUT);
 
-    pb_go_cog = new QPushButton(tr("Go to COG"));
-    ui->mainToolBar->addWidget(pb_go_cog);
-    connect(pb_go_cog, SIGNAL(clicked()), SLOT(gotoCog()));
-    ui->mainToolBar->addSeparator();
+    connect(ui->action_Go_to_FC000, SIGNAL(triggered()), SLOT(gotoFC000()));
+    ui->mainToolBar->addAction(ui->action_Go_to_FC000);
 
-    pb_go_lut = new QPushButton(tr("Go to LUT"));
-    ui->mainToolBar->addWidget(pb_go_lut);
-    connect(pb_go_lut, SIGNAL(clicked()), SLOT(gotoLut()));
-    ui->mainToolBar->addSeparator();
-
-    pb_go_fc000 = new QPushButton(tr("Go to $FC000"));
-    connect(pb_go_fc000, SIGNAL(clicked()), SLOT(gotoFC000()));
-    ui->mainToolBar->addWidget(pb_go_fc000);
-
-    cb_lowercase = new QCheckBox(tr("lowercase"));
-    connect(cb_lowercase, SIGNAL(clicked(bool)), SLOT(setLowercase(bool)));
-    ui->mainToolBar->addWidget(cb_lowercase);
+    connect(ui->action_setLowercase, SIGNAL(triggered(bool)), SLOT(setLowercase(bool)));
+    ui->mainToolBar->addAction(ui->action_setLowercase);
 }

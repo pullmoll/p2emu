@@ -3,5 +3,10 @@
         <file>P2 instruction set.csv</file>
         <file>instructions_v33g.txt</file>
         <file>ROM_Booter_v33_01j.bin</file>
+        <file>icons/go_to.png</file>
+        <file>icons/go_to_cog.png</file>
+        <file>icons/go_to_fc000.png</file>
+        <file>icons/go_to_lut.png</file>
+        <file>icons/lowercase.png</file>
     </qresource>
 </RCC>

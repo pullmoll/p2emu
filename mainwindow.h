@@ -69,11 +69,4 @@ private:
     P2DasmModel* m_model;
 
     void setupToolbar();
-
-    QLineEdit* le_address;
-    QPushButton* pb_go;
-    QPushButton* pb_go_cog;
-    QPushButton* pb_go_lut;
-    QPushButton* pb_go_fc000;
-    QCheckBox* cb_lowercase;
 };

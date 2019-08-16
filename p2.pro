@@ -23,7 +23,7 @@ CONFIG += c++14
 
 SOURCES += \
 		about.cpp \
-		csv.cpp \
+		gotoaddress.cpp \
 		main.cpp \
 		mainwindow.cpp \
 		p2cog.cpp \
@@ -34,7 +34,7 @@ SOURCES += \
 
 HEADERS += \
 		about.h \
-		csv.h \
+		gotoaddress.h \
 		mainwindow.h \
 		p2cog.h \
 		p2dasm.h \
@@ -45,6 +45,7 @@ HEADERS += \
 
 FORMS += \
 		about.ui \
+		gotoaddress.ui \
 		mainwindow.ui
 
 # Default rules for deployment.
@@ -54,3 +55,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 RESOURCES += \
 	propeller2.qrc
+
+DISTFILES += \
+		csv.cpp \
+		csv.h
