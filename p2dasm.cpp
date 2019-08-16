@@ -97,7 +97,7 @@ p2_token_e P2Dasm::conditional(unsigned cond)
     return conditional(static_cast<p2_cond_e>(cond));
 }
 
-bool P2Dasm::dasm(p2_LONG addr, QString& opcode, QString& instruction)
+bool P2Dasm::dasm(p2_LONG addr, QString& opcode, QString& instruction, QString* description)
 {
 
     IR.word = COG->rd_mem(addr*4);
@@ -122,325 +122,325 @@ bool P2Dasm::dasm(p2_LONG addr, QString& opcode, QString& instruction)
     // Dispatch to dasm_xxx() functions
     switch (IR.op.inst) {
     case p2_ror:
-        dasm_ror(instruction);
+        dasm_ror(instruction, description);
         break;
 
     case p2_rol:
-        dasm_rol(instruction);
+        dasm_rol(instruction, description);
         break;
 
     case p2_shr:
-        dasm_shr(instruction);
+        dasm_shr(instruction, description);
         break;
 
     case p2_shl:
-        dasm_shl(instruction);
+        dasm_shl(instruction, description);
         break;
 
     case p2_rcr:
-        dasm_rcr(instruction);
+        dasm_rcr(instruction, description);
         break;
 
     case p2_rcl:
-        dasm_rcl(instruction);
+        dasm_rcl(instruction, description);
         break;
 
     case p2_sar:
-        dasm_sar(instruction);
+        dasm_sar(instruction, description);
         break;
 
     case p2_sal:
-        dasm_sal(instruction);
+        dasm_sal(instruction, description);
         break;
 
     case p2_add:
-        dasm_add(instruction);
+        dasm_add(instruction, description);
         break;
 
     case p2_addx:
-        dasm_addx(instruction);
+        dasm_addx(instruction, description);
         break;
 
     case p2_adds:
-        dasm_adds(instruction);
+        dasm_adds(instruction, description);
         break;
 
     case p2_addsx:
-        dasm_addsx(instruction);
+        dasm_addsx(instruction, description);
         break;
 
     case p2_sub:
-        dasm_sub(instruction);
+        dasm_sub(instruction, description);
         break;
 
     case p2_subx:
-        dasm_subx(instruction);
+        dasm_subx(instruction, description);
         break;
 
     case p2_subs:
-        dasm_subs(instruction);
+        dasm_subs(instruction, description);
         break;
 
     case p2_subsx:
-        dasm_subsx(instruction);
+        dasm_subsx(instruction, description);
         break;
 
     case p2_cmp:
-        dasm_cmp(instruction);
+        dasm_cmp(instruction, description);
         break;
 
     case p2_cmpx:
-        dasm_cmpx(instruction);
+        dasm_cmpx(instruction, description);
         break;
 
     case p2_cmps:
-        dasm_cmps(instruction);
+        dasm_cmps(instruction, description);
         break;
 
     case p2_cmpsx:
-        dasm_cmpsx(instruction);
+        dasm_cmpsx(instruction, description);
         break;
 
     case p2_cmpr:
-        dasm_cmpr(instruction);
+        dasm_cmpr(instruction, description);
         break;
 
     case p2_cmpm:
-        dasm_cmpm(instruction);
+        dasm_cmpm(instruction, description);
         break;
 
     case p2_subr:
-        dasm_subr(instruction);
+        dasm_subr(instruction, description);
         break;
 
     case p2_cmpsub:
-        dasm_cmpsub(instruction);
+        dasm_cmpsub(instruction, description);
         break;
 
     case p2_fge:
-        dasm_fge(instruction);
+        dasm_fge(instruction, description);
         break;
 
     case p2_fle:
-        dasm_fle(instruction);
+        dasm_fle(instruction, description);
         break;
 
     case p2_fges:
-        dasm_fges(instruction);
+        dasm_fges(instruction, description);
         break;
 
     case p2_fles:
-        dasm_fles(instruction);
+        dasm_fles(instruction, description);
         break;
 
     case p2_sumc:
-        dasm_sumc(instruction);
+        dasm_sumc(instruction, description);
         break;
 
     case p2_sumnc:
-        dasm_sumnc(instruction);
+        dasm_sumnc(instruction, description);
         break;
 
     case p2_sumz:
-        dasm_sumz(instruction);
+        dasm_sumz(instruction, description);
         break;
 
     case p2_sumnz:
-        dasm_sumnz(instruction);
+        dasm_sumnz(instruction, description);
         break;
 
     case p2_testb_w:
         // case p2_bitl:
-        (IR.op.wc != IR.op.wz) ? dasm_testb_w(instruction)
-                               : dasm_bitl(instruction);
+        (IR.op.wc != IR.op.wz) ? dasm_testb_w(instruction, description)
+                               : dasm_bitl(instruction, description);
         break;
 
     case p2_testbn_w:
         // case p2_bith:
-        (IR.op.wc != IR.op.wz) ? dasm_testbn_w(instruction)
-                               : dasm_bith(instruction);
+        (IR.op.wc != IR.op.wz) ? dasm_testbn_w(instruction, description)
+                               : dasm_bith(instruction, description);
         break;
 
     case p2_testb_and:
         // case p2_bitc:
-        (IR.op.wc != IR.op.wz) ? dasm_testb_and(instruction)
-                               : dasm_bitc(instruction);
+        (IR.op.wc != IR.op.wz) ? dasm_testb_and(instruction, description)
+                               : dasm_bitc(instruction, description);
         break;
 
     case p2_testbn_and:
         // case p2_bitnc:
-        (IR.op.wc != IR.op.wz) ? dasm_testbn_and(instruction)
-                               : dasm_bitnc(instruction);
+        (IR.op.wc != IR.op.wz) ? dasm_testbn_and(instruction, description)
+                               : dasm_bitnc(instruction, description);
         break;
 
     case p2_testb_or:
         // case p2_bitz:
-        (IR.op.wc != IR.op.wz) ? dasm_testb_or(instruction)
-                               : dasm_bitz(instruction);
+        (IR.op.wc != IR.op.wz) ? dasm_testb_or(instruction, description)
+                               : dasm_bitz(instruction, description);
         break;
 
     case p2_testbn_or:
         // case p2_bitnz:
-        (IR.op.wc != IR.op.wz) ? dasm_testbn_or(instruction)
-                               : dasm_bitnz(instruction);
+        (IR.op.wc != IR.op.wz) ? dasm_testbn_or(instruction, description)
+                               : dasm_bitnz(instruction, description);
         break;
 
     case p2_testb_xor:
         // case p2_bitrnd:
-        (IR.op.wc != IR.op.wz) ? dasm_testb_xor(instruction)
-                               : dasm_bitrnd(instruction);
+        (IR.op.wc != IR.op.wz) ? dasm_testb_xor(instruction, description)
+                               : dasm_bitrnd(instruction, description);
         break;
 
     case p2_testbn_xor:
         // case p2_bitnot:
-        (IR.op.wc != IR.op.wz) ? dasm_testbn_xor(instruction)
-                               : dasm_bitnot(instruction);
+        (IR.op.wc != IR.op.wz) ? dasm_testbn_xor(instruction, description)
+                               : dasm_bitnot(instruction, description);
         break;
 
     case p2_and:
-        dasm_and(instruction);
+        dasm_and(instruction, description);
         break;
 
     case p2_andn:
-        dasm_andn(instruction);
+        dasm_andn(instruction, description);
         break;
 
     case p2_or:
-        dasm_or(instruction);
+        dasm_or(instruction, description);
         break;
 
     case p2_xor:
-        dasm_xor(instruction);
+        dasm_xor(instruction, description);
         break;
 
     case p2_muxc:
-        dasm_muxc(instruction);
+        dasm_muxc(instruction, description);
         break;
 
     case p2_muxnc:
-        dasm_muxnc(instruction);
+        dasm_muxnc(instruction, description);
         break;
 
     case p2_muxz:
-        dasm_muxz(instruction);
+        dasm_muxz(instruction, description);
         break;
 
     case p2_muxnz:
-        dasm_muxnz(instruction);
+        dasm_muxnz(instruction, description);
         break;
 
     case p2_mov:
-        dasm_mov(instruction);
+        dasm_mov(instruction, description);
         break;
 
     case p2_not:
-        dasm_not(instruction);
+        dasm_not(instruction, description);
         break;
 
     case p2_abs:
-        dasm_abs(instruction);
+        dasm_abs(instruction, description);
         break;
 
     case p2_neg:
-        dasm_neg(instruction);
+        dasm_neg(instruction, description);
         break;
 
     case p2_negc:
-        dasm_negc(instruction);
+        dasm_negc(instruction, description);
         break;
 
     case p2_negnc:
-        dasm_negnc(instruction);
+        dasm_negnc(instruction, description);
         break;
 
     case p2_negz:
-        dasm_negz(instruction);
+        dasm_negz(instruction, description);
         break;
 
     case p2_negnz:
-        dasm_negnz(instruction);
+        dasm_negnz(instruction, description);
         break;
 
     case p2_incmod:
-        dasm_incmod(instruction);
+        dasm_incmod(instruction, description);
         break;
 
     case p2_decmod:
-        dasm_decmod(instruction);
+        dasm_decmod(instruction, description);
         break;
 
     case p2_zerox:
-        dasm_zerox(instruction);
+        dasm_zerox(instruction, description);
         break;
 
     case p2_signx:
-        dasm_signx(instruction);
+        dasm_signx(instruction, description);
         break;
 
     case p2_encod:
-        dasm_encod(instruction);
+        dasm_encod(instruction, description);
         break;
 
     case p2_ones:
-        dasm_ones(instruction);
+        dasm_ones(instruction, description);
         break;
 
     case p2_test:
-        dasm_test(instruction);
+        dasm_test(instruction, description);
         break;
 
     case p2_testn:
-        dasm_testn(instruction);
+        dasm_testn(instruction, description);
         break;
 
     case p2_setnib_0:
     case p2_setnib_1:
-        dasm_setnib(instruction);
+        dasm_setnib(instruction, description);
         break;
 
     case p2_getnib_0:
     case p2_getnib_1:
-        dasm_getnib(instruction);
+        dasm_getnib(instruction, description);
         break;
 
     case p2_rolnib_0:
     case p2_rolnib_1:
-        dasm_rolnib(instruction);
+        dasm_rolnib(instruction, description);
         break;
 
     case p2_setbyte:
-        dasm_setbyte(instruction);
+        dasm_setbyte(instruction, description);
         break;
 
     case p2_getbyte:
-        dasm_getbyte(instruction);
+        dasm_getbyte(instruction, description);
         break;
 
     case p2_rolbyte:
-        dasm_rolbyte(instruction);
+        dasm_rolbyte(instruction, description);
         break;
 
     case p2_1001001:
         if (IR.op.wc == 0) {
-            (IR.op.dst == 0 && IR.op.wz == 0) ? dasm_setword_altsw(instruction)
-                                              : dasm_setword(instruction);
+            (IR.op.dst == 0 && IR.op.wz == 0) ? dasm_setword_altsw(instruction, description)
+                                              : dasm_setword(instruction, description);
         } else {
-            (IR.op.src == 0 && IR.op.wz == 0) ? dasm_getword_altgw(instruction)
-                                              : dasm_getword(instruction);
+            (IR.op.src == 0 && IR.op.wz == 0) ? dasm_getword_altgw(instruction, description)
+                                              : dasm_getword(instruction, description);
         }
         break;
 
     case p2_1001010:
         if (IR.op.wc == 0) {
-            (IR.op.src == 0 && IR.op.wz == 0) ? dasm_rolword_altgw(instruction)
-                                              : dasm_rolword(instruction);
+            (IR.op.src == 0 && IR.op.wz == 0) ? dasm_rolword_altgw(instruction, description)
+                                              : dasm_rolword(instruction, description);
         } else {
             if (IR.op.wz == 0) {
-                (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altsn_d(instruction)
-                                                   : dasm_altsn(instruction);
+                (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altsn_d(instruction, description)
+                                                   : dasm_altsn(instruction, description);
             } else {
-                (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altgn_d(instruction)
-                                                   : dasm_altgn(instruction);
+                (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altgn_d(instruction, description)
+                                                   : dasm_altgn(instruction, description);
             }
         }
         break;
@@ -448,19 +448,19 @@ bool P2Dasm::dasm(p2_LONG addr, QString& opcode, QString& instruction)
     case p2_1001011:
         if (IR.op.wc == 0) {
             if (IR.op.wz == 0) {
-                (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altsb_d(instruction)
-                                                   : dasm_altsb(instruction);
+                (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altsb_d(instruction, description)
+                                                   : dasm_altsb(instruction, description);
             } else {
-                (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altgb_d(instruction)
-                                                   : dasm_altgb(instruction);
+                (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altgb_d(instruction, description)
+                                                   : dasm_altgb(instruction, description);
             }
         } else {
             if (IR.op.wz == 0) {
-                (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altsw_d(instruction)
-                                                   : dasm_altsw(instruction);
+                (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altsw_d(instruction, description)
+                                                   : dasm_altsw(instruction, description);
             } else {
-                (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altgw_d(instruction)
-                                                   : dasm_altgw(instruction);
+                (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altgw_d(instruction, description)
+                                                   : dasm_altgw(instruction, description);
             }
         }
         break;
@@ -468,19 +468,19 @@ bool P2Dasm::dasm(p2_LONG addr, QString& opcode, QString& instruction)
     case p2_1001100:
         if (IR.op.wc == 0) {
             if (IR.op.wz == 0) {
-                (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altr_d(instruction)
-                                                   : dasm_altr(instruction);
+                (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altr_d(instruction, description)
+                                                   : dasm_altr(instruction, description);
             } else {
-                (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altd_d(instruction)
-                                                   : dasm_altd(instruction);
+                (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altd_d(instruction, description)
+                                                   : dasm_altd(instruction, description);
             }
         } else {
             if (IR.op.wz == 0) {
-                (IR.op.src == 0 && IR.op.imm == 1) ? dasm_alts_d(instruction)
-                                                   : dasm_alts(instruction);
+                (IR.op.src == 0 && IR.op.imm == 1) ? dasm_alts_d(instruction, description)
+                                                   : dasm_alts(instruction, description);
             } else {
-                (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altb_d(instruction)
-                                                   : dasm_altb(instruction);
+                (IR.op.src == 0 && IR.op.imm == 1) ? dasm_altb_d(instruction, description)
+                                                   : dasm_altb(instruction, description);
             }
         }
         break;
@@ -488,31 +488,31 @@ bool P2Dasm::dasm(p2_LONG addr, QString& opcode, QString& instruction)
     case p2_1001101:
         if (IR.op.wc == 0) {
             if (IR.op.wz == 0) {
-                (IR.op.imm == 1 && IR.op.src == 0x164 /* 101100100 */) ? dasm_alti_d(instruction)
-                                                                       : dasm_alti(instruction);
+                (IR.op.imm == 1 && IR.op.src == 0x164 /* 101100100 */) ? dasm_alti_d(instruction, description)
+                                                                       : dasm_alti(instruction, description);
             } else {
-                dasm_setr(instruction);
+                dasm_setr(instruction, description);
             }
         } else {
-            (IR.op.wz == 0) ? dasm_setd(instruction)
-                            : dasm_sets(instruction);
+            (IR.op.wz == 0) ? dasm_setd(instruction, description)
+                            : dasm_sets(instruction, description);
         }
         break;
 
     case p2_1001110:
         if (IR.op.wc == 0) {
             if (IR.op.wz == 0) {
-                (IR.op.imm == 0 && IR.op.src == IR.op.dst) ? dasm_decod_d(instruction)
-                                                           : dasm_decod(instruction);
+                (IR.op.imm == 0 && IR.op.src == IR.op.dst) ? dasm_decod_d(instruction, description)
+                                                           : dasm_decod(instruction, description);
             } else {
-                (IR.op.imm == 0 && IR.op.src == IR.op.dst) ? dasm_bmask_d(instruction)
-                                                           : dasm_bmask(instruction);
+                (IR.op.imm == 0 && IR.op.src == IR.op.dst) ? dasm_bmask_d(instruction, description)
+                                                           : dasm_bmask(instruction, description);
             }
         } else {
             if (IR.op.wz == 0) {
-                dasm_crcbit(instruction);
+                dasm_crcbit(instruction, description);
             } else {
-                dasm_crcnib(instruction);
+                dasm_crcnib(instruction, description);
             }
         }
         break;
@@ -520,47 +520,47 @@ bool P2Dasm::dasm(p2_LONG addr, QString& opcode, QString& instruction)
     case p2_1001111:
         if (IR.op.wc == 0) {
             if (IR.op.wz == 0) {
-                dasm_muxnits(instruction);
+                dasm_muxnits(instruction, description);
             } else {
-                dasm_muxnibs(instruction);
+                dasm_muxnibs(instruction, description);
             }
         } else {
             if (IR.op.wz == 0) {
-                dasm_muxq(instruction);
+                dasm_muxq(instruction, description);
             } else {
-                dasm_movbyts(instruction);
+                dasm_movbyts(instruction, description);
             }
         }
         break;
 
     case p2_1010000:
         if (IR.op.wc == 0) {
-            dasm_mul(instruction);
+            dasm_mul(instruction, description);
         } else {
-            dasm_muls(instruction);
+            dasm_muls(instruction, description);
         }
         break;
 
     case p2_1010001:
         if (IR.op.wc == 0) {
-            dasm_sca(instruction);
+            dasm_sca(instruction, description);
         } else {
-            dasm_scas(instruction);
+            dasm_scas(instruction, description);
         }
         break;
 
     case p2_1010010:
         if (IR.op.wc == 0) {
             if (IR.op.wz == 0) {
-                dasm_addpix(instruction);
+                dasm_addpix(instruction, description);
             } else {
-                dasm_mulpix(instruction);
+                dasm_mulpix(instruction, description);
             }
         } else {
             if (IR.op.wz == 0) {
-                dasm_blnpix(instruction);
+                dasm_blnpix(instruction, description);
             } else {
-                dasm_mixpix(instruction);
+                dasm_mixpix(instruction, description);
             }
         }
         break;
@@ -568,63 +568,63 @@ bool P2Dasm::dasm(p2_LONG addr, QString& opcode, QString& instruction)
     case p2_1010011:
         if (IR.op.wc == 0) {
             if (IR.op.wz == 0) {
-                dasm_addct1(instruction);
+                dasm_addct1(instruction, description);
             } else {
-                dasm_addct2(instruction);
+                dasm_addct2(instruction, description);
             }
         } else {
             if (IR.op.wz == 0) {
-                dasm_addct3(instruction);
+                dasm_addct3(instruction, description);
             } else {
-                dasm_wmlong(instruction);
+                dasm_wmlong(instruction, description);
             }
         }
         break;
 
     case p2_1010100:
         if (IR.op.wz == 0) {
-            dasm_rqpin(instruction);
+            dasm_rqpin(instruction, description);
         } else {
 
         }
         break;
 
     case p2_rdlut:
-        dasm_rdlut(instruction);
+        dasm_rdlut(instruction, description);
         break;
 
     case p2_rdbyte:
-        dasm_rdbyte(instruction);
+        dasm_rdbyte(instruction, description);
         break;
 
     case p2_rdword:
-        dasm_rdword(instruction);
+        dasm_rdword(instruction, description);
         break;
 
     case p2_rdlong:
-        dasm_rdlong(instruction);
+        dasm_rdlong(instruction, description);
         break;
 
     case p2_calld:
-        dasm_calld(instruction);
+        dasm_calld(instruction, description);
         break;
 
     case p2_callp:
-        (IR.op.wc == 0) ? dasm_callpa(instruction) : dasm_callpb(instruction);
+        (IR.op.wc == 0) ? dasm_callpa(instruction, description) : dasm_callpb(instruction, description);
         break;
 
     case p2_1011011:
         if (IR.op.wc == 0) {
             if (IR.op.wz == 0) {
-                dasm_djz(instruction);
+                dasm_djz(instruction, description);
             } else {
-                dasm_djnz(instruction);
+                dasm_djnz(instruction, description);
             }
         } else {
             if (IR.op.wz == 0) {
-                dasm_djf(instruction);
+                dasm_djf(instruction, description);
             } else {
-                dasm_djnf(instruction);
+                dasm_djnf(instruction, description);
             }
         }
         break;
@@ -632,15 +632,15 @@ bool P2Dasm::dasm(p2_LONG addr, QString& opcode, QString& instruction)
     case p2_1011100:
         if (IR.op.wc == 0) {
             if (IR.op.wz == 0) {
-                dasm_ijz(instruction);
+                dasm_ijz(instruction, description);
             } else {
-                dasm_ijnz(instruction);
+                dasm_ijnz(instruction, description);
             }
         } else {
             if (IR.op.wz == 0) {
-                dasm_tjz(instruction);
+                dasm_tjz(instruction, description);
             } else {
-                dasm_tjnz(instruction);
+                dasm_tjnz(instruction, description);
             }
         }
         break;
@@ -648,15 +648,15 @@ bool P2Dasm::dasm(p2_LONG addr, QString& opcode, QString& instruction)
     case p2_1011101:
         if (IR.op.wc == 0) {
             if (IR.op.wz == 0) {
-                dasm_tjf(instruction);
+                dasm_tjf(instruction, description);
             } else {
-                dasm_tjnf(instruction);
+                dasm_tjnf(instruction, description);
             }
         } else {
             if (IR.op.wz == 0) {
-                dasm_tjs(instruction);
+                dasm_tjs(instruction, description);
             } else {
-                dasm_tjns(instruction);
+                dasm_tjns(instruction, description);
             }
         }
         break;
@@ -664,104 +664,104 @@ bool P2Dasm::dasm(p2_LONG addr, QString& opcode, QString& instruction)
     case p2_1011110:
         if (IR.op.wc == 0) {
             if (IR.op.wz == 0) {
-                dasm_tjv(instruction);
+                dasm_tjv(instruction, description);
             } else {
                 switch (IR.op.dst) {
                 case 0x00:
-                    dasm_jint(instruction);
+                    dasm_jint(instruction, description);
                     break;
                 case 0x01:
-                    dasm_jct1(instruction);
+                    dasm_jct1(instruction, description);
                     break;
                 case 0x02:
-                    dasm_jct2(instruction);
+                    dasm_jct2(instruction, description);
                     break;
                 case 0x03:
-                    dasm_jct3(instruction);
+                    dasm_jct3(instruction, description);
                     break;
                 case 0x04:
-                    dasm_jse1(instruction);
+                    dasm_jse1(instruction, description);
                     break;
                 case 0x05:
-                    dasm_jse2(instruction);
+                    dasm_jse2(instruction, description);
                     break;
                 case 0x06:
-                    dasm_jse3(instruction);
+                    dasm_jse3(instruction, description);
                     break;
                 case 0x07:
-                    dasm_jse4(instruction);
+                    dasm_jse4(instruction, description);
                     break;
                 case 0x08:
-                    dasm_jpat(instruction);
+                    dasm_jpat(instruction, description);
                     break;
                 case 0x09:
-                    dasm_jfbw(instruction);
+                    dasm_jfbw(instruction, description);
                     break;
                 case 0x0a:
-                    dasm_jxmt(instruction);
+                    dasm_jxmt(instruction, description);
                     break;
                 case 0x0b:
-                    dasm_jxfi(instruction);
+                    dasm_jxfi(instruction, description);
                     break;
                 case 0x0c:
-                    dasm_jxro(instruction);
+                    dasm_jxro(instruction, description);
                     break;
                 case 0x0d:
-                    dasm_jxrl(instruction);
+                    dasm_jxrl(instruction, description);
                     break;
                 case 0x0e:
-                    dasm_jatn(instruction);
+                    dasm_jatn(instruction, description);
                     break;
                 case 0x0f:
-                    dasm_jqmt(instruction);
+                    dasm_jqmt(instruction, description);
                     break;
                 case 0x10:
-                    dasm_jnint(instruction);
+                    dasm_jnint(instruction, description);
                     break;
                 case 0x11:
-                    dasm_jnct1(instruction);
+                    dasm_jnct1(instruction, description);
                     break;
                 case 0x12:
-                    dasm_jnct2(instruction);
+                    dasm_jnct2(instruction, description);
                     break;
                 case 0x13:
-                    dasm_jnct3(instruction);
+                    dasm_jnct3(instruction, description);
                     break;
                 case 0x14:
-                    dasm_jnse1(instruction);
+                    dasm_jnse1(instruction, description);
                     break;
                 case 0x15:
-                    dasm_jnse2(instruction);
+                    dasm_jnse2(instruction, description);
                     break;
                 case 0x16:
-                    dasm_jnse3(instruction);
+                    dasm_jnse3(instruction, description);
                     break;
                 case 0x17:
-                    dasm_jnse4(instruction);
+                    dasm_jnse4(instruction, description);
                     break;
                 case 0x18:
-                    dasm_jnpat(instruction);
+                    dasm_jnpat(instruction, description);
                     break;
                 case 0x19:
-                    dasm_jnfbw(instruction);
+                    dasm_jnfbw(instruction, description);
                     break;
                 case 0x1a:
-                    dasm_jnxmt(instruction);
+                    dasm_jnxmt(instruction, description);
                     break;
                 case 0x1b:
-                    dasm_jnxfi(instruction);
+                    dasm_jnxfi(instruction, description);
                     break;
                 case 0x1c:
-                    dasm_jnxro(instruction);
+                    dasm_jnxro(instruction, description);
                     break;
                 case 0x1d:
-                    dasm_jnxrl(instruction);
+                    dasm_jnxrl(instruction, description);
                     break;
                 case 0x1e:
-                    dasm_jnatn(instruction);
+                    dasm_jnatn(instruction, description);
                     break;
                 case 0x1f:
-                    dasm_jnqmt(instruction);
+                    dasm_jnqmt(instruction, description);
                     break;
                 default:
                     // TODO: invalid D value
@@ -769,612 +769,612 @@ bool P2Dasm::dasm(p2_LONG addr, QString& opcode, QString& instruction)
                 }
             }
         } else {
-            dasm_1011110_1(instruction);
+            dasm_1011110_1(instruction, description);
         }
         break;
 
     case p2_1011111:
         if (IR.op.wc == 0) {
-            dasm_1011111_0(instruction);
+            dasm_1011111_0(instruction, description);
         } else {
-            dasm_setpat(instruction);
+            dasm_setpat(instruction, description);
         }
         break;
 
     case p2_1100000:
         if (IR.op.wc == 0) {
-            (IR.op.wz == 1 && IR.op.dst == 1) ? dasm_akpin(instruction)
-                                              : dasm_wrpin(instruction);
+            (IR.op.wz == 1 && IR.op.dst == 1) ? dasm_akpin(instruction, description)
+                                              : dasm_wrpin(instruction, description);
         } else {
-            dasm_wxpin(instruction);
+            dasm_wxpin(instruction, description);
         }
         break;
 
     case p2_1100001:
         if (IR.op.wc == 0) {
-            dasm_wypin(instruction);
+            dasm_wypin(instruction, description);
         } else {
-            dasm_wrlut(instruction);
+            dasm_wrlut(instruction, description);
         }
         break;
 
     case p2_1100010:
         if (IR.op.wc == 0) {
-            dasm_wrbyte(instruction);
+            dasm_wrbyte(instruction, description);
         } else {
-            dasm_wrword(instruction);
+            dasm_wrword(instruction, description);
         }
         break;
 
     case p2_1100011:
         if (IR.op.wc == 0) {
-            dasm_wrlong(instruction);
+            dasm_wrlong(instruction, description);
         } else {
-            dasm_rdfast(instruction);
+            dasm_rdfast(instruction, description);
         }
         break;
 
     case p2_1100100:
         if (IR.op.wc == 0) {
-            dasm_wrfast(instruction);
+            dasm_wrfast(instruction, description);
         } else {
-            dasm_fblock(instruction);
+            dasm_fblock(instruction, description);
         }
         break;
 
     case p2_1100101:
         if (IR.op.wc == 0) {
             if (IR.op.wz == 1 && IR.op.imm == 1 && IR.op.src == 0 && IR.op.dst == 0) {
-                dasm_xstop(instruction);
+                dasm_xstop(instruction, description);
             } else {
-                dasm_xinit(instruction);
+                dasm_xinit(instruction, description);
             }
         } else {
-            dasm_xzero(instruction);
+            dasm_xzero(instruction, description);
         }
         break;
 
     case p2_1100110:
         if (IR.op.wc == 0) {
-            dasm_xcont(instruction);
+            dasm_xcont(instruction, description);
         } else {
-            dasm_rep(instruction);
+            dasm_rep(instruction, description);
         }
         break;
 
     case p2_coginit:
-        dasm_coginit(instruction);
+        dasm_coginit(instruction, description);
         break;
 
     case p2_1101000:
         if (IR.op.wc == 0) {
-            dasm_qmul(instruction);
+            dasm_qmul(instruction, description);
         } else {
-            dasm_qdiv(instruction);
+            dasm_qdiv(instruction, description);
         }
         break;
 
     case p2_1101001:
         if (IR.op.wc == 0) {
-            dasm_qfrac(instruction);
+            dasm_qfrac(instruction, description);
         } else {
-            dasm_qsqrt(instruction);
+            dasm_qsqrt(instruction, description);
         }
         break;
 
     case p2_1101010:
         if (IR.op.wc == 0) {
-            dasm_qrotate(instruction);
+            dasm_qrotate(instruction, description);
         } else {
-            dasm_qvector(instruction);
+            dasm_qvector(instruction, description);
         }
         break;
 
     case p2_1101011:
         switch (IR.op.src) {
         case 0x00:
-            dasm_hubset(instruction);
+            dasm_hubset(instruction, description);
             break;
         case 0x01:
-            dasm_cogid(instruction);
+            dasm_cogid(instruction, description);
             break;
         case 0x03:
-            dasm_cogstop(instruction);
+            dasm_cogstop(instruction, description);
             break;
         case 0x04:
-            dasm_locknew(instruction);
+            dasm_locknew(instruction, description);
             break;
         case 0x05:
-            dasm_lockret(instruction);
+            dasm_lockret(instruction, description);
             break;
         case 0x06:
-            dasm_locktry(instruction);
+            dasm_locktry(instruction, description);
             break;
         case 0x07:
-            dasm_lockrel(instruction);
+            dasm_lockrel(instruction, description);
             break;
         case 0x0e:
-            dasm_qlog(instruction);
+            dasm_qlog(instruction, description);
             break;
         case 0x0f:
-            dasm_qexp(instruction);
+            dasm_qexp(instruction, description);
             break;
         case 0x10:
-            dasm_rfbyte(instruction);
+            dasm_rfbyte(instruction, description);
             break;
         case 0x11:
-            dasm_rfword(instruction);
+            dasm_rfword(instruction, description);
             break;
         case 0x12:
-            dasm_rflong(instruction);
+            dasm_rflong(instruction, description);
             break;
         case 0x13:
-            dasm_rfvar(instruction);
+            dasm_rfvar(instruction, description);
             break;
         case 0x14:
-            dasm_rfvars(instruction);
+            dasm_rfvars(instruction, description);
             break;
         case 0x15:
-            dasm_wfbyte(instruction);
+            dasm_wfbyte(instruction, description);
             break;
         case 0x16:
-            dasm_wfword(instruction);
+            dasm_wfword(instruction, description);
             break;
         case 0x17:
-            dasm_wflong(instruction);
+            dasm_wflong(instruction, description);
             break;
         case 0x18:
-            dasm_getqx(instruction);
+            dasm_getqx(instruction, description);
             break;
         case 0x19:
-            dasm_getqy(instruction);
+            dasm_getqy(instruction, description);
             break;
         case 0x1a:
-            dasm_getct(instruction);
+            dasm_getct(instruction, description);
             break;
         case 0x1b:
-            (IR.op.dst == 0) ? dasm_getrnd_cz(instruction)
-                             : dasm_getrnd(instruction);
+            (IR.op.dst == 0) ? dasm_getrnd_cz(instruction, description)
+                             : dasm_getrnd(instruction, description);
             break;
         case 0x1c:
-            dasm_setdacs(instruction);
+            dasm_setdacs(instruction, description);
             break;
         case 0x1d:
-            dasm_setxfrq(instruction);
+            dasm_setxfrq(instruction, description);
             break;
         case 0x1e:
-            dasm_getxacc(instruction);
+            dasm_getxacc(instruction, description);
             break;
         case 0x1f:
-            dasm_waitx(instruction);
+            dasm_waitx(instruction, description);
             break;
         case 0x20:
-            dasm_setse1(instruction);
+            dasm_setse1(instruction, description);
             break;
         case 0x21:
-            dasm_setse2(instruction);
+            dasm_setse2(instruction, description);
             break;
         case 0x22:
-            dasm_setse3(instruction);
+            dasm_setse3(instruction, description);
             break;
         case 0x23:
-            dasm_setse4(instruction);
+            dasm_setse4(instruction, description);
             break;
         case 0x24:
             switch (IR.op.dst) {
             case 0x00:
-                dasm_pollint(instruction);
+                dasm_pollint(instruction, description);
                 break;
             case 0x01:
-                dasm_pollct1(instruction);
+                dasm_pollct1(instruction, description);
                 break;
             case 0x02:
-                dasm_pollct2(instruction);
+                dasm_pollct2(instruction, description);
                 break;
             case 0x03:
-                dasm_pollct3(instruction);
+                dasm_pollct3(instruction, description);
                 break;
             case 0x04:
-                dasm_pollse1(instruction);
+                dasm_pollse1(instruction, description);
                 break;
             case 0x05:
-                dasm_pollse2(instruction);
+                dasm_pollse2(instruction, description);
                 break;
             case 0x06:
-                dasm_pollse3(instruction);
+                dasm_pollse3(instruction, description);
                 break;
             case 0x07:
-                dasm_pollse4(instruction);
+                dasm_pollse4(instruction, description);
                 break;
             case 0x08:
-                dasm_pollpat(instruction);
+                dasm_pollpat(instruction, description);
                 break;
             case 0x09:
-                dasm_pollfbw(instruction);
+                dasm_pollfbw(instruction, description);
                 break;
             case 0x0a:
-                dasm_pollxmt(instruction);
+                dasm_pollxmt(instruction, description);
                 break;
             case 0x0b:
-                dasm_pollxfi(instruction);
+                dasm_pollxfi(instruction, description);
                 break;
             case 0x0c:
-                dasm_pollxro(instruction);
+                dasm_pollxro(instruction, description);
                 break;
             case 0x0d:
-                dasm_pollxrl(instruction);
+                dasm_pollxrl(instruction, description);
                 break;
             case 0x0e:
-                dasm_pollatn(instruction);
+                dasm_pollatn(instruction, description);
                 break;
             case 0x0f:
-                dasm_pollqmt(instruction);
+                dasm_pollqmt(instruction, description);
                 break;
             case 0x10:
-                dasm_waitint(instruction);
+                dasm_waitint(instruction, description);
                 break;
             case 0x11:
-                dasm_waitct1(instruction);
+                dasm_waitct1(instruction, description);
                 break;
             case 0x12:
-                dasm_waitct2(instruction);
+                dasm_waitct2(instruction, description);
                 break;
             case 0x13:
-                dasm_waitct3(instruction);
+                dasm_waitct3(instruction, description);
                 break;
             case 0x14:
-                dasm_waitse1(instruction);
+                dasm_waitse1(instruction, description);
                 break;
             case 0x15:
-                dasm_waitse2(instruction);
+                dasm_waitse2(instruction, description);
                 break;
             case 0x16:
-                dasm_waitse3(instruction);
+                dasm_waitse3(instruction, description);
                 break;
             case 0x17:
-                dasm_waitse4(instruction);
+                dasm_waitse4(instruction, description);
                 break;
             case 0x18:
-                dasm_waitpat(instruction);
+                dasm_waitpat(instruction, description);
                 break;
             case 0x19:
-                dasm_waitfbw(instruction);
+                dasm_waitfbw(instruction, description);
                 break;
             case 0x1a:
-                dasm_waitxmt(instruction);
+                dasm_waitxmt(instruction, description);
                 break;
             case 0x1b:
-                dasm_waitxfi(instruction);
+                dasm_waitxfi(instruction, description);
                 break;
             case 0x1c:
-                dasm_waitxro(instruction);
+                dasm_waitxro(instruction, description);
                 break;
             case 0x1d:
-                dasm_waitxrl(instruction);
+                dasm_waitxrl(instruction, description);
                 break;
             case 0x1e:
-                dasm_waitatn(instruction);
+                dasm_waitatn(instruction, description);
                 break;
             case 0x20:
-                dasm_allowi(instruction);
+                dasm_allowi(instruction, description);
                 break;
             case 0x21:
-                dasm_stalli(instruction);
+                dasm_stalli(instruction, description);
                 break;
             case 0x22:
-                dasm_trgint1(instruction);
+                dasm_trgint1(instruction, description);
                 break;
             case 0x23:
-                dasm_trgint2(instruction);
+                dasm_trgint2(instruction, description);
                 break;
             case 0x24:
-                dasm_trgint3(instruction);
+                dasm_trgint3(instruction, description);
                 break;
             case 0x25:
-                dasm_nixint1(instruction);
+                dasm_nixint1(instruction, description);
                 break;
             case 0x26:
-                dasm_nixint2(instruction);
+                dasm_nixint2(instruction, description);
                 break;
             case 0x27:
-                dasm_nixint3(instruction);
+                dasm_nixint3(instruction, description);
                 break;
             }
             break;
         case 0x25:
-            dasm_setint1(instruction);
+            dasm_setint1(instruction, description);
             break;
         case 0x26:
-            dasm_setint2(instruction);
+            dasm_setint2(instruction, description);
             break;
         case 0x27:
-            dasm_setint3(instruction);
+            dasm_setint3(instruction, description);
             break;
         case 0x28:
-            dasm_setq(instruction);
+            dasm_setq(instruction, description);
             break;
         case 0x29:
-            dasm_setq2(instruction);
+            dasm_setq2(instruction, description);
             break;
         case 0x2a:
-            dasm_push(instruction);
+            dasm_push(instruction, description);
             break;
         case 0x2b:
-            dasm_pop(instruction);
+            dasm_pop(instruction, description);
             break;
         case 0x2c:
-            dasm_jmp(instruction);
+            dasm_jmp(instruction, description);
             break;
         case 0x2d:
-            (IR.op.imm == 0) ? dasm_call(instruction)
-                             : dasm_ret(instruction);
+            (IR.op.imm == 0) ? dasm_call(instruction, description)
+                             : dasm_ret(instruction, description);
             break;
         case 0x2e:
-            (IR.op.imm == 0) ? dasm_calla(instruction)
-                             : dasm_reta(instruction);
+            (IR.op.imm == 0) ? dasm_calla(instruction, description)
+                             : dasm_reta(instruction, description);
             break;
         case 0x2f:
-            (IR.op.imm == 0) ? dasm_callb(instruction)
-                             : dasm_retb(instruction);
+            (IR.op.imm == 0) ? dasm_callb(instruction, description)
+                             : dasm_retb(instruction, description);
             break;
         case 0x30:
-            dasm_jmprel(instruction);
+            dasm_jmprel(instruction, description);
             break;
         case 0x31:
-            dasm_skip(instruction);
+            dasm_skip(instruction, description);
             break;
         case 0x32:
-            dasm_skipf(instruction);
+            dasm_skipf(instruction, description);
             break;
         case 0x33:
-            dasm_execf(instruction);
+            dasm_execf(instruction, description);
             break;
         case 0x34:
-            dasm_getptr(instruction);
+            dasm_getptr(instruction, description);
             break;
         case 0x35:
-            (IR.op.wc == 0 && IR.op.wz == 0) ? dasm_cogbrk(instruction)
-                                             : dasm_getbrk(instruction);
+            (IR.op.wc == 0 && IR.op.wz == 0) ? dasm_cogbrk(instruction, description)
+                                             : dasm_getbrk(instruction, description);
             break;
         case 0x36:
-            dasm_brk(instruction);
+            dasm_brk(instruction, description);
             break;
         case 0x37:
-            dasm_setluts(instruction);
+            dasm_setluts(instruction, description);
             break;
         case 0x38:
-            dasm_setcy(instruction);
+            dasm_setcy(instruction, description);
             break;
         case 0x39:
-            dasm_setci(instruction);
+            dasm_setci(instruction, description);
             break;
         case 0x3a:
-            dasm_setcq(instruction);
+            dasm_setcq(instruction, description);
             break;
         case 0x3b:
-            dasm_setcfrq(instruction);
+            dasm_setcfrq(instruction, description);
             break;
         case 0x3c:
-            dasm_setcmod(instruction);
+            dasm_setcmod(instruction, description);
             break;
         case 0x3d:
-            dasm_setpiv(instruction);
+            dasm_setpiv(instruction, description);
             break;
         case 0x3e:
-            dasm_setpix(instruction);
+            dasm_setpix(instruction, description);
             break;
         case 0x3f:
-            dasm_cogatn(instruction);
+            dasm_cogatn(instruction, description);
             break;
         case 0x40:
-            (IR.op.wc == IR.op.wz) ? dasm_testp_w(instruction)
-                                   : dasm_dirl(instruction);
+            (IR.op.wc == IR.op.wz) ? dasm_testp_w(instruction, description)
+                                   : dasm_dirl(instruction, description);
             break;
         case 0x41:
-            (IR.op.wc == IR.op.wz) ? dasm_testpn_w(instruction)
-                                   : dasm_dirh(instruction);
+            (IR.op.wc == IR.op.wz) ? dasm_testpn_w(instruction, description)
+                                   : dasm_dirh(instruction, description);
             break;
         case 0x42:
-            (IR.op.wc == IR.op.wz) ? dasm_testp_and(instruction)
-                                   : dasm_dirc(instruction);
+            (IR.op.wc == IR.op.wz) ? dasm_testp_and(instruction, description)
+                                   : dasm_dirc(instruction, description);
             break;
         case 0x43:
-            (IR.op.wc == IR.op.wz) ? dasm_testpn_and(instruction)
-                                   : dasm_dirnc(instruction);
+            (IR.op.wc == IR.op.wz) ? dasm_testpn_and(instruction, description)
+                                   : dasm_dirnc(instruction, description);
             break;
         case 0x44:
-            (IR.op.wc == IR.op.wz) ? dasm_testp_or(instruction)
-                                   : dasm_dirz(instruction);
+            (IR.op.wc == IR.op.wz) ? dasm_testp_or(instruction, description)
+                                   : dasm_dirz(instruction, description);
             break;
         case 0x45:
-            (IR.op.wc == IR.op.wz) ? dasm_testpn_or(instruction)
-                                   : dasm_dirnz(instruction);
+            (IR.op.wc == IR.op.wz) ? dasm_testpn_or(instruction, description)
+                                   : dasm_dirnz(instruction, description);
             break;
         case 0x46:
-            (IR.op.wc == IR.op.wz) ? dasm_testp_xor(instruction)
-                                   : dasm_dirrnd(instruction);
+            (IR.op.wc == IR.op.wz) ? dasm_testp_xor(instruction, description)
+                                   : dasm_dirrnd(instruction, description);
             break;
         case 0x47:
-            (IR.op.wc == IR.op.wz) ? dasm_testpn_xor(instruction)
-                                   : dasm_dirnot(instruction);
+            (IR.op.wc == IR.op.wz) ? dasm_testpn_xor(instruction, description)
+                                   : dasm_dirnot(instruction, description);
             break;
         case 0x48:
-            dasm_outl(instruction);
+            dasm_outl(instruction, description);
             break;
         case 0x49:
-            dasm_outh(instruction);
+            dasm_outh(instruction, description);
             break;
         case 0x4a:
-            dasm_outc(instruction);
+            dasm_outc(instruction, description);
             break;
         case 0x4b:
-            dasm_outnc(instruction);
+            dasm_outnc(instruction, description);
             break;
         case 0x4c:
-            dasm_outz(instruction);
+            dasm_outz(instruction, description);
             break;
         case 0x4d:
-            dasm_outnz(instruction);
+            dasm_outnz(instruction, description);
             break;
         case 0x4e:
-            dasm_outrnd(instruction);
+            dasm_outrnd(instruction, description);
             break;
         case 0x4f:
-            dasm_outnot(instruction);
+            dasm_outnot(instruction, description);
             break;
         case 0x50:
-            dasm_fltl(instruction);
+            dasm_fltl(instruction, description);
             break;
         case 0x51:
-            dasm_flth(instruction);
+            dasm_flth(instruction, description);
             break;
         case 0x52:
-            dasm_fltc(instruction);
+            dasm_fltc(instruction, description);
             break;
         case 0x53:
-            dasm_fltnc(instruction);
+            dasm_fltnc(instruction, description);
             break;
         case 0x54:
-            dasm_fltz(instruction);
+            dasm_fltz(instruction, description);
             break;
         case 0x55:
-            dasm_fltnz(instruction);
+            dasm_fltnz(instruction, description);
             break;
         case 0x56:
-            dasm_fltrnd(instruction);
+            dasm_fltrnd(instruction, description);
             break;
         case 0x57:
-            dasm_fltnot(instruction);
+            dasm_fltnot(instruction, description);
             break;
         case 0x58:
-            dasm_drvl(instruction);
+            dasm_drvl(instruction, description);
             break;
         case 0x59:
-            dasm_drvh(instruction);
+            dasm_drvh(instruction, description);
             break;
         case 0x5a:
-            dasm_drvc(instruction);
+            dasm_drvc(instruction, description);
             break;
         case 0x5b:
-            dasm_drvnc(instruction);
+            dasm_drvnc(instruction, description);
             break;
         case 0x5c:
-            dasm_drvz(instruction);
+            dasm_drvz(instruction, description);
             break;
         case 0x5d:
-            dasm_drvnz(instruction);
+            dasm_drvnz(instruction, description);
             break;
         case 0x5e:
-            dasm_drvrnd(instruction);
+            dasm_drvrnd(instruction, description);
             break;
         case 0x5f:
-            dasm_drvnot(instruction);
+            dasm_drvnot(instruction, description);
             break;
         case 0x60:
-            dasm_splitb(instruction);
+            dasm_splitb(instruction, description);
             break;
         case 0x61:
-            dasm_mergeb(instruction);
+            dasm_mergeb(instruction, description);
             break;
         case 0x62:
-            dasm_splitw(instruction);
+            dasm_splitw(instruction, description);
             break;
         case 0x63:
-            dasm_mergew(instruction);
+            dasm_mergew(instruction, description);
             break;
         case 0x64:
-            dasm_seussf(instruction);
+            dasm_seussf(instruction, description);
             break;
         case 0x65:
-            dasm_seussr(instruction);
+            dasm_seussr(instruction, description);
             break;
         case 0x66:
-            dasm_rgbsqz(instruction);
+            dasm_rgbsqz(instruction, description);
             break;
         case 0x67:
-            dasm_rgbexp(instruction);
+            dasm_rgbexp(instruction, description);
             break;
         case 0x68:
-            dasm_xoro32(instruction);
+            dasm_xoro32(instruction, description);
             break;
         case 0x69:
-            dasm_rev(instruction);
+            dasm_rev(instruction, description);
             break;
         case 0x6a:
-            dasm_rczr(instruction);
+            dasm_rczr(instruction, description);
             break;
         case 0x6b:
-            dasm_rczl(instruction);
+            dasm_rczl(instruction, description);
             break;
         case 0x6c:
-            dasm_wrc(instruction);
+            dasm_wrc(instruction, description);
             break;
         case 0x6d:
-            dasm_wrnc(instruction);
+            dasm_wrnc(instruction, description);
             break;
         case 0x6e:
-            dasm_wrz(instruction);
+            dasm_wrz(instruction, description);
             break;
         case 0x6f:
-            dasm_wrnz(instruction);
+            dasm_wrnz(instruction, description);
             break;
         case 0x7f:
-            dasm_modcz(instruction);
+            dasm_modcz(instruction, description);
             break;
         }
         break;
 
     case p2_jmp_abs:
-        dasm_jmp_abs(instruction);
+        dasm_jmp_abs(instruction, description);
         break;
 
     case p2_call_abs:
-        dasm_call_abs(instruction);
+        dasm_call_abs(instruction, description);
         break;
 
     case p2_calla_abs:
-        dasm_calla_abs(instruction);
+        dasm_calla_abs(instruction, description);
         break;
 
     case p2_callb_abs:
-        dasm_callb_abs(instruction);
+        dasm_callb_abs(instruction, description);
         break;
 
     case p2_calld_pa_abs:
     case p2_calld_pb_abs:
     case p2_calld_ptra_abs:
     case p2_calld_ptrb_abs:
-        dasm_calld_abs(instruction);
+        dasm_calld_abs(instruction, description);
         break;
 
     case p2_loc_pa:
-        dasm_loc_pa(instruction);
+        dasm_loc_pa(instruction, description);
         break;
 
     case p2_loc_pb:
-        dasm_loc_pb(instruction);
+        dasm_loc_pb(instruction, description);
         break;
 
     case p2_loc_ptra:
-        dasm_loc_ptra(instruction);
+        dasm_loc_ptra(instruction, description);
         break;
 
     case p2_loc_ptrb:
-        dasm_loc_ptrb(instruction);
+        dasm_loc_ptrb(instruction, description);
         break;
 
     case p2_augs_00:
     case p2_augs_01:
     case p2_augs_10:
     case p2_augs_11:
-        dasm_augs(instruction);
+        dasm_augs(instruction, description);
         break;
 
     case p2_augd_00:
     case p2_augd_01:
     case p2_augd_10:
     case p2_augd_11:
-        dasm_augd(instruction);
+        dasm_augd(instruction, description);
         break;
     }
 
@@ -1843,8 +1843,10 @@ void P2Dasm::format_imm23(QString& instruction, p2_token_e inst)
  * NOP
  *
  */
-void P2Dasm::dasm_nop(QString& instruction)
+void P2Dasm::dasm_nop(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("No operation.");
     format_inst(instruction, t_NOP);
 }
 
@@ -1859,12 +1861,15 @@ void P2Dasm::dasm_nop(QString& instruction)
  * C = last bit shifted out if S[4:0] > 0, else D[0].
  * Z = (result == 0).
  */
-void P2Dasm::dasm_ror(QString& instruction)
+void P2Dasm::dasm_ror(QString& instruction, QString* description)
 {
-    if (0 == IR.word)
-        dasm_nop(instruction);
-    else
+    if (0 == IR.word) {
+        dasm_nop(instruction, description);
+    } else {
+        if (description)
+            *description = tr("Rotate right.");
         format_d_imm_s_cz(instruction, t_ROR);
+    }
 }
 
 /**
@@ -1878,8 +1883,10 @@ void P2Dasm::dasm_ror(QString& instruction)
  * C = last bit shifted out if S[4:0] > 0, else D[31].
  * Z = (result == 0).
  */
-void P2Dasm::dasm_rol(QString& instruction)
+void P2Dasm::dasm_rol(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Rotate left.");
     format_d_imm_s_cz(instruction, t_ROL);
 }
 
@@ -1894,8 +1901,10 @@ void P2Dasm::dasm_rol(QString& instruction)
  * C = last bit shifted out if S[4:0] > 0, else D[0].
  * Z = (result == 0).
  */
-void P2Dasm::dasm_shr(QString& instruction)
+void P2Dasm::dasm_shr(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Shift right.");
     format_d_imm_s_cz(instruction, t_SHR);
 }
 
@@ -1910,8 +1919,10 @@ void P2Dasm::dasm_shr(QString& instruction)
  * C = last bit shifted out if S[4:0] > 0, else D[31].
  * Z = (result == 0).
  */
-void P2Dasm::dasm_shl(QString& instruction)
+void P2Dasm::dasm_shl(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Shift left.");
     format_d_imm_s_cz(instruction, t_SHL);
 }
 
@@ -1926,8 +1937,10 @@ void P2Dasm::dasm_shl(QString& instruction)
  * C = last bit shifted out if S[4:0] > 0, else D[0].
  * Z = (result == 0).
  */
-void P2Dasm::dasm_rcr(QString& instruction)
+void P2Dasm::dasm_rcr(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Rotate carry right.");
     format_d_imm_s_cz(instruction, t_RCR);
 }
 
@@ -1942,8 +1955,10 @@ void P2Dasm::dasm_rcr(QString& instruction)
  * C = last bit shifted out if S[4:0] > 0, else D[31].
  * Z = (result == 0).
  */
-void P2Dasm::dasm_rcl(QString& instruction)
+void P2Dasm::dasm_rcl(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Rotate carry left.");
     format_d_imm_s_cz(instruction, t_RCL);
 }
 
@@ -1958,8 +1973,10 @@ void P2Dasm::dasm_rcl(QString& instruction)
  * C = last bit shifted out if S[4:0] > 0, else D[0].
  * Z = (result == 0).
  */
-void P2Dasm::dasm_sar(QString& instruction)
+void P2Dasm::dasm_sar(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Shift arithmetic right.");
     format_d_imm_s_cz(instruction, t_SAR);
 }
 
@@ -1974,8 +1991,10 @@ void P2Dasm::dasm_sar(QString& instruction)
  * C = last bit shifted out if S[4:0] > 0, else D[31].
  * Z = (result == 0).
  */
-void P2Dasm::dasm_sal(QString& instruction)
+void P2Dasm::dasm_sal(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Shift arithmetic left.");
     format_d_imm_s_cz(instruction, t_SAL);
 }
 
@@ -1990,8 +2009,10 @@ void P2Dasm::dasm_sal(QString& instruction)
  * C = carry of (D + S).
  * Z = (result == 0).
  */
-void P2Dasm::dasm_add(QString& instruction)
+void P2Dasm::dasm_add(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Add S into D.");
     format_d_imm_s_cz(instruction, t_ADD);
 }
 
@@ -2006,8 +2027,10 @@ void P2Dasm::dasm_add(QString& instruction)
  * C = carry of (D + S + C).
  * Z = Z AND (result == 0).
  */
-void P2Dasm::dasm_addx(QString& instruction)
+void P2Dasm::dasm_addx(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Add (S + C) into D, extended.");
     format_d_imm_s_cz(instruction, t_ADDX);
 }
 
@@ -2022,8 +2045,10 @@ void P2Dasm::dasm_addx(QString& instruction)
  * C = correct sign of (D + S).
  * Z = (result == 0).
  */
-void P2Dasm::dasm_adds(QString& instruction)
+void P2Dasm::dasm_adds(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Add S into D, signed.");
     format_d_imm_s_cz(instruction, t_ADDS);
 }
 
@@ -2038,8 +2063,10 @@ void P2Dasm::dasm_adds(QString& instruction)
  * C = correct sign of (D + S + C).
  * Z = Z AND (result == 0).
  */
-void P2Dasm::dasm_addsx(QString& instruction)
+void P2Dasm::dasm_addsx(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Add (S + C) into D, signed and extended.");
     format_d_imm_s_cz(instruction, t_ADDSX);
 }
 
@@ -2054,8 +2081,10 @@ void P2Dasm::dasm_addsx(QString& instruction)
  * C = borrow of (D - S).
  * Z = (result == 0).
  */
-void P2Dasm::dasm_sub(QString& instruction)
+void P2Dasm::dasm_sub(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Subtract S from D.");
     format_d_imm_s_cz(instruction, t_SUB);
 }
 
@@ -2070,8 +2099,10 @@ void P2Dasm::dasm_sub(QString& instruction)
  * C = borrow of (D - (S + C)).
  * Z = Z AND (result == 0).
  */
-void P2Dasm::dasm_subx(QString& instruction)
+void P2Dasm::dasm_subx(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Subtract (S + C) from D, extended.");
     format_d_imm_s_cz(instruction, t_SUBX);
 }
 
@@ -2086,8 +2117,10 @@ void P2Dasm::dasm_subx(QString& instruction)
  * C = correct sign of (D - S).
  * Z = (result == 0).
  */
-void P2Dasm::dasm_subs(QString& instruction)
+void P2Dasm::dasm_subs(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Subtract S from D, signed.");
     format_d_imm_s_cz(instruction, t_SUBS);
 }
 
@@ -2102,8 +2135,10 @@ void P2Dasm::dasm_subs(QString& instruction)
  * C = correct sign of (D - (S + C)).
  * Z = Z AND (result == 0).
  */
-void P2Dasm::dasm_subsx(QString& instruction)
+void P2Dasm::dasm_subsx(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Subtract (S + C) from D, signed and extended.");
     format_d_imm_s_cz(instruction, t_SUBSX);
 }
 
@@ -2117,8 +2152,10 @@ void P2Dasm::dasm_subsx(QString& instruction)
  * C = borrow of (D - S).
  * Z = (D == S).
  */
-void P2Dasm::dasm_cmp(QString& instruction)
+void P2Dasm::dasm_cmp(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Compare D to S.");
     format_d_imm_s_cz(instruction, t_CMP);
 }
 
@@ -2132,8 +2169,10 @@ void P2Dasm::dasm_cmp(QString& instruction)
  * C = borrow of (D - (S + C)).
  * Z = Z AND (D == S + C).
  */
-void P2Dasm::dasm_cmpx(QString& instruction)
+void P2Dasm::dasm_cmpx(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Compare D to (S + C), extended.");
     format_d_imm_s_cz(instruction, t_CMPX);
 }
 
@@ -2147,8 +2186,10 @@ void P2Dasm::dasm_cmpx(QString& instruction)
  * C = correct sign of (D - S).
  * Z = (D == S).
  */
-void P2Dasm::dasm_cmps(QString& instruction)
+void P2Dasm::dasm_cmps(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Compare D to S, signed.");
     format_d_imm_s_cz(instruction, t_CMPS);
 }
 
@@ -2162,8 +2203,10 @@ void P2Dasm::dasm_cmps(QString& instruction)
  * C = correct sign of (D - (S + C)).
  * Z = Z AND (D == S + C).
  */
-void P2Dasm::dasm_cmpsx(QString& instruction)
+void P2Dasm::dasm_cmpsx(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Compare D to (S + C), signed and extended.");
     format_d_imm_s_cz(instruction, t_CMPSX);
 }
 
@@ -2177,8 +2220,10 @@ void P2Dasm::dasm_cmpsx(QString& instruction)
  * C = borrow of (S - D).
  * Z = (D == S).
  */
-void P2Dasm::dasm_cmpr(QString& instruction)
+void P2Dasm::dasm_cmpr(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Compare S to D (reverse).");
     format_d_imm_s_cz(instruction, t_CMPR);
 }
 
@@ -2192,8 +2237,10 @@ void P2Dasm::dasm_cmpr(QString& instruction)
  * C = MSB of (D - S).
  * Z = (D == S).
  */
-void P2Dasm::dasm_cmpm(QString& instruction)
+void P2Dasm::dasm_cmpm(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Compare D to S, get MSB of difference into C.");
     format_d_imm_s_cz(instruction, t_CMPM);
 }
 
@@ -2208,8 +2255,10 @@ void P2Dasm::dasm_cmpm(QString& instruction)
  * C = borrow of (S - D).
  * Z = (result == 0).
  */
-void P2Dasm::dasm_subr(QString& instruction)
+void P2Dasm::dasm_subr(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Subtract D from S (reverse).");
     format_d_imm_s_cz(instruction, t_SUBR);
 }
 
@@ -2223,8 +2272,10 @@ void P2Dasm::dasm_subr(QString& instruction)
  * If D => S then D = D - S and C = 1, else D same and C = 0.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_cmpsub(QString& instruction)
+void P2Dasm::dasm_cmpsub(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Compare and subtract S from D if D >= S.");
     format_d_imm_s_cz(instruction, t_CMPSUB);
 }
 
@@ -2238,8 +2289,10 @@ void P2Dasm::dasm_cmpsub(QString& instruction)
  * If D < S then D = S and C = 1, else D same and C = 0.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_fge(QString& instruction)
+void P2Dasm::dasm_fge(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Force D >= S.");
     format_d_imm_s_cz(instruction, t_FGE);
 }
 
@@ -2253,8 +2306,10 @@ void P2Dasm::dasm_fge(QString& instruction)
  * If D > S then D = S and C = 1, else D same and C = 0.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_fle(QString& instruction)
+void P2Dasm::dasm_fle(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Force D <= S.");
     format_d_imm_s_cz(instruction, t_FLE);
 }
 
@@ -2268,8 +2323,10 @@ void P2Dasm::dasm_fle(QString& instruction)
  * If D < S then D = S and C = 1, else D same and C = 0.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_fges(QString& instruction)
+void P2Dasm::dasm_fges(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Force D >= S, signed.");
     format_d_imm_s_cz(instruction, t_FGES);
 }
 
@@ -2283,8 +2340,10 @@ void P2Dasm::dasm_fges(QString& instruction)
  * If D > S then D = S and C = 1, else D same and C = 0.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_fles(QString& instruction)
+void P2Dasm::dasm_fles(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Force D <= S, signed.");
     format_d_imm_s_cz(instruction, t_FLES);
 }
 
@@ -2299,8 +2358,10 @@ void P2Dasm::dasm_fles(QString& instruction)
  * C = correct sign of (D +/- S).
  * Z = (result == 0).
  */
-void P2Dasm::dasm_sumc(QString& instruction)
+void P2Dasm::dasm_sumc(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Sum +/-S into D by  C.");
     format_d_imm_s_cz(instruction, t_SUMC);
 }
 
@@ -2315,8 +2376,10 @@ void P2Dasm::dasm_sumc(QString& instruction)
  * C = correct sign of (D +/- S).
  * Z = (result == 0).
  */
-void P2Dasm::dasm_sumnc(QString& instruction)
+void P2Dasm::dasm_sumnc(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Sum +/-S into D by !C.");
     format_d_imm_s_cz(instruction, t_SUMNC);
 }
 
@@ -2331,8 +2394,10 @@ void P2Dasm::dasm_sumnc(QString& instruction)
  * C = correct sign of (D +/- S).
  * Z = (result == 0).
  */
-void P2Dasm::dasm_sumz(QString& instruction)
+void P2Dasm::dasm_sumz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Sum +/-S into D by  Z.");
     format_d_imm_s_cz(instruction, t_SUMZ);
 }
 
@@ -2347,8 +2412,10 @@ void P2Dasm::dasm_sumz(QString& instruction)
  * C = correct sign of (D +/- S).
  * Z = (result == 0).
  */
-void P2Dasm::dasm_sumnz(QString& instruction)
+void P2Dasm::dasm_sumnz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Sum +/-S into D by !Z.");
     format_d_imm_s_cz(instruction, t_SUMNZ);
 }
 
@@ -2361,8 +2428,10 @@ void P2Dasm::dasm_sumnz(QString& instruction)
  *
  * C/Z =          D[S[4:0]].
  */
-void P2Dasm::dasm_testb_w(QString& instruction)
+void P2Dasm::dasm_testb_w(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Test bit S[4:0] of  D, write to C/Z.");
     format_d_imm_s_cz(instruction, t_TESTB);
 }
 
@@ -2375,8 +2444,10 @@ void P2Dasm::dasm_testb_w(QString& instruction)
  *
  * C/Z =         !D[S[4:0]].
  */
-void P2Dasm::dasm_testbn_w(QString& instruction)
+void P2Dasm::dasm_testbn_w(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Test bit S[4:0] of !D, write to C/Z.");
     format_d_imm_s_cz(instruction, t_TESTBN);
 }
 
@@ -2389,8 +2460,10 @@ void P2Dasm::dasm_testbn_w(QString& instruction)
  *
  * C/Z = C/Z AND  D[S[4:0]].
  */
-void P2Dasm::dasm_testb_and(QString& instruction)
+void P2Dasm::dasm_testb_and(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Test bit S[4:0] of  D, AND into C/Z.");
     format_d_imm_s_cz(instruction, t_TESTB, t_AND);
 }
 
@@ -2403,8 +2476,10 @@ void P2Dasm::dasm_testb_and(QString& instruction)
  *
  * C/Z = C/Z AND !D[S[4:0]].
  */
-void P2Dasm::dasm_testbn_and(QString& instruction)
+void P2Dasm::dasm_testbn_and(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Test bit S[4:0] of !D, AND into C/Z.");
     format_d_imm_s_cz(instruction, t_TESTNB, t_AND);
 }
 
@@ -2417,8 +2492,10 @@ void P2Dasm::dasm_testbn_and(QString& instruction)
  *
  * C/Z = C/Z OR   D[S[4:0]].
  */
-void P2Dasm::dasm_testb_or(QString& instruction)
+void P2Dasm::dasm_testb_or(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Test bit S[4:0] of  D, OR  into C/Z.");
     format_d_imm_s_cz(instruction, t_TESTB, t_OR);
 }
 
@@ -2431,8 +2508,10 @@ void P2Dasm::dasm_testb_or(QString& instruction)
  *
  * C/Z = C/Z OR  !D[S[4:0]].
  */
-void P2Dasm::dasm_testbn_or(QString& instruction)
+void P2Dasm::dasm_testbn_or(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Test bit S[4:0] of !D, OR  into C/Z.");
     format_d_imm_s_cz(instruction, t_TESTNB, t_OR);
 }
 
@@ -2445,8 +2524,10 @@ void P2Dasm::dasm_testbn_or(QString& instruction)
  *
  * C/Z = C/Z XOR  D[S[4:0]].
  */
-void P2Dasm::dasm_testb_xor(QString& instruction)
+void P2Dasm::dasm_testb_xor(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Test bit S[4:0] of  D, XOR into C/Z.");
     format_d_imm_s_cz(instruction, t_TESTB, t_XOR);
 }
 
@@ -2459,8 +2540,10 @@ void P2Dasm::dasm_testb_xor(QString& instruction)
  *
  * C/Z = C/Z XOR !D[S[4:0]].
  */
-void P2Dasm::dasm_testbn_xor(QString& instruction)
+void P2Dasm::dasm_testbn_xor(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Test bit S[4:0] of !D, XOR into C/Z.");
     format_d_imm_s_cz(instruction, t_TESTBN, t_XOR);
 }
 
@@ -2472,8 +2555,10 @@ void P2Dasm::dasm_testbn_xor(QString& instruction)
  * BITL    D,{#}S         {WCZ}
  *
  */
-void P2Dasm::dasm_bitl(QString& instruction)
+void P2Dasm::dasm_bitl(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Bit S[4:0] of D = 0,    C,Z = D[S[4:0]].");
     format_d_imm_s_cz(instruction, t_BITL);
 }
 
@@ -2485,8 +2570,10 @@ void P2Dasm::dasm_bitl(QString& instruction)
  * BITH    D,{#}S         {WCZ}
  *
  */
-void P2Dasm::dasm_bith(QString& instruction)
+void P2Dasm::dasm_bith(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Bit S[4:0] of D = 1,    C,Z = D[S[4:0]].");
     format_d_imm_s_cz(instruction, t_BITH);
 }
 
@@ -2498,8 +2585,10 @@ void P2Dasm::dasm_bith(QString& instruction)
  * BITC    D,{#}S         {WCZ}
  *
  */
-void P2Dasm::dasm_bitc(QString& instruction)
+void P2Dasm::dasm_bitc(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Bit S[4:0] of D = C,    C,Z = D[S[4:0]].");
     format_d_imm_s_cz(instruction, t_BITC);
 }
 
@@ -2511,8 +2600,10 @@ void P2Dasm::dasm_bitc(QString& instruction)
  * BITNC   D,{#}S         {WCZ}
  *
  */
-void P2Dasm::dasm_bitnc(QString& instruction)
+void P2Dasm::dasm_bitnc(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Bit S[4:0] of D = !C,   C,Z = D[S[4:0]].");
     format_d_imm_s_cz(instruction, t_BITNC);
 }
 
@@ -2524,8 +2615,10 @@ void P2Dasm::dasm_bitnc(QString& instruction)
  * BITZ    D,{#}S         {WCZ}
  *
  */
-void P2Dasm::dasm_bitz(QString& instruction)
+void P2Dasm::dasm_bitz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Bit S[4:0] of D = Z,    C,Z = D[S[4:0]].");
     format_d_imm_s_cz(instruction, t_BITZ);
 }
 
@@ -2537,8 +2630,10 @@ void P2Dasm::dasm_bitz(QString& instruction)
  * BITNZ   D,{#}S         {WCZ}
  *
  */
-void P2Dasm::dasm_bitnz(QString& instruction)
+void P2Dasm::dasm_bitnz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Bit S[4:0] of D = !Z,   C,Z = D[S[4:0]].");
     format_d_imm_s_cz(instruction, t_BITNZ);
 }
 
@@ -2550,8 +2645,10 @@ void P2Dasm::dasm_bitnz(QString& instruction)
  * BITRND  D,{#}S         {WCZ}
  *
  */
-void P2Dasm::dasm_bitrnd(QString& instruction)
+void P2Dasm::dasm_bitrnd(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Bit S[4:0] of D = RND,  C,Z = D[S[4:0]].");
     format_d_imm_s_cz(instruction, t_BITRND);
 }
 
@@ -2563,8 +2660,10 @@ void P2Dasm::dasm_bitrnd(QString& instruction)
  * BITNOT  D,{#}S         {WCZ}
  *
  */
-void P2Dasm::dasm_bitnot(QString& instruction)
+void P2Dasm::dasm_bitnot(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Bit S[4:0] of D = !bit, C,Z = D[S[4:0]].");
     format_d_imm_s_cz(instruction, t_BITNOT);
 }
 
@@ -2579,8 +2678,10 @@ void P2Dasm::dasm_bitnot(QString& instruction)
  * C = parity of result.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_and(QString& instruction)
+void P2Dasm::dasm_and(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("AND S into D.");
     format_d_imm_s_cz(instruction, t_AND);
 }
 
@@ -2595,8 +2696,10 @@ void P2Dasm::dasm_and(QString& instruction)
  * C = parity of result.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_andn(QString& instruction)
+void P2Dasm::dasm_andn(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("AND !S into D.");
     format_d_imm_s_cz(instruction, t_ANDN);
 }
 
@@ -2611,8 +2714,10 @@ void P2Dasm::dasm_andn(QString& instruction)
  * C = parity of result.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_or(QString& instruction)
+void P2Dasm::dasm_or(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("OR S into D.");
     format_d_imm_s_cz(instruction, t_OR);
 }
 
@@ -2627,13 +2732,15 @@ void P2Dasm::dasm_or(QString& instruction)
  * C = parity of result.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_xor(QString& instruction)
+void P2Dasm::dasm_xor(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("XOR S into D.");
     format_d_imm_s_cz(instruction, t_XOR);
 }
 
 /**
- * @brief Mux  C into each D bit that is '1' in S.
+ * @brief Mux C into each D bit that is '1' in S.
  *
  * EEEE 0101100 CZI DDDDDDDDD SSSSSSSSS
  *
@@ -2643,8 +2750,10 @@ void P2Dasm::dasm_xor(QString& instruction)
  * C = parity of result.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_muxc(QString& instruction)
+void P2Dasm::dasm_muxc(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Mux C into each D bit that is '1' in S.");
     format_d_imm_s_cz(instruction, t_MUXC);
 }
 
@@ -2659,13 +2768,15 @@ void P2Dasm::dasm_muxc(QString& instruction)
  * C = parity of result.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_muxnc(QString& instruction)
+void P2Dasm::dasm_muxnc(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Mux !C into each D bit that is '1' in S.");
     format_d_imm_s_cz(instruction, t_MUXNC);
 }
 
 /**
- * @brief Mux  Z into each D bit that is '1' in S.
+ * @brief Mux Z into each D bit that is '1' in S.
  *
  * EEEE 0101110 CZI DDDDDDDDD SSSSSSSSS
  *
@@ -2675,8 +2786,10 @@ void P2Dasm::dasm_muxnc(QString& instruction)
  * C = parity of result.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_muxz(QString& instruction)
+void P2Dasm::dasm_muxz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Mux Z into each D bit that is '1' in S.");
     format_d_imm_s_cz(instruction, t_MUXZ);
 }
 
@@ -2691,8 +2804,10 @@ void P2Dasm::dasm_muxz(QString& instruction)
  * C = parity of result.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_muxnz(QString& instruction)
+void P2Dasm::dasm_muxnz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Mux !Z into each D bit that is '1' in S.");
     format_d_imm_s_cz(instruction, t_MUXNZ);
 }
 
@@ -2707,8 +2822,10 @@ void P2Dasm::dasm_muxnz(QString& instruction)
  * C = S[31].
  * Z = (result == 0).
  */
-void P2Dasm::dasm_mov(QString& instruction)
+void P2Dasm::dasm_mov(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Move S into D.");
     format_d_imm_s_cz(instruction, t_MOV);
 }
 
@@ -2723,8 +2840,10 @@ void P2Dasm::dasm_mov(QString& instruction)
  * C = !S[31].
  * Z = (result == 0).
  */
-void P2Dasm::dasm_not(QString& instruction)
+void P2Dasm::dasm_not(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get !S into D.");
     format_d_imm_s_cz(instruction, t_NOT);
 }
 
@@ -2739,8 +2858,10 @@ void P2Dasm::dasm_not(QString& instruction)
  * C = S[31].
  * Z = (result == 0).
  */
-void P2Dasm::dasm_abs(QString& instruction)
+void P2Dasm::dasm_abs(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get absolute value of S into D.");
     format_d_imm_s_cz(instruction, t_ABS);
 }
 
@@ -2755,8 +2876,10 @@ void P2Dasm::dasm_abs(QString& instruction)
  * C = MSB of result.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_neg(QString& instruction)
+void P2Dasm::dasm_neg(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Negate S into D.");
     format_d_imm_s_cz(instruction, t_NEG);
 }
 
@@ -2771,8 +2894,10 @@ void P2Dasm::dasm_neg(QString& instruction)
  * C = MSB of result.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_negc(QString& instruction)
+void P2Dasm::dasm_negc(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Negate S by  C into D.");
     format_d_imm_s_cz(instruction, t_NEGC);
 }
 
@@ -2787,8 +2912,10 @@ void P2Dasm::dasm_negc(QString& instruction)
  * C = MSB of result.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_negnc(QString& instruction)
+void P2Dasm::dasm_negnc(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Negate S by !C into D.");
     format_d_imm_s_cz(instruction, t_NEGNC);
 }
 
@@ -2803,8 +2930,10 @@ void P2Dasm::dasm_negnc(QString& instruction)
  * C = MSB of result.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_negz(QString& instruction)
+void P2Dasm::dasm_negz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Negate S by  Z into D.");
     format_d_imm_s_cz(instruction, t_NEGZ);
 }
 
@@ -2819,8 +2948,10 @@ void P2Dasm::dasm_negz(QString& instruction)
  * C = MSB of result.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_negnz(QString& instruction)
+void P2Dasm::dasm_negnz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Negate S by !Z into D.");
     format_d_imm_s_cz(instruction, t_NEGNZ);
 }
 
@@ -2834,8 +2965,10 @@ void P2Dasm::dasm_negnz(QString& instruction)
  * If D = S then D = 0 and C = 1, else D = D + 1 and C = 0.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_incmod(QString& instruction)
+void P2Dasm::dasm_incmod(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Increment with modulus.");
     format_d_imm_s_cz(instruction, t_INCMOD);
 }
 
@@ -2849,8 +2982,10 @@ void P2Dasm::dasm_incmod(QString& instruction)
  * If D = 0 then D = S and C = 1, else D = D - 1 and C = 0.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_decmod(QString& instruction)
+void P2Dasm::dasm_decmod(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Decrement with modulus.");
     format_d_imm_s_cz(instruction, t_DECMOD);
 }
 
@@ -2864,8 +2999,10 @@ void P2Dasm::dasm_decmod(QString& instruction)
  * C = MSB of result.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_zerox(QString& instruction)
+void P2Dasm::dasm_zerox(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Zero-extend D above bit S[4:0].");
     format_d_imm_s_cz(instruction, t_ZEROX);
 }
 
@@ -2879,8 +3016,10 @@ void P2Dasm::dasm_zerox(QString& instruction)
  * C = MSB of result.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_signx(QString& instruction)
+void P2Dasm::dasm_signx(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Sign-extend D from bit S[4:0].");
     format_d_imm_s_cz(instruction, t_SIGNX);
 }
 
@@ -2895,8 +3034,10 @@ void P2Dasm::dasm_signx(QString& instruction)
  * C = (S != 0).
  * Z = (result == 0).
  */
-void P2Dasm::dasm_encod(QString& instruction)
+void P2Dasm::dasm_encod(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get bit position of top-most '1' in S into D.");
     format_d_imm_s_cz(instruction, t_ENCOD);
 }
 
@@ -2911,8 +3052,10 @@ void P2Dasm::dasm_encod(QString& instruction)
  * C = LSB of result.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_ones(QString& instruction)
+void P2Dasm::dasm_ones(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get number of '1's in S into D.");
     format_d_imm_s_cz(instruction, t_ONES);
 }
 
@@ -2926,8 +3069,10 @@ void P2Dasm::dasm_ones(QString& instruction)
  * C = parity of (D & S).
  * Z = ((D & S) == 0).
  */
-void P2Dasm::dasm_test(QString& instruction)
+void P2Dasm::dasm_test(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Test D with S.");
     format_d_imm_s_cz(instruction, t_TEST);
 }
 
@@ -2941,8 +3086,10 @@ void P2Dasm::dasm_test(QString& instruction)
  * C = parity of (D & !S).
  * Z = ((D & !S) == 0).
  */
-void P2Dasm::dasm_testn(QString& instruction)
+void P2Dasm::dasm_testn(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Test D with !S.");
     format_d_imm_s_cz(instruction, t_TESTN);
 }
 
@@ -2954,8 +3101,10 @@ void P2Dasm::dasm_testn(QString& instruction)
  * SETNIB  D,{#}S,#N
  *
  */
-void P2Dasm::dasm_setnib(QString& instruction)
+void P2Dasm::dasm_setnib(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set S[3:0] into nibble N in D, keeping rest of D same.");
     format_d_imm_s_nnn(instruction, t_SETNIB);
 }
 
@@ -2967,8 +3116,10 @@ void P2Dasm::dasm_setnib(QString& instruction)
  * SETNIB  {#}S
  *
  */
-void P2Dasm::dasm_setnib_altsn(QString& instruction)
+void P2Dasm::dasm_setnib_altsn(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set S[3:0] into nibble established by prior ALTSN instruction.");
     format_imm_s(instruction, t_SETNIB);
 }
 
@@ -2982,8 +3133,10 @@ void P2Dasm::dasm_setnib_altsn(QString& instruction)
  * D = {28'b0, S.
  * NIBBLE[N]).
  */
-void P2Dasm::dasm_getnib(QString& instruction)
+void P2Dasm::dasm_getnib(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get nibble N of S into D.");
     format_d_imm_s_nnn(instruction, t_GETNIB);
 }
 
@@ -2995,8 +3148,10 @@ void P2Dasm::dasm_getnib(QString& instruction)
  * GETNIB  D
  *
  */
-void P2Dasm::dasm_getnib_altgn(QString& instruction)
+void P2Dasm::dasm_getnib_altgn(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get nibble established by prior ALTGN instruction into D.");
     format_imm_s(instruction, t_GETNIB);
 }
 
@@ -3009,8 +3164,10 @@ void P2Dasm::dasm_getnib_altgn(QString& instruction)
  *
  * D = {D[27:0], S.NIBBLE[N]).
  */
-void P2Dasm::dasm_rolnib(QString& instruction)
+void P2Dasm::dasm_rolnib(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Rotate-left nibble N of S into D.");
     format_d_imm_s_nnn(instruction, t_ROLNIB);
 }
 
@@ -3022,8 +3179,10 @@ void P2Dasm::dasm_rolnib(QString& instruction)
  * ROLNIB  D
  *
  */
-void P2Dasm::dasm_rolnib_altgn(QString& instruction)
+void P2Dasm::dasm_rolnib_altgn(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Rotate-left nibble established by prior ALTGN instruction into D.");
     format_d(instruction, t_ROLNIB);
 }
 
@@ -3035,8 +3194,10 @@ void P2Dasm::dasm_rolnib_altgn(QString& instruction)
  * SETBYTE D,{#}S,#N
  *
  */
-void P2Dasm::dasm_setbyte(QString& instruction)
+void P2Dasm::dasm_setbyte(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set S[7:0] into byte N in D, keeping rest of D same.");
     format_d_imm_s_nnn(instruction, t_SETBYTE);
 }
 
@@ -3048,8 +3209,10 @@ void P2Dasm::dasm_setbyte(QString& instruction)
  * SETBYTE {#}S
  *
  */
-void P2Dasm::dasm_setbyte_altsb(QString& instruction)
+void P2Dasm::dasm_setbyte_altsb(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set S[7:0] into byte established by prior ALTSB instruction.");
     format_imm_s(instruction, t_SETBYTE);
 }
 
@@ -3062,8 +3225,10 @@ void P2Dasm::dasm_setbyte_altsb(QString& instruction)
  *
  * D = {24'b0, S.BYTE[N]).
  */
-void P2Dasm::dasm_getbyte(QString& instruction)
+void P2Dasm::dasm_getbyte(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get byte N of S into D.");
     format_d_imm_s_nnn(instruction, t_GETBYTE);
 }
 
@@ -3075,8 +3240,10 @@ void P2Dasm::dasm_getbyte(QString& instruction)
  * GETBYTE D
  *
  */
-void P2Dasm::dasm_getbyte_altgb(QString& instruction)
+void P2Dasm::dasm_getbyte_altgb(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get byte established by prior ALTGB instruction into D.");
     format_d(instruction, t_GETBYTE);
 }
 
@@ -3089,8 +3256,10 @@ void P2Dasm::dasm_getbyte_altgb(QString& instruction)
  *
  * D = {D[23:0], S.BYTE[N]).
  */
-void P2Dasm::dasm_rolbyte(QString& instruction)
+void P2Dasm::dasm_rolbyte(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Rotate-left byte N of S into D.");
     format_d_imm_s_nnn(instruction, t_ROLBYTE);
 }
 
@@ -3102,8 +3271,10 @@ void P2Dasm::dasm_rolbyte(QString& instruction)
  * ROLBYTE D
  *
  */
-void P2Dasm::dasm_rolbyte_altgb(QString& instruction)
+void P2Dasm::dasm_rolbyte_altgb(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Rotate-left byte established by prior ALTGB instruction into D.");
     format_d(instruction, t_ROLBYTE);
 }
 
@@ -3115,8 +3286,10 @@ void P2Dasm::dasm_rolbyte_altgb(QString& instruction)
  * SETWORD D,{#}S,#N
  *
  */
-void P2Dasm::dasm_setword(QString& instruction)
+void P2Dasm::dasm_setword(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set S[15:0] into word N in D, keeping rest of D same.");
     format_d_imm_s_n(instruction, t_SETWORD);
 }
 
@@ -3128,8 +3301,10 @@ void P2Dasm::dasm_setword(QString& instruction)
  * SETWORD {#}S
  *
  */
-void P2Dasm::dasm_setword_altsw(QString& instruction)
+void P2Dasm::dasm_setword_altsw(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set S[15:0] into word established by prior ALTSW instruction.");
     format_imm_s(instruction, t_SETWORD);
 }
 
@@ -3142,8 +3317,10 @@ void P2Dasm::dasm_setword_altsw(QString& instruction)
  *
  * D = {16'b0, S.WORD[N]).
  */
-void P2Dasm::dasm_getword(QString& instruction)
+void P2Dasm::dasm_getword(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get word N of S into D.");
     format_d_imm_s_n(instruction, t_GETWORD);
 }
 
@@ -3155,8 +3332,10 @@ void P2Dasm::dasm_getword(QString& instruction)
  * GETWORD D
  *
  */
-void P2Dasm::dasm_getword_altgw(QString& instruction)
+void P2Dasm::dasm_getword_altgw(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get word established by prior ALTGW instruction into D.");
     format_imm_s(instruction, t_GETWORD);
 }
 
@@ -3169,8 +3348,10 @@ void P2Dasm::dasm_getword_altgw(QString& instruction)
  *
  * D = {D[15:0], S.WORD[N]).
  */
-void P2Dasm::dasm_rolword(QString& instruction)
+void P2Dasm::dasm_rolword(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Rotate-left word N of S into D.");
     format_d_imm_s_n(instruction, t_ROLWORD);
 }
 
@@ -3182,8 +3363,10 @@ void P2Dasm::dasm_rolword(QString& instruction)
  * ROLWORD D
  *
  */
-void P2Dasm::dasm_rolword_altgw(QString& instruction)
+void P2Dasm::dasm_rolword_altgw(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Rotate-left word established by prior ALTGW instruction into D.");
     format_d(instruction, t_ROLWORD);
 }
 
@@ -3197,8 +3380,10 @@ void P2Dasm::dasm_rolword_altgw(QString& instruction)
  * Next D field = (D[11:3] + S) & $1FF, N field = D[2:0].
  * D += sign-extended S[17:9].
  */
-void P2Dasm::dasm_altsn(QString& instruction)
+void P2Dasm::dasm_altsn(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Alter subsequent SETNIB instruction.");
     format_d_imm_s(instruction, t_ALTSN);
 }
 
@@ -3211,8 +3396,10 @@ void P2Dasm::dasm_altsn(QString& instruction)
  *
  * Next D field = D[11:3], N field = D[2:0].
  */
-void P2Dasm::dasm_altsn_d(QString& instruction)
+void P2Dasm::dasm_altsn_d(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Alter subsequent SETNIB instruction.");
     format_d(instruction, t_ALTSN);
 }
 
@@ -3226,8 +3413,10 @@ void P2Dasm::dasm_altsn_d(QString& instruction)
  * Next S field = (D[11:3] + S) & $1FF, N field = D[2:0].
  * D += sign-extended S[17:9].
  */
-void P2Dasm::dasm_altgn(QString& instruction)
+void P2Dasm::dasm_altgn(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Alter subsequent GETNIB/ROLNIB instruction.");
     format_d_imm_s(instruction, t_ALTGN);
 }
 
@@ -3240,8 +3429,10 @@ void P2Dasm::dasm_altgn(QString& instruction)
  *
  * Next S field = D[11:3], N field = D[2:0].
  */
-void P2Dasm::dasm_altgn_d(QString& instruction)
+void P2Dasm::dasm_altgn_d(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Alter subsequent GETNIB/ROLNIB instruction.");
     format_d(instruction, t_ALTGN);
 }
 
@@ -3255,8 +3446,10 @@ void P2Dasm::dasm_altgn_d(QString& instruction)
  * Next D field = (D[10:2] + S) & $1FF, N field = D[1:0].
  * D += sign-extended S[17:9].
  */
-void P2Dasm::dasm_altsb(QString& instruction)
+void P2Dasm::dasm_altsb(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Alter subsequent SETBYTE instruction.");
     format_d_imm_s(instruction, t_ALTSB);
 }
 
@@ -3269,8 +3462,10 @@ void P2Dasm::dasm_altsb(QString& instruction)
  *
  * Next D field = D[10:2], N field = D[1:0].
  */
-void P2Dasm::dasm_altsb_d(QString& instruction)
+void P2Dasm::dasm_altsb_d(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Alter subsequent SETBYTE instruction.");
     format_d(instruction, t_ALTSB);
 }
 
@@ -3284,8 +3479,10 @@ void P2Dasm::dasm_altsb_d(QString& instruction)
  * Next S field = (D[10:2] + S) & $1FF, N field = D[1:0].
  * D += sign-extended S[17:9].
  */
-void P2Dasm::dasm_altgb(QString& instruction)
+void P2Dasm::dasm_altgb(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Alter subsequent GETBYTE/ROLBYTE instruction.");
     format_d_imm_s(instruction, t_ALTGB);
 }
 
@@ -3298,8 +3495,10 @@ void P2Dasm::dasm_altgb(QString& instruction)
  *
  * Next S field = D[10:2], N field = D[1:0].
  */
-void P2Dasm::dasm_altgb_d(QString& instruction)
+void P2Dasm::dasm_altgb_d(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Alter subsequent GETBYTE/ROLBYTE instruction.");
     format_d(instruction, t_ALTGB);
 }
 
@@ -3313,8 +3512,10 @@ void P2Dasm::dasm_altgb_d(QString& instruction)
  * Next D field = (D[9:1] + S) & $1FF, N field = D[0].
  * D += sign-extended S[17:9].
  */
-void P2Dasm::dasm_altsw(QString& instruction)
+void P2Dasm::dasm_altsw(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Alter subsequent SETWORD instruction.");
     format_d_imm_s(instruction, t_ALTSW);
 }
 
@@ -3327,8 +3528,10 @@ void P2Dasm::dasm_altsw(QString& instruction)
  *
  * Next D field = D[9:1], N field = D[0].
  */
-void P2Dasm::dasm_altsw_d(QString& instruction)
+void P2Dasm::dasm_altsw_d(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Alter subsequent SETWORD instruction.");
     format_d(instruction, t_ALTSW);
 }
 
@@ -3342,8 +3545,10 @@ void P2Dasm::dasm_altsw_d(QString& instruction)
  * Next S field = ((D[9:1] + S) & $1FF), N field = D[0].
  * D += sign-extended S[17:9].
  */
-void P2Dasm::dasm_altgw(QString& instruction)
+void P2Dasm::dasm_altgw(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Alter subsequent GETWORD/ROLWORD instruction.");
     format_d_imm_s(instruction, t_ALTGW);
 }
 
@@ -3356,8 +3561,10 @@ void P2Dasm::dasm_altgw(QString& instruction)
  *
  * Next S field = D[9:1], N field = D[0].
  */
-void P2Dasm::dasm_altgw_d(QString& instruction)
+void P2Dasm::dasm_altgw_d(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Alter subsequent GETWORD/ROLWORD instruction.");
     format_d(instruction, t_ALTGW);
 }
 
@@ -3370,8 +3577,10 @@ void P2Dasm::dasm_altgw_d(QString& instruction)
  *
  * D += sign-extended S[17:9].
  */
-void P2Dasm::dasm_altr(QString& instruction)
+void P2Dasm::dasm_altr(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Alter result register address (normally D field) of next instruction to (D + S) & $1FF.");
     format_d_imm_s(instruction, t_ALTR);
 }
 
@@ -3383,8 +3592,10 @@ void P2Dasm::dasm_altr(QString& instruction)
  * ALTR    D
  *
  */
-void P2Dasm::dasm_altr_d(QString& instruction)
+void P2Dasm::dasm_altr_d(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Alter result register address (normally D field) of next instruction to D[8:0].");
     format_d(instruction, t_ALTD);
 }
 
@@ -3397,8 +3608,10 @@ void P2Dasm::dasm_altr_d(QString& instruction)
  *
  * D += sign-extended S[17:9].
  */
-void P2Dasm::dasm_altd(QString& instruction)
+void P2Dasm::dasm_altd(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Alter D field of next instruction to (D + S) & $1FF.");
     format_d_imm_s(instruction, t_ALTD);
 }
 
@@ -3410,8 +3623,10 @@ void P2Dasm::dasm_altd(QString& instruction)
  * ALTD    D
  *
  */
-void P2Dasm::dasm_altd_d(QString& instruction)
+void P2Dasm::dasm_altd_d(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Alter D field of next instruction to D[8:0].");
     format_d(instruction, t_ALTD);
 }
 
@@ -3424,8 +3639,10 @@ void P2Dasm::dasm_altd_d(QString& instruction)
  *
  * D += sign-extended S[17:9].
  */
-void P2Dasm::dasm_alts(QString& instruction)
+void P2Dasm::dasm_alts(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Alter S field of next instruction to (D + S) & $1FF.");
     format_d_imm_s(instruction, t_ALTS);
 }
 
@@ -3437,8 +3654,10 @@ void P2Dasm::dasm_alts(QString& instruction)
  * ALTS    D
  *
  */
-void P2Dasm::dasm_alts_d(QString& instruction)
+void P2Dasm::dasm_alts_d(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Alter S field of next instruction to D[8:0].");
     format_d(instruction, t_ALTS);
 }
 
@@ -3451,8 +3670,10 @@ void P2Dasm::dasm_alts_d(QString& instruction)
  *
  * D += sign-extended S[17:9].
  */
-void P2Dasm::dasm_altb(QString& instruction)
+void P2Dasm::dasm_altb(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Alter D field of next instruction to (D[13:5] + S) & $1FF.");
     format_d_imm_s(instruction, t_ALTB);
 }
 
@@ -3464,8 +3685,10 @@ void P2Dasm::dasm_altb(QString& instruction)
  * ALTB    D
  *
  */
-void P2Dasm::dasm_altb_d(QString& instruction)
+void P2Dasm::dasm_altb_d(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Alter D field of next instruction to D[13:5].");
     format_d(instruction, t_ALTB);
 }
 
@@ -3478,8 +3701,10 @@ void P2Dasm::dasm_altb_d(QString& instruction)
  *
  * Modify D per S.
  */
-void P2Dasm::dasm_alti(QString& instruction)
+void P2Dasm::dasm_alti(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Substitute next instruction's I/R/D/S fields with fields from D, per S.");
     format_d_imm_s(instruction, t_ALTI);
 }
 
@@ -3492,8 +3717,10 @@ void P2Dasm::dasm_alti(QString& instruction)
  *
  * D stays same.
  */
-void P2Dasm::dasm_alti_d(QString& instruction)
+void P2Dasm::dasm_alti_d(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Execute D in place of next instruction.");
     format_d(instruction, t_ALTI);
 }
 
@@ -3506,8 +3733,10 @@ void P2Dasm::dasm_alti_d(QString& instruction)
  *
  * D = {D[31:28], S[8:0], D[18:0]}.
  */
-void P2Dasm::dasm_setr(QString& instruction)
+void P2Dasm::dasm_setr(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set R field of D to S[8:0].");
     format_d_imm_s(instruction, t_SETR);
 }
 
@@ -3520,8 +3749,10 @@ void P2Dasm::dasm_setr(QString& instruction)
  *
  * D = {D[31:18], S[8:0], D[8:0]}.
  */
-void P2Dasm::dasm_setd(QString& instruction)
+void P2Dasm::dasm_setd(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set D field of D to S[8:0].");
     format_d_imm_s(instruction, t_SETD);
 }
 
@@ -3534,8 +3765,10 @@ void P2Dasm::dasm_setd(QString& instruction)
  *
  * D = {D[31:9], S[8:0]}.
  */
-void P2Dasm::dasm_sets(QString& instruction)
+void P2Dasm::dasm_sets(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set S field of D to S[8:0].");
     format_d_imm_s(instruction, t_SETS);
 }
 
@@ -3548,8 +3781,10 @@ void P2Dasm::dasm_sets(QString& instruction)
  *
  * D = 1 << S[4:0].
  */
-void P2Dasm::dasm_decod(QString& instruction)
+void P2Dasm::dasm_decod(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Decode S[4:0] into D.");
     format_d_imm_s(instruction, t_DECOD);
 }
 
@@ -3562,8 +3797,10 @@ void P2Dasm::dasm_decod(QString& instruction)
  *
  * D = 1 << D[4:0].
  */
-void P2Dasm::dasm_decod_d(QString& instruction)
+void P2Dasm::dasm_decod_d(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Decode D[4:0] into D.");
     format_d(instruction, t_DECOD);
 }
 
@@ -3576,8 +3813,10 @@ void P2Dasm::dasm_decod_d(QString& instruction)
  *
  * D = ($0000_0002 << S[4:0]) - 1.
  */
-void P2Dasm::dasm_bmask(QString& instruction)
+void P2Dasm::dasm_bmask(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get LSB-justified bit mask of size (S[4:0] + 1) into D.");
     format_d_imm_s(instruction, t_BMASK);
 }
 
@@ -3590,8 +3829,10 @@ void P2Dasm::dasm_bmask(QString& instruction)
  *
  * D = ($0000_0002 << D[4:0]) - 1.
  */
-void P2Dasm::dasm_bmask_d(QString& instruction)
+void P2Dasm::dasm_bmask_d(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get LSB-justified bit mask of size (D[4:0] + 1) into D.");
     format_d(instruction, t_BMASK);
 }
 
@@ -3604,8 +3845,10 @@ void P2Dasm::dasm_bmask_d(QString& instruction)
  *
  * If (C XOR D[0]) then D = (D >> 1) XOR S, else D = (D >> 1).
  */
-void P2Dasm::dasm_crcbit(QString& instruction)
+void P2Dasm::dasm_crcbit(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Iterate CRC value in D using C and polynomial in S.");
     format_d_imm_s(instruction, t_CRCBIT);
 }
 
@@ -3620,8 +3863,10 @@ void P2Dasm::dasm_crcbit(QString& instruction)
  * Q = Q << 4.
  * Use SETQ+CRCNIB+CRCNIB+CRCNIB.
  */
-void P2Dasm::dasm_crcnib(QString& instruction)
+void P2Dasm::dasm_crcnib(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Iterate CRC value in D using Q[31:28] and polynomial in S.");
     format_d_imm_s(instruction, t_CRCNIB);
 }
 
@@ -3633,8 +3878,10 @@ void P2Dasm::dasm_crcnib(QString& instruction)
  * MUXNITS D,{#}S
  *
  */
-void P2Dasm::dasm_muxnits(QString& instruction)
+void P2Dasm::dasm_muxnits(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("For each non-zero bit pair in S, copy that bit pair into the corresponding D bits, else leave that D bit pair the same.");
     format_d_imm_s(instruction, t_MUXNITS);
 }
 
@@ -3646,8 +3893,10 @@ void P2Dasm::dasm_muxnits(QString& instruction)
  * MUXNIBS D,{#}S
  *
  */
-void P2Dasm::dasm_muxnibs(QString& instruction)
+void P2Dasm::dasm_muxnibs(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("For each non-zero nibble in S, copy that nibble into the corresponding D nibble, else leave that D nibble the same.");
     format_d_imm_s(instruction, t_MUXNIBS);
 }
 
@@ -3661,8 +3910,10 @@ void P2Dasm::dasm_muxnibs(QString& instruction)
  * For each '1' bit in Q, copy the corresponding bit in S into D.
  * D = (D & !Q) | (S & Q).
  */
-void P2Dasm::dasm_muxq(QString& instruction)
+void P2Dasm::dasm_muxq(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Used after SETQ.");
     format_d_imm_s(instruction, t_MUXQ);
 }
 
@@ -3675,8 +3926,10 @@ void P2Dasm::dasm_muxq(QString& instruction)
  *
  * D = {D.BYTE[S[7:6]], D.BYTE[S[5:4]], D.BYTE[S[3:2]], D.BYTE[S[1:0]]}.
  */
-void P2Dasm::dasm_movbyts(QString& instruction)
+void P2Dasm::dasm_movbyts(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Move bytes within D, per S.");
     format_d_imm_s(instruction, t_MOVBYTS);
 }
 
@@ -3689,8 +3942,10 @@ void P2Dasm::dasm_movbyts(QString& instruction)
  *
  * Z = (S == 0) | (D == 0).
  */
-void P2Dasm::dasm_mul(QString& instruction)
+void P2Dasm::dasm_mul(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("D = unsigned (D[15:0] * S[15:0]).");
     format_d_imm_s_z(instruction, t_MUL);
 }
 
@@ -3703,8 +3958,10 @@ void P2Dasm::dasm_mul(QString& instruction)
  *
  * Z = (S == 0) | (D == 0).
  */
-void P2Dasm::dasm_muls(QString& instruction)
+void P2Dasm::dasm_muls(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("D = signed (D[15:0] * S[15:0]).");
     format_d_imm_s_z(instruction, t_MULS);
 }
 
@@ -3717,8 +3974,10 @@ void P2Dasm::dasm_muls(QString& instruction)
  *
  * Z = (result == 0).
  */
-void P2Dasm::dasm_sca(QString& instruction)
+void P2Dasm::dasm_sca(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Next instruction's S value = unsigned (D[15:0] * S[15:0]) >> 16.");
     format_d_imm_s_z(instruction, t_SCA);
 }
 
@@ -3732,8 +3991,10 @@ void P2Dasm::dasm_sca(QString& instruction)
  * In this scheme, $4000 = 1.0 and $C000 = -1.0.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_scas(QString& instruction)
+void P2Dasm::dasm_scas(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Next instruction's S value = signed (D[15:0] * S[15:0]) >> 14.");
     format_d_imm_s_z(instruction, t_SCAS);
 }
 
@@ -3745,8 +4006,10 @@ void P2Dasm::dasm_scas(QString& instruction)
  * ADDPIX  D,{#}S
  *
  */
-void P2Dasm::dasm_addpix(QString& instruction)
+void P2Dasm::dasm_addpix(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Add bytes of S into bytes of D, with $FF saturation.");
     format_d_imm_s(instruction, t_ADDPIX);
 }
 
@@ -3759,8 +4022,10 @@ void P2Dasm::dasm_addpix(QString& instruction)
  *
  * 0.
  */
-void P2Dasm::dasm_mulpix(QString& instruction)
+void P2Dasm::dasm_mulpix(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Multiply bytes of S into bytes of D, where $FF = 1.");
     format_d_imm_s(instruction, t_MULPIX);
 }
 
@@ -3772,8 +4037,10 @@ void P2Dasm::dasm_mulpix(QString& instruction)
  * BLNPIX  D,{#}S
  *
  */
-void P2Dasm::dasm_blnpix(QString& instruction)
+void P2Dasm::dasm_blnpix(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Alpha-blend bytes of S into bytes of D, using SETPIV value.");
     format_d_imm_s(instruction, t_BLNPIX);
 }
 
@@ -3785,8 +4052,10 @@ void P2Dasm::dasm_blnpix(QString& instruction)
  * MIXPIX  D,{#}S
  *
  */
-void P2Dasm::dasm_mixpix(QString& instruction)
+void P2Dasm::dasm_mixpix(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Mix bytes of S into bytes of D, using SETPIX and SETPIV values.");
     format_d_imm_s(instruction, t_MIXPIX);
 }
 
@@ -3799,8 +4068,10 @@ void P2Dasm::dasm_mixpix(QString& instruction)
  *
  * Adds S into D.
  */
-void P2Dasm::dasm_addct1(QString& instruction)
+void P2Dasm::dasm_addct1(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set CT1 event to trigger on CT = D + S.");
     format_d_imm_s(instruction, t_ADDCT1);
 }
 
@@ -3813,8 +4084,10 @@ void P2Dasm::dasm_addct1(QString& instruction)
  *
  * Adds S into D.
  */
-void P2Dasm::dasm_addct2(QString& instruction)
+void P2Dasm::dasm_addct2(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set CT2 event to trigger on CT = D + S.");
     format_d_imm_s(instruction, t_ADDCT2);
 }
 
@@ -3827,8 +4100,10 @@ void P2Dasm::dasm_addct2(QString& instruction)
  *
  * Adds S into D.
  */
-void P2Dasm::dasm_addct3(QString& instruction)
+void P2Dasm::dasm_addct3(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set CT3 event to trigger on CT = D + S.");
     format_d_imm_s(instruction, t_ADDCT3);
 }
 
@@ -3841,8 +4116,10 @@ void P2Dasm::dasm_addct3(QString& instruction)
  *
  * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  */
-void P2Dasm::dasm_wmlong(QString& instruction)
+void P2Dasm::dasm_wmlong(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Write only non-$00 bytes in D[31:0] to hub address {#}S/PTRx.");
     format_d_imm_s(instruction, t_WMLONG);
 }
 
@@ -3855,8 +4132,10 @@ void P2Dasm::dasm_wmlong(QString& instruction)
  *
  * C = modal result.
  */
-void P2Dasm::dasm_rqpin(QString& instruction)
+void P2Dasm::dasm_rqpin(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Read smart pin S[5:0] result \"Z\" into D, don't acknowledge smart pin (\"Q\" in RQPIN means \"quiet\").");
     format_d_imm_s_c(instruction, t_RQPIN);
 }
 
@@ -3869,8 +4148,10 @@ void P2Dasm::dasm_rqpin(QString& instruction)
  *
  * C = modal result.
  */
-void P2Dasm::dasm_rdpin(QString& instruction)
+void P2Dasm::dasm_rdpin(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Read smart pin S[5:0] result \"Z\" into D, acknowledge smart pin.");
     format_d_imm_s_c(instruction, t_RDPIN);
 }
 
@@ -3884,8 +4165,10 @@ void P2Dasm::dasm_rdpin(QString& instruction)
  * C = MSB of data.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_rdlut(QString& instruction)
+void P2Dasm::dasm_rdlut(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Read LUT data from address S[8:0] into D.");
     format_d_imm_s_cz(instruction, t_RDLUT);
 }
 
@@ -3899,8 +4182,10 @@ void P2Dasm::dasm_rdlut(QString& instruction)
  * C = MSB of byte.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_rdbyte(QString& instruction)
+void P2Dasm::dasm_rdbyte(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Read zero-extended byte from hub address {#}S/PTRx into D.");
     format_d_imm_s_cz(instruction, t_RDBYTE);
 }
 
@@ -3914,8 +4199,10 @@ void P2Dasm::dasm_rdbyte(QString& instruction)
  * C = MSB of word.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_rdword(QString& instruction)
+void P2Dasm::dasm_rdword(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Read zero-extended word from hub address {#}S/PTRx into D.");
     format_d_imm_s_cz(instruction, t_RDWORD);
 }
 
@@ -3929,8 +4216,10 @@ void P2Dasm::dasm_rdword(QString& instruction)
  * C = MSB of long.
  * *   Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  */
-void P2Dasm::dasm_rdlong(QString& instruction)
+void P2Dasm::dasm_rdlong(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Read long from hub address {#}S/PTRx into D.");
     format_d_imm_s_cz(instruction, t_RDLONG);
 }
 
@@ -3944,8 +4233,10 @@ void P2Dasm::dasm_rdlong(QString& instruction)
  * C = MSB of long.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_popa(QString& instruction)
+void P2Dasm::dasm_popa(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Read long from hub address --PTRA into D.");
     format_d_imm_s_cz(instruction, t_POPA);
 }
 
@@ -3959,8 +4250,10 @@ void P2Dasm::dasm_popa(QString& instruction)
  * C = MSB of long.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_popb(QString& instruction)
+void P2Dasm::dasm_popb(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Read long from hub address --PTRB into D.");
     format_d_imm_s_cz(instruction, t_POPB);
 }
 
@@ -3973,7 +4266,7 @@ void P2Dasm::dasm_popb(QString& instruction)
  *
  * C = S[31], Z = S[30].
  */
-void P2Dasm::dasm_calld(QString& instruction)
+void P2Dasm::dasm_calld(QString& instruction, QString* description)
 {
     if (IR.op.wc && IR.op.wz) {
         if (IR.op.dst == offs_IJMP3 && IR.op.src == offs_IRET3) {
@@ -4009,6 +4302,8 @@ void P2Dasm::dasm_calld(QString& instruction)
             return;
         }
     }
+    if (description)
+        *description = tr("Call to S** by writing {C, Z, 10'b0, PC[19:0]} to D.");
     format_d_imm_s_cz(instruction, t_CALLD);
 }
 
@@ -4021,8 +4316,10 @@ void P2Dasm::dasm_calld(QString& instruction)
  *
  * (CALLD $1F0,$1F1 WC,WZ).
  */
-void P2Dasm::dasm_resi3(QString& instruction)
+void P2Dasm::dasm_resi3(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Resume from INT3.");
     format_inst(instruction, t_RESI3);
 }
 
@@ -4035,8 +4332,10 @@ void P2Dasm::dasm_resi3(QString& instruction)
  *
  * (CALLD $1F2,$1F3 WC,WZ).
  */
-void P2Dasm::dasm_resi2(QString& instruction)
+void P2Dasm::dasm_resi2(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Resume from INT2.");
     format_inst(instruction, t_RESI2);
 }
 
@@ -4049,8 +4348,10 @@ void P2Dasm::dasm_resi2(QString& instruction)
  *
  * (CALLD $1F4,$1F5 WC,WZ).
  */
-void P2Dasm::dasm_resi1(QString& instruction)
+void P2Dasm::dasm_resi1(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Resume from INT1.");
     format_inst(instruction, t_RESI1);
 }
 
@@ -4063,8 +4364,10 @@ void P2Dasm::dasm_resi1(QString& instruction)
  *
  * (CALLD $1FE,$1FF WC,WZ).
  */
-void P2Dasm::dasm_resi0(QString& instruction)
+void P2Dasm::dasm_resi0(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Resume from INT0.");
     format_inst(instruction, t_RESI0);
 }
 
@@ -4077,8 +4380,10 @@ void P2Dasm::dasm_resi0(QString& instruction)
  *
  * (CALLD $1FF,$1F1 WC,WZ).
  */
-void P2Dasm::dasm_reti3(QString& instruction)
+void P2Dasm::dasm_reti3(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Return from INT3.");
     format_inst(instruction, t_RETI3);
 }
 
@@ -4091,8 +4396,10 @@ void P2Dasm::dasm_reti3(QString& instruction)
  *
  * (CALLD $1FF,$1F3 WC,WZ).
  */
-void P2Dasm::dasm_reti2(QString& instruction)
+void P2Dasm::dasm_reti2(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Return from INT2.");
     format_inst(instruction, t_RETI2);
 }
 
@@ -4105,8 +4412,10 @@ void P2Dasm::dasm_reti2(QString& instruction)
  *
  * (CALLD $1FF,$1F5 WC,WZ).
  */
-void P2Dasm::dasm_reti1(QString& instruction)
+void P2Dasm::dasm_reti1(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Return from INT1.");
     format_inst(instruction, t_RETI1);
 }
 
@@ -4119,8 +4428,10 @@ void P2Dasm::dasm_reti1(QString& instruction)
  *
  * (CALLD $1FF,$1FF WC,WZ).
  */
-void P2Dasm::dasm_reti0(QString& instruction)
+void P2Dasm::dasm_reti0(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Return from INT0.");
     format_inst(instruction, t_RETI0);
 }
 
@@ -4132,8 +4443,10 @@ void P2Dasm::dasm_reti0(QString& instruction)
  * CALLPA  {#}D,{#}S
  *
  */
-void P2Dasm::dasm_callpa(QString& instruction)
+void P2Dasm::dasm_callpa(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Call to S** by pushing {C, Z, 10'b0, PC[19:0]} onto stack, copy D to PA.");
     format_wz_d_imm_s(instruction, t_CALLPA);
 }
 
@@ -4145,8 +4458,10 @@ void P2Dasm::dasm_callpa(QString& instruction)
  * CALLPB  {#}D,{#}S
  *
  */
-void P2Dasm::dasm_callpb(QString& instruction)
+void P2Dasm::dasm_callpb(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Call to S** by pushing {C, Z, 10'b0, PC[19:0]} onto stack, copy D to PB.");
     format_wz_d_imm_s(instruction, t_CALLPB);
 }
 
@@ -4158,8 +4473,10 @@ void P2Dasm::dasm_callpb(QString& instruction)
  * DJZ     D,{#}S
  *
  */
-void P2Dasm::dasm_djz(QString& instruction)
+void P2Dasm::dasm_djz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Decrement D and jump to S** if result is zero.");
     format_d_imm_s(instruction, t_DJZ);
 }
 
@@ -4171,8 +4488,10 @@ void P2Dasm::dasm_djz(QString& instruction)
  * DJNZ    D,{#}S
  *
  */
-void P2Dasm::dasm_djnz(QString& instruction)
+void P2Dasm::dasm_djnz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Decrement D and jump to S** if result is not zero.");
     format_d_imm_s(instruction, t_DJNZ);
 }
 
@@ -4184,8 +4503,10 @@ void P2Dasm::dasm_djnz(QString& instruction)
  * DJF     D,{#}S
  *
  */
-void P2Dasm::dasm_djf(QString& instruction)
+void P2Dasm::dasm_djf(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Decrement D and jump to S** if result is $FFFF_FFFF.");
     format_d_imm_s(instruction, t_DJF);
 }
 
@@ -4197,8 +4518,10 @@ void P2Dasm::dasm_djf(QString& instruction)
  * DJNF    D,{#}S
  *
  */
-void P2Dasm::dasm_djnf(QString& instruction)
+void P2Dasm::dasm_djnf(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Decrement D and jump to S** if result is not $FFFF_FFFF.");
     format_d_imm_s(instruction, t_DJNF);
 }
 
@@ -4210,8 +4533,10 @@ void P2Dasm::dasm_djnf(QString& instruction)
  * IJZ     D,{#}S
  *
  */
-void P2Dasm::dasm_ijz(QString& instruction)
+void P2Dasm::dasm_ijz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Increment D and jump to S** if result is zero.");
     format_d_imm_s(instruction, t_IJZ);
 }
 
@@ -4223,8 +4548,10 @@ void P2Dasm::dasm_ijz(QString& instruction)
  * IJNZ    D,{#}S
  *
  */
-void P2Dasm::dasm_ijnz(QString& instruction)
+void P2Dasm::dasm_ijnz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Increment D and jump to S** if result is not zero.");
     format_d_imm_s(instruction, t_IJNZ);
 }
 
@@ -4236,8 +4563,10 @@ void P2Dasm::dasm_ijnz(QString& instruction)
  * TJZ     D,{#}S
  *
  */
-void P2Dasm::dasm_tjz(QString& instruction)
+void P2Dasm::dasm_tjz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Test D and jump to S** if D is zero.");
     format_d_imm_s(instruction, t_TJZ);
 }
 
@@ -4249,8 +4578,10 @@ void P2Dasm::dasm_tjz(QString& instruction)
  * TJNZ    D,{#}S
  *
  */
-void P2Dasm::dasm_tjnz(QString& instruction)
+void P2Dasm::dasm_tjnz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Test D and jump to S** if D is not zero.");
     format_d_imm_s(instruction, t_TJNZ);
 }
 
@@ -4262,8 +4593,10 @@ void P2Dasm::dasm_tjnz(QString& instruction)
  * TJF     D,{#}S
  *
  */
-void P2Dasm::dasm_tjf(QString& instruction)
+void P2Dasm::dasm_tjf(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Test D and jump to S** if D is full (D = $FFFF_FFFF).");
     format_d_imm_s(instruction, t_TJF);
 }
 
@@ -4275,8 +4608,10 @@ void P2Dasm::dasm_tjf(QString& instruction)
  * TJNF    D,{#}S
  *
  */
-void P2Dasm::dasm_tjnf(QString& instruction)
+void P2Dasm::dasm_tjnf(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Test D and jump to S** if D is not full (D != $FFFF_FFFF).");
     format_d_imm_s(instruction, t_TJNF);
 }
 
@@ -4288,8 +4623,10 @@ void P2Dasm::dasm_tjnf(QString& instruction)
  * TJS     D,{#}S
  *
  */
-void P2Dasm::dasm_tjs(QString& instruction)
+void P2Dasm::dasm_tjs(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Test D and jump to S** if D is signed (D[31] = 1).");
     format_d_imm_s(instruction, t_TJS);
 }
 
@@ -4301,8 +4638,10 @@ void P2Dasm::dasm_tjs(QString& instruction)
  * TJNS    D,{#}S
  *
  */
-void P2Dasm::dasm_tjns(QString& instruction)
+void P2Dasm::dasm_tjns(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Test D and jump to S** if D is not signed (D[31] = 0).");
     format_d_imm_s(instruction, t_TJNS);
 }
 
@@ -4314,8 +4653,10 @@ void P2Dasm::dasm_tjns(QString& instruction)
  * TJV     D,{#}S
  *
  */
-void P2Dasm::dasm_tjv(QString& instruction)
+void P2Dasm::dasm_tjv(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Test D and jump to S** if D overflowed (D[31] != C, C = 'correct sign' from last addition/subtraction).");
     format_d_imm_s(instruction, t_TJV);
 }
 
@@ -4327,8 +4668,10 @@ void P2Dasm::dasm_tjv(QString& instruction)
  * JINT    {#}S
  *
  */
-void P2Dasm::dasm_jint(QString& instruction)
+void P2Dasm::dasm_jint(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if INT event flag is set.");
     format_imm_s(instruction, t_JINT);
 }
 
@@ -4340,8 +4683,10 @@ void P2Dasm::dasm_jint(QString& instruction)
  * JCT1    {#}S
  *
  */
-void P2Dasm::dasm_jct1(QString& instruction)
+void P2Dasm::dasm_jct1(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if CT1 event flag is set.");
     format_imm_s(instruction, t_JCT1);
 }
 
@@ -4353,8 +4698,10 @@ void P2Dasm::dasm_jct1(QString& instruction)
  * JCT2    {#}S
  *
  */
-void P2Dasm::dasm_jct2(QString& instruction)
+void P2Dasm::dasm_jct2(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if CT2 event flag is set.");
     format_imm_s(instruction, t_JCT2);
 }
 
@@ -4366,8 +4713,10 @@ void P2Dasm::dasm_jct2(QString& instruction)
  * JCT3    {#}S
  *
  */
-void P2Dasm::dasm_jct3(QString& instruction)
+void P2Dasm::dasm_jct3(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if CT3 event flag is set.");
     format_imm_s(instruction, t_JCT3);
 }
 
@@ -4379,8 +4728,10 @@ void P2Dasm::dasm_jct3(QString& instruction)
  * JSE1    {#}S
  *
  */
-void P2Dasm::dasm_jse1(QString& instruction)
+void P2Dasm::dasm_jse1(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if SE1 event flag is set.");
     format_imm_s(instruction, t_JSE1);
 }
 
@@ -4392,8 +4743,10 @@ void P2Dasm::dasm_jse1(QString& instruction)
  * JSE2    {#}S
  *
  */
-void P2Dasm::dasm_jse2(QString& instruction)
+void P2Dasm::dasm_jse2(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if SE2 event flag is set.");
     format_imm_s(instruction, t_JSE2);
 }
 
@@ -4405,8 +4758,10 @@ void P2Dasm::dasm_jse2(QString& instruction)
  * JSE3    {#}S
  *
  */
-void P2Dasm::dasm_jse3(QString& instruction)
+void P2Dasm::dasm_jse3(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if SE3 event flag is set.");
     format_imm_s(instruction, t_JSE3);
 }
 
@@ -4418,8 +4773,10 @@ void P2Dasm::dasm_jse3(QString& instruction)
  * JSE4    {#}S
  *
  */
-void P2Dasm::dasm_jse4(QString& instruction)
+void P2Dasm::dasm_jse4(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if SE4 event flag is set.");
     format_imm_s(instruction, t_JSE4);
 }
 
@@ -4431,8 +4788,10 @@ void P2Dasm::dasm_jse4(QString& instruction)
  * JPAT    {#}S
  *
  */
-void P2Dasm::dasm_jpat(QString& instruction)
+void P2Dasm::dasm_jpat(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if PAT event flag is set.");
     format_imm_s(instruction, t_JPAT);
 }
 
@@ -4444,8 +4803,10 @@ void P2Dasm::dasm_jpat(QString& instruction)
  * JFBW    {#}S
  *
  */
-void P2Dasm::dasm_jfbw(QString& instruction)
+void P2Dasm::dasm_jfbw(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if FBW event flag is set.");
     format_imm_s(instruction, t_JFBW);
 }
 
@@ -4457,8 +4818,10 @@ void P2Dasm::dasm_jfbw(QString& instruction)
  * JXMT    {#}S
  *
  */
-void P2Dasm::dasm_jxmt(QString& instruction)
+void P2Dasm::dasm_jxmt(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if XMT event flag is set.");
     format_imm_s(instruction, t_JXMT);
 }
 
@@ -4470,8 +4833,10 @@ void P2Dasm::dasm_jxmt(QString& instruction)
  * JXFI    {#}S
  *
  */
-void P2Dasm::dasm_jxfi(QString& instruction)
+void P2Dasm::dasm_jxfi(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if XFI event flag is set.");
     format_imm_s(instruction, t_JXFI);
 }
 
@@ -4483,8 +4848,10 @@ void P2Dasm::dasm_jxfi(QString& instruction)
  * JXRO    {#}S
  *
  */
-void P2Dasm::dasm_jxro(QString& instruction)
+void P2Dasm::dasm_jxro(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if XRO event flag is set.");
     format_imm_s(instruction, t_JXRO);
 }
 
@@ -4496,8 +4863,10 @@ void P2Dasm::dasm_jxro(QString& instruction)
  * JXRL    {#}S
  *
  */
-void P2Dasm::dasm_jxrl(QString& instruction)
+void P2Dasm::dasm_jxrl(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if XRL event flag is set.");
     format_imm_s(instruction, t_JXRL);
 }
 
@@ -4509,8 +4878,10 @@ void P2Dasm::dasm_jxrl(QString& instruction)
  * JATN    {#}S
  *
  */
-void P2Dasm::dasm_jatn(QString& instruction)
+void P2Dasm::dasm_jatn(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if ATN event flag is set.");
     format_imm_s(instruction, t_JATN);
 }
 
@@ -4522,8 +4893,10 @@ void P2Dasm::dasm_jatn(QString& instruction)
  * JQMT    {#}S
  *
  */
-void P2Dasm::dasm_jqmt(QString& instruction)
+void P2Dasm::dasm_jqmt(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if QMT event flag is set.");
     format_imm_s(instruction, t_JQMT);
 }
 
@@ -4535,8 +4908,10 @@ void P2Dasm::dasm_jqmt(QString& instruction)
  * JNINT   {#}S
  *
  */
-void P2Dasm::dasm_jnint(QString& instruction)
+void P2Dasm::dasm_jnint(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if INT event flag is clear.");
     format_imm_s(instruction, t_JNINT);
 }
 
@@ -4548,8 +4923,10 @@ void P2Dasm::dasm_jnint(QString& instruction)
  * JNCT1   {#}S
  *
  */
-void P2Dasm::dasm_jnct1(QString& instruction)
+void P2Dasm::dasm_jnct1(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if CT1 event flag is clear.");
     format_imm_s(instruction, t_JNCT1);
 }
 
@@ -4561,8 +4938,10 @@ void P2Dasm::dasm_jnct1(QString& instruction)
  * JNCT2   {#}S
  *
  */
-void P2Dasm::dasm_jnct2(QString& instruction)
+void P2Dasm::dasm_jnct2(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if CT2 event flag is clear.");
     format_imm_s(instruction, t_JNCT2);
 }
 
@@ -4574,8 +4953,10 @@ void P2Dasm::dasm_jnct2(QString& instruction)
  * JNCT3   {#}S
  *
  */
-void P2Dasm::dasm_jnct3(QString& instruction)
+void P2Dasm::dasm_jnct3(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if CT3 event flag is clear.");
     format_imm_s(instruction, t_JNCT3);
 }
 
@@ -4587,8 +4968,10 @@ void P2Dasm::dasm_jnct3(QString& instruction)
  * JNSE1   {#}S
  *
  */
-void P2Dasm::dasm_jnse1(QString& instruction)
+void P2Dasm::dasm_jnse1(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if SE1 event flag is clear.");
     format_imm_s(instruction, t_JNSE1);
 }
 
@@ -4600,8 +4983,10 @@ void P2Dasm::dasm_jnse1(QString& instruction)
  * JNSE2   {#}S
  *
  */
-void P2Dasm::dasm_jnse2(QString& instruction)
+void P2Dasm::dasm_jnse2(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if SE2 event flag is clear.");
     format_imm_s(instruction, t_JNSE2);
 }
 
@@ -4613,8 +4998,10 @@ void P2Dasm::dasm_jnse2(QString& instruction)
  * JNSE3   {#}S
  *
  */
-void P2Dasm::dasm_jnse3(QString& instruction)
+void P2Dasm::dasm_jnse3(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if SE3 event flag is clear.");
     format_imm_s(instruction, t_JNSE3);
 }
 
@@ -4626,8 +5013,10 @@ void P2Dasm::dasm_jnse3(QString& instruction)
  * JNSE4   {#}S
  *
  */
-void P2Dasm::dasm_jnse4(QString& instruction)
+void P2Dasm::dasm_jnse4(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if SE4 event flag is clear.");
     format_imm_s(instruction, t_JNSE4);
 }
 
@@ -4639,8 +5028,10 @@ void P2Dasm::dasm_jnse4(QString& instruction)
  * JNPAT   {#}S
  *
  */
-void P2Dasm::dasm_jnpat(QString& instruction)
+void P2Dasm::dasm_jnpat(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if PAT event flag is clear.");
     format_imm_s(instruction, t_JNPAT);
 }
 
@@ -4652,8 +5043,10 @@ void P2Dasm::dasm_jnpat(QString& instruction)
  * JNFBW   {#}S
  *
  */
-void P2Dasm::dasm_jnfbw(QString& instruction)
+void P2Dasm::dasm_jnfbw(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if FBW event flag is clear.");
     format_imm_s(instruction, t_JNFBW);
 }
 
@@ -4665,8 +5058,10 @@ void P2Dasm::dasm_jnfbw(QString& instruction)
  * JNXMT   {#}S
  *
  */
-void P2Dasm::dasm_jnxmt(QString& instruction)
+void P2Dasm::dasm_jnxmt(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if XMT event flag is clear.");
     format_imm_s(instruction, t_JNXMT);
 }
 
@@ -4678,8 +5073,10 @@ void P2Dasm::dasm_jnxmt(QString& instruction)
  * JNXFI   {#}S
  *
  */
-void P2Dasm::dasm_jnxfi(QString& instruction)
+void P2Dasm::dasm_jnxfi(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if XFI event flag is clear.");
     format_imm_s(instruction, t_JNXFI);
 }
 
@@ -4691,8 +5088,10 @@ void P2Dasm::dasm_jnxfi(QString& instruction)
  * JNXRO   {#}S
  *
  */
-void P2Dasm::dasm_jnxro(QString& instruction)
+void P2Dasm::dasm_jnxro(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if XRO event flag is clear.");
     format_imm_s(instruction, t_JNXRO);
 }
 
@@ -4704,8 +5103,10 @@ void P2Dasm::dasm_jnxro(QString& instruction)
  * JNXRL   {#}S
  *
  */
-void P2Dasm::dasm_jnxrl(QString& instruction)
+void P2Dasm::dasm_jnxrl(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if XRL event flag is clear.");
     format_imm_s(instruction, t_JNXRL);
 }
 
@@ -4717,8 +5118,10 @@ void P2Dasm::dasm_jnxrl(QString& instruction)
  * JNATN   {#}S
  *
  */
-void P2Dasm::dasm_jnatn(QString& instruction)
+void P2Dasm::dasm_jnatn(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if ATN event flag is clear.");
     format_imm_s(instruction, t_JNATN);
 }
 
@@ -4730,8 +5133,10 @@ void P2Dasm::dasm_jnatn(QString& instruction)
  * JNQMT   {#}S
  *
  */
-void P2Dasm::dasm_jnqmt(QString& instruction)
+void P2Dasm::dasm_jnqmt(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to S** if QMT event flag is clear.");
     format_imm_s(instruction, t_JNQMT);
 }
 
@@ -4743,8 +5148,10 @@ void P2Dasm::dasm_jnqmt(QString& instruction)
  * <empty> {#}D,{#}S
  *
  */
-void P2Dasm::dasm_1011110_1(QString& instruction)
+void P2Dasm::dasm_1011110_1(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("<empty>.");
     format_wz_d_imm_s(instruction, t_empty);
 }
 
@@ -4756,8 +5163,10 @@ void P2Dasm::dasm_1011110_1(QString& instruction)
  * <empty> {#}D,{#}S
  *
  */
-void P2Dasm::dasm_1011111_0(QString& instruction)
+void P2Dasm::dasm_1011111_0(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("<empty>.");
     format_wz_d_imm_s(instruction, t_empty);
 }
 
@@ -4770,8 +5179,10 @@ void P2Dasm::dasm_1011111_0(QString& instruction)
  *
  * C selects INA/INB, Z selects =/!=, D provides mask value, S provides match value.
  */
-void P2Dasm::dasm_setpat(QString& instruction)
+void P2Dasm::dasm_setpat(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set pin pattern for PAT event.");
     format_wz_d_imm_s(instruction, t_SETPAT);
 }
 
@@ -4783,8 +5194,10 @@ void P2Dasm::dasm_setpat(QString& instruction)
  * WRPIN   {#}D,{#}S
  *
  */
-void P2Dasm::dasm_wrpin(QString& instruction)
+void P2Dasm::dasm_wrpin(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Write D to mode register of smart pin S[5:0], acknowledge smart pin.");
     format_wz_d_imm_s(instruction, t_WRPIN);
 }
 
@@ -4796,8 +5209,10 @@ void P2Dasm::dasm_wrpin(QString& instruction)
  * AKPIN   {#}S
  *
  */
-void P2Dasm::dasm_akpin(QString& instruction)
+void P2Dasm::dasm_akpin(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Acknowledge smart pin S[5:0].");
     format_imm_s(instruction, t_AKPIN);
 }
 
@@ -4809,8 +5224,10 @@ void P2Dasm::dasm_akpin(QString& instruction)
  * WXPIN   {#}D,{#}S
  *
  */
-void P2Dasm::dasm_wxpin(QString& instruction)
+void P2Dasm::dasm_wxpin(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Write D to parameter \"X\" of smart pin S[5:0], acknowledge smart pin.");
     format_wz_d_imm_s(instruction, t_WXPIN);
 }
 
@@ -4822,8 +5239,10 @@ void P2Dasm::dasm_wxpin(QString& instruction)
  * WYPIN   {#}D,{#}S
  *
  */
-void P2Dasm::dasm_wypin(QString& instruction)
+void P2Dasm::dasm_wypin(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Write D to parameter \"Y\" of smart pin S[5:0], acknowledge smart pin.");
     format_wz_d_imm_s(instruction, t_WYPIN);
 }
 
@@ -4835,8 +5254,10 @@ void P2Dasm::dasm_wypin(QString& instruction)
  * WRLUT   {#}D,{#}S
  *
  */
-void P2Dasm::dasm_wrlut(QString& instruction)
+void P2Dasm::dasm_wrlut(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Write D to LUT address S[8:0].");
     format_wz_d_imm_s(instruction, t_WRLUT);
 }
 
@@ -4848,8 +5269,10 @@ void P2Dasm::dasm_wrlut(QString& instruction)
  * WRBYTE  {#}D,{#}S/P
  *
  */
-void P2Dasm::dasm_wrbyte(QString& instruction)
+void P2Dasm::dasm_wrbyte(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Write byte in D[7:0] to hub address {#}S/PTRx.");
     format_wz_d_imm_s(instruction, t_WRBYTE);
 }
 
@@ -4861,8 +5284,10 @@ void P2Dasm::dasm_wrbyte(QString& instruction)
  * WRWORD  {#}D,{#}S/P
  *
  */
-void P2Dasm::dasm_wrword(QString& instruction)
+void P2Dasm::dasm_wrword(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Write word in D[15:0] to hub address {#}S/PTRx.");
     format_wz_d_imm_s(instruction, t_WRWORD);
 }
 
@@ -4875,8 +5300,10 @@ void P2Dasm::dasm_wrword(QString& instruction)
  *
  * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  */
-void P2Dasm::dasm_wrlong(QString& instruction)
+void P2Dasm::dasm_wrlong(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Write long in D[31:0] to hub address {#}S/PTRx.");
     format_wz_d_imm_s(instruction, t_WRLONG);
 }
 
@@ -4888,8 +5315,10 @@ void P2Dasm::dasm_wrlong(QString& instruction)
  * PUSHA   {#}D
  *
  */
-void P2Dasm::dasm_pusha(QString& instruction)
+void P2Dasm::dasm_pusha(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Write long in D[31:0] to hub address PTRA++.");
     format_wz_d(instruction, t_PUSHA);
 }
 
@@ -4901,8 +5330,10 @@ void P2Dasm::dasm_pusha(QString& instruction)
  * PUSHB   {#}D
  *
  */
-void P2Dasm::dasm_pushb(QString& instruction)
+void P2Dasm::dasm_pushb(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Write long in D[31:0] to hub address PTRB++.");
     format_wz_d(instruction, t_PUSHB);
 }
 
@@ -4915,8 +5346,10 @@ void P2Dasm::dasm_pushb(QString& instruction)
  *
  * D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
  */
-void P2Dasm::dasm_rdfast(QString& instruction)
+void P2Dasm::dasm_rdfast(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Begin new fast hub read via FIFO.");
     format_wz_d_imm_s(instruction, t_RDFAST);
 }
 
@@ -4929,8 +5362,10 @@ void P2Dasm::dasm_rdfast(QString& instruction)
  *
  * D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
  */
-void P2Dasm::dasm_wrfast(QString& instruction)
+void P2Dasm::dasm_wrfast(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Begin new fast hub write via FIFO.");
     format_wz_d_imm_s(instruction, t_WRFAST);
 }
 
@@ -4943,8 +5378,10 @@ void P2Dasm::dasm_wrfast(QString& instruction)
  *
  * D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
  */
-void P2Dasm::dasm_fblock(QString& instruction)
+void P2Dasm::dasm_fblock(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set next block for when block wraps.");
     format_wz_d_imm_s(instruction, t_FBLOCK);
 }
 
@@ -4956,8 +5393,10 @@ void P2Dasm::dasm_fblock(QString& instruction)
  * XINIT   {#}D,{#}S
  *
  */
-void P2Dasm::dasm_xinit(QString& instruction)
+void P2Dasm::dasm_xinit(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Issue streamer command immediately, zeroing phase.");
     format_wz_d_imm_s(instruction, t_XINIT);
 }
 
@@ -4969,8 +5408,10 @@ void P2Dasm::dasm_xinit(QString& instruction)
  * XSTOP
  *
  */
-void P2Dasm::dasm_xstop(QString& instruction)
+void P2Dasm::dasm_xstop(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Stop streamer immediately.");
     format_inst(instruction, t_XSTOP);
 }
 
@@ -4982,8 +5423,10 @@ void P2Dasm::dasm_xstop(QString& instruction)
  * XZERO   {#}D,{#}S
  *
  */
-void P2Dasm::dasm_xzero(QString& instruction)
+void P2Dasm::dasm_xzero(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Buffer new streamer command to be issued on final NCO rollover of current command, zeroing phase.");
     format_wz_d_imm_s(instruction, t_XZERO);
 }
 
@@ -4995,8 +5438,10 @@ void P2Dasm::dasm_xzero(QString& instruction)
  * XCONT   {#}D,{#}S
  *
  */
-void P2Dasm::dasm_xcont(QString& instruction)
+void P2Dasm::dasm_xcont(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Buffer new streamer command to be issued on final NCO rollover of current command, continuing phase.");
     format_wz_d_imm_s(instruction, t_XCONT);
 }
 
@@ -5010,8 +5455,10 @@ void P2Dasm::dasm_xcont(QString& instruction)
  * If S = 0, repeat infinitely.
  * If D[8:0] = 0, nothing repeats.
  */
-void P2Dasm::dasm_rep(QString& instruction)
+void P2Dasm::dasm_rep(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Execute next D[8:0] instructions S times.");
     format_wz_d_imm_s(instruction, t_REP);
 }
 
@@ -5025,8 +5472,10 @@ void P2Dasm::dasm_rep(QString& instruction)
  * S[19:0] sets hub startup address and PTRB of cog.
  * Prior SETQ sets PTRA of cog.
  */
-void P2Dasm::dasm_coginit(QString& instruction)
+void P2Dasm::dasm_coginit(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Start cog selected by D.");
     format_wz_d_imm_s(instruction, t_COGINIT);
 }
 
@@ -5039,8 +5488,10 @@ void P2Dasm::dasm_coginit(QString& instruction)
  *
  * GETQX/GETQY retrieves lower/upper product.
  */
-void P2Dasm::dasm_qmul(QString& instruction)
+void P2Dasm::dasm_qmul(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Begin CORDIC unsigned multiplication of D * S.");
     format_wz_d_imm_s(instruction, t_QMUL);
 }
 
@@ -5053,8 +5504,10 @@ void P2Dasm::dasm_qmul(QString& instruction)
  *
  * GETQX/GETQY retrieves quotient/remainder.
  */
-void P2Dasm::dasm_qdiv(QString& instruction)
+void P2Dasm::dasm_qdiv(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Begin CORDIC unsigned division of {SETQ value or 32'b0, D} / S.");
     format_wz_d_imm_s(instruction, t_QDIV);
 }
 
@@ -5067,8 +5520,10 @@ void P2Dasm::dasm_qdiv(QString& instruction)
  *
  * GETQX/GETQY retrieves quotient/remainder.
  */
-void P2Dasm::dasm_qfrac(QString& instruction)
+void P2Dasm::dasm_qfrac(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Begin CORDIC unsigned division of {D, SETQ value or 32'b0} / S.");
     format_wz_d_imm_s(instruction, t_QFRAC);
 }
 
@@ -5081,8 +5536,10 @@ void P2Dasm::dasm_qfrac(QString& instruction)
  *
  * GETQX retrieves root.
  */
-void P2Dasm::dasm_qsqrt(QString& instruction)
+void P2Dasm::dasm_qsqrt(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Begin CORDIC square root of {S, D}.");
     format_wz_d_imm_s(instruction, t_QSQRT);
 }
 
@@ -5095,8 +5552,10 @@ void P2Dasm::dasm_qsqrt(QString& instruction)
  *
  * GETQX/GETQY retrieves X/Y.
  */
-void P2Dasm::dasm_qrotate(QString& instruction)
+void P2Dasm::dasm_qrotate(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Begin CORDIC rotation of point (D, SETQ value or 32'b0) by angle S.");
     format_wz_d_imm_s(instruction, t_QROTATE);
 }
 
@@ -5109,8 +5568,10 @@ void P2Dasm::dasm_qrotate(QString& instruction)
  *
  * GETQX/GETQY retrieves length/angle.
  */
-void P2Dasm::dasm_qvector(QString& instruction)
+void P2Dasm::dasm_qvector(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Begin CORDIC vectoring of point (D, S).");
     format_wz_d_imm_s(instruction, t_QVECTOR);
 }
 
@@ -5122,8 +5583,10 @@ void P2Dasm::dasm_qvector(QString& instruction)
  * HUBSET  {#}D
  *
  */
-void P2Dasm::dasm_hubset(QString& instruction)
+void P2Dasm::dasm_hubset(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set hub configuration to D.");
     format_imm_d(instruction, t_HUBSET);
 }
 
@@ -5136,8 +5599,10 @@ void P2Dasm::dasm_hubset(QString& instruction)
  *
  * If WC, check status of cog D[3:0], C = 1 if on.
  */
-void P2Dasm::dasm_cogid(QString& instruction)
+void P2Dasm::dasm_cogid(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("If D is register and no WC, get cog ID (0 to 15) into D.");
     format_imm_d_c(instruction, t_COGID);
 }
 
@@ -5149,8 +5614,10 @@ void P2Dasm::dasm_cogid(QString& instruction)
  * COGSTOP {#}D
  *
  */
-void P2Dasm::dasm_cogstop(QString& instruction)
+void P2Dasm::dasm_cogstop(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Stop cog D[3:0].");
     format_imm_d(instruction, t_COGSTOP);
 }
 
@@ -5164,8 +5631,10 @@ void P2Dasm::dasm_cogstop(QString& instruction)
  * D will be written with the LOCK number (0 to 15).
  * C = 1 if no LOCK available.
  */
-void P2Dasm::dasm_locknew(QString& instruction)
+void P2Dasm::dasm_locknew(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Request a LOCK.");
     format_imm_d_c(instruction, t_LOCKNEW);
 }
 
@@ -5177,8 +5646,10 @@ void P2Dasm::dasm_locknew(QString& instruction)
  * LOCKRET {#}D
  *
  */
-void P2Dasm::dasm_lockret(QString& instruction)
+void P2Dasm::dasm_lockret(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Return LOCK D[3:0] for reallocation.");
     format_imm_d(instruction, t_LOCKRET);
 }
 
@@ -5193,8 +5664,10 @@ void P2Dasm::dasm_lockret(QString& instruction)
  * LOCKREL releases LOCK.
  * LOCK is also released if owner cog stops or restarts.
  */
-void P2Dasm::dasm_locktry(QString& instruction)
+void P2Dasm::dasm_locktry(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Try to get LOCK D[3:0].");
     format_imm_d_c(instruction, t_LOCKTRY);
 }
 
@@ -5207,8 +5680,10 @@ void P2Dasm::dasm_locktry(QString& instruction)
  *
  * If D is a register and WC, get current/last cog id of LOCK owner into D and LOCK status into C.
  */
-void P2Dasm::dasm_lockrel(QString& instruction)
+void P2Dasm::dasm_lockrel(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Release LOCK D[3:0].");
     format_imm_d_c(instruction, t_LOCKREL);
 }
 
@@ -5221,8 +5696,10 @@ void P2Dasm::dasm_lockrel(QString& instruction)
  *
  * GETQX retrieves log {5'whole_exponent, 27'fractional_exponent}.
  */
-void P2Dasm::dasm_qlog(QString& instruction)
+void P2Dasm::dasm_qlog(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Begin CORDIC number-to-logarithm conversion of D.");
     format_imm_d(instruction, t_QLOG);
 }
 
@@ -5235,133 +5712,141 @@ void P2Dasm::dasm_qlog(QString& instruction)
  *
  * GETQX retrieves number.
  */
-void P2Dasm::dasm_qexp(QString& instruction)
+void P2Dasm::dasm_qexp(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Begin CORDIC logarithm-to-number conversion of D.");
     format_imm_d(instruction, t_QEXP);
 }
 
 /**
- * @brief Used after RDFAST.
+ * @brief Read zero-extended byte from FIFO into D. Used after RDFAST.
  *
  * EEEE 1101011 CZ0 DDDDDDDDD 000010000
  *
  * RFBYTE  D        {WC/WZ/WCZ}
  *
- * Read zero-extended byte from FIFO into D.
  * C = MSB of byte.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_rfbyte(QString& instruction)
+void P2Dasm::dasm_rfbyte(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Read zero-extended byte from FIFO into D. Used after RDFAST.");
     format_d_cz(instruction, t_RFBYTE);
 }
 
 /**
- * @brief Used after RDFAST.
+ * @brief Read zero-extended word from FIFO into D. Used after RDFAST.
  *
  * EEEE 1101011 CZ0 DDDDDDDDD 000010001
  *
  * RFWORD  D        {WC/WZ/WCZ}
  *
- * Read zero-extended word from FIFO into D.
  * C = MSB of word.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_rfword(QString& instruction)
+void P2Dasm::dasm_rfword(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Read zero-extended word from FIFO into D. Used after RDFAST.");
     format_d_cz(instruction, t_RFWORD);
 }
 
 /**
- * @brief Used after RDFAST.
+ * @brief Read long from FIFO into D. Used after RDFAST.
  *
  * EEEE 1101011 CZ0 DDDDDDDDD 000010010
  *
  * RFLONG  D        {WC/WZ/WCZ}
  *
- * Read long from FIFO into D.
  * C = MSB of long.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_rflong(QString& instruction)
+void P2Dasm::dasm_rflong(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Read long from FIFO into D. Used after RDFAST.");
     format_d_cz(instruction, t_RFLONG);
 }
 
 /**
- * @brief Used after RDFAST.
+ * @brief Read zero-extended 1..4-byte value from FIFO into D. Used after RDFAST.
  *
  * EEEE 1101011 CZ0 DDDDDDDDD 000010011
  *
  * RFVAR   D        {WC/WZ/WCZ}
  *
- * Read zero-extended 1.
- * 4-byte value from FIFO into D.
  * C = 0.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_rfvar(QString& instruction)
+void P2Dasm::dasm_rfvar(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Read zero-extended 1..4-byte value from FIFO into D. Used after RDFAST.");
     format_d_cz(instruction, t_RFVAR);
 }
 
 /**
- * @brief Used after RDFAST.
+ * @brief Read sign-extended 1..4-byte value from FIFO into D. Used after RDFAST.
  *
  * EEEE 1101011 CZ0 DDDDDDDDD 000010100
  *
  * RFVARS  D        {WC/WZ/WCZ}
  *
- * Read sign-extended 1.
- * 4-byte value from FIFO into D.
  * C = MSB of value.
  * Z = (result == 0).
  */
-void P2Dasm::dasm_rfvars(QString& instruction)
+void P2Dasm::dasm_rfvars(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Read sign-extended 1..4-byte value from FIFO into D. Used after RDFAST.");
 
     format_d_cz(instruction, t_RFVARS);
 }
 
 /**
- * @brief Used after WRFAST.
+ * @brief Write byte in D[7:0] into FIFO. Used after WRFAST.
  *
  * EEEE 1101011 00L DDDDDDDDD 000010101
  *
  * WFBYTE  {#}D
  *
- * Write byte in D[7:0] into FIFO.
  */
-void P2Dasm::dasm_wfbyte(QString& instruction)
+void P2Dasm::dasm_wfbyte(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Write byte in D[7:0] into FIFO. Used after WRFAST.");
     format_imm_d(instruction, t_WFBYTE);
 }
 
 /**
- * @brief Used after WRFAST.
+ * @brief Write word in D[15:0] into FIFO. Used after WRFAST.
  *
  * EEEE 1101011 00L DDDDDDDDD 000010110
  *
  * WFWORD  {#}D
  *
- * Write word in D[15:0] into FIFO.
  */
-void P2Dasm::dasm_wfword(QString& instruction)
+void P2Dasm::dasm_wfword(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Write word in D[15:0] into FIFO. Used after WRFAST.");
     format_imm_d(instruction, t_WFWORD);
 }
 
 /**
- * @brief Used after WRFAST.
+ * @brief Write long in D[31:0] into FIFO. Used after WRFAST.
  *
  * EEEE 1101011 00L DDDDDDDDD 000010111
  *
  * WFLONG  {#}D
  *
- * Write long in D[31:0] into FIFO.
  */
-void P2Dasm::dasm_wflong(QString& instruction)
+void P2Dasm::dasm_wflong(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Write long in D[31:0] into FIFO. Used after WRFAST.");
     format_imm_d(instruction, t_WFLONG);
 }
 
@@ -5372,14 +5857,14 @@ void P2Dasm::dasm_wflong(QString& instruction)
  *
  * GETQX   D        {WC/WZ/WCZ}
  *
- * Waits, in case result:
-        op_not ready.();
-        return;
+ * Waits, in case result not ready.
  * C = X[31].
  * Z = (result == 0).
  */
-void P2Dasm::dasm_getqx(QString& instruction)
+void P2Dasm::dasm_getqx(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Retrieve CORDIC result X into D.");
     format_d_cz(instruction, t_GETQX);
 }
 
@@ -5390,14 +5875,14 @@ void P2Dasm::dasm_getqx(QString& instruction)
  *
  * GETQY   D        {WC/WZ/WCZ}
  *
- * Waits, in case result:
-        op_not ready.();
-        return;
+ * Waits, in case result no ready.
  * C = Y[31].
  * Z = (result == 0).
  */
-void P2Dasm::dasm_getqy(QString& instruction)
+void P2Dasm::dasm_getqy(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Retrieve CORDIC result Y into D.");
     format_d_cz(instruction, t_GETQY);
 }
 
@@ -5410,8 +5895,10 @@ void P2Dasm::dasm_getqy(QString& instruction)
  *
  * CT is the free-running 32-bit system counter that increments on every clock.
  */
-void P2Dasm::dasm_getct(QString& instruction)
+void P2Dasm::dasm_getct(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get CT into D.");
     format_d(instruction, t_GETCT);
 }
 
@@ -5425,8 +5912,10 @@ void P2Dasm::dasm_getct(QString& instruction)
  * RND is the PRNG that updates on every clock.
  * D = RND[31:0], C = RND[31], Z = RND[30], unique per cog.
  */
-void P2Dasm::dasm_getrnd(QString& instruction)
+void P2Dasm::dasm_getrnd(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get RND into D/C/Z.");
     format_d_cz(instruction, t_GETRND);
 }
 
@@ -5439,8 +5928,10 @@ void P2Dasm::dasm_getrnd(QString& instruction)
  *
  * C = RND[31], Z = RND[30], unique per cog.
  */
-void P2Dasm::dasm_getrnd_cz(QString& instruction)
+void P2Dasm::dasm_getrnd_cz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get RND into C/Z.");
     format_cz(instruction, t_GETRND);
 }
 
@@ -5452,8 +5943,10 @@ void P2Dasm::dasm_getrnd_cz(QString& instruction)
  * SETDACS {#}D
  *
  */
-void P2Dasm::dasm_setdacs(QString& instruction)
+void P2Dasm::dasm_setdacs(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("DAC3 = D[31:24], DAC2 = D[23:16], DAC1 = D[15:8], DAC0 = D[7:0].");
     format_imm_d(instruction, t_SETDACS);
 }
 
@@ -5465,8 +5958,10 @@ void P2Dasm::dasm_setdacs(QString& instruction)
  * SETXFRQ {#}D
  *
  */
-void P2Dasm::dasm_setxfrq(QString& instruction)
+void P2Dasm::dasm_setxfrq(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set streamer NCO frequency to D.");
     format_imm_d(instruction, t_SETXFRQ);
 }
 
@@ -5478,8 +5973,10 @@ void P2Dasm::dasm_setxfrq(QString& instruction)
  * GETXACC D
  *
  */
-void P2Dasm::dasm_getxacc(QString& instruction)
+void P2Dasm::dasm_getxacc(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get the streamer's Goertzel X accumulator into D and the Y accumulator into the next instruction's S, clear accumulators.");
     format_d(instruction, t_GETXACC);
 }
 
@@ -5493,8 +5990,10 @@ void P2Dasm::dasm_getxacc(QString& instruction)
  * If WC/WZ/WCZ, wait 2 + (D & RND) clocks.
  * C/Z = 0.
  */
-void P2Dasm::dasm_waitx(QString& instruction)
+void P2Dasm::dasm_waitx(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Wait 2 + D clocks if no WC/WZ/WCZ.");
     format_imm_d_cz(instruction, t_WAITX);
 }
 
@@ -5506,8 +6005,10 @@ void P2Dasm::dasm_waitx(QString& instruction)
  * SETSE1  {#}D
  *
  */
-void P2Dasm::dasm_setse1(QString& instruction)
+void P2Dasm::dasm_setse1(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set SE1 event configuration to D[8:0].");
     format_imm_d(instruction, t_SETSE1);
 }
 
@@ -5519,8 +6020,10 @@ void P2Dasm::dasm_setse1(QString& instruction)
  * SETSE2  {#}D
  *
  */
-void P2Dasm::dasm_setse2(QString& instruction)
+void P2Dasm::dasm_setse2(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set SE2 event configuration to D[8:0].");
     format_imm_d(instruction, t_SETSE2);
 }
 
@@ -5532,8 +6035,10 @@ void P2Dasm::dasm_setse2(QString& instruction)
  * SETSE3  {#}D
  *
  */
-void P2Dasm::dasm_setse3(QString& instruction)
+void P2Dasm::dasm_setse3(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set SE3 event configuration to D[8:0].");
     format_imm_d(instruction, t_SETSE3);
 }
 
@@ -5545,8 +6050,10 @@ void P2Dasm::dasm_setse3(QString& instruction)
  * SETSE4  {#}D
  *
  */
-void P2Dasm::dasm_setse4(QString& instruction)
+void P2Dasm::dasm_setse4(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set SE4 event configuration to D[8:0].");
     format_imm_d(instruction, t_SETSE4);
 }
 
@@ -5558,8 +6065,10 @@ void P2Dasm::dasm_setse4(QString& instruction)
  * POLLINT          {WC/WZ/WCZ}
  *
  */
-void P2Dasm::dasm_pollint(QString& instruction)
+void P2Dasm::dasm_pollint(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get INT event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLINT);
 }
 
@@ -5571,8 +6080,10 @@ void P2Dasm::dasm_pollint(QString& instruction)
  * POLLCT1          {WC/WZ/WCZ}
  *
  */
-void P2Dasm::dasm_pollct1(QString& instruction)
+void P2Dasm::dasm_pollct1(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get CT1 event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLCT1);
 }
 
@@ -5584,8 +6095,10 @@ void P2Dasm::dasm_pollct1(QString& instruction)
  * POLLCT2          {WC/WZ/WCZ}
  *
  */
-void P2Dasm::dasm_pollct2(QString& instruction)
+void P2Dasm::dasm_pollct2(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get CT2 event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLCT2);
 }
 
@@ -5597,8 +6110,10 @@ void P2Dasm::dasm_pollct2(QString& instruction)
  * POLLCT3          {WC/WZ/WCZ}
  *
  */
-void P2Dasm::dasm_pollct3(QString& instruction)
+void P2Dasm::dasm_pollct3(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get CT3 event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLCT3);
 }
 
@@ -5610,8 +6125,10 @@ void P2Dasm::dasm_pollct3(QString& instruction)
  * POLLSE1          {WC/WZ/WCZ}
  *
  */
-void P2Dasm::dasm_pollse1(QString& instruction)
+void P2Dasm::dasm_pollse1(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get SE1 event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLSE1);
 }
 
@@ -5623,8 +6140,10 @@ void P2Dasm::dasm_pollse1(QString& instruction)
  * POLLSE2          {WC/WZ/WCZ}
  *
  */
-void P2Dasm::dasm_pollse2(QString& instruction)
+void P2Dasm::dasm_pollse2(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get SE2 event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLSE2);
 }
 
@@ -5636,8 +6155,10 @@ void P2Dasm::dasm_pollse2(QString& instruction)
  * POLLSE3          {WC/WZ/WCZ}
  *
  */
-void P2Dasm::dasm_pollse3(QString& instruction)
+void P2Dasm::dasm_pollse3(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get SE3 event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLSE3);
 }
 
@@ -5649,8 +6170,10 @@ void P2Dasm::dasm_pollse3(QString& instruction)
  * POLLSE4          {WC/WZ/WCZ}
  *
  */
-void P2Dasm::dasm_pollse4(QString& instruction)
+void P2Dasm::dasm_pollse4(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get SE4 event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLSE4);
 }
 
@@ -5662,8 +6185,10 @@ void P2Dasm::dasm_pollse4(QString& instruction)
  * POLLPAT          {WC/WZ/WCZ}
  *
  */
-void P2Dasm::dasm_pollpat(QString& instruction)
+void P2Dasm::dasm_pollpat(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get PAT event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLPAT);
 }
 
@@ -5675,8 +6200,10 @@ void P2Dasm::dasm_pollpat(QString& instruction)
  * POLLFBW          {WC/WZ/WCZ}
  *
  */
-void P2Dasm::dasm_pollfbw(QString& instruction)
+void P2Dasm::dasm_pollfbw(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get FBW event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLFBW);
 }
 
@@ -5688,8 +6215,10 @@ void P2Dasm::dasm_pollfbw(QString& instruction)
  * POLLXMT          {WC/WZ/WCZ}
  *
  */
-void P2Dasm::dasm_pollxmt(QString& instruction)
+void P2Dasm::dasm_pollxmt(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get XMT event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLXMT);
 }
 
@@ -5701,8 +6230,10 @@ void P2Dasm::dasm_pollxmt(QString& instruction)
  * POLLXFI          {WC/WZ/WCZ}
  *
  */
-void P2Dasm::dasm_pollxfi(QString& instruction)
+void P2Dasm::dasm_pollxfi(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get XFI event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLXFI);
 }
 
@@ -5714,8 +6245,10 @@ void P2Dasm::dasm_pollxfi(QString& instruction)
  * POLLXRO          {WC/WZ/WCZ}
  *
  */
-void P2Dasm::dasm_pollxro(QString& instruction)
+void P2Dasm::dasm_pollxro(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get XRO event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLXRO);
 }
 
@@ -5727,8 +6260,10 @@ void P2Dasm::dasm_pollxro(QString& instruction)
  * POLLXRL          {WC/WZ/WCZ}
  *
  */
-void P2Dasm::dasm_pollxrl(QString& instruction)
+void P2Dasm::dasm_pollxrl(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get XRL event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLXRL);
 }
 
@@ -5740,8 +6275,10 @@ void P2Dasm::dasm_pollxrl(QString& instruction)
  * POLLATN          {WC/WZ/WCZ}
  *
  */
-void P2Dasm::dasm_pollatn(QString& instruction)
+void P2Dasm::dasm_pollatn(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get ATN event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLATN);
 }
 
@@ -5753,8 +6290,10 @@ void P2Dasm::dasm_pollatn(QString& instruction)
  * POLLQMT          {WC/WZ/WCZ}
  *
  */
-void P2Dasm::dasm_pollqmt(QString& instruction)
+void P2Dasm::dasm_pollqmt(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get QMT event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLQMT);
 }
 
@@ -5768,8 +6307,10 @@ void P2Dasm::dasm_pollqmt(QString& instruction)
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-void P2Dasm::dasm_waitint(QString& instruction)
+void P2Dasm::dasm_waitint(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Wait for INT event flag, then clear it.");
     format_cz(instruction, t_WAITINT);
 }
 
@@ -5783,8 +6324,10 @@ void P2Dasm::dasm_waitint(QString& instruction)
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-void P2Dasm::dasm_waitct1(QString& instruction)
+void P2Dasm::dasm_waitct1(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Wait for CT1 event flag, then clear it.");
     format_cz(instruction, t_WAITCT1);
 }
 
@@ -5798,8 +6341,10 @@ void P2Dasm::dasm_waitct1(QString& instruction)
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-void P2Dasm::dasm_waitct2(QString& instruction)
+void P2Dasm::dasm_waitct2(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Wait for CT2 event flag, then clear it.");
     format_cz(instruction, t_WAITCT2);
 }
 
@@ -5813,8 +6358,10 @@ void P2Dasm::dasm_waitct2(QString& instruction)
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-void P2Dasm::dasm_waitct3(QString& instruction)
+void P2Dasm::dasm_waitct3(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Wait for CT3 event flag, then clear it.");
     format_cz(instruction, t_WAITCT3);
 }
 
@@ -5828,8 +6375,10 @@ void P2Dasm::dasm_waitct3(QString& instruction)
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-void P2Dasm::dasm_waitse1(QString& instruction)
+void P2Dasm::dasm_waitse1(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Wait for SE1 event flag, then clear it.");
     format_cz(instruction, t_WAITSE1);
 }
 
@@ -5843,8 +6392,10 @@ void P2Dasm::dasm_waitse1(QString& instruction)
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-void P2Dasm::dasm_waitse2(QString& instruction)
+void P2Dasm::dasm_waitse2(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Wait for SE2 event flag, then clear it.");
     format_cz(instruction, t_WAITSE2);
 }
 
@@ -5858,8 +6409,10 @@ void P2Dasm::dasm_waitse2(QString& instruction)
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-void P2Dasm::dasm_waitse3(QString& instruction)
+void P2Dasm::dasm_waitse3(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Wait for SE3 event flag, then clear it.");
     format_cz(instruction, t_WAITSE3);
 }
 
@@ -5873,8 +6426,10 @@ void P2Dasm::dasm_waitse3(QString& instruction)
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-void P2Dasm::dasm_waitse4(QString& instruction)
+void P2Dasm::dasm_waitse4(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Wait for SE4 event flag, then clear it.");
     format_cz(instruction, t_WAITSE4);
 }
 
@@ -5888,8 +6443,10 @@ void P2Dasm::dasm_waitse4(QString& instruction)
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-void P2Dasm::dasm_waitpat(QString& instruction)
+void P2Dasm::dasm_waitpat(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Wait for PAT event flag, then clear it.");
     format_cz(instruction, t_WAITPAT);
 }
 
@@ -5903,8 +6460,10 @@ void P2Dasm::dasm_waitpat(QString& instruction)
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-void P2Dasm::dasm_waitfbw(QString& instruction)
+void P2Dasm::dasm_waitfbw(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Wait for FBW event flag, then clear it.");
     format_cz(instruction, t_WAITFBW);
 }
 
@@ -5918,8 +6477,10 @@ void P2Dasm::dasm_waitfbw(QString& instruction)
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-void P2Dasm::dasm_waitxmt(QString& instruction)
+void P2Dasm::dasm_waitxmt(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Wait for XMT event flag, then clear it.");
     format_cz(instruction, t_WAITXMT);
 }
 
@@ -5933,8 +6494,10 @@ void P2Dasm::dasm_waitxmt(QString& instruction)
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-void P2Dasm::dasm_waitxfi(QString& instruction)
+void P2Dasm::dasm_waitxfi(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Wait for XFI event flag, then clear it.");
     format_cz(instruction, t_WAITXFI);
 }
 
@@ -5948,8 +6511,10 @@ void P2Dasm::dasm_waitxfi(QString& instruction)
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-void P2Dasm::dasm_waitxro(QString& instruction)
+void P2Dasm::dasm_waitxro(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Wait for XRO event flag, then clear it.");
     format_cz(instruction, t_WAITXRO);
 }
 
@@ -5963,8 +6528,10 @@ void P2Dasm::dasm_waitxro(QString& instruction)
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-void P2Dasm::dasm_waitxrl(QString& instruction)
+void P2Dasm::dasm_waitxrl(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Wait for XRL event flag, then clear it.");
     format_cz(instruction, t_WAITXRL);
 }
 
@@ -5978,8 +6545,10 @@ void P2Dasm::dasm_waitxrl(QString& instruction)
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-void P2Dasm::dasm_waitatn(QString& instruction)
+void P2Dasm::dasm_waitatn(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Wait for ATN event flag, then clear it.");
     format_cz(instruction, t_WAITATN);
 }
 
@@ -5991,8 +6560,10 @@ void P2Dasm::dasm_waitatn(QString& instruction)
  * ALLOWI
  *
  */
-void P2Dasm::dasm_allowi(QString& instruction)
+void P2Dasm::dasm_allowi(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Allow interrupts (default).");
     format_inst(instruction, t_ALLOWI);
 }
 
@@ -6004,8 +6575,10 @@ void P2Dasm::dasm_allowi(QString& instruction)
  * STALLI
  *
  */
-void P2Dasm::dasm_stalli(QString& instruction)
+void P2Dasm::dasm_stalli(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Stall Interrupts.");
     format_inst(instruction, t_STALLI);
 }
 
@@ -6017,8 +6590,10 @@ void P2Dasm::dasm_stalli(QString& instruction)
  * TRGINT1
  *
  */
-void P2Dasm::dasm_trgint1(QString& instruction)
+void P2Dasm::dasm_trgint1(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Trigger INT1, regardless of STALLI mode.");
     format_inst(instruction, t_TRGINT1);
 }
 
@@ -6030,8 +6605,10 @@ void P2Dasm::dasm_trgint1(QString& instruction)
  * TRGINT2
  *
  */
-void P2Dasm::dasm_trgint2(QString& instruction)
+void P2Dasm::dasm_trgint2(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Trigger INT2, regardless of STALLI mode.");
     format_inst(instruction, t_TRGINT2);
 }
 
@@ -6043,8 +6620,10 @@ void P2Dasm::dasm_trgint2(QString& instruction)
  * TRGINT3
  *
  */
-void P2Dasm::dasm_trgint3(QString& instruction)
+void P2Dasm::dasm_trgint3(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Trigger INT3, regardless of STALLI mode.");
     format_inst(instruction, t_TRGINT3);
 }
 
@@ -6056,8 +6635,10 @@ void P2Dasm::dasm_trgint3(QString& instruction)
  * NIXINT1
  *
  */
-void P2Dasm::dasm_nixint1(QString& instruction)
+void P2Dasm::dasm_nixint1(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Cancel INT1.");
     format_inst(instruction, t_NIXINT1);
 }
 
@@ -6069,8 +6650,10 @@ void P2Dasm::dasm_nixint1(QString& instruction)
  * NIXINT2
  *
  */
-void P2Dasm::dasm_nixint2(QString& instruction)
+void P2Dasm::dasm_nixint2(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Cancel INT2.");
     format_inst(instruction, t_NIXINT2);
 }
 
@@ -6082,8 +6665,10 @@ void P2Dasm::dasm_nixint2(QString& instruction)
  * NIXINT3
  *
  */
-void P2Dasm::dasm_nixint3(QString& instruction)
+void P2Dasm::dasm_nixint3(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Cancel INT3.");
     format_inst(instruction, t_NIXINT3);
 }
 
@@ -6095,8 +6680,10 @@ void P2Dasm::dasm_nixint3(QString& instruction)
  * SETINT1 {#}D
  *
  */
-void P2Dasm::dasm_setint1(QString& instruction)
+void P2Dasm::dasm_setint1(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set INT1 source to D[3:0].");
     format_imm_d(instruction, t_SETINT1);
 }
 
@@ -6108,8 +6695,10 @@ void P2Dasm::dasm_setint1(QString& instruction)
  * SETINT2 {#}D
  *
  */
-void P2Dasm::dasm_setint2(QString& instruction)
+void P2Dasm::dasm_setint2(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set INT2 source to D[3:0].");
     format_imm_d(instruction, t_SETINT2);
 }
 
@@ -6121,8 +6710,10 @@ void P2Dasm::dasm_setint2(QString& instruction)
  * SETINT3 {#}D
  *
  */
-void P2Dasm::dasm_setint3(QString& instruction)
+void P2Dasm::dasm_setint3(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set INT3 source to D[3:0].");
     format_imm_d(instruction, t_SETINT3);
 }
 
@@ -6136,8 +6727,10 @@ void P2Dasm::dasm_setint3(QString& instruction)
  * Use before RDLONG/WRLONG/WMLONG to set block transfer.
  * Also used before MUXQ/COGINIT/QDIV/QFRAC/QROTATE/WAITxxx.
  */
-void P2Dasm::dasm_setq(QString& instruction)
+void P2Dasm::dasm_setq(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set Q to D.");
     format_imm_d(instruction, t_SETQ);
 }
 
@@ -6150,8 +6743,10 @@ void P2Dasm::dasm_setq(QString& instruction)
  *
  * Use before RDLONG/WRLONG/WMLONG to set LUT block transfer.
  */
-void P2Dasm::dasm_setq2(QString& instruction)
+void P2Dasm::dasm_setq2(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set Q to D.");
     format_imm_d(instruction, t_SETQ2);
 }
 
@@ -6163,8 +6758,10 @@ void P2Dasm::dasm_setq2(QString& instruction)
  * PUSH    {#}D
  *
  */
-void P2Dasm::dasm_push(QString& instruction)
+void P2Dasm::dasm_push(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Push D onto stack.");
     format_imm_d(instruction, t_PUSH);
 }
 
@@ -6177,8 +6774,10 @@ void P2Dasm::dasm_push(QString& instruction)
  *
  * C = K[31], Z = K[30], D = K.
  */
-void P2Dasm::dasm_pop(QString& instruction)
+void P2Dasm::dasm_pop(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Pop stack (K).");
     format_d_cz(instruction, t_POP);
 }
 
@@ -6191,8 +6790,10 @@ void P2Dasm::dasm_pop(QString& instruction)
  *
  * C = D[31], Z = D[30], PC = D[19:0].
  */
-void P2Dasm::dasm_jmp(QString& instruction)
+void P2Dasm::dasm_jmp(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to D.");
     format_d_cz(instruction, t_JMP);
 }
 
@@ -6205,8 +6806,10 @@ void P2Dasm::dasm_jmp(QString& instruction)
  *
  * C = D[31], Z = D[30], PC = D[19:0].
  */
-void P2Dasm::dasm_call(QString& instruction)
+void P2Dasm::dasm_call(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Call to D by pushing {C, Z, 10'b0, PC[19:0]} onto stack.");
     format_d_cz(instruction, t_CALL);
 }
 
@@ -6219,8 +6822,10 @@ void P2Dasm::dasm_call(QString& instruction)
  *
  * C = K[31], Z = K[30], PC = K[19:0].
  */
-void P2Dasm::dasm_ret(QString& instruction)
+void P2Dasm::dasm_ret(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Return by popping stack (K).");
     format_cz(instruction, t_RET);
 }
 
@@ -6233,8 +6838,10 @@ void P2Dasm::dasm_ret(QString& instruction)
  *
  * C = D[31], Z = D[30], PC = D[19:0].
  */
-void P2Dasm::dasm_calla(QString& instruction)
+void P2Dasm::dasm_calla(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Call to D by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRA++.");
     format_d_cz(instruction, t_CALLA);
 }
 
@@ -6247,8 +6854,10 @@ void P2Dasm::dasm_calla(QString& instruction)
  *
  * C = L[31], Z = L[30], PC = L[19:0].
  */
-void P2Dasm::dasm_reta(QString& instruction)
+void P2Dasm::dasm_reta(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Return by reading hub long (L) at --PTRA.");
     format_cz(instruction, t_RETA);
 }
 
@@ -6261,8 +6870,10 @@ void P2Dasm::dasm_reta(QString& instruction)
  *
  * C = D[31], Z = D[30], PC = D[19:0].
  */
-void P2Dasm::dasm_callb(QString& instruction)
+void P2Dasm::dasm_callb(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Call to D by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRB++.");
     format_d_cz(instruction, t_CALLB);
 }
 
@@ -6275,8 +6886,10 @@ void P2Dasm::dasm_callb(QString& instruction)
  *
  * C = L[31], Z = L[30], PC = L[19:0].
  */
-void P2Dasm::dasm_retb(QString& instruction)
+void P2Dasm::dasm_retb(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Return by reading hub long (L) at --PTRB.");
     format_cz(instruction, t_RETB);
 }
 
@@ -6290,8 +6903,10 @@ void P2Dasm::dasm_retb(QString& instruction)
  * For cogex, PC += D[19:0].
  * For hubex, PC += D[17:0] << 2.
  */
-void P2Dasm::dasm_jmprel(QString& instruction)
+void P2Dasm::dasm_jmprel(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump ahead/back by D instructions.");
     format_imm_d(instruction, t_JMPREL);
 }
 
@@ -6306,8 +6921,10 @@ void P2Dasm::dasm_jmprel(QString& instruction)
  * 31 get cancelled for each '1' bit in D[0].
  * D[31].
  */
-void P2Dasm::dasm_skip(QString& instruction)
+void P2Dasm::dasm_skip(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Skip instructions per D.");
     format_imm_d(instruction, t_SKIP);
 }
 
@@ -6320,8 +6937,10 @@ void P2Dasm::dasm_skip(QString& instruction)
  *
  * Like SKIP, but instead of cancelling instructions, the PC leaps over them.
  */
-void P2Dasm::dasm_skipf(QString& instruction)
+void P2Dasm::dasm_skipf(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Skip cog/LUT instructions fast per D.");
     format_imm_d(instruction, t_SKIPF);
 }
 
@@ -6334,8 +6953,10 @@ void P2Dasm::dasm_skipf(QString& instruction)
  *
  * PC = {10'b0, D[9:0]}.
  */
-void P2Dasm::dasm_execf(QString& instruction)
+void P2Dasm::dasm_execf(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to D[9:0] in cog/LUT and set SKIPF pattern to D[31:10].");
     format_imm_d(instruction, t_EXECF);
 }
 
@@ -6347,8 +6968,10 @@ void P2Dasm::dasm_execf(QString& instruction)
  * GETPTR  D
  *
  */
-void P2Dasm::dasm_getptr(QString& instruction)
+void P2Dasm::dasm_getptr(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get current FIFO hub pointer into D.");
     format_d(instruction, t_GETPTR);
 }
 
@@ -6362,8 +6985,10 @@ void P2Dasm::dasm_getptr(QString& instruction)
  * C = 0.
  * Z = 0.
  */
-void P2Dasm::dasm_getbrk(QString& instruction)
+void P2Dasm::dasm_getbrk(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get breakpoint status into D according to WC/WZ/WCZ.");
     format_d_cz(instruction, t_GETBRK);
 }
 
@@ -6376,8 +7001,10 @@ void P2Dasm::dasm_getbrk(QString& instruction)
  *
  * Cog D[3:0] must have asynchronous breakpoint enabled.
  */
-void P2Dasm::dasm_cogbrk(QString& instruction)
+void P2Dasm::dasm_cogbrk(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("If in debug ISR, trigger asynchronous breakpoint in cog D[3:0].");
     format_imm_d(instruction, t_COGBRK);
 }
 
@@ -6390,8 +7017,10 @@ void P2Dasm::dasm_cogbrk(QString& instruction)
  *
  * Else, trigger break if enabled, conditionally write break code to D[7:0].
  */
-void P2Dasm::dasm_brk(QString& instruction)
+void P2Dasm::dasm_brk(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("If in debug ISR, set next break condition to D.");
     format_imm_d(instruction, t_BRK);
 }
 
@@ -6403,8 +7032,10 @@ void P2Dasm::dasm_brk(QString& instruction)
  * SETLUTS {#}D
  *
  */
-void P2Dasm::dasm_setluts(QString& instruction)
+void P2Dasm::dasm_setluts(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("If D[0] = 1 then enable LUT sharing, where LUT writes within the adjacent odd/even companion cog are copied to this LUT.");
     format_imm_d(instruction, t_SETLUTS);
 }
 
@@ -6416,8 +7047,10 @@ void P2Dasm::dasm_setluts(QString& instruction)
  * SETCY   {#}D
  *
  */
-void P2Dasm::dasm_setcy(QString& instruction)
+void P2Dasm::dasm_setcy(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set the colorspace converter \"CY\" parameter to D[31:0].");
     format_imm_d(instruction, t_SETCY);
 }
 
@@ -6429,8 +7062,10 @@ void P2Dasm::dasm_setcy(QString& instruction)
  * SETCI   {#}D
  *
  */
-void P2Dasm::dasm_setci(QString& instruction)
+void P2Dasm::dasm_setci(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set the colorspace converter \"CI\" parameter to D[31:0].");
     format_imm_d(instruction, t_SETCI);
 }
 
@@ -6442,8 +7077,10 @@ void P2Dasm::dasm_setci(QString& instruction)
  * SETCQ   {#}D
  *
  */
-void P2Dasm::dasm_setcq(QString& instruction)
+void P2Dasm::dasm_setcq(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set the colorspace converter \"CQ\" parameter to D[31:0].");
     format_imm_d(instruction, t_SETCQ);
 }
 
@@ -6455,8 +7092,10 @@ void P2Dasm::dasm_setcq(QString& instruction)
  * SETCFRQ {#}D
  *
  */
-void P2Dasm::dasm_setcfrq(QString& instruction)
+void P2Dasm::dasm_setcfrq(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set the colorspace converter \"CFRQ\" parameter to D[31:0].");
     format_imm_d(instruction, t_SETCFRQ);
 }
 
@@ -6468,8 +7107,10 @@ void P2Dasm::dasm_setcfrq(QString& instruction)
  * SETCMOD {#}D
  *
  */
-void P2Dasm::dasm_setcmod(QString& instruction)
+void P2Dasm::dasm_setcmod(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set the colorspace converter \"CMOD\" parameter to D[6:0].");
     format_imm_d(instruction, t_SETCMOD);
 }
 
@@ -6481,8 +7122,10 @@ void P2Dasm::dasm_setcmod(QString& instruction)
  * SETPIV  {#}D
  *
  */
-void P2Dasm::dasm_setpiv(QString& instruction)
+void P2Dasm::dasm_setpiv(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set BLNPIX/MIXPIX blend factor to D[7:0].");
     format_imm_d(instruction, t_SETPIV);
 }
 
@@ -6494,8 +7137,10 @@ void P2Dasm::dasm_setpiv(QString& instruction)
  * SETPIX  {#}D
  *
  */
-void P2Dasm::dasm_setpix(QString& instruction)
+void P2Dasm::dasm_setpix(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Set MIXPIX mode to D[5:0].");
     format_imm_d(instruction, t_SETPIX);
 }
 
@@ -6507,8 +7152,10 @@ void P2Dasm::dasm_setpix(QString& instruction)
  * COGATN  {#}D
  *
  */
-void P2Dasm::dasm_cogatn(QString& instruction)
+void P2Dasm::dasm_cogatn(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Strobe \"attention\" of all cogs whose corresponging bits are high in D[15:0].");
     format_imm_d(instruction, t_COGATN);
 }
 
@@ -6521,8 +7168,10 @@ void P2Dasm::dasm_cogatn(QString& instruction)
  *
  * C/Z =          IN[D[5:0]].
  */
-void P2Dasm::dasm_testp_w(QString& instruction)
+void P2Dasm::dasm_testp_w(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Test  IN bit of pin D[5:0], write to C/Z.");
     format_imm_d_cz(instruction, t_TESTP);
 }
 
@@ -6535,8 +7184,10 @@ void P2Dasm::dasm_testp_w(QString& instruction)
  *
  * C/Z =         !IN[D[5:0]].
  */
-void P2Dasm::dasm_testpn_w(QString& instruction)
+void P2Dasm::dasm_testpn_w(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Test !IN bit of pin D[5:0], write to C/Z.");
     format_imm_d_cz(instruction, t_TESTPN);
 }
 
@@ -6549,8 +7200,10 @@ void P2Dasm::dasm_testpn_w(QString& instruction)
  *
  * C/Z = C/Z AND  IN[D[5:0]].
  */
-void P2Dasm::dasm_testp_and(QString& instruction)
+void P2Dasm::dasm_testp_and(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Test  IN bit of pin D[5:0], AND into C/Z.");
     format_imm_d_cz(instruction, t_TESTP, t_AND);
 }
 
@@ -6563,8 +7216,10 @@ void P2Dasm::dasm_testp_and(QString& instruction)
  *
  * C/Z = C/Z AND !IN[D[5:0]].
  */
-void P2Dasm::dasm_testpn_and(QString& instruction)
+void P2Dasm::dasm_testpn_and(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Test !IN bit of pin D[5:0], AND into C/Z.");
     format_imm_d_cz(instruction, t_TESTPN, t_AND);
 }
 
@@ -6577,8 +7232,10 @@ void P2Dasm::dasm_testpn_and(QString& instruction)
  *
  * C/Z = C/Z OR   IN[D[5:0]].
  */
-void P2Dasm::dasm_testp_or(QString& instruction)
+void P2Dasm::dasm_testp_or(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Test  IN bit of pin D[5:0], OR  into C/Z.");
     format_imm_d_cz(instruction, t_TESTP, t_OR);
 }
 
@@ -6591,8 +7248,10 @@ void P2Dasm::dasm_testp_or(QString& instruction)
  *
  * C/Z = C/Z OR  !IN[D[5:0]].
  */
-void P2Dasm::dasm_testpn_or(QString& instruction)
+void P2Dasm::dasm_testpn_or(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Test !IN bit of pin D[5:0], OR  into C/Z.");
     format_imm_d_cz(instruction, t_TESTPN, t_OR);
 }
 
@@ -6605,8 +7264,10 @@ void P2Dasm::dasm_testpn_or(QString& instruction)
  *
  * C/Z = C/Z XOR  IN[D[5:0]].
  */
-void P2Dasm::dasm_testp_xor(QString& instruction)
+void P2Dasm::dasm_testp_xor(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Test  IN bit of pin D[5:0], XOR into C/Z.");
     format_imm_d_cz(instruction, t_TESTP, t_XOR);
 }
 
@@ -6619,8 +7280,10 @@ void P2Dasm::dasm_testp_xor(QString& instruction)
  *
  * C/Z = C/Z XOR !IN[D[5:0]].
  */
-void P2Dasm::dasm_testpn_xor(QString& instruction)
+void P2Dasm::dasm_testpn_xor(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Test !IN bit of pin D[5:0], XOR into C/Z.");
     format_imm_d_cz(instruction, t_TESTPN, t_XOR);
 }
 
@@ -6633,8 +7296,10 @@ void P2Dasm::dasm_testpn_xor(QString& instruction)
  *
  * C,Z = DIR bit.
  */
-void P2Dasm::dasm_dirl(QString& instruction)
+void P2Dasm::dasm_dirl(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("DIR bit of pin D[5:0] = 0.");
     format_imm_d_cz(instruction, t_DIRL);
 }
 
@@ -6647,8 +7312,10 @@ void P2Dasm::dasm_dirl(QString& instruction)
  *
  * C,Z = DIR bit.
  */
-void P2Dasm::dasm_dirh(QString& instruction)
+void P2Dasm::dasm_dirh(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("DIR bit of pin D[5:0] = 1.");
     format_imm_d_cz(instruction, t_DIRH);
 }
 
@@ -6661,8 +7328,10 @@ void P2Dasm::dasm_dirh(QString& instruction)
  *
  * C,Z = DIR bit.
  */
-void P2Dasm::dasm_dirc(QString& instruction)
+void P2Dasm::dasm_dirc(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("DIR bit of pin D[5:0] = C.");
     format_imm_d_cz(instruction, t_DIRC);
 }
 
@@ -6675,8 +7344,10 @@ void P2Dasm::dasm_dirc(QString& instruction)
  *
  * C,Z = DIR bit.
  */
-void P2Dasm::dasm_dirnc(QString& instruction)
+void P2Dasm::dasm_dirnc(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("DIR bit of pin D[5:0] = !C.");
     format_imm_d_cz(instruction, t_DIRNC);
 }
 
@@ -6689,8 +7360,10 @@ void P2Dasm::dasm_dirnc(QString& instruction)
  *
  * C,Z = DIR bit.
  */
-void P2Dasm::dasm_dirz(QString& instruction)
+void P2Dasm::dasm_dirz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("DIR bit of pin D[5:0] = Z.");
     format_imm_d_cz(instruction, t_DIRZ);
 }
 
@@ -6703,8 +7376,10 @@ void P2Dasm::dasm_dirz(QString& instruction)
  *
  * C,Z = DIR bit.
  */
-void P2Dasm::dasm_dirnz(QString& instruction)
+void P2Dasm::dasm_dirnz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("DIR bit of pin D[5:0] = !Z.");
     format_imm_d_cz(instruction, t_DIRNZ);
 }
 
@@ -6717,8 +7392,10 @@ void P2Dasm::dasm_dirnz(QString& instruction)
  *
  * C,Z = DIR bit.
  */
-void P2Dasm::dasm_dirrnd(QString& instruction)
+void P2Dasm::dasm_dirrnd(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("DIR bit of pin D[5:0] = RND.");
     format_imm_d_cz(instruction, t_DIRRND);
 }
 
@@ -6731,8 +7408,10 @@ void P2Dasm::dasm_dirrnd(QString& instruction)
  *
  * C,Z = DIR bit.
  */
-void P2Dasm::dasm_dirnot(QString& instruction)
+void P2Dasm::dasm_dirnot(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("DIR bit of pin D[5:0] = !bit.");
     format_imm_d_cz(instruction, t_DIRNOT);
 }
 
@@ -6745,8 +7424,10 @@ void P2Dasm::dasm_dirnot(QString& instruction)
  *
  * C,Z = OUT bit.
  */
-void P2Dasm::dasm_outl(QString& instruction)
+void P2Dasm::dasm_outl(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("OUT bit of pin D[5:0] = 0.");
     format_imm_d_cz(instruction, t_OUTL);
 }
 
@@ -6759,8 +7440,10 @@ void P2Dasm::dasm_outl(QString& instruction)
  *
  * C,Z = OUT bit.
  */
-void P2Dasm::dasm_outh(QString& instruction)
+void P2Dasm::dasm_outh(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("OUT bit of pin D[5:0] = 1.");
     format_imm_d_cz(instruction, t_OUTH);
 }
 
@@ -6773,8 +7456,10 @@ void P2Dasm::dasm_outh(QString& instruction)
  *
  * C,Z = OUT bit.
  */
-void P2Dasm::dasm_outc(QString& instruction)
+void P2Dasm::dasm_outc(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("OUT bit of pin D[5:0] = C.");
     format_imm_d_cz(instruction, t_OUTC);
 }
 
@@ -6787,8 +7472,10 @@ void P2Dasm::dasm_outc(QString& instruction)
  *
  * C,Z = OUT bit.
  */
-void P2Dasm::dasm_outnc(QString& instruction)
+void P2Dasm::dasm_outnc(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("OUT bit of pin D[5:0] = !C.");
     format_imm_d_cz(instruction, t_OUTNC);
 }
 
@@ -6801,8 +7488,10 @@ void P2Dasm::dasm_outnc(QString& instruction)
  *
  * C,Z = OUT bit.
  */
-void P2Dasm::dasm_outz(QString& instruction)
+void P2Dasm::dasm_outz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("OUT bit of pin D[5:0] = Z.");
     format_imm_d_cz(instruction, t_OUTZ);
 }
 
@@ -6815,8 +7504,10 @@ void P2Dasm::dasm_outz(QString& instruction)
  *
  * C,Z = OUT bit.
  */
-void P2Dasm::dasm_outnz(QString& instruction)
+void P2Dasm::dasm_outnz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("OUT bit of pin D[5:0] = !Z.");
     format_imm_d_cz(instruction, t_OUTNZ);
 }
 
@@ -6829,8 +7520,10 @@ void P2Dasm::dasm_outnz(QString& instruction)
  *
  * C,Z = OUT bit.
  */
-void P2Dasm::dasm_outrnd(QString& instruction)
+void P2Dasm::dasm_outrnd(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("OUT bit of pin D[5:0] = RND.");
     format_imm_d_cz(instruction, t_OUTRND);
 }
 
@@ -6843,8 +7536,10 @@ void P2Dasm::dasm_outrnd(QString& instruction)
  *
  * C,Z = OUT bit.
  */
-void P2Dasm::dasm_outnot(QString& instruction)
+void P2Dasm::dasm_outnot(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("OUT bit of pin D[5:0] = !bit.");
     format_imm_d_cz(instruction, t_OUTNOT);
 }
 
@@ -6858,8 +7553,10 @@ void P2Dasm::dasm_outnot(QString& instruction)
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-void P2Dasm::dasm_fltl(QString& instruction)
+void P2Dasm::dasm_fltl(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("OUT bit of pin D[5:0] = 0.");
     format_imm_d_cz(instruction, t_FLTL);
 }
 
@@ -6873,8 +7570,10 @@ void P2Dasm::dasm_fltl(QString& instruction)
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-void P2Dasm::dasm_flth(QString& instruction)
+void P2Dasm::dasm_flth(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("OUT bit of pin D[5:0] = 1.");
     format_imm_d_cz(instruction, t_FLTH);
 }
 
@@ -6888,8 +7587,10 @@ void P2Dasm::dasm_flth(QString& instruction)
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-void P2Dasm::dasm_fltc(QString& instruction)
+void P2Dasm::dasm_fltc(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("OUT bit of pin D[5:0] = C.");
     format_imm_d_cz(instruction, t_FLTC);
 }
 
@@ -6903,8 +7604,10 @@ void P2Dasm::dasm_fltc(QString& instruction)
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-void P2Dasm::dasm_fltnc(QString& instruction)
+void P2Dasm::dasm_fltnc(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("OUT bit of pin D[5:0] = !C.");
     format_imm_d_cz(instruction, t_FLTNC);
 }
 
@@ -6918,8 +7621,10 @@ void P2Dasm::dasm_fltnc(QString& instruction)
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-void P2Dasm::dasm_fltz(QString& instruction)
+void P2Dasm::dasm_fltz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("OUT bit of pin D[5:0] = Z.");
     format_imm_d_cz(instruction, t_FLTZ);
 }
 
@@ -6933,8 +7638,10 @@ void P2Dasm::dasm_fltz(QString& instruction)
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-void P2Dasm::dasm_fltnz(QString& instruction)
+void P2Dasm::dasm_fltnz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("OUT bit of pin D[5:0] = !Z.");
     format_imm_d_cz(instruction, t_FLTNZ);
 }
 
@@ -6948,8 +7655,10 @@ void P2Dasm::dasm_fltnz(QString& instruction)
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-void P2Dasm::dasm_fltrnd(QString& instruction)
+void P2Dasm::dasm_fltrnd(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("OUT bit of pin D[5:0] = RND.");
     format_imm_d_cz(instruction, t_FLTRND);
 }
 
@@ -6963,8 +7672,10 @@ void P2Dasm::dasm_fltrnd(QString& instruction)
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-void P2Dasm::dasm_fltnot(QString& instruction)
+void P2Dasm::dasm_fltnot(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("OUT bit of pin D[5:0] = !bit.");
     format_imm_d_cz(instruction, t_FLTNOT);
 }
 
@@ -6978,8 +7689,10 @@ void P2Dasm::dasm_fltnot(QString& instruction)
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-void P2Dasm::dasm_drvl(QString& instruction)
+void P2Dasm::dasm_drvl(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("OUT bit of pin D[5:0] = 0.");
     format_imm_d_cz(instruction, t_DRVL);
 }
 
@@ -6993,8 +7706,10 @@ void P2Dasm::dasm_drvl(QString& instruction)
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-void P2Dasm::dasm_drvh(QString& instruction)
+void P2Dasm::dasm_drvh(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("OUT bit of pin D[5:0] = 1.");
     format_imm_d_cz(instruction, t_DRVH);
 }
 
@@ -7008,8 +7723,10 @@ void P2Dasm::dasm_drvh(QString& instruction)
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-void P2Dasm::dasm_drvc(QString& instruction)
+void P2Dasm::dasm_drvc(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("OUT bit of pin D[5:0] = C.");
     format_imm_d_cz(instruction, t_DRVC);
 }
 
@@ -7023,8 +7740,10 @@ void P2Dasm::dasm_drvc(QString& instruction)
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-void P2Dasm::dasm_drvnc(QString& instruction)
+void P2Dasm::dasm_drvnc(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("OUT bit of pin D[5:0] = !C.");
     format_imm_d_cz(instruction, t_DRVNC);
 }
 
@@ -7038,8 +7757,10 @@ void P2Dasm::dasm_drvnc(QString& instruction)
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-void P2Dasm::dasm_drvz(QString& instruction)
+void P2Dasm::dasm_drvz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("OUT bit of pin D[5:0] = Z.");
     format_imm_d_cz(instruction, t_DRVZ);
 }
 
@@ -7053,8 +7774,10 @@ void P2Dasm::dasm_drvz(QString& instruction)
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-void P2Dasm::dasm_drvnz(QString& instruction)
+void P2Dasm::dasm_drvnz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("OUT bit of pin D[5:0] = !Z.");
     format_imm_d_cz(instruction, t_DRVNZ);
 }
 
@@ -7068,8 +7791,10 @@ void P2Dasm::dasm_drvnz(QString& instruction)
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-void P2Dasm::dasm_drvrnd(QString& instruction)
+void P2Dasm::dasm_drvrnd(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("OUT bit of pin D[5:0] = RND.");
     format_imm_d_cz(instruction, t_DRVRND);
 }
 
@@ -7083,8 +7808,10 @@ void P2Dasm::dasm_drvrnd(QString& instruction)
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-void P2Dasm::dasm_drvnot(QString& instruction)
+void P2Dasm::dasm_drvnot(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("OUT bit of pin D[5:0] = !bit.");
     format_imm_d_cz(instruction, t_DRVNOT);
 }
 
@@ -7097,8 +7824,10 @@ void P2Dasm::dasm_drvnot(QString& instruction)
  *
  * D = {S[31], S[27], S[23], S[19], ... S[12], S[8], S[4], S[0]}.
  */
-void P2Dasm::dasm_splitb(QString& instruction)
+void P2Dasm::dasm_splitb(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Split every 4th bit of S into bytes of D.");
     format_d(instruction, t_SPLITB);
 }
 
@@ -7111,8 +7840,10 @@ void P2Dasm::dasm_splitb(QString& instruction)
  *
  * D = {S[31], S[23], S[15], S[7], ... S[24], S[16], S[8], S[0]}.
  */
-void P2Dasm::dasm_mergeb(QString& instruction)
+void P2Dasm::dasm_mergeb(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Merge bits of bytes in S into D.");
     format_d(instruction, t_MERGEB);
 }
 
@@ -7125,8 +7856,10 @@ void P2Dasm::dasm_mergeb(QString& instruction)
  *
  * D = {S[31], S[29], S[27], S[25], ... S[6], S[4], S[2], S[0]}.
  */
-void P2Dasm::dasm_splitw(QString& instruction)
+void P2Dasm::dasm_splitw(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Split bits of S into words of D.");
     format_d(instruction, t_SPLITW);
 }
 
@@ -7139,8 +7872,10 @@ void P2Dasm::dasm_splitw(QString& instruction)
  *
  * D = {S[31], S[15], S[30], S[14], ... S[17], S[1], S[16], S[0]}.
  */
-void P2Dasm::dasm_mergew(QString& instruction)
+void P2Dasm::dasm_mergew(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Merge bits of words in S into D.");
     format_d(instruction, t_MERGEW);
 }
 
@@ -7154,8 +7889,10 @@ void P2Dasm::dasm_mergew(QString& instruction)
  * Returns to original value on 32nd iteration.
  * Forward pattern.
  */
-void P2Dasm::dasm_seussf(QString& instruction)
+void P2Dasm::dasm_seussf(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Relocate and periodically invert bits from S into D.");
     format_d(instruction, t_SEUSSF);
 }
 
@@ -7169,8 +7906,10 @@ void P2Dasm::dasm_seussf(QString& instruction)
  * Returns to original value on 32nd iteration.
  * Reverse pattern.
  */
-void P2Dasm::dasm_seussr(QString& instruction)
+void P2Dasm::dasm_seussr(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Relocate and periodically invert bits from S into D.");
     format_d(instruction, t_SEUSSR);
 }
 
@@ -7183,8 +7922,10 @@ void P2Dasm::dasm_seussr(QString& instruction)
  *
  * D = {15'b0, S[31:27], S[23:18], S[15:11]}.
  */
-void P2Dasm::dasm_rgbsqz(QString& instruction)
+void P2Dasm::dasm_rgbsqz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Squeeze 8:8:8 RGB value in S[31:8] into 5:6:5 value in D[15:0].");
     format_d(instruction, t_RGBSQZ);
 }
 
@@ -7197,8 +7938,10 @@ void P2Dasm::dasm_rgbsqz(QString& instruction)
  *
  * D = {S[15:11,15:13], S[10:5,10:9], S[4:0,4:2], 8'b0}.
  */
-void P2Dasm::dasm_rgbexp(QString& instruction)
+void P2Dasm::dasm_rgbexp(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Expand 5:6:5 RGB value in S[15:0] into 8:8:8 value in D[31:8].");
     format_d(instruction, t_RGBEXP);
 }
 
@@ -7210,8 +7953,10 @@ void P2Dasm::dasm_rgbexp(QString& instruction)
  * XORO32  D
  *
  */
-void P2Dasm::dasm_xoro32(QString& instruction)
+void P2Dasm::dasm_xoro32(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Iterate D with xoroshiro32+ PRNG algorithm and put PRNG result into next instruction's S.");
     format_d(instruction, t_XORO32);
 }
 
@@ -7224,8 +7969,10 @@ void P2Dasm::dasm_xoro32(QString& instruction)
  *
  * D = D[0:31].
  */
-void P2Dasm::dasm_rev(QString& instruction)
+void P2Dasm::dasm_rev(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Reverse D bits.");
     format_d(instruction, t_REV);
 }
 
@@ -7239,8 +7986,10 @@ void P2Dasm::dasm_rev(QString& instruction)
  * D = {C, Z, D[31:2]}.
  * C = D[1],  Z = D[0].
  */
-void P2Dasm::dasm_rczr(QString& instruction)
+void P2Dasm::dasm_rczr(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Rotate C,Z right through D.");
     format_d_cz(instruction, t_RCZR);
 }
 
@@ -7254,8 +8003,10 @@ void P2Dasm::dasm_rczr(QString& instruction)
  * D = {D[29:0], C, Z}.
  * C = D[31], Z = D[30].
  */
-void P2Dasm::dasm_rczl(QString& instruction)
+void P2Dasm::dasm_rczl(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Rotate C,Z left through D.");
     format_d_cz(instruction, t_RCZL);
 }
 
@@ -7268,8 +8019,10 @@ void P2Dasm::dasm_rczl(QString& instruction)
  *
  * D = {31'b0,  C).
  */
-void P2Dasm::dasm_wrc(QString& instruction)
+void P2Dasm::dasm_wrc(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Write 0 or 1 to D, according to  C.");
     format_d(instruction, t_WRC);
 }
 
@@ -7282,8 +8035,10 @@ void P2Dasm::dasm_wrc(QString& instruction)
  *
  * D = {31'b0, !C).
  */
-void P2Dasm::dasm_wrnc(QString& instruction)
+void P2Dasm::dasm_wrnc(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Write 0 or 1 to D, according to !C.");
     format_d(instruction, t_WRNC);
 }
 
@@ -7296,8 +8051,10 @@ void P2Dasm::dasm_wrnc(QString& instruction)
  *
  * D = {31'b0,  Z).
  */
-void P2Dasm::dasm_wrz(QString& instruction)
+void P2Dasm::dasm_wrz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Write 0 or 1 to D, according to  Z.");
     format_d(instruction, t_WRZ);
 }
 
@@ -7310,8 +8067,10 @@ void P2Dasm::dasm_wrz(QString& instruction)
  *
  * D = {31'b0, !Z).
  */
-void P2Dasm::dasm_wrnz(QString& instruction)
+void P2Dasm::dasm_wrnz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Write 0 or 1 to D, according to !Z.");
     format_d(instruction, t_WRNZ);
 }
 
@@ -7324,8 +8083,10 @@ void P2Dasm::dasm_wrnz(QString& instruction)
  *
  * C = cccc[{C,Z}], Z = zzzz[{C,Z}].
  */
-void P2Dasm::dasm_modcz(QString& instruction)
+void P2Dasm::dasm_modcz(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Modify C and Z according to cccc and zzzz.");
     format_cz_cz(instruction, t_MODCZ);
 }
 
@@ -7338,8 +8099,10 @@ void P2Dasm::dasm_modcz(QString& instruction)
  *
  * If R = 1, PC += A, else PC = A.
  */
-void P2Dasm::dasm_jmp_abs(QString& instruction)
+void P2Dasm::dasm_jmp_abs(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Jump to A.");
     format_pc_abs(instruction, t_JMP);
 }
 
@@ -7352,8 +8115,10 @@ void P2Dasm::dasm_jmp_abs(QString& instruction)
  *
  * If R = 1, PC += A, else PC = A.
  */
-void P2Dasm::dasm_call_abs(QString& instruction)
+void P2Dasm::dasm_call_abs(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Call to A by pushing {C, Z, 10'b0, PC[19:0]} onto stack.");
     format_pc_abs(instruction, t_CALL);
 }
 
@@ -7366,8 +8131,10 @@ void P2Dasm::dasm_call_abs(QString& instruction)
  *
  * If R = 1, PC += A, else PC = A.
  */
-void P2Dasm::dasm_calla_abs(QString& instruction)
+void P2Dasm::dasm_calla_abs(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Call to A by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRA++.");
     format_pc_abs(instruction, t_CALLA);
 }
 
@@ -7380,8 +8147,10 @@ void P2Dasm::dasm_calla_abs(QString& instruction)
  *
  * If R = 1, PC += A, else PC = A.
  */
-void P2Dasm::dasm_callb_abs(QString& instruction)
+void P2Dasm::dasm_callb_abs(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Call to A by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRB++.");
     format_pc_abs(instruction, t_CALLB);
 }
 
@@ -7394,8 +8163,10 @@ void P2Dasm::dasm_callb_abs(QString& instruction)
  *
  * If R = 1, PC += A, else PC = A.
  */
-void P2Dasm::dasm_calld_abs(QString& instruction)
+void P2Dasm::dasm_calld_abs(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Call to A by writing {C, Z, 10'b0, PC[19:0]} to PA/PB/PTRA/PTRB (per W).");
     format_pc_abs(instruction, t_CALLD);
 }
 
@@ -7408,8 +8179,10 @@ void P2Dasm::dasm_calld_abs(QString& instruction)
  *
  * If R = 1, address = PC + A, else address = A.
  */
-void P2Dasm::dasm_loc_pa(QString& instruction)
+void P2Dasm::dasm_loc_pa(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).");
     format_pc_abs(instruction, t_LOC, t_PA);
 }
 
@@ -7422,8 +8195,10 @@ void P2Dasm::dasm_loc_pa(QString& instruction)
  *
  * If R = 1, address = PC + A, else address = A.
  */
-void P2Dasm::dasm_loc_pb(QString& instruction)
+void P2Dasm::dasm_loc_pb(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).");
     format_pc_abs(instruction, t_LOC, t_PB);
 }
 
@@ -7436,8 +8211,10 @@ void P2Dasm::dasm_loc_pb(QString& instruction)
  *
  * If R = 1, address = PC + A, else address = A.
  */
-void P2Dasm::dasm_loc_ptra(QString& instruction)
+void P2Dasm::dasm_loc_ptra(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).");
     format_pc_abs(instruction, t_LOC, t_PTRA);
 }
 
@@ -7450,8 +8227,10 @@ void P2Dasm::dasm_loc_ptra(QString& instruction)
  *
  * If R = 1, address = PC + A, else address = A.
  */
-void P2Dasm::dasm_loc_ptrb(QString& instruction)
+void P2Dasm::dasm_loc_ptrb(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).");
     format_pc_abs(instruction, t_LOC, t_PTRB);
 }
 
@@ -7463,8 +8242,10 @@ void P2Dasm::dasm_loc_ptrb(QString& instruction)
  * AUGS    #N
  *
  */
-void P2Dasm::dasm_augs(QString& instruction)
+void P2Dasm::dasm_augs(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Queue #N[31:9] to be used as upper 23 bits for next #S occurrence, so that the next 9-bit #S will be augmented to 32 bits.");
     format_imm23(instruction, t_AUGS);
 }
 
@@ -7476,7 +8257,9 @@ void P2Dasm::dasm_augs(QString& instruction)
  * AUGD    #N
  *
  */
-void P2Dasm::dasm_augd(QString& instruction)
+void P2Dasm::dasm_augd(QString& instruction, QString* description)
 {
+    if (description)
+        *description = tr("Queue #N[31:9] to be used as upper 23 bits for next #D occurrence, so that the next 9-bit #D will be augmented to 32 bits.");
     format_imm23(instruction, t_AUGD);
 }

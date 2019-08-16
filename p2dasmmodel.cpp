@@ -119,7 +119,8 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
     const p2_LONG addr = PC * 4;
     QString opcode;
     QString instruction;
-    bool known = m_dasm->dasm(PC, opcode, instruction);
+    QString description;
+    bool known = m_dasm->dasm(PC, opcode, instruction, &description);
     Q_UNUSED(known)
 
     switch (role) {
@@ -141,6 +142,7 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
             result = instruction;
             break;
         case c_Comment: // Comments
+            result = description;
             break;
         }
         break;
@@ -239,16 +241,16 @@ QSize P2DasmModel::sizeHint(column_e column, bool bold) const
     QFontMetrics metrics(bold ? m_bold : m_font);
     QSize result;
     switch (column) {
-    case 0: // Address
+    case c_Address: // Address
         result = metrics.size(Qt::TextSingleLine, QStringLiteral(" COG[$000] "));
         break;
-    case 1: // Opcode string
+    case c_Opcode: // Opcode string
         result = metrics.size(Qt::TextSingleLine, QStringLiteral(" EEEE_OOOOOOO_CZI_DDDDDDDDD_SSSSSSSSS "));
         break;
-    case 2: // Disassembled instruction string
+    case c_Instruction: // Disassembled instruction string
         result = metrics.size(Qt::TextSingleLine, QStringLiteral(" IF_NC_AND_NZ  INSTRUCTION #$1ff,#$1ff,#7 XORCZ "));
         break;
-    case 3:
+    case c_Comment:
         result = metrics.size(Qt::TextSingleLine, QStringLiteral(" Some comment string... "));
         break;
     }
