@@ -111,6 +111,7 @@ P2Token::P2Token(bool lowercase)
     m_token.insert(t_GETQX,         QStringLiteral("GETQX"));
     m_token.insert(t_GETQY,         QStringLiteral("GETQY"));
     m_token.insert(t_GETRND,        QStringLiteral("GETRND"));
+    m_token.insert(t_GETSCP,        QStringLiteral("GETSCP"));
     m_token.insert(t_GETWORD,       QStringLiteral("GETWORD"));
     m_token.insert(t_GETXACC,       QStringLiteral("GETXACC"));
     m_token.insert(t_HUBSET,        QStringLiteral("HUBSET"));
@@ -301,6 +302,7 @@ P2Token::P2Token(bool lowercase)
     m_token.insert(t_SETQ2,         QStringLiteral("SETQ2"));
     m_token.insert(t_SETR,          QStringLiteral("SETR"));
     m_token.insert(t_SETS,          QStringLiteral("SETS"));
+    m_token.insert(t_SETSCP,        QStringLiteral("SETSCP"));
     m_token.insert(t_SETSE1,        QStringLiteral("SETSE1"));
     m_token.insert(t_SETSE2,        QStringLiteral("SETSE2"));
     m_token.insert(t_SETSE3,        QStringLiteral("SETSE3"));

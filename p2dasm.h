@@ -515,6 +515,8 @@ private:
     void dasm_wrz(QString& instruction, QString* description = nullptr);
     void dasm_wrnz(QString& instruction, QString* description = nullptr);
     void dasm_modcz(QString& instruction, QString* description = nullptr);
+    void dasm_setscp(QString& instruction, QString* description = nullptr);
+    void dasm_getscp(QString& instruction, QString* description = nullptr);
 
     void dasm_jmp_abs(QString& instruction, QString* description = nullptr);
     void dasm_call_abs(QString& instruction, QString* description = nullptr);

@@ -1316,10 +1316,16 @@ bool P2Dasm::dasm(p2_LONG addr, QString& opcode, QString& instruction, QString* 
             dasm_wrz(instruction, description);
             break;
         case 0x6f:
-            dasm_wrnz(instruction, description);
+            if (IR.op.wc | IR.op.wz)
+                dasm_modcz(instruction, description);
+            else
+                dasm_wrnz(instruction, description);
             break;
-        case 0x7f:
-            dasm_modcz(instruction, description);
+        case 0x70:
+            dasm_setscp(instruction, description);
+            break;
+        case 0x71:
+            dasm_getscp(instruction, description);
             break;
         }
         break;
@@ -8088,6 +8094,44 @@ void P2Dasm::dasm_modcz(QString& instruction, QString* description)
     if (description)
         *description = tr("Modify C and Z according to cccc and zzzz.");
     format_cz_cz(instruction, t_MODCZ);
+}
+
+/**
+ * @brief Set scope mode.
+ * SETSCP points the scope mux to a set of four pins starting
+ * at (D[5:0] AND $3C), with D[6]=1 to enable scope operation.
+ *
+ * EEEE 1101011 00L DDDDDDDDD 001110000
+ *
+ * SETSCP  {#}D
+ *
+ * Pins D[5:2], enable D[6].
+ *
+ */
+void P2Dasm::dasm_setscp(QString& instruction, QString* description)
+{
+    if (description)
+        *description = tr("Set scope mode.");
+    format_imm_d(instruction, t_SETSCP);
+}
+
+/**
+ * @brief Get scope values.
+ *
+ * EEEE 1101011 000 DDDDDDDDD 001110001
+ *
+ * Any time GETSCP is executed, the lower bytes of those four pins' RDPIN values are returned in D.
+ * This feature will mainly be useful on the next silicon, as the FPGAs don't have ADC-capable pins.
+ *
+ * GETSCP  D
+ *
+ * C = cccc[{C,Z}], Z = zzzz[{C,Z}].
+ */
+void P2Dasm::dasm_getscp(QString& instruction, QString* description)
+{
+    if (description)
+        *description = tr("Get scope values.");
+    format_d(instruction, t_GETSCP);
 }
 
 /**
