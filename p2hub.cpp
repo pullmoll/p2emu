@@ -36,44 +36,27 @@
 #include "p2hub.h"
 #include "p2cog.h"
 
-P2Hub::P2Hub(QObject* parent)
+P2Hub::P2Hub(int ncogs, QObject* parent)
     : QObject(parent)
+    , XORO128_s0(1)
+    , XORO128_s1(0)
+    , CNT(0)
+    , PIN(0)
     , COGS()
-    , PA(0)
-    , PB(0)
+    , NCOGS(ncogs)
+    , pin_mode(64, 0)
+    , pin_X(64, 0)
+    , pin_Y(64, 0)
     , MEM()
 {
-    COGS[ 0] = new P2Cog( 0, this);
-#if NUM_COGS > 1
-    COGS[ 1] = new P2Cog( 1, this);
-#if NUM_COGS > 2
-    COGS[ 2] = new P2Cog( 2, this);
-    COGS[ 3] = new P2Cog( 3, this);
-#if NUM_COGS > 4
-    COGS[ 4] = new P2Cog( 4, this);
-    COGS[ 5] = new P2Cog( 5, this);
-    COGS[ 6] = new P2Cog( 6, this);
-    COGS[ 7] = new P2Cog( 7, this);
-#if NUM_COGS > 8
-    cogs[ 8] = new P2Cog( 8, this);
-    cogs[ 9] = new P2Cog( 9, this);
-    cogs[10] = new P2Cog(10, this);
-    cogs[11] = new P2Cog(11, this);
-    cogs[12] = new P2Cog(12, this);
-    cogs[13] = new P2Cog(13, this);
-    cogs[14] = new P2Cog(14, this);
-    cogs[15] = new P2Cog(15, this);
-#endif
-#endif
-#endif
-#endif
+    Q_ASSERT(ncogs <= 16);
+    while (ncogs--)
+        COGS.append(new P2Cog( 0, this));
 }
 
-P2Cog* P2Hub::cog(uint id)
+P2Cog* P2Hub::cog(int id)
 {
-    if (id < NUM_COGS)
-        return COGS[id];
-    return nullptr;
+    return COGS.value(id, nullptr);
 }
 
 /**
@@ -94,6 +77,55 @@ p2_LONG P2Hub::memsize() const
     return sizeof(MEM);
 }
 
+/**
+ * @brief Return the current counter value
+ * @return
+ */
+quint64 P2Hub::count() const
+{
+    return CNT;
+}
+
+/**
+ * @brief Return one pseudo random bit from the RND value
+ * @param index cog index (-0 … -15), bit index (0 … 63)
+ * @return true if set, or false otherwise
+ */
+p2_LONG P2Hub::rnd(int index)
+{
+    Q_ASSERT(index >= 0 && index < 64);
+    return static_cast<p2_LONG>(RND >> index);
+}
+
+/**
+ * @brief Rotate a 64 bit value %val left by %shift bits
+ * @param val value to rotate
+ * @param shift number of bits (0 … 63)
+ * @return rotated value
+ */
+quint64 P2Hub::rotl(quint64 val, uchar shift)
+{
+    return (val << shift) | (val >> (64 - shift));
+}
+
+/**
+ * @brief Calculate the next PRNG value
+ */
+void P2Hub::xoro128()
+{
+    const quint64 s0 = XORO128_s0;
+    const quint64 result = s0 + XORO128_s1;
+    const quint64 s1 = XORO128_s1 ^ s0;
+    XORO128_s0 = rotl(s0, 55) ^ s1 ^ (s1 << 14); // a, b
+    XORO128_s1 = rotl(s1, 36); // c
+    RND = result;
+}
+
+/**
+ * @brief Load a file into HUB memory
+ * @param filename name of the file or resource
+ * @return true on success, or false on error
+ */
 bool P2Hub::load(const QString& filename)
 {
     QFile file(filename);
@@ -106,6 +138,7 @@ bool P2Hub::load(const QString& filename)
     for (int i = 0; i < bin.size(); i += 4, p++) {
         wr_mem(0, static_cast<p2_LONG>(i), p->l);
     }
+
     return true;
 }
 
@@ -139,8 +172,7 @@ void P2Hub::wr_BYTE(p2_LONG addr, p2_BYTE val)
  */
 p2_WORD P2Hub::rd_WORD(p2_LONG addr) const
 {
-    addr &= ~1u;
-    if (addr/2 < sizeof(MEM))
+    if (addr < sizeof(MEM))
         return MEM.W[addr/2];
     return 0x0000;
 }
@@ -152,8 +184,7 @@ p2_WORD P2Hub::rd_WORD(p2_LONG addr) const
  */
 void P2Hub::wr_WORD(p2_LONG addr, p2_WORD val)
 {
-    addr &= ~1u;
-    if (addr/2 < sizeof(MEM))
+    if (addr < sizeof(MEM))
         MEM.W[addr/2] = val;
 }
 
@@ -164,8 +195,7 @@ void P2Hub::wr_WORD(p2_LONG addr, p2_WORD val)
  */
 p2_LONG P2Hub::rd_LONG(p2_LONG addr) const
 {
-    addr &= ~3u;
-    if (addr/4 < sizeof(MEM))
+    if (addr < sizeof(MEM))
         return MEM.L[addr/4];
     return 0x00000000;
 }
@@ -177,8 +207,7 @@ p2_LONG P2Hub::rd_LONG(p2_LONG addr) const
  */
 void P2Hub::wr_LONG(p2_LONG addr, p2_LONG val)
 {
-    addr &= ~3u;
-    if (addr/4 < sizeof(MEM))
+    if (addr < sizeof(MEM))
         MEM.L[addr/4] = val;
 }
 
@@ -188,9 +217,9 @@ void P2Hub::wr_LONG(p2_LONG addr, p2_LONG val)
  * @param offs COG offset (0 … 511)
  * @return long from that address
  */
-p2_LONG P2Hub::rd_cog(uint cog, p2_LONG offs) const
+p2_LONG P2Hub::rd_cog(int cog, p2_LONG offs) const
 {
-    if (cog >= NUM_COGS)
+    if (cog >= NCOGS)
         return 0;
     Q_ASSERT(offs < 0x200);
     return COGS[cog]->rd_cog(offs);
@@ -202,9 +231,9 @@ p2_LONG P2Hub::rd_cog(uint cog, p2_LONG offs) const
  * @param offs COG offset (0 … 511)
  * @param val long value to write
  */
-void P2Hub::wr_cog(uint cog, p2_LONG offs, p2_LONG val)
+void P2Hub::wr_cog(int cog, p2_LONG offs, p2_LONG val)
 {
-    if (cog >= NUM_COGS)
+    if (cog >= NCOGS)
         return;
     Q_ASSERT(offs < 0x200);
     COGS[cog]->wr_cog(offs, val);
@@ -216,9 +245,9 @@ void P2Hub::wr_cog(uint cog, p2_LONG offs, p2_LONG val)
  * @param offs LUT offset (0 … 511)
  * @return long from that address
  */
-p2_LONG P2Hub::rd_lut(uint cog, p2_LONG offs) const
+p2_LONG P2Hub::rd_lut(int cog, p2_LONG offs) const
 {
-    if (cog >= NUM_COGS)
+    if (cog >= NCOGS)
         return 0;
     Q_ASSERT(offs < 0x200);
     return COGS[cog]->rd_lut(offs);
@@ -230,9 +259,9 @@ p2_LONG P2Hub::rd_lut(uint cog, p2_LONG offs) const
  * @param offs LUT offset (0 … 511)
  * @param val long value to write
  */
-void P2Hub::wr_lut(uint cog, p2_LONG offs, p2_LONG val)
+void P2Hub::wr_lut(int cog, p2_LONG offs, p2_LONG val)
 {
-    if (cog >= NUM_COGS)
+    if (cog >= NCOGS)
         return;
     Q_ASSERT(offs < 0x200);
     COGS[cog]->wr_lut(offs, val);
@@ -244,10 +273,10 @@ void P2Hub::wr_lut(uint cog, p2_LONG offs, p2_LONG val)
  * @param offs 20 bit address
  * @return long from that address
  */
-p2_LONG P2Hub::rd_mem(uint cog, p2_LONG addr) const
+p2_LONG P2Hub::rd_mem(int cog, p2_LONG addr) const
 {
     p2_LONG data = 0;
-    if (cog >= NUM_COGS)
+    if (cog >= NCOGS)
         return 0;
     Q_ASSERT(addr <= 0xfffffu);
     if (addr < 0x00800) {
@@ -266,16 +295,16 @@ p2_LONG P2Hub::rd_mem(uint cog, p2_LONG addr) const
  * @param offs 20 bit address
  * @param val long value to write
  */
-void P2Hub::wr_mem(uint cog, p2_LONG addr, p2_LONG val)
+void P2Hub::wr_mem(int cog, p2_LONG addr, p2_LONG val)
 {
-    if (cog >= NUM_COGS)
+    if (cog >= NCOGS)
         return;
-    Q_ASSERT(addr <= 0xfffffu);
     if (addr < 0x00800) {
         wr_cog(cog, addr/4, val);
     } else if (addr < 0x01000) {
         wr_lut(cog, addr/4 - 0x200, val);
     } else {
+        Q_ASSERT(addr < MEM_SIZE);
         MEM.L[addr/4] = val;
     }
 }
@@ -286,7 +315,7 @@ void P2Hub::wr_mem(uint cog, p2_LONG addr, p2_LONG val)
  */
 p2_LONG P2Hub::rd_PA()
 {
-    return PA;
+    return static_cast<p2_LONG>(PIN);
 }
 
 /**
@@ -295,7 +324,7 @@ p2_LONG P2Hub::rd_PA()
  */
 void P2Hub::wr_PA(p2_LONG val)
 {
-    PA = val;
+    PIN = (PIN & Q_UINT64_C(0xffffffff00000000)) | val;
 }
 
 /**
@@ -304,7 +333,7 @@ void P2Hub::wr_PA(p2_LONG val)
  */
 p2_LONG P2Hub::rd_PB()
 {
-    return PB;
+    return static_cast<p2_LONG>(PIN >> 32);
 }
 
 /**
@@ -313,5 +342,64 @@ p2_LONG P2Hub::rd_PB()
  */
 void P2Hub::wr_PB(quint32 val)
 {
-    PB = val;
+    PIN = (PIN & Q_UINT64_C(0x00000000ffffffff)) | static_cast<quint64>(val) << 32;
+}
+
+/**
+ * @brief Return the current direction of port PA/PB
+ * @param port number 0 … 31 for PA, 32 … 63 for PB
+ * @return 1 if input, 0 if output
+ */
+p2_LONG P2Hub::rd_DIR(p2_LONG port)
+{
+    Q_ASSERT(port < 64);
+    return (DIR >> port) & 1;
+}
+
+/**
+ * @brief Set the current direction of port PA/PB
+ * @param port number 0 … 31 for PA, 32 … 63 for PB
+ * @param val 1 for input, 0 for output
+ */
+void P2Hub::wr_DIR(p2_LONG port, p2_LONG val)
+{
+    Q_ASSERT(port < 64);
+    const quint64 mask = Q_UINT64_C(1) << port;
+    const quint64 bit = static_cast<quint64>(val & 1) << port;
+    DIR = (DIR & ~mask) | bit;
+}
+
+/**
+ * @brief Return the current output of port PA/PB
+ * @param port number 0 … 31 for PA, 32 … 63 for PB
+ * @return 1 if set, 0 if clear
+ */
+p2_LONG P2Hub::rd_OUT(p2_LONG port)
+{
+    Q_ASSERT(port < 64);
+    return (OUT >> port) & 1;
+}
+
+/**
+ * @brief Set the current output of port PA/PB
+ * @param port number 0 … 31 for PA, 32 … 63 for PB
+ * @param val 1 for set, 0 for clear
+ */
+void P2Hub::wr_OUT(p2_LONG port, p2_LONG val)
+{
+    Q_ASSERT(port < 64);
+    const quint64 mask = Q_UINT64_C(1) << port;
+    const quint64 bit = static_cast<quint64>(val & 1) << port;
+    OUT = (OUT & ~mask) | bit;
+}
+
+/**
+ * @brief Return true, if pin %n is high (0 … 31 on PA, 32 … 63 on PB)
+ * @param n pin number
+ * @return true if high, or false otherwise
+ */
+bool P2Hub::rd_PIN(p2_LONG n)
+{
+    p2_BYTE shift = n & 63;
+    return ((PIN >> shift) & 1) != 0;
 }

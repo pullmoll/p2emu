@@ -37,11 +37,31 @@
 #include "p2defs.h"
 #include "p2hub.h"
 
+typedef struct {
+    p2_LONG buff[16];
+    p2_LONG rindex;
+    p2_LONG windex;
+    p2_LONG head_addr;
+    p2_LONG tail_addr;
+    p2_LONG addr0;
+    p2_LONG addr1;
+    p2_LONG mode;
+    p2_LONG word;
+    p2_LONG flag;
+}   p2_fifo_t;
+
+typedef struct {
+    p2_opword_t IR;
+    p2_LONG R;
+    p2_LONG D;
+    p2_LONG S;
+}   p2_queue_t;
+
 class P2Cog : public QObject
 {
     Q_OBJECT
 public:
-    P2Cog(uchar cog_id = 0, P2Hub* hub = nullptr, QObject* parent = nullptr);
+    P2Cog(int cog_id = 0, P2Hub* hub = nullptr, QObject* parent = nullptr);
 
     p2_LONG decode();
     p2_opword_t ir() const { return IR; }
@@ -54,26 +74,35 @@ public:
 
     p2_LONG rd_cog(p2_LONG addr) const;
     void wr_cog(p2_LONG addr, p2_LONG val);
+
     p2_LONG rd_lut(p2_LONG addr) const;
     void wr_lut(p2_LONG addr, p2_LONG val);
+
     p2_LONG rd_mem(p2_LONG addr) const;
     void wr_mem(p2_LONG addr, p2_LONG val);
 
 private:
     P2Hub* HUB;             //!< pointer to the HUB, i.e. the parent of the Propeller2 cog
-    quint64 xoro_s[2];      //!< Xoroshiro128 PRNG state
-    p2_LONG ID;             //!< this COG's ID
+    int ID;                 //!< COG ID
     p2_LONG PC;             //!< program counter
     p2_flags_t FL;          //!< flags register
+    p2_LONG CT1;            //!< counter CT1 value
+    p2_LONG CT2;            //!< counter CT2 value
+    p2_LONG CT3;            //!< counter CT3 value
+    p2_pat_t PAT;           //!< pattern mode, mask, and match
     p2_opword_t IR;         //!< instruction register
-    p2_LONG S;              //!< value of S
+    p2_opword_t IR2;        //!< pipeline instruction register
     p2_LONG D;              //!< value of D
+    p2_LONG S;              //!< value of S
     p2_LONG Q;              //!< value of Q
     p2_LONG C;              //!< current carry flag
     p2_LONG Z;              //!< current zero flag
+    p2_fifo_t FIFO;         //!< stream FIFO
     QVariant S_next;        //!< next instruction's S value
     QVariant S_aug;         //!< augment next S with this value, if set
     QVariant D_aug;         //!< augment next D with this value, if set
+    QVariant R_aug;         //!< augment next R with this value, if set
+    QVariant IR_aug;        //!< augment next IR with this value, if set
 
     p2_cog_t COG;           //!< COG memory (512 longs)
     p2_lut_t LUT;           //!< LUT memory (512 longs)
@@ -97,7 +126,7 @@ private:
     //! update D, i.e. write result to COG
     template <typename T>
     void updateD(T d) {
-        COG.RAM[IR.op.dst] = static_cast<p2_LONG>(d);
+        COG.RAM[D] = static_cast<p2_LONG>(d);
     }
 
     //! update PC (program counter)
@@ -147,31 +176,45 @@ private:
     //! update PA, i.e. write result to port A
     template <typename T>
     void updatePA(T d) {
+        Q_ASSERT(HUB);
         LUT.REG.PA = static_cast<p2_LONG>(d);
-        if (HUB)
-            HUB->wr_PA(LUT.REG.PA);
+        HUB->wr_PA(LUT.REG.PA);
     }
 
     //! update PB, i.e. write result to port A
     template <typename T>
     void updatePB(T d) {
+        Q_ASSERT(HUB);
         LUT.REG.PB = static_cast<p2_LONG>(d);
-        if (HUB)
-            HUB->wr_PB(LUT.REG.PA);
+        HUB->wr_PB(LUT.REG.PA);
     }
 
     //! update PTRA, i.e. write result to pointer A
     template <typename T>
     void updatePTRA(T d) {
-        if (HUB)
-            HUB->wr_LONG(LUT.REG.PTRA, static_cast<p2_LONG>(d));
+        Q_ASSERT(HUB);
+        HUB->wr_LONG(LUT.REG.PTRA, static_cast<p2_LONG>(d));
     }
 
     //! update PTRB, i.e. write result to pointer B
     template <typename T>
     void updatePTRB(T d) {
-        if (HUB)
-            HUB->wr_LONG(LUT.REG.PTRB, static_cast<p2_LONG>(d));
+        Q_ASSERT(HUB);
+        HUB->wr_LONG(LUT.REG.PTRB, static_cast<p2_LONG>(d));
+    }
+
+    //! update DIR bit
+    template <typename T>
+    void updateDIR(p2_LONG port, T v)
+    {
+        HUB->wr_DIR(port, static_cast<p2_LONG>(v) & 1);
+    }
+
+    //! update OUT bit
+    template <typename T>
+    void updateOUT(p2_LONG port, T v)
+    {
+        HUB->wr_OUT(port, static_cast<p2_LONG>(v) & 1);
     }
 
     //! return a signed 32 bit value for val[15:0]
@@ -183,7 +226,7 @@ private:
     //! return the usigned 32 bit value for val[15:0]
     template <typename T>
     p2_LONG U16(T val) {
-        return static_cast<p2_LONG>(static_cast<quint16>(val));
+        return static_cast<p2_LONG>(static_cast<p2_WORD>(val));
     }
 
     //! return the signed 32 bit value for val[31:0]
@@ -263,8 +306,8 @@ private:
     p2_BYTE msbit(p2_LONG val);
     p2_BYTE ones(p2_LONG val);
     p2_BYTE parity(p2_LONG val);
-    quint64 rotl(quint64 val, uchar shift);
-    quint64 rnd();
+    p2_LONG seuss(p2_LONG val, bool forward = true);
+    p2_LONG reverse(p2_LONG val);
 
     uint op_nop();
     uint op_ror();

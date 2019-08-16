@@ -326,16 +326,19 @@ typedef union {
     p2_lutregs_t REG;
 }   p2_lut_t;
 
+/**
+ * @brief flag bits per COG
+ */
 typedef struct {
     bool    f_INT:1;            //!< INT interrupt flag
-    bool    f_CT1:1;            //!< CT1 counter 1 flag
-    bool    f_CT2:1;            //!< CT2 counter 2 flag
-    bool    f_CT3:1;            //!< CT3 counter 3 flag
-    bool    f_SE1:1;            //!< SE1 set event 1 flag
-    bool    f_SE2:1;            //!< SE2 set event 2 flag
-    bool    f_SE3:1;            //!< SE3 set event 3 flag
-    bool    f_SE4:1;            //!< SE4 set event 4 flag
-    bool    f_PAT:1;            //!< PAT pattern flag
+    bool    f_CT1:1;            //!< CT1 counter flag
+    bool    f_CT2:1;            //!< CT2 counter flag
+    bool    f_CT3:1;            //!< CT3 counter flag
+    bool    f_SE1:1;            //!< SE1 event flag
+    bool    f_SE2:1;            //!< SE2 event flag
+    bool    f_SE3:1;            //!< SE3 event flag
+    bool    f_SE4:1;            //!< SE4 event flag
+    bool    f_PAT:1;            //!< PAT pattern matching flag
     bool    f_FBW:1;            //!< FBW flag
     bool    f_XMT:1;            //!< XMT flag
     bool    f_XFI:1;            //!< XFI flag
@@ -344,3 +347,20 @@ typedef struct {
     bool    f_ATN:1;            //!< ATN COG attention flag
     bool    f_QMT:1;            //!< QMT Q empty flag
 }   p2_flags_t;
+
+/**
+ * @brief pattern matching mode
+ */
+typedef enum {
+    pat_NONE,                   //!< no pattern matching
+    pat_PA_EQ,                  //!< match if (PA & mask) == match
+    pat_PA_NE,                  //!< match if (PA & mask) != match
+    pat_PB_EQ,                  //!< match if (PB & mask) == match
+    pat_PB_NE                   //!< match if (PB & mask) != match
+}   p2_pat_mode_t;
+
+typedef struct {
+    p2_pat_mode_t mode;         //!< pattern matching mode
+    p2_LONG mask;               //!< mask value
+    p2_LONG match;              //!< match value
+}   p2_pat_t;

@@ -254,3 +254,9 @@ QSize P2DasmModel::sizeHint(column_e column, bool bold) const
     }
     return result;
 }
+
+void P2DasmModel::invalidate()
+{
+    beginResetModel();
+    endResetModel();
+}

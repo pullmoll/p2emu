@@ -59,6 +59,9 @@ public:
     Qt::Alignment alignment(column_e column) const;
     QSize sizeHint(column_e column, bool bold = false) const;
 
+public slots:
+    void invalidate();
+
 private:
     P2Dasm* m_dasm;
     QFont m_font;

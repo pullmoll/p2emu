@@ -36,6 +36,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QCheckBox>
 #include "p2hub.h"
 #include "p2cog.h"
 #include "p2dasmmodel.h"
@@ -55,10 +56,24 @@ public:
 private slots:
     void about();
     void aboutQt5();
-
+    void gotoAddress(const QString& address = QString());
+    void gotoInputAddress();
+    void gotoCog();
+    void gotoLut();
+    void gotoFC000();
+    void setLowercase(bool check);
 private:
     Ui::MainWindow *ui;
     P2Hub m_hub;
     P2Dasm* m_dasm;
     P2DasmModel* m_model;
+
+    void setupToolbar();
+
+    QLineEdit* le_address;
+    QPushButton* pb_go;
+    QPushButton* pb_go_cog;
+    QPushButton* pb_go_lut;
+    QPushButton* pb_go_fc000;
+    QCheckBox* cb_lowercase;
 };

@@ -42,15 +42,26 @@
 #include "p2dasm.h"
 
 static const QLatin1String key_windowGeometry("windowGeometry");
+static const QLatin1String key_lowercase("lowercase");
+static const QLatin1String key_current_row("current_row");
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
+    , m_hub(2, this)
     , m_dasm(new P2Dasm(m_hub.cog(0)))
     , m_model(new P2DasmModel(m_dasm))
+    , le_address(nullptr)
+    , pb_go(nullptr)
+    , pb_go_cog(nullptr)
+    , pb_go_lut(nullptr)
+    , pb_go_fc000(nullptr)
+    , cb_lowercase(nullptr)
 {
     QEventLoop loop(this);
     ui->setupUi(this);
+
+    setupToolbar();
 
     connect(ui->action_Quit, SIGNAL(triggered(bool)), this, SLOT(close()));
     connect(ui->action_About, SIGNAL(triggered(bool)), this, SLOT(about()));
@@ -63,15 +74,19 @@ MainWindow::MainWindow(QWidget *parent)
         QSize size = m_model->sizeHint(static_cast<P2DasmModel::column_e>(column));
         ui->dasm->setColumnWidth(column, size.width());
     }
-    ui->dasm->selectRow(0);
+
     QSettings s;
     restoreGeometry(s.value(key_windowGeometry).toByteArray());
+    setLowercase(s.value(key_lowercase).toBool());
+    ui->dasm->selectRow(s.value(key_current_row).toInt());
 }
 
 MainWindow::~MainWindow()
 {
     QSettings s;
     s.setValue(key_windowGeometry, saveGeometry());
+    s.setValue(key_lowercase, cb_lowercase->isChecked());
+    s.setValue(key_current_row, ui->dasm->currentIndex().row());
     delete ui;
 }
 
@@ -87,4 +102,74 @@ void MainWindow::about()
 void MainWindow::aboutQt5()
 {
     qApp->aboutQt();
+}
+
+void MainWindow::gotoAddress(const QString& address)
+{
+    bool ok;
+    p2_LONG addr = address.toUInt(&ok, 16);
+    if (ok)
+        ui->dasm->selectRow(static_cast<int>(addr / 4));
+}
+
+void MainWindow::gotoInputAddress()
+{
+    gotoAddress(le_address->text());
+}
+
+void MainWindow::gotoCog()
+{
+    gotoAddress("00000");
+}
+
+void MainWindow::gotoLut()
+{
+    gotoAddress("00800");
+}
+
+void MainWindow::gotoFC000()
+{
+    gotoAddress("fc000");
+}
+
+void MainWindow::setLowercase(bool check)
+{
+    cb_lowercase->setChecked(check);
+    m_dasm->setLowercase(check);
+    int row = ui->dasm->currentIndex().row();
+    m_model->invalidate();
+    ui->dasm->selectRow(row);
+}
+
+void MainWindow::setupToolbar()
+{
+    QLabel *lbl = new QLabel(tr("Address:"));
+    ui->mainToolBar->addWidget(lbl);
+
+    le_address = new QLineEdit(QString("000000"));
+    connect(le_address, SIGNAL(returnPressed()), SLOT(gotoInputAddress()));
+    ui->mainToolBar->addWidget(le_address);
+
+    pb_go = new QPushButton(tr("Go"));
+    ui->mainToolBar->addWidget(pb_go);
+    connect(pb_go, SIGNAL(clicked()), SLOT(gotoInputAddress()));
+    ui->mainToolBar->addSeparator();
+
+    pb_go_cog = new QPushButton(tr("Go to COG"));
+    ui->mainToolBar->addWidget(pb_go_cog);
+    connect(pb_go_cog, SIGNAL(clicked()), SLOT(gotoCog()));
+    ui->mainToolBar->addSeparator();
+
+    pb_go_lut = new QPushButton(tr("Go to LUT"));
+    ui->mainToolBar->addWidget(pb_go_lut);
+    connect(pb_go_lut, SIGNAL(clicked()), SLOT(gotoLut()));
+    ui->mainToolBar->addSeparator();
+
+    pb_go_fc000 = new QPushButton(tr("Go to $FC000"));
+    connect(pb_go_fc000, SIGNAL(clicked()), SLOT(gotoFC000()));
+    ui->mainToolBar->addWidget(pb_go_fc000);
+
+    cb_lowercase = new QCheckBox(tr("lowercase"));
+    connect(cb_lowercase, SIGNAL(clicked(bool)), SLOT(setLowercase(bool)));
+    ui->mainToolBar->addWidget(cb_lowercase);
 }
