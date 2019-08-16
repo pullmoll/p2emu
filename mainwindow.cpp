@@ -34,11 +34,14 @@
 #include <QFile>
 #include <QTextStream>
 #include <QTimer>
+#include <QSettings>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "about.h"
 #include "csv.h"
 #include "p2dasm.h"
+
+static const QLatin1String key_windowGeometry("windowGeometry");
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -55,21 +58,20 @@ MainWindow::MainWindow(QWidget *parent)
 
     m_hub.load(":/ROM_Booter_v33_01j.bin");
     ui->dasm->setModel(m_model);
-
     // Set column sizes
     for (int column = 0; column < m_model->columnCount(); column++) {
         QSize size = m_model->sizeHint(static_cast<P2DasmModel::column_e>(column));
         ui->dasm->setColumnWidth(column, size.width());
     }
-    // Set row sizes to 8 fixed
-    QHeaderView *vh = ui->dasm->verticalHeader();
-    vh->setSectionResizeMode(QHeaderView::Fixed);
-    vh->setDefaultSectionSize(8);
     ui->dasm->selectRow(0);
+    QSettings s;
+    restoreGeometry(s.value(key_windowGeometry).toByteArray());
 }
 
 MainWindow::~MainWindow()
 {
+    QSettings s;
+    s.setValue(key_windowGeometry, saveGeometry());
     delete ui;
 }
 
