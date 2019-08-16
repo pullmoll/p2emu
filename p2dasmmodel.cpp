@@ -85,6 +85,7 @@ QVariant P2DasmModel::headerData(int section, Qt::Orientation orientation, int r
         break;
 
     case Qt::Vertical:
+        result.clear();
         break;
     }
     return result;
@@ -168,20 +169,7 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
         break;
 
     case Qt::BackgroundRole:
-        switch (column) {
-        case c_Address:
-            result = QColor(0xff,0xff,0xfc);
-            break;
-        case c_Opcode:
-            result = QColor(0xfc,0xfc,0xff);
-            break;
-        case c_Instruction:
-            result = QColor(0xff,0xff,0xff);
-            break;
-        case c_Comment:
-            result = QColor(0xfc,0xff,0xfc);
-            break;
-        }
+        result = background(column);
         break;
 
     case Qt::ForegroundRole:
@@ -201,6 +189,26 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
         break;
 
     case Qt::InitialSortOrderRole:
+        break;
+    }
+    return result;
+}
+
+QColor P2DasmModel::background(P2DasmModel::column_e column) const
+{
+    QColor result;
+    switch (column) {
+    case c_Address:
+        result = QColor(0xff,0xfc,0xf8);
+        break;
+    case c_Opcode:
+        result = QColor(0xf8,0xfc,0xff);
+        break;
+    case c_Instruction:
+        result = QColor(0xff,0xff,0xff);
+        break;
+    case c_Comment:
+        result = QColor(0xf8,0xff,0xf8);
         break;
     }
     return result;
