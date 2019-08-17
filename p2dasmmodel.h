@@ -33,6 +33,7 @@
  ****************************************************************************/
 #pragma once
 #include <QAbstractTableModel>
+#include <QColor>
 #include <QFont>
 #include <QFontMetrics>
 class P2Dasm;
@@ -55,9 +56,7 @@ public:
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 
-    QColor background(column_e column) const;
-    Qt::Alignment alignment(column_e column) const;
-    QSize sizeHint(column_e column, bool bold = false) const;
+    QSize sizeHint(column_e column) const { return m_size_normal.value(column); }
 
 public slots:
     void invalidate();
@@ -66,4 +65,8 @@ private:
     P2Dasm* m_dasm;
     QFont m_font;
     QFont m_bold;
+    QHash<column_e,QSize> m_size_normal;
+    QHash<column_e,QSize> m_size_bold;
+    QHash<column_e,QRgb> m_background;
+    QHash<column_e,int> m_alignment;
 };

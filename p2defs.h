@@ -228,7 +228,38 @@ typedef enum {
     p2_augd_00,         //!< 1111100
     p2_augd_01,         //!< 1111101
     p2_augd_10,         //!< 1111110
-    p2_augd_11          //!< 1111111
+    p2_augd_11,         //!< 1111111
+
+    p2_OPCODE_WMLONG    = 0x53,
+    p2_OPCODE_RDBYTE    = 0x56,
+    p2_OPCODE_RDWORD    = 0x57,
+    p2_OPCODE_RDLONG    = 0x58,
+    p2_OPCODE_CALLD     = 0x59,
+    p2_OPCODE_CALLPB    = 0x5e,
+    p2_OPCODE_JINT      = 0x5f,
+    p2_OPCODE_WRBYTE    = 0x62,
+    p2_OPCODE_WRWORD    = 0x62,
+    p2_OPCODE_WRLONG    = 0x63,
+    p2_OPCODE_QMUL      = 0x68,
+    p2_OPCODE_QVECTOR   = 0x6a,
+
+    p2_INSTR_MASK1      = 0x0fe001ff,
+    p2_INSTR_MASK2      = 0x0fe3e1ff,
+    p2_INSTR_LOCKNEW    = 0x0d600004,
+    p2_INSTR_LOCKSET    = 0x0d600007,
+    p2_INSTR_QLOG       = 0x0d60000e,
+    p2_INSTR_QEXP       = 0x0d60000f,
+    p2_INSTR_RFBYTE     = 0x0d600010,
+    p2_INSTR_RFWORD     = 0x0d600011,
+    p2_INSTR_RFLONG     = 0x0d600012,
+    p2_INSTR_WFBYTE     = 0x0d600015,
+    p2_INSTR_WFWORD     = 0x0d600016,
+    p2_INSTR_WFLONG     = 0x0d600017,
+    p2_INSTR_GETQX      = 0x0d600018,
+    p2_INSTR_GETQY      = 0x0d600019,
+    p2_INSTR_WAITX      = 0x0d60001f,
+    p2_INSTR_WAITXXX    = 0x0d602024,
+
 }   p2_inst_e;
 
 Q_STATIC_ASSERT(p2_augd_11 == 127);
@@ -349,18 +380,130 @@ typedef struct {
 }   p2_flags_t;
 
 /**
- * @brief pattern matching mode
+ * @brief pattern matching mode enum
  */
 typedef enum {
-    pat_NONE,                   //!< no pattern matching
-    pat_PA_EQ,                  //!< match if (PA & mask) == match
-    pat_PA_NE,                  //!< match if (PA & mask) != match
-    pat_PB_EQ,                  //!< match if (PB & mask) == match
-    pat_PB_NE                   //!< match if (PB & mask) != match
-}   p2_pat_mode_t;
+    p2_PAT_NONE,                //!< no pattern matching
+    p2_PAT_PA_EQ,               //!< match if (PA & mask) == match
+    p2_PAT_PA_NE,               //!< match if (PA & mask) != match
+    p2_PAT_PB_EQ,               //!< match if (PB & mask) == match
+    p2_PAT_PB_NE                //!< match if (PB & mask) != match
+}   p2_pat_mode_e;
 
+/**
+ * @brief PAT pattern matching data
+ */
 typedef struct {
-    p2_pat_mode_t mode;         //!< pattern matching mode
+    p2_pat_mode_e mode;         //!< pattern matching mode
     p2_LONG mask;               //!< mask value
     p2_LONG match;              //!< match value
 }   p2_pat_t;
+
+/**
+ * @brief pin edge mode enum
+ */
+typedef enum {
+    p2_PIN_NONE,                //!< no pin edge
+    p2_PIN_CHANGED_LO,          //!< match if pin changed to lo
+    p2_PIN_CHANGED_HI,          //!< match if pin changed to hi
+    p2_PIN_CHANGED              //!< match if pin changed
+}   p2_pin_mode_e;
+
+/**
+ * @brief PIN pin edge data
+ */
+typedef struct {
+    p2_pin_mode_e mode;         //!< pin edge mode
+    p2_LONG edge;               //!< pin edge type
+    p2_LONG num;                //!< pin number
+}   p2_pin_t;
+
+/**
+ * @brief INT disable / active / source data
+ */
+typedef struct {
+    bool disabled:1;            //!< interrupts disabled
+    bool INT1_active:1;         //!< INT1 is active
+    bool INT2_active:1;         //!< INT2 is active
+    bool INT3_active:1;         //!< INT3 is active
+    bool PAT_active:1;          //!< PAT pattern matching active
+    bool PIN_active:1;          //!< PIN edged interrupt active
+    bool RDL_active:1;          //!< RDLONG active
+    bool WRL_active:1;          //!< WRLONG active
+    bool LOCK_active:1;         //!< LOCK active
+    uint INT1_source:2;         //!< INT1 enabled source
+    uint INT2_source:2;         //!< INT2 enabled source
+    uint INT3_source:2;         //!< INT3 enabled source
+}   p2_int_flags_t;
+
+/**
+ * @brief union of INT flags and bits
+ */
+typedef union {
+    p2_LONG bits;               //!< interrupt flags as LONG
+    p2_int_flags_t flags;
+}   p2_int_bits_u;
+
+/**
+ * @brief LOCK edge mode enum
+ */
+typedef enum {
+    p2_LOCK_NONE,               //!< no LOCK edge
+    p2_LOCK_CHANGED_LO,         //!< match if LOCK changed to lo
+    p2_LOCK_CHANGED_HI,         //!< match if LOCK changed to hi
+    p2_LOCK_CHANGED             //!< match if LOCK changed
+}   p2_lock_mode_e;
+
+/**
+ * @brief LOCK edge data
+ */
+typedef struct {
+    p2_LONG num:4;              //!< LOCK COG id
+    p2_lock_mode_e mode:2;      //!< LOCK edge mode
+    p2_LONG edge:2;             //!< LOCK edge
+    p2_LONG prev:1;             //!< LOCK previous state
+}   p2_lock_t;
+
+/**
+ * @brief wait reason enum
+ */
+typedef enum {
+    p2_WAIT_NONE,               //!< not waiting on anything
+    p2_WAIT_CNT,                //!< waiting for CNT to reach one of CT1, CT2, CT3
+    p2_WAIT_CORDIC,             //!< waiting for CORDIC solver to finish
+    p2_WAIT_PIN,                //!< waiting for PIN to change level
+    p2_WAIT_HUB,                //!< waiting for HUB access
+    p2_WAIT_CACHE,              //!< waiting on FIFO cache to be filled
+    p2_WAIT_FLAG                //!< waiting for a specific FLAG bit
+}   p2_wait_mode_e;
+
+/**
+ * @brief wait status
+ */
+typedef struct {
+    p2_LONG flag;               //!< non-zero if waiting
+    p2_wait_mode_e mode;        //!< current wait mode
+}   p2_wait_t;
+
+/**
+ * @brief FIFO configuration and status
+ */
+typedef struct {
+    p2_LONG buff[16];           //!< buffer of 16 longs read from / written to the HUB
+    p2_LONG rindex;             //!< current read index
+    p2_LONG windex;             //!< current write index
+    p2_LONG head_addr;          //!< head address
+    p2_LONG tail_addr;          //!< tail address
+    p2_LONG addr0;              //!< 1st address
+    p2_LONG addr1;              //!< 2nd address
+    p2_LONG mode;               //!< FIFO mode
+    p2_LONG word;               //!< FIFO word
+    p2_LONG flag;               //!< FIFO flags
+}   p2_fifo_t;
+
+typedef struct {
+    p2_opword_t IR;
+    p2_LONG R;
+    p2_LONG D;
+    p2_LONG S;
+}   p2_queue_t;

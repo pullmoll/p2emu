@@ -47,15 +47,19 @@ class P2Hub : public QObject
 public:
     P2Hub(int ncogs, QObject* parent = nullptr);
 
+    void execute(int cycles);
+    bool load(const QString& filename);
+
     P2Cog* cog(int id);
     p2_BYTE* mem();
     p2_LONG memsize() const;
 
     quint64 count() const;
+    p2_LONG hubslots() const;
+    p2_LONG cogindex() const;
+    int lockstate(int id) const;
 
-    p2_LONG rnd(int index = -1);
-
-    bool load(const QString& filename);
+    p2_LONG random(uint index = 0);
 
     p2_BYTE rd_BYTE(p2_LONG addr) const;
     void wr_BYTE(p2_LONG addr, p2_BYTE val);
@@ -91,7 +95,6 @@ public:
     void wr_SCP(p2_LONG n);
 
     bool rd_PIN(p2_LONG n);
-
 private:
     quint64 rotl(quint64 val, uchar shift);
     void xoro128();
@@ -105,7 +108,9 @@ private:
     quint64 OUT;            //!< 64 output bits (0 … 31 on PA, 32 … 63 on PB)
     p2_LONG MUX;            //!< scope input MUX (TODO: how is it defined?)
     QVector<P2Cog*> COGS;   //!< vector of available COGs
-    int NCOGS;              //!< number of available COGs (1 … 16)
+    int nCOGS;              //!< number of available COGs (1 … 16)
+    p2_LONG mCOGS;        //!< COG mask
+    p2_LONG LOCK;           //!< lock state
     QVector<p2_LONG> pin_mode;
     QVector<p2_LONG> pin_X;
     QVector<p2_LONG> pin_Y;

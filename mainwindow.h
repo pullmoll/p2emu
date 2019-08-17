@@ -45,6 +45,8 @@ namespace Ui {
 class MainWindow;
 }
 
+class P2CogView;
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -64,9 +66,11 @@ private slots:
     void setLowercase(bool check);
 private:
     Ui::MainWindow *ui;
+    QVector<P2CogView*> m_vcog;
     P2Hub m_hub;
     P2Dasm* m_dasm;
     P2DasmModel* m_model;
 
     void setupToolbar();
+    void setupCogView();
 };

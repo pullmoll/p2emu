@@ -585,7 +585,7 @@ bool P2Dasm::dasm(p2_LONG addr, QString& opcode, QString& instruction, QString* 
         if (IR.op.wz == 0) {
             dasm_rqpin(instruction, description);
         } else {
-
+            dasm_rdpin(instruction, description);
         }
         break;
 

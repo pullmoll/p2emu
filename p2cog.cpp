@@ -38,15 +38,17 @@
 P2Cog::P2Cog(int cog_id, P2Hub* hub, QObject* parent)
     : QObject(parent)
     , HUB(hub)
-    , ID(cog_id)
+    , ID(static_cast<p2_LONG>(cog_id))
+    , WAIT()
     , PC(0)
-    , FL()
+    , FLAGS()
     , CT1(0)
     , CT2(0)
     , CT3(0)
     , PAT()
+    , PIN()
+    , INT()
     , IR()
-    , IR2()
     , D(0)
     , S(0)
     , Q(0)
@@ -154,7 +156,7 @@ bool P2Cog::conditional(p2_cond_e cond)
 
 /**
  * @brief Alias for conditional() with an unsigned parameter
- * @param cond condition (0 ... 15)
+ * @param cond condition (0 … 15)
  * @return true if met, false otherwise
  */
 bool P2Cog::conditional(unsigned cond)
@@ -251,54 +253,438 @@ p2_LONG P2Cog::reverse(p2_LONG val)
 }
 
 /**
- * @brief Read and decode the next Propeller2 opcode
- * @return number of cycles
+ * @brief Return the current FIFO level
+ * @return FIFO level 0 … 15
  */
-p2_LONG P2Cog::decode()
+p2_LONG P2Cog::fifo_level()
 {
-    p2_LONG cycles = 2;
+    return (FIFO.windex - FIFO.rindex) & 15;
+}
+
+void P2Cog::check_interrupt_flags()
+{
+
     p2_LONG count = U32L(HUB->count());
 
     // Update counter flags
     if (count == CT1)
-        FL.f_CT1 = true;
+        FLAGS.f_CT1 = true;
     if (count == CT2)
-        FL.f_CT2 = true;
+        FLAGS.f_CT2 = true;
     if (count == CT3)
-        FL.f_CT3 = true;
+        FLAGS.f_CT3 = true;
 
     // Update pattern match/mismatch flag
     switch (PAT.mode) {
-    case pat_PA_EQ: // (PA & mask) == match
+    case p2_PAT_PA_EQ: // (PA & mask) == match
         if (PAT.match == (HUB->rd_PA() & PAT.mask)) {
-            PAT.mode = pat_NONE;
-            FL.f_PAT = true;
+            PAT.mode = p2_PAT_NONE;
+            FLAGS.f_PAT = true;
         }
         break;
-    case pat_PA_NE: // (PA & mask) != match
+    case p2_PAT_PA_NE: // (PA & mask) != match
         if (PAT.match != (HUB->rd_PA() & PAT.mask)) {
-            PAT.mode = pat_NONE;
-            FL.f_PAT = true;
+            PAT.mode = p2_PAT_NONE;
+            FLAGS.f_PAT = true;
         }
         break;
-    case pat_PB_EQ: // (PB & mask) == match
+    case p2_PAT_PB_EQ: // (PB & mask) == match
         if (PAT.match == (HUB->rd_PB() & PAT.mask)) {
-            PAT.mode = pat_NONE;
-            FL.f_PAT = true;
+            PAT.mode = p2_PAT_NONE;
+            FLAGS.f_PAT = true;
         }
         break;
-    case pat_PB_NE: // (PB & mask) != match
+    case p2_PAT_PB_NE: // (PB & mask) != match
         if (PAT.match != (HUB->rd_PB() & PAT.mask)) {
-            PAT.mode = pat_NONE;
-            FL.f_PAT = true;
+            PAT.mode = p2_PAT_NONE;
+            FLAGS.f_PAT = true;
         }
         break;
     default:
-        PAT.mode = pat_NONE;
+        PAT.mode = p2_PAT_NONE;
     }
 
     // Update PIN edge detection
+    if (PIN.edge & 0xc0) {
+        bool prev = ((PIN.edge >> 8) & 1) ? true : false;
+        if (prev != HUB->rd_PIN(PIN.edge)) {
+            switch (PIN.mode) {
+            case p2_PIN_CHANGED_LO:
+                if (prev)
+                    INT.flags.PIN_active = true;
+                break;
+            case p2_PIN_CHANGED_HI:
+                if (!prev)
+                    INT.flags.PIN_active = true;
+                break;
+            case p2_PIN_CHANGED:
+                INT.flags.PIN_active = true;
+                break;
+            default:
+                INT.flags.PIN_active = false;
+            }
+            PIN.edge ^= 0x100;
+        }
+    }
 
+    // Update RDLONG state
+    if (RDL_mask & RDL_flags1) {
+        INT.flags.RDL_active = true;
+    }
+
+    // Update WRLONG state
+    if (WRL_mask & WRL_flags1) {
+        INT.flags.WRL_active = true;
+    }
+
+    // Update LOCK edge state
+    if (LOCK.edge & 0x30) {
+        if (LOCK.prev != HUB->lockstate(LOCK.num)) {
+            switch (LOCK.mode) {
+            case p2_LOCK_NONE:
+                INT.flags.LOCK_active = false;
+                break;
+            case p2_LOCK_CHANGED_LO:
+                if (LOCK.prev)
+                    INT.flags.LOCK_active = true;
+                break;
+            case p2_LOCK_CHANGED_HI:
+                if (!LOCK.prev)
+                    INT.flags.LOCK_active = true;
+                break;
+            case p2_LOCK_CHANGED:
+                INT.flags.LOCK_active = true;
+                break;
+            }
+        }
+        LOCK.prev = !LOCK.prev;
+    }
+}
+
+/**
+ * @brief Check and update the interrupt state
+ */
+void P2Cog::check_wait_int_state()
+{
+    // Check if interrupts disabled or INT1 active
+    if (INT.flags.disabled || INT.flags.INT1_active)
+        return;
+
+    // Check INT1
+    if (INT.flags.INT1_source) {
+        p2_LONG bitmask = 1u << INT.flags.INT1_source;
+        if (INT.bits & bitmask) {
+            INT.flags.disabled = true;
+            return;
+        }
+    }
+
+    // Check if interrupts disabled or INT1 or INT2 active
+    if (INT.flags.disabled || INT.flags.INT1_active || INT.flags.INT2_active)
+        return;
+
+    // Check INT2
+    if (INT.flags.INT2_source) {
+        p2_LONG bitmask = 1u << INT.flags.INT2_source;
+        if (INT.bits & bitmask) {
+            INT.flags.disabled = true;
+            return;
+        }
+    }
+
+    // Check if interrupts disabled or INT1 or INT2 or INT3 active
+    if (INT.flags.disabled || INT.flags.INT1_active || INT.flags.INT2_active || INT.flags.INT3_active)
+        return;
+
+    // Check INT3
+    if (INT.flags.INT3_source) {
+        p2_LONG bitmask = 1u << INT.flags.INT3_source;
+        if (INT.bits & bitmask) {
+            INT.flags.disabled = true;
+            return;
+        }
+    }
+}
+
+/**
+ * @brief Check and update the WAIT flags
+ * @param IR instruction register
+ * @param value1 1st value (D)
+ * @param value2 2nd value (S)
+ * @param streamflag true, if streaming is active
+ * @return
+ */
+p2_LONG P2Cog::check_wait_flag(p2_opword_t IR, p2_LONG value1, p2_LONG value2, bool streamflag)
+{
+    p2_LONG hubcycles;
+    p2_inst_e inst1 = static_cast<p2_inst_e>(IR.word & p2_INSTR_MASK1);
+    p2_inst_e inst2 = static_cast<p2_inst_e>(IR.word & p2_INSTR_MASK2);
+    p2_inst_e opcode = static_cast<p2_inst_e>(IR.op.inst);
+
+    if (WAIT.flag) {
+        switch (WAIT.mode) {
+        case p2_WAIT_CACHE:
+            Q_ASSERT(false && "We should not be here!");
+            break;
+
+        case p2_WAIT_CORDIC:
+            switch (inst1) {
+            case p2_INSTR_GETQX:
+                if (QX_posted)
+                    WAIT.flag = 0;
+                break;
+            case p2_INSTR_GETQY:
+                if (QY_posted)
+                    WAIT.flag = 0;
+                break;
+            default:
+                Q_ASSERT(false && "We should not be here!");
+            }
+            if (0 == WAIT.flag)
+                WAIT.mode = p2_WAIT_NONE;
+            return WAIT.flag;
+
+        case p2_WAIT_FLAG:
+            break;
+
+        default:
+            WAIT.flag--;
+            if (0 == WAIT.flag) {
+                if (WAIT.mode == p2_WAIT_HUB && streamflag)
+                    WAIT.flag = 16;
+                else {
+                    WAIT.mode = p2_WAIT_NONE;
+                }
+            }
+            return WAIT.flag;
+        }
+    }
+
+    if (RW_repeat) {
+        if (!streamflag)
+            return 0;
+        WAIT.flag = 16;
+        WAIT.mode = p2_WAIT_HUB;
+        return WAIT.flag;
+    }
+
+    if (0 == HUB->hubslots())
+        hubcycles = 0;
+    else
+        hubcycles = ((ID + (value2 >> 2)) - HUB->cogindex()) & 15u;
+
+    if (p2_INSTR_GETQX == inst1) {
+
+        if (!QX_posted && CORDIC_count > 0) {
+            WAIT.flag = 1;
+            WAIT.mode = p2_WAIT_CORDIC;
+        }
+
+    } else if (p2_INSTR_GETQY == inst1) {
+
+        if (!QY_posted && CORDIC_count > 0) {
+            WAIT.flag = 1;
+            WAIT.mode = p2_WAIT_CORDIC;
+        }
+
+    } else if (p2_INSTR_WAITXXX == inst2) {
+
+        if (0x02024 == (IR.word & 0x3ffff))
+            check_wait_int_state();
+
+        switch (IR.op.dst) {
+        case 0x10:
+            WAIT.flag = FLAGS.f_INT ? 0 : 1;
+            WAIT.mode = FLAGS.f_INT ? p2_WAIT_NONE : p2_WAIT_FLAG;
+            break;
+        case 0x11:
+            WAIT.flag = FLAGS.f_CT1 ? 0 : 1;
+            WAIT.mode = FLAGS.f_CT1 ? p2_WAIT_NONE : p2_WAIT_FLAG;
+            break;
+        case 0x12:
+            WAIT.flag = FLAGS.f_CT2 ? 0 : 1;
+            WAIT.mode = FLAGS.f_CT2 ? p2_WAIT_NONE : p2_WAIT_FLAG;
+            break;
+        case 0x13:
+            WAIT.flag = FLAGS.f_CT3 ? 0 : 1;
+            WAIT.mode = FLAGS.f_CT3 ? p2_WAIT_NONE : p2_WAIT_FLAG;
+            break;
+        case 0x14:
+            WAIT.flag = FLAGS.f_SE1 ? 0 : 1;
+            WAIT.mode = FLAGS.f_SE1 ? p2_WAIT_NONE : p2_WAIT_FLAG;
+            break;
+        case 0x15:
+            WAIT.flag = FLAGS.f_SE2 ? 0 : 1;
+            WAIT.mode = FLAGS.f_SE2 ? p2_WAIT_NONE : p2_WAIT_FLAG;
+            break;
+        case 0x16:
+            WAIT.flag = FLAGS.f_SE3 ? 0 : 1;
+            WAIT.mode = FLAGS.f_SE3 ? p2_WAIT_NONE : p2_WAIT_FLAG;
+            break;
+        case 0x17:
+            WAIT.flag = FLAGS.f_SE4 ? 0 : 1;
+            WAIT.mode = FLAGS.f_SE4 ? p2_WAIT_NONE : p2_WAIT_FLAG;
+            break;
+        case 0x18:
+            WAIT.flag = FLAGS.f_PAT ? 0 : 1;
+            WAIT.mode = FLAGS.f_PAT ? p2_WAIT_NONE : p2_WAIT_FLAG;
+            break;
+        case 0x19:
+            WAIT.flag = FLAGS.f_FBW ? 0 : 1;
+            WAIT.mode = FLAGS.f_FBW ? p2_WAIT_NONE : p2_WAIT_FLAG;
+            break;
+        case 0x1a:
+            WAIT.flag = FLAGS.f_XMT ? 0 : 1;
+            WAIT.mode = FLAGS.f_XMT ? p2_WAIT_NONE : p2_WAIT_FLAG;
+            break;
+        case 0x1b:
+            WAIT.flag = FLAGS.f_XFI ? 0 : 1;
+            WAIT.mode = FLAGS.f_XFI ? p2_WAIT_NONE : p2_WAIT_FLAG;
+            break;
+        case 0x1c:
+            WAIT.flag = FLAGS.f_XRO ? 0 : 1;
+            WAIT.mode = FLAGS.f_XRO ? p2_WAIT_NONE : p2_WAIT_FLAG;
+            break;
+        case 0x1d:
+            WAIT.flag = FLAGS.f_XRL ? 0 : 1;
+            WAIT.mode = FLAGS.f_XRL ? p2_WAIT_NONE : p2_WAIT_FLAG;
+            break;
+        case 0x1e:
+            WAIT.flag = FLAGS.f_ATN ? 0 : 1;
+            WAIT.mode = FLAGS.f_ATN ? p2_WAIT_NONE : p2_WAIT_FLAG;
+            break;
+        }
+    } else if (p2_INSTR_WAITX == inst1) {
+
+        WAIT.flag = value1;
+        WAIT.mode = p2_WAIT_CNT;
+
+    } else if (opcode >= p2_OPCODE_RDBYTE && opcode <= p2_OPCODE_RDLONG) {
+
+        HUBOP = 1;
+        WAIT.flag = hubcycles + 2;
+        WAIT.mode = p2_WAIT_HUB;
+
+    } else if ((opcode == p2_OPCODE_WRBYTE) ||
+               (opcode == p2_OPCODE_WRLONG && IR.op.wc) ||
+               (opcode == p2_OPCODE_WMLONG && IR.op.wc && IR.op.wz)) {
+
+        HUBOP = 1;
+        WAIT.flag = hubcycles + 2;
+        WAIT.mode = p2_WAIT_HUB;
+
+    } else if ((opcode >= p2_OPCODE_QMUL && opcode <= p2_OPCODE_QVECTOR) ||
+               (inst1 == p2_INSTR_QLOG) || (inst1 == p2_INSTR_QEXP))
+    {
+
+        HUBOP = 1;
+        WAIT.flag = ((ID - HUB->cogindex()) & 15) + 1;
+        WAIT.mode = p2_WAIT_HUB;
+
+    } else if (inst1 >= p2_INSTR_LOCKNEW && inst1 <= p2_INSTR_LOCKSET) {
+
+        HUBOP = 1;
+        WAIT.flag = ((ID - HUB->cogindex()) & 15) + 1;
+        WAIT.mode = p2_WAIT_HUB;
+
+    } else if (inst1 >= p2_INSTR_RFBYTE && inst1 <= p2_INSTR_RFLONG) {
+
+        if (fifo_level() < 2) {
+            WAIT.flag = 1;
+            WAIT.mode = p2_WAIT_CACHE;
+        } else {
+            WAIT.flag = 0;
+        }
+
+    } else if (inst1 >= p2_INSTR_WFBYTE && inst1 <= p2_INSTR_WFLONG) {
+
+        if (fifo_level() >= 15) {
+            WAIT.flag = 1;
+            WAIT.mode = p2_WAIT_CACHE;
+        } else {
+            WAIT.flag = 0;
+        }
+
+    } else {
+
+        WAIT.flag = 0;
+
+    }
+
+    return HUBOP;
+}
+
+/**
+ * @brief Compute the hub RAM address from the pointer instruction
+ * @param inst instruction field (1SUPIIIII)
+ * @param size size of instruction (0 = byte, 1 = word, 2 = long)
+ * @return computed 20 bit RAM address
+ */
+p2_LONG P2Cog::get_pointer(p2_LONG inst, p2_LONG size)
+{
+    p2_LONG address = 0;
+    p2_LONG offset = static_cast<p2_LONG>((static_cast<qint32>(inst) << 27) >> (27 - size));
+
+    switch ((inst >> 5) & 7) {
+    case 0: // PTRA[offset]
+        address = (LUT.REG.PTRA + offset) & ADDR;
+        break;
+    case 1: // PTRA
+        address = LUT.REG.PTRA & ADDR;
+        break;
+    case 2: // PTRA[++offset]
+        address = (LUT.REG.PTRA + offset) & ADDR;
+        PTRA0 = address;
+        break;
+    case 3: // PTRA[offset++]
+        address = LUT.REG.PTRA & ADDR;
+        PTRA0 = (LUT.REG.PTRA + offset) & ADDR;
+        break;
+    case 4: // PTRB[offset]
+        address = (LUT.REG.PTRB + offset) & ADDR;
+        break;
+    case 5: // PTRB
+        address = LUT.REG.PTRB & ADDR;
+        break;
+    case 6: // PTRB[++offset]
+        address = (LUT.REG.PTRB + offset) & ADDR;
+        PTRB0 = address;
+        break;
+    case 7: // PTRB[offset++]
+        address = LUT.REG.PTRB & ADDR;
+        PTRB0 = (LUT.REG.PTRB + offset) & ADDR;
+        break;
+    }
+    return address;
+}
+
+/**
+ * @brief Save pointer registers PTRA/PTRB
+ */
+void P2Cog::save_regs()
+{
+    PTRA0 = LUT.REG.PTRA;
+    PTRB0 = LUT.REG.PTRB;
+}
+
+/**
+ * @brief Update pointer registers PTRA/PTRB
+ */
+void P2Cog::update_regs()
+{
+    LUT.REG.PTRA = PTRA0;
+    LUT.REG.PTRB = PTRB0;
+}
+
+/**
+ * @brief Read and decode the next Propeller2 opcode
+ * @return number of cycles
+ */
+int P2Cog::decode()
+{
+    int cycles = 2;
+
+    check_interrupt_flags();
 
     switch (PC & 0xffe00) {
     case 0x00000:   // cogexec
@@ -1546,10 +1932,19 @@ p2_LONG P2Cog::decode()
         break;
 
     case p2_calld_pa_abs:
+        cycles = op_calld_pa_abs();
+        break;
+
     case p2_calld_pb_abs:
+        cycles = op_calld_pb_abs();
+        break;
+
     case p2_calld_ptra_abs:
+        cycles = op_calld_ptra_abs();
+        break;
+
     case p2_calld_ptrb_abs:
-        cycles = op_calld_abs();
+        cycles = op_calld_ptrb_abs();
         break;
 
     case p2_loc_pa:
@@ -1594,7 +1989,7 @@ p2_LONG P2Cog::decode()
  * NOP
  *</pre>
  */
-uint P2Cog::op_nop()
+int P2Cog::op_nop()
 {
     return 2;
 }
@@ -1611,7 +2006,7 @@ uint P2Cog::op_nop()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_ror()
+int P2Cog::op_ror()
 {
     if (0 == IR.word)
         return op_nop();
@@ -1637,7 +2032,7 @@ uint P2Cog::op_ror()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_rol()
+int P2Cog::op_rol()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -1661,7 +2056,7 @@ uint P2Cog::op_rol()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_shr()
+int P2Cog::op_shr()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -1685,7 +2080,7 @@ uint P2Cog::op_shr()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_shl()
+int P2Cog::op_shl()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -1709,7 +2104,7 @@ uint P2Cog::op_shl()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_rcr()
+int P2Cog::op_rcr()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -1733,7 +2128,7 @@ uint P2Cog::op_rcr()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_rcl()
+int P2Cog::op_rcl()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -1757,7 +2152,7 @@ uint P2Cog::op_rcl()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_sar()
+int P2Cog::op_sar()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -1781,7 +2176,7 @@ uint P2Cog::op_sar()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_sal()
+int P2Cog::op_sal()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -1805,7 +2200,7 @@ uint P2Cog::op_sal()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_add()
+int P2Cog::op_add()
 {
     augmentS(IR.op.imm);
     const quint64 accu = U64(D) + U64(S);
@@ -1828,7 +2223,7 @@ uint P2Cog::op_add()
  * Z = Z AND (result == 0).
  *</pre>
  */
-uint P2Cog::op_addx()
+int P2Cog::op_addx()
 {
     augmentS(IR.op.imm);
     const quint64 accu = U64(D) + U64(S) + C;
@@ -1851,7 +2246,7 @@ uint P2Cog::op_addx()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_adds()
+int P2Cog::op_adds()
 {
     augmentS(IR.op.imm);
     const bool sign = (S32(D) ^ S32(S)) < 0;
@@ -1875,7 +2270,7 @@ uint P2Cog::op_adds()
  * Z = Z AND (result == 0).
  *</pre>
  */
-uint P2Cog::op_addsx()
+int P2Cog::op_addsx()
 {
     augmentS(IR.op.imm);
     const uchar sign = (D ^ (S + C)) >> 31;
@@ -1899,7 +2294,7 @@ uint P2Cog::op_addsx()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_sub()
+int P2Cog::op_sub()
 {
     augmentS(IR.op.imm);
     const quint64 accu = U64(D) - U64(S);
@@ -1922,7 +2317,7 @@ uint P2Cog::op_sub()
  * Z = Z AND (result == 0).
  *</pre>
  */
-uint P2Cog::op_subx()
+int P2Cog::op_subx()
 {
     augmentS(IR.op.imm);
     const quint64 accu = U64(D) - (U64(S) + C);
@@ -1945,7 +2340,7 @@ uint P2Cog::op_subx()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_subs()
+int P2Cog::op_subs()
 {
     augmentS(IR.op.imm);
     const bool sign = (S32(D) ^ S32(S)) < 0;
@@ -1969,7 +2364,7 @@ uint P2Cog::op_subs()
  * Z = Z AND (result == 0).
  *</pre>
  */
-uint P2Cog::op_subsx()
+int P2Cog::op_subsx()
 {
     augmentS(IR.op.imm);
     const uchar sign = (D ^ (S + C)) >> 31;
@@ -1992,7 +2387,7 @@ uint P2Cog::op_subsx()
  * Z = (D == S).
  *</pre>
  */
-uint P2Cog::op_cmp()
+int P2Cog::op_cmp()
 {
     augmentS(IR.op.imm);
     const quint64 accu = U64(D) - U64(S);
@@ -2013,7 +2408,7 @@ uint P2Cog::op_cmp()
  * Z = Z AND (D == S + C).
  *</pre>
  */
-uint P2Cog::op_cmpx()
+int P2Cog::op_cmpx()
 {
     augmentS(IR.op.imm);
     const quint64 accu = U64(D) - (U64(S) + C);
@@ -2034,7 +2429,7 @@ uint P2Cog::op_cmpx()
  * Z = (D == S).
  *</pre>
  */
-uint P2Cog::op_cmps()
+int P2Cog::op_cmps()
 {
     augmentS(IR.op.imm);
     const bool sign = (S32(D) ^ S32(S)) < 0;
@@ -2056,7 +2451,7 @@ uint P2Cog::op_cmps()
  * Z = Z AND (D == S + C).
  *</pre>
  */
-uint P2Cog::op_cmpsx()
+int P2Cog::op_cmpsx()
 {
     augmentS(IR.op.imm);
     const uchar sign = (D ^ (S + C)) >> 31;
@@ -2078,7 +2473,7 @@ uint P2Cog::op_cmpsx()
  * Z = (D == S).
  *</pre>
  */
-uint P2Cog::op_cmpr()
+int P2Cog::op_cmpr()
 {
     augmentS(IR.op.imm);
     const quint64 accu = U64(S) - U64(D);
@@ -2099,7 +2494,7 @@ uint P2Cog::op_cmpr()
  * Z = (D == S).
  *</pre>
  */
-uint P2Cog::op_cmpm()
+int P2Cog::op_cmpm()
 {
     augmentS(IR.op.imm);
     const quint64 accu = U64(D) - U64(S);
@@ -2121,7 +2516,7 @@ uint P2Cog::op_cmpm()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_subr()
+int P2Cog::op_subr()
 {
     augmentS(IR.op.imm);
     const quint64 accu = U64(S) - U64(D);
@@ -2143,7 +2538,7 @@ uint P2Cog::op_subr()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_cmpsub()
+int P2Cog::op_cmpsub()
 {
     augmentS(IR.op.imm);
     if (D < S) {
@@ -2173,7 +2568,7 @@ uint P2Cog::op_cmpsub()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_fge()
+int P2Cog::op_fge()
 {
     augmentS(IR.op.imm);
     if (D < S) {
@@ -2200,7 +2595,7 @@ uint P2Cog::op_fge()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_fle()
+int P2Cog::op_fle()
 {
     augmentS(IR.op.imm);
     if (D > S) {
@@ -2227,7 +2622,7 @@ uint P2Cog::op_fle()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_fges()
+int P2Cog::op_fges()
 {
     augmentS(IR.op.imm);
     if (S32(D) < S32(S)) {
@@ -2254,7 +2649,7 @@ uint P2Cog::op_fges()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_fles()
+int P2Cog::op_fles()
 {
     augmentS(IR.op.imm);
     if (S32(D) > S32(S)) {
@@ -2282,7 +2677,7 @@ uint P2Cog::op_fles()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_sumc()
+int P2Cog::op_sumc()
 {
     augmentS(IR.op.imm);
     const bool sign = (S32(D) ^ S32(S)) < 0;
@@ -2306,7 +2701,7 @@ uint P2Cog::op_sumc()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_sumnc()
+int P2Cog::op_sumnc()
 {
     augmentS(IR.op.imm);
     const bool sign = (S32(D) ^ S32(S)) < 0;
@@ -2330,7 +2725,7 @@ uint P2Cog::op_sumnc()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_sumz()
+int P2Cog::op_sumz()
 {
     augmentS(IR.op.imm);
     const bool sign = (S32(D) ^ S32(S)) < 0;
@@ -2354,7 +2749,7 @@ uint P2Cog::op_sumz()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_sumnz()
+int P2Cog::op_sumnz()
 {
     augmentS(IR.op.imm);
     const bool sign = (S32(D) ^ S32(S)) < 0;
@@ -2376,7 +2771,7 @@ uint P2Cog::op_sumnz()
  * C/Z =          D[S[4:0]].
  *</pre>
  */
-uint P2Cog::op_testb_w()
+int P2Cog::op_testb_w()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2396,7 +2791,7 @@ uint P2Cog::op_testb_w()
  * C/Z =         !D[S[4:0]].
  *</pre>
  */
-uint P2Cog::op_testbn_w()
+int P2Cog::op_testbn_w()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2416,7 +2811,7 @@ uint P2Cog::op_testbn_w()
  * C/Z = C/Z AND  D[S[4:0]].
  *</pre>
  */
-uint P2Cog::op_testb_and()
+int P2Cog::op_testb_and()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2436,7 +2831,7 @@ uint P2Cog::op_testb_and()
  * C/Z = C/Z AND !D[S[4:0]].
  *</pre>
  */
-uint P2Cog::op_testbn_and()
+int P2Cog::op_testbn_and()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2456,7 +2851,7 @@ uint P2Cog::op_testbn_and()
  * C/Z = C/Z OR   D[S[4:0]].
  *</pre>
  */
-uint P2Cog::op_testb_or()
+int P2Cog::op_testb_or()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2476,7 +2871,7 @@ uint P2Cog::op_testb_or()
  * C/Z = C/Z OR  !D[S[4:0]].
  *</pre>
  */
-uint P2Cog::op_testbn_or()
+int P2Cog::op_testbn_or()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2496,7 +2891,7 @@ uint P2Cog::op_testbn_or()
  * C/Z = C/Z XOR  D[S[4:0]].
  *</pre>
  */
-uint P2Cog::op_testb_xor()
+int P2Cog::op_testb_xor()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2516,7 +2911,7 @@ uint P2Cog::op_testb_xor()
  * C/Z = C/Z XOR !D[S[4:0]].
  *</pre>
  */
-uint P2Cog::op_testbn_xor()
+int P2Cog::op_testbn_xor()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2534,7 +2929,7 @@ uint P2Cog::op_testbn_xor()
  * BITL    D,{#}S         {WCZ}
  *</pre>
  */
-uint P2Cog::op_bitl()
+int P2Cog::op_bitl()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2553,7 +2948,7 @@ uint P2Cog::op_bitl()
  * BITH    D,{#}S         {WCZ}
  *</pre>
  */
-uint P2Cog::op_bith()
+int P2Cog::op_bith()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2572,7 +2967,7 @@ uint P2Cog::op_bith()
  * BITC    D,{#}S         {WCZ}
  *</pre>
  */
-uint P2Cog::op_bitc()
+int P2Cog::op_bitc()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2591,7 +2986,7 @@ uint P2Cog::op_bitc()
  * BITNC   D,{#}S         {WCZ}
  *</pre>
  */
-uint P2Cog::op_bitnc()
+int P2Cog::op_bitnc()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2610,7 +3005,7 @@ uint P2Cog::op_bitnc()
  * BITZ    D,{#}S         {WCZ}
  *</pre>
  */
-uint P2Cog::op_bitz()
+int P2Cog::op_bitz()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2629,7 +3024,7 @@ uint P2Cog::op_bitz()
  * BITNZ   D,{#}S         {WCZ}
  *</pre>
  */
-uint P2Cog::op_bitnz()
+int P2Cog::op_bitnz()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2648,12 +3043,12 @@ uint P2Cog::op_bitnz()
  * BITRND  D,{#}S         {WCZ}
  *</pre>
  */
-uint P2Cog::op_bitrnd()
+int P2Cog::op_bitrnd()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
     const p2_LONG bit = LSB << shift;
-    const p2_LONG result = (HUB->rnd(shift) & 1) ? D | bit : D & ~bit;
+    const p2_LONG result = (HUB->random(shift) & 1) ? D | bit : D & ~bit;
     updateC((result >> shift) & 1);
     updateZ((result >> shift) & 1);
     return 2;
@@ -2667,7 +3062,7 @@ uint P2Cog::op_bitrnd()
  * BITNOT  D,{#}S         {WCZ}
  *</pre>
  */
-uint P2Cog::op_bitnot()
+int P2Cog::op_bitnot()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -2690,7 +3085,7 @@ uint P2Cog::op_bitnot()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_and()
+int P2Cog::op_and()
 {
     augmentS(IR.op.imm);
     const p2_LONG result = D & S;
@@ -2711,7 +3106,7 @@ uint P2Cog::op_and()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_andn()
+int P2Cog::op_andn()
 {
     augmentS(IR.op.imm);
     const p2_LONG result = D & ~S;
@@ -2732,7 +3127,7 @@ uint P2Cog::op_andn()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_or()
+int P2Cog::op_or()
 {
     augmentS(IR.op.imm);
     const p2_LONG result = D | S;
@@ -2753,7 +3148,7 @@ uint P2Cog::op_or()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_xor()
+int P2Cog::op_xor()
 {
     augmentS(IR.op.imm);
     const p2_LONG result = D ^ S;
@@ -2774,7 +3169,7 @@ uint P2Cog::op_xor()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_muxc()
+int P2Cog::op_muxc()
 {
     augmentS(IR.op.imm);
     const p2_LONG result = (D & ~S) | (C ? S : 0);
@@ -2795,7 +3190,7 @@ uint P2Cog::op_muxc()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_muxnc()
+int P2Cog::op_muxnc()
 {
     augmentS(IR.op.imm);
     const p2_LONG result = (D & ~S) | (!C ? S : 0);
@@ -2816,7 +3211,7 @@ uint P2Cog::op_muxnc()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_muxz()
+int P2Cog::op_muxz()
 {
     augmentS(IR.op.imm);
     const p2_LONG result = (D & ~S) | (Z ? S : 0);
@@ -2837,7 +3232,7 @@ uint P2Cog::op_muxz()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_muxnz()
+int P2Cog::op_muxnz()
 {
     augmentS(IR.op.imm);
     const p2_LONG result = (D & ~S) | (!Z ? S : 0);
@@ -2858,7 +3253,7 @@ uint P2Cog::op_muxnz()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_mov()
+int P2Cog::op_mov()
 {
     augmentS(IR.op.imm);
     const p2_LONG result = S;
@@ -2880,7 +3275,7 @@ uint P2Cog::op_mov()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_not()
+int P2Cog::op_not()
 {
     augmentS(IR.op.imm);
     const p2_LONG result = ~S;
@@ -2902,7 +3297,7 @@ uint P2Cog::op_not()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_abs()
+int P2Cog::op_abs()
 {
     augmentS(IR.op.imm);
     const qint32 result = qAbs(S32(S));
@@ -2924,7 +3319,7 @@ uint P2Cog::op_abs()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_neg()
+int P2Cog::op_neg()
 {
     augmentS(IR.op.imm);
     const qint32 result = 0 - S32(S);
@@ -2946,7 +3341,7 @@ uint P2Cog::op_neg()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_negc()
+int P2Cog::op_negc()
 {
     augmentS(IR.op.imm);
     const qint32 result = C ? 0 - S32(S) : S32(32);
@@ -2968,7 +3363,7 @@ uint P2Cog::op_negc()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_negnc()
+int P2Cog::op_negnc()
 {
     augmentS(IR.op.imm);
     const qint32 result = !C ? 0 - S32(S) : S32(32);
@@ -2990,7 +3385,7 @@ uint P2Cog::op_negnc()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_negz()
+int P2Cog::op_negz()
 {
     augmentS(IR.op.imm);
     const qint32 result = Z ? 0 - S32(S) : S32(32);
@@ -3012,7 +3407,7 @@ uint P2Cog::op_negz()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_negnz()
+int P2Cog::op_negnz()
 {
     augmentS(IR.op.imm);
     const qint32 result = !Z ? 0 - S32(S) : S32(32);
@@ -3033,7 +3428,7 @@ uint P2Cog::op_negnz()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_incmod()
+int P2Cog::op_incmod()
 {
     augmentS(IR.op.imm);
     const p2_LONG result = (D == S) ? 0 : D + 1;
@@ -3054,7 +3449,7 @@ uint P2Cog::op_incmod()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_decmod()
+int P2Cog::op_decmod()
 {
     augmentS(IR.op.imm);
     const p2_LONG result = (D == 0) ? S : D - 1;
@@ -3075,7 +3470,7 @@ uint P2Cog::op_decmod()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_zerox()
+int P2Cog::op_zerox()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -3099,7 +3494,7 @@ uint P2Cog::op_zerox()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_signx()
+int P2Cog::op_signx()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -3119,12 +3514,12 @@ uint P2Cog::op_signx()
  *
  * ENCOD   D,{#}S   {WC/WZ/WCZ}
  *
- * D = position of top '1' in S (0..31).
+ * D = position of top '1' in S (0 … 31).
  * C = (S != 0).
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_encod()
+int P2Cog::op_encod()
 {
     augmentS(IR.op.imm);
     const p2_LONG result = msbit(S);
@@ -3141,12 +3536,12 @@ uint P2Cog::op_encod()
  *
  * ONES    D,{#}S   {WC/WZ/WCZ}
  *
- * D = number of '1's in S (0..32).
+ * D = number of '1's in S (0 … 32).
  * C = LSB of result.
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_ones()
+int P2Cog::op_ones()
 {
     augmentS(IR.op.imm);
     const p2_LONG result = ones(S);
@@ -3166,7 +3561,7 @@ uint P2Cog::op_ones()
  * Z = ((D & S) == 0).
  *</pre>
  */
-uint P2Cog::op_test()
+int P2Cog::op_test()
 {
     augmentS(IR.op.imm);
     const p2_LONG result = D & S;
@@ -3186,7 +3581,7 @@ uint P2Cog::op_test()
  * Z = ((D & !S) == 0).
  *</pre>
  */
-uint P2Cog::op_testn()
+int P2Cog::op_testn()
 {
     augmentS(IR.op.imm);
     const p2_LONG result = D & ~S;
@@ -3203,7 +3598,7 @@ uint P2Cog::op_testn()
  * SETNIB  D,{#}S,#N
  *</pre>
  */
-uint P2Cog::op_setnib()
+int P2Cog::op_setnib()
 {
     augmentS(IR.op.imm);
     const uchar shift = static_cast<uchar>((IR.word >> 19) & 7) * 4;
@@ -3221,7 +3616,7 @@ uint P2Cog::op_setnib()
  * SETNIB  {#}S
  *</pre>
  */
-uint P2Cog::op_setnib_altsn()
+int P2Cog::op_setnib_altsn()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3237,7 +3632,7 @@ uint P2Cog::op_setnib_altsn()
  * D = {28'b0, S.NIBBLE[N]).
  *</pre>
  */
-uint P2Cog::op_getnib()
+int P2Cog::op_getnib()
 {
     augmentS(IR.op.imm);
     const uchar shift = static_cast<uchar>((IR.word >> 19) & 7) * 4;
@@ -3254,7 +3649,7 @@ uint P2Cog::op_getnib()
  * GETNIB  D
  *</pre>
  */
-uint P2Cog::op_getnib_altgn()
+int P2Cog::op_getnib_altgn()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3270,7 +3665,7 @@ uint P2Cog::op_getnib_altgn()
  * D = {D[27:0], S.NIBBLE[N]).
  *</pre>
  */
-uint P2Cog::op_rolnib()
+int P2Cog::op_rolnib()
 {
     augmentS(IR.op.imm);
     const uchar shift = static_cast<uchar>((IR.word >> 19) & 7) * 4;
@@ -3287,7 +3682,7 @@ uint P2Cog::op_rolnib()
  * ROLNIB  D
  *</pre>
  */
-uint P2Cog::op_rolnib_altgn()
+int P2Cog::op_rolnib_altgn()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3301,7 +3696,7 @@ uint P2Cog::op_rolnib_altgn()
  * SETBYTE D,{#}S,#N
  *</pre>
  */
-uint P2Cog::op_setbyte()
+int P2Cog::op_setbyte()
 {
     augmentS(IR.op.imm);
     const uchar shift = static_cast<uchar>((IR.word >> 19) & 3) * 8;
@@ -3319,7 +3714,7 @@ uint P2Cog::op_setbyte()
  * SETBYTE {#}S
  *</pre>
  */
-uint P2Cog::op_setbyte_altsb()
+int P2Cog::op_setbyte_altsb()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3335,7 +3730,7 @@ uint P2Cog::op_setbyte_altsb()
  * D = {24'b0, S.BYTE[N]).
  *</pre>
  */
-uint P2Cog::op_getbyte()
+int P2Cog::op_getbyte()
 {
     augmentS(IR.op.imm);
     const uchar shift = static_cast<uchar>((IR.word >> 19) & 3) * 8;
@@ -3352,7 +3747,7 @@ uint P2Cog::op_getbyte()
  * GETBYTE D
  *</pre>
  */
-uint P2Cog::op_getbyte_altgb()
+int P2Cog::op_getbyte_altgb()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3368,7 +3763,7 @@ uint P2Cog::op_getbyte_altgb()
  * D = {D[23:0], S.BYTE[N]).
  *</pre>
  */
-uint P2Cog::op_rolbyte()
+int P2Cog::op_rolbyte()
 {
     augmentS(IR.op.imm);
     const uchar shift = static_cast<uchar>((IR.word >> 19) & 3) * 8;
@@ -3385,7 +3780,7 @@ uint P2Cog::op_rolbyte()
  * ROLBYTE D
  *</pre>
  */
-uint P2Cog::op_rolbyte_altgb()
+int P2Cog::op_rolbyte_altgb()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3399,7 +3794,7 @@ uint P2Cog::op_rolbyte_altgb()
  * SETWORD D,{#}S,#N
  *</pre>
  */
-uint P2Cog::op_setword()
+int P2Cog::op_setword()
 {
     augmentS(IR.op.imm);
     const uchar shift = IR.op.wz ? 16 : 0;
@@ -3417,7 +3812,7 @@ uint P2Cog::op_setword()
  * SETWORD {#}S
  *</pre>
  */
-uint P2Cog::op_setword_altsw()
+int P2Cog::op_setword_altsw()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3433,7 +3828,7 @@ uint P2Cog::op_setword_altsw()
  * D = {16'b0, S.WORD[N]).
  *</pre>
  */
-uint P2Cog::op_getword()
+int P2Cog::op_getword()
 {
     augmentS(IR.op.imm);
     const uchar shift = IR.op.wz * 16;
@@ -3450,7 +3845,7 @@ uint P2Cog::op_getword()
  * GETWORD D
  *</pre>
  */
-uint P2Cog::op_getword_altgw()
+int P2Cog::op_getword_altgw()
 {
     return 2;
 }
@@ -3465,7 +3860,7 @@ uint P2Cog::op_getword_altgw()
  * D = {D[15:0], S.WORD[N]).
  *</pre>
  */
-uint P2Cog::op_rolword()
+int P2Cog::op_rolword()
 {
     augmentS(IR.op.imm);
     const uchar shift = IR.op.wz * 16;
@@ -3482,7 +3877,7 @@ uint P2Cog::op_rolword()
  * ROLWORD D
  *</pre>
  */
-uint P2Cog::op_rolword_altgw()
+int P2Cog::op_rolword_altgw()
 {
     return 2;
 }
@@ -3498,7 +3893,7 @@ uint P2Cog::op_rolword_altgw()
  * D += sign-extended S[17:9].
  *</pre>
  */
-uint P2Cog::op_altsn()
+int P2Cog::op_altsn()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3514,7 +3909,7 @@ uint P2Cog::op_altsn()
  * Next D field = D[11:3], N field = D[2:0].
  *</pre>
  */
-uint P2Cog::op_altsn_d()
+int P2Cog::op_altsn_d()
 {
     return 2;
 }
@@ -3530,7 +3925,7 @@ uint P2Cog::op_altsn_d()
  * D += sign-extended S[17:9].
  *</pre>
  */
-uint P2Cog::op_altgn()
+int P2Cog::op_altgn()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3546,7 +3941,7 @@ uint P2Cog::op_altgn()
  * Next S field = D[11:3], N field = D[2:0].
  *</pre>
  */
-uint P2Cog::op_altgn_d()
+int P2Cog::op_altgn_d()
 {
     return 2;
 }
@@ -3562,7 +3957,7 @@ uint P2Cog::op_altgn_d()
  * D += sign-extended S[17:9].
  *</pre>
  */
-uint P2Cog::op_altsb()
+int P2Cog::op_altsb()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3578,7 +3973,7 @@ uint P2Cog::op_altsb()
  * Next D field = D[10:2], N field = D[1:0].
  *</pre>
  */
-uint P2Cog::op_altsb_d()
+int P2Cog::op_altsb_d()
 {
     return 2;
 }
@@ -3594,7 +3989,7 @@ uint P2Cog::op_altsb_d()
  * D += sign-extended S[17:9].
  *</pre>
  */
-uint P2Cog::op_altgb()
+int P2Cog::op_altgb()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3610,7 +4005,7 @@ uint P2Cog::op_altgb()
  * Next S field = D[10:2], N field = D[1:0].
  *</pre>
  */
-uint P2Cog::op_altgb_d()
+int P2Cog::op_altgb_d()
 {
     return 2;
 }
@@ -3626,7 +4021,7 @@ uint P2Cog::op_altgb_d()
  * D += sign-extended S[17:9].
  *</pre>
  */
-uint P2Cog::op_altsw()
+int P2Cog::op_altsw()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3642,7 +4037,7 @@ uint P2Cog::op_altsw()
  * Next D field = D[9:1], N field = D[0].
  *</pre>
  */
-uint P2Cog::op_altsw_d()
+int P2Cog::op_altsw_d()
 {
     return 2;
 }
@@ -3658,7 +4053,7 @@ uint P2Cog::op_altsw_d()
  * D += sign-extended S[17:9].
  *</pre>
  */
-uint P2Cog::op_altgw()
+int P2Cog::op_altgw()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3674,7 +4069,7 @@ uint P2Cog::op_altgw()
  * Next S field = D[9:1], N field = D[0].
  *</pre>
  */
-uint P2Cog::op_altgw_d()
+int P2Cog::op_altgw_d()
 {
     return 2;
 }
@@ -3689,7 +4084,7 @@ uint P2Cog::op_altgw_d()
  * D += sign-extended S[17:9].
  *</pre>
  */
-uint P2Cog::op_altr()
+int P2Cog::op_altr()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3703,7 +4098,7 @@ uint P2Cog::op_altr()
  * ALTR    D
  *</pre>
  */
-uint P2Cog::op_altr_d()
+int P2Cog::op_altr_d()
 {
     return 2;
 }
@@ -3718,7 +4113,7 @@ uint P2Cog::op_altr_d()
  * D += sign-extended S[17:9].
  *</pre>
  */
-uint P2Cog::op_altd()
+int P2Cog::op_altd()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3732,7 +4127,7 @@ uint P2Cog::op_altd()
  * ALTD    D
  *</pre>
  */
-uint P2Cog::op_altd_d()
+int P2Cog::op_altd_d()
 {
     return 2;
 }
@@ -3747,7 +4142,7 @@ uint P2Cog::op_altd_d()
  * D += sign-extended S[17:9].
  *</pre>
  */
-uint P2Cog::op_alts()
+int P2Cog::op_alts()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3761,7 +4156,7 @@ uint P2Cog::op_alts()
  * ALTS    D
  *</pre>
  */
-uint P2Cog::op_alts_d()
+int P2Cog::op_alts_d()
 {
     return 2;
 }
@@ -3776,7 +4171,7 @@ uint P2Cog::op_alts_d()
  * D += sign-extended S[17:9].
  *</pre>
  */
-uint P2Cog::op_altb()
+int P2Cog::op_altb()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3790,7 +4185,7 @@ uint P2Cog::op_altb()
  * ALTB    D
  *</pre>
  */
-uint P2Cog::op_altb_d()
+int P2Cog::op_altb_d()
 {
     return 2;
 }
@@ -3805,7 +4200,7 @@ uint P2Cog::op_altb_d()
  * Modify D per S.
  *</pre>
  */
-uint P2Cog::op_alti()
+int P2Cog::op_alti()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3821,7 +4216,7 @@ uint P2Cog::op_alti()
  * D stays same.
  *</pre>
  */
-uint P2Cog::op_alti_d()
+int P2Cog::op_alti_d()
 {
     return 2;
 }
@@ -3836,7 +4231,7 @@ uint P2Cog::op_alti_d()
  * D = {D[31:28], S[8:0], D[18:0]}.
  *</pre>
  */
-uint P2Cog::op_setr()
+int P2Cog::op_setr()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3852,7 +4247,7 @@ uint P2Cog::op_setr()
  * D = {D[31:18], S[8:0], D[8:0]}.
  *</pre>
  */
-uint P2Cog::op_setd()
+int P2Cog::op_setd()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3868,7 +4263,7 @@ uint P2Cog::op_setd()
  * D = {D[31:9], S[8:0]}.
  *</pre>
  */
-uint P2Cog::op_sets()
+int P2Cog::op_sets()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -3884,7 +4279,7 @@ uint P2Cog::op_sets()
  * D = 1 << S[4:0].
  *</pre>
  */
-uint P2Cog::op_decod()
+int P2Cog::op_decod()
 {
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -3903,7 +4298,7 @@ uint P2Cog::op_decod()
  * D = 1 << D[4:0].
  *</pre>
  */
-uint P2Cog::op_decod_d()
+int P2Cog::op_decod_d()
 {
     return 2;
 }
@@ -3918,7 +4313,7 @@ uint P2Cog::op_decod_d()
  * D = ($0000_0002 << S[4:0]) - 1.
  *</pre>
  */
-uint P2Cog::op_bmask()
+int P2Cog::op_bmask()
 {
     const uchar shift = S & 31;
     const p2_LONG result = U32L((Q_UINT64_C(2) << shift) - 1);
@@ -3937,7 +4332,7 @@ uint P2Cog::op_bmask()
  * D = ($0000_0002 << D[4:0]) - 1.
  *</pre>
  */
-uint P2Cog::op_bmask_d()
+int P2Cog::op_bmask_d()
 {
     const uchar shift = D & 31;
     const p2_LONG result = U32L((Q_UINT64_C(2) << shift) - 1);
@@ -3955,7 +4350,7 @@ uint P2Cog::op_bmask_d()
  * If (C XOR D[0]) then D = (D >> 1) XOR S, else D = (D >> 1).
  *</pre>
  */
-uint P2Cog::op_crcbit()
+int P2Cog::op_crcbit()
 {
     augmentS(IR.op.imm);
     const p2_LONG result = ((C ^ D) & 1) ? (D >> 1) ^ S : (D >> 1);
@@ -3976,7 +4371,7 @@ uint P2Cog::op_crcbit()
  * Use SETQ+CRCNIB+CRCNIB+CRCNIB.
  *</pre>
  */
-uint P2Cog::op_crcnib()
+int P2Cog::op_crcnib()
 {
     augmentS(IR.op.imm);
     // FIXME: Huh?
@@ -3991,7 +4386,7 @@ uint P2Cog::op_crcnib()
  * MUXNITS D,{#}S
  *</pre>
  */
-uint P2Cog::op_muxnits()
+int P2Cog::op_muxnits()
 {
     augmentS(IR.op.imm);
     const p2_LONG mask = S | ((S & 0xaaaaaaaa) >> 1) | ((S & 0x55555555) << 1);
@@ -4008,7 +4403,7 @@ uint P2Cog::op_muxnits()
  * MUXNIBS D,{#}S
  *</pre>
  */
-uint P2Cog::op_muxnibs()
+int P2Cog::op_muxnibs()
 {
     augmentS(IR.op.imm);
     const p2_LONG mask0 = S | ((S & 0xaaaaaaaa) >> 1) | ((S & 0x55555555) << 1);
@@ -4029,7 +4424,7 @@ uint P2Cog::op_muxnibs()
  * D = (D & !Q) | (S & Q).
  *</pre>
  */
-uint P2Cog::op_muxq()
+int P2Cog::op_muxq()
 {
     augmentS(IR.op.imm);
     const p2_LONG result = (D & ~Q) | (S & Q);
@@ -4047,7 +4442,7 @@ uint P2Cog::op_muxq()
  * D = {D.BYTE[S[7:6]], D.BYTE[S[5:4]], D.BYTE[S[3:2]], D.BYTE[S[1:0]]}.
  *</pre>
  */
-uint P2Cog::op_movbyts()
+int P2Cog::op_movbyts()
 {
     augmentS(IR.op.imm);
     union {
@@ -4073,7 +4468,7 @@ uint P2Cog::op_movbyts()
  * Z = (S == 0) | (D == 0).
  *</pre>
  */
-uint P2Cog::op_mul()
+int P2Cog::op_mul()
 {
     augmentS(IR.op.imm);
     const p2_LONG result = U16(D) * U16(S);
@@ -4092,7 +4487,7 @@ uint P2Cog::op_mul()
  * Z = (S == 0) | (D == 0).
  *</pre>
  */
-uint P2Cog::op_muls()
+int P2Cog::op_muls()
 {
     augmentS(IR.op.imm);
     const qint32 result = S16(D) * S16(S);
@@ -4111,7 +4506,7 @@ uint P2Cog::op_muls()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_sca()
+int P2Cog::op_sca()
 {
     augmentS(IR.op.imm);
     const p2_LONG result = (U16(D) * U16(S)) >> 16;
@@ -4131,7 +4526,7 @@ uint P2Cog::op_sca()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_scas()
+int P2Cog::op_scas()
 {
     augmentS(IR.op.imm);
     const qint32 result = (S16(D) * S16(S)) >> 14;
@@ -4148,7 +4543,7 @@ uint P2Cog::op_scas()
  * ADDPIX  D,{#}S
  *</pre>
  */
-uint P2Cog::op_addpix()
+int P2Cog::op_addpix()
 {
     augmentS(IR.op.imm);
     union {
@@ -4173,7 +4568,7 @@ uint P2Cog::op_addpix()
  * MULPIX  D,{#}S
  *</pre>
  */
-uint P2Cog::op_mulpix()
+int P2Cog::op_mulpix()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4187,7 +4582,7 @@ uint P2Cog::op_mulpix()
  * BLNPIX  D,{#}S
  *</pre>
  */
-uint P2Cog::op_blnpix()
+int P2Cog::op_blnpix()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4201,7 +4596,7 @@ uint P2Cog::op_blnpix()
  * MIXPIX  D,{#}S
  *</pre>
  */
-uint P2Cog::op_mixpix()
+int P2Cog::op_mixpix()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4217,7 +4612,7 @@ uint P2Cog::op_mixpix()
  * Adds S into D.
  *</pre>
  */
-uint P2Cog::op_addct1()
+int P2Cog::op_addct1()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4233,7 +4628,7 @@ uint P2Cog::op_addct1()
  * Adds S into D.
  *</pre>
  */
-uint P2Cog::op_addct2()
+int P2Cog::op_addct2()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4249,7 +4644,7 @@ uint P2Cog::op_addct2()
  * Adds S into D.
  *</pre>
  */
-uint P2Cog::op_addct3()
+int P2Cog::op_addct3()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4265,7 +4660,7 @@ uint P2Cog::op_addct3()
  * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  *</pre>
  */
-uint P2Cog::op_wmlong()
+int P2Cog::op_wmlong()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4281,7 +4676,7 @@ uint P2Cog::op_wmlong()
  * C = modal result.
  *</pre>
  */
-uint P2Cog::op_rqpin()
+int P2Cog::op_rqpin()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4297,7 +4692,7 @@ uint P2Cog::op_rqpin()
  * C = modal result.
  *</pre>
  */
-uint P2Cog::op_rdpin()
+int P2Cog::op_rdpin()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4314,7 +4709,7 @@ uint P2Cog::op_rdpin()
  * Z = (result == 0).
  *</pre>
  */
-uint P2Cog::op_rdlut()
+int P2Cog::op_rdlut()
 {
     augmentS(IR.op.imm);
     p2_LONG result;
@@ -4341,7 +4736,7 @@ uint P2Cog::op_rdlut()
  * C = MSB of byte.
  * Z = (result == 0).
  */
-uint P2Cog::op_rdbyte()
+int P2Cog::op_rdbyte()
 {
     augmentS(IR.op.imm);
     p2_BYTE result;
@@ -4368,7 +4763,7 @@ uint P2Cog::op_rdbyte()
  * C = MSB of word.
  * Z = (result == 0).
  */
-uint P2Cog::op_rdword()
+int P2Cog::op_rdword()
 {
     augmentS(IR.op.imm);
     p2_WORD result;
@@ -4395,7 +4790,7 @@ uint P2Cog::op_rdword()
  * C = MSB of long.
  * *   Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  */
-uint P2Cog::op_rdlong()
+int P2Cog::op_rdlong()
 {
     augmentS(IR.op.imm);
     p2_LONG result;
@@ -4422,7 +4817,7 @@ uint P2Cog::op_rdlong()
  * C = MSB of long.
  * Z = (result == 0).
  */
-uint P2Cog::op_popa()
+int P2Cog::op_popa()
 {
     return 2;
 }
@@ -4437,7 +4832,7 @@ uint P2Cog::op_popa()
  * C = MSB of long.
  * Z = (result == 0).
  */
-uint P2Cog::op_popb()
+int P2Cog::op_popb()
 {
     return 2;
 }
@@ -4451,7 +4846,7 @@ uint P2Cog::op_popb()
  *
  * C = S[31], Z = S[30].
  */
-uint P2Cog::op_calld()
+int P2Cog::op_calld()
 {
     augmentS(IR.op.imm);
     if (IR.op.wc && IR.op.wz) {
@@ -4489,7 +4884,7 @@ uint P2Cog::op_calld()
  *
  * (CALLD $1F0,$1F1 WC,WZ).
  */
-uint P2Cog::op_resi3()
+int P2Cog::op_resi3()
 {
     return 2;
 }
@@ -4503,7 +4898,7 @@ uint P2Cog::op_resi3()
  *
  * (CALLD $1F2,$1F3 WC,WZ).
  */
-uint P2Cog::op_resi2()
+int P2Cog::op_resi2()
 {
     return 2;
 }
@@ -4517,7 +4912,7 @@ uint P2Cog::op_resi2()
  *
  * (CALLD $1F4,$1F5 WC,WZ).
  */
-uint P2Cog::op_resi1()
+int P2Cog::op_resi1()
 {
     return 2;
 }
@@ -4531,7 +4926,7 @@ uint P2Cog::op_resi1()
  *
  * (CALLD $1FE,$1FF WC,WZ).
  */
-uint P2Cog::op_resi0()
+int P2Cog::op_resi0()
 {
     return 2;
 }
@@ -4545,7 +4940,7 @@ uint P2Cog::op_resi0()
  *
  * (CALLD $1FF,$1F1 WC,WZ).
  */
-uint P2Cog::op_reti3()
+int P2Cog::op_reti3()
 {
     return 2;
 }
@@ -4559,7 +4954,7 @@ uint P2Cog::op_reti3()
  *
  * (CALLD $1FF,$1F3 WC,WZ).
  */
-uint P2Cog::op_reti2()
+int P2Cog::op_reti2()
 {
     return 2;
 }
@@ -4573,7 +4968,7 @@ uint P2Cog::op_reti2()
  *
  * (CALLD $1FF,$1F5 WC,WZ).
  */
-uint P2Cog::op_reti1()
+int P2Cog::op_reti1()
 {
     return 2;
 }
@@ -4587,7 +4982,7 @@ uint P2Cog::op_reti1()
  *
  * (CALLD $1FF,$1FF WC,WZ).
  */
-uint P2Cog::op_reti0()
+int P2Cog::op_reti0()
 {
     return 2;
 }
@@ -4600,7 +4995,7 @@ uint P2Cog::op_reti0()
  * CALLPA  {#}D,{#}S
  *
  */
-uint P2Cog::op_callpa()
+int P2Cog::op_callpa()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.wz);
@@ -4615,7 +5010,7 @@ uint P2Cog::op_callpa()
  * CALLPB  {#}D,{#}S
  *
  */
-uint P2Cog::op_callpb()
+int P2Cog::op_callpb()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.wz);
@@ -4630,7 +5025,7 @@ uint P2Cog::op_callpb()
  * DJZ     D,{#}S
  *
  */
-uint P2Cog::op_djz()
+int P2Cog::op_djz()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4644,7 +5039,7 @@ uint P2Cog::op_djz()
  * DJNZ    D,{#}S
  *
  */
-uint P2Cog::op_djnz()
+int P2Cog::op_djnz()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4658,7 +5053,7 @@ uint P2Cog::op_djnz()
  * DJF     D,{#}S
  *
  */
-uint P2Cog::op_djf()
+int P2Cog::op_djf()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4672,7 +5067,7 @@ uint P2Cog::op_djf()
  * DJNF    D,{#}S
  *
  */
-uint P2Cog::op_djnf()
+int P2Cog::op_djnf()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4686,7 +5081,7 @@ uint P2Cog::op_djnf()
  * IJZ     D,{#}S
  *
  */
-uint P2Cog::op_ijz()
+int P2Cog::op_ijz()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4700,7 +5095,7 @@ uint P2Cog::op_ijz()
  * IJNZ    D,{#}S
  *
  */
-uint P2Cog::op_ijnz()
+int P2Cog::op_ijnz()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4714,7 +5109,7 @@ uint P2Cog::op_ijnz()
  * TJZ     D,{#}S
  *
  */
-uint P2Cog::op_tjz()
+int P2Cog::op_tjz()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4728,7 +5123,7 @@ uint P2Cog::op_tjz()
  * TJNZ    D,{#}S
  *
  */
-uint P2Cog::op_tjnz()
+int P2Cog::op_tjnz()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4742,7 +5137,7 @@ uint P2Cog::op_tjnz()
  * TJF     D,{#}S
  *
  */
-uint P2Cog::op_tjf()
+int P2Cog::op_tjf()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4756,7 +5151,7 @@ uint P2Cog::op_tjf()
  * TJNF    D,{#}S
  *
  */
-uint P2Cog::op_tjnf()
+int P2Cog::op_tjnf()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4770,7 +5165,7 @@ uint P2Cog::op_tjnf()
  * TJS     D,{#}S
  *
  */
-uint P2Cog::op_tjs()
+int P2Cog::op_tjs()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4784,7 +5179,7 @@ uint P2Cog::op_tjs()
  * TJNS    D,{#}S
  *
  */
-uint P2Cog::op_tjns()
+int P2Cog::op_tjns()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4798,7 +5193,7 @@ uint P2Cog::op_tjns()
  * TJV     D,{#}S
  *
  */
-uint P2Cog::op_tjv()
+int P2Cog::op_tjv()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -4812,10 +5207,10 @@ uint P2Cog::op_tjv()
  * JINT    {#}S
  *
  */
-uint P2Cog::op_jint()
+int P2Cog::op_jint()
 {
     augmentS(IR.op.imm);
-    if (FL.f_INT)
+    if (FLAGS.f_INT)
         updatePC(S);
     return 2;
 }
@@ -4828,10 +5223,10 @@ uint P2Cog::op_jint()
  * JCT1    {#}S
  *
  */
-uint P2Cog::op_jct1()
+int P2Cog::op_jct1()
 {
     augmentS(IR.op.imm);
-    if (FL.f_CT1)
+    if (FLAGS.f_CT1)
         updatePC(S);
     return 2;
 }
@@ -4844,10 +5239,10 @@ uint P2Cog::op_jct1()
  * JCT2    {#}S
  *
  */
-uint P2Cog::op_jct2()
+int P2Cog::op_jct2()
 {
     augmentS(IR.op.imm);
-    if (FL.f_CT2)
+    if (FLAGS.f_CT2)
         updatePC(S);
     return 2;
 }
@@ -4860,10 +5255,10 @@ uint P2Cog::op_jct2()
  * JCT3    {#}S
  *
  */
-uint P2Cog::op_jct3()
+int P2Cog::op_jct3()
 {
     augmentS(IR.op.imm);
-    if (FL.f_CT3)
+    if (FLAGS.f_CT3)
         updatePC(S);
     return 2;
 }
@@ -4876,10 +5271,10 @@ uint P2Cog::op_jct3()
  * JSE1    {#}S
  *
  */
-uint P2Cog::op_jse1()
+int P2Cog::op_jse1()
 {
     augmentS(IR.op.imm);
-    if (FL.f_SE1)
+    if (FLAGS.f_SE1)
         updatePC(S);
     return 2;
 }
@@ -4892,10 +5287,10 @@ uint P2Cog::op_jse1()
  * JSE2    {#}S
  *
  */
-uint P2Cog::op_jse2()
+int P2Cog::op_jse2()
 {
     augmentS(IR.op.imm);
-    if (FL.f_SE2)
+    if (FLAGS.f_SE2)
         updatePC(S);
     return 2;
 }
@@ -4908,10 +5303,10 @@ uint P2Cog::op_jse2()
  * JSE3    {#}S
  *
  */
-uint P2Cog::op_jse3()
+int P2Cog::op_jse3()
 {
     augmentS(IR.op.imm);
-    if (FL.f_SE3)
+    if (FLAGS.f_SE3)
         updatePC(S);
     return 2;
 }
@@ -4924,10 +5319,10 @@ uint P2Cog::op_jse3()
  * JSE4    {#}S
  *
  */
-uint P2Cog::op_jse4()
+int P2Cog::op_jse4()
 {
     augmentS(IR.op.imm);
-    if (FL.f_SE4)
+    if (FLAGS.f_SE4)
         updatePC(S);
     return 2;
 }
@@ -4940,10 +5335,10 @@ uint P2Cog::op_jse4()
  * JPAT    {#}S
  *
  */
-uint P2Cog::op_jpat()
+int P2Cog::op_jpat()
 {
     augmentS(IR.op.imm);
-    if (FL.f_PAT)
+    if (FLAGS.f_PAT)
         updatePC(S);
     return 2;
 }
@@ -4956,10 +5351,10 @@ uint P2Cog::op_jpat()
  * JFBW    {#}S
  *
  */
-uint P2Cog::op_jfbw()
+int P2Cog::op_jfbw()
 {
     augmentS(IR.op.imm);
-    if (FL.f_FBW)
+    if (FLAGS.f_FBW)
         updatePC(S);
     return 2;
 }
@@ -4972,10 +5367,10 @@ uint P2Cog::op_jfbw()
  * JXMT    {#}S
  *
  */
-uint P2Cog::op_jxmt()
+int P2Cog::op_jxmt()
 {
     augmentS(IR.op.imm);
-    if (FL.f_XMT)
+    if (FLAGS.f_XMT)
         updatePC(S);
     return 2;
 }
@@ -4988,10 +5383,10 @@ uint P2Cog::op_jxmt()
  * JXFI    {#}S
  *
  */
-uint P2Cog::op_jxfi()
+int P2Cog::op_jxfi()
 {
     augmentS(IR.op.imm);
-    if (FL.f_XFI)
+    if (FLAGS.f_XFI)
         updatePC(S);
     return 2;
 }
@@ -5004,10 +5399,10 @@ uint P2Cog::op_jxfi()
  * JXRO    {#}S
  *
  */
-uint P2Cog::op_jxro()
+int P2Cog::op_jxro()
 {
     augmentS(IR.op.imm);
-    if (FL.f_XRO)
+    if (FLAGS.f_XRO)
         updatePC(S);
     return 2;
 }
@@ -5020,10 +5415,10 @@ uint P2Cog::op_jxro()
  * JXRL    {#}S
  *
  */
-uint P2Cog::op_jxrl()
+int P2Cog::op_jxrl()
 {
     augmentS(IR.op.imm);
-    if (FL.f_XRL)
+    if (FLAGS.f_XRL)
         updatePC(S);
     return 2;
 }
@@ -5036,10 +5431,10 @@ uint P2Cog::op_jxrl()
  * JATN    {#}S
  *
  */
-uint P2Cog::op_jatn()
+int P2Cog::op_jatn()
 {
     augmentS(IR.op.imm);
-    if (FL.f_ATN)
+    if (FLAGS.f_ATN)
         updatePC(S);
     return 2;
 }
@@ -5052,10 +5447,10 @@ uint P2Cog::op_jatn()
  * JQMT    {#}S
  *
  */
-uint P2Cog::op_jqmt()
+int P2Cog::op_jqmt()
 {
     augmentS(IR.op.imm);
-    if (FL.f_QMT)
+    if (FLAGS.f_QMT)
         updatePC(S);
     return 2;
 }
@@ -5068,10 +5463,10 @@ uint P2Cog::op_jqmt()
  * JNINT   {#}S
  *
  */
-uint P2Cog::op_jnint()
+int P2Cog::op_jnint()
 {
     augmentS(IR.op.imm);
-    if (!FL.f_INT)
+    if (!FLAGS.f_INT)
         updatePC(S);
     return 2;
 }
@@ -5084,10 +5479,10 @@ uint P2Cog::op_jnint()
  * JNCT1   {#}S
  *
  */
-uint P2Cog::op_jnct1()
+int P2Cog::op_jnct1()
 {
     augmentS(IR.op.imm);
-    if (!FL.f_CT1)
+    if (!FLAGS.f_CT1)
         updatePC(S);
     return 2;
 }
@@ -5100,10 +5495,10 @@ uint P2Cog::op_jnct1()
  * JNCT2   {#}S
  *
  */
-uint P2Cog::op_jnct2()
+int P2Cog::op_jnct2()
 {
     augmentS(IR.op.imm);
-    if (!FL.f_CT2)
+    if (!FLAGS.f_CT2)
         updatePC(S);
     return 2;
 }
@@ -5116,10 +5511,10 @@ uint P2Cog::op_jnct2()
  * JNCT3   {#}S
  *
  */
-uint P2Cog::op_jnct3()
+int P2Cog::op_jnct3()
 {
     augmentS(IR.op.imm);
-    if (!FL.f_CT3)
+    if (!FLAGS.f_CT3)
         updatePC(S);
     return 2;
 }
@@ -5132,10 +5527,10 @@ uint P2Cog::op_jnct3()
  * JNSE1   {#}S
  *
  */
-uint P2Cog::op_jnse1()
+int P2Cog::op_jnse1()
 {
     augmentS(IR.op.imm);
-    if (!FL.f_SE1)
+    if (!FLAGS.f_SE1)
         updatePC(S);
     return 2;
 }
@@ -5148,10 +5543,10 @@ uint P2Cog::op_jnse1()
  * JNSE2   {#}S
  *
  */
-uint P2Cog::op_jnse2()
+int P2Cog::op_jnse2()
 {
     augmentS(IR.op.imm);
-    if (!FL.f_SE2)
+    if (!FLAGS.f_SE2)
         updatePC(S);
     return 2;
 }
@@ -5164,10 +5559,10 @@ uint P2Cog::op_jnse2()
  * JNSE3   {#}S
  *
  */
-uint P2Cog::op_jnse3()
+int P2Cog::op_jnse3()
 {
     augmentS(IR.op.imm);
-    if (!FL.f_SE3)
+    if (!FLAGS.f_SE3)
         updatePC(S);
     return 2;
 }
@@ -5180,10 +5575,10 @@ uint P2Cog::op_jnse3()
  * JNSE4   {#}S
  *
  */
-uint P2Cog::op_jnse4()
+int P2Cog::op_jnse4()
 {
     augmentS(IR.op.imm);
-    if (!FL.f_SE4)
+    if (!FLAGS.f_SE4)
         updatePC(S);
     return 2;
 }
@@ -5196,10 +5591,10 @@ uint P2Cog::op_jnse4()
  * JNPAT   {#}S
  *
  */
-uint P2Cog::op_jnpat()
+int P2Cog::op_jnpat()
 {
     augmentS(IR.op.imm);
-    if (!FL.f_PAT)
+    if (!FLAGS.f_PAT)
         updatePC(S);
     return 2;
 }
@@ -5212,10 +5607,10 @@ uint P2Cog::op_jnpat()
  * JNFBW   {#}S
  *
  */
-uint P2Cog::op_jnfbw()
+int P2Cog::op_jnfbw()
 {
     augmentS(IR.op.imm);
-    if (!FL.f_FBW)
+    if (!FLAGS.f_FBW)
         updatePC(S);
     return 2;
 }
@@ -5228,10 +5623,10 @@ uint P2Cog::op_jnfbw()
  * JNXMT   {#}S
  *
  */
-uint P2Cog::op_jnxmt()
+int P2Cog::op_jnxmt()
 {
     augmentS(IR.op.imm);
-    if (!FL.f_XMT)
+    if (!FLAGS.f_XMT)
         updatePC(S);
     return 2;
 }
@@ -5244,10 +5639,10 @@ uint P2Cog::op_jnxmt()
  * JNXFI   {#}S
  *
  */
-uint P2Cog::op_jnxfi()
+int P2Cog::op_jnxfi()
 {
     augmentS(IR.op.imm);
-    if (!FL.f_XFI)
+    if (!FLAGS.f_XFI)
         updatePC(S);
     return 2;
 }
@@ -5260,10 +5655,10 @@ uint P2Cog::op_jnxfi()
  * JNXRO   {#}S
  *
  */
-uint P2Cog::op_jnxro()
+int P2Cog::op_jnxro()
 {
     augmentS(IR.op.imm);
-    if (!FL.f_XRO)
+    if (!FLAGS.f_XRO)
         updatePC(S);
     return 2;
 }
@@ -5276,10 +5671,10 @@ uint P2Cog::op_jnxro()
  * JNXRL   {#}S
  *
  */
-uint P2Cog::op_jnxrl()
+int P2Cog::op_jnxrl()
 {
     augmentS(IR.op.imm);
-    if (!FL.f_XRL)
+    if (!FLAGS.f_XRL)
         updatePC(S);
     return 2;
 }
@@ -5292,10 +5687,10 @@ uint P2Cog::op_jnxrl()
  * JNATN   {#}S
  *
  */
-uint P2Cog::op_jnatn()
+int P2Cog::op_jnatn()
 {
     augmentS(IR.op.imm);
-    if (!FL.f_ATN)
+    if (!FLAGS.f_ATN)
         updatePC(S);
     return 2;
 }
@@ -5308,10 +5703,10 @@ uint P2Cog::op_jnatn()
  * JNQMT   {#}S
  *
  */
-uint P2Cog::op_jnqmt()
+int P2Cog::op_jnqmt()
 {
     augmentS(IR.op.imm);
-    if (!FL.f_QMT)
+    if (!FLAGS.f_QMT)
         updatePC(S);
     return 2;
 }
@@ -5324,7 +5719,7 @@ uint P2Cog::op_jnqmt()
  * <empty> {#}D,{#}S
  *
  */
-uint P2Cog::op_1011110_1()
+int P2Cog::op_1011110_1()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.wz);
@@ -5339,7 +5734,7 @@ uint P2Cog::op_1011110_1()
  * <empty> {#}D,{#}S
  *
  */
-uint P2Cog::op_1011111_0()
+int P2Cog::op_1011111_0()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.wz);
@@ -5355,12 +5750,12 @@ uint P2Cog::op_1011111_0()
  *
  * C selects INA/INB, Z selects =/!=, D provides mask value, S provides match value.
  */
-uint P2Cog::op_setpat()
+int P2Cog::op_setpat()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.imm);
-    PAT.mode = IR.op.wc ? (IR.op.wz ? pat_PB_EQ : pat_PB_NE)
-                        : (IR.op.wz ? pat_PA_EQ : pat_PA_NE);
+    PAT.mode = IR.op.wc ? (IR.op.wz ? p2_PAT_PB_EQ : p2_PAT_PB_NE)
+                        : (IR.op.wz ? p2_PAT_PA_EQ : p2_PAT_PA_NE);
     PAT.mask = D;
     PAT.match = S;
     return 2;
@@ -5374,7 +5769,7 @@ uint P2Cog::op_setpat()
  * WRPIN   {#}D,{#}S
  *
  */
-uint P2Cog::op_wrpin()
+int P2Cog::op_wrpin()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.wz);
@@ -5389,7 +5784,7 @@ uint P2Cog::op_wrpin()
  * AKPIN   {#}S
  *
  */
-uint P2Cog::op_akpin()
+int P2Cog::op_akpin()
 {
     augmentS(IR.op.imm);
     return 2;
@@ -5403,7 +5798,7 @@ uint P2Cog::op_akpin()
  * WXPIN   {#}D,{#}S
  *
  */
-uint P2Cog::op_wxpin()
+int P2Cog::op_wxpin()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.wz);
@@ -5418,7 +5813,7 @@ uint P2Cog::op_wxpin()
  * WYPIN   {#}D,{#}S
  *
  */
-uint P2Cog::op_wypin()
+int P2Cog::op_wypin()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.wz);
@@ -5433,7 +5828,7 @@ uint P2Cog::op_wypin()
  * WRLUT   {#}D,{#}S
  *
  */
-uint P2Cog::op_wrlut()
+int P2Cog::op_wrlut()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.wz);
@@ -5449,7 +5844,7 @@ uint P2Cog::op_wrlut()
  * WRBYTE  {#}D,{#}S/P
  *
  */
-uint P2Cog::op_wrbyte()
+int P2Cog::op_wrbyte()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.wz);
@@ -5464,7 +5859,7 @@ uint P2Cog::op_wrbyte()
  * WRWORD  {#}D,{#}S/P
  *
  */
-uint P2Cog::op_wrword()
+int P2Cog::op_wrword()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.wz);
@@ -5480,7 +5875,7 @@ uint P2Cog::op_wrword()
  *
  * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  */
-uint P2Cog::op_wrlong()
+int P2Cog::op_wrlong()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.wz);
@@ -5495,7 +5890,7 @@ uint P2Cog::op_wrlong()
  * PUSHA   {#}D
  *
  */
-uint P2Cog::op_pusha()
+int P2Cog::op_pusha()
 {
     augmentD(IR.op.wz);
     return 2;
@@ -5509,7 +5904,7 @@ uint P2Cog::op_pusha()
  * PUSHB   {#}D
  *
  */
-uint P2Cog::op_pushb()
+int P2Cog::op_pushb()
 {
     augmentD(IR.op.wz);
     return 2;
@@ -5524,7 +5919,7 @@ uint P2Cog::op_pushb()
  *
  * D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
  */
-uint P2Cog::op_rdfast()
+int P2Cog::op_rdfast()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.wz);
@@ -5540,7 +5935,7 @@ uint P2Cog::op_rdfast()
  *
  * D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
  */
-uint P2Cog::op_wrfast()
+int P2Cog::op_wrfast()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.wz);
@@ -5556,7 +5951,7 @@ uint P2Cog::op_wrfast()
  *
  * D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
  */
-uint P2Cog::op_fblock()
+int P2Cog::op_fblock()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.wz);
@@ -5571,7 +5966,7 @@ uint P2Cog::op_fblock()
  * XINIT   {#}D,{#}S
  *
  */
-uint P2Cog::op_xinit()
+int P2Cog::op_xinit()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.wz);
@@ -5586,7 +5981,7 @@ uint P2Cog::op_xinit()
  * XSTOP
  *
  */
-uint P2Cog::op_xstop()
+int P2Cog::op_xstop()
 {
     return 2;
 }
@@ -5599,7 +5994,7 @@ uint P2Cog::op_xstop()
  * XZERO   {#}D,{#}S
  *
  */
-uint P2Cog::op_xzero()
+int P2Cog::op_xzero()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.wz);
@@ -5614,7 +6009,7 @@ uint P2Cog::op_xzero()
  * XCONT   {#}D,{#}S
  *
  */
-uint P2Cog::op_xcont()
+int P2Cog::op_xcont()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.wz);
@@ -5631,7 +6026,7 @@ uint P2Cog::op_xcont()
  * If S = 0, repeat infinitely.
  * If D[8:0] = 0, nothing repeats.
  */
-uint P2Cog::op_rep()
+int P2Cog::op_rep()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.wz);
@@ -5648,7 +6043,7 @@ uint P2Cog::op_rep()
  * S[19:0] sets hub startup address and PTRB of cog.
  * Prior SETQ sets PTRA of cog.
  */
-uint P2Cog::op_coginit()
+int P2Cog::op_coginit()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.wz);
@@ -5664,7 +6059,7 @@ uint P2Cog::op_coginit()
  *
  * GETQX/GETQY retrieves lower/upper product.
  */
-uint P2Cog::op_qmul()
+int P2Cog::op_qmul()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.wz);
@@ -5680,7 +6075,7 @@ uint P2Cog::op_qmul()
  *
  * GETQX/GETQY retrieves quotient/remainder.
  */
-uint P2Cog::op_qdiv()
+int P2Cog::op_qdiv()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.wz);
@@ -5696,7 +6091,7 @@ uint P2Cog::op_qdiv()
  *
  * GETQX/GETQY retrieves quotient/remainder.
  */
-uint P2Cog::op_qfrac()
+int P2Cog::op_qfrac()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.wz);
@@ -5712,7 +6107,7 @@ uint P2Cog::op_qfrac()
  *
  * GETQX retrieves root.
  */
-uint P2Cog::op_qsqrt()
+int P2Cog::op_qsqrt()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.wz);
@@ -5728,7 +6123,7 @@ uint P2Cog::op_qsqrt()
  *
  * GETQX/GETQY retrieves X/Y.
  */
-uint P2Cog::op_qrotate()
+int P2Cog::op_qrotate()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.wz);
@@ -5744,7 +6139,7 @@ uint P2Cog::op_qrotate()
  *
  * GETQX/GETQY retrieves length/angle.
  */
-uint P2Cog::op_qvector()
+int P2Cog::op_qvector()
 {
     augmentS(IR.op.imm);
     augmentD(IR.op.wz);
@@ -5759,7 +6154,7 @@ uint P2Cog::op_qvector()
  * HUBSET  {#}D
  *
  */
-uint P2Cog::op_hubset()
+int P2Cog::op_hubset()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -5774,7 +6169,7 @@ uint P2Cog::op_hubset()
  *
  * If WC, check status of cog D[3:0], C = 1 if on.
  */
-uint P2Cog::op_cogid()
+int P2Cog::op_cogid()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -5788,7 +6183,7 @@ uint P2Cog::op_cogid()
  * COGSTOP {#}D
  *
  */
-uint P2Cog::op_cogstop()
+int P2Cog::op_cogstop()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -5804,7 +6199,7 @@ uint P2Cog::op_cogstop()
  * D will be written with the LOCK number (0 to 15).
  * C = 1 if no LOCK available.
  */
-uint P2Cog::op_locknew()
+int P2Cog::op_locknew()
 {
     return 2;
 }
@@ -5817,7 +6212,7 @@ uint P2Cog::op_locknew()
  * LOCKRET {#}D
  *
  */
-uint P2Cog::op_lockret()
+int P2Cog::op_lockret()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -5834,7 +6229,7 @@ uint P2Cog::op_lockret()
  * LOCKREL releases LOCK.
  * LOCK is also released if owner cog stops or restarts.
  */
-uint P2Cog::op_locktry()
+int P2Cog::op_locktry()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -5849,7 +6244,7 @@ uint P2Cog::op_locktry()
  *
  * If D is a register and WC, get current/last cog id of LOCK owner into D and LOCK status into C.
  */
-uint P2Cog::op_lockrel()
+int P2Cog::op_lockrel()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -5864,7 +6259,7 @@ uint P2Cog::op_lockrel()
  *
  * GETQX retrieves log {5'whole_exponent, 27'fractional_exponent}.
  */
-uint P2Cog::op_qlog()
+int P2Cog::op_qlog()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -5879,132 +6274,122 @@ uint P2Cog::op_qlog()
  *
  * GETQX retrieves number.
  */
-uint P2Cog::op_qexp()
+int P2Cog::op_qexp()
 {
     augmentD(IR.op.imm);
     return 2;
 }
 
 /**
- * @brief Used after RDFAST.
+ * @brief Read zero-extended byte from FIFO into D. Used after RDFAST.
  *
  * EEEE 1101011 CZ0 DDDDDDDDD 000010000
  *
  * RFBYTE  D        {WC/WZ/WCZ}
  *
- * Read zero-extended byte from FIFO into D.
  * C = MSB of byte.
  * Z = (result == 0).
  */
-uint P2Cog::op_rfbyte()
+int P2Cog::op_rfbyte()
 {
     return 2;
 }
 
 /**
- * @brief Used after RDFAST.
+ * @brief Read zero-extended word from FIFO into D. Used after RDFAST.
  *
  * EEEE 1101011 CZ0 DDDDDDDDD 000010001
  *
  * RFWORD  D        {WC/WZ/WCZ}
  *
- * Read zero-extended word from FIFO into D.
  * C = MSB of word.
  * Z = (result == 0).
  */
-uint P2Cog::op_rfword()
+int P2Cog::op_rfword()
 {
     return 2;
 }
 
 /**
- * @brief Used after RDFAST.
+ * @brief Read long from FIFO into D. Used after RDFAST.
  *
  * EEEE 1101011 CZ0 DDDDDDDDD 000010010
  *
  * RFLONG  D        {WC/WZ/WCZ}
  *
- * Read long from FIFO into D.
  * C = MSB of long.
  * Z = (result == 0).
  */
-uint P2Cog::op_rflong()
+int P2Cog::op_rflong()
 {
     return 2;
 }
 
 /**
- * @brief Used after RDFAST.
+ * @brief Read zero-extended 1 … 4-byte value from FIFO into D. Used after RDFAST.
  *
  * EEEE 1101011 CZ0 DDDDDDDDD 000010011
  *
  * RFVAR   D        {WC/WZ/WCZ}
  *
- * Read zero-extended 1.
- * 4-byte value from FIFO into D.
  * C = 0.
  * Z = (result == 0).
  */
-uint P2Cog::op_rfvar()
+int P2Cog::op_rfvar()
 {
     return 2;
 }
 
 /**
- * @brief Used after RDFAST.
+ * @brief Read sign-extended 1 … 4-byte value from FIFO into D. Used after RDFAST.
  *
  * EEEE 1101011 CZ0 DDDDDDDDD 000010100
  *
  * RFVARS  D        {WC/WZ/WCZ}
  *
- * Read sign-extended 1.
- * 4-byte value from FIFO into D.
  * C = MSB of value.
  * Z = (result == 0).
  */
-uint P2Cog::op_rfvars()
+int P2Cog::op_rfvars()
 {
     return 2;
 }
 
 /**
- * @brief Used after WRFAST.
+ * @brief Write byte in D[7:0] into FIFO. Used after WRFAST.
  *
  * EEEE 1101011 00L DDDDDDDDD 000010101
  *
  * WFBYTE  {#}D
  *
- * Write byte in D[7:0] into FIFO.
  */
-uint P2Cog::op_wfbyte()
+int P2Cog::op_wfbyte()
 {
     return 2;
 }
 
 /**
- * @brief Used after WRFAST.
+ * @brief Write word in D[15:0] into FIFO. Used after WRFAST.
  *
  * EEEE 1101011 00L DDDDDDDDD 000010110
  *
  * WFWORD  {#}D
  *
- * Write word in D[15:0] into FIFO.
  */
-uint P2Cog::op_wfword()
+int P2Cog::op_wfword()
 {
     return 2;
 }
 
 /**
- * @brief Used after WRFAST.
+ * @brief Write long in D[31:0] into FIFO. Used after WRFAST.
  *
  * EEEE 1101011 00L DDDDDDDDD 000010111
  *
  * WFLONG  {#}D
  *
- * Write long in D[31:0] into FIFO.
  */
-uint P2Cog::op_wflong()
+int P2Cog::op_wflong()
 {
     return 2;
 }
@@ -6022,7 +6407,7 @@ uint P2Cog::op_wflong()
  * C = X[31].
  * Z = (result == 0).
  */
-uint P2Cog::op_getqx()
+int P2Cog::op_getqx()
 {
     return 2;
 }
@@ -6040,7 +6425,7 @@ uint P2Cog::op_getqx()
  * C = Y[31].
  * Z = (result == 0).
  */
-uint P2Cog::op_getqy()
+int P2Cog::op_getqy()
 {
     return 2;
 }
@@ -6054,7 +6439,7 @@ uint P2Cog::op_getqy()
  *
  * CT is the free-running 32-bit system counter that increments on every clock.
  */
-uint P2Cog::op_getct()
+int P2Cog::op_getct()
 {
     return 2;
 }
@@ -6069,9 +6454,9 @@ uint P2Cog::op_getct()
  * RND is the PRNG that updates on every clock.
  * D = RND[31:0], C = RND[31], Z = RND[30], unique per cog.
  */
-uint P2Cog::op_getrnd()
+int P2Cog::op_getrnd()
 {
-    p2_LONG result = HUB->rnd(2*ID);
+    p2_LONG result = HUB->random(2*ID);
     updateC((result >> 31) & 1);
     updateZ((result >> 30) & 1);
     updateD(result);
@@ -6087,9 +6472,9 @@ uint P2Cog::op_getrnd()
  *
  * C = RND[31], Z = RND[30], unique per cog.
  */
-uint P2Cog::op_getrnd_cz()
+int P2Cog::op_getrnd_cz()
 {
-    p2_LONG result = HUB->rnd(2*ID);
+    p2_LONG result = HUB->random(2*ID);
     updateC((result >> 31) & 1);
     updateZ((result >> 30) & 1);
     return 2;
@@ -6103,7 +6488,7 @@ uint P2Cog::op_getrnd_cz()
  * SETDACS {#}D
  *
  */
-uint P2Cog::op_setdacs()
+int P2Cog::op_setdacs()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6117,7 +6502,7 @@ uint P2Cog::op_setdacs()
  * SETXFRQ {#}D
  *
  */
-uint P2Cog::op_setxfrq()
+int P2Cog::op_setxfrq()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6131,7 +6516,7 @@ uint P2Cog::op_setxfrq()
  * GETXACC D
  *
  */
-uint P2Cog::op_getxacc()
+int P2Cog::op_getxacc()
 {
     return 2;
 }
@@ -6146,7 +6531,7 @@ uint P2Cog::op_getxacc()
  * If WC/WZ/WCZ, wait 2 + (D & RND) clocks.
  * C/Z = 0.
  */
-uint P2Cog::op_waitx()
+int P2Cog::op_waitx()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6160,7 +6545,7 @@ uint P2Cog::op_waitx()
  * SETSE1  {#}D
  *
  */
-uint P2Cog::op_setse1()
+int P2Cog::op_setse1()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6174,7 +6559,7 @@ uint P2Cog::op_setse1()
  * SETSE2  {#}D
  *
  */
-uint P2Cog::op_setse2()
+int P2Cog::op_setse2()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6188,7 +6573,7 @@ uint P2Cog::op_setse2()
  * SETSE3  {#}D
  *
  */
-uint P2Cog::op_setse3()
+int P2Cog::op_setse3()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6202,7 +6587,7 @@ uint P2Cog::op_setse3()
  * SETSE4  {#}D
  *
  */
-uint P2Cog::op_setse4()
+int P2Cog::op_setse4()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6216,7 +6601,7 @@ uint P2Cog::op_setse4()
  * POLLINT          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollint()
+int P2Cog::op_pollint()
 {
     return 2;
 }
@@ -6229,7 +6614,7 @@ uint P2Cog::op_pollint()
  * POLLCT1          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollct1()
+int P2Cog::op_pollct1()
 {
     return 2;
 }
@@ -6242,7 +6627,7 @@ uint P2Cog::op_pollct1()
  * POLLCT2          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollct2()
+int P2Cog::op_pollct2()
 {
     return 2;
 }
@@ -6255,7 +6640,7 @@ uint P2Cog::op_pollct2()
  * POLLCT3          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollct3()
+int P2Cog::op_pollct3()
 {
     return 2;
 }
@@ -6268,7 +6653,7 @@ uint P2Cog::op_pollct3()
  * POLLSE1          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollse1()
+int P2Cog::op_pollse1()
 {
     return 2;
 }
@@ -6281,7 +6666,7 @@ uint P2Cog::op_pollse1()
  * POLLSE2          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollse2()
+int P2Cog::op_pollse2()
 {
     return 2;
 }
@@ -6294,7 +6679,7 @@ uint P2Cog::op_pollse2()
  * POLLSE3          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollse3()
+int P2Cog::op_pollse3()
 {
     return 2;
 }
@@ -6307,7 +6692,7 @@ uint P2Cog::op_pollse3()
  * POLLSE4          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollse4()
+int P2Cog::op_pollse4()
 {
     return 2;
 }
@@ -6320,7 +6705,7 @@ uint P2Cog::op_pollse4()
  * POLLPAT          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollpat()
+int P2Cog::op_pollpat()
 {
     return 2;
 }
@@ -6333,7 +6718,7 @@ uint P2Cog::op_pollpat()
  * POLLFBW          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollfbw()
+int P2Cog::op_pollfbw()
 {
     return 2;
 }
@@ -6346,7 +6731,7 @@ uint P2Cog::op_pollfbw()
  * POLLXMT          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollxmt()
+int P2Cog::op_pollxmt()
 {
     return 2;
 }
@@ -6359,7 +6744,7 @@ uint P2Cog::op_pollxmt()
  * POLLXFI          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollxfi()
+int P2Cog::op_pollxfi()
 {
     return 2;
 }
@@ -6372,7 +6757,7 @@ uint P2Cog::op_pollxfi()
  * POLLXRO          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollxro()
+int P2Cog::op_pollxro()
 {
     return 2;
 }
@@ -6385,7 +6770,7 @@ uint P2Cog::op_pollxro()
  * POLLXRL          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollxrl()
+int P2Cog::op_pollxrl()
 {
     return 2;
 }
@@ -6398,7 +6783,7 @@ uint P2Cog::op_pollxrl()
  * POLLATN          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollatn()
+int P2Cog::op_pollatn()
 {
     return 2;
 }
@@ -6411,7 +6796,7 @@ uint P2Cog::op_pollatn()
  * POLLQMT          {WC/WZ/WCZ}
  *
  */
-uint P2Cog::op_pollqmt()
+int P2Cog::op_pollqmt()
 {
     return 2;
 }
@@ -6426,7 +6811,7 @@ uint P2Cog::op_pollqmt()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitint()
+int P2Cog::op_waitint()
 {
     return 2;
 }
@@ -6441,7 +6826,7 @@ uint P2Cog::op_waitint()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitct1()
+int P2Cog::op_waitct1()
 {
     return 2;
 }
@@ -6456,7 +6841,7 @@ uint P2Cog::op_waitct1()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitct2()
+int P2Cog::op_waitct2()
 {
     return 2;
 }
@@ -6471,7 +6856,7 @@ uint P2Cog::op_waitct2()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitct3()
+int P2Cog::op_waitct3()
 {
     return 2;
 }
@@ -6486,7 +6871,7 @@ uint P2Cog::op_waitct3()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitse1()
+int P2Cog::op_waitse1()
 {
     return 2;
 }
@@ -6501,7 +6886,7 @@ uint P2Cog::op_waitse1()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitse2()
+int P2Cog::op_waitse2()
 {
     return 2;
 }
@@ -6516,7 +6901,7 @@ uint P2Cog::op_waitse2()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitse3()
+int P2Cog::op_waitse3()
 {
     return 2;
 }
@@ -6531,7 +6916,7 @@ uint P2Cog::op_waitse3()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitse4()
+int P2Cog::op_waitse4()
 {
     return 2;
 }
@@ -6546,7 +6931,7 @@ uint P2Cog::op_waitse4()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitpat()
+int P2Cog::op_waitpat()
 {
     return 2;
 }
@@ -6561,7 +6946,7 @@ uint P2Cog::op_waitpat()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitfbw()
+int P2Cog::op_waitfbw()
 {
     return 2;
 }
@@ -6576,7 +6961,7 @@ uint P2Cog::op_waitfbw()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitxmt()
+int P2Cog::op_waitxmt()
 {
     return 2;
 }
@@ -6591,7 +6976,7 @@ uint P2Cog::op_waitxmt()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitxfi()
+int P2Cog::op_waitxfi()
 {
     return 2;
 }
@@ -6606,7 +6991,7 @@ uint P2Cog::op_waitxfi()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitxro()
+int P2Cog::op_waitxro()
 {
     return 2;
 }
@@ -6621,7 +7006,7 @@ uint P2Cog::op_waitxro()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitxrl()
+int P2Cog::op_waitxrl()
 {
     return 2;
 }
@@ -6636,7 +7021,7 @@ uint P2Cog::op_waitxrl()
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
  */
-uint P2Cog::op_waitatn()
+int P2Cog::op_waitatn()
 {
     return 2;
 }
@@ -6649,7 +7034,7 @@ uint P2Cog::op_waitatn()
  * ALLOWI
  *
  */
-uint P2Cog::op_allowi()
+int P2Cog::op_allowi()
 {
     return 2;
 }
@@ -6662,7 +7047,7 @@ uint P2Cog::op_allowi()
  * STALLI
  *
  */
-uint P2Cog::op_stalli()
+int P2Cog::op_stalli()
 {
     return 2;
 }
@@ -6675,7 +7060,7 @@ uint P2Cog::op_stalli()
  * TRGINT1
  *
  */
-uint P2Cog::op_trgint1()
+int P2Cog::op_trgint1()
 {
     return 2;
 }
@@ -6688,7 +7073,7 @@ uint P2Cog::op_trgint1()
  * TRGINT2
  *
  */
-uint P2Cog::op_trgint2()
+int P2Cog::op_trgint2()
 {
     return 2;
 }
@@ -6701,7 +7086,7 @@ uint P2Cog::op_trgint2()
  * TRGINT3
  *
  */
-uint P2Cog::op_trgint3()
+int P2Cog::op_trgint3()
 {
     return 2;
 }
@@ -6714,7 +7099,7 @@ uint P2Cog::op_trgint3()
  * NIXINT1
  *
  */
-uint P2Cog::op_nixint1()
+int P2Cog::op_nixint1()
 {
     return 2;
 }
@@ -6727,7 +7112,7 @@ uint P2Cog::op_nixint1()
  * NIXINT2
  *
  */
-uint P2Cog::op_nixint2()
+int P2Cog::op_nixint2()
 {
     return 2;
 }
@@ -6740,7 +7125,7 @@ uint P2Cog::op_nixint2()
  * NIXINT3
  *
  */
-uint P2Cog::op_nixint3()
+int P2Cog::op_nixint3()
 {
     return 2;
 }
@@ -6753,7 +7138,7 @@ uint P2Cog::op_nixint3()
  * SETINT1 {#}D
  *
  */
-uint P2Cog::op_setint1()
+int P2Cog::op_setint1()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6767,7 +7152,7 @@ uint P2Cog::op_setint1()
  * SETINT2 {#}D
  *
  */
-uint P2Cog::op_setint2()
+int P2Cog::op_setint2()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6781,7 +7166,7 @@ uint P2Cog::op_setint2()
  * SETINT3 {#}D
  *
  */
-uint P2Cog::op_setint3()
+int P2Cog::op_setint3()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6797,7 +7182,7 @@ uint P2Cog::op_setint3()
  * Use before RDLONG/WRLONG/WMLONG to set block transfer.
  * Also used before MUXQ/COGINIT/QDIV/QFRAC/QROTATE/WAITxxx.
  */
-uint P2Cog::op_setq()
+int P2Cog::op_setq()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6812,7 +7197,7 @@ uint P2Cog::op_setq()
  *
  * Use before RDLONG/WRLONG/WMLONG to set LUT block transfer.
  */
-uint P2Cog::op_setq2()
+int P2Cog::op_setq2()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6826,7 +7211,7 @@ uint P2Cog::op_setq2()
  * PUSH    {#}D
  *
  */
-uint P2Cog::op_push()
+int P2Cog::op_push()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6841,7 +7226,7 @@ uint P2Cog::op_push()
  *
  * C = K[31], Z = K[30], D = K.
  */
-uint P2Cog::op_pop()
+int P2Cog::op_pop()
 {
     return 2;
 }
@@ -6855,7 +7240,7 @@ uint P2Cog::op_pop()
  *
  * C = D[31], Z = D[30], PC = D[19:0].
  */
-uint P2Cog::op_jmp()
+int P2Cog::op_jmp()
 {
     updateC((D >> 31) & 1);
     updateZ((D >> 30) & 1);
@@ -6872,7 +7257,7 @@ uint P2Cog::op_jmp()
  *
  * C = D[31], Z = D[30], PC = D[19:0].
  */
-uint P2Cog::op_call()
+int P2Cog::op_call()
 {
     // FIXME: which stack?
     updateC((D >> 31) & 1);
@@ -6890,7 +7275,7 @@ uint P2Cog::op_call()
  *
  * C = K[31], Z = K[30], PC = K[19:0].
  */
-uint P2Cog::op_ret()
+int P2Cog::op_ret()
 {
     // FIXME: which stack?
     p2_LONG K = HUB->rd_LONG(LUT.REG.PB);
@@ -6909,7 +7294,7 @@ uint P2Cog::op_ret()
  *
  * C = D[31], Z = D[30], PC = D[19:0].
  */
-uint P2Cog::op_calla()
+int P2Cog::op_calla()
 {
     return 2;
 }
@@ -6923,7 +7308,7 @@ uint P2Cog::op_calla()
  *
  * C = L[31], Z = L[30], PC = L[19:0].
  */
-uint P2Cog::op_reta()
+int P2Cog::op_reta()
 {
     return 2;
 }
@@ -6937,7 +7322,7 @@ uint P2Cog::op_reta()
  *
  * C = D[31], Z = D[30], PC = D[19:0].
  */
-uint P2Cog::op_callb()
+int P2Cog::op_callb()
 {
     return 2;
 }
@@ -6951,7 +7336,7 @@ uint P2Cog::op_callb()
  *
  * C = L[31], Z = L[30], PC = L[19:0].
  */
-uint P2Cog::op_retb()
+int P2Cog::op_retb()
 {
     return 2;
 }
@@ -6966,7 +7351,7 @@ uint P2Cog::op_retb()
  * For cogex, PC += D[19:0].
  * For hubex, PC += D[17:0] << 2.
  */
-uint P2Cog::op_jmprel()
+int P2Cog::op_jmprel()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6983,7 +7368,7 @@ uint P2Cog::op_jmprel()
  * 31 get cancelled for each '1' bit in D[0].
  * D[31].
  */
-uint P2Cog::op_skip()
+int P2Cog::op_skip()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -6998,7 +7383,7 @@ uint P2Cog::op_skip()
  *
  * Like SKIP, but instead of cancelling instructions, the PC leaps over them.
  */
-uint P2Cog::op_skipf()
+int P2Cog::op_skipf()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7013,7 +7398,7 @@ uint P2Cog::op_skipf()
  *
  * PC = {10'b0, D[9:0]}.
  */
-uint P2Cog::op_execf()
+int P2Cog::op_execf()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7027,7 +7412,7 @@ uint P2Cog::op_execf()
  * GETPTR  D
  *
  */
-uint P2Cog::op_getptr()
+int P2Cog::op_getptr()
 {
     return 2;
 }
@@ -7042,7 +7427,7 @@ uint P2Cog::op_getptr()
  * C = 0.
  * Z = 0.
  */
-uint P2Cog::op_getbrk()
+int P2Cog::op_getbrk()
 {
     return 2;
 }
@@ -7056,7 +7441,7 @@ uint P2Cog::op_getbrk()
  *
  * Cog D[3:0] must have asynchronous breakpoint enabled.
  */
-uint P2Cog::op_cogbrk()
+int P2Cog::op_cogbrk()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7071,7 +7456,7 @@ uint P2Cog::op_cogbrk()
  *
  * Else, trigger break if enabled, conditionally write break code to D[7:0].
  */
-uint P2Cog::op_brk()
+int P2Cog::op_brk()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7085,7 +7470,7 @@ uint P2Cog::op_brk()
  * SETLUTS {#}D
  *
  */
-uint P2Cog::op_setluts()
+int P2Cog::op_setluts()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7099,7 +7484,7 @@ uint P2Cog::op_setluts()
  * SETCY   {#}D
  *
  */
-uint P2Cog::op_setcy()
+int P2Cog::op_setcy()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7113,7 +7498,7 @@ uint P2Cog::op_setcy()
  * SETCI   {#}D
  *
  */
-uint P2Cog::op_setci()
+int P2Cog::op_setci()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7127,7 +7512,7 @@ uint P2Cog::op_setci()
  * SETCQ   {#}D
  *
  */
-uint P2Cog::op_setcq()
+int P2Cog::op_setcq()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7141,7 +7526,7 @@ uint P2Cog::op_setcq()
  * SETCFRQ {#}D
  *
  */
-uint P2Cog::op_setcfrq()
+int P2Cog::op_setcfrq()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7155,7 +7540,7 @@ uint P2Cog::op_setcfrq()
  * SETCMOD {#}D
  *
  */
-uint P2Cog::op_setcmod()
+int P2Cog::op_setcmod()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7169,7 +7554,7 @@ uint P2Cog::op_setcmod()
  * SETPIV  {#}D
  *
  */
-uint P2Cog::op_setpiv()
+int P2Cog::op_setpiv()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7183,7 +7568,7 @@ uint P2Cog::op_setpiv()
  * SETPIX  {#}D
  *
  */
-uint P2Cog::op_setpix()
+int P2Cog::op_setpix()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7197,7 +7582,7 @@ uint P2Cog::op_setpix()
  * COGATN  {#}D
  *
  */
-uint P2Cog::op_cogatn()
+int P2Cog::op_cogatn()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7212,7 +7597,7 @@ uint P2Cog::op_cogatn()
  *
  * C/Z =          IN[D[5:0]].
  */
-uint P2Cog::op_testp_w()
+int P2Cog::op_testp_w()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7227,7 +7612,7 @@ uint P2Cog::op_testp_w()
  *
  * C/Z =         !IN[D[5:0]].
  */
-uint P2Cog::op_testpn_w()
+int P2Cog::op_testpn_w()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7242,7 +7627,7 @@ uint P2Cog::op_testpn_w()
  *
  * C/Z = C/Z AND  IN[D[5:0]].
  */
-uint P2Cog::op_testp_and()
+int P2Cog::op_testp_and()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7257,7 +7642,7 @@ uint P2Cog::op_testp_and()
  *
  * C/Z = C/Z AND !IN[D[5:0]].
  */
-uint P2Cog::op_testpn_and()
+int P2Cog::op_testpn_and()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7272,7 +7657,7 @@ uint P2Cog::op_testpn_and()
  *
  * C/Z = C/Z OR   IN[D[5:0]].
  */
-uint P2Cog::op_testp_or()
+int P2Cog::op_testp_or()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7287,7 +7672,7 @@ uint P2Cog::op_testp_or()
  *
  * C/Z = C/Z OR  !IN[D[5:0]].
  */
-uint P2Cog::op_testpn_or()
+int P2Cog::op_testpn_or()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7302,7 +7687,7 @@ uint P2Cog::op_testpn_or()
  *
  * C/Z = C/Z XOR  IN[D[5:0]].
  */
-uint P2Cog::op_testp_xor()
+int P2Cog::op_testp_xor()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7317,7 +7702,7 @@ uint P2Cog::op_testp_xor()
  *
  * C/Z = C/Z XOR !IN[D[5:0]].
  */
-uint P2Cog::op_testpn_xor()
+int P2Cog::op_testpn_xor()
 {
     augmentD(IR.op.imm);
     return 2;
@@ -7332,7 +7717,7 @@ uint P2Cog::op_testpn_xor()
  *
  * C,Z = DIR bit.
  */
-uint P2Cog::op_dirl()
+int P2Cog::op_dirl()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = 0;
@@ -7351,7 +7736,7 @@ uint P2Cog::op_dirl()
  *
  * C,Z = DIR bit.
  */
-uint P2Cog::op_dirh()
+int P2Cog::op_dirh()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = 1;
@@ -7370,7 +7755,7 @@ uint P2Cog::op_dirh()
  *
  * C,Z = DIR bit.
  */
-uint P2Cog::op_dirc()
+int P2Cog::op_dirc()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = C;
@@ -7389,7 +7774,7 @@ uint P2Cog::op_dirc()
  *
  * C,Z = DIR bit.
  */
-uint P2Cog::op_dirnc()
+int P2Cog::op_dirnc()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = C ^ 1;
@@ -7408,7 +7793,7 @@ uint P2Cog::op_dirnc()
  *
  * C,Z = DIR bit.
  */
-uint P2Cog::op_dirz()
+int P2Cog::op_dirz()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = Z;
@@ -7427,7 +7812,7 @@ uint P2Cog::op_dirz()
  *
  * C,Z = DIR bit.
  */
-uint P2Cog::op_dirnz()
+int P2Cog::op_dirnz()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = Z ^ 1;
@@ -7446,10 +7831,10 @@ uint P2Cog::op_dirnz()
  *
  * C,Z = DIR bit.
  */
-uint P2Cog::op_dirrnd()
+int P2Cog::op_dirrnd()
 {
     augmentD(IR.op.imm);
-    const p2_LONG result = HUB->rnd(2*ID) & 1;
+    const p2_LONG result = HUB->random(2*ID) & 1;
     updateC(result);
     updateZ(result);
     updateDIR(D, result);
@@ -7465,7 +7850,7 @@ uint P2Cog::op_dirrnd()
  *
  * C,Z = DIR bit.
  */
-uint P2Cog::op_dirnot()
+int P2Cog::op_dirnot()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = HUB->rd_DIR(D) ^ 1;
@@ -7484,7 +7869,7 @@ uint P2Cog::op_dirnot()
  *
  * C,Z = OUT bit.
  */
-uint P2Cog::op_outl()
+int P2Cog::op_outl()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = 0;
@@ -7503,7 +7888,7 @@ uint P2Cog::op_outl()
  *
  * C,Z = OUT bit.
  */
-uint P2Cog::op_outh()
+int P2Cog::op_outh()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = 1;
@@ -7522,7 +7907,7 @@ uint P2Cog::op_outh()
  *
  * C,Z = OUT bit.
  */
-uint P2Cog::op_outc()
+int P2Cog::op_outc()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = C;
@@ -7541,7 +7926,7 @@ uint P2Cog::op_outc()
  *
  * C,Z = OUT bit.
  */
-uint P2Cog::op_outnc()
+int P2Cog::op_outnc()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = C ^ 1;
@@ -7560,7 +7945,7 @@ uint P2Cog::op_outnc()
  *
  * C,Z = OUT bit.
  */
-uint P2Cog::op_outz()
+int P2Cog::op_outz()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = Z;
@@ -7579,7 +7964,7 @@ uint P2Cog::op_outz()
  *
  * C,Z = OUT bit.
  */
-uint P2Cog::op_outnz()
+int P2Cog::op_outnz()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = Z ^ 1;
@@ -7598,10 +7983,10 @@ uint P2Cog::op_outnz()
  *
  * C,Z = OUT bit.
  */
-uint P2Cog::op_outrnd()
+int P2Cog::op_outrnd()
 {
     augmentD(IR.op.imm);
-    const p2_LONG result = HUB->rnd(2*ID) & 1;
+    const p2_LONG result = HUB->random(2*ID) & 1;
     updateC(result);
     updateZ(result);
     updateOUT(D, result);
@@ -7617,7 +8002,7 @@ uint P2Cog::op_outrnd()
  *
  * C,Z = OUT bit.
  */
-uint P2Cog::op_outnot()
+int P2Cog::op_outnot()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = HUB->rd_OUT(D) ^ 1;
@@ -7637,7 +8022,7 @@ uint P2Cog::op_outnot()
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_fltl()
+int P2Cog::op_fltl()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = 0;
@@ -7658,7 +8043,7 @@ uint P2Cog::op_fltl()
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_flth()
+int P2Cog::op_flth()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = 1;
@@ -7679,7 +8064,7 @@ uint P2Cog::op_flth()
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_fltc()
+int P2Cog::op_fltc()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = C;
@@ -7700,7 +8085,7 @@ uint P2Cog::op_fltc()
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_fltnc()
+int P2Cog::op_fltnc()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = C ^ 1;
@@ -7721,7 +8106,7 @@ uint P2Cog::op_fltnc()
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_fltz()
+int P2Cog::op_fltz()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = Z;
@@ -7742,7 +8127,7 @@ uint P2Cog::op_fltz()
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_fltnz()
+int P2Cog::op_fltnz()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = Z ^ 1;
@@ -7763,10 +8148,10 @@ uint P2Cog::op_fltnz()
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_fltrnd()
+int P2Cog::op_fltrnd()
 {
     augmentD(IR.op.imm);
-    const p2_LONG result = HUB->rnd(2*ID) & 1;
+    const p2_LONG result = HUB->random(2*ID) & 1;
     updateC(result);
     updateZ(result);
     updateDIR(D, 0);
@@ -7784,7 +8169,7 @@ uint P2Cog::op_fltrnd()
  * DIR bit = 0.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_fltnot()
+int P2Cog::op_fltnot()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = HUB->rd_OUT(D);
@@ -7805,7 +8190,7 @@ uint P2Cog::op_fltnot()
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_drvl()
+int P2Cog::op_drvl()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = 0;
@@ -7826,7 +8211,7 @@ uint P2Cog::op_drvl()
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_drvh()
+int P2Cog::op_drvh()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = 1;
@@ -7847,7 +8232,7 @@ uint P2Cog::op_drvh()
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_drvc()
+int P2Cog::op_drvc()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = C;
@@ -7868,7 +8253,7 @@ uint P2Cog::op_drvc()
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_drvnc()
+int P2Cog::op_drvnc()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = C ^ 1;
@@ -7889,7 +8274,7 @@ uint P2Cog::op_drvnc()
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_drvz()
+int P2Cog::op_drvz()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = Z;
@@ -7910,7 +8295,7 @@ uint P2Cog::op_drvz()
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_drvnz()
+int P2Cog::op_drvnz()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = Z ^ 1;
@@ -7931,10 +8316,10 @@ uint P2Cog::op_drvnz()
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_drvrnd()
+int P2Cog::op_drvrnd()
 {
     augmentD(IR.op.imm);
-    const p2_LONG result = HUB->rnd(2*ID) & 1;
+    const p2_LONG result = HUB->random(2*ID) & 1;
     updateC(result);
     updateZ(result);
     updateDIR(D, 1);
@@ -7952,7 +8337,7 @@ uint P2Cog::op_drvrnd()
  * DIR bit = 1.
  * C,Z = OUT bit.
  */
-uint P2Cog::op_drvnot()
+int P2Cog::op_drvnot()
 {
     augmentD(IR.op.imm);
     const p2_LONG result = HUB->rd_OUT(D) ^ 1;
@@ -7970,9 +8355,9 @@ uint P2Cog::op_drvnot()
  *
  * SPLITB  D
  *
- * D = {S[31], S[27], S[23], S[19], ... S[12], S[8], S[4], S[0]}.
+ * D = {S[31], S[27], S[23], S[19], … S[12], S[8], S[4], S[0]}.
  */
-uint P2Cog::op_splitb()
+int P2Cog::op_splitb()
 {
     const quint32 result =
             (((S >> 31) & 1) << 31) | (((S >> 27) & 1) << 30) | (((S >> 23) & 1) << 29) | (((S >> 19) & 1) << 28) |
@@ -7994,9 +8379,9 @@ uint P2Cog::op_splitb()
  *
  * MERGEB  D
  *
- * D = {S[31], S[23], S[15], S[7], ... S[24], S[16], S[8], S[0]}.
+ * D = {S[31], S[23], S[15], S[7], … S[24], S[16], S[8], S[0]}.
  */
-uint P2Cog::op_mergeb()
+int P2Cog::op_mergeb()
 {
     const quint32 result =
             (((S >> 31) & 1) << 31) | (((S >> 23) & 1) << 30) | (((S >> 15) & 1) << 29) | (((S >>  7) & 1) << 28) |
@@ -8018,9 +8403,9 @@ uint P2Cog::op_mergeb()
  *
  * SPLITW  D
  *
- * D = {S[31], S[29], S[27], S[25], ... S[6], S[4], S[2], S[0]}.
+ * D = {S[31], S[29], S[27], S[25], … S[6], S[4], S[2], S[0]}.
  */
-uint P2Cog::op_splitw()
+int P2Cog::op_splitw()
 {
     const quint32 result =
             (((S >> 31) & 1) << 31) | (((S >> 29) & 1) << 30) | (((S >> 27) & 1) << 29) | (((S >> 25) & 1) << 28) |
@@ -8042,9 +8427,9 @@ uint P2Cog::op_splitw()
  *
  * MERGEW  D
  *
- * D = {S[31], S[15], S[30], S[14], ... S[17], S[1], S[16], S[0]}.
+ * D = {S[31], S[15], S[30], S[14], … S[17], S[1], S[16], S[0]}.
  */
-uint P2Cog::op_mergew()
+int P2Cog::op_mergew()
 {
     const quint32 result =
             (((S >> 31) & 1) << 31) | (((S >> 15) & 1) << 30) |
@@ -8077,7 +8462,7 @@ uint P2Cog::op_mergew()
  * Returns to original value on 32nd iteration.
  * Forward pattern.
  */
-uint P2Cog::op_seussf()
+int P2Cog::op_seussf()
 {
     const p2_LONG result = seuss(S, true);
     updateD(result);
@@ -8094,7 +8479,7 @@ uint P2Cog::op_seussf()
  * Returns to original value on 32nd iteration.
  * Reverse pattern.
  */
-uint P2Cog::op_seussr()
+int P2Cog::op_seussr()
 {
     const p2_LONG result = seuss(S, false);
     updateD(result);
@@ -8110,7 +8495,7 @@ uint P2Cog::op_seussr()
  *
  * D = {15'b0, S[31:27], S[23:18], S[15:11]}.
  */
-uint P2Cog::op_rgbsqz()
+int P2Cog::op_rgbsqz()
 {
     const p2_LONG result =
             (((S >> 27) & 0x1f) << 11) |
@@ -8129,7 +8514,7 @@ uint P2Cog::op_rgbsqz()
  *
  * D = {S[15:11,15:13], S[10:5,10:9], S[4:0,4:2], 8'b0}.
  */
-uint P2Cog::op_rgbexp()
+int P2Cog::op_rgbexp()
 {
     const p2_LONG result =
             (((S >> 11) & 0x1f) << 27) |
@@ -8150,7 +8535,7 @@ uint P2Cog::op_rgbexp()
  * XORO32  D
  *
  */
-uint P2Cog::op_xoro32()
+int P2Cog::op_xoro32()
 {
     return 2;
 }
@@ -8164,7 +8549,7 @@ uint P2Cog::op_xoro32()
  *
  * D = D[0:31].
  */
-uint P2Cog::op_rev()
+int P2Cog::op_rev()
 {
     p2_LONG result = reverse(D);
     updateD(result);
@@ -8181,7 +8566,7 @@ uint P2Cog::op_rev()
  * D = {C, Z, D[31:2]}.
  * C = D[1],  Z = D[0].
  */
-uint P2Cog::op_rczr()
+int P2Cog::op_rczr()
 {
     const p2_LONG result = (C << 31) | (Z << 30) | (D >> 2);
     updateC((D >> 1) & 1);
@@ -8200,7 +8585,7 @@ uint P2Cog::op_rczr()
  * D = {D[29:0], C, Z}.
  * C = D[31], Z = D[30].
  */
-uint P2Cog::op_rczl()
+int P2Cog::op_rczl()
 {
     const p2_LONG result = (D << 2) | (C << 1) | (Z << 0);
     updateC((D >> 31) & 1);
@@ -8218,7 +8603,7 @@ uint P2Cog::op_rczl()
  *
  * D = {31'b0,  C).
  */
-uint P2Cog::op_wrc()
+int P2Cog::op_wrc()
 {
     const p2_LONG result = C;
     updateD(result);
@@ -8234,7 +8619,7 @@ uint P2Cog::op_wrc()
  *
  * D = {31'b0, !C).
  */
-uint P2Cog::op_wrnc()
+int P2Cog::op_wrnc()
 {
     const p2_LONG result = C ^ 1;
     updateD(result);
@@ -8250,7 +8635,7 @@ uint P2Cog::op_wrnc()
  *
  * D = {31'b0,  Z).
  */
-uint P2Cog::op_wrz()
+int P2Cog::op_wrz()
 {
     const p2_LONG result = Z;
     updateD(result);
@@ -8266,7 +8651,7 @@ uint P2Cog::op_wrz()
  *
  * D = {31'b0, !Z).
  */
-uint P2Cog::op_wrnz()
+int P2Cog::op_wrnz()
 {
     const p2_LONG result = Z ^ 1;
     updateD(result);
@@ -8282,7 +8667,7 @@ uint P2Cog::op_wrnz()
  *
  * C = cccc[{C,Z}], Z = zzzz[{C,Z}].
  */
-uint P2Cog::op_modcz()
+int P2Cog::op_modcz()
 {
     const p2_cond_e cccc = static_cast<p2_cond_e>((IR.op.dst >> 4) & 15);
     const p2_cond_e zzzz = static_cast<p2_cond_e>((IR.op.dst >> 0) & 15);
@@ -8302,10 +8687,10 @@ uint P2Cog::op_modcz()
  * SETSCP points the scope mux to a set of four pins starting
  * at (D[5:0] AND $3C), with D[6]=1 to enable scope operation.
  *
- * Set pins D[5:2] (0,4,8,12,...,60)
+ * Set pins D[5:2] (0, 4, 8, 12, …, 60)
  * Enable if D[6]=1.
  */
-uint P2Cog::op_setscp()
+int P2Cog::op_setscp()
 {
     augmentD(IR.op.imm);
     HUB->wr_SCP(D);
@@ -8323,7 +8708,7 @@ uint P2Cog::op_setscp()
  *
  * Pins D[5:2].
  */
-uint P2Cog::op_getscp()
+int P2Cog::op_getscp()
 {
     const p2_LONG result = HUB->rd_SCP();
     updateD(result);
@@ -8339,8 +8724,10 @@ uint P2Cog::op_getscp()
  *
  * If R = 1, PC += A, else PC = A.
  */
-uint P2Cog::op_jmp_abs()
+int P2Cog::op_jmp_abs()
 {
+    const p2_LONG result = (IR.op.wc ? (PC + IR.word) : IR.word) & ADDR;
+    updatePC(result);
     return 2;
 }
 
@@ -8353,8 +8740,12 @@ uint P2Cog::op_jmp_abs()
  *
  * If R = 1, PC += A, else PC = A.
  */
-uint P2Cog::op_call_abs()
+int P2Cog::op_call_abs()
 {
+    const p2_LONG stack = (C << 31) | (Z << 30) | PC;
+    const p2_LONG result = (IR.op.wc ? (PC + IR.word) : IR.word) & ADDR;
+    pushK(stack);
+    updatePC(result);
     return 2;
 }
 
@@ -8367,8 +8758,12 @@ uint P2Cog::op_call_abs()
  *
  * If R = 1, PC += A, else PC = A.
  */
-uint P2Cog::op_calla_abs()
+int P2Cog::op_calla_abs()
 {
+    const p2_LONG stack = (C << 31) | (Z << 30) | PC;
+    const p2_LONG result = (IR.op.wc ? (PC + IR.word) : IR.word) & ADDR;
+    pushPTRA(stack);
+    updatePC(result);
     return 2;
 }
 
@@ -8381,22 +8776,84 @@ uint P2Cog::op_calla_abs()
  *
  * If R = 1, PC += A, else PC = A.
  */
-uint P2Cog::op_callb_abs()
+int P2Cog::op_callb_abs()
 {
+    const p2_LONG stack = (C << 31) | (Z << 30) | PC;
+    const p2_LONG result = (IR.op.wc ? (PC + IR.word) : IR.word) & ADDR;
+    pushPTRB(stack);
+    updatePC(result);
     return 2;
 }
 
 /**
  * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to PA/PB/PTRA/PTRB (per W).
  *
- * EEEE 11100WW RAA AAAAAAAAA AAAAAAAAA
+ * EEEE 1110000 RAA AAAAAAAAA AAAAAAAAA
  *
- * CALLD   PA/PB/PTRA/PTRB,#A
+ * CALLD   PA,#A
  *
  * If R = 1, PC += A, else PC = A.
  */
-uint P2Cog::op_calld_abs()
+int P2Cog::op_calld_pa_abs()
 {
+    const p2_LONG stack = (C << 31) | (Z << 30) | PC;
+    const p2_LONG result = (IR.op.wc ? (PC + IR.word) : IR.word) & ADDR;
+    pushPA(stack);
+    updatePC(result);
+    return 2;
+}
+
+/**
+ * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to PA/PB/PTRA/PTRB (per W).
+ *
+ * EEEE 1110001 RAA AAAAAAAAA AAAAAAAAA
+ *
+ * CALLD   PB,#A
+ *
+ * If R = 1, PC += A, else PC = A.
+ */
+int P2Cog::op_calld_pb_abs()
+{
+    const p2_LONG stack = (C << 31) | (Z << 30) | PC;
+    const p2_LONG result = (IR.op.wc ? (PC + IR.word) : IR.word) & ADDR;
+    pushPB(stack);
+    updatePC(result);
+    return 2;
+}
+
+/**
+ * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to PA/PB/PTRA/PTRB (per W).
+ *
+ * EEEE 1110010 RAA AAAAAAAAA AAAAAAAAA
+ *
+ * CALLD   PTRA,#A
+ *
+ * If R = 1, PC += A, else PC = A.
+ */
+int P2Cog::op_calld_ptra_abs()
+{
+    const p2_LONG stack = (C << 31) | (Z << 30) | PC;
+    const p2_LONG result = (IR.op.wc ? (PC + IR.word) : IR.word) & ADDR;
+    pushPTRA(stack);
+    updatePC(result);
+    return 2;
+}
+
+/**
+ * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to PA/PB/PTRA/PTRB (per W).
+ *
+ * EEEE 1110011 RAA AAAAAAAAA AAAAAAAAA
+ *
+ * CALLD   PTRB,#A
+ *
+ * If R = 1, PC += A, else PC = A.
+ */
+int P2Cog::op_calld_ptrb_abs()
+{
+    const p2_LONG stack = (C << 31) | (Z << 30) | PC;
+    const p2_LONG result = (IR.op.wc ? (PC + IR.word) : IR.word) & ADDR;
+    pushPTRB(stack);
+    updatePC(result);
     return 2;
 }
 
@@ -8409,11 +8866,11 @@ uint P2Cog::op_calld_abs()
  *
  * If R = 1, address = PC + A, else address = A.
  */
-uint P2Cog::op_loc_pa()
+int P2Cog::op_loc_pa()
 {
-    const p2_LONG A = IR.word & ADDR;
-    const p2_LONG addr = IR.op.wc ? PC + A : A;
-    updatePA(addr);
+    const p2_LONG aaaa = IR.word & ADDR;
+    const p2_LONG address = IR.op.wc ? PC + aaaa : aaaa;
+    updatePA(address);
     return 2;
 }
 
@@ -8426,11 +8883,11 @@ uint P2Cog::op_loc_pa()
  *
  * If R = 1, address = PC + A, else address = A.
  */
-uint P2Cog::op_loc_pb()
+int P2Cog::op_loc_pb()
 {
-    const p2_LONG A = IR.word & ADDR;
-    const p2_LONG addr = IR.op.wc ? PC + A : A;
-    updatePB(addr);
+    const p2_LONG aaaa = IR.word & ADDR;
+    const p2_LONG address = IR.op.wc ? PC + aaaa : aaaa;
+    updatePB(address);
     return 2;
 }
 
@@ -8443,11 +8900,11 @@ uint P2Cog::op_loc_pb()
  *
  * If R = 1, address = PC + A, else address = A.
  */
-uint P2Cog::op_loc_ptra()
+int P2Cog::op_loc_ptra()
 {
-    const p2_LONG A = IR.word & ADDR;
-    const p2_LONG addr = IR.op.wc ? PC + A : A;
-    updatePTRA(addr);
+    const p2_LONG aaaa = IR.word & ADDR;
+    const p2_LONG address = IR.op.wc ? PC + aaaa : aaaa;
+    updatePTRA(address);
     return 2;
 }
 
@@ -8460,11 +8917,11 @@ uint P2Cog::op_loc_ptra()
  *
  * If R = 1, address = PC + A, else address = A.
  */
-uint P2Cog::op_loc_ptrb()
+int P2Cog::op_loc_ptrb()
 {
-    const p2_LONG A = IR.word & ADDR;
-    const p2_LONG addr = IR.op.wc ? PC + A : A;
-    updatePTRB(addr);
+    const p2_LONG aaaa = IR.word & ADDR;
+    const p2_LONG address = IR.op.wc ? PC + aaaa : aaaa;
+    updatePTRB(address);
     return 2;
 }
 
@@ -8476,7 +8933,7 @@ uint P2Cog::op_loc_ptrb()
  * AUGS    #N
  *
  */
-uint P2Cog::op_augs()
+int P2Cog::op_augs()
 {
     S_aug = (IR.word << 9) & AUG;
     return 2;
@@ -8490,7 +8947,7 @@ uint P2Cog::op_augs()
  * AUGD    #N
  *
  */
-uint P2Cog::op_augd()
+int P2Cog::op_augd()
 {
     D_aug = (IR.word << 9) & AUG;
     return 2;

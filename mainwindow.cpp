@@ -41,6 +41,7 @@
 #include "gotoaddress.h"
 #include "p2dasm.h"
 
+static const int ncogs = 4;
 static const QLatin1String key_windowGeometry("windowGeometry");
 static const QLatin1String key_lowercase("lowercase");
 static const QLatin1String key_current_row("current_row");
@@ -48,13 +49,13 @@ static const QLatin1String key_current_row("current_row");
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , m_hub(2, this)
+    , m_vcog()
+    , m_hub(ncogs, this)
     , m_dasm(new P2Dasm(m_hub.cog(0)))
     , m_model(new P2DasmModel(m_dasm))
 {
     ui->setupUi(this);
     setWindowTitle(QString("%1 v%2").arg(qApp->applicationName()).arg(qApp->applicationVersion()));
-
     setupToolbar();
 
     connect(ui->action_Quit, SIGNAL(triggered(bool)), this, SLOT(close()));
@@ -62,17 +63,20 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->action_AboutQt5, SIGNAL(triggered(bool)), this, SLOT(aboutQt5()));
 
     m_hub.load(":/ROM_Booter_v33_01j.bin");
-    ui->dasm->setModel(m_model);
+
+    ui->tvDasm->setModel(m_model);
     // Set column sizes
     for (int column = 0; column < m_model->columnCount(); column++) {
         QSize size = m_model->sizeHint(static_cast<P2DasmModel::column_e>(column));
-        ui->dasm->setColumnWidth(column, size.width());
+        ui->tvDasm->setColumnWidth(column, size.width());
     }
 
     QSettings s;
     restoreGeometry(s.value(key_windowGeometry).toByteArray());
     setLowercase(s.value(key_lowercase).toBool());
-    ui->dasm->selectRow(s.value(key_current_row).toInt());
+    ui->tvDasm->selectRow(s.value(key_current_row).toInt());
+
+    setupCogView();
 }
 
 MainWindow::~MainWindow()
@@ -80,7 +84,7 @@ MainWindow::~MainWindow()
     QSettings s;
     s.setValue(key_windowGeometry, saveGeometry());
     s.setValue(key_lowercase, ui->action_setLowercase->isChecked());
-    s.setValue(key_current_row, ui->dasm->currentIndex().row());
+    s.setValue(key_current_row, ui->tvDasm->currentIndex().row());
     delete ui;
 }
 
@@ -103,7 +107,7 @@ void MainWindow::gotoAddress(const QString& address)
     bool ok;
     p2_LONG addr = address.toUInt(&ok, 16);
     if (ok)
-        ui->dasm->selectRow(static_cast<int>(addr / 4));
+        ui->tvDasm->selectRow(static_cast<int>(addr / 4));
 }
 
 void MainWindow::gotoInputAddress()
@@ -133,9 +137,9 @@ void MainWindow::setLowercase(bool check)
 {
     ui->action_setLowercase->setChecked(check);
     m_dasm->setLowercase(check);
-    int row = ui->dasm->currentIndex().row();
+    int row = ui->tvDasm->currentIndex().row();
     m_model->invalidate();
-    ui->dasm->selectRow(row);
+    ui->tvDasm->selectRow(row);
 }
 
 void MainWindow::setupToolbar()
@@ -154,4 +158,23 @@ void MainWindow::setupToolbar()
 
     connect(ui->action_setLowercase, SIGNAL(triggered(bool)), SLOT(setLowercase(bool)));
     ui->mainToolBar->addAction(ui->action_setLowercase);
+}
+
+void MainWindow::setupCogView()
+{
+    m_vcog = QVector<P2CogView*>()
+             << ui->cog0 << ui->cog1 << ui->cog2 << ui->cog3
+             << ui->cog4 << ui->cog5 << ui->cog6 << ui->cog7
+             << ui->cog8 << ui->cog9 << ui->cogA << ui->cogB
+             << ui->cogC << ui->cogD << ui->cogE << ui->cogF;
+    for (int id = 0; id < 16; id++) {
+        P2CogView* vcog = m_vcog[id];
+        if (!vcog)
+            continue;
+        if (id >= ncogs) {
+            vcog->hide();
+            continue;
+        }
+        vcog->setCog(m_hub.cog(id));
+    }
 }

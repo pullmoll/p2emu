@@ -27,6 +27,7 @@ SOURCES += \
 		main.cpp \
 		mainwindow.cpp \
 		p2cog.cpp \
+		p2cogview.cpp \
 		p2dasm.cpp \
 		p2dasmmodel.cpp \
 		p2hub.cpp \
@@ -37,6 +38,7 @@ HEADERS += \
 		gotoaddress.h \
 		mainwindow.h \
 		p2cog.h \
+		p2cogview.h \
 		p2dasm.h \
 		p2dasmmodel.h \
 		p2defs.h \
@@ -46,7 +48,8 @@ HEADERS += \
 FORMS += \
 		about.ui \
 		gotoaddress.ui \
-		mainwindow.ui
+		mainwindow.ui \
+		p2cogview.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

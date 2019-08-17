@@ -35,12 +35,41 @@
 #include "p2dasm.h"
 #include "p2dasmmodel.h"
 
+static const QString str_Address = QStringLiteral(" COG[$000] ");
+static const QString str_Opcode = QStringLiteral(" EEEE_OOOOOOO_CZI_DDDDDDDDD_SSSSSSSSS ");
+static const QString str_Instruction = QStringLiteral(" IF_NC_AND_NZ  INSTRUCTION #$1ff,#$1ff,#7 XORCZ ");
+static const QString str_Comment = QStringLiteral(" Some comment string... ");
+
 P2DasmModel::P2DasmModel(P2Dasm* dasm, QObject *parent)
     : QAbstractTableModel(parent)
     , m_dasm(dasm)
     , m_font(QStringLiteral("Monospace"), 8, QFont::Normal, false)
     , m_bold(QStringLiteral("Monospace"), 8, QFont::Bold, false)
+    , m_size_normal()
+    , m_size_bold()
 {
+
+    QFontMetrics metrics_normal(m_font);
+    m_size_normal.insert(c_Address,     metrics_normal.size(Qt::TextSingleLine, str_Address));
+    m_size_normal.insert(c_Opcode,      metrics_normal.size(Qt::TextSingleLine, str_Opcode));
+    m_size_normal.insert(c_Instruction, metrics_normal.size(Qt::TextSingleLine, str_Instruction));
+    m_size_normal.insert(c_Comment,     metrics_normal.size(Qt::TextSingleLine, str_Comment));
+
+    QFontMetrics metrics_bold(m_bold);
+    m_size_bold.insert(c_Address,       metrics_bold.size(Qt::TextSingleLine, str_Address));
+    m_size_bold.insert(c_Opcode,        metrics_bold.size(Qt::TextSingleLine, str_Opcode));
+    m_size_bold.insert(c_Instruction,   metrics_bold.size(Qt::TextSingleLine, str_Instruction));
+    m_size_bold.insert(c_Comment,       metrics_bold.size(Qt::TextSingleLine, str_Comment));
+
+    m_alignment.insert(c_Address,       Qt::AlignLeft | Qt::AlignVCenter);
+    m_alignment.insert(c_Opcode,        Qt::AlignLeft | Qt::AlignVCenter);
+    m_alignment.insert(c_Instruction,   Qt::AlignLeft | Qt::AlignVCenter);
+    m_alignment.insert(c_Comment,       Qt::AlignLeft | Qt::AlignVCenter);
+
+    m_background.insert(c_Address,      qRgb(0xff,0xfc,0xf8));
+    m_background.insert(c_Opcode,       qRgb(0xf8,0xfc,0xff));
+    m_background.insert(c_Instruction,  qRgb(0xff,0xff,0xff));
+    m_background.insert(c_Comment,      qRgb(0xf8,0xff,0xf8));
 }
 
 QVariant P2DasmModel::headerData(int section, Qt::Orientation orientation, int role) const
@@ -73,13 +102,12 @@ QVariant P2DasmModel::headerData(int section, Qt::Orientation orientation, int r
             result = m_bold;
             break;
 
-
         case Qt::SizeHintRole:
-            result = sizeHint(column, true);
+            result = m_size_bold.value(column);
             break;
 
         case Qt::TextAlignmentRole:
-            result = qVariantFromValue(alignment(column));
+            result = m_alignment.value(column);
             break;
         }
         break;
@@ -167,11 +195,11 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
         break;
 
     case Qt::TextAlignmentRole:
-        result = qVariantFromValue(alignment(column));
+        result = m_alignment.value(column);
         break;
 
     case Qt::BackgroundRole:
-        result = background(column);
+        result = m_background.value(column);
         break;
 
     case Qt::ForegroundRole:
@@ -187,71 +215,10 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
         break;
 
     case Qt::SizeHintRole:
-        result = sizeHint(column);
+        result = m_size_normal.value(column);
         break;
 
     case Qt::InitialSortOrderRole:
-        break;
-    }
-    return result;
-}
-
-QColor P2DasmModel::background(P2DasmModel::column_e column) const
-{
-    QColor result;
-    switch (column) {
-    case c_Address:
-        result = QColor(0xff,0xfc,0xf8);
-        break;
-    case c_Opcode:
-        result = QColor(0xf8,0xfc,0xff);
-        break;
-    case c_Instruction:
-        result = QColor(0xff,0xff,0xff);
-        break;
-    case c_Comment:
-        result = QColor(0xf8,0xff,0xf8);
-        break;
-    }
-    return result;
-}
-
-Qt::Alignment P2DasmModel::alignment(column_e column) const
-{
-    Qt::Alignment result;
-    switch (column) {
-    case c_Address:
-        result = Qt::AlignLeft | Qt::AlignVCenter;
-        break;
-    case c_Opcode:
-        result = Qt::AlignLeft | Qt::AlignVCenter;
-        break;
-    case c_Instruction:
-        result = Qt::AlignLeft | Qt::AlignVCenter;
-        break;
-    case c_Comment:
-        result = Qt::AlignLeft | Qt::AlignVCenter;
-        break;
-    }
-    return result;
-}
-
-QSize P2DasmModel::sizeHint(column_e column, bool bold) const
-{
-    QFontMetrics metrics(bold ? m_bold : m_font);
-    QSize result;
-    switch (column) {
-    case c_Address: // Address
-        result = metrics.size(Qt::TextSingleLine, QStringLiteral(" COG[$000] "));
-        break;
-    case c_Opcode: // Opcode string
-        result = metrics.size(Qt::TextSingleLine, QStringLiteral(" EEEE_OOOOOOO_CZI_DDDDDDDDD_SSSSSSSSS "));
-        break;
-    case c_Instruction: // Disassembled instruction string
-        result = metrics.size(Qt::TextSingleLine, QStringLiteral(" IF_NC_AND_NZ  INSTRUCTION #$1ff,#$1ff,#7 XORCZ "));
-        break;
-    case c_Comment:
-        result = metrics.size(Qt::TextSingleLine, QStringLiteral(" Some comment string... "));
         break;
     }
     return result;

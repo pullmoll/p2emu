@@ -37,40 +37,31 @@
 #include "p2defs.h"
 #include "p2hub.h"
 
-typedef struct {
-    p2_LONG buff[16];
-    p2_LONG rindex;
-    p2_LONG windex;
-    p2_LONG head_addr;
-    p2_LONG tail_addr;
-    p2_LONG addr0;
-    p2_LONG addr1;
-    p2_LONG mode;
-    p2_LONG word;
-    p2_LONG flag;
-}   p2_fifo_t;
-
-typedef struct {
-    p2_opword_t IR;
-    p2_LONG R;
-    p2_LONG D;
-    p2_LONG S;
-}   p2_queue_t;
-
 class P2Cog : public QObject
 {
     Q_OBJECT
 public:
     P2Cog(int cog_id = 0, P2Hub* hub = nullptr, QObject* parent = nullptr);
 
-    p2_LONG decode();
-    p2_opword_t ir() const { return IR; }
-    p2_LONG pc() const { return PC; }
-    p2_LONG d() const { return D; }
-    p2_LONG s() const { return S; }
-    p2_LONG q() const { return Q; }
-    p2_LONG c() const { return C; }
-    p2_LONG z() const { return Z; }
+    int decode();
+
+    p2_opword_t rd_IR() const { return IR; }
+    p2_LONG rd_ID() const { return ID; }
+    p2_LONG rd_PC() const { return PC; }
+    p2_wait_t rd_WAIT() const { return WAIT; }
+    p2_flags_t rd_FLAGS() const { return FLAGS; }
+    p2_LONG rd_CT1() const { return CT1; }
+    p2_LONG rd_CT2() const { return CT2; }
+    p2_LONG rd_CT3() const { return CT3; }
+    p2_pat_t rd_PAT() const { return PAT; }
+    p2_pin_t rd_PIN() const { return PIN; }
+    p2_int_bits_u rd_INT() const { return INT; }
+    p2_lock_t rd_LOCK() const { return LOCK; }
+    p2_LONG rd_D() const { return D; }
+    p2_LONG rd_S() const { return S; }
+    p2_LONG rd_Q() const { return Q; }
+    p2_LONG rd_C() const { return C; }
+    p2_LONG rd_Z() const { return Z; }
 
     p2_LONG rd_cog(p2_LONG addr) const;
     void wr_cog(p2_LONG addr, p2_LONG val);
@@ -82,27 +73,45 @@ public:
     void wr_mem(p2_LONG addr, p2_LONG val);
 
 private:
-    P2Hub* HUB;             //!< pointer to the HUB, i.e. the parent of the Propeller2 cog
-    int ID;                 //!< COG ID
+    P2Hub* HUB;             //!< pointer to the HUB, i.e. the parent of this P2Cog
+    p2_LONG ID;             //!< COG ID (0 … number of COGs - 1)
     p2_LONG PC;             //!< program counter
-    p2_flags_t FL;          //!< flags register
+    p2_wait_t WAIT;         //!< waiting conidition
+    p2_flags_t FLAGS;       //!< flags register
     p2_LONG CT1;            //!< counter CT1 value
     p2_LONG CT2;            //!< counter CT2 value
     p2_LONG CT3;            //!< counter CT3 value
-    p2_pat_t PAT;           //!< pattern mode, mask, and match
+    p2_pat_t PAT;           //!< PAT mode, mask, and match
+    p2_pin_t PIN;           //!< PIN mode, mask, and match
+    p2_int_bits_u INT;      //!< INT disable / active / source bits union
+    p2_lock_t LOCK;         //!<
     p2_opword_t IR;         //!< instruction register
-    p2_opword_t IR2;        //!< pipeline instruction register
     p2_LONG D;              //!< value of D
     p2_LONG S;              //!< value of S
     p2_LONG Q;              //!< value of Q
     p2_LONG C;              //!< current carry flag
     p2_LONG Z;              //!< current zero flag
     p2_fifo_t FIFO;         //!< stream FIFO
+    p2_LONG K;              //!< stack pointer (0 … 7)
+    p2_LONG STACK[8];       //!< stack of 8 levels
     QVariant S_next;        //!< next instruction's S value
     QVariant S_aug;         //!< augment next S with this value, if set
     QVariant D_aug;         //!< augment next D with this value, if set
     QVariant R_aug;         //!< augment next R with this value, if set
     QVariant IR_aug;        //!< augment next IR with this value, if set
+    p2_LONG PTRA0;          //!< actual pointer A to hub RAM
+    p2_LONG PTRB0;          //!< actual pointer B to hub RAM
+    p2_LONG HUBOP;          //!< non-zero if HUB operation
+    p2_LONG CORDIC_count;   //!< non-zero if CORDIC solver running
+    bool QX_posted;         //!< true if CORDIC solver X is posted
+    bool QY_posted;         //!< true if CORDIC solver Y is posted
+    bool RW_repeat;         //!< true if read/write HUB repeated
+    p2_LONG RDL_mask;       //!<
+    p2_LONG RDL_flags0;     //!<
+    p2_LONG RDL_flags1;     //!<
+    p2_LONG WRL_mask;       //!<
+    p2_LONG WRL_flags0;     //!<
+    p2_LONG WRL_flags1;     //!<
 
     p2_cog_t COG;           //!< COG memory (512 longs)
     p2_lut_t LUT;           //!< LUT memory (512 longs)
@@ -140,6 +149,47 @@ private:
     template <typename T>
     void updateLUT(p2_LONG addr, T d) {
         LUT.RAM[addr & 0x1ff] = static_cast<p2_LONG>(d);
+    }
+
+    //! push val to the 8 level stack
+    template <typename T>
+    void pushK(T val) {
+        K = (K - 1) & 7;
+        STACK[K] = static_cast<p2_LONG>(val);
+    }
+
+    //! pop val from the 8 level stack
+    template <typename T>
+    T popK() {
+        p2_LONG val = static_cast<T>(STACK[K]);
+        K = (K + 1) & 7;
+        return static_cast<T>(val);
+    }
+
+    //! push val to PA
+    template <typename T>
+    void pushPA(T val) {
+        LUT.REG.PA = static_cast<p2_LONG>(val);
+    }
+
+    //! push val to PB
+    template <typename T>
+    void pushPB(T val) {
+        LUT.REG.PB = static_cast<p2_LONG>(val);
+    }
+
+    //! push val to PTRA++
+    template <typename T>
+    void pushPTRA(T val) {
+        HUB->wr_LONG(LUT.REG.PTRA, static_cast<p2_LONG>(val));
+        LUT.REG.PTRA = (LUT.REG.PTRA + 4) & ADDR;
+    }
+
+    //! push val to PTRB++
+    template <typename T>
+    void pushPTRB(T val) {
+        HUB->wr_LONG(LUT.REG.PTRB, static_cast<p2_LONG>(val));
+        LUT.REG.PTRB = (LUT.REG.PTRB + 4) & ADDR;
     }
 
     //! augment #S or use #S, if the flag bit is set, then possibly set S from next_S
@@ -308,449 +358,461 @@ private:
     p2_BYTE parity(p2_LONG val);
     p2_LONG seuss(p2_LONG val, bool forward = true);
     p2_LONG reverse(p2_LONG val);
+    p2_LONG fifo_level();
+    void check_interrupt_flags();
+    void check_wait_int_state();
+    p2_LONG check_wait_flag(p2_opword_t IR, p2_LONG value1, p2_LONG value2, bool streamflag);
+    p2_LONG get_pointer(p2_LONG inst, p2_LONG size);
+    void save_regs();
+    void update_regs();
 
-    uint op_nop();
-    uint op_ror();
-    uint op_rol();
-    uint op_shr();
-    uint op_shl();
-    uint op_rcr();
-    uint op_rcl();
-    uint op_sar();
-    uint op_sal();
+    int op_nop();
+    int op_ror();
+    int op_rol();
+    int op_shr();
+    int op_shl();
+    int op_rcr();
+    int op_rcl();
+    int op_sar();
+    int op_sal();
 
-    uint op_add();
-    uint op_addx();
-    uint op_adds();
-    uint op_addsx();
-    uint op_sub();
-    uint op_subx();
-    uint op_subs();
-    uint op_subsx();
+    int op_add();
+    int op_addx();
+    int op_adds();
+    int op_addsx();
+    int op_sub();
+    int op_subx();
+    int op_subs();
+    int op_subsx();
 
-    uint op_cmp();
-    uint op_cmpx();
-    uint op_cmps();
-    uint op_cmpsx();
-    uint op_cmpr();
-    uint op_cmpm();
-    uint op_subr();
-    uint op_cmpsub();
+    int op_cmp();
+    int op_cmpx();
+    int op_cmps();
+    int op_cmpsx();
+    int op_cmpr();
+    int op_cmpm();
+    int op_subr();
+    int op_cmpsub();
 
-    uint op_fge();
-    uint op_fle();
-    uint op_fges();
-    uint op_fles();
-    uint op_sumc();
-    uint op_sumnc();
-    uint op_sumz();
-    uint op_sumnz();
+    int op_fge();
+    int op_fle();
+    int op_fges();
+    int op_fles();
+    int op_sumc();
+    int op_sumnc();
+    int op_sumz();
+    int op_sumnz();
 
-    uint op_testb_w();
-    uint op_testbn_w();
-    uint op_testb_and();
-    uint op_testbn_and();
-    uint op_testb_or();
-    uint op_testbn_or();
-    uint op_testb_xor();
-    uint op_testbn_xor();
+    int op_testb_w();
+    int op_testbn_w();
+    int op_testb_and();
+    int op_testbn_and();
+    int op_testb_or();
+    int op_testbn_or();
+    int op_testb_xor();
+    int op_testbn_xor();
 
-    uint op_bitl();
-    uint op_bith();
-    uint op_bitc();
-    uint op_bitnc();
-    uint op_bitz();
-    uint op_bitnz();
-    uint op_bitrnd();
-    uint op_bitnot();
+    int op_bitl();
+    int op_bith();
+    int op_bitc();
+    int op_bitnc();
+    int op_bitz();
+    int op_bitnz();
+    int op_bitrnd();
+    int op_bitnot();
 
-    uint op_and();
-    uint op_andn();
-    uint op_or();
-    uint op_xor();
-    uint op_muxc();
-    uint op_muxnc();
-    uint op_muxz();
-    uint op_muxnz();
+    int op_and();
+    int op_andn();
+    int op_or();
+    int op_xor();
+    int op_muxc();
+    int op_muxnc();
+    int op_muxz();
+    int op_muxnz();
 
-    uint op_mov();
-    uint op_not();
-    uint op_not_d();
-    uint op_abs();
-    uint op_neg();
-    uint op_negc();
-    uint op_negnc();
-    uint op_negz();
-    uint op_negnz();
+    int op_mov();
+    int op_not();
+    int op_not_d();
+    int op_abs();
+    int op_neg();
+    int op_negc();
+    int op_negnc();
+    int op_negz();
+    int op_negnz();
 
-    uint op_incmod();
-    uint op_decmod();
-    uint op_zerox();
-    uint op_signx();
-    uint op_encod();
-    uint op_ones();
-    uint op_test();
-    uint op_testn();
+    int op_incmod();
+    int op_decmod();
+    int op_zerox();
+    int op_signx();
+    int op_encod();
+    int op_ones();
+    int op_test();
+    int op_testn();
 
-    uint op_setnib();
-    uint op_setnib_altsn();
-    uint op_getnib();
-    uint op_getnib_altgn();
-    uint op_rolnib();
-    uint op_rolnib_altgn();
-    uint op_setbyte();
-    uint op_setbyte_altsb();
-    uint op_getbyte();
-    uint op_getbyte_altgb();
-    uint op_rolbyte();
-    uint op_rolbyte_altgb();
+    int op_setnib();
+    int op_setnib_altsn();
+    int op_getnib();
+    int op_getnib_altgn();
+    int op_rolnib();
+    int op_rolnib_altgn();
+    int op_setbyte();
+    int op_setbyte_altsb();
+    int op_getbyte();
+    int op_getbyte_altgb();
+    int op_rolbyte();
+    int op_rolbyte_altgb();
 
-    uint op_setword();
-    uint op_setword_altsw();
-    uint op_getword();
-    uint op_getword_altgw();
-    uint op_rolword();
-    uint op_rolword_altgw();
+    int op_setword();
+    int op_setword_altsw();
+    int op_getword();
+    int op_getword_altgw();
+    int op_rolword();
+    int op_rolword_altgw();
 
-    uint op_altsn();
-    uint op_altsn_d();
-    uint op_altgn();
-    uint op_altgn_d();
-    uint op_altsb();
-    uint op_altsb_d();
-    uint op_altgb();
-    uint op_altgb_d();
+    int op_altsn();
+    int op_altsn_d();
+    int op_altgn();
+    int op_altgn_d();
+    int op_altsb();
+    int op_altsb_d();
+    int op_altgb();
+    int op_altgb_d();
 
-    uint op_altsw();
-    uint op_altsw_d();
-    uint op_altgw();
-    uint op_altgw_d();
+    int op_altsw();
+    int op_altsw_d();
+    int op_altgw();
+    int op_altgw_d();
 
-    uint op_altr();
-    uint op_altr_d();
-    uint op_altd();
-    uint op_altd_d();
-    uint op_alts();
-    uint op_alts_d();
-    uint op_altb();
-    uint op_altb_d();
-    uint op_alti();
-    uint op_alti_d();
+    int op_altr();
+    int op_altr_d();
+    int op_altd();
+    int op_altd_d();
+    int op_alts();
+    int op_alts_d();
+    int op_altb();
+    int op_altb_d();
+    int op_alti();
+    int op_alti_d();
 
-    uint op_setr();
-    uint op_setd();
-    uint op_sets();
-    uint op_decod();
-    uint op_decod_d();
-    uint op_bmask();
-    uint op_bmask_d();
-    uint op_crcbit();
-    uint op_crcnib();
+    int op_setr();
+    int op_setd();
+    int op_sets();
+    int op_decod();
+    int op_decod_d();
+    int op_bmask();
+    int op_bmask_d();
+    int op_crcbit();
+    int op_crcnib();
 
-    uint op_muxnits();
-    uint op_muxnibs();
-    uint op_muxq();
-    uint op_movbyts();
-    uint op_mul();
-    uint op_muls();
-    uint op_sca();
-    uint op_scas();
+    int op_muxnits();
+    int op_muxnibs();
+    int op_muxq();
+    int op_movbyts();
+    int op_mul();
+    int op_muls();
+    int op_sca();
+    int op_scas();
 
-    uint op_addpix();
-    uint op_mulpix();
-    uint op_blnpix();
-    uint op_mixpix();
-    uint op_addct1();
-    uint op_addct2();
-    uint op_addct3();
+    int op_addpix();
+    int op_mulpix();
+    int op_blnpix();
+    int op_mixpix();
+    int op_addct1();
+    int op_addct2();
+    int op_addct3();
 
-    uint op_wmlong();
-    uint op_rqpin();
-    uint op_rdpin();
-    uint op_rdlut();
-    uint op_rdbyte();
-    uint op_rdword();
-    uint op_rdlong();
+    int op_wmlong();
+    int op_rqpin();
+    int op_rdpin();
+    int op_rdlut();
+    int op_rdbyte();
+    int op_rdword();
+    int op_rdlong();
 
-    uint op_popa();
-    uint op_popb();
-    uint op_calld();
-    uint op_resi3();
-    uint op_resi2();
-    uint op_resi1();
-    uint op_resi0();
-    uint op_reti3();
-    uint op_reti2();
-    uint op_reti1();
-    uint op_reti0();
-    uint op_callpa();
-    uint op_callpb();
+    int op_popa();
+    int op_popb();
+    int op_calld();
+    int op_resi3();
+    int op_resi2();
+    int op_resi1();
+    int op_resi0();
+    int op_reti3();
+    int op_reti2();
+    int op_reti1();
+    int op_reti0();
+    int op_callpa();
+    int op_callpb();
 
-    uint op_djz();
-    uint op_djnz();
-    uint op_djf();
-    uint op_djnf();
-    uint op_ijz();
-    uint op_ijnz();
-    uint op_tjz();
-    uint op_tjnz();
-    uint op_tjf();
-    uint op_tjnf();
-    uint op_tjs();
-    uint op_tjns();
-    uint op_tjv();
+    int op_djz();
+    int op_djnz();
+    int op_djf();
+    int op_djnf();
+    int op_ijz();
+    int op_ijnz();
+    int op_tjz();
+    int op_tjnz();
+    int op_tjf();
+    int op_tjnf();
+    int op_tjs();
+    int op_tjns();
+    int op_tjv();
 
-    uint op_jint();
-    uint op_jct1();
-    uint op_jct2();
-    uint op_jct3();
-    uint op_jse1();
-    uint op_jse2();
-    uint op_jse3();
-    uint op_jse4();
-    uint op_jpat();
-    uint op_jfbw();
-    uint op_jxmt();
-    uint op_jxfi();
-    uint op_jxro();
-    uint op_jxrl();
-    uint op_jatn();
-    uint op_jqmt();
+    int op_jint();
+    int op_jct1();
+    int op_jct2();
+    int op_jct3();
+    int op_jse1();
+    int op_jse2();
+    int op_jse3();
+    int op_jse4();
+    int op_jpat();
+    int op_jfbw();
+    int op_jxmt();
+    int op_jxfi();
+    int op_jxro();
+    int op_jxrl();
+    int op_jatn();
+    int op_jqmt();
 
-    uint op_jnint();
-    uint op_jnct1();
-    uint op_jnct2();
-    uint op_jnct3();
-    uint op_jnse1();
-    uint op_jnse2();
-    uint op_jnse3();
-    uint op_jnse4();
-    uint op_jnpat();
-    uint op_jnfbw();
-    uint op_jnxmt();
-    uint op_jnxfi();
-    uint op_jnxro();
-    uint op_jnxrl();
-    uint op_jnatn();
-    uint op_jnqmt();
-    uint op_1011110_1();
-    uint op_1011111_0();
-    uint op_setpat();
+    int op_jnint();
+    int op_jnct1();
+    int op_jnct2();
+    int op_jnct3();
+    int op_jnse1();
+    int op_jnse2();
+    int op_jnse3();
+    int op_jnse4();
+    int op_jnpat();
+    int op_jnfbw();
+    int op_jnxmt();
+    int op_jnxfi();
+    int op_jnxro();
+    int op_jnxrl();
+    int op_jnatn();
+    int op_jnqmt();
+    int op_1011110_1();
+    int op_1011111_0();
+    int op_setpat();
 
-    uint op_wrpin();
-    uint op_akpin();
-    uint op_wxpin();
-    uint op_wypin();
-    uint op_wrlut();
-    uint op_wrbyte();
-    uint op_wrword();
-    uint op_wrlong();
+    int op_wrpin();
+    int op_akpin();
+    int op_wxpin();
+    int op_wypin();
+    int op_wrlut();
+    int op_wrbyte();
+    int op_wrword();
+    int op_wrlong();
 
-    uint op_pusha();
-    uint op_pushb();
-    uint op_rdfast();
-    uint op_wrfast();
-    uint op_fblock();
-    uint op_xinit();
-    uint op_xstop();
-    uint op_xzero();
-    uint op_xcont();
+    int op_pusha();
+    int op_pushb();
+    int op_rdfast();
+    int op_wrfast();
+    int op_fblock();
+    int op_xinit();
+    int op_xstop();
+    int op_xzero();
+    int op_xcont();
 
-    uint op_rep();
-    uint op_coginit();
+    int op_rep();
+    int op_coginit();
 
-    uint op_qmul();
-    uint op_qdiv();
-    uint op_qfrac();
-    uint op_qsqrt();
-    uint op_qrotate();
-    uint op_qvector();
+    int op_qmul();
+    int op_qdiv();
+    int op_qfrac();
+    int op_qsqrt();
+    int op_qrotate();
+    int op_qvector();
 
-    uint op_hubset();
-    uint op_cogid();
-    uint op_cogstop();
-    uint op_locknew();
-    uint op_lockret();
-    uint op_locktry();
-    uint op_lockrel();
-    uint op_qlog();
-    uint op_qexp();
+    int op_hubset();
+    int op_cogid();
+    int op_cogstop();
+    int op_locknew();
+    int op_lockret();
+    int op_locktry();
+    int op_lockrel();
+    int op_qlog();
+    int op_qexp();
 
-    uint op_rfbyte();
-    uint op_rfword();
-    uint op_rflong();
-    uint op_rfvar();
-    uint op_rfvars();
-    uint op_wfbyte();
-    uint op_wfword();
-    uint op_wflong();
+    int op_rfbyte();
+    int op_rfword();
+    int op_rflong();
+    int op_rfvar();
+    int op_rfvars();
+    int op_wfbyte();
+    int op_wfword();
+    int op_wflong();
 
-    uint op_getqx();
-    uint op_getqy();
-    uint op_getct();
-    uint op_getrnd();
-    uint op_getrnd_cz();
+    int op_getqx();
+    int op_getqy();
+    int op_getct();
+    int op_getrnd();
+    int op_getrnd_cz();
 
-    uint op_setdacs();
-    uint op_setxfrq();
-    uint op_getxacc();
-    uint op_waitx();
-    uint op_setse1();
-    uint op_setse2();
-    uint op_setse3();
-    uint op_setse4();
-    uint op_pollint();
-    uint op_pollct1();
-    uint op_pollct2();
-    uint op_pollct3();
-    uint op_pollse1();
-    uint op_pollse2();
-    uint op_pollse3();
-    uint op_pollse4();
-    uint op_pollpat();
-    uint op_pollfbw();
-    uint op_pollxmt();
-    uint op_pollxfi();
-    uint op_pollxro();
-    uint op_pollxrl();
-    uint op_pollatn();
-    uint op_pollqmt();
+    int op_setdacs();
+    int op_setxfrq();
+    int op_getxacc();
+    int op_waitx();
+    int op_setse1();
+    int op_setse2();
+    int op_setse3();
+    int op_setse4();
+    int op_pollint();
+    int op_pollct1();
+    int op_pollct2();
+    int op_pollct3();
+    int op_pollse1();
+    int op_pollse2();
+    int op_pollse3();
+    int op_pollse4();
+    int op_pollpat();
+    int op_pollfbw();
+    int op_pollxmt();
+    int op_pollxfi();
+    int op_pollxro();
+    int op_pollxrl();
+    int op_pollatn();
+    int op_pollqmt();
 
-    uint op_waitint();
-    uint op_waitct1();
-    uint op_waitct2();
-    uint op_waitct3();
-    uint op_waitse1();
-    uint op_waitse2();
-    uint op_waitse3();
-    uint op_waitse4();
-    uint op_waitpat();
-    uint op_waitfbw();
-    uint op_waitxmt();
-    uint op_waitxfi();
-    uint op_waitxro();
-    uint op_waitxrl();
-    uint op_waitatn();
+    int op_waitint();
+    int op_waitct1();
+    int op_waitct2();
+    int op_waitct3();
+    int op_waitse1();
+    int op_waitse2();
+    int op_waitse3();
+    int op_waitse4();
+    int op_waitpat();
+    int op_waitfbw();
+    int op_waitxmt();
+    int op_waitxfi();
+    int op_waitxro();
+    int op_waitxrl();
+    int op_waitatn();
 
-    uint op_allowi();
-    uint op_stalli();
-    uint op_trgint1();
-    uint op_trgint2();
-    uint op_trgint3();
-    uint op_nixint1();
-    uint op_nixint2();
-    uint op_nixint3();
-    uint op_setint1();
-    uint op_setint2();
-    uint op_setint3();
-    uint op_setq();
-    uint op_setq2();
+    int op_allowi();
+    int op_stalli();
+    int op_trgint1();
+    int op_trgint2();
+    int op_trgint3();
+    int op_nixint1();
+    int op_nixint2();
+    int op_nixint3();
+    int op_setint1();
+    int op_setint2();
+    int op_setint3();
+    int op_setq();
+    int op_setq2();
 
-    uint op_push();
-    uint op_pop();
-    uint op_jmp();
-    uint op_call();
-    uint op_ret();
-    uint op_calla();
-    uint op_reta();
-    uint op_callb();
-    uint op_retb();
+    int op_push();
+    int op_pop();
+    int op_jmp();
+    int op_call();
+    int op_ret();
+    int op_calla();
+    int op_reta();
+    int op_callb();
+    int op_retb();
 
-    uint op_jmprel();
-    uint op_skip();
-    uint op_skipf();
-    uint op_execf();
-    uint op_getptr();
-    uint op_getbrk();
-    uint op_cogbrk();
-    uint op_brk();
+    int op_jmprel();
+    int op_skip();
+    int op_skipf();
+    int op_execf();
+    int op_getptr();
+    int op_getbrk();
+    int op_cogbrk();
+    int op_brk();
 
-    uint op_setluts();
-    uint op_setcy();
-    uint op_setci();
-    uint op_setcq();
-    uint op_setcfrq();
-    uint op_setcmod();
-    uint op_setpiv();
-    uint op_setpix();
-    uint op_cogatn();
+    int op_setluts();
+    int op_setcy();
+    int op_setci();
+    int op_setcq();
+    int op_setcfrq();
+    int op_setcmod();
+    int op_setpiv();
+    int op_setpix();
+    int op_cogatn();
 
-    uint op_testp_w();
-    uint op_testpn_w();
-    uint op_testp_and();
-    uint op_testpn_and();
-    uint op_testp_or();
-    uint op_testpn_or();
-    uint op_testp_xor();
-    uint op_testpn_xor();
+    int op_testp_w();
+    int op_testpn_w();
+    int op_testp_and();
+    int op_testpn_and();
+    int op_testp_or();
+    int op_testpn_or();
+    int op_testp_xor();
+    int op_testpn_xor();
 
-    uint op_dirl();
-    uint op_dirh();
-    uint op_dirc();
-    uint op_dirnc();
-    uint op_dirz();
-    uint op_dirnz();
-    uint op_dirrnd();
-    uint op_dirnot();
+    int op_dirl();
+    int op_dirh();
+    int op_dirc();
+    int op_dirnc();
+    int op_dirz();
+    int op_dirnz();
+    int op_dirrnd();
+    int op_dirnot();
 
-    uint op_outl();
-    uint op_outh();
-    uint op_outc();
-    uint op_outnc();
-    uint op_outz();
-    uint op_outnz();
-    uint op_outrnd();
-    uint op_outnot();
+    int op_outl();
+    int op_outh();
+    int op_outc();
+    int op_outnc();
+    int op_outz();
+    int op_outnz();
+    int op_outrnd();
+    int op_outnot();
 
-    uint op_fltl();
-    uint op_flth();
-    uint op_fltc();
-    uint op_fltnc();
-    uint op_fltz();
-    uint op_fltnz();
-    uint op_fltrnd();
-    uint op_fltnot();
+    int op_fltl();
+    int op_flth();
+    int op_fltc();
+    int op_fltnc();
+    int op_fltz();
+    int op_fltnz();
+    int op_fltrnd();
+    int op_fltnot();
 
-    uint op_drvl();
-    uint op_drvh();
-    uint op_drvc();
-    uint op_drvnc();
-    uint op_drvz();
-    uint op_drvnz();
-    uint op_drvrnd();
-    uint op_drvnot();
+    int op_drvl();
+    int op_drvh();
+    int op_drvc();
+    int op_drvnc();
+    int op_drvz();
+    int op_drvnz();
+    int op_drvrnd();
+    int op_drvnot();
 
-    uint op_splitb();
-    uint op_mergeb();
-    uint op_splitw();
-    uint op_mergew();
-    uint op_seussf();
-    uint op_seussr();
-    uint op_rgbsqz();
-    uint op_rgbexp();
-    uint op_xoro32();
+    int op_splitb();
+    int op_mergeb();
+    int op_splitw();
+    int op_mergew();
+    int op_seussf();
+    int op_seussr();
+    int op_rgbsqz();
+    int op_rgbexp();
+    int op_xoro32();
 
-    uint op_rev();
-    uint op_rczr();
-    uint op_rczl();
-    uint op_wrc();
-    uint op_wrnc();
-    uint op_wrz();
-    uint op_wrnz();
-    uint op_modcz();
-    uint op_setscp();
-    uint op_getscp();
+    int op_rev();
+    int op_rczr();
+    int op_rczl();
+    int op_wrc();
+    int op_wrnc();
+    int op_wrz();
+    int op_wrnz();
+    int op_modcz();
+    int op_setscp();
+    int op_getscp();
 
-    uint op_jmp_abs();
-    uint op_call_abs();
-    uint op_calla_abs();
-    uint op_callb_abs();
-    uint op_calld_abs();
-    uint op_loc_pa();
-    uint op_loc_pb();
-    uint op_loc_ptra();
-    uint op_loc_ptrb();
+    int op_jmp_abs();
+    int op_call_abs();
+    int op_calla_abs();
+    int op_callb_abs();
 
-    uint op_augs();
-    uint op_augd();
+    int op_calld_pa_abs();
+    int op_calld_pb_abs();
+    int op_calld_ptra_abs();
+    int op_calld_ptrb_abs();
+
+    int op_loc_pa();
+    int op_loc_pb();
+    int op_loc_ptra();
+    int op_loc_ptrb();
+
+    int op_augs();
+    int op_augd();
 };

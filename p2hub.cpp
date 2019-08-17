@@ -43,7 +43,8 @@ P2Hub::P2Hub(int ncogs, QObject* parent)
     , CNT(0)
     , PIN(0)
     , COGS()
-    , NCOGS(ncogs)
+    , nCOGS(ncogs)
+    , mCOGS((1u << nCOGS) - 1)
     , pin_mode(64, 0)
     , pin_X(64, 0)
     , pin_Y(64, 0)
@@ -52,8 +53,46 @@ P2Hub::P2Hub(int ncogs, QObject* parent)
     , MEM()
 {
     Q_ASSERT(ncogs <= 16);
-    while (ncogs--)
-        COGS.append(new P2Cog( 0, this));
+    for (int idx = 0; idx < ncogs; idx++)
+        COGS += (new P2Cog(idx, this));
+}
+
+/**
+ * @brief Execute COGs round robin for %run_cycles
+ * @param run_cycles number of cycles to run COGs
+ */
+void P2Hub::execute(int run_cycles)
+{
+    while (run_cycles > 0) {
+        xoro128();
+        int id = static_cast<int>(CNT & mCOGS);
+        P2Cog* cog = COGS[id];
+        qDebug("%s: run COG #%x (%d cycles left)", __func__, id, run_cycles);
+        int cycles = cog ? cog->decode() : 2;
+        CNT++;
+        run_cycles -= cycles;
+    }
+}
+
+/**
+ * @brief Load a file into HUB memory
+ * @param filename name of the file or resource
+ * @return true on success, or false on error
+ */
+bool P2Hub::load(const QString& filename)
+{
+    QFile file(filename);
+    if (!file.open(QIODevice::ReadOnly))
+        return false;
+
+    QByteArray bin = file.read(MEM_SIZE);
+    qDebug("%s: file=%s size=0x%06x (%d)", __func__, qPrintable(filename), bin.size(), bin.size());
+    p2_BWL* p = reinterpret_cast<p2_BWL *>(bin.data());
+    for (int i = 0; i < bin.size(); i += 4, p++) {
+        wr_mem(0, static_cast<p2_LONG>(i), p->l);
+    }
+
+    return true;
 }
 
 P2Cog* P2Hub::cog(int id)
@@ -80,7 +119,7 @@ p2_LONG P2Hub::memsize() const
 }
 
 /**
- * @brief Return the current counter value
+ * @brief Return the current free running counter value
  * @return
  */
 quint64 P2Hub::count() const
@@ -89,13 +128,41 @@ quint64 P2Hub::count() const
 }
 
 /**
- * @brief Return one pseudo random bit from the RND value
- * @param index cog index (-0 … -15), bit index (0 … 63)
- * @return true if set, or false otherwise
+ * @brief Return the number for free HUB slots
+ * @return number of free HUB slots
  */
-p2_LONG P2Hub::rnd(int index)
+p2_LONG P2Hub::hubslots() const
 {
-    Q_ASSERT(index >= 0 && index < 64);
+    return 0;
+}
+
+/**
+ * @brief Return current COG index
+ * @return
+ */
+p2_LONG P2Hub::cogindex() const
+{
+    return CNT & mCOGS;
+}
+
+/**
+ * @brief Return lock state for COG %id
+ * @param id COG index
+ * @return 1 if locked, 0 if unlocked
+ */
+int P2Hub::lockstate(int id) const
+{
+    return (LOCK >> id) & 1;
+}
+
+/**
+ * @brief Return one pseudo random bit from the RND value
+ * @param index bits index (0 … 63)
+ * @return p2_LONG pseudo random value
+ */
+p2_LONG P2Hub::random(uint index)
+{
+    Q_ASSERT(index < 64);
     return static_cast<p2_LONG>(RND >> index);
 }
 
@@ -121,27 +188,6 @@ void P2Hub::xoro128()
     XORO128_s0 = rotl(s0, 55) ^ s1 ^ (s1 << 14); // a, b
     XORO128_s1 = rotl(s1, 36); // c
     RND = result;
-}
-
-/**
- * @brief Load a file into HUB memory
- * @param filename name of the file or resource
- * @return true on success, or false on error
- */
-bool P2Hub::load(const QString& filename)
-{
-    QFile file(filename);
-    if (!file.open(QIODevice::ReadOnly))
-        return false;
-
-    QByteArray bin = file.read(MEM_SIZE);
-    qDebug("%s: file=%s size=0x%06x (%d)", __func__, qPrintable(filename), bin.size(), bin.size());
-    p2_BWL* p = reinterpret_cast<p2_BWL *>(bin.data());
-    for (int i = 0; i < bin.size(); i += 4, p++) {
-        wr_mem(0, static_cast<p2_LONG>(i), p->l);
-    }
-
-    return true;
 }
 
 /**
@@ -221,7 +267,7 @@ void P2Hub::wr_LONG(p2_LONG addr, p2_LONG val)
  */
 p2_LONG P2Hub::rd_cog(int cog, p2_LONG offs) const
 {
-    if (cog >= NCOGS)
+    if (cog >= nCOGS)
         return 0;
     Q_ASSERT(offs < 0x200);
     return COGS[cog]->rd_cog(offs);
@@ -235,7 +281,7 @@ p2_LONG P2Hub::rd_cog(int cog, p2_LONG offs) const
  */
 void P2Hub::wr_cog(int cog, p2_LONG offs, p2_LONG val)
 {
-    if (cog >= NCOGS)
+    if (cog >= nCOGS)
         return;
     Q_ASSERT(offs < 0x200);
     COGS[cog]->wr_cog(offs, val);
@@ -249,7 +295,7 @@ void P2Hub::wr_cog(int cog, p2_LONG offs, p2_LONG val)
  */
 p2_LONG P2Hub::rd_lut(int cog, p2_LONG offs) const
 {
-    if (cog >= NCOGS)
+    if (cog >= nCOGS)
         return 0;
     Q_ASSERT(offs < 0x200);
     return COGS[cog]->rd_lut(offs);
@@ -263,7 +309,7 @@ p2_LONG P2Hub::rd_lut(int cog, p2_LONG offs) const
  */
 void P2Hub::wr_lut(int cog, p2_LONG offs, p2_LONG val)
 {
-    if (cog >= NCOGS)
+    if (cog >= nCOGS)
         return;
     Q_ASSERT(offs < 0x200);
     COGS[cog]->wr_lut(offs, val);
@@ -278,7 +324,7 @@ void P2Hub::wr_lut(int cog, p2_LONG offs, p2_LONG val)
 p2_LONG P2Hub::rd_mem(int cog, p2_LONG addr) const
 {
     p2_LONG data = 0;
-    if (cog >= NCOGS)
+    if (cog >= nCOGS)
         return 0;
     Q_ASSERT(addr <= 0xfffffu);
     if (addr < 0x00800) {
@@ -299,7 +345,7 @@ p2_LONG P2Hub::rd_mem(int cog, p2_LONG addr) const
  */
 void P2Hub::wr_mem(int cog, p2_LONG addr, p2_LONG val)
 {
-    if (cog >= NCOGS)
+    if (cog >= nCOGS)
         return;
     if (addr < 0x00800) {
         wr_cog(cog, addr/4, val);
