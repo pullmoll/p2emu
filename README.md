@@ -16,4 +16,4 @@ Implementing also a disassembler, and perhaps an assembler, as well as
 a debugger interface in the Qt5 UI are also on the list of things to do.
 
 #### Screenshot of v0.0.1 disassembly of the ROM
-![alt text](https://github.com/pullmoll/p2emu/p2em_001.png)
+![Screenshot v0.0.1](https://github.com/pullmoll/p2emu/blob/master/p2em_001.png)
