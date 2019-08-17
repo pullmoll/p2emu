@@ -44,8 +44,8 @@ public:
     P2Dasm(const P2Cog* cog, QObject* parent = nullptr);
     ~P2Dasm();
 
-    bool dasm(p2_LONG addr, QString& opcode, QString& instruction, QString* description = nullptr);
-    p2_LONG memsize() const;
+    bool dasm(P2LONG addr, QString& opcode, QString& instruction, QString* description = nullptr);
+    P2LONG memsize() const;
 
 public slots:
     void setLowercase(bool flag);
@@ -522,7 +522,10 @@ private:
     void dasm_call_abs(QString& instruction, QString* description = nullptr);
     void dasm_calla_abs(QString& instruction, QString* description = nullptr);
     void dasm_callb_abs(QString& instruction, QString* description = nullptr);
-    void dasm_calld_abs(QString& instruction, QString* description = nullptr);
+    void dasm_calld_pa_abs(QString& instruction, QString* description = nullptr);
+    void dasm_calld_pb_abs(QString& instruction, QString* description = nullptr);
+    void dasm_calld_ptra_abs(QString& instruction, QString* description = nullptr);
+    void dasm_calld_ptrb_abs(QString& instruction, QString* description = nullptr);
     void dasm_loc_pa(QString& instruction, QString* description = nullptr);
     void dasm_loc_pb(QString& instruction, QString* description = nullptr);
     void dasm_loc_ptra(QString& instruction, QString* description = nullptr);

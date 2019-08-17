@@ -22,7 +22,7 @@ P2CogView::~P2CogView()
 void P2CogView::updateView()
 {
     ui->group_PC->setTitle(QString("COG ID #%1").arg(m_cog->rd_ID()));
-    const p2_LONG PC = m_cog->rd_PC();
+    const P2LONG PC = m_cog->rd_PC();
     p2_opword_t IR;
     ui->le_PC->setText(QString("%1").arg(PC, 6, 16, QChar('0')));
     IR.word = m_cog->rd_mem(PC*4);

@@ -139,8 +139,8 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
         return result;
 
     const column_e column = static_cast<column_e>(index.column());
-    const p2_LONG PC = static_cast<p2_LONG>(index.row());
-    const p2_LONG addr = PC * 4;
+    const P2LONG PC = static_cast<P2LONG>(index.row());
+    const P2LONG addr = PC * 4;
     QString opcode;
     QString instruction;
     QString description;

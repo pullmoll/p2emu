@@ -51,50 +51,50 @@ public:
     bool load(const QString& filename);
 
     P2Cog* cog(int id);
-    p2_BYTE* mem();
-    p2_LONG memsize() const;
+    P2BYTE* mem();
+    P2LONG memsize() const;
 
     quint64 count() const;
-    p2_LONG hubslots() const;
-    p2_LONG cogindex() const;
+    P2LONG hubslots() const;
+    P2LONG cogindex() const;
     int lockstate(int id) const;
 
-    p2_LONG random(uint index = 0);
+    P2LONG random(uint index = 0);
 
-    p2_BYTE rd_BYTE(p2_LONG addr) const;
-    void wr_BYTE(p2_LONG addr, p2_BYTE val);
+    P2BYTE rd_BYTE(P2LONG addr) const;
+    void wr_BYTE(P2LONG addr, P2BYTE val);
 
-    p2_WORD rd_WORD(p2_LONG addr) const;
-    void wr_WORD(p2_LONG addr, p2_WORD val);
+    P2WORD rd_WORD(P2LONG addr) const;
+    void wr_WORD(P2LONG addr, P2WORD val);
 
-    p2_LONG rd_LONG(p2_LONG addr) const;
-    void wr_LONG(p2_LONG addr, p2_LONG val);
+    P2LONG rd_LONG(P2LONG addr) const;
+    void wr_LONG(P2LONG addr, P2LONG val);
 
-    p2_LONG rd_cog(int cog, p2_LONG offs) const;
-    void wr_cog(int cog, p2_LONG offs, p2_LONG val);
+    P2LONG rd_cog(int cog, P2LONG offs) const;
+    void wr_cog(int cog, P2LONG offs, P2LONG val);
 
-    p2_LONG rd_lut(int cog, p2_LONG offs) const;
-    void wr_lut(int cog, p2_LONG offs, p2_LONG val);
+    P2LONG rd_lut(int cog, P2LONG offs) const;
+    void wr_lut(int cog, P2LONG offs, P2LONG val);
 
-    p2_LONG rd_mem(int cog, p2_LONG addr) const;
-    void wr_mem(int cog, p2_LONG addr, p2_LONG val);
+    P2LONG rd_mem(int cog, P2LONG addr) const;
+    void wr_mem(int cog, P2LONG addr, P2LONG val);
 
-    p2_LONG rd_PA();
-    void wr_PA(p2_LONG val);
+    P2LONG rd_PA();
+    void wr_PA(P2LONG val);
 
-    p2_LONG rd_PB();
-    void wr_PB(p2_LONG val);
+    P2LONG rd_PB();
+    void wr_PB(P2LONG val);
 
-    p2_LONG rd_DIR(p2_LONG port);
-    void wr_DIR(p2_LONG port, p2_LONG val);
+    P2LONG rd_DIR(P2LONG port);
+    void wr_DIR(P2LONG port, P2LONG val);
 
-    p2_LONG rd_OUT(p2_LONG port);
-    void wr_OUT(p2_LONG port, p2_LONG val);
+    P2LONG rd_OUT(P2LONG port);
+    void wr_OUT(P2LONG port, P2LONG val);
 
-    p2_LONG rd_SCP();
-    void wr_SCP(p2_LONG n);
+    P2LONG rd_SCP();
+    void wr_SCP(P2LONG n);
 
-    bool rd_PIN(p2_LONG n);
+    bool rd_PIN(P2LONG n);
 private:
     quint64 rotl(quint64 val, uchar shift);
     void xoro128();
@@ -106,19 +106,19 @@ private:
     quint64 PIN;            //!< 64 pins (0 … 31 on PA, 32 … 63 on PB)
     quint64 DIR;            //!< 64 direction bits (0 … 31 on PA, 32 … 63 on PB)
     quint64 OUT;            //!< 64 output bits (0 … 31 on PA, 32 … 63 on PB)
-    p2_LONG MUX;            //!< scope input MUX (TODO: how is it defined?)
+    P2LONG MUX;            //!< scope input MUX (TODO: how is it defined?)
     QVector<P2Cog*> COGS;   //!< vector of available COGs
     int nCOGS;              //!< number of available COGs (1 … 16)
-    p2_LONG mCOGS;        //!< COG mask
-    p2_LONG LOCK;           //!< lock state
-    QVector<p2_LONG> pin_mode;
-    QVector<p2_LONG> pin_X;
-    QVector<p2_LONG> pin_Y;
-    p2_LONG scope_pin0;
-    p2_LONG scope_enable;
+    P2LONG mCOGS;        //!< COG mask
+    P2LONG LOCK;           //!< lock state
+    QVector<P2LONG> pin_mode;
+    QVector<P2LONG> pin_X;
+    QVector<P2LONG> pin_Y;
+    P2LONG scope_pin0;
+    P2LONG scope_enable;
     union {
-        p2_BYTE B[MEM_SIZE];
-        p2_WORD W[MEM_SIZE/2];
-        p2_LONG L[MEM_SIZE/4];
+        P2BYTE B[MEM_SIZE];
+        P2WORD W[MEM_SIZE/2];
+        P2LONG L[MEM_SIZE/4];
     } MEM;
 };

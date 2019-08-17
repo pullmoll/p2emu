@@ -46,6 +46,10 @@ static const QLatin1String key_windowGeometry("windowGeometry");
 static const QLatin1String key_opcodes("opcodes");
 static const QLatin1String key_lowercase("lowercase");
 static const QLatin1String key_current_row("current_row");
+static const QLatin1String key_column_address("hide_address");
+static const QLatin1String key_column_opcode("hide_opcode");
+static const QLatin1String key_column_instruction("hide_instruction");
+static const QLatin1String key_column_description("hide_description");
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -67,9 +71,11 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->tvDasm->setModel(m_model);
     updateColumnSizes();
+
     QHeaderView* hh = ui->tvDasm->horizontalHeader();
     hh->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(hh, SIGNAL(customContextMenuRequested(QPoint)), SLOT(dasmHeaderColums(QPoint)), Qt::UniqueConnection);
+
     restoreSettings();
     setupCogView();
 }
@@ -87,6 +93,10 @@ void MainWindow::saveSettings()
     s.setValue(key_opcodes, m_model->opcode_format());
     s.setValue(key_lowercase, ui->action_setLowercase->isChecked());
     s.setValue(key_current_row, ui->tvDasm->currentIndex().row());
+    s.setValue(key_column_address, ui->tvDasm->isColumnHidden(P2DasmModel::c_Address));
+    s.setValue(key_column_opcode, ui->tvDasm->isColumnHidden(P2DasmModel::c_Opcode));
+    s.setValue(key_column_instruction, ui->tvDasm->isColumnHidden(P2DasmModel::c_Instruction));
+    s.setValue(key_column_description, ui->tvDasm->isColumnHidden(P2DasmModel::c_Description));
 }
 
 void MainWindow::restoreSettings()
@@ -96,6 +106,10 @@ void MainWindow::restoreSettings()
     setOpcodes(s.value(key_opcodes, P2DasmModel::f_binary).toInt());
     setInstructionsLowercase(s.value(key_lowercase).toBool());
     ui->tvDasm->selectRow(s.value(key_current_row).toInt());
+    ui->tvDasm->setColumnHidden(P2DasmModel::c_Address, s.value(key_column_address, false).toBool());
+    ui->tvDasm->setColumnHidden(P2DasmModel::c_Opcode, s.value(key_column_opcode, false).toBool());
+    ui->tvDasm->setColumnHidden(P2DasmModel::c_Instruction, s.value(key_column_instruction, false).toBool());
+    ui->tvDasm->setColumnHidden(P2DasmModel::c_Description, s.value(key_column_description, false).toBool());
 }
 
 void MainWindow::about()
@@ -115,7 +129,7 @@ void MainWindow::aboutQt5()
 void MainWindow::gotoHex(const QString& address)
 {
     bool ok;
-    p2_LONG addr = address.toUInt(&ok, 16);
+    P2LONG addr = address.toUInt(&ok, 16);
     if (ok)
         ui->tvDasm->selectRow(static_cast<int>(addr / 4));
 }
