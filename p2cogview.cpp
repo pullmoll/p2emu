@@ -23,8 +23,9 @@ void P2CogView::updateView()
 {
     ui->group_PC->setTitle(QString("COG ID #%1").arg(m_cog->rd_ID()));
     const p2_LONG PC = m_cog->rd_PC();
+    p2_opword_t IR;
     ui->le_PC->setText(QString("%1").arg(PC, 6, 16, QChar('0')));
-    const p2_opword_t IR = m_cog->rd_IR();
+    IR.word = m_cog->rd_mem(PC*4);
     ui->le_IR->setText(QString("%1_%2_%3%4%5_%6_%8")
                        .arg(IR.op.cond, 4, 2, QChar('0'))
                         .arg(IR.op.inst, 7, 2, QChar('0'))
@@ -112,5 +113,6 @@ void P2CogView::setCog(const P2Cog* cog)
         QSize size = m_model->sizeHint(static_cast<P2DasmModel::column_e>(column));
         ui->tvDasm->setColumnWidth(column, size.width());
     }
+    ui->tvDasm->setColumnHidden(P2DasmModel::c_Description, true);
     updateView();
 }

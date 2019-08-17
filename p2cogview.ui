@@ -10,18 +10,17 @@
     <height>361</height>
    </rect>
   </property>
-  <property name="font">
-   <font>
-    <family>DejaVu Sans Mono</family>
-    <pointsize>9</pointsize>
-   </font>
-  </property>
   <property name="windowTitle">
    <string>COG view</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
    <item row="3" column="0" colspan="2">
     <widget class="QFrame" name="frame_CTx">
+     <property name="font">
+      <font>
+       <pointsize>9</pointsize>
+      </font>
+     </property>
      <property name="toolTip">
       <string>Count match values for CT1, CT2, and CT3</string>
      </property>
@@ -82,6 +81,12 @@
    </item>
    <item row="0" column="0" colspan="2">
     <widget class="QGroupBox" name="group_PC">
+     <property name="font">
+      <font>
+       <family>DejaVu Sans Mono</family>
+       <pointsize>10</pointsize>
+      </font>
+     </property>
      <property name="toolTip">
       <string>Program counter (PC), intruction register, C flag, Z flag</string>
      </property>
@@ -106,16 +111,35 @@
       </property>
       <item row="0" column="0">
        <widget class="QLabel" name="lbl_PC">
+        <property name="font">
+         <font>
+          <family>DejaVu Sans Mono</family>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
         <property name="text">
          <string>PC:</string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QLineEdit" name="le_PC"/>
+       <widget class="QLineEdit" name="le_PC">
+        <property name="font">
+         <font>
+          <family>DejaVu Sans Mono</family>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
+       </widget>
       </item>
       <item row="0" column="4">
        <widget class="QCheckBox" name="cb_Z">
+        <property name="font">
+         <font>
+          <family>DejaVu Sans Mono</family>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
         <property name="text">
          <string>Z</string>
         </property>
@@ -123,19 +147,38 @@
       </item>
       <item row="0" column="3">
        <widget class="QCheckBox" name="cb_C">
+        <property name="font">
+         <font>
+          <family>DejaVu Sans Mono</family>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
         <property name="text">
          <string>C</string>
         </property>
        </widget>
       </item>
       <item row="0" column="2">
-       <widget class="QLineEdit" name="le_IR"/>
+       <widget class="QLineEdit" name="le_IR">
+        <property name="font">
+         <font>
+          <family>DejaVu Sans Mono</family>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
    </item>
    <item row="6" column="0" colspan="2">
     <widget class="QFrame" name="frame_LOCK">
+     <property name="font">
+      <font>
+       <family>DejaVu Sans Mono</family>
+       <pointsize>9</pointsize>
+      </font>
+     </property>
      <property name="toolTip">
       <string>LOCK mode / edge / number values</string>
      </property>
@@ -330,6 +373,12 @@
    </item>
    <item row="4" column="0" colspan="2">
     <widget class="QFrame" name="frame_PAT">
+     <property name="font">
+      <font>
+       <family>DejaVu Sans Mono</family>
+       <pointsize>9</pointsize>
+      </font>
+     </property>
      <property name="toolTip">
       <string>PAT mode, mask, match values</string>
      </property>
@@ -376,6 +425,12 @@
    </item>
    <item row="5" column="0" colspan="2">
     <widget class="QFrame" name="frame_PIN">
+     <property name="font">
+      <font>
+       <family>DejaVu Sans Mono</family>
+       <pointsize>9</pointsize>
+      </font>
+     </property>
      <property name="toolTip">
       <string>PIN mode, edge, and number values</string>
      </property>
@@ -422,6 +477,11 @@
    </item>
    <item row="1" column="0">
     <widget class="QTableView" name="tvDasm">
+     <property name="font">
+      <font>
+       <family>DejaVu Sans Mono</family>
+      </font>
+     </property>
      <property name="toolTip">
       <string>Disassembled instruction</string>
      </property>

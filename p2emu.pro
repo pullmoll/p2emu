@@ -57,8 +57,9 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 RESOURCES += \
-	propeller2.qrc
+	p2emu.qrc
 
 DISTFILES += \
+		README.md \
 		csv.cpp \
 		csv.h

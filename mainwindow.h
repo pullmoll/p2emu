@@ -56,14 +56,21 @@ public:
     ~MainWindow();
 
 private slots:
+    void saveSettings();
+    void restoreSettings();
     void about();
     void aboutQt5();
-    void gotoAddress(const QString& address = QString());
-    void gotoInputAddress();
+    void gotoHex(const QString& address = QString());
     void gotoCog();
     void gotoLut();
-    void gotoFC000();
-    void setLowercase(bool check);
+    void gotoRom();
+    void gotoAddress();
+    void setOpcodes(int mode);
+    void setOpcodesBinary();
+    void setOpcodesHexDec();
+    void setOpcodesOctal();
+    void setInstructionsLowercase(bool check);
+    void dasmHeaderColums(const QPoint& pos);
 private:
     Ui::MainWindow *ui;
     QVector<P2CogView*> m_vcog;
@@ -72,5 +79,6 @@ private:
     P2DasmModel* m_model;
 
     void setupToolbar();
+    void updateColumnSizes();
     void setupCogView();
 };
