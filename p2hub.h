@@ -106,11 +106,11 @@ private:
     quint64 PIN;            //!< 64 pins (0 … 31 on PA, 32 … 63 on PB)
     quint64 DIR;            //!< 64 direction bits (0 … 31 on PA, 32 … 63 on PB)
     quint64 OUT;            //!< 64 output bits (0 … 31 on PA, 32 … 63 on PB)
-    P2LONG MUX;            //!< scope input MUX (TODO: how is it defined?)
+    P2LONG MUX;             //!< scope input MUX (TODO: how is it defined?)
     QVector<P2Cog*> COGS;   //!< vector of available COGs
     int nCOGS;              //!< number of available COGs (1 … 16)
-    P2LONG mCOGS;        //!< COG mask
-    P2LONG LOCK;           //!< lock state
+    int mCOGS;              //!< COG mask
+    P2LONG LOCK;            //!< lock state
     QVector<P2LONG> pin_mode;
     QVector<P2LONG> pin_X;
     QVector<P2LONG> pin_Y;

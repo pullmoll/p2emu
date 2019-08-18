@@ -79,54 +79,91 @@
        <attribute name="title">
         <string>COGs</string>
        </attribute>
-       <layout class="QGridLayout" name="gridLayout">
-        <item row="0" column="0">
-         <widget class="P2CogView" name="cog0" native="true"/>
-        </item>
-        <item row="0" column="1">
-         <widget class="P2CogView" name="cog1" native="true"/>
-        </item>
-        <item row="1" column="0">
-         <widget class="P2CogView" name="cog2" native="true"/>
-        </item>
-        <item row="1" column="1">
-         <widget class="P2CogView" name="cog3" native="true"/>
-        </item>
-        <item row="2" column="0">
-         <widget class="P2CogView" name="cog4" native="true"/>
-        </item>
-        <item row="2" column="1">
-         <widget class="P2CogView" name="cog5" native="true"/>
-        </item>
-        <item row="3" column="0">
-         <widget class="P2CogView" name="cog6" native="true"/>
-        </item>
-        <item row="3" column="1">
-         <widget class="P2CogView" name="cog7" native="true"/>
-        </item>
-        <item row="4" column="0">
-         <widget class="P2CogView" name="cog8" native="true"/>
-        </item>
-        <item row="4" column="1">
-         <widget class="P2CogView" name="cog9" native="true"/>
-        </item>
-        <item row="5" column="0">
-         <widget class="P2CogView" name="cogA" native="true"/>
-        </item>
-        <item row="5" column="1">
-         <widget class="P2CogView" name="cogB" native="true"/>
-        </item>
-        <item row="6" column="0">
-         <widget class="P2CogView" name="cogC" native="true"/>
-        </item>
-        <item row="6" column="1">
-         <widget class="P2CogView" name="cogD" native="true"/>
-        </item>
-        <item row="7" column="0">
-         <widget class="P2CogView" name="cogE" native="true"/>
-        </item>
-        <item row="7" column="1">
-         <widget class="P2CogView" name="cogF" native="true"/>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="QScrollArea" name="saCOGs">
+          <property name="verticalScrollBarPolicy">
+           <enum>Qt::ScrollBarAlwaysOn</enum>
+          </property>
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <widget class="QWidget" name="sawcCOGs">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>662</width>
+             <height>374</height>
+            </rect>
+           </property>
+           <layout class="QGridLayout" name="gridLayout">
+            <property name="leftMargin">
+             <number>2</number>
+            </property>
+            <property name="topMargin">
+             <number>2</number>
+            </property>
+            <property name="rightMargin">
+             <number>2</number>
+            </property>
+            <property name="bottomMargin">
+             <number>2</number>
+            </property>
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <item row="2" column="2">
+             <widget class="P2CogView" name="cog5" native="true"/>
+            </item>
+            <item row="4" column="1">
+             <widget class="P2CogView" name="cog8" native="true"/>
+            </item>
+            <item row="0" column="2">
+             <widget class="P2CogView" name="cog1" native="true"/>
+            </item>
+            <item row="4" column="2">
+             <widget class="P2CogView" name="cog9" native="true"/>
+            </item>
+            <item row="5" column="1">
+             <widget class="P2CogView" name="cogA" native="true"/>
+            </item>
+            <item row="1" column="1">
+             <widget class="P2CogView" name="cog2" native="true"/>
+            </item>
+            <item row="1" column="2">
+             <widget class="P2CogView" name="cog3" native="true"/>
+            </item>
+            <item row="5" column="2">
+             <widget class="P2CogView" name="cogB" native="true"/>
+            </item>
+            <item row="7" column="2">
+             <widget class="P2CogView" name="cogF" native="true"/>
+            </item>
+            <item row="7" column="1">
+             <widget class="P2CogView" name="cogE" native="true"/>
+            </item>
+            <item row="3" column="2">
+             <widget class="P2CogView" name="cog7" native="true"/>
+            </item>
+            <item row="6" column="1">
+             <widget class="P2CogView" name="cogC" native="true"/>
+            </item>
+            <item row="0" column="1">
+             <widget class="P2CogView" name="cog0" native="true"/>
+            </item>
+            <item row="6" column="2">
+             <widget class="P2CogView" name="cogD" native="true"/>
+            </item>
+            <item row="2" column="1">
+             <widget class="P2CogView" name="cog4" native="true"/>
+            </item>
+            <item row="3" column="1">
+             <widget class="P2CogView" name="cog6" native="true"/>
+            </item>
+           </layout>
+          </widget>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -180,7 +217,14 @@
     <addaction name="separator"/>
     <addaction name="action_setLowercase"/>
    </widget>
+   <widget class="QMenu" name="menu_Run">
+    <property name="title">
+     <string>&amp;Run</string>
+    </property>
+    <addaction name="action_SingleStep"/>
+   </widget>
    <addaction name="menu_File"/>
+   <addaction name="menu_Run"/>
    <addaction name="menu_Edit"/>
    <addaction name="menu_View"/>
    <addaction name="menu_Help"/>
@@ -314,6 +358,18 @@
    </property>
    <property name="text">
     <string>Opcodes as &amp;octal</string>
+   </property>
+  </action>
+  <action name="action_SingleStep">
+   <property name="icon">
+    <iconset resource="p2emu.qrc">
+     <normaloff>:/icons/single_step.png</normaloff>:/icons/single_step.png</iconset>
+   </property>
+   <property name="text">
+    <string>Single &amp;step</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Return</string>
    </property>
   </action>
  </widget>

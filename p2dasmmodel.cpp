@@ -35,7 +35,7 @@
 #include "p2dasm.h"
 #include "p2dasmmodel.h"
 
-static const QString str_Address = QStringLiteral("COG[$000] ");
+static const QString str_Address = QStringLiteral("COG[000] ");
 static const QString str_Opcode_binary = QStringLiteral("EEEE_OOOOOOO_CZI_DDDDDDDDD_SSSSSSSSS ");
 static const QString str_Opcode_hexdec = QStringLiteral("FFFFFFFF ");
 static const QString str_Opcode_octal = QStringLiteral("37777777777 ");
@@ -152,11 +152,11 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
         switch (column) {
         case c_Address: // Address as COG[xxx], LUT[xxx], or xxxxxx in RAM
             if (PC < 0x200) {
-                result = QString("COG[$%1]").arg(PC, 3, 16, QChar('0'));
+                result = QString("COG[%1]").arg(PC, 3, 16, QChar('0'));
             } else if (PC < 0x400) {
-                result = QString("LUT[$%1]").arg(PC - 0x200, 3, 16, QChar('0'));
+                result = QString("LUT[%1]").arg(PC - 0x200, 3, 16, QChar('0'));
             } else {
-                result = QString("$%1").arg(addr, 8, 16, QChar('0'));
+                result = QString("%1").arg(addr, 6, 16, QChar('0'));
             }
             break;
         case c_Opcode: // Opcode string

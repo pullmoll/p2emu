@@ -39,7 +39,7 @@ P2Cog::P2Cog(int cog_id, P2Hub* hub, QObject* parent)
     : QObject(parent)
     , HUB(hub)
     , ID(static_cast<P2LONG>(cog_id))
-    , PC(0)
+    , PC(0xfc000)
     , WAIT()
     , FLAGS()
     , CT1(0)
@@ -836,44 +836,82 @@ int P2Cog::decode()
         cycles = op_sumnz();
         break;
 
-    case p2_TESTB_W_BITL: // case p2_bitl:
-        cycles = (IR.op.wc != IR.op.wz) ? op_testb_w()
-                                        : op_bitl();
-        break;
-
-    case p2_TESTBN_W_BITH: // case p2_bith:
-        cycles = (IR.op.wc != IR.op.wz) ? op_testbn_w()
-                                        : op_bith();
-        break;
-
-    case p2_TESTB_AND_BITC: // case p2_bitc:
-        cycles = (IR.op.wc != IR.op.wz) ? op_testb_and()
-                                        : op_bitc();
-        break;
-
-    case p2_TESTBN_AND_BITNC: // case p2_bitnc:
-        cycles = (IR.op.wc != IR.op.wz) ? op_testbn_and()
-                                        : op_bitnc();
-        break;
-
-    case p2_TESTB_OR_BITZ: // case p2_bitz:
-        cycles = (IR.op.wc != IR.op.wz) ? op_testb_or()
-                                        : op_bitz();
-        break;
-
-    case p2_TESTBN_OR_BITNZ: // case p2_bitnz:
-        cycles = (IR.op.wc != IR.op.wz) ? op_testbn_or()
-                                        : op_bitnz();
-        break;
-
-    case p2_TESTB_XOR_BITRND: // case p2_bitrnd:
-        cycles = (IR.op.wc != IR.op.wz) ? op_testb_xor()
-                                        : op_bitrnd();
-        break;
-
-    case p2_TESTBN_XOR_BITNOT: // case p2_bitnot:
-        cycles = (IR.op.wc != IR.op.wz) ? op_testbn_xor()
-                                        : op_bitnot();
+    case p2_TESTB_W_BITL:
+    case p2_TESTBN_W_BITH:
+    case p2_TESTB_AND_BITC:
+    case p2_TESTBN_AND_BITNC:
+    case p2_TESTB_OR_BITZ:
+    case p2_TESTBN_OR_BITNZ:
+    case p2_TESTB_XOR_BITRND:
+    case p2_TESTBN_XOR_BITNOT:
+        switch (IR.op9.inst) {
+        case p2_TESTB_WC:
+        case p2_TESTB_WZ:
+            cycles = op_testb_w();
+            break;
+        case p2_TESTBN_WZ:
+        case p2_TESTBN_WC:
+            cycles = op_testbn_w();
+            break;
+        case p2_TESTB_ANDZ:
+        case p2_TESTB_ANDC:
+            cycles = op_testb_and();
+            break;
+        case p2_TESTBN_ANDZ:
+        case p2_TESTBN_ANDC:
+            cycles = op_testbn_and();
+            break;
+        case p2_TESTB_ORC:
+        case p2_TESTB_ORZ:
+            cycles = op_testb_or();
+            break;
+        case p2_TESTBN_ORC:
+        case p2_TESTBN_ORZ:
+            cycles = op_testbn_or();
+            break;
+        case p2_TESTB_XORC:
+        case p2_TESTB_XORZ:
+            cycles = op_testb_xor();
+            break;
+        case p2_TESTBN_XORC:
+        case p2_TESTBN_XORZ:
+            cycles = op_testbn_xor();
+            break;
+        case p2_BITL:
+        case p2_BITL_WCZ:
+            cycles = op_bitl();
+            break;
+        case p2_BITH:
+        case p2_BITH_WCZ:
+            cycles = op_bith();
+            break;
+        case p2_BITC:
+        case p2_BITC_WCZ:
+            cycles = op_bitc();
+            break;
+        case p2_BITNC:
+        case p2_BITNC_WCZ:
+            cycles = op_bitnc();
+            break;
+        case p2_BITZ:
+        case p2_BITZ_WCZ:
+            cycles = op_bitz();
+            break;
+        case p2_BITNZ:
+        case p2_BITNZ_WCZ:
+            cycles = op_bitnz();
+            break;
+        case p2_BITRND:
+        case p2_BITRND_WCZ:
+            cycles = op_bitrnd();
+            break;
+        case p2_BITNOT:
+        case p2_BITNOT_WCZ:
+            cycles = op_bitnot();
+            break;
+        default:
+            Q_ASSERT_X(false, "TEST{B,BN}{WC,WZ} or BIT{L,H,C,NC,Z,NZ,RND,NOT}", "inst9 error");
+        }
         break;
 
     case p2_AND:
@@ -1000,12 +1038,21 @@ int P2Cog::decode()
         break;
 
     case p2_SETWORD_GETWORD:
-        if (IR.op.wc == 0) {
-            cycles = (IR.op.dst == 0 && IR.op.wz == 0) ? op_setword_altsw()
-                                                       : op_setword();
-        } else {
-            cycles = (IR.op.src == 0 && IR.op.wz == 0) ? op_getword_altgw()
-                                                       : op_getword();
+        switch (IR.op9.inst) {
+        case p2_SETWORD_ALTSW:
+            cycles = op_setword_altsw();
+            break;
+        case p2_SETWORD:
+            cycles = op_setword();
+            break;
+        case p2_GETWORD_ALTGW:
+            cycles = op_getword_altgw();
+            break;
+        case p2_GETWORD:
+            cycles = op_getword();
+            break;
+        default:
+            Q_ASSERT_X(false, "SETWORD or GETWORD", "inst9 error");
         }
         break;
 
@@ -1097,66 +1144,77 @@ int P2Cog::decode()
         break;
 
     case p2_MUXXXX:
-        if (IR.op.wc == 0) {
-            if (IR.op.wz == 0) {
-                cycles = op_muxnits();
-            } else {
-                cycles = op_muxnibs();
-            }
-        } else {
-            if (IR.op.wz == 0) {
-                cycles = op_muxq();
-            } else {
-                cycles = op_movbyts();
-            }
+        switch (IR.op9.inst) {
+        case p2_MUXNITS:
+            cycles = op_muxnits();
+            break;
+        case p2_MUXNIBS:
+            cycles = op_muxnibs();
+            break;
+        case p2_MUXQ:
+            cycles = op_muxq();
+            break;
+        case p2_MOVBYTS:
+            cycles = op_movbyts();
+            break;
+        default:
+            Q_ASSERT_X(false, "MUXXXX", "inst9 error");
         }
         break;
 
     case p2_MUL_MULS:
-        if (IR.op.wc == 0) {
+        switch (IR.op8.inst) {
+        case p2_MUL:
             cycles = op_mul();
-        } else {
+            break;
+        case p2_MULS:
             cycles = op_muls();
+            break;
         }
         break;
 
     case p2_SCA_SCAS:
-        if (IR.op.wc == 0) {
+        switch (IR.op8.inst) {
+        case p2_SCA:
             cycles = op_sca();
-        } else {
+            break;
+        case p2_SCAS:
             cycles = op_scas();
+            break;
         }
         break;
 
-    case p2_1010010:
-        if (IR.op.wc == 0) {
-            if (IR.op.wz == 0) {
-                cycles = op_addpix();
-            } else {
-                cycles = op_mulpix();
-            }
-        } else {
-            if (IR.op.wz == 0) {
-                cycles = op_blnpix();
-            } else {
-                cycles = op_mixpix();
-            }
+    case p2_XXXPIX:
+        switch (IR.op9.inst) {
+        case p2_ADDPIX:
+            cycles = op_addpix();
+            break;
+        case p2_MULPIX:
+            cycles = op_mulpix();
+            break;
+        case p2_BLNPIX:
+            cycles = op_blnpix();
+            break;
+        case p2_MIXPIX:
+            cycles = op_mixpix();
+            break;
         }
         break;
 
     case p2_WMLONG_ADDCTx:
-        if (IR.op.wc == 0) {
-            if (IR.op.wz == 0) {
-                cycles = op_addct1();
-            } else {
-                cycles = op_addct2();
-            }
-        } else {
-            if (IR.op.wz == 0) {
-                cycles = op_addct3();
-            } else {
-                cycles = op_wmlong();
-            }
+        switch (IR.op9.inst) {
+        case p2_ADDCT1:
+            cycles = op_addct1();
+            break;
+        case p2_ADDCT2:
+            cycles = op_addct2();
+            break;
+        case p2_ADDCT3:
+            cycles = op_addct3();
+            break;
+        case p2_WMLONG:
+            cycles = op_wmlong();
+            break;
         }
         break;
 
@@ -1189,54 +1247,64 @@ int P2Cog::decode()
         break;
 
     case p2_CALLP:
-        cycles = (IR.op.wc == 0) ? op_callpa() : op_callpb();
-        break;
-
-    case p2_1011011:
-        if (IR.op.wc == 0) {
-            if (IR.op.wz == 0) {
-                cycles = op_djz();
-            } else {
-                cycles = op_djnz();
-            }
-        } else {
-            if (IR.op.wz == 0) {
-                cycles = op_djf();
-            } else {
-                cycles = op_djnf();
-            }
+        switch (IR.op8.inst) {
+        case p2_CALLPA:
+            cycles = op_callpa();
+            break;
+        case p2_CALLPB:
+            cycles = op_callpb();
+            break;
         }
         break;
 
-    case p2_1011100:
-        if (IR.op.wc == 0) {
-            if (IR.op.wz == 0) {
-                cycles = op_ijz();
-            } else {
-                cycles = op_ijnz();
-            }
-        } else {
-            if (IR.op.wz == 0) {
-                cycles = op_tjz();
-            } else {
-                cycles = op_tjnz();
-            }
+    case p2_DJZ_DJNZ_DJF_DJNF:
+        switch (IR.op9.inst) {
+        case p2_DJZ:
+            cycles = op_djz();
+            break;
+        case p2_DJNZ:
+            cycles = op_djnz();
+            break;
+        case p2_DJF:
+            cycles = op_djf();
+            break;
+        case p2_DJNF:
+            cycles = op_djnf();
+            break;
         }
         break;
 
-    case p2_1011101:
-        if (IR.op.wc == 0) {
-            if (IR.op.wz == 0) {
-                cycles = op_tjf();
-            } else {
-                cycles = op_tjnf();
-            }
-        } else {
-            if (IR.op.wz == 0) {
-                cycles = op_tjs();
-            } else {
-                cycles = op_tjns();
-            }
+    case p2_IJZ_IJNZ_TJZ_TJNZ:
+        switch (IR.op9.inst) {
+        case p2_IJZ:
+            cycles = op_ijz();
+            break;
+        case p2_IJNZ:
+            cycles = op_ijnz();
+            break;
+        case p2_TJZ:
+            cycles = op_tjz();
+            break;
+        case p2_TJNZ:
+            cycles = op_tjnz();
+            break;
+        }
+        break;
+
+    case p2_TJF_TJNF_TJS_TJNS:
+        switch (IR.op9.inst) {
+        case p2_TJF:
+            cycles = op_tjf();
+            break;
+        case p2_TJNF:
+            cycles = op_tjnf();
+            break;
+        case p2_TJS:
+            cycles = op_tjs();
+            break;
+        case p2_TJNS:
+            cycles = op_tjns();
+            break;
         }
         break;
 
@@ -1425,7 +1493,7 @@ int P2Cog::decode()
         cycles = op_coginit();
         break;
 
-    case p2_1101000:
+    case p2_QMUL_QDIV:
         if (IR.op.wc == 0) {
             cycles = op_qmul();
         } else {
@@ -1433,7 +1501,7 @@ int P2Cog::decode()
         }
         break;
 
-    case p2_1101001:
+    case p2_QFRAC_QSQRT:
         if (IR.op.wc == 0) {
             cycles = op_qfrac();
         } else {
@@ -1441,7 +1509,7 @@ int P2Cog::decode()
         }
         break;
 
-    case p2_1101010:
+    case p2_QROTATE_QVECTOR:
         if (IR.op.wc == 0) {
             cycles = op_qrotate();
         } else {
@@ -8782,7 +8850,7 @@ int P2Cog::op_callb_abs()
 }
 
 /**
- * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to PA/PB/PTRA/PTRB (per W).
+ * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to PA (per W).
  *
  * EEEE 1110000 RAA AAAAAAAAA AAAAAAAAA
  *
@@ -8800,7 +8868,7 @@ int P2Cog::op_calld_pa_abs()
 }
 
 /**
- * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to PA/PB/PTRA/PTRB (per W).
+ * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to PB (per W).
  *
  * EEEE 1110001 RAA AAAAAAAAA AAAAAAAAA
  *
@@ -8818,7 +8886,7 @@ int P2Cog::op_calld_pb_abs()
 }
 
 /**
- * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to PA/PB/PTRA/PTRB (per W).
+ * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to PTRA (per W).
  *
  * EEEE 1110010 RAA AAAAAAAAA AAAAAAAAA
  *
@@ -8836,7 +8904,7 @@ int P2Cog::op_calld_ptra_abs()
 }
 
 /**
- * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to PA/PB/PTRA/PTRB (per W).
+ * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to PTRB (per W).
  *
  * EEEE 1110011 RAA AAAAAAAAA AAAAAAAAA
  *
@@ -8864,9 +8932,8 @@ int P2Cog::op_calld_ptrb_abs()
  */
 int P2Cog::op_loc_pa()
 {
-    const P2LONG aaaa = IR.word & A20MASK;
-    const P2LONG address = IR.op.wc ? PC + aaaa : aaaa;
-    updatePA(address);
+    const P2LONG result = (IR.op.wc ? (PC + IR.word) : IR.word) & A20MASK;
+    updatePA(result);
     return 2;
 }
 
@@ -8881,9 +8948,8 @@ int P2Cog::op_loc_pa()
  */
 int P2Cog::op_loc_pb()
 {
-    const P2LONG aaaa = IR.word & A20MASK;
-    const P2LONG address = IR.op.wc ? PC + aaaa : aaaa;
-    updatePB(address);
+    const P2LONG result = (IR.op.wc ? (PC + IR.word) : IR.word) & A20MASK;
+    updatePB(result);
     return 2;
 }
 
@@ -8898,9 +8964,8 @@ int P2Cog::op_loc_pb()
  */
 int P2Cog::op_loc_ptra()
 {
-    const P2LONG aaaa = IR.word & A20MASK;
-    const P2LONG address = IR.op.wc ? PC + aaaa : aaaa;
-    updatePTRA(address);
+    const P2LONG result = (IR.op.wc ? (PC + IR.word) : IR.word) & A20MASK;
+    updatePTRA(result);
     return 2;
 }
 
@@ -8915,9 +8980,8 @@ int P2Cog::op_loc_ptra()
  */
 int P2Cog::op_loc_ptrb()
 {
-    const P2LONG aaaa = IR.word & A20MASK;
-    const P2LONG address = IR.op.wc ? PC + aaaa : aaaa;
-    updatePTRB(address);
+    const P2LONG result = (IR.op.wc ? (PC + IR.word) : IR.word) & A20MASK;
+    updatePTRB(result);
     return 2;
 }
 
@@ -8931,7 +8995,7 @@ int P2Cog::op_loc_ptrb()
  */
 int P2Cog::op_augs()
 {
-    S_aug = (IR.word << 9) & AUG;
+    S_aug = (IR.word << 9) & AUGMASK;
     return 2;
 }
 
@@ -8945,6 +9009,6 @@ int P2Cog::op_augs()
  */
 int P2Cog::op_augd()
 {
-    D_aug = (IR.word << 9) & AUG;
+    D_aug = (IR.word << 9) & AUGMASK;
     return 2;
 }

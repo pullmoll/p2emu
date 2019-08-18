@@ -250,51 +250,81 @@ bool P2Dasm::dasm(P2LONG addr, QString& opcode, QString& instruction, QString* d
         break;
 
     case p2_TESTB_W_BITL:
-        // case p2_bitl:
-        (IR.op.wc != IR.op.wz) ? dasm_testb_w(instruction, description)
-                               : dasm_bitl(instruction, description);
-        break;
-
     case p2_TESTBN_W_BITH:
-        // case p2_bith:
-        (IR.op.wc != IR.op.wz) ? dasm_testbn_w(instruction, description)
-                               : dasm_bith(instruction, description);
-        break;
-
     case p2_TESTB_AND_BITC:
-        // case p2_bitc:
-        (IR.op.wc != IR.op.wz) ? dasm_testb_and(instruction, description)
-                               : dasm_bitc(instruction, description);
-        break;
-
     case p2_TESTBN_AND_BITNC:
-        // case p2_bitnc:
-        (IR.op.wc != IR.op.wz) ? dasm_testbn_and(instruction, description)
-                               : dasm_bitnc(instruction, description);
-        break;
-
     case p2_TESTB_OR_BITZ:
-        // case p2_bitz:
-        (IR.op.wc != IR.op.wz) ? dasm_testb_or(instruction, description)
-                               : dasm_bitz(instruction, description);
-        break;
-
     case p2_TESTBN_OR_BITNZ:
-        // case p2_bitnz:
-        (IR.op.wc != IR.op.wz) ? dasm_testbn_or(instruction, description)
-                               : dasm_bitnz(instruction, description);
-        break;
-
     case p2_TESTB_XOR_BITRND:
-        // case p2_bitrnd:
-        (IR.op.wc != IR.op.wz) ? dasm_testb_xor(instruction, description)
-                               : dasm_bitrnd(instruction, description);
-        break;
-
     case p2_TESTBN_XOR_BITNOT:
-        // case p2_bitnot:
-        (IR.op.wc != IR.op.wz) ? dasm_testbn_xor(instruction, description)
-                               : dasm_bitnot(instruction, description);
+        switch (IR.op9.inst) {
+        case p2_TESTB_WC:
+        case p2_TESTB_WZ:
+            dasm_testb_w(instruction, description);
+            break;
+        case p2_TESTBN_WZ:
+        case p2_TESTBN_WC:
+            dasm_testbn_w(instruction, description);
+            break;
+        case p2_TESTB_ANDZ:
+        case p2_TESTB_ANDC:
+            dasm_testb_and(instruction, description);
+            break;
+        case p2_TESTBN_ANDZ:
+        case p2_TESTBN_ANDC:
+            dasm_testbn_and(instruction, description);
+            break;
+        case p2_TESTB_ORC:
+        case p2_TESTB_ORZ:
+            dasm_testb_or(instruction, description);
+            break;
+        case p2_TESTBN_ORC:
+        case p2_TESTBN_ORZ:
+            dasm_testbn_or(instruction, description);
+            break;
+        case p2_TESTB_XORC:
+        case p2_TESTB_XORZ:
+            dasm_testb_xor(instruction, description);
+            break;
+        case p2_TESTBN_XORC:
+        case p2_TESTBN_XORZ:
+            dasm_testbn_xor(instruction, description);
+            break;
+        case p2_BITL:
+        case p2_BITL_WCZ:
+            dasm_bitl(instruction, description);
+            break;
+        case p2_BITH:
+        case p2_BITH_WCZ:
+            dasm_bith(instruction, description);
+            break;
+        case p2_BITC:
+        case p2_BITC_WCZ:
+            dasm_bitc(instruction, description);
+            break;
+        case p2_BITNC:
+        case p2_BITNC_WCZ:
+            dasm_bitnc(instruction, description);
+            break;
+        case p2_BITZ:
+        case p2_BITZ_WCZ:
+            dasm_bitz(instruction, description);
+            break;
+        case p2_BITNZ:
+        case p2_BITNZ_WCZ:
+            dasm_bitnz(instruction, description);
+            break;
+        case p2_BITRND:
+        case p2_BITRND_WCZ:
+            dasm_bitrnd(instruction, description);
+            break;
+        case p2_BITNOT:
+        case p2_BITNOT_WCZ:
+            dasm_bitnot(instruction, description);
+            break;
+        default:
+            Q_ASSERT_X(false, "TEST{B,BN}{WC,WZ} or BIT{L,H,C,NC,Z,NZ,RND,NOT}", "inst9 error");
+        }
         break;
 
     case p2_AND:
@@ -421,12 +451,21 @@ bool P2Dasm::dasm(P2LONG addr, QString& opcode, QString& instruction, QString* d
         break;
 
     case p2_SETWORD_GETWORD:
-        if (IR.op.wc == 0) {
-            (IR.op.dst == 0 && IR.op.wz == 0) ? dasm_setword_altsw(instruction, description)
-                                              : dasm_setword(instruction, description);
-        } else {
-            (IR.op.src == 0 && IR.op.wz == 0) ? dasm_getword_altgw(instruction, description)
-                                              : dasm_getword(instruction, description);
+        switch (IR.op9.inst) {
+        case p2_SETWORD_ALTSW:
+            dasm_setword_altsw(instruction, description);
+            break;
+        case p2_SETWORD:
+            dasm_setword(instruction, description);
+            break;
+        case p2_GETWORD_ALTGW:
+            dasm_getword_altgw(instruction, description);
+            break;
+        case p2_GETWORD:
+            dasm_getword(instruction, description);
+            break;
+        default:
+            Q_ASSERT_X(false, "SETWORD or GETWORD", "inst9 error");
         }
         break;
 
@@ -518,66 +557,79 @@ bool P2Dasm::dasm(P2LONG addr, QString& opcode, QString& instruction, QString* d
         break;
 
     case p2_MUXXXX:
-        if (IR.op.wc == 0) {
-            if (IR.op.wz == 0) {
-                dasm_muxnits(instruction, description);
-            } else {
-                dasm_muxnibs(instruction, description);
-            }
-        } else {
-            if (IR.op.wz == 0) {
-                dasm_muxq(instruction, description);
-            } else {
-                dasm_movbyts(instruction, description);
-            }
+        switch (IR.op9.inst) {
+        case p2_MUXNITS:
+            dasm_muxnits(instruction, description);
+            break;
+        case p2_MUXNIBS:
+            dasm_muxnibs(instruction, description);
+            break;
+        case p2_MUXQ:
+            dasm_muxq(instruction, description);
+            break;
+        case p2_MOVBYTS:
+            dasm_movbyts(instruction, description);
+            break;
+        default:
+            Q_ASSERT_X(false, "MUXXXX", "inst9 error");
         }
         break;
 
     case p2_MUL_MULS:
-        if (IR.op.wc == 0) {
+        switch (IR.op8.inst) {
+        case p2_MUL:
             dasm_mul(instruction, description);
-        } else {
+            break;
+        case p2_MULS:
             dasm_muls(instruction, description);
+            break;
         }
         break;
 
     case p2_SCA_SCAS:
-        if (IR.op.wc == 0) {
+        switch (IR.op8.inst) {
+        case p2_SCA:
             dasm_sca(instruction, description);
-        } else {
+            break;
+        case p2_SCAS:
             dasm_scas(instruction, description);
+            break;
         }
         break;
 
-    case p2_1010010:
-        if (IR.op.wc == 0) {
-            if (IR.op.wz == 0) {
-                dasm_addpix(instruction, description);
-            } else {
-                dasm_mulpix(instruction, description);
-            }
-        } else {
-            if (IR.op.wz == 0) {
-                dasm_blnpix(instruction, description);
-            } else {
-                dasm_mixpix(instruction, description);
-            }
+    case p2_XXXPIX:
+        switch (IR.op9.inst) {
+        case p2_ADDPIX:
+            dasm_addpix(instruction, description);
+            break;
+        case p2_MULPIX:
+            dasm_mulpix(instruction, description);
+            break;
+        case p2_BLNPIX:
+            dasm_blnpix(instruction, description);
+            break;
+        case p2_MIXPIX:
+            dasm_mixpix(instruction, description);
+            break;
+        default:
+            Q_ASSERT_X(false, "XXXPIX", "inst9 error");
         }
         break;
 
     case p2_WMLONG_ADDCTx:
-        if (IR.op.wc == 0) {
-            if (IR.op.wz == 0) {
-                dasm_addct1(instruction, description);
-            } else {
-                dasm_addct2(instruction, description);
-            }
-        } else {
-            if (IR.op.wz == 0) {
-                dasm_addct3(instruction, description);
-            } else {
-                dasm_wmlong(instruction, description);
-            }
+        switch (IR.op9.inst) {
+        case p2_ADDCT1:
+            dasm_addct1(instruction, description);
+            break;
+        case p2_ADDCT2:
+            dasm_addct2(instruction, description);
+            break;
+        case p2_ADDCT3:
+            dasm_addct3(instruction, description);
+            break;
+        case p2_WMLONG:
+            dasm_wmlong(instruction, description);
+            break;
         }
         break;
 
@@ -610,54 +662,64 @@ bool P2Dasm::dasm(P2LONG addr, QString& opcode, QString& instruction, QString* d
         break;
 
     case p2_CALLP:
-        (IR.op.wc == 0) ? dasm_callpa(instruction, description) : dasm_callpb(instruction, description);
-        break;
-
-    case p2_1011011:
-        if (IR.op.wc == 0) {
-            if (IR.op.wz == 0) {
-                dasm_djz(instruction, description);
-            } else {
-                dasm_djnz(instruction, description);
-            }
-        } else {
-            if (IR.op.wz == 0) {
-                dasm_djf(instruction, description);
-            } else {
-                dasm_djnf(instruction, description);
-            }
+        switch (IR.op8.inst) {
+        case p2_CALLPA:
+            dasm_callpa(instruction, description);
+            break;
+        case p2_CALLPB:
+            dasm_callpb(instruction, description);
+            break;
         }
         break;
 
-    case p2_1011100:
-        if (IR.op.wc == 0) {
-            if (IR.op.wz == 0) {
-                dasm_ijz(instruction, description);
-            } else {
-                dasm_ijnz(instruction, description);
-            }
-        } else {
-            if (IR.op.wz == 0) {
-                dasm_tjz(instruction, description);
-            } else {
-                dasm_tjnz(instruction, description);
-            }
+    case p2_DJZ_DJNZ_DJF_DJNF:
+        switch (IR.op9.inst) {
+        case p2_DJZ:
+            dasm_djz(instruction, description);
+            break;
+        case p2_DJNZ:
+            dasm_djnz(instruction, description);
+            break;
+        case p2_DJF:
+            dasm_djf(instruction, description);
+            break;
+        case p2_DJNF:
+            dasm_djnf(instruction, description);
+            break;
         }
         break;
 
-    case p2_1011101:
-        if (IR.op.wc == 0) {
-            if (IR.op.wz == 0) {
-                dasm_tjf(instruction, description);
-            } else {
-                dasm_tjnf(instruction, description);
-            }
-        } else {
-            if (IR.op.wz == 0) {
-                dasm_tjs(instruction, description);
-            } else {
-                dasm_tjns(instruction, description);
-            }
+    case p2_IJZ_IJNZ_TJZ_TJNZ:
+        switch (IR.op9.inst) {
+        case p2_IJZ:
+            dasm_ijz(instruction, description);
+            break;
+        case p2_IJNZ:
+            dasm_ijnz(instruction, description);
+            break;
+        case p2_TJZ:
+            dasm_tjz(instruction, description);
+            break;
+        case p2_TJNZ:
+            dasm_tjnz(instruction, description);
+            break;
+        }
+        break;
+
+    case p2_TJF_TJNF_TJS_TJNS:
+        switch (IR.op9.inst) {
+        case p2_TJF:
+            dasm_tjf(instruction, description);
+            break;
+        case p2_TJNF:
+            dasm_tjnf(instruction, description);
+            break;
+        case p2_TJS:
+            dasm_tjs(instruction, description);
+            break;
+        case p2_TJNS:
+            dasm_tjns(instruction, description);
+            break;
         }
         break;
 
@@ -846,27 +908,28 @@ bool P2Dasm::dasm(P2LONG addr, QString& opcode, QString& instruction, QString* d
         dasm_coginit(instruction, description);
         break;
 
-    case p2_1101000:
-        if (IR.op.wc == 0) {
+    case p2_QMUL_QDIV:
+    case p2_QFRAC_QSQRT:
+    case p2_QROTATE_QVECTOR:
+        switch (IR.op8.inst) {
+        case p2_QMUL:
             dasm_qmul(instruction, description);
-        } else {
+            break;
+        case p2_QDIV:
             dasm_qdiv(instruction, description);
-        }
-        break;
-
-    case p2_1101001:
-        if (IR.op.wc == 0) {
+            break;
+        case p2_QFRAC:
             dasm_qfrac(instruction, description);
-        } else {
+            break;
+        case p2_QSQRT:
             dasm_qsqrt(instruction, description);
-        }
-        break;
-
-    case p2_1101010:
-        if (IR.op.wc == 0) {
+            break;
+        case p2_QROTATE:
             dasm_qrotate(instruction, description);
-        } else {
+            break;
+        case p2_QVECTOR:
             dasm_qvector(instruction, description);
+            break;
         }
         break;
 
@@ -1167,35 +1230,35 @@ bool P2Dasm::dasm(P2LONG addr, QString& opcode, QString& instruction, QString* d
             dasm_cogatn(instruction, description);
             break;
         case p2_OPSRC_TESTP_W_DIRL:
-            (IR.op.wc == IR.op.wz) ? dasm_testp_w(instruction, description)
+            (IR.op.wc != IR.op.wz) ? dasm_testp_w(instruction, description)
                                    : dasm_dirl(instruction, description);
             break;
         case p2_OPSRC_TESTPN_W_DIRH:
-            (IR.op.wc == IR.op.wz) ? dasm_testpn_w(instruction, description)
+            (IR.op.wc != IR.op.wz) ? dasm_testpn_w(instruction, description)
                                    : dasm_dirh(instruction, description);
             break;
         case p2_OPSRC_TESTP_AND_DIRC:
-            (IR.op.wc == IR.op.wz) ? dasm_testp_and(instruction, description)
+            (IR.op.wc != IR.op.wz) ? dasm_testp_and(instruction, description)
                                    : dasm_dirc(instruction, description);
             break;
         case p2_OPSRC_TESTPN_AND_DIRNC:
-            (IR.op.wc == IR.op.wz) ? dasm_testpn_and(instruction, description)
+            (IR.op.wc != IR.op.wz) ? dasm_testpn_and(instruction, description)
                                    : dasm_dirnc(instruction, description);
             break;
         case p2_OPSRC_TESTP_OR_DIRZ:
-            (IR.op.wc == IR.op.wz) ? dasm_testp_or(instruction, description)
+            (IR.op.wc != IR.op.wz) ? dasm_testp_or(instruction, description)
                                    : dasm_dirz(instruction, description);
             break;
         case p2_OPSRC_TESTPN_OR_DIRNZ:
-            (IR.op.wc == IR.op.wz) ? dasm_testpn_or(instruction, description)
+            (IR.op.wc != IR.op.wz) ? dasm_testpn_or(instruction, description)
                                    : dasm_dirnz(instruction, description);
             break;
         case p2_OPSRC_TESTP_XOR_DIRRND:
-            (IR.op.wc == IR.op.wz) ? dasm_testp_xor(instruction, description)
+            (IR.op.wc != IR.op.wz) ? dasm_testp_xor(instruction, description)
                                    : dasm_dirrnd(instruction, description);
             break;
         case p2_OPSRC_TESTPN_XOR_DIRNOT:
-            (IR.op.wc == IR.op.wz) ? dasm_testpn_xor(instruction, description)
+            (IR.op.wc != IR.op.wz) ? dasm_testpn_xor(instruction, description)
                                    : dasm_dirnot(instruction, description);
             break;
         case p2_OPSRC_OUTL:

@@ -135,7 +135,7 @@ private:
     //! update D, i.e. write result to COG
     template <typename T>
     void updateD(T d) {
-        COG.RAM[D] = static_cast<P2LONG>(d);
+        COG.RAM[IR.op.dst] = static_cast<P2LONG>(d);
     }
 
     //! update PC (program counter)
@@ -343,7 +343,7 @@ private:
     static const P2LONG A20MASK = (1u << 20) - 1;
 
     //! most significant 23 bits for an augmentation value
-    static const P2LONG AUG = 0xfffffe00;
+    static const P2LONG AUGMASK = 0xfffffe00;
 
     //! upper word max / mask in a 64 bit unsigned
     static const quint64 HMAX = Q_UINT64_C(0xffffffff00000000);

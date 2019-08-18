@@ -4,6 +4,11 @@
 #include "p2dasm.h"
 #include "p2dasmmodel.h"
 
+static QString hex(P2LONG val, int digits = 8)
+{
+    return QString("%1").arg(val, digits, 16, QChar('0'));
+}
+
 P2CogView::P2CogView(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::P2CogView)
@@ -28,7 +33,7 @@ void P2CogView::updateView()
     IR.word = m_cog->rd_mem(PC*4);
     ui->le_IR->setText(QString("%1_%2_%3%4%5_%6_%8")
                        .arg(IR.op.cond, 4, 2, QChar('0'))
-                        .arg(IR.op.inst, 7, 2, QChar('0'))
+                       .arg(IR.op.inst, 7, 2, QChar('0'))
                        .arg(IR.op.wc, 1, 2, QChar('0'))
                        .arg(IR.op.wz, 1, 2, QChar('0'))
                        .arg(IR.op.imm, 1, 2, QChar('0'))
@@ -55,9 +60,9 @@ void P2CogView::updateView()
     ui->cb_ATN->setChecked(flags.f_ATN);            // ATN COG attention flag
     ui->cb_QMT->setChecked(flags.f_QMT);            // QMT Q empty flag
 
-    ui->le_CT1->setText(QString("$%1").arg(m_cog->rd_CT1(), 8, 16, QChar('0')));
-    ui->le_CT2->setText(QString("$%1").arg(m_cog->rd_CT2(), 8, 16, QChar('0')));
-    ui->le_CT3->setText(QString("$%1").arg(m_cog->rd_CT3(), 8, 16, QChar('0')));
+    ui->le_CT1->setText(hex(m_cog->rd_CT1()));
+    ui->le_CT2->setText(hex(m_cog->rd_CT2()));
+    ui->le_CT3->setText(hex(m_cog->rd_CT3()));
 
     p2_pat_t pat = m_cog->rd_PAT();
     switch (pat.mode) {
@@ -65,20 +70,20 @@ void P2CogView::updateView()
         ui->le_PAT_mode->setText(tr("OFF"));
         break;
     case p2_PAT_PA_EQ:
-        ui->le_PAT_mode->setText(tr("(PA & mask) == match"));
+        ui->le_PAT_mode->setText(tr("PA == match"));
         break;
     case p2_PAT_PA_NE:
-        ui->le_PAT_mode->setText(tr("(PA & mask) != match"));
+        ui->le_PAT_mode->setText(tr("PA != match"));
         break;
     case p2_PAT_PB_EQ:
-        ui->le_PAT_mode->setText(tr("(PB & mask) == match"));
+        ui->le_PAT_mode->setText(tr("PB == match"));
         break;
     case p2_PAT_PB_NE:
-        ui->le_PAT_mode->setText(tr("(PB & mask) != match"));
+        ui->le_PAT_mode->setText(tr("PB != match"));
         break;
     }
-    ui->le_PAT_mask->setText(QString("$%1").arg(pat.mask, 8, 16, QChar('0')));
-    ui->le_PAT_match->setText(QString("$%1").arg(pat.match, 8, 16, QChar('0')));
+    ui->le_PAT_mask->setText(QString("%1").arg(pat.mask, 8, 16, QChar('0')));
+    ui->le_PAT_match->setText(QString("%1").arg(pat.match, 8, 16, QChar('0')));
 
     p2_pin_t pin = m_cog->rd_PIN();
     switch (pin.mode) {
@@ -95,10 +100,11 @@ void P2CogView::updateView()
         ui->le_PIN_mode->setText(tr("Any edge"));
         break;
     }
-    ui->le_PIN_edge->setText(QString("$%1").arg(pin.edge, 2, 16, QChar('0')));
-    ui->le_PIN_num->setText(QString::number(pin.num));
+    ui->le_PIN_edge->setText(hex(pin.edge, 2));
+    ui->le_PIN_num->setText(hex(pin.num, 2));
 
     const int row = static_cast<int>(PC < 0x00400 ? PC : PC / 4);
+    m_model->invalidate();
     ui->tvDasm->selectRow(row);
 }
 

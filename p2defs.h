@@ -78,174 +78,160 @@ typedef enum {
     cond_always                 //!< execute always (default)
 }   p2_cond_e;
 
+#define INST7(b6,b5,b4,b3,b2,b1,b0) ((b6<<6)|(b5<<5)|(b4<<4)|(b3<<3)|(b2<<2)|(b1<<1)|(b0))
+#define INST8(inst,b0)              ((inst<<1)|(b0))
+#define INST9(inst,b1,b0)           ((inst<<2)|(b1<<1)|(b0))
+
 /**
  * @brief Enumeration of the 128 possible instruction types
- *
- * NB: Some instructions use more bits from the opcode word,
- * so there are extra bit masks and patterns defined besides
- * the 7 bit opcodes.
- *
  */
 typedef enum {
-    p2_ROR,                     //!< 0000000
-    p2_ROL,                     //!< 0000001
-    p2_SHR,                     //!< 0000010
-    p2_SHL,                     //!< 0000011
-    p2_RCR,                     //!< 0000100
-    p2_RCL,                     //!< 0000101
-    p2_SAR,                     //!< 0000110
-    p2_SAL,                     //!< 0000111
+    p2_ROR                      = INST7(0,0,0,0,0,0,0),
+    p2_ROL                      = INST7(0,0,0,0,0,0,1),
+    p2_SHR                      = INST7(0,0,0,0,0,1,0),
+    p2_SHL                      = INST7(0,0,0,0,0,1,1),
+    p2_RCR                      = INST7(0,0,0,0,1,0,0),
+    p2_RCL                      = INST7(0,0,0,0,1,0,1),
+    p2_SAR                      = INST7(0,0,0,0,1,1,0),
+    p2_SAL                      = INST7(0,0,0,0,1,1,1),
 
-    p2_ADD,                     //!< 0001000
-    p2_ADDX,                    //!< 0001001
-    p2_ADDS,                    //!< 0001010
-    p2_ADDSX,                   //!< 0001011
-    p2_SUB,                     //!< 0001100
-    p2_SUBX,                    //!< 0001101
-    p2_SUBS,                    //!< 0001110
-    p2_SUBSX,                   //!< 0001111
+    p2_ADD                      = INST7(0,0,0,1,0,0,0),
+    p2_ADDX                     = INST7(0,0,0,1,0,0,1),
+    p2_ADDS                     = INST7(0,0,0,1,0,1,0),
+    p2_ADDSX                    = INST7(0,0,0,1,0,1,1),
+    p2_SUB                      = INST7(0,0,0,1,1,0,0),
+    p2_SUBX                     = INST7(0,0,0,1,1,0,1),
+    p2_SUBS                     = INST7(0,0,0,1,1,1,0),
+    p2_SUBSX                    = INST7(0,0,0,1,1,1,1),
 
-    p2_CMP,                     //!< 0010000
-    p2_CMPX,                    //!< 0010001
-    p2_CMPS,                    //!< 0010010
-    p2_CMPSX,                   //!< 0010011
-    p2_CMPR,                    //!< 0010100
-    p2_CMPM,                    //!< 0010101
-    p2_SUBR,                    //!< 0010110
-    p2_CMPSUB,                  //!< 0010111
+    p2_CMP                      = INST7(0,0,1,0,0,0,0),
+    p2_CMPX                     = INST7(0,0,1,0,0,0,1),
+    p2_CMPS                     = INST7(0,0,1,0,0,1,0),
+    p2_CMPSX                    = INST7(0,0,1,0,0,1,1),
+    p2_CMPR                     = INST7(0,0,1,0,1,0,0),
+    p2_CMPM                     = INST7(0,0,1,0,1,0,1),
+    p2_SUBR                     = INST7(0,0,1,0,1,1,0),
+    p2_CMPSUB                   = INST7(0,0,1,0,1,1,1),
 
-    p2_FGE,                     //!< 0011000
-    p2_FLE,                     //!< 0011001
-    p2_FGES,                    //!< 0011010
-    p2_FLES,                    //!< 0011011
-    p2_SUMC,                    //!< 0011100
-    p2_SUMNC,                   //!< 0011101
-    p2_SUMZ,                    //!< 0011110
-    p2_SUMNZ,                   //!< 0011111
+    p2_FGE                      = INST7(0,0,1,1,0,0,0),
+    p2_FLE                      = INST7(0,0,1,1,0,0,1),
+    p2_FGES                     = INST7(0,0,1,1,0,1,0),
+    p2_FLES                     = INST7(0,0,1,1,0,1,1),
+    p2_SUMC                     = INST7(0,0,1,1,1,0,0),
+    p2_SUMNC                    = INST7(0,0,1,1,1,0,1),
+    p2_SUMZ                     = INST7(0,0,1,1,1,1,0),
+    p2_SUMNZ                    = INST7(0,0,1,1,1,1,1),
 
-    p2_TESTB_W_BITL,            //!< 0100000
-    p2_TESTBN_W_BITH,           //!< 0100001
-    p2_TESTB_AND_BITC,          //!< 0100010
-    p2_TESTBN_AND_BITNC,        //!< 0100011
-    p2_TESTB_OR_BITZ,           //!< 0100100
-    p2_TESTBN_OR_BITNZ,         //!< 0100101
-    p2_TESTB_XOR_BITRND,        //!< 0100110
-    p2_TESTBN_XOR_BITNOT,       //!< 0100111
+    p2_TESTB_W_BITL             = INST7(0,1,0,0,0,0,0),
+    p2_TESTBN_W_BITH            = INST7(0,1,0,0,0,0,1),
+    p2_TESTB_AND_BITC           = INST7(0,1,0,0,0,1,0),
+    p2_TESTBN_AND_BITNC         = INST7(0,1,0,0,0,1,1),
+    p2_TESTB_OR_BITZ            = INST7(0,1,0,0,1,0,0),
+    p2_TESTBN_OR_BITNZ          = INST7(0,1,0,0,1,0,1),
+    p2_TESTB_XOR_BITRND         = INST7(0,1,0,0,1,1,0),
+    p2_TESTBN_XOR_BITNOT        = INST7(0,1,0,0,1,1,1),
 
-    p2_AND,                     //!< 0101000
-    p2_ANDN,                    //!< 0101001
-    p2_OR,                      //!< 0101010
-    p2_XOR,                     //!< 0101011
-    p2_MUXC,                    //!< 0101100
-    p2_MUXNC,                   //!< 0101101
-    p2_MUXZ,                    //!< 0101110
-    p2_MUXNZ,                   //!< 0101111
+    p2_AND                      = INST7(0,1,0,1,0,0,0),
+    p2_ANDN                     = INST7(0,1,0,1,0,0,1),
+    p2_OR                       = INST7(0,1,0,1,0,1,0),
+    p2_XOR                      = INST7(0,1,0,1,0,1,1),
+    p2_MUXC                     = INST7(0,1,0,1,1,0,0),
+    p2_MUXNC                    = INST7(0,1,0,1,1,0,1),
+    p2_MUXZ                     = INST7(0,1,0,1,1,1,0),
+    p2_MUXNZ                    = INST7(0,1,0,1,1,1,1),
 
-    p2_MOV,                     //!< 0110000
-    p2_NOT,                     //!< 0110001
-    p2_ABS,                     //!< 0110010
-    p2_NEG,                     //!< 0110011
-    p2_NEGC,                    //!< 0110100
-    p2_NEGNC,                   //!< 0110101
-    p2_NEGZ,                    //!< 0110110
-    p2_NEGNZ,                   //!< 0110111
+    p2_MOV                      = INST7(0,1,1,0,0,0,0),
+    p2_NOT                      = INST7(0,1,1,0,0,0,1),
+    p2_ABS                      = INST7(0,1,1,0,0,1,0),
+    p2_NEG                      = INST7(0,1,1,0,0,1,1),
+    p2_NEGC                     = INST7(0,1,1,0,1,0,0),
+    p2_NEGNC                    = INST7(0,1,1,0,1,0,1),
+    p2_NEGZ                     = INST7(0,1,1,0,1,1,0),
+    p2_NEGNZ                    = INST7(0,1,1,0,1,1,1),
 
-    p2_INCMOD,                  //!< 0111000
-    p2_DECMOD,                  //!< 0111001
-    p2_ZEROX,                   //!< 0111010
-    p2_SIGNX,                   //!< 0111011
-    p2_ENCOD,                   //!< 0111100
-    p2_ONES,                    //!< 0111101
-    p2_TEST,                    //!< 0111110
-    p2_TESTN,                   //!< 0111111
+    p2_INCMOD                   = INST7(0,1,1,1,0,0,0),
+    p2_DECMOD                   = INST7(0,1,1,1,0,0,1),
+    p2_ZEROX                    = INST7(0,1,1,1,0,1,0),
+    p2_SIGNX                    = INST7(0,1,1,1,0,1,1),
+    p2_ENCOD                    = INST7(0,1,1,1,1,0,0),
+    p2_ONES                     = INST7(0,1,1,1,1,0,1),
+    p2_TEST                     = INST7(0,1,1,1,1,1,0),
+    p2_TESTN                    = INST7(0,1,1,1,1,1,1),
 
-    p2_SETNIB_0,                //!< 1000000
-    p2_SETNIB_1,                //!< 1000001
-    p2_GETNIB_0,                //!< 1000010
-    p2_GETNIB_1,                //!< 1000011
-    p2_ROLNIB_0,                //!< 1000100
-    p2_ROLNIB_1,                //!< 1000101
-    p2_SETBYTE,                 //!< 1000110
-    p2_GETBYTE,                 //!< 1000111
+    p2_SETNIB_0                 = INST7(1,0,0,0,0,0,0),
+    p2_SETNIB_1                 = INST7(1,0,0,0,0,0,1),
+    p2_GETNIB_0                 = INST7(1,0,0,0,0,1,0),
+    p2_GETNIB_1                 = INST7(1,0,0,0,0,1,1),
+    p2_ROLNIB_0                 = INST7(1,0,0,0,1,0,0),
+    p2_ROLNIB_1                 = INST7(1,0,0,0,1,0,1),
+    p2_SETBYTE                  = INST7(1,0,0,0,1,1,0),
+    p2_GETBYTE                  = INST7(1,0,0,0,1,1,1),
 
-    p2_ROLBYTE,                 //!< 1001000
-    p2_SETWORD_GETWORD,         //!< 1001001
-    p2_1001010,                 //!< 1001010
-    p2_1001011,                 //!< 1001011
-    p2_1001100,                 //!< 1001100
-    p2_1001101,                 //!< 1001101
-    p2_1001110,                 //!< 1001110
-    p2_MUXXXX,                  //!< 1001111
+    p2_ROLBYTE                  = INST7(1,0,0,1,0,0,0),
+    p2_SETWORD_GETWORD          = INST7(1,0,0,1,0,0,1),
+    p2_1001010                  = INST7(1,0,0,1,0,1,0),
+    p2_1001011                  = INST7(1,0,0,1,0,1,1),
+    p2_1001100                  = INST7(1,0,0,1,1,0,0),
+    p2_1001101                  = INST7(1,0,0,1,1,0,1),
+    p2_1001110                  = INST7(1,0,0,1,1,1,0),
+    p2_MUXXXX                   = INST7(1,0,0,1,1,1,1),
 
-    p2_MUL_MULS,                //!< 1010000
-    p2_SCA_SCAS,                //!< 1010001
-    p2_1010010,                 //!< 1010010
-    p2_WMLONG_ADDCTx,           //!< 1010011
-    p2_RQPIND_RDPIN,            //!< 1010100
-    p2_RDLUT,                   //!< 1010101
-    p2_RDBYTE,                  //!< 1010110
-    p2_RDWORD,                  //!< 1010111
+    p2_MUL_MULS                 = INST7(1,0,1,0,0,0,0),
+    p2_SCA_SCAS                 = INST7(1,0,1,0,0,0,1),
+    p2_XXXPIX                   = INST7(1,0,1,0,0,1,0),
+    p2_WMLONG_ADDCTx            = INST7(1,0,1,0,0,1,1),
+    p2_RQPIND_RDPIN             = INST7(1,0,1,0,1,0,0),
+    p2_RDLUT                    = INST7(1,0,1,0,1,0,1),
+    p2_RDBYTE                   = INST7(1,0,1,0,1,1,0),
+    p2_RDWORD                   = INST7(1,0,1,0,1,1,1),
 
-    p2_RDLONG,                  //!< 1011000
-    p2_CALLD,                   //!< 1011001
-    p2_CALLP,                   //!< 1011010
-    p2_1011011,                 //!< 1011011
-    p2_1011100,                 //!< 1011100
-    p2_1011101,                 //!< 1011101
-    p2_1011110,                 //!< 1011110
-    p2_1011111,                 //!< 1011111
+    p2_RDLONG                   = INST7(1,0,1,1,0,0,0),
+    p2_CALLD                    = INST7(1,0,1,1,0,0,1),
+    p2_CALLP                    = INST7(1,0,1,1,0,1,0),
+    p2_DJZ_DJNZ_DJF_DJNF        = INST7(1,0,1,1,0,1,1),
+    p2_IJZ_IJNZ_TJZ_TJNZ        = INST7(1,0,1,1,1,0,0),
+    p2_TJF_TJNF_TJS_TJNS        = INST7(1,0,1,1,1,0,1),
+    p2_1011110                  = INST7(1,0,1,1,1,1,0),
+    p2_1011111                  = INST7(1,0,1,1,1,1,1),
 
-    p2_1100000,                 //!< 1100000
-    p2_1100001,                 //!< 1100001
-    p2_1100010,                 //!< 1100010
-    p2_1100011,                 //!< 1100011
-    p2_1100100,                 //!< 1100100
-    p2_1100101,                 //!< 1100101
-    p2_1100110,                 //!< 1100110
-    p2_COGINIT,                 //!< 1100111
+    p2_1100000                  = INST7(1,1,0,0,0,0,0),
+    p2_1100001                  = INST7(1,1,0,0,0,0,1),
+    p2_1100010                  = INST7(1,1,0,0,0,1,0),
+    p2_1100011                  = INST7(1,1,0,0,0,1,1),
+    p2_1100100                  = INST7(1,1,0,0,1,0,0),
+    p2_1100101                  = INST7(1,1,0,0,1,0,1),
+    p2_1100110                  = INST7(1,1,0,0,1,1,0),
+    p2_COGINIT                  = INST7(1,1,0,0,1,1,1),
 
-    p2_1101000,                 //!< 1101000
-    p2_1101001,                 //!< 1101001
-    p2_1101010,                 //!< 1101010
-    p2_1101011,                 //!< 1101011
+    p2_QMUL_QDIV                = INST7(1,1,0,1,0,0,0),
+    p2_QFRAC_QSQRT              = INST7(1,1,0,1,0,0,1),
+    p2_QROTATE_QVECTOR          = INST7(1,1,0,1,0,1,0),
+    p2_1101011                  = INST7(1,1,0,1,0,1,1),
 
-    p2_JMP_ABS,                 //!< 1101100
-    p2_CALL_ABS,                //!< 1101101
-    p2_CALLA_ABS,               //!< 1101110
-    p2_CALLB_ABS,               //!< 1101111
+    p2_JMP_ABS                  = INST7(1,1,0,1,1,0,0),
+    p2_CALL_ABS                 = INST7(1,1,0,1,1,0,1),
+    p2_CALLA_ABS                = INST7(1,1,0,1,1,1,0),
+    p2_CALLB_ABS                = INST7(1,1,0,1,1,1,1),
 
-    p2_CALLD_PA_ABS,            //!< 1110000
-    p2_CALLD_PB_ABS,            //!< 1110001
-    p2_CALLD_PTRA_ABS,          //!< 1110010
-    p2_CALLD_PTRB_ABS,          //!< 1110011
+    p2_CALLD_PA_ABS             = INST7(1,1,1,0,0,0,0),
+    p2_CALLD_PB_ABS             = INST7(1,1,1,0,0,0,1),
+    p2_CALLD_PTRA_ABS           = INST7(1,1,1,0,0,1,0),
+    p2_CALLD_PTRB_ABS           = INST7(1,1,1,0,0,1,1),
 
-    p2_LOC_PA,                  //!< 1110100
-    p2_LOC_PB,                  //!< 1110101
-    p2_LOC_PTRA,                //!< 1110110
-    p2_LOC_PTRB,                //!< 1110111
+    p2_LOC_PA                   = INST7(1,1,1,0,1,0,0),
+    p2_LOC_PB                   = INST7(1,1,1,0,1,0,1),
+    p2_LOC_PTRA                 = INST7(1,1,1,0,1,1,0),
+    p2_LOC_PTRB                 = INST7(1,1,1,0,1,1,1),
 
-    p2_AUGS_00,                 //!< 1111000
-    p2_AUGS_01,                 //!< 1111001
-    p2_AUGS_10,                 //!< 1111010
-    p2_AUGS_11,                 //!< 1111011
+    p2_AUGS_00                  = INST7(1,1,1,1,0,0,0),
+    p2_AUGS_01                  = INST7(1,1,1,1,0,0,1),
+    p2_AUGS_10                  = INST7(1,1,1,1,0,1,0),
+    p2_AUGS_11                  = INST7(1,1,1,1,0,1,1),
 
-    p2_AUGD_00,                 //!< 1111100
-    p2_AUGD_01,                 //!< 1111101
-    p2_AUGD_10,                 //!< 1111110
-    p2_AUDG_11,                 //!< 1111111
-
-    p2_OPCODE_WMLONG            = 0x53,
-    p2_OPCODE_RDBYTE            = 0x56,
-    p2_OPCODE_RDWORD            = 0x57,
-    p2_OPCODE_RDLONG            = 0x58,
-    p2_OPCODE_CALLD             = 0x59,
-    p2_OPCODE_CALLPB            = 0x5e,
-    p2_OPCODE_JINT              = 0x5f,
-    p2_OPCODE_WRBYTE            = 0x62,
-    p2_OPCODE_WRWORD            = 0x62,
-    p2_OPCODE_WRLONG            = 0x63,
-    p2_OPCODE_QMUL              = 0x68,
-    p2_OPCODE_QVECTOR           = 0x6a,
+    p2_AUGD_00                  = INST7(1,1,1,1,1,0,0),
+    p2_AUGD_01                  = INST7(1,1,1,1,1,0,1),
+    p2_AUGD_10                  = INST7(1,1,1,1,1,1,0),
+    p2_AUDG_11                  = INST7(1,1,1,1,1,1,1),
 
     p2_OPDST_JINT               = 0x00,
     p2_OPDST_JCT1               = 0x01,
@@ -263,6 +249,7 @@ typedef enum {
     p2_OPDST_JXRL               = 0x0d,
     p2_OPDST_JATN               = 0x0e,
     p2_OPDST_JQMT               = 0x0f,
+
     p2_OPDST_JNINT              = 0x10,
     p2_OPDST_JNCT1              = 0x11,
     p2_OPDST_JNCT2              = 0x12,
@@ -289,6 +276,7 @@ typedef enum {
     p2_OPSRC_LOCKREL            = 0x07,
     p2_OPSRC_QLOG               = 0x0e,
     p2_OPSRC_QEXP               = 0x0f,
+
     p2_OPSRC_RFBYTE             = 0x10,
     p2_OPSRC_RFWORD             = 0x11,
     p2_OPSRC_RFLONG             = 0x12,
@@ -297,6 +285,7 @@ typedef enum {
     p2_OPSRC_WFBYTE             = 0x15,
     p2_OPSRC_WFWORD             = 0x16,
     p2_OPSRC_WFLONG             = 0x17,
+
     p2_OPSRC_GETQX              = 0x18,
     p2_OPSRC_GETQY              = 0x19,
     p2_OPSRC_GETCT              = 0x1a,
@@ -305,6 +294,7 @@ typedef enum {
     p2_OPSRC_SETXFRQ            = 0x1d,
     p2_OPSRC_GETXACC            = 0x1e,
     p2_OPSRC_WAITX              = 0x1f,
+
     p2_OPSRC_SETSE1             = 0x20,
     p2_OPSRC_SETSE2             = 0x21,
     p2_OPSRC_SETSE3             = 0x22,
@@ -313,6 +303,7 @@ typedef enum {
     p2_OPSRC_SETINT1            = 0x25,
     p2_OPSRC_SETINT2            = 0x26,
     p2_OPSRC_SETINT3            = 0x27,
+
     p2_OPSRC_SETQ               = 0x28,
     p2_OPSRC_SETQ2              = 0x29,
     p2_OPSRC_PUSH               = 0x2a,
@@ -321,6 +312,7 @@ typedef enum {
     p2_OPSRC_CALL_RET           = 0x2d,
     p2_OPSRC_CALLA_RETA         = 0x2e,
     p2_OPSRC_CALLB_RETB         = 0x2f,
+
     p2_OPSRC_JMPREL             = 0x30,
     p2_OPSRC_SKIP               = 0x31,
     p2_OPSRC_SKIPF              = 0x32,
@@ -329,6 +321,7 @@ typedef enum {
     p2_OPSRC_COGBRK             = 0x35,
     p2_OPSRC_BRK                = 0x36,
     p2_OPSRC_SETLUTS            = 0x37,
+
     p2_OPSRC_SETCY              = 0x38,
     p2_OPSRC_SETCI              = 0x39,
     p2_OPSRC_SETCQ              = 0x3a,
@@ -337,6 +330,7 @@ typedef enum {
     p2_OPSRC_SETPIV             = 0x3d,
     p2_OPSRC_SETPIX             = 0x3e,
     p2_OPSRC_COGATN             = 0x3f,
+
     p2_OPSRC_TESTP_W_DIRL       = 0x40,
     p2_OPSRC_TESTPN_W_DIRH      = 0x41,
     p2_OPSRC_TESTP_AND_DIRC     = 0x42,
@@ -345,6 +339,7 @@ typedef enum {
     p2_OPSRC_TESTPN_OR_DIRNZ    = 0x45,
     p2_OPSRC_TESTP_XOR_DIRRND   = 0x46,
     p2_OPSRC_TESTPN_XOR_DIRNOT  = 0x47,
+
     p2_OPSRC_OUTL               = 0x48,
     p2_OPSRC_OUTH               = 0x49,
     p2_OPSRC_OUTC               = 0x4a,
@@ -353,6 +348,7 @@ typedef enum {
     p2_OPSRC_OUTNZ              = 0x4d,
     p2_OPSRC_OUTRND             = 0x4e,
     p2_OPSRC_OUTNOT             = 0x4f,
+
     p2_OPSRC_FLTL               = 0x50,
     p2_OPSRC_FLTH               = 0x51,
     p2_OPSRC_FLTC               = 0x52,
@@ -361,6 +357,7 @@ typedef enum {
     p2_OPSRC_FLTNZ              = 0x55,
     p2_OPSRC_FLTRND             = 0x56,
     p2_OPSRC_FLTNOT             = 0x57,
+
     p2_OPSRC_DRVL               = 0x58,
     p2_OPSRC_DRVH               = 0x59,
     p2_OPSRC_DRVC               = 0x5a,
@@ -369,6 +366,7 @@ typedef enum {
     p2_OPSRC_DRVNZ              = 0x5d,
     p2_OPSRC_DRVRND             = 0x5e,
     p2_OPSRC_DRVNOT             = 0x5f,
+
     p2_OPSRC_SPLITB             = 0x60,
     p2_OPSRC_MERGEB             = 0x61,
     p2_OPSRC_SPLITW             = 0x62,
@@ -377,6 +375,7 @@ typedef enum {
     p2_OPSRC_SEUSSR             = 0x65,
     p2_OPSRC_RGBSQZ             = 0x66,
     p2_OPSRC_RGBEXP             = 0x67,
+
     p2_OPSRC_XORO32             = 0x68,
     p2_OPSRC_REV                = 0x69,
     p2_OPSRC_RCZR               = 0x6a,
@@ -385,6 +384,7 @@ typedef enum {
     p2_OPSRC_WRNC               = 0x6d,
     p2_OPSRC_WRZ                = 0x6e,
     p2_OPSRC_WRNZ_MODCZ         = 0x6f,
+
     p2_OPSRC_SETSCP             = 0x70,
     p2_OPSRC_GETSCP             = 0x71,
 
@@ -404,6 +404,7 @@ typedef enum {
     p2_OPX24_POLLXRL            = 0x0d,
     p2_OPX24_POLLATN            = 0x0e,
     p2_OPX24_POLLQMT            = 0x0f,
+
     p2_OPX24_WAITINT            = 0x10,
     p2_OPX24_WAITCT1            = 0x11,
     p2_OPX24_WAITCT2            = 0x12,
@@ -419,6 +420,7 @@ typedef enum {
     p2_OPX24_WAITXRO            = 0x1c,
     p2_OPX24_WAITXRL            = 0x1d,
     p2_OPX24_WAITATN            = 0x1e,
+
     p2_OPX24_ALLOWI             = 0x20,
     p2_OPX24_STALLI             = 0x21,
     p2_OPX24_TRGINT1            = 0x22,
@@ -427,6 +429,19 @@ typedef enum {
     p2_OPX24_NIXINT1            = 0x25,
     p2_OPX24_NIXINT2            = 0x26,
     p2_OPX24_NIXINT3            = 0x27,
+
+    p2_OPCODE_WMLONG            = 0x53,
+    p2_OPCODE_RDBYTE            = 0x56,
+    p2_OPCODE_RDWORD            = 0x57,
+    p2_OPCODE_RDLONG            = 0x58,
+    p2_OPCODE_CALLD             = 0x59,
+    p2_OPCODE_CALLPB            = 0x5e,
+    p2_OPCODE_JINT              = 0x5f,
+    p2_OPCODE_WRBYTE            = 0x62,
+    p2_OPCODE_WRWORD            = 0x62,
+    p2_OPCODE_WRLONG            = 0x63,
+    p2_OPCODE_QMUL              = 0x68,
+    p2_OPCODE_QVECTOR           = 0x6a,
 
     p2_INSTR_MASK1              = 0x0fe001ff,
     p2_INSTR_LOCKNEW            = 0x0d600004,
@@ -442,15 +457,121 @@ typedef enum {
     p2_INSTR_GETQX              = 0x0d600018,
     p2_INSTR_GETQY              = 0x0d600019,
     p2_INSTR_WAITX              = 0x0d60001f,
+
     p2_INSTR_MASK2              = 0x0fe3e1ff,
     p2_INSTR_WAITXXX            = 0x0d602024,
 
 }   p2_inst_e;
 
+/**
+ * @brief Enumeration of the b bit instruction types including WC
+ */
+typedef enum {
+    p2_MUL                      = INST8(p2_MUL_MULS,0),
+    p2_MULS                     = INST8(p2_MUL_MULS,1),
+
+    p2_SCA                      = INST8(p2_SCA_SCAS,0),
+    p2_SCAS                     = INST8(p2_SCA_SCAS,1),
+
+    p2_CALLPA                   = INST8(p2_CALLP,0),
+    p2_CALLPB                   = INST8(p2_CALLP,1),
+
+    p2_QMUL                     = INST8(p2_QMUL_QDIV,0),
+    p2_QDIV                     = INST8(p2_QMUL_QDIV,1),
+
+    p2_QFRAC                    = INST8(p2_QFRAC_QSQRT,0),
+    p2_QSQRT                    = INST8(p2_QFRAC_QSQRT,1),
+
+    p2_QROTATE                  = INST8(p2_QROTATE_QVECTOR,0),
+    p2_QVECTOR                  = INST8(p2_QROTATE_QVECTOR,1),
+
+}   p2_inst8_e;
+
+/**
+ * @brief Enumeration of the 9 bit instruction types including WC and WZ
+ */
+typedef enum {
+    p2_BITL                     = INST9(p2_TESTB_W_BITL,0,0),
+    p2_TESTB_WZ                 = INST9(p2_TESTB_W_BITL,0,1),
+    p2_TESTB_WC                 = INST9(p2_TESTB_W_BITL,1,0),
+    p2_BITL_WCZ                 = INST9(p2_TESTB_W_BITL,1,1),
+
+    p2_BITH                     = INST9(p2_TESTBN_W_BITH,0,0),
+    p2_TESTBN_WZ                = INST9(p2_TESTBN_W_BITH,0,1),
+    p2_TESTBN_WC                = INST9(p2_TESTBN_W_BITH,1,0),
+    p2_BITH_WCZ                 = INST9(p2_TESTBN_W_BITH,1,1),
+
+    p2_BITC                     = INST9(p2_TESTB_AND_BITC,0,0),
+    p2_TESTB_ANDZ               = INST9(p2_TESTB_AND_BITC,0,1),
+    p2_TESTB_ANDC               = INST9(p2_TESTB_AND_BITC,1,0),
+    p2_BITC_WCZ                 = INST9(p2_TESTB_AND_BITC,1,1),
+
+    p2_BITNC                    = INST9(p2_TESTBN_AND_BITNC,0,0),
+    p2_TESTBN_ANDZ              = INST9(p2_TESTBN_AND_BITNC,0,1),
+    p2_TESTBN_ANDC              = INST9(p2_TESTBN_AND_BITNC,1,0),
+    p2_BITNC_WCZ                = INST9(p2_TESTBN_AND_BITNC,1,1),
+
+    p2_BITZ                     = INST9(p2_TESTB_OR_BITZ,0,0),
+    p2_TESTB_ORZ                = INST9(p2_TESTB_OR_BITZ,0,1),
+    p2_TESTB_ORC                = INST9(p2_TESTB_OR_BITZ,1,0),
+    p2_BITZ_WCZ                 = INST9(p2_TESTB_OR_BITZ,1,1),
+
+    p2_BITNZ                    = INST9(p2_TESTBN_OR_BITNZ,0,0),
+    p2_TESTBN_ORZ               = INST9(p2_TESTBN_OR_BITNZ,0,1),
+    p2_TESTBN_ORC               = INST9(p2_TESTBN_OR_BITNZ,1,0),
+    p2_BITNZ_WCZ                = INST9(p2_TESTBN_OR_BITNZ,1,1),
+
+    p2_BITRND                   = INST9(p2_TESTB_XOR_BITRND,0,0),
+    p2_TESTB_XORZ               = INST9(p2_TESTB_XOR_BITRND,0,1),
+    p2_TESTB_XORC               = INST9(p2_TESTB_XOR_BITRND,1,0),
+    p2_BITRND_WCZ               = INST9(p2_TESTB_XOR_BITRND,1,1),
+
+    p2_BITNOT                   = INST9(p2_TESTBN_XOR_BITNOT,0,0),
+    p2_TESTBN_XORZ              = INST9(p2_TESTBN_XOR_BITNOT,0,1),
+    p2_TESTBN_XORC              = INST9(p2_TESTBN_XOR_BITNOT,1,0),
+    p2_BITNOT_WCZ               = INST9(p2_TESTBN_XOR_BITNOT,1,1),
+
+    p2_SETWORD_ALTSW            = INST9(p2_SETWORD_GETWORD,0,0),
+    p2_SETWORD                  = INST9(p2_SETWORD_GETWORD,0,1),
+    p2_GETWORD_ALTGW            = INST9(p2_SETWORD_GETWORD,1,0),
+    p2_GETWORD                  = INST9(p2_SETWORD_GETWORD,1,1),
+
+    p2_MUXNITS                  = INST9(p2_MUXXXX,0,0),
+    p2_MUXNIBS                  = INST9(p2_MUXXXX,0,1),
+    p2_MUXQ                     = INST9(p2_MUXXXX,1,0),
+    p2_MOVBYTS                  = INST9(p2_MUXXXX,1,1),
+
+    p2_ADDCT1                   = INST9(p2_WMLONG_ADDCTx,0,0),
+    p2_ADDCT2                   = INST9(p2_WMLONG_ADDCTx,0,1),
+    p2_ADDCT3                   = INST9(p2_WMLONG_ADDCTx,1,0),
+    p2_WMLONG                   = INST9(p2_WMLONG_ADDCTx,1,1),
+
+    p2_ADDPIX                   = INST9(p2_XXXPIX,0,0),
+    p2_MULPIX                   = INST9(p2_XXXPIX,0,1),
+    p2_BLNPIX                   = INST9(p2_XXXPIX,1,0),
+    p2_MIXPIX                   = INST9(p2_XXXPIX,1,1),
+
+    p2_DJZ                      = INST9(p2_DJZ_DJNZ_DJF_DJNF,0,0),
+    p2_DJNZ                     = INST9(p2_DJZ_DJNZ_DJF_DJNF,0,1),
+    p2_DJF                      = INST9(p2_DJZ_DJNZ_DJF_DJNF,1,0),
+    p2_DJNF                     = INST9(p2_DJZ_DJNZ_DJF_DJNF,1,1),
+
+    p2_IJZ                      = INST9(p2_IJZ_IJNZ_TJZ_TJNZ,0,0),
+    p2_IJNZ                     = INST9(p2_IJZ_IJNZ_TJZ_TJNZ,0,1),
+    p2_TJZ                      = INST9(p2_IJZ_IJNZ_TJZ_TJNZ,1,0),
+    p2_TJNZ                     = INST9(p2_IJZ_IJNZ_TJZ_TJNZ,1,1),
+
+    p2_TJF                      = INST9(p2_TJF_TJNF_TJS_TJNS,0,0),
+    p2_TJNF                     = INST9(p2_TJF_TJNF_TJS_TJNS,0,1),
+    p2_TJS                      = INST9(p2_TJF_TJNF_TJS_TJNS,1,0),
+    p2_TJNS                     = INST9(p2_TJF_TJNF_TJS_TJNS,1,1),
+
+}   p2_inst9_e;
+
 Q_STATIC_ASSERT(p2_AUDG_11 == 127);
 
 /**
- * @brief Structure of the Propeller2 opcode words
+ * @brief Structure of the Propeller2 opcode words with 7 bits instruction, wc, wz, and imm
  *
  * Note: To have the bit fields work for both, little
  * and big endian machines, the order has to match
@@ -479,11 +600,30 @@ typedef struct {
 }   p2_opcode_t;
 
 /**
- * @brief Structure of the Propeller2 opcode words
- *
- * Note: To have the bit fields work for both, little
- * and big endian machines, the order has to match
- * the native order of bits in 32 bit words of the target.
+ * @brief Structure of the Propeller2 opcode words with 8 bits of instruction, wz, and imm
+ */
+typedef struct {
+#if (Q_BYTE_ORDER == Q_LITTLE_ENDIAN)
+    unsigned src:9;             //!< source (S or #S)
+    unsigned dst:9;             //!< destination (D or #D)
+    bool imm:1;                 //!< immediate flag
+    bool wz:1;                  //!< update Z flag
+    unsigned inst:8;            //!< instruction type including WC
+    unsigned cond:4;            //!< conditional execution
+#elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
+    unsigned cond:4;            //!< conditional execution
+    unsigned inst:8;            //!< instruction type including WC
+    bool wz:1;                  //!< update Z flag
+    bool imm:1;                 //!< immediate flag
+    unsigned dst:9;             //!< destination (D or #D)
+    unsigned src:9;             //!< source (S or #S)
+#else
+#error "Unknown byte order!"
+#endif
+}   p2_opcode1_t;
+
+/**
+ * @brief Structure of the Propeller2 opcode words with 9 bits of instruction and imm
  */
 typedef struct {
 #if (Q_BYTE_ORDER == Q_LITTLE_ENDIAN)
@@ -507,32 +647,33 @@ typedef struct {
  * @brief union of a 32 bit word and the opcode bit fields
  */
 typedef union {
-    unsigned int word;          //!< opcode as 32 bit word
+    P2LONG word;                //!< opcode as 32 bit word
     p2_opcode_t op;             //!< ocpode as bit fields
-    p2_opcode2_t op2;           //!< ocpode as bit fields (version including WC and WZ)
+    p2_opcode1_t op8;           //!< ocpode as bit fields (version including)
+    p2_opcode2_t op9;           //!< ocpode as bit fields (version including WC and WZ)
 }   p2_opword_t;
 
 /**
  * @brief structure of the shadow registers at the end of LUT
  */
 typedef struct {
-    P2LONG RAM[512-16];        //!< general-use code/data registers
-    P2LONG IJMP3;              //!< interrupt call address for INT3
-    P2LONG IRET3;              //!< interrupt return address for INT3
-    P2LONG IJMP2;              //!< interrupt call address for INT2
-    P2LONG IRET2;              //!< interrupt return address for INT2
-    P2LONG IJMP1;              //!< interrupt call address for INT1
-    P2LONG IRET1;              //!< interrupt return address for INT1
-    P2LONG PA;                 //!< CALLD-imm return, CALLPA parameter, or LOC address
-    P2LONG PB;                 //!< CALLD-imm return, CALLPB parameter, or LOC address
-    P2LONG PTRA;               //!< pointer A to hub RAM
-    P2LONG PTRB;               //!< pointer B to hub RAM
-    P2LONG DIRA;               //!< output enables for P31 ... P0
-    P2LONG DIRB;               //!< output enables for P63 ... P32
-    P2LONG OUTA;               //!< output states for P31 ... P0
-    P2LONG OUTB;               //!< output states for P63 ... P32
-    P2LONG INA;                //!< input states for P31 ... P0
-    P2LONG INB;                //!< input states for P63 ... P32
+    P2LONG RAM[512-16];         //!< general-use code/data registers
+    P2LONG IJMP3;               //!< interrupt call address for INT3
+    P2LONG IRET3;               //!< interrupt return address for INT3
+    P2LONG IJMP2;               //!< interrupt call address for INT2
+    P2LONG IRET2;               //!< interrupt return address for INT2
+    P2LONG IJMP1;               //!< interrupt call address for INT1
+    P2LONG IRET1;               //!< interrupt return address for INT1
+    P2LONG PA;                  //!< CALLD-imm return, CALLPA parameter, or LOC address
+    P2LONG PB;                  //!< CALLD-imm return, CALLPB parameter, or LOC address
+    P2LONG PTRA;                //!< pointer A to hub RAM
+    P2LONG PTRB;                //!< pointer B to hub RAM
+    P2LONG DIRA;                //!< output enables for P31 ... P0
+    P2LONG DIRB;                //!< output enables for P63 ... P32
+    P2LONG OUTA;                //!< output states for P31 ... P0
+    P2LONG OUTB;                //!< output states for P63 ... P32
+    P2LONG INA;                 //!< input states for P31 ... P0
+    P2LONG INB;                 //!< input states for P63 ... P32
 }   p2_lutregs_t;
 
 typedef enum {
@@ -557,14 +698,14 @@ typedef enum {
 Q_STATIC_ASSERT(offs_INB == 0x1ff);
 
 /**
- * @brief union of the COG memory (shadow registers ?)
+ * @brief Structure of the COG memory
  */
 typedef union {
     P2LONG RAM[512];
 }   p2_cog_t;
 
 /**
- * @brief union of the LUT memory and shadow registers
+ * @brief Union of the LUT memory and shadow registers
  */
 typedef union {
     P2LONG RAM[512];

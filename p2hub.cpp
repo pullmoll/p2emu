@@ -44,7 +44,7 @@ P2Hub::P2Hub(int ncogs, QObject* parent)
     , PIN(0)
     , COGS()
     , nCOGS(ncogs)
-    , mCOGS((1u << nCOGS) - 1)
+    , mCOGS(ncogs - 1)
     , pin_mode(64, 0)
     , pin_X(64, 0)
     , pin_Y(64, 0)
@@ -65,8 +65,8 @@ void P2Hub::execute(int run_cycles)
 {
     while (run_cycles > 0) {
         xoro128();
-        int id = static_cast<int>(CNT & mCOGS);
-        P2Cog* cog = COGS[id];
+        int id = static_cast<int>(CNT) & mCOGS;
+        P2Cog* cog = COGS.value(id, nullptr);
         qDebug("%s: run COG #%x (%d cycles left)", __func__, id, run_cycles);
         int cycles = cog ? cog->decode() : 2;
         CNT++;

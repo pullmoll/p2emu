@@ -41,8 +41,9 @@
 #include "gotoaddress.h"
 #include "p2dasm.h"
 
-static const int ncogs = 4;
+static const int ncogs = 2;
 static const QLatin1String key_windowGeometry("windowGeometry");
+static const QLatin1String key_windowState("windowState");
 static const QLatin1String key_opcodes("opcodes");
 static const QLatin1String key_lowercase("lowercase");
 static const QLatin1String key_current_row("current_row");
@@ -90,6 +91,7 @@ void MainWindow::saveSettings()
 {
     QSettings s;
     s.setValue(key_windowGeometry, saveGeometry());
+    s.setValue(key_windowState, saveState());
     s.setValue(key_opcodes, m_model->opcode_format());
     s.setValue(key_lowercase, ui->action_setLowercase->isChecked());
     s.setValue(key_current_row, ui->tvDasm->currentIndex().row());
@@ -103,6 +105,7 @@ void MainWindow::restoreSettings()
 {
     QSettings s;
     restoreGeometry(s.value(key_windowGeometry).toByteArray());
+    restoreState(s.value(key_windowState).toByteArray());
     setOpcodes(s.value(key_opcodes, P2DasmModel::f_binary).toInt());
     setInstructionsLowercase(s.value(key_lowercase).toBool());
     ui->tvDasm->selectRow(s.value(key_current_row).toInt());
@@ -223,11 +226,19 @@ void MainWindow::dasmHeaderColums(const QPoint& pos)
     ui->tvDasm->setColumnHidden(column, !act->isChecked());
 }
 
+void MainWindow::hubSingleStep()
+{
+    m_hub.execute(ncogs*2);
+    for (int id = 0; id < ncogs; id++)
+        m_vcog[id]->updateView();
+}
+
 void MainWindow::setInstructionsLowercase(bool check)
 {
     ui->action_setLowercase->setChecked(check);
     m_dasm->setLowercase(check);
-    int row = ui->tvDasm->currentIndex().row();
+    P2LONG PC = m_hub.cog(0)->rd_PC();
+    int row = static_cast<int>((PC < 0x400) ? PC : PC / 4);
     m_model->invalidate();
     ui->tvDasm->selectRow(row);
 }
@@ -261,6 +272,11 @@ void MainWindow::setupToolbar()
 
     connect(ui->action_setLowercase, SIGNAL(triggered(bool)), SLOT(setInstructionsLowercase(bool)));
     ui->mainToolBar->addAction(ui->action_setLowercase);
+
+    ui->mainToolBar->addSeparator();
+
+    connect(ui->action_SingleStep, SIGNAL(triggered()), SLOT(hubSingleStep()));
+    ui->mainToolBar->addAction(ui->action_SingleStep);
 }
 
 /**

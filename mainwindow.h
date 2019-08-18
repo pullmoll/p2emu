@@ -71,6 +71,7 @@ private slots:
     void setOpcodesOctal();
     void setInstructionsLowercase(bool check);
     void dasmHeaderColums(const QPoint& pos);
+    void hubSingleStep();
 private:
     Ui::MainWindow *ui;
     QVector<P2CogView*> m_vcog;

@@ -11,5 +11,6 @@
         <file>icons/opcode_binary.png</file>
         <file>icons/opcode_hexdec.png</file>
         <file>icons/opcode_octal.png</file>
+        <file>icons/single_step.png</file>
     </qresource>
 </RCC>
