@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * P2 emulator main window
+ * Propeller2 assembler symbol table
  *
  * Copyright (C) 2019 Jürgen Buchmüller <pullmoll@t-online.de>
  *
@@ -32,55 +32,29 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 #pragma once
-#include <QMainWindow>
-#include <QLabel>
-#include <QLineEdit>
-#include <QPushButton>
-#include <QCheckBox>
-#include "p2token.h"
-#include "p2hub.h"
-#include "p2cog.h"
-#include "p2dasmmodel.h"
+#include "p2asmsym.h"
 
-namespace Ui {
-class MainWindow;
-}
-
-class P2CogView;
-
-class MainWindow : public QMainWindow
+/**
+ * @brief The SymbolTable class is a QHash<QString,Symbol>, i.e. a hash
+ * of symbol names containing their definitions.
+ */
+class P2AsmSymTbl
 {
-    Q_OBJECT
-
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+    explicit P2AsmSymTbl();
 
-private slots:
-    void saveSettings();
-    void restoreSettings();
-    void about();
-    void aboutQt5();
-    void gotoHex(const QString& address = QString());
-    void gotoCog();
-    void gotoLut();
-    void gotoRom();
-    void gotoAddress();
-    void setOpcodes(int mode);
-    void setOpcodesBinary();
-    void setOpcodesHexDec();
-    void setOpcodesOctal();
-    void setInstructionsLowercase(bool check);
-    void dasmHeaderColums(const QPoint& pos);
-    void hubSingleStep();
+    bool contains(const QString& name);
+    bool insert(const QString& name, const P2AsmSymbol& symbol);
+    bool insert(const QString& name, const QVariant& value, P2AsmSymbol* psym = nullptr);
+    P2AsmSymbol value(const QString& name) const;
+
+    template <typename T>
+    T value(const QString& name) const
+    {
+        const P2AsmSymbol sym = m_symbols.value(name);
+        return sym.value<T>();
+    }
+
 private:
-    Ui::MainWindow *ui;
-    QVector<P2CogView*> m_vcog;
-    P2Hub m_hub;
-    P2Dasm* m_dasm;
-    P2DasmModel* m_model;
-
-    void setupToolbar();
-    void updateColumnSizes();
-    void setupCogView();
+    QHash<QString,P2AsmSymbol> m_symbols;
 };

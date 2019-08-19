@@ -144,7 +144,7 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
     QString opcode;
     QString instruction;
     QString description;
-    bool known = m_dasm->dasm(PC, opcode, instruction, &description);
+    bool known = m_dasm->dasm(PC, opcode, &instruction, &description);
     Q_UNUSED(known)
 
     switch (role) {

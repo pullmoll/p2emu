@@ -33,7 +33,7 @@
  ****************************************************************************/
 #pragma once
 #include <QString>
-#include <QMap>
+#include <QMultiHash>
 #include "p2defs.h"
 
 /**
@@ -43,6 +43,22 @@ typedef enum {
     t_invalid,
     t_nothing,
     t_empty,
+    t__RET_,
+    t_IF_C,
+    t_IF_C_AND_NZ,
+    t_IF_C_AND_Z,
+    t_IF_C_EQ_Z,
+    t_IF_C_NE_Z,
+    t_IF_C_OR_NZ,
+    t_IF_C_OR_Z,
+    t_IF_NC,
+    t_IF_NC_AND_NZ,
+    t_IF_NC_AND_Z,
+    t_IF_NC_OR_NZ,
+    t_IF_NC_OR_Z,
+    t_IF_NZ,
+    t_IF_Z,
+    t_ALWAYS,
     t_ABS,
     t_ADD,
     t_ADDCT1,
@@ -80,7 +96,6 @@ typedef enum {
     t_BLNPIX,
     t_BMASK,
     t_BRK,
-    t_C,
     t_CALL,
     t_CALLA,
     t_CALLB,
@@ -101,7 +116,7 @@ typedef enum {
     t_COGSTOP,
     t_CRCBIT,
     t_CRCNIB,
-    t_CZ,
+    t_DAT,
     t_DECMOD,
     t_DECOD,
     t_DIRC,
@@ -129,6 +144,7 @@ typedef enum {
     t_FBLOCK,
     t_FGE,
     t_FGES,
+    t_FIT,
     t_FLE,
     t_FLES,
     t_FLTC,
@@ -151,20 +167,6 @@ typedef enum {
     t_GETWORD,
     t_GETXACC,
     t_HUBSET,
-    t_IF_C,
-    t_IF_C_AND_NZ,
-    t_IF_C_AND_Z,
-    t_IF_C_EQ_Z,
-    t_IF_C_NE_Z,
-    t_IF_C_OR_NZ,
-    t_IF_C_OR_Z,
-    t_IF_NC,
-    t_IF_NC_AND_NZ,
-    t_IF_NC_AND_Z,
-    t_IF_NC_OR_NZ,
-    t_IF_NC_OR_Z,
-    t_IF_NZ,
-    t_IF_Z,
     t_IJNZ,
     t_IJZ,
     t_INCMOD,
@@ -228,7 +230,6 @@ typedef enum {
     t_NEGNC,
     t_NEGNZ,
     t_NEGZ,
-    t_ALWAYS,
     t_NIXINT1,
     t_NIXINT2,
     t_NIXINT3,
@@ -266,7 +267,11 @@ typedef enum {
     t_POPA,
     t_POPB,
     t_PTRA,
+    t_PTRA_predec,
+    t_PTRA_postinc,
     t_PTRB,
+    t_PTRB_predec,
+    t_PTRB_postinc,
     t_PUSH,
     t_PUSHA,
     t_PUSHB,
@@ -289,6 +294,7 @@ typedef enum {
     t_RDPIN,
     t_RDWORD,
     t_REP,
+    t__RES,
     t_RESI0,
     t_RESI1,
     t_RESI2,
@@ -352,6 +358,7 @@ typedef enum {
     t_SIGNX,
     t_SKIP,
     t_SKIPF,
+    t_SPACE,
     t_SPLITB,
     t_SPLITW,
     t_STALLI,
@@ -381,7 +388,6 @@ typedef enum {
     t_TRGINT1,
     t_TRGINT2,
     t_TRGINT3,
-    t_W,
     t_WAITATN,
     t_WAITCT1,
     t_WAITCT2,
@@ -420,21 +426,58 @@ typedef enum {
     t_XORO32,
     t_XSTOP,
     t_XZERO,
-    t_Z,
     t_ZEROX,
-    t__RET_
+    t_WC,
+    t_WZ,
+    t_WCZ,
+    t_ANDC,
+    t_ANDZ,
+    t_ORC,
+    t_ORZ,
+    t_XORC,
+    t_XORZ,
+    t__ORG,
+    t__ORGH,
+    t__BYTE,
+    t__WORD,
+    t__LONG,
+    t__ASSIGN,          //!< "="
+    t__DOLLAR,          //!< "$"
+    t__EQ,              //!< "=="
+    t__NE,              //!< "!="
+    t__GE,              //!< ">="
+    t__GT,              //!< ">"
+    t__LE,              //!< "<="
+    t__LT,              //!< "<"
+    t__ADD,             //!< "+"
+    t__SUB,             //!< "-"
+    t__MUL,             //!< "*"
+    t__DIV,             //!< "/"
+    t__MOD,             //!< "%"
+    t__NOT,             //!< "!"
+    t__AND,             //!< "&"
+    t__OR,              //!< "|"
+    t__XOR,             //!< "^"
+    t__INC,             //!< "++"
+    t__DEC,             //!< "--"
+    t__SHL,             //!< "<<"
+    t__SHR,             //!< ">>"
 }   p2_token_e;
 
 class P2Token
 {
 public:
     P2Token(bool lowercase = false);
-    QString str(p2_token_e token);
+    QString string(p2_token_e token);
+    p2_token_e token(const QString& string);
 
     bool lowercase() const;
     void setLowercase(bool lowercase = true);
 
 private:
     bool m_lowercase;
-    QMap<p2_token_e, QString> m_token;
+    QMultiHash<p2_token_e, QString> m_token_string;
+    QMultiHash<QString, p2_token_e> m_string_token;
 };
+
+extern P2Token Token;

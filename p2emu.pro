@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui widgets
+QT += core gui widgets
 TARGET = p2
 TEMPLATE = app
 
@@ -26,6 +26,9 @@ SOURCES += \
 		gotoaddress.cpp \
 		main.cpp \
 		mainwindow.cpp \
+		p2asm.cpp \
+		p2asmsym.cpp \
+		p2asmsymtbl.cpp \
 		p2cog.cpp \
 		p2cogview.cpp \
 		p2dasm.cpp \
@@ -37,6 +40,9 @@ HEADERS += \
 		about.h \
 		gotoaddress.h \
 		mainwindow.h \
+		p2asm.h \
+		p2asmsym.h \
+		p2asmsymtbl.h \
 		p2cog.h \
 		p2cogview.h \
 		p2dasm.h \
@@ -61,5 +67,6 @@ RESOURCES += \
 
 DISTFILES += \
 		README.md \
+		ROM_Booter_v33_01j.spin2 \
 		csv.cpp \
 		csv.h

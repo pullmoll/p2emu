@@ -10,17 +10,33 @@
     <height>361</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <family>DejaVu Sans Mono</family>
+    <pointsize>8</pointsize>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>COG view</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
+   <property name="leftMargin">
+    <number>3</number>
+   </property>
+   <property name="topMargin">
+    <number>3</number>
+   </property>
+   <property name="rightMargin">
+    <number>3</number>
+   </property>
+   <property name="bottomMargin">
+    <number>3</number>
+   </property>
+   <property name="spacing">
+    <number>1</number>
+   </property>
    <item row="3" column="0" colspan="2">
     <widget class="QFrame" name="frame_CTx">
-     <property name="font">
-      <font>
-       <pointsize>9</pointsize>
-      </font>
-     </property>
      <property name="toolTip">
       <string>Count match values for CT1, CT2, and CT3</string>
      </property>
@@ -81,19 +97,13 @@
    </item>
    <item row="0" column="0" colspan="2">
     <widget class="QGroupBox" name="group_PC">
-     <property name="font">
-      <font>
-       <family>DejaVu Sans Mono</family>
-       <pointsize>10</pointsize>
-      </font>
-     </property>
      <property name="toolTip">
-      <string>Program counter (PC), intruction register, C flag, Z flag</string>
+      <string>Program counter (PC), intruction register, D value, S value, C flag, Z flag</string>
      </property>
      <property name="title">
       <string>COG ID #0</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout_6">
+     <layout class="QGridLayout" name="gridLayout_6" columnstretch="0,1,4,1,1,0,0">
       <property name="leftMargin">
        <number>2</number>
       </property>
@@ -109,8 +119,8 @@
       <property name="spacing">
        <number>2</number>
       </property>
-      <item row="0" column="0">
-       <widget class="QLabel" name="lbl_PC">
+      <item row="0" column="6">
+       <widget class="QCheckBox" name="cb_Z">
         <property name="font">
          <font>
           <family>DejaVu Sans Mono</family>
@@ -118,7 +128,7 @@
          </font>
         </property>
         <property name="text">
-         <string>PC:</string>
+         <string>Z</string>
         </property>
        </widget>
       </item>
@@ -132,20 +142,7 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="4">
-       <widget class="QCheckBox" name="cb_Z">
-        <property name="font">
-         <font>
-          <family>DejaVu Sans Mono</family>
-          <pointsize>9</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Z</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="3">
+      <item row="0" column="5">
        <widget class="QCheckBox" name="cb_C">
         <property name="font">
          <font>
@@ -155,6 +152,22 @@
         </property>
         <property name="text">
          <string>C</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="3">
+       <widget class="QLineEdit" name="le_DST"/>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="lbl_PC">
+        <property name="font">
+         <font>
+          <family>DejaVu Sans Mono</family>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>PC:</string>
         </property>
        </widget>
       </item>
@@ -168,17 +181,14 @@
         </property>
        </widget>
       </item>
+      <item row="0" column="4">
+       <widget class="QLineEdit" name="le_SRC"/>
+      </item>
      </layout>
     </widget>
    </item>
    <item row="6" column="0" colspan="2">
     <widget class="QFrame" name="frame_LOCK">
-     <property name="font">
-      <font>
-       <family>DejaVu Sans Mono</family>
-       <pointsize>9</pointsize>
-      </font>
-     </property>
      <property name="toolTip">
       <string>LOCK mode / edge / number values</string>
      </property>
@@ -225,12 +235,6 @@
    </item>
    <item row="2" column="0" colspan="2">
     <widget class="QFrame" name="frame_FLAGS">
-     <property name="font">
-      <font>
-       <family>DejaVu Sans Mono</family>
-       <pointsize>9</pointsize>
-      </font>
-     </property>
      <property name="toolTip">
       <string>COG status flags</string>
      </property>
@@ -373,12 +377,6 @@
    </item>
    <item row="4" column="0" colspan="2">
     <widget class="QFrame" name="frame_PAT">
-     <property name="font">
-      <font>
-       <family>DejaVu Sans Mono</family>
-       <pointsize>9</pointsize>
-      </font>
-     </property>
      <property name="toolTip">
       <string>PAT mode, mask, match values</string>
      </property>
@@ -425,12 +423,6 @@
    </item>
    <item row="5" column="0" colspan="2">
     <widget class="QFrame" name="frame_PIN">
-     <property name="font">
-      <font>
-       <family>DejaVu Sans Mono</family>
-       <pointsize>9</pointsize>
-      </font>
-     </property>
      <property name="toolTip">
       <string>PIN mode, edge, and number values</string>
      </property>
@@ -477,11 +469,6 @@
    </item>
    <item row="1" column="0">
     <widget class="QTableView" name="tvDasm">
-     <property name="font">
-      <font>
-       <family>DejaVu Sans Mono</family>
-      </font>
-     </property>
      <property name="toolTip">
       <string>Disassembled instruction</string>
      </property>
@@ -531,6 +518,8 @@
  <tabstops>
   <tabstop>le_PC</tabstop>
   <tabstop>le_IR</tabstop>
+  <tabstop>le_DST</tabstop>
+  <tabstop>le_SRC</tabstop>
   <tabstop>cb_C</tabstop>
   <tabstop>cb_Z</tabstop>
   <tabstop>tvDasm</tabstop>

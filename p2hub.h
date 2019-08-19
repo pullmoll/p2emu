@@ -47,18 +47,18 @@ class P2Hub : public QObject
 public:
     P2Hub(int ncogs, QObject* parent = nullptr);
 
-    void execute(int cycles);
+    int execute(int cycles);
     bool load(const QString& filename);
 
     P2Cog* cog(int id);
     P2BYTE* mem();
     P2LONG memsize() const;
 
+    void coginit(P2LONG id, P2LONG ptra, P2LONG ptrb);
     quint64 count() const;
     P2LONG hubslots() const;
     P2LONG cogindex() const;
     int lockstate(int id) const;
-
     P2LONG random(uint index = 0);
 
     P2BYTE rd_BYTE(P2LONG addr) const;

@@ -39,6 +39,7 @@
 #include "ui_mainwindow.h"
 #include "about.h"
 #include "gotoaddress.h"
+#include "p2asm.h"
 #include "p2dasm.h"
 
 static const int ncogs = 2;
@@ -79,6 +80,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     restoreSettings();
     setupCogView();
+
+    P2Asm p2asm(this);
+    P2Params result;
+    if (p2asm.assemble(result, QStringLiteral(":/ROM_Booter_v33_01j.spin2"))) {
+        // Inspect result
+    }
 }
 
 MainWindow::~MainWindow()

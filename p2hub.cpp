@@ -60,18 +60,21 @@ P2Hub::P2Hub(int ncogs, QObject* parent)
 /**
  * @brief Execute COGs round robin for %run_cycles
  * @param run_cycles number of cycles to run COGs
+ * @param returns cycles actually run (may be < 0)
  */
-void P2Hub::execute(int run_cycles)
+int P2Hub::execute(int run_cycles)
 {
     while (run_cycles > 0) {
         xoro128();
-        int id = static_cast<int>(CNT) & mCOGS;
-        P2Cog* cog = COGS.value(id, nullptr);
-        qDebug("%s: run COG #%x (%d cycles left)", __func__, id, run_cycles);
-        int cycles = cog ? cog->decode() : 2;
+        for (int id = 0; id < nCOGS; id++) {
+            P2Cog* cog = COGS.value(id, nullptr);
+            qDebug("%s: run COG #%x (%d cycles left)", __func__, id, run_cycles);
+            int cycles = cog ? cog->decode() : 2;
+            run_cycles -= cycles;
+        }
         CNT++;
-        run_cycles -= cycles;
     }
+    return run_cycles;
 }
 
 /**
@@ -118,6 +121,15 @@ P2LONG P2Hub::memsize() const
     return sizeof(MEM);
 }
 
+void P2Hub::coginit(P2LONG cog, P2LONG ptra, P2LONG ptrb)
+{
+    int id = static_cast<int>(cog);
+    Q_ASSERT(id < nCOGS);
+    COGS[id]->wr_PC(ptrb);
+    COGS[id]->wr_PTRA(ptra);
+    COGS[id]->wr_PTRB(ptrb);
+}
+
 /**
  * @brief Return the current free running counter value
  * @return
@@ -142,7 +154,7 @@ P2LONG P2Hub::hubslots() const
  */
 P2LONG P2Hub::cogindex() const
 {
-    return CNT & mCOGS;
+    return CNT & static_cast<P2LONG>(mCOGS);
 }
 
 /**

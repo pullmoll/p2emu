@@ -4,6 +4,11 @@
 #include "p2dasm.h"
 #include "p2dasmmodel.h"
 
+static QString bin(P2LONG val, int digits = 1)
+{
+    return QString("%1").arg(val, digits, 2, QChar('0'));
+}
+
 static QString hex(P2LONG val, int digits = 8)
 {
     return QString("%1").arg(val, digits, 16, QChar('0'));
@@ -28,17 +33,24 @@ void P2CogView::updateView()
 {
     ui->group_PC->setTitle(QString("COG ID #%1").arg(m_cog->rd_ID()));
     const P2LONG PC = m_cog->rd_PC();
-    p2_opword_t IR;
-    ui->le_PC->setText(QString("%1").arg(PC, 6, 16, QChar('0')));
-    IR.word = m_cog->rd_mem(PC*4);
+    ui->le_PC->setText(hex(PC, 6));
+
+    p2_opword_t IR = { m_cog->rd_mem(PC), };
+    QVariant D_aug = m_cog->rd_D_aug();
+    QVariant S_aug = m_cog->rd_S_aug();
+    P2LONG D = D_aug.isValid() ? D_aug.toUInt() | IR.op.dst : IR.op.dst;
+    P2LONG S = S_aug.isValid() ? S_aug.toUInt() | IR.op.src : IR.op.src;
+    ui->le_DST->setText(hex(D, 3));
+    ui->le_SRC->setText(hex(S, 3));
+
     ui->le_IR->setText(QString("%1_%2_%3%4%5_%6_%8")
-                       .arg(IR.op.cond, 4, 2, QChar('0'))
-                       .arg(IR.op.inst, 7, 2, QChar('0'))
-                       .arg(IR.op.wc, 1, 2, QChar('0'))
-                       .arg(IR.op.wz, 1, 2, QChar('0'))
-                       .arg(IR.op.imm, 1, 2, QChar('0'))
-                       .arg(IR.op.dst, 9, 2, QChar('0'))
-                       .arg(IR.op.src, 9, 2, QChar('0')));
+                       .arg(bin(IR.op.cond, 4))
+                       .arg(bin(IR.op.inst, 7))
+                       .arg(bin(IR.op.wc, 1))
+                       .arg(bin(IR.op.wz, 1))
+                       .arg(bin(IR.op.imm, 1))
+                       .arg(bin(IR.op.dst, 9))
+                       .arg(bin(IR.op.src, 9)));
     ui->cb_C->setChecked(m_cog->rd_C());
     ui->cb_Z->setChecked(m_cog->rd_Z());
 
@@ -113,6 +125,7 @@ void P2CogView::setCog(const P2Cog* cog)
     m_cog = cog;
     m_dasm = new P2Dasm(cog);
     m_model = new P2DasmModel(m_dasm);
+    m_model->setOpcodeFormat(P2DasmModel::f_hexdec);
     ui->tvDasm->setModel(m_model);
     // Set column sizes
     for (int column = 0; column < m_model->columnCount(); column++) {

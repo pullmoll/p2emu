@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * P2 emulator main window
+ * Propeller2 assembler symbol
  *
  * Copyright (C) 2019 Jürgen Buchmüller <pullmoll@t-online.de>
  *
@@ -32,55 +32,32 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 #pragma once
-#include <QMainWindow>
-#include <QLabel>
-#include <QLineEdit>
-#include <QPushButton>
-#include <QCheckBox>
-#include "p2token.h"
-#include "p2hub.h"
-#include "p2cog.h"
-#include "p2dasmmodel.h"
+#include <QString>
+#include <QVariant>
 
-namespace Ui {
-class MainWindow;
-}
-
-class P2CogView;
-
-class MainWindow : public QMainWindow
+/**
+ * @brief The P2AsmSymbol class is a wrapper for one symbolic name for a value
+ */
+class P2AsmSymbol
 {
-    Q_OBJECT
-
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+    explicit P2AsmSymbol(const QString& name = QString(), const QVariant& value = QVariant());
 
-private slots:
-    void saveSettings();
-    void restoreSettings();
-    void about();
-    void aboutQt5();
-    void gotoHex(const QString& address = QString());
-    void gotoCog();
-    void gotoLut();
-    void gotoRom();
-    void gotoAddress();
-    void setOpcodes(int mode);
-    void setOpcodesBinary();
-    void setOpcodesHexDec();
-    void setOpcodesOctal();
-    void setInstructionsLowercase(bool check);
-    void dasmHeaderColums(const QPoint& pos);
-    void hubSingleStep();
+    bool isEmpty() const;
+    const QString& name() const;
+    void setValue(const QVariant& value);
+    void addReference(int lineno);
+
+    template <typename T>
+    T value() const
+    {
+        return qvariant_cast<T>(m_value);
+    }
+
 private:
-    Ui::MainWindow *ui;
-    QVector<P2CogView*> m_vcog;
-    P2Hub m_hub;
-    P2Dasm* m_dasm;
-    P2DasmModel* m_model;
-
-    void setupToolbar();
-    void updateColumnSizes();
-    void setupCogView();
+    QString m_name;
+    QVariant m_value;
+    QList<int> m_references;
 };
+
+Q_DECLARE_METATYPE(P2AsmSymbol);

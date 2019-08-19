@@ -38,6 +38,46 @@ typedef quint8 P2BYTE;
 typedef quint16 P2WORD;
 typedef quint32 P2LONG;
 
+
+//! most significant bit in a 32 bit word
+static const P2LONG MSB = 1u << 31;
+
+//! least significant bit in a 32 bit word
+static const P2LONG LSB = 1u;
+
+//! least significant nibble in a 32 bit word
+static const P2LONG LNIBBLE = 0x0000000fu;
+
+//! least significant byte in a 32 bit word
+static const P2LONG LBYTE = 0x000000ffu;
+
+//! least significant word in a 32 bit word
+static const P2LONG LWORD = 0x0000ffffu;
+
+//! most significant word in a 32 bit word
+static const P2LONG HWORD = 0xffff0000u;
+
+//! bits without sign bit in a 32 bit word
+static const P2LONG IMAX = 0x7fffffffu;
+
+//! no bits in a 32 bit word
+static const P2LONG ZERO = 0x00000000u;
+
+//! all bits in a 32 bit word
+static const P2LONG FULL = 0xffffffffu;
+
+//! least significant 20 bits for an address value
+static const P2LONG A20MASK = (1u << 20) - 1;
+
+//! most significant 23 bits for an augmentation value
+static const P2LONG AUGMASK = 0xfffffe00;
+
+//! upper word max / mask in a 64 bit unsigned
+static const quint64 HMAX = Q_UINT64_C(0xffffffff00000000);
+
+//! lower word max / mask in a 64 bit unsigned
+static const quint64 LMAX = Q_UINT64_C(0x00000000ffffffff);
+
 typedef union {
 #if (Q_BYTE_ORDER == Q_LITTLE_ENDIAN)
     P2BYTE b0,b1,b2,b3;
@@ -78,8 +118,13 @@ typedef enum {
     cond_always                 //!< execute always (default)
 }   p2_cond_e;
 
+//! define an instruction with 7 bits
 #define INST7(b6,b5,b4,b3,b2,b1,b0) ((b6<<6)|(b5<<5)|(b4<<4)|(b3<<3)|(b2<<2)|(b1<<1)|(b0))
+
+//! extend an instruction to 8 bits using wc
 #define INST8(inst,b0)              ((inst<<1)|(b0))
+
+//! extend an instruction to 9 bits using wc and wz
 #define INST9(inst,b1,b0)           ((inst<<2)|(b1<<1)|(b0))
 
 /**
@@ -169,44 +214,44 @@ typedef enum {
 
     p2_ROLBYTE                  = INST7(1,0,0,1,0,0,0),
     p2_SETWORD_GETWORD          = INST7(1,0,0,1,0,0,1),
-    p2_1001010                  = INST7(1,0,0,1,0,1,0),
-    p2_1001011                  = INST7(1,0,0,1,0,1,1),
-    p2_1001100                  = INST7(1,0,0,1,1,0,0),
-    p2_1001101                  = INST7(1,0,0,1,1,0,1),
-    p2_1001110                  = INST7(1,0,0,1,1,1,0),
-    p2_MUXXXX                   = INST7(1,0,0,1,1,1,1),
+    p2_ROLWORD_ALTSN_ALTGN      = INST7(1,0,0,1,0,1,0),
+    p2_ALTSB_ALTGB_ALTSW_ALTGW  = INST7(1,0,0,1,0,1,1),
+    p2_ALTR_ALTD_ALTS_ALTB      = INST7(1,0,0,1,1,0,0),
+    p2_ALTI_SETR_SETD_SETS      = INST7(1,0,0,1,1,0,1),
+    p2_DECOD_BMASK_CRCBIT_CRCNIB= INST7(1,0,0,1,1,1,0),
+    p2_MUX_NITS_NIBS_Q_MOVBYTS  = INST7(1,0,0,1,1,1,1),
 
     p2_MUL_MULS                 = INST7(1,0,1,0,0,0,0),
     p2_SCA_SCAS                 = INST7(1,0,1,0,0,0,1),
     p2_XXXPIX                   = INST7(1,0,1,0,0,1,0),
     p2_WMLONG_ADDCTx            = INST7(1,0,1,0,0,1,1),
-    p2_RQPIND_RDPIN             = INST7(1,0,1,0,1,0,0),
+    p2_RQPIN_RDPIN              = INST7(1,0,1,0,1,0,0),
     p2_RDLUT                    = INST7(1,0,1,0,1,0,1),
     p2_RDBYTE                   = INST7(1,0,1,0,1,1,0),
     p2_RDWORD                   = INST7(1,0,1,0,1,1,1),
 
     p2_RDLONG                   = INST7(1,0,1,1,0,0,0),
     p2_CALLD                    = INST7(1,0,1,1,0,0,1),
-    p2_CALLP                    = INST7(1,0,1,1,0,1,0),
+    p2_CALLPA_CALLPB            = INST7(1,0,1,1,0,1,0),
     p2_DJZ_DJNZ_DJF_DJNF        = INST7(1,0,1,1,0,1,1),
     p2_IJZ_IJNZ_TJZ_TJNZ        = INST7(1,0,1,1,1,0,0),
     p2_TJF_TJNF_TJS_TJNS        = INST7(1,0,1,1,1,0,1),
-    p2_1011110                  = INST7(1,0,1,1,1,1,0),
-    p2_1011111                  = INST7(1,0,1,1,1,1,1),
+    p2_TJV_OPDST                = INST7(1,0,1,1,1,1,0),
+    p2_empty_SETPAT             = INST7(1,0,1,1,1,1,1),
 
-    p2_1100000                  = INST7(1,1,0,0,0,0,0),
-    p2_1100001                  = INST7(1,1,0,0,0,0,1),
-    p2_1100010                  = INST7(1,1,0,0,0,1,0),
-    p2_1100011                  = INST7(1,1,0,0,0,1,1),
-    p2_1100100                  = INST7(1,1,0,0,1,0,0),
-    p2_1100101                  = INST7(1,1,0,0,1,0,1),
-    p2_1100110                  = INST7(1,1,0,0,1,1,0),
+    p2_WRPIN_AKPIN_WXPIN        = INST7(1,1,0,0,0,0,0),
+    p2_WYPIN_WRLUT              = INST7(1,1,0,0,0,0,1),
+    p2_WRBYTE_WRWORD            = INST7(1,1,0,0,0,1,0),
+    p2_WRLONG_RDFAST            = INST7(1,1,0,0,0,1,1),
+    p2_WRFAST_FBLOCK            = INST7(1,1,0,0,1,0,0),
+    p2_XINIT_XSTOP_XZERO        = INST7(1,1,0,0,1,0,1),
+    p2_XCONT_REP                = INST7(1,1,0,0,1,1,0),
     p2_COGINIT                  = INST7(1,1,0,0,1,1,1),
 
     p2_QMUL_QDIV                = INST7(1,1,0,1,0,0,0),
     p2_QFRAC_QSQRT              = INST7(1,1,0,1,0,0,1),
     p2_QROTATE_QVECTOR          = INST7(1,1,0,1,0,1,0),
-    p2_1101011                  = INST7(1,1,0,1,0,1,1),
+    p2_OPSRC                    = INST7(1,1,0,1,0,1,1),
 
     p2_JMP_ABS                  = INST7(1,1,0,1,1,0,0),
     p2_CALL_ABS                 = INST7(1,1,0,1,1,0,1),
@@ -464,7 +509,7 @@ typedef enum {
 }   p2_inst_e;
 
 /**
- * @brief Enumeration of the b bit instruction types including WC
+ * @brief Enumeration of the 8 bit instruction types including WC
  */
 typedef enum {
     p2_MUL                      = INST8(p2_MUL_MULS,0),
@@ -473,8 +518,8 @@ typedef enum {
     p2_SCA                      = INST8(p2_SCA_SCAS,0),
     p2_SCAS                     = INST8(p2_SCA_SCAS,1),
 
-    p2_CALLPA                   = INST8(p2_CALLP,0),
-    p2_CALLPB                   = INST8(p2_CALLP,1),
+    p2_CALLPA                   = INST8(p2_CALLPA_CALLPB,0),
+    p2_CALLPB                   = INST8(p2_CALLPA_CALLPB,1),
 
     p2_QMUL                     = INST8(p2_QMUL_QDIV,0),
     p2_QDIV                     = INST8(p2_QMUL_QDIV,1),
@@ -484,6 +529,33 @@ typedef enum {
 
     p2_QROTATE                  = INST8(p2_QROTATE_QVECTOR,0),
     p2_QVECTOR                  = INST8(p2_QROTATE_QVECTOR,1),
+
+    p2_1011111_0                = INST8(p2_empty_SETPAT,0),
+    p2_SETPAT                   = INST8(p2_empty_SETPAT,1),
+
+    p2_RQPIN                    = INST8(p2_RQPIN_RDPIN,0),
+    p2_RDPIN                    = INST8(p2_RQPIN_RDPIN,1),
+
+    p2_WRPIN                    = INST8(p2_WRPIN_AKPIN_WXPIN, 0),
+    p2_WXPIN                    = INST8(p2_WRPIN_AKPIN_WXPIN, 1),
+
+    p2_WYPIN                    = INST8(p2_WYPIN_WRLUT, 0),
+    p2_WRLUT                    = INST8(p2_WYPIN_WRLUT, 1),
+
+    p2_WRBYTE                   = INST8(p2_WRBYTE_WRWORD, 0),
+    p2_WRWORD                   = INST8(p2_WRBYTE_WRWORD, 1),
+
+    p2_WRLONG                   = INST8(p2_WRLONG_RDFAST, 0),
+    p2_RDFAST                   = INST8(p2_WRLONG_RDFAST, 1),
+
+    p2_WRFAST                   = INST8(p2_WRFAST_FBLOCK, 0),
+    p2_FBLOCK                   = INST8(p2_WRFAST_FBLOCK, 1),
+
+    p2_XINIT                    = INST8(p2_XINIT_XSTOP_XZERO, 0),
+    p2_XZERO                    = INST8(p2_XINIT_XSTOP_XZERO, 1),
+
+    p2_XCONT                    = INST8(p2_XCONT_REP, 0),
+    p2_REP                      = INST8(p2_XCONT_REP, 1),
 
 }   p2_inst8_e;
 
@@ -536,10 +608,35 @@ typedef enum {
     p2_GETWORD_ALTGW            = INST9(p2_SETWORD_GETWORD,1,0),
     p2_GETWORD                  = INST9(p2_SETWORD_GETWORD,1,1),
 
-    p2_MUXNITS                  = INST9(p2_MUXXXX,0,0),
-    p2_MUXNIBS                  = INST9(p2_MUXXXX,0,1),
-    p2_MUXQ                     = INST9(p2_MUXXXX,1,0),
-    p2_MOVBYTS                  = INST9(p2_MUXXXX,1,1),
+    p2_ROLWORD_ALTGW            = INST9(p2_ROLWORD_ALTSN_ALTGN,0,0),
+    p2_ROLWORD                  = INST9(p2_ROLWORD_ALTSN_ALTGN,0,1),
+    p2_ALTSN                    = INST9(p2_ROLWORD_ALTSN_ALTGN,1,0),
+    p2_ALTGN                    = INST9(p2_ROLWORD_ALTSN_ALTGN,1,1),
+
+    p2_ALTSB                    = INST9(p2_ALTSB_ALTGB_ALTSW_ALTGW,0,0),
+    p2_ALTGB                    = INST9(p2_ALTSB_ALTGB_ALTSW_ALTGW,0,1),
+    p2_ALTSW                    = INST9(p2_ALTSB_ALTGB_ALTSW_ALTGW,1,0),
+    p2_ALTGW                    = INST9(p2_ALTSB_ALTGB_ALTSW_ALTGW,1,1),
+
+    p2_ALTR                     = INST9(p2_ALTR_ALTD_ALTS_ALTB,0,0),
+    p2_ALTD                     = INST9(p2_ALTR_ALTD_ALTS_ALTB,0,1),
+    p2_ALTS                     = INST9(p2_ALTR_ALTD_ALTS_ALTB,1,0),
+    p2_ALTB                     = INST9(p2_ALTR_ALTD_ALTS_ALTB,1,1),
+
+    p2_ALTI                     = INST9(p2_ALTI_SETR_SETD_SETS,0,0),
+    p2_SETR                     = INST9(p2_ALTI_SETR_SETD_SETS,0,1),
+    p2_SETD                     = INST9(p2_ALTI_SETR_SETD_SETS,1,0),
+    p2_SETS                     = INST9(p2_ALTI_SETR_SETD_SETS,1,1),
+
+    p2_DECOD                    = INST9(p2_DECOD_BMASK_CRCBIT_CRCNIB,0,0),
+    p2_BMASK                    = INST9(p2_DECOD_BMASK_CRCBIT_CRCNIB,0,1),
+    p2_CRCBIT                   = INST9(p2_DECOD_BMASK_CRCBIT_CRCNIB,1,0),
+    p2_CRCNIB                   = INST9(p2_DECOD_BMASK_CRCBIT_CRCNIB,1,1),
+
+    p2_MUXNITS                  = INST9(p2_MUX_NITS_NIBS_Q_MOVBYTS,0,0),
+    p2_MUXNIBS                  = INST9(p2_MUX_NITS_NIBS_Q_MOVBYTS,0,1),
+    p2_MUXQ                     = INST9(p2_MUX_NITS_NIBS_Q_MOVBYTS,1,0),
+    p2_MOVBYTS                  = INST9(p2_MUX_NITS_NIBS_Q_MOVBYTS,1,1),
 
     p2_ADDCT1                   = INST9(p2_WMLONG_ADDCTx,0,0),
     p2_ADDCT2                   = INST9(p2_WMLONG_ADDCTx,0,1),
@@ -565,6 +662,16 @@ typedef enum {
     p2_TJNF                     = INST9(p2_TJF_TJNF_TJS_TJNS,0,1),
     p2_TJS                      = INST9(p2_TJF_TJNF_TJS_TJNS,1,0),
     p2_TJNS                     = INST9(p2_TJF_TJNF_TJS_TJNS,1,1),
+
+    p2_TJV                      = INST9(p2_TJV_OPDST,0,0),
+    p2_OPDST                    = INST9(p2_TJV_OPDST,0,1),
+    p2_1011110_10               = INST9(p2_TJV_OPDST,1,0),
+    p2_1011110_11               = INST9(p2_TJV_OPDST,1,1),
+
+    p2_COGBRK                   = INST9(p2_OPSRC_COGBRK,0,0),
+    p2_GETBRK_WZ                = INST9(p2_OPSRC_COGBRK,0,1),
+    p2_GETBRK_WC                = INST9(p2_OPSRC_COGBRK,1,0),
+    p2_GETBRK_WCZ               = INST9(p2_OPSRC_COGBRK,1,1),
 
 }   p2_inst9_e;
 

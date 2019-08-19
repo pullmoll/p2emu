@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * P2 emulator main window
+ * Propeller2 assembler symbol table
  *
  * Copyright (C) 2019 Jürgen Buchmüller <pullmoll@t-online.de>
  *
@@ -31,56 +31,35 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
-#pragma once
-#include <QMainWindow>
-#include <QLabel>
-#include <QLineEdit>
-#include <QPushButton>
-#include <QCheckBox>
-#include "p2token.h"
-#include "p2hub.h"
-#include "p2cog.h"
-#include "p2dasmmodel.h"
+#include "p2asmsymtbl.h"
 
-namespace Ui {
-class MainWindow;
+P2AsmSymTbl::P2AsmSymTbl()
+    : m_symbols()
+{
 }
 
-class P2CogView;
-
-class MainWindow : public QMainWindow
+bool P2AsmSymTbl::contains(const QString& name)
 {
-    Q_OBJECT
+    return m_symbols.contains(name);
+}
 
-public:
-    explicit MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+bool P2AsmSymTbl::insert(const QString& name, const P2AsmSymbol& symbol)
+{
+    if (m_symbols.contains(name))
+        return false;
+    m_symbols.insert(name, symbol);
+    return true;
+}
 
-private slots:
-    void saveSettings();
-    void restoreSettings();
-    void about();
-    void aboutQt5();
-    void gotoHex(const QString& address = QString());
-    void gotoCog();
-    void gotoLut();
-    void gotoRom();
-    void gotoAddress();
-    void setOpcodes(int mode);
-    void setOpcodesBinary();
-    void setOpcodesHexDec();
-    void setOpcodesOctal();
-    void setInstructionsLowercase(bool check);
-    void dasmHeaderColums(const QPoint& pos);
-    void hubSingleStep();
-private:
-    Ui::MainWindow *ui;
-    QVector<P2CogView*> m_vcog;
-    P2Hub m_hub;
-    P2Dasm* m_dasm;
-    P2DasmModel* m_model;
+bool P2AsmSymTbl::insert(const QString& name, const QVariant& value, P2AsmSymbol* psym)
+{
+    P2AsmSymbol sym(name, value);
+    if (psym)
+        *psym = sym;
+    return insert(name, sym);
+}
 
-    void setupToolbar();
-    void updateColumnSizes();
-    void setupCogView();
-};
+P2AsmSymbol P2AsmSymTbl::value(const QString& name) const
+{
+    return m_symbols.value(name);
+}

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * P2 emulator main window
+ * Propeller2 assembler symbol
  *
  * Copyright (C) 2019 Jürgen Buchmüller <pullmoll@t-online.de>
  *
@@ -31,56 +31,30 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
-#pragma once
-#include <QMainWindow>
-#include <QLabel>
-#include <QLineEdit>
-#include <QPushButton>
-#include <QCheckBox>
-#include "p2token.h"
-#include "p2hub.h"
-#include "p2cog.h"
-#include "p2dasmmodel.h"
+#include "p2asmsym.h"
 
-namespace Ui {
-class MainWindow;
+P2AsmSymbol::P2AsmSymbol(const QString& name, const QVariant& value)
+    : m_name(name)
+    , m_value(value)
+    , m_references()
+{}
+
+bool P2AsmSymbol::isEmpty() const
+{
+    return m_name.isEmpty();
 }
 
-class P2CogView;
-
-class MainWindow : public QMainWindow
+const QString& P2AsmSymbol::name() const
 {
-    Q_OBJECT
+    return m_name;
+}
 
-public:
-    explicit MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+void P2AsmSymbol::setValue(const QVariant& value)
+{
+    m_value = value;
+}
 
-private slots:
-    void saveSettings();
-    void restoreSettings();
-    void about();
-    void aboutQt5();
-    void gotoHex(const QString& address = QString());
-    void gotoCog();
-    void gotoLut();
-    void gotoRom();
-    void gotoAddress();
-    void setOpcodes(int mode);
-    void setOpcodesBinary();
-    void setOpcodesHexDec();
-    void setOpcodesOctal();
-    void setInstructionsLowercase(bool check);
-    void dasmHeaderColums(const QPoint& pos);
-    void hubSingleStep();
-private:
-    Ui::MainWindow *ui;
-    QVector<P2CogView*> m_vcog;
-    P2Hub m_hub;
-    P2Dasm* m_dasm;
-    P2DasmModel* m_model;
-
-    void setupToolbar();
-    void updateColumnSizes();
-    void setupCogView();
-};
+void P2AsmSymbol::addReference(int lineno)
+{
+    m_references.append(lineno);
+}
