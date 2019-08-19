@@ -728,9 +728,9 @@ void P2Cog::check_wait_int_state()
 P2LONG P2Cog::check_wait_flag(p2_opword_t IR, P2LONG value1, P2LONG value2, bool streamflag)
 {
     P2LONG hubcycles;
-    const p2_inst_e inst1 = static_cast<p2_inst_e>(IR.word & p2_INSTR_MASK1);
-    const p2_inst_e inst2 = static_cast<p2_inst_e>(IR.word & p2_INSTR_MASK2);
-    const p2_inst_e opcode = static_cast<p2_inst_e>(IR.op.inst);
+    const p2_instx1_e inst1 = static_cast<p2_instx1_e>(IR.opcode & p2_INSTR_MASK1);
+    const p2_instx2_e inst2 = static_cast<p2_instx2_e>(IR.opcode & p2_INSTR_MASK2);
+    const p2_opcode_e opcode = static_cast<p2_opcode_e>(IR.op.inst);
 
     if (WAIT.flag) {
         switch (WAIT.mode) {
@@ -800,7 +800,7 @@ P2LONG P2Cog::check_wait_flag(p2_opword_t IR, P2LONG value1, P2LONG value2, bool
 
     } else if (p2_INSTR_WAITXXX == inst2) {
 
-        if (0x02024 == (IR.word & 0x3ffff))
+        if (0x02024 == (IR.opcode & 0x3ffff))
             check_wait_int_state();
 
         switch (IR.op.dst) {
@@ -1000,15 +1000,15 @@ int P2Cog::decode()
     do {
         switch (PC & 0xffe00) {
         case 0x00000:   // cogexec
-            IR.word = COG.RAM[PC];
+            IR.opcode = COG.RAM[PC];
             PC++;       // increment PC
             break;
         case 0x00200:   // lutexec
-            IR.word = LUT.RAM[PC - 0x200];
+            IR.opcode = LUT.RAM[PC - 0x200];
             PC++;       // increment PC
             break;
         default:        // hubexec
-            IR.word = HUB->rd_LONG(PC);
+            IR.opcode = HUB->rd_LONG(PC);
             PC += 4;    // increment PC by 4
         }
         if (SKIPF)
@@ -1376,63 +1376,107 @@ int P2Cog::decode()
             cycles = op_getword();
             break;
         default:
-            Q_ASSERT_X(false, "SETWORD or GETWORD", "inst9 error");
+            Q_ASSERT_X(false, "p2_inst9_e", "SETWORD/GETWORD");
         }
         break;
 
     case p2_ROLWORD_ALTSN_ALTGN:
-        if (IR.op.wc == 0) {
-            cycles = (IR.op.src == 0 && IR.op.wz == 0) ? op_rolword_altgw()
-                                                       : op_rolword();
-        } else {
-            if (IR.op.wz == 0) {
-                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altsn_d()
-                                                            : op_altsn();
-            } else {
-                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altgn_d()
-                                                            : op_altgn();
+        switch (IR.op9.inst) {
+        case p2_ROLWORD_ALTGW:
+            if (IR.op.src == 0) {
+                cycles = op_rolword_altgw();
+                break;
             }
+            break;
+        case p2_ROLWORD:
+            cycles = op_rolword();
+            break;
+        case p2_ALTSN:
+            if (IR.op.src == 0 && IR.op.imm == 1) {
+                cycles = op_altsn_d();
+                break;
+            }
+            cycles = op_altsn();
+            break;
+        case p2_ALTGN:
+            if (IR.op.src == 0 && IR.op.imm == 1) {
+                cycles = op_altgn_d();
+                break;
+            }
+            cycles = op_altgn();
+            break;
+        default:
+            Q_ASSERT_X(false, "p2_inst9_e", "ROLWORD/ALTSN/ALTGN");
         }
         break;
 
     case p2_ALTSB_ALTGB_ALTSW_ALTGW:
-        if (IR.op.wc == 0) {
-            if (IR.op.wz == 0) {
-                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altsb_d()
-                                                            : op_altsb();
-            } else {
-                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altgb_d()
-                                                            : op_altgb();
+        switch (IR.op9.inst) {
+        case p2_ALTSB:
+            if (IR.op.src == 0 && IR.op.imm == 1) {
+                cycles = op_altsb_d();
+                break;
             }
-        } else {
-            if (IR.op.wz == 0) {
-                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altsw_d()
-                                                            : op_altsw();
-            } else {
-                cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altgw_d()
-                                                            : op_altgw();
+            cycles = op_altsb();
+            break;
+        case p2_ALTGB:
+            if (IR.op.src == 0 && IR.op.imm == 1) {
+                cycles = op_altgb_d();
+                break;
             }
+            cycles = op_altgb();
+            break;
+        case p2_ALTSW:
+            if (IR.op.src == 0 && IR.op.imm == 1) {
+                cycles = op_altsw_d();
+                break;
+            }
+            cycles = op_altsw();
+            break;
+        case p2_ALTGW:
+            if (IR.op.src == 0 && IR.op.imm == 1) {
+                cycles = op_altgw_d();
+                break;
+            }
+            cycles = op_altgw();
+            break;
+        default:
+            Q_ASSERT_X(false, "p2_inst9_e", "ALTSB/ALTGB/ALTSW/ALTGW");
         }
         break;
 
     case p2_ALTR_ALTD_ALTS_ALTB:
         switch (IR.op9.inst) {
         case p2_ALTR:
-            cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altr_d()
-                                                        : op_altr();
+            if (IR.op.src == 0 && IR.op.imm == 1) {
+                cycles = op_altr_d();
+                break;
+            }
+            cycles = op_altr();
             break;
         case p2_ALTD:
-            cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altd_d()
-                                                        : op_altd();
+            if (IR.op.src == 0 && IR.op.imm == 1) {
+                cycles = op_altd_d();
+                break;
+            }
+            cycles = op_altd();
             break;
         case p2_ALTS:
-            cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_alts_d()
-                                                        : op_alts();
+            if (IR.op.src == 0 && IR.op.imm == 1) {
+                cycles = op_alts_d();
+                break;
+            }
+            cycles = op_alts();
             break;
         case p2_ALTB:
-            cycles = (IR.op.src == 0 && IR.op.imm == 1) ? op_altb_d()
-                                                        : op_altb();
+            if (IR.op.src == 0 && IR.op.imm == 1) {
+                cycles = op_altb_d();
+                break;
+            }
+            cycles = op_altb();
             break;
+        default:
+            Q_ASSERT_X(false, "p2_inst9_e", "ALTR/ALTD/ALTS/ALTB");
         }
         break;
 
@@ -1454,24 +1498,35 @@ int P2Cog::decode()
         case p2_SETS:
             cycles = op_sets();
             break;
+        default:
+            Q_ASSERT_X(false, "p2_inst9_e", "ALTI/SETR/SETD/SETS");
         }
         break;
 
     case p2_DECOD_BMASK_CRCBIT_CRCNIB:
-        if (IR.op.wc == 0) {
-            if (IR.op.wz == 0) {
-                cycles = (IR.op.imm == 0 && IR.op.src == IR.op.dst) ? op_decod_d()
-                                                                    : op_decod();
-            } else {
-                cycles = (IR.op.imm == 0 && IR.op.src == IR.op.dst) ? op_bmask_d()
-                                                                    : op_bmask();
+        switch (IR.op9.inst) {
+        case p2_DECOD:
+            if (IR.op.imm == 0 && IR.op.src == IR.op.dst) {
+                cycles = op_decod_d();
+                break;
             }
-        } else {
-            if (IR.op.wz == 0) {
-                cycles = op_crcbit();
-            } else {
-                cycles = op_crcnib();
+            cycles = op_decod();
+            break;
+        case p2_BMASK:
+            if (IR.op.imm == 0 && IR.op.src == IR.op.dst) {
+                cycles = op_bmask_d();
+                break;
             }
+            cycles = op_bmask();
+            break;
+        case p2_CRCBIT:
+            cycles = op_crcbit();
+            break;
+        case p2_CRCNIB:
+            cycles = op_crcnib();
+            break;
+        default:
+            Q_ASSERT_X(false, "p2_inst9_e", "DECOD/BMASK/CRCBIT/CRCNIB");
         }
         break;
 
@@ -1490,7 +1545,7 @@ int P2Cog::decode()
             cycles = op_movbyts();
             break;
         default:
-            Q_ASSERT_X(false, "MUXXXX", "inst9 error");
+            Q_ASSERT_X(false, "p2_inst9_e", "MUXNITS/MUXNIBS/MUXQ/MOVBYTS");
         }
         break;
 
@@ -1502,6 +1557,8 @@ int P2Cog::decode()
         case p2_MULS:
             cycles = op_muls();
             break;
+        default:
+            Q_ASSERT_X(false, "p2_inst8_e", "MUL/MULS");
         }
         break;
 
@@ -1513,6 +1570,8 @@ int P2Cog::decode()
         case p2_SCAS:
             cycles = op_scas();
             break;
+        default:
+            Q_ASSERT_X(false, "p2_inst8_e", "SCA/SCAS");
         }
         break;
 
@@ -1530,6 +1589,8 @@ int P2Cog::decode()
         case p2_MIXPIX:
             cycles = op_mixpix();
             break;
+        default:
+            Q_ASSERT_X(false, "p2_inst9_e", "ADDPIX/MULPIX/BLNPIX/MIXPIX");
         }
         break;
 
@@ -1547,14 +1608,21 @@ int P2Cog::decode()
         case p2_WMLONG:
             cycles = op_wmlong();
             break;
+        default:
+            Q_ASSERT_X(false, "p2_inst9_e", "ADDCT1/ADDCT2/ADDCT3/WMLONG");
         }
         break;
 
     case p2_RQPIN_RDPIN:
-        if (IR.op.wz == 0) {
+        switch (IR.op8.inst) {
+        case p2_RQPIN:
             cycles = op_rqpin();
-        } else {
+            break;
+        case p2_RDPIN:
             cycles = op_rdpin();
+            break;
+        default:
+            Q_ASSERT_X(false, "p2_inst8_e", "RQPIN/RDPIN");
         }
         break;
 
@@ -1586,6 +1654,8 @@ int P2Cog::decode()
         case p2_CALLPB:
             cycles = op_callpb();
             break;
+        default:
+            Q_ASSERT_X(false, "p2_inst8_e", "CALLPA/CALLPB");
         }
         break;
 
@@ -1603,6 +1673,8 @@ int P2Cog::decode()
         case p2_DJNF:
             cycles = op_djnf();
             break;
+        default:
+            Q_ASSERT_X(false, "p2_inst9_e", "DJZ/DJNZ/DJF/DJNF");
         }
         break;
 
@@ -1620,6 +1692,8 @@ int P2Cog::decode()
         case p2_TJNZ:
             cycles = op_tjnz();
             break;
+        default:
+            Q_ASSERT_X(false, "p2_inst9_e", "IJZ/IJNZ/TJZ/TJNZ");
         }
         break;
 
@@ -1637,6 +1711,8 @@ int P2Cog::decode()
         case p2_TJNS:
             cycles = op_tjns();
             break;
+        default:
+            Q_ASSERT_X(false, "p2_inst9_e", "TJF/TJNF/TJS/TJNS");
         }
         break;
 
@@ -1744,6 +1820,7 @@ int P2Cog::decode()
                     break;
                 default:
                     // TODO: invalid D value
+                    Q_ASSERT_X(false, "p2_opdst_e", "missing enum value");
                     break;
                 }
             }
@@ -1760,6 +1837,8 @@ int P2Cog::decode()
         case p2_SETPAT:
             cycles = op_setpat();
             break;
+        default:
+            Q_ASSERT_X(false, "p2_inst8_e", "1011111_0/SETPAT");
         }
         break;
 
@@ -1775,6 +1854,8 @@ int P2Cog::decode()
         case p2_WXPIN:
             cycles = op_wxpin();
             break;
+        default:
+            Q_ASSERT_X(false, "p2_inst8_e", "WRPIN/AKPIN/WXPIN");
         }
         break;
 
@@ -1786,6 +1867,8 @@ int P2Cog::decode()
         case p2_WRLUT:
             cycles = op_wrlut();
             break;
+        default:
+            Q_ASSERT_X(false, "p2_inst8_e", "WYPIN/WRLUT");
         }
         break;
 
@@ -1797,6 +1880,8 @@ int P2Cog::decode()
         case p2_WRWORD:
             cycles = op_wrword();
             break;
+        default:
+            Q_ASSERT_X(false, "p2_inst8_e", "WRBYTE/WRWORD");
         }
         break;
 
@@ -1808,6 +1893,8 @@ int P2Cog::decode()
         case p2_RDFAST:
             cycles = op_rdfast();
             break;
+        default:
+            Q_ASSERT_X(false, "p2_inst8_e", "WRLONG/RDFAST");
         }
         break;
 
@@ -1819,6 +1906,8 @@ int P2Cog::decode()
         case p2_FBLOCK:
             cycles = op_fblock();
             break;
+        default:
+            Q_ASSERT_X(false, "p2_inst8_e", "WRFAST/FBLOCK");
         }
         break;
 
@@ -1834,6 +1923,8 @@ int P2Cog::decode()
         case p2_XZERO:
             cycles = op_xzero();
             break;
+        default:
+            Q_ASSERT_X(false, "p2_inst8_e", "XINIT/XSTOP/XZERO");
         }
         break;
 
@@ -1845,6 +1936,8 @@ int P2Cog::decode()
         case p2_REP:
             cycles = op_rep();
             break;
+        default:
+            Q_ASSERT_X(false, "p2_inst8_e", "XCONT/REP");
         }
         break;
 
@@ -1860,6 +1953,8 @@ int P2Cog::decode()
         case p2_QDIV:
             cycles = op_qdiv();
             break;
+        default:
+            Q_ASSERT_X(false, "p2_inst8_e", "QMUL/QDIV");
         }
         break;
 
@@ -1871,6 +1966,8 @@ int P2Cog::decode()
         case p2_QSQRT:
             cycles = op_qsqrt();
             break;
+        default:
+            Q_ASSERT_X(false, "p2_inst8_e", "QFRAC/QSQRT");
         }
         break;
 
@@ -1882,6 +1979,8 @@ int P2Cog::decode()
         case p2_QVECTOR:
             cycles = op_qvector();
             break;
+        default:
+            Q_ASSERT_X(false, "p2_inst8_e", "QROTATE/QVECTOR");
         }
         break;
 
@@ -2169,6 +2268,8 @@ int P2Cog::decode()
             case p2_GETBRK_WCZ:
                 cycles = op_getbrk();
                 break;
+            default:
+                Q_ASSERT_X(false, "p2_inst9_e", "COGBRK/GETBRK {WZ,WC,WCZ}");
             }
             break;
         case p2_OPSRC_BRK:
@@ -2425,7 +2526,7 @@ int P2Cog::decode()
     case p2_AUGD_00:
     case p2_AUGD_01:
     case p2_AUGD_10:
-    case p2_AUDG_11:
+    case p2_AUGD_11:
         cycles = op_augd();
         break;
     }
@@ -2473,7 +2574,7 @@ int P2Cog::op_nop()
  */
 int P2Cog::op_ror()
 {
-    if (0 == IR.word)
+    if (0 == IR.opcode)
         return op_nop();
     augmentS(IR.op.imm);
     const uchar shift = S & 31;
@@ -4066,7 +4167,7 @@ int P2Cog::op_testn()
 int P2Cog::op_setnib()
 {
     augmentS(IR.op.imm);
-    const uchar shift = static_cast<uchar>((IR.word >> 19) & 7) * 4;
+    const uchar shift = static_cast<uchar>((IR.opcode >> 19) & 7) * 4;
     const P2LONG mask = LNIBBLE << shift;
     const P2LONG result = (D & ~mask) | ((S << shift) & mask);
     updateD(result);
@@ -4100,7 +4201,7 @@ int P2Cog::op_setnib_altsn()
 int P2Cog::op_getnib()
 {
     augmentS(IR.op.imm);
-    const uchar shift = static_cast<uchar>((IR.word >> 19) & 7) * 4;
+    const uchar shift = static_cast<uchar>((IR.opcode >> 19) & 7) * 4;
     const P2LONG result = (S >> shift) & LNIBBLE;
     updateD(result);
     return 2;
@@ -4133,7 +4234,7 @@ int P2Cog::op_getnib_altgn()
 int P2Cog::op_rolnib()
 {
     augmentS(IR.op.imm);
-    const uchar shift = static_cast<uchar>((IR.word >> 19) & 7) * 4;
+    const uchar shift = static_cast<uchar>((IR.opcode >> 19) & 7) * 4;
     const P2LONG result = (D << 4) | ((S >> shift) & LNIBBLE);
     updateD(result);
     return 2;
@@ -4164,7 +4265,7 @@ int P2Cog::op_rolnib_altgn()
 int P2Cog::op_setbyte()
 {
     augmentS(IR.op.imm);
-    const uchar shift = static_cast<uchar>((IR.word >> 19) & 3) * 8;
+    const uchar shift = static_cast<uchar>((IR.opcode >> 19) & 3) * 8;
     const P2LONG mask = LBYTE << shift;
     const P2LONG result = (D & ~mask) | ((S << shift) & mask);
     updateD(result);
@@ -4198,7 +4299,7 @@ int P2Cog::op_setbyte_altsb()
 int P2Cog::op_getbyte()
 {
     augmentS(IR.op.imm);
-    const uchar shift = static_cast<uchar>((IR.word >> 19) & 3) * 8;
+    const uchar shift = static_cast<uchar>((IR.opcode >> 19) & 3) * 8;
     const P2LONG result = (S >> shift) & LBYTE;
     updateD(result);
     return 2;
@@ -4231,7 +4332,7 @@ int P2Cog::op_getbyte_altgb()
 int P2Cog::op_rolbyte()
 {
     augmentS(IR.op.imm);
-    const uchar shift = static_cast<uchar>((IR.word >> 19) & 3) * 8;
+    const uchar shift = static_cast<uchar>((IR.opcode >> 19) & 3) * 8;
     const P2LONG result = (D << 8) | ((S >> shift) & LBYTE);
     updateD(result);
     return 2;
@@ -9330,7 +9431,7 @@ int P2Cog::op_getscp()
  */
 int P2Cog::op_jmp_abs()
 {
-    const P2LONG result = (IR.op.wc ? (PC + IR.word) : IR.word) & A20MASK;
+    const P2LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
     updatePC(result);
     return 2;
 }
@@ -9347,7 +9448,7 @@ int P2Cog::op_jmp_abs()
 int P2Cog::op_call_abs()
 {
     const P2LONG stack = (C << 31) | (Z << 30) | PC;
-    const P2LONG result = (IR.op.wc ? (PC + IR.word) : IR.word) & A20MASK;
+    const P2LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
     pushK(stack);
     updatePC(result);
     return 2;
@@ -9365,7 +9466,7 @@ int P2Cog::op_call_abs()
 int P2Cog::op_calla_abs()
 {
     const P2LONG stack = (C << 31) | (Z << 30) | PC;
-    const P2LONG result = (IR.op.wc ? (PC + IR.word) : IR.word) & A20MASK;
+    const P2LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
     pushPTRA(stack);
     updatePC(result);
     return 2;
@@ -9383,7 +9484,7 @@ int P2Cog::op_calla_abs()
 int P2Cog::op_callb_abs()
 {
     const P2LONG stack = (C << 31) | (Z << 30) | PC;
-    const P2LONG result = (IR.op.wc ? (PC + IR.word) : IR.word) & A20MASK;
+    const P2LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
     pushPTRB(stack);
     updatePC(result);
     return 2;
@@ -9401,7 +9502,7 @@ int P2Cog::op_callb_abs()
 int P2Cog::op_calld_pa_abs()
 {
     const P2LONG stack = (C << 31) | (Z << 30) | PC;
-    const P2LONG result = (IR.op.wc ? (PC + IR.word) : IR.word) & A20MASK;
+    const P2LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
     pushPA(stack);
     updatePC(result);
     return 2;
@@ -9419,7 +9520,7 @@ int P2Cog::op_calld_pa_abs()
 int P2Cog::op_calld_pb_abs()
 {
     const P2LONG stack = (C << 31) | (Z << 30) | PC;
-    const P2LONG result = (IR.op.wc ? (PC + IR.word) : IR.word) & A20MASK;
+    const P2LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
     pushPB(stack);
     updatePC(result);
     return 2;
@@ -9437,7 +9538,7 @@ int P2Cog::op_calld_pb_abs()
 int P2Cog::op_calld_ptra_abs()
 {
     const P2LONG stack = (C << 31) | (Z << 30) | PC;
-    const P2LONG result = (IR.op.wc ? (PC + IR.word) : IR.word) & A20MASK;
+    const P2LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
     pushPTRA(stack);
     updatePC(result);
     return 2;
@@ -9455,7 +9556,7 @@ int P2Cog::op_calld_ptra_abs()
 int P2Cog::op_calld_ptrb_abs()
 {
     const P2LONG stack = (C << 31) | (Z << 30) | PC;
-    const P2LONG result = (IR.op.wc ? (PC + IR.word) : IR.word) & A20MASK;
+    const P2LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
     pushPTRB(stack);
     updatePC(result);
     return 2;
@@ -9472,7 +9573,7 @@ int P2Cog::op_calld_ptrb_abs()
  */
 int P2Cog::op_loc_pa()
 {
-    const P2LONG result = (IR.op.wc ? (PC + IR.word) : IR.word) & A20MASK;
+    const P2LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
     updatePA(result);
     return 2;
 }
@@ -9488,7 +9589,7 @@ int P2Cog::op_loc_pa()
  */
 int P2Cog::op_loc_pb()
 {
-    const P2LONG result = (IR.op.wc ? (PC + IR.word) : IR.word) & A20MASK;
+    const P2LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
     updatePB(result);
     return 2;
 }
@@ -9504,7 +9605,7 @@ int P2Cog::op_loc_pb()
  */
 int P2Cog::op_loc_ptra()
 {
-    const P2LONG result = (IR.op.wc ? (PC + IR.word) : IR.word) & A20MASK;
+    const P2LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
     updatePTRA(result);
     return 2;
 }
@@ -9520,7 +9621,7 @@ int P2Cog::op_loc_ptra()
  */
 int P2Cog::op_loc_ptrb()
 {
-    const P2LONG result = (IR.op.wc ? (PC + IR.word) : IR.word) & A20MASK;
+    const P2LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
     updatePTRB(result);
     return 2;
 }
@@ -9535,7 +9636,7 @@ int P2Cog::op_loc_ptrb()
  */
 int P2Cog::op_augs()
 {
-    S_aug = (IR.word << 9) & AUGMASK;
+    S_aug = (IR.opcode << 9) & AUGMASK;
     return 2;
 }
 
@@ -9549,6 +9650,6 @@ int P2Cog::op_augs()
  */
 int P2Cog::op_augd()
 {
-    D_aug = (IR.word << 9) & AUGMASK;
+    D_aug = (IR.opcode << 9) & AUGMASK;
     return 2;
 }

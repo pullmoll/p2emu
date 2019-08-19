@@ -119,13 +119,13 @@ typedef enum {
 }   p2_cond_e;
 
 //! define an instruction with 7 bits
-#define INST7(b6,b5,b4,b3,b2,b1,b0) ((b6<<6)|(b5<<5)|(b4<<4)|(b3<<3)|(b2<<2)|(b1<<1)|(b0))
+#define INST7(b6,b5,b4,b3,b2,b1,b0) (0u|(b6<<6)|(b5<<5)|(b4<<4)|(b3<<3)|(b2<<2)|(b1<<1)|(b0))
 
 //! extend an instruction to 8 bits using wc
-#define INST8(inst,b0)              ((inst<<1)|(b0))
+#define INST8(inst,b0)              (0u|(inst<<1)|(b0))
 
 //! extend an instruction to 9 bits using wc and wz
-#define INST9(inst,b1,b0)           ((inst<<2)|(b1<<1)|(b0))
+#define INST9(inst,b1,b0)           (0u|(inst<<2)|(b1<<1)|(b0))
 
 /**
  * @brief Enumeration of the 128 possible instruction types
@@ -276,7 +276,12 @@ typedef enum {
     p2_AUGD_00                  = INST7(1,1,1,1,1,0,0),
     p2_AUGD_01                  = INST7(1,1,1,1,1,0,1),
     p2_AUGD_10                  = INST7(1,1,1,1,1,1,0),
-    p2_AUDG_11                  = INST7(1,1,1,1,1,1,1),
+    p2_AUGD_11                  = INST7(1,1,1,1,1,1,1),
+
+}   p2_inst_e;
+
+
+typedef enum {
 
     p2_OPDST_JINT               = 0x00,
     p2_OPDST_JCT1               = 0x01,
@@ -311,7 +316,9 @@ typedef enum {
     p2_OPDST_JNXRL              = 0x1d,
     p2_OPDST_JNATN              = 0x1e,
     p2_OPDST_JNQMT              = 0x1f,
+}   p2_opdst_e;
 
+typedef enum {
     p2_OPSRC_HUBSET             = 0x00,
     p2_OPSRC_COGID              = 0x01,
     p2_OPSRC_COGSTOP            = 0x03,
@@ -432,7 +439,9 @@ typedef enum {
 
     p2_OPSRC_SETSCP             = 0x70,
     p2_OPSRC_GETSCP             = 0x71,
+}   p2_opsrc_e;
 
+typedef enum {
     p2_OPX24_POLLINT            = 0x00,
     p2_OPX24_POLLCT1            = 0x01,
     p2_OPX24_POLLCT2            = 0x02,
@@ -474,7 +483,9 @@ typedef enum {
     p2_OPX24_NIXINT1            = 0x25,
     p2_OPX24_NIXINT2            = 0x26,
     p2_OPX24_NIXINT3            = 0x27,
+}   p2_opx24_e;
 
+typedef enum {
     p2_OPCODE_WMLONG            = 0x53,
     p2_OPCODE_RDBYTE            = 0x56,
     p2_OPCODE_RDWORD            = 0x57,
@@ -487,7 +498,9 @@ typedef enum {
     p2_OPCODE_WRLONG            = 0x63,
     p2_OPCODE_QMUL              = 0x68,
     p2_OPCODE_QVECTOR           = 0x6a,
+}   p2_opcode_e;
 
+typedef enum {
     p2_INSTR_MASK1              = 0x0fe001ff,
     p2_INSTR_LOCKNEW            = 0x0d600004,
     p2_INSTR_LOCKSET            = 0x0d600007,
@@ -502,11 +515,12 @@ typedef enum {
     p2_INSTR_GETQX              = 0x0d600018,
     p2_INSTR_GETQY              = 0x0d600019,
     p2_INSTR_WAITX              = 0x0d60001f,
+}   p2_instx1_e;
 
+typedef enum {
     p2_INSTR_MASK2              = 0x0fe3e1ff,
     p2_INSTR_WAITXXX            = 0x0d602024,
-
-}   p2_inst_e;
+}   p2_instx2_e;
 
 /**
  * @brief Enumeration of the 8 bit instruction types including WC
@@ -675,7 +689,7 @@ typedef enum {
 
 }   p2_inst9_e;
 
-Q_STATIC_ASSERT(p2_AUDG_11 == 127);
+Q_STATIC_ASSERT(p2_AUGD_11 == 127u);
 
 /**
  * @brief Structure of the Propeller2 opcode words with 7 bits instruction, wc, wz, and imm
@@ -691,11 +705,11 @@ typedef struct {
     bool imm:1;                 //!< immediate flag
     bool wz:1;                  //!< update Z flag
     bool wc:1;                  //!< update C flag
-    unsigned inst:7;            //!< instruction type
+    p2_inst_e inst:7;           //!< instruction type
     unsigned cond:4;            //!< conditional execution
 #elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
     unsigned cond:4;            //!< conditional execution
-    unsigned inst:7;            //!< instruction type
+    p2_inst_e inst:7;           //!< instruction type
     bool uc:1;                  //!< update C flag
     bool uz:1;                  //!< update Z flag
     bool imm:1;                 //!< immediate flag
@@ -704,7 +718,7 @@ typedef struct {
 #else
 #error "Unknown byte order!"
 #endif
-}   p2_opcode_t;
+}   p2_opcode7_t;
 
 /**
  * @brief Structure of the Propeller2 opcode words with 8 bits of instruction, wz, and imm
@@ -715,11 +729,11 @@ typedef struct {
     unsigned dst:9;             //!< destination (D or #D)
     bool imm:1;                 //!< immediate flag
     bool wz:1;                  //!< update Z flag
-    unsigned inst:8;            //!< instruction type including WC
+    p2_inst8_e inst:8;          //!< instruction type including WC
     unsigned cond:4;            //!< conditional execution
 #elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
     unsigned cond:4;            //!< conditional execution
-    unsigned inst:8;            //!< instruction type including WC
+    p2_inst8_e inst:8;          //!< instruction type including WC
     bool wz:1;                  //!< update Z flag
     bool imm:1;                 //!< immediate flag
     unsigned dst:9;             //!< destination (D or #D)
@@ -727,7 +741,7 @@ typedef struct {
 #else
 #error "Unknown byte order!"
 #endif
-}   p2_opcode1_t;
+}   p2_opcode8_t;
 
 /**
  * @brief Structure of the Propeller2 opcode words with 9 bits of instruction and imm
@@ -737,27 +751,27 @@ typedef struct {
     unsigned src:9;             //!< source (S or #S)
     unsigned dst:9;             //!< destination (D or #D)
     bool imm:1;                 //!< immediate flag
-    unsigned inst:9;            //!< instruction type including WC and WZ
+    p2_inst9_e inst:9;          //!< instruction type including WC and WZ
     unsigned cond:4;            //!< conditional execution
 #elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
     unsigned cond:4;            //!< conditional execution
-    unsigned inst:9;            //!< instruction type including WC and WZ
+    p2_inst9_e inst:9;          //!< instruction type including WC and WZ
     bool imm:1;                 //!< immediate flag
     unsigned dst:9;             //!< destination (D or #D)
     unsigned src:9;             //!< source (S or #S)
 #else
 #error "Unknown byte order!"
 #endif
-}   p2_opcode2_t;
+}   p2_opcode9_t;
 
 /**
  * @brief union of a 32 bit word and the opcode bit fields
  */
 typedef union {
-    P2LONG word;                //!< opcode as 32 bit word
-    p2_opcode_t op;             //!< ocpode as bit fields
-    p2_opcode1_t op8;           //!< ocpode as bit fields (version including)
-    p2_opcode2_t op9;           //!< ocpode as bit fields (version including WC and WZ)
+    P2LONG opcode;              //!< opcode as 32 bit word
+    p2_opcode7_t op;            //!< ocpode as bit fields (version with 7 bits instruction)
+    p2_opcode8_t op8;           //!< ocpode as bit fields (version including WC)
+    p2_opcode9_t op9;           //!< ocpode as bit fields (version including WC and WZ)
 }   p2_opword_t;
 
 /**
@@ -959,7 +973,7 @@ typedef struct {
     P2LONG addr0;              //!< 1st address
     P2LONG addr1;              //!< 2nd address
     P2LONG mode;               //!< FIFO mode
-    P2LONG word;               //!< FIFO word
+    P2LONG opcode;               //!< FIFO word
     P2LONG flag;               //!< FIFO flags
 }   p2_fifo_t;
 

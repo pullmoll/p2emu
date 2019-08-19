@@ -74,7 +74,11 @@ public:
     int cnt;                        //!< count of (relevant) words
     int idx;                        //!< token (and word) index
     QString error;                  //!< error message from parameters parser
-    QByteArray binary;              //!< binary data
+    union {
+        P2BYTE b[1024*1024];        //!< as bytes
+        P2WORD w[1024*1024/2];      //!< as words
+        P2LONG l[1024*1024/4];      //!< as longs
+    } binary;                       //!< binary data
 };
 
 /**
@@ -115,7 +119,7 @@ private:
     static QVariant parse_binops(P2Params& params, int& pos, const QString& str, p2_token_e tok);
     static QVariant expression(P2Params& params, imm_to_e imm_to = immediate_none);
 
-    static bool end_of_line(P2Params& params);
+    static bool end_of_line(P2Params& params, bool binary = false);
     static bool optional_wcz(P2Params& params);
     static bool optional_wc(P2Params& params);
     static bool optional_wz(P2Params& params);
@@ -144,9 +148,10 @@ private:
     static bool params_imm_d_cz(P2Params &params);
     static bool params_imm_d_c(P2Params &params);
     static bool params_imm_s(P2Params &params);
+    static bool params_imm_s_cz(P2Params &params);
     static bool params_pc_abs(P2Params &params);
     static bool params_ptr_pc_abs(P2Params &params);
-    static bool params_imm23(P2Params &params);
+    static bool params_imm23(P2Params &params, QVector<p2_inst_e> aug);
 
     static bool params_byte(P2Params &params);
     static bool params_word(P2Params &params);

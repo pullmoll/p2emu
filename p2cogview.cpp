@@ -35,7 +35,7 @@ void P2CogView::updateView()
     const P2LONG PC = m_cog->rd_PC();
     ui->le_PC->setText(hex(PC, 6));
 
-    p2_opword_t IR = { m_cog->rd_mem(PC), };
+    p2_opcode_u IR = { m_cog->rd_mem(PC), };
     QVariant D_aug = m_cog->rd_D_aug();
     QVariant S_aug = m_cog->rd_S_aug();
     P2LONG D = D_aug.isValid() ? D_aug.toUInt() | IR.op.dst : IR.op.dst;

@@ -45,7 +45,7 @@ public:
 
     int decode();
 
-    p2_opword_t rd_IR() const { return IR; }
+    p2_opcode_u rd_IR() const { return IR; }
     P2LONG rd_ID() const { return ID; }
     P2LONG rd_PC() const { return PC; }
     p2_wait_t rd_WAIT() const { return WAIT; }
@@ -90,7 +90,7 @@ private:
     p2_pin_t PIN;           //!< PIN mode, mask, and match
     p2_int_bits_u INT;      //!< INT disable / active / source bits union
     p2_lock_t LOCK;         //!<
-    p2_opword_t IR;         //!< instruction register
+    p2_opcode_u IR;         //!< instruction register
     P2LONG D;               //!< value of D
     P2LONG S;               //!< value of S
     P2LONG Q;               //!< value of Q
@@ -185,7 +185,7 @@ private:
     P2LONG fifo_level();
     void check_interrupt_flags();
     void check_wait_int_state();
-    P2LONG check_wait_flag(p2_opword_t IR, P2LONG value1, P2LONG value2, bool streamflag);
+    P2LONG check_wait_flag(p2_opcode_u IR, P2LONG value1, P2LONG value2, bool streamflag);
     P2LONG get_pointer(P2LONG inst, P2LONG size);
     void save_regs();
     void update_regs();

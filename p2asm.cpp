@@ -243,11 +243,11 @@ bool P2Asm::assemble(P2Params& params, const QStringList& source)
         params.line = line;
         params.lineno += 1;
 
-        if (line.startsWith(QStringLiteral("{{")))
+        if (line.startsWith(QStringLiteral("{")))
             multi_comment = true;
 
         if (multi_comment) {
-            if (line.endsWith("}}"))
+            if (line.endsWith("}"))
                 multi_comment = false;
             // skip over multi line comment
             continue;
@@ -296,7 +296,7 @@ bool P2Asm::assemble(P2Params& params, const QStringList& source)
             continue;
 
         // Reset all instruction bits
-        params.IR.word = 0;
+        params.IR.opcode = 0;
 
         // Conditional execution prefix
         const p2_token_e cond = params.tokens.at(params.idx);
@@ -352,7 +352,7 @@ bool P2Asm::assemble(P2Params& params, const QStringList& source)
             break;
 
         case t_AKPIN:
-            params.IR.op9.inst = p2_WRPIN;
+            params.IR.op8.inst = p2_WRPIN;
             params_d_imm_s_cz(params);
             params.IR.op.wz = 1;
             params.IR.op.dst = 1;
@@ -432,12 +432,12 @@ bool P2Asm::assemble(P2Params& params, const QStringList& source)
 
         case t_AUGD:
             params.IR.op.inst = p2_AUGD_00;
-            params_imm23(params);
+            params_imm23(params, QVector<p2_inst_e>() << p2_AUGD_00 << p2_AUGD_01 << p2_AUGD_10 << p2_AUGD_11);
             break;
 
         case t_AUGS:
             params.IR.op.inst = p2_AUGS_00;
-            params_imm23(params);
+            params_imm23(params, QVector<p2_inst_e>() << p2_AUGS_00 << p2_AUGS_01 << p2_AUGS_10 << p2_AUGS_11);
             break;
 
         case t_BITC:
@@ -517,8 +517,13 @@ bool P2Asm::assemble(P2Params& params, const QStringList& source)
             break;
 
         case t_CALLPA:
+            params.IR.op8.inst = p2_CALLPA;
+            params_ptr_pc_abs(params);
             break;
+
         case t_CALLPB:
+            params.IR.op8.inst = p2_CALLPB;
+            params_ptr_pc_abs(params);
             break;
 
         case t_CMP:
@@ -753,43 +758,43 @@ bool P2Asm::assemble(P2Params& params, const QStringList& source)
             break;
 
         case t_JATN:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op.inst = p2_TJV_OPDST;
             params.IR.op9.dst = p2_OPDST_JATN;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JCT1:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op.inst = p2_TJV_OPDST;
             params.IR.op9.dst = p2_OPDST_JCT1;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JCT2:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op.inst = p2_TJV_OPDST;
             params.IR.op9.dst = p2_OPDST_JCT2;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JCT3:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op.inst = p2_TJV_OPDST;
             params.IR.op9.dst = p2_OPDST_JCT3;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JFBW:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op.inst = p2_TJV_OPDST;
             params.IR.op9.dst = p2_OPDST_JFBW;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JINT:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op.inst = p2_TJV_OPDST;
             params.IR.op9.dst = p2_OPDST_JINT;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JMP:
-            params.IR.op9.inst = p2_JMP_ABS;
+            params.IR.op.inst = p2_JMP_ABS;
             params_pc_abs(params);
             break;
 
@@ -797,159 +802,159 @@ bool P2Asm::assemble(P2Params& params, const QStringList& source)
             break;
 
         case t_JNATN:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JNATN;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JNCT1:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JNCT1;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JNCT2:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JNCT2;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JNCT3:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JNCT3;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JNFBW:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JNFBW;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JNINT:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JNINT;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JNPAT:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JNPAT;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JNQMT:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JNQMT;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JNSE1:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JNSE1;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JNSE2:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JNSE2;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JNSE3:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JNSE3;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JNSE4:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JNSE4;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JNXFI:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JNXFI;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JNXMT:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JNXMT;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JNXRL:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JNXRL;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JNXRO:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JNXRO;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JPAT:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JPAT;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JQMT:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JQMT;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JSE1:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JSE1;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JSE2:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JSE2;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JSE3:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JSE3;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JSE4:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JSE4;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JXFI:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JXFI;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JXMT:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JXMT;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JXRL:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JXRL;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_JXRO:
-            params.IR.op9.inst = p2_TJV_OPDST;
+            params.IR.op9.inst = p2_OPDST;
             params.IR.op9.dst = p2_OPDST_JXRO;
-            params_with_cz(params);
+            params_imm_s_cz(params);
             break;
 
         case t_LOC:
@@ -2191,13 +2196,21 @@ QVariant P2Asm::expression(P2Params& params, imm_to_e imm_to)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::end_of_line(P2Params& params)
+bool P2Asm::end_of_line(P2Params& params, bool binary)
 {
     if (params.idx < params.cnt) {
         // ignore extra parameters?
-        params.error = tr("Ignored extra parameters: %1")
+        params.error = tr("Found extra parameters: %1")
                        .arg(params.words.mid(params.idx).join(QChar::Space));
         return false;
+    }
+
+    if (binary) {
+        if (params.curr_pc < 0x400) {
+            params.binary.l[params.curr_pc] = params.IR.opcode;
+        } else {
+            params.binary.l[params.curr_pc / 4] = params.IR.opcode;
+        }
     }
     return true;
 }
@@ -2232,7 +2245,7 @@ bool P2Asm::optional_wcz(P2Params& params)
             return false;
         }
     }
-    return end_of_line(params);
+    return true;
 }
 
 /**
@@ -2256,7 +2269,7 @@ bool P2Asm::optional_wc(P2Params& params)
             return false;
         }
     }
-    return end_of_line(params);
+    return true;
 }
 
 /**
@@ -2280,7 +2293,7 @@ bool P2Asm::optional_wz(P2Params& params)
             return false;
         }
     }
-    return end_of_line(params);
+    return true;
 }
 
 /**
@@ -2338,7 +2351,8 @@ bool P2Asm::params_orgh(P2Params& params, P2AsmSymbol& sym)
 bool P2Asm::params_with_cz(P2Params& params)
 {
     params.idx++;
-    return optional_wcz(params);
+    optional_wcz(params);
+    return end_of_line(params, true);
 }
 
 /**
@@ -2349,7 +2363,8 @@ bool P2Asm::params_with_cz(P2Params& params)
 bool P2Asm::params_with_c(P2Params& params)
 {
     params.idx++;
-    return optional_wc(params);
+    optional_wc(params);
+    return end_of_line(params, true);
 }
 
 
@@ -2361,7 +2376,8 @@ bool P2Asm::params_with_c(P2Params& params)
 bool P2Asm::params_with_z(P2Params& params)
 {
     params.idx++;
-    return optional_wz(params);
+    optional_wz(params);
+    return end_of_line(params);
 }
 
 /**
@@ -2401,7 +2417,8 @@ bool P2Asm::params_d_cz(P2Params& params)
     params.idx++;
     QVariant dst = expression(params);
     params.IR.op.dst = dst.toUInt();
-    return optional_wcz(params);
+    optional_wcz(params);
+    return end_of_line(params, true);
 }
 
 /**
@@ -2412,7 +2429,8 @@ bool P2Asm::params_d_cz(P2Params& params)
 bool P2Asm::params_cz(P2Params& params)
 {
     params.idx++;
-    return optional_wcz(params);
+    optional_wcz(params);
+    return end_of_line(params, true);
 }
 
 /**
@@ -2424,9 +2442,12 @@ bool P2Asm::params_cccc_zzzz_cz(P2Params& params)
 {
     params.idx++;
     p2_cond_e cccc = conditional(params, params.tokens.value(params.idx));
+    params.idx++;
     p2_cond_e zzzz = conditional(params, params.tokens.value(params.idx));
+    params.idx++;
     params.IR.op.dst = static_cast<P2LONG>((cccc << 4) | zzzz);
-    return optional_wcz(params);
+    optional_wcz(params);
+    return end_of_line(params, true);
 }
 
 /**
@@ -2439,7 +2460,7 @@ bool P2Asm::params_d(P2Params& params)
     params.idx++;
     QVariant dst = expression(params);
     params.IR.op.dst = dst.toUInt();
-    return end_of_line(params);
+    return end_of_line(params, true);
 }
 
 /**
@@ -2452,7 +2473,7 @@ bool P2Asm::params_wz_d(P2Params& params)
     params.idx++;
     QVariant dst = expression(params, immediate_wz);
     params.IR.op.dst = dst.toUInt();
-    return end_of_line(params);
+    return end_of_line(params, true);
 }
 
 /**
@@ -2465,7 +2486,7 @@ bool P2Asm::params_imm_d(P2Params& params)
     params.idx++;
     QVariant dst = expression(params, immediate_imm);
     params.IR.op.dst = dst.toUInt();
-    return end_of_line(params);
+    return end_of_line(params, true);
 }
 
 /**
@@ -2478,7 +2499,8 @@ bool P2Asm::params_imm_d_cz(P2Params& params)
     params.idx++;
     QVariant dst = expression(params, immediate_imm);
     params.IR.op.dst = dst.toUInt();
-    return optional_wcz(params);
+    optional_wcz(params);
+    return end_of_line(params, true);
 }
 
 /**
@@ -2491,7 +2513,8 @@ bool P2Asm::params_imm_d_c(P2Params& params)
     params.idx++;
     QVariant dst = expression(params, immediate_imm);
     params.IR.op.dst = dst.toUInt();
-    return optional_wc(params);
+    optional_wc(params);
+    return end_of_line(params, true);
 }
 
 /**
@@ -2506,7 +2529,8 @@ bool P2Asm::params_d_imm_s_cz(P2Params& params)
     QVariant src = expression(params, immediate_imm);
     params.IR.op.dst = dst.toUInt();
     params.IR.op.src = dst.toUInt();
-    return optional_wcz(params);
+    optional_wcz(params);
+    return end_of_line(params, true);
 }
 
 /**
@@ -2521,7 +2545,8 @@ bool P2Asm::params_d_imm_s_c(P2Params& params)
     QVariant src = expression(params, immediate_imm);
     params.IR.op.dst = dst.toUInt();
     params.IR.op.src = dst.toUInt();
-    return optional_wc(params);
+    optional_wc(params);
+    return end_of_line(params, true);
 }
 
 /**
@@ -2536,7 +2561,8 @@ bool P2Asm::params_d_imm_s_z(P2Params& params)
     QVariant src = expression(params, immediate_imm);
     params.IR.op.dst = dst.toUInt();
     params.IR.op.src = dst.toUInt();
-    return optional_wz(params);
+    optional_wz(params);
+    return end_of_line(params, true);
 }
 
 /**
@@ -2551,7 +2577,7 @@ bool P2Asm::params_wz_d_imm_s(P2Params& params)
     QVariant src = expression(params, immediate_imm);
     params.IR.op.dst = dst.toUInt();
     params.IR.op.src = dst.toUInt();
-    return end_of_line(params);
+    return end_of_line(params, true);
 }
 
 /**
@@ -2578,7 +2604,7 @@ bool P2Asm::params_d_imm_s_nnn(P2Params& params)
                        .arg(params.line);
         return false;
     }
-    return end_of_line(params);
+    return end_of_line(params, true);
 }
 
 /**
@@ -2603,7 +2629,7 @@ bool P2Asm::params_d_imm_s_n(P2Params& params)
         params.error = tr("Missing immediate #n in: %1")
                        .arg(params.line);
     }
-    return end_of_line(params);
+    return end_of_line(params, true);
 }
 
 /**
@@ -2616,7 +2642,20 @@ bool P2Asm::params_imm_s(P2Params& params)
     params.idx++;
     QVariant src = expression(params, immediate_imm);
     params.IR.op.src = src.toUInt();
-    return end_of_line(params);
+    return end_of_line(params, true);
+}
+
+/**
+ * @brief Expect parameters for {#}S, and optional WC
+ * @brief params reference to the assembler parameters
+ * @return true on success, or false on error
+ */
+bool P2Asm::params_imm_s_cz(P2Params& params)
+{
+    params.idx++;
+    QVariant src = expression(params, immediate_imm);
+    params.IR.op.src = src.toUInt();
+    return end_of_line(params, true);
 }
 
 
@@ -2631,15 +2670,11 @@ bool P2Asm::params_ptr_pc_abs(P2Params& params)
     p2_token_e dst = params.tokens.value(params.idx);
     switch (dst) {
     case t_PA:
-        params.IR.op.wz = false;
-        params.IR.op.wc = false;
         break;
     case t_PB:
         params.IR.op.wz = true;
-        params.IR.op.wc = false;
         break;
     case t_PTRA:
-        params.IR.op.wz = false;
         params.IR.op.wc = true;
         break;
     case t_PTRB:
@@ -2654,9 +2689,9 @@ bool P2Asm::params_ptr_pc_abs(P2Params& params)
     params.idx++;
 
     quint64 addr = expression(params).toULongLong();
-    params.IR.word |= addr & A20MASK;
+    params.IR.opcode |= addr & A20MASK;
 
-    return end_of_line(params);
+    return end_of_line(params, true);
 }
 
 /**
@@ -2668,9 +2703,9 @@ bool P2Asm::params_pc_abs(P2Params& params)
 {
     params.idx++;
     quint64 addr = expression(params).toULongLong();
-    params.IR.word |= addr & A20MASK;
+    params.IR.opcode |= addr & A20MASK;
 
-    return end_of_line(params);
+    return end_of_line(params, true);
 }
 
 /**
@@ -2678,13 +2713,13 @@ bool P2Asm::params_pc_abs(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::params_imm23(P2Params& params)
+bool P2Asm::params_imm23(P2Params& params, QVector<p2_inst_e> aug)
 {
     params.idx++;
     quint64 addr = expression(params).toULongLong();
-    params.IR.op.inst |= (addr >> 21) & 3;
+    params.IR.op.inst = static_cast<p2_inst_e>(params.IR.op.inst | aug[(addr >> 21) & 3]);
 
-    return end_of_line(params);
+    return end_of_line(params, true);
 }
 
 /**
@@ -2741,6 +2776,7 @@ bool P2Asm::params_res(P2Params& params)
 {
     while (params.idx < params.cnt) {
         QVariant data = expression(params);
+        qDebug("%s: res %#x", __func__, data.toUInt());
     }
     return end_of_line(params);
 }
