@@ -54,7 +54,7 @@ private:
     int pad_opcode;
     int pad_inst;
     int pad_wcz;
-    p2_opword_t IR;
+    p2_opcode_u IR;
     quint32 PC;
     quint32 S;
     quint32 D;

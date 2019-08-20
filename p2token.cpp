@@ -111,7 +111,6 @@ P2Token::P2Token(bool lowercase)
     m_token_string.insert(t_FBLOCK,         QStringLiteral("FBLOCK"));
     m_token_string.insert(t_FGE,            QStringLiteral("FGE"));
     m_token_string.insert(t_FGES,           QStringLiteral("FGES"));
-    m_token_string.insert(t_FIT,            QStringLiteral("FIT"));
     m_token_string.insert(t_FLE,            QStringLiteral("FLE"));
     m_token_string.insert(t_FLES,           QStringLiteral("FLES"));
     m_token_string.insert(t_FLTC,           QStringLiteral("FLTC"));
@@ -341,7 +340,7 @@ P2Token::P2Token(bool lowercase)
     m_token_string.insert(t_TESTB,          QStringLiteral("TESTB"));
     m_token_string.insert(t_TESTBN,         QStringLiteral("TESTBN"));
     m_token_string.insert(t_TESTN,          QStringLiteral("TESTN"));
-    m_token_string.insert(t_TESTNB,         QStringLiteral("TESTNB"));
+    m_token_string.insert(t_TESTBN,         QStringLiteral("TESTNB"));
     m_token_string.insert(t_TESTP,          QStringLiteral("TESTP"));
     m_token_string.insert(t_TESTPN,         QStringLiteral("TESTPN"));
     m_token_string.insert(t_TJF,            QStringLiteral("TJF"));
@@ -408,6 +407,7 @@ P2Token::P2Token(bool lowercase)
     m_token_string.insert(t__WORD,          QStringLiteral("WORD"));
     m_token_string.insert(t__LONG,          QStringLiteral("LONG"));
     m_token_string.insert(t__RES,           QStringLiteral("RES"));
+    m_token_string.insert(t__FIT,           QStringLiteral("FIT"));
     m_token_string.insert(t__ORG,           QStringLiteral("ORG"));
     m_token_string.insert(t__ORGH,          QStringLiteral("ORGH"));
     m_token_string.insert(t__ASSIGN,        QStringLiteral("="));

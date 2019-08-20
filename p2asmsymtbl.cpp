@@ -51,12 +51,19 @@ bool P2AsmSymTbl::insert(const QString& name, const P2AsmSymbol& symbol)
     return true;
 }
 
-bool P2AsmSymTbl::insert(const QString& name, const QVariant& value, P2AsmSymbol* psym)
+bool P2AsmSymTbl::insert(const QString& name, const QVariant& value)
 {
     P2AsmSymbol sym(name, value);
-    if (psym)
-        *psym = sym;
     return insert(name, sym);
+}
+
+bool P2AsmSymTbl::setValue(const QString& name, const QVariant& value)
+{
+    if (m_symbols.contains(name)) {
+        m_symbols[name].setValue(value);
+        return true;
+    }
+    return false;
 }
 
 P2AsmSymbol P2AsmSymTbl::value(const QString& name) const

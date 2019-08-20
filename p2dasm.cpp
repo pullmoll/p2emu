@@ -284,35 +284,35 @@ bool P2Dasm::dasm(P2LONG addr, QString& opcode, QString* instruction, QString* d
         case p2_TESTBN_XORZ:
             dasm_testbn_xor(instruction, description);
             break;
-        case p2_BITL:
+        case p2_BITL_eol:
         case p2_BITL_WCZ:
             dasm_bitl(instruction, description);
             break;
-        case p2_BITH:
+        case p2_BITH_eol:
         case p2_BITH_WCZ:
             dasm_bith(instruction, description);
             break;
-        case p2_BITC:
+        case p2_BITC_eol:
         case p2_BITC_WCZ:
             dasm_bitc(instruction, description);
             break;
-        case p2_BITNC:
+        case p2_BITNC_eol:
         case p2_BITNC_WCZ:
             dasm_bitnc(instruction, description);
             break;
-        case p2_BITZ:
+        case p2_BITZ_eol:
         case p2_BITZ_WCZ:
             dasm_bitz(instruction, description);
             break;
-        case p2_BITNZ:
+        case p2_BITNZ_eol:
         case p2_BITNZ_WCZ:
             dasm_bitnz(instruction, description);
             break;
-        case p2_BITRND:
+        case p2_BITRND_eol:
         case p2_BITRND_WCZ:
             dasm_bitrnd(instruction, description);
             break;
-        case p2_BITNOT:
+        case p2_BITNOT_eol:
         case p2_BITNOT_WCZ:
             dasm_bitnot(instruction, description);
             break;
@@ -2911,7 +2911,7 @@ void P2Dasm::dasm_testbn_and(QString* instruction, QString* description)
 {
     if (description)
         *description = tr("Test bit S[4:0] of !D, AND into C/Z.");
-    format_d_imm_s_cz(instruction, t_TESTNB, t_AND);
+    format_d_imm_s_cz(instruction, t_TESTBN, t_AND);
 }
 
 /**
@@ -2949,7 +2949,7 @@ void P2Dasm::dasm_testbn_or(QString* instruction, QString* description)
 {
     if (description)
         *description = tr("Test bit S[4:0] of !D, OR  into C/Z.");
-    format_d_imm_s_cz(instruction, t_TESTNB, t_OR);
+    format_d_imm_s_cz(instruction, t_TESTBN, t_OR);
 }
 
 /**

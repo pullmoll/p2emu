@@ -144,7 +144,7 @@ typedef enum {
     t_FBLOCK,
     t_FGE,
     t_FGES,
-    t_FIT,
+    t__FIT,
     t_FLE,
     t_FLES,
     t_FLTC,
@@ -294,7 +294,6 @@ typedef enum {
     t_RDPIN,
     t_RDWORD,
     t_REP,
-    t__RES,
     t_RESI0,
     t_RESI1,
     t_RESI2,
@@ -441,6 +440,7 @@ typedef enum {
     t__BYTE,
     t__WORD,
     t__LONG,
+    t__RES,
     t__ASSIGN,          //!< "="
     t__DOLLAR,          //!< "$"
     t__EQ,              //!< "=="

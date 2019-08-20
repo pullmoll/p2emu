@@ -45,7 +45,8 @@ public:
 
     bool contains(const QString& name);
     bool insert(const QString& name, const P2AsmSymbol& symbol);
-    bool insert(const QString& name, const QVariant& value, P2AsmSymbol* psym = nullptr);
+    bool insert(const QString& name, const QVariant& value);
+    bool setValue(const QString& name, const QVariant& value);
     P2AsmSymbol value(const QString& name) const;
 
     template <typename T>
