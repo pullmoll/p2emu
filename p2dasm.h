@@ -43,7 +43,7 @@ class P2Dasm : public QObject
 public:
     P2Dasm(const P2Cog* cog, QObject* parent = nullptr);
 
-    bool dasm(P2LONG addr, QString& opcode, QString* instruction = nullptr, QString* description = nullptr);
+    bool dasm(P2LONG addr, QString* opcode = nullptr, QString* instruction = nullptr, QString* description = nullptr);
     P2LONG memsize() const;
 
 public slots:
@@ -62,20 +62,19 @@ private:
     p2_token_e conditional(p2_cond_e cond);
     p2_token_e conditional(unsigned cond);
 
-    QString format_num(uint num, bool binary = false);
-    QString format_bin(uint num, int digits = 0);
+    static QString format_num(uint num, bool binary = false);
+    static QString format_bin(uint num, int digits = 0);
 
     void format_with_cz(QString* instruction, p2_token_e with = t_WCZ);
     void format_with_c(QString* instruction, p2_token_e with = t_WC);
     void format_with_z(QString* instruction, p2_token_e with = t_WZ);
     void format_inst(QString* instruction, p2_token_e inst);
-    void format_d_imm_s_cz(QString* instruction, p2_token_e inst, p2_token_e with = t_WCZ);
-    void format_d_imm_s_c(QString* instruction, p2_token_e inst, p2_token_e with = t_WC);
-    void format_d_imm_s_z(QString* instruction, p2_token_e inst, p2_token_e with = t_WZ);
+    void format_d_imm_s_wcz(QString* instruction, p2_token_e inst, p2_token_e wcz = t_WCZ);
+    void format_d_imm_s_wc(QString* instruction, p2_token_e inst);
+    void format_d_imm_s_wz(QString* instruction, p2_token_e inst, p2_token_e with = t_WZ);
     void format_wz_d_imm_s(QString* instruction, p2_token_e inst);
     void format_wz_d_imm_s_wc(QString* instruction, p2_token_e inst);
-    void format_d_imm_s_nnn(QString* instruction, p2_token_e inst);
-    void format_d_imm_s_n(QString* instruction, p2_token_e inst);
+    void format_d_imm_s_nnn(QString* instruction, p2_token_e inst, int max = 7);
     void format_d_imm_s(QString* instruction, p2_token_e inst);
     void format_d_cz(QString* instruction, p2_token_e inst, p2_token_e with = t_WCZ);
     void format_cz(QString* instruction, p2_token_e inst, p2_token_e with = t_WCZ);

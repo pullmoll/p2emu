@@ -435,6 +435,8 @@ typedef enum {
     t_ORZ,
     t_XORC,
     t_XORZ,
+    t__CON,
+    t__DAT,
     t__ORG,
     t__ORGH,
     t__BYTE,

@@ -408,6 +408,8 @@ P2Token::P2Token(bool lowercase)
     m_token_string.insert(t__LONG,          QStringLiteral("LONG"));
     m_token_string.insert(t__RES,           QStringLiteral("RES"));
     m_token_string.insert(t__FIT,           QStringLiteral("FIT"));
+    m_token_string.insert(t__CON,           QStringLiteral("CON"));
+    m_token_string.insert(t__DAT,           QStringLiteral("DAT"));
     m_token_string.insert(t__ORG,           QStringLiteral("ORG"));
     m_token_string.insert(t__ORGH,          QStringLiteral("ORGH"));
     m_token_string.insert(t__ASSIGN,        QStringLiteral("="));

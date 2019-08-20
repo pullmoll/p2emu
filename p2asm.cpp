@@ -165,11 +165,6 @@ bool P2Asm::split_and_tokenize(P2Params& params, const QString& line)
     params.words.clear();
     foreach(QChar ch, line) {
 
-        if (comment) {
-            word += ch;
-            continue;
-        }
-
         if (escaped) {
             escaped = false;
             word += ch;
@@ -194,8 +189,7 @@ bool P2Asm::split_and_tokenize(P2Params& params, const QString& line)
 
         if (ch == QChar('\'')) {
             comment = true;
-            word += ch;
-            continue;
+            break;
         }
 
         if (ch == QChar(',')) {
@@ -252,45 +246,53 @@ bool P2Asm::assemble(P2Params& params, const QStringList& source)
             if (line.endsWith("}"))
                 multi_comment = false;
             // skip over multi line comment
+            listing(params);
             continue;
         }
 
         // Skip over empty lines
-        if (line.isEmpty())
+        if (line.isEmpty()) {
+            listing(params);
             continue;
+        }
 
         // Split line into words and tokenize it
         split_and_tokenize(params, line);
 
         // Set current program counter from next
         params.curr_pc = params.next_pc;
+        // Assume the instruction advances by 1 long
+        params.advance = 1;
 
-        // Whenever the original line starts with a non-blank char,
-        // the first word is defined as a symbol for the current origin
+        // Whenever the line starts with a token t_nothing, i.e. not an reserved name,
+        // the first word is defined as a symbol for the current program counter value
         params.symbol.clear();
         if (params.idx < params.cnt && params.tokens.at(params.idx) == t_nothing) {
             params.symbol = params.words.at(params.idx);
-            // skip over first word
-            params.idx++;
+            params.idx++;   // skip over first word
             P2AsmSymbol sym = params.symbols.value(params.symbol);
             if (sym.isEmpty()) {
+                // Not defined yet
                 params.symbols.insert(params.symbol, params.curr_pc);
             } else {
-                emit Error(params.lineno, tr("Symbol already defined: %1").arg(params.symbol));
+                // Already defined
+                params.error = tr("Symbol already defined: %1").arg(params.symbol);
+                emit Error(params.lineno, params.error);
             }
         }
 
         // Skip if no more tokens were found
-        if (params.idx >= params.tokens.count())
+        if (params.idx >= params.tokens.count()) {
+            listing(params);
             continue;
+        }
 
         // Reset all instruction bits
         params.IR.opcode = 0;
 
         // Conditional execution prefix
         const p2_token_e cond = params.tokens.at(params.idx);
-        const p2_cond_e eeee = conditional(params, cond);
-        params.IR.op.cond = eeee;
+        params.IR.op.cond = conditional(params, cond);
 
         // Expect a token for an instruction
         const p2_token_e inst = params.tokens.at(params.idx);
@@ -1794,21 +1796,17 @@ bool P2Asm::assemble(P2Params& params, const QStringList& source)
         }
 
         if (success) {
-            qDebug("%s: line=%-5d cnt=%-3d pc=$%06x [%08x] : %s", __func__,
-                   params.lineno, params.cnt, params.curr_pc, params.IR.opcode, qPrintable(line));
+            listing(params, true);
             // Calculate next PC for regular instructions
             if (params.curr_pc < 0x400) {
-                params.next_pc = params.curr_pc + 1;
+                params.next_pc = params.curr_pc + params.advance;
             } else {
-                params.next_pc = params.curr_pc + 4;
+                params.next_pc = params.curr_pc + params.advance * 4;
             }
             if (params.next_pc > params.last_pc)
                 params.last_pc = params.next_pc;
         } else {
-            qDebug("%s: line=%-5d cnt=%-3d pc=$%06x [%-8s] : %s", __func__,
-                   params.lineno, params.cnt, params.curr_pc, "", qPrintable(line));
-            if (!params.error.isEmpty())
-                qDebug("%s: %s", __func__, qPrintable(params.error));
+            listing(params);
         }
     }
 
@@ -1837,7 +1835,33 @@ bool P2Asm::assemble(P2Params& params, const QString& filename)
 }
 
 /**
+ * @brief Append a line to the listing
+ * @param params
+ */
+void P2Asm::listing(P2Params& params, bool opcode)
+{
+    if (opcode) {
+        if (params.advance) {
+            // opcode was built
+            qDebug("%s: line=%-5d cnt=%-3d pc=$%06x [%08x] : %s", __func__,
+                params.lineno, params.cnt, params.curr_pc, params.IR.opcode, qPrintable(params.line));
+        } else {
+            // assignment
+            qDebug("%s: line=%-5d cnt=%-3d pc=$%06x <%08x> : %s", __func__,
+                params.lineno, params.cnt, params.curr_pc, params.IR.opcode, qPrintable(params.line));
+        }
+    } else {
+        // comment or non code generating instruction
+        qDebug("%s: line=%-5d cnt=%-3d pc=$%06x %-10s : %s", __func__,
+            params.lineno, params.cnt, params.curr_pc, "----------", qPrintable(params.line));
+    }
+    if (!params.error.isEmpty())
+        qDebug("%s: %s", __func__, qPrintable(params.error));
+}
+
+/**
  * @brief Convert a string of binary digits into an unsigned value
+ * @param pos current position in str
  * @param str binary digits
  * @return value of binary digits in str
  */
@@ -1857,6 +1881,7 @@ quint64 P2Asm::from_bin(int& pos, const QString& str, const QString& stop)
 
 /**
  * @brief Convert a string of octal digits into an unsigned value
+ * @param pos current position in str
  * @param str octal digits
  * @return value of octal digits in str
  */
@@ -1876,6 +1901,7 @@ quint64 P2Asm::from_oct(int& pos, const QString& str, const QString& stop)
 
 /**
  * @brief Convert a string of decimal digits into an unsigned value
+ * @param pos current position in str
  * @param str decimal digits
  * @return value of decimal digits in str
  */
@@ -2204,7 +2230,7 @@ QVariant P2Asm::expression(P2Params& params, imm_to_e imm_to)
     // Set immediate flag, if specified
     switch (imm_to) {
     case immediate_imm:
-        params.IR.op.imm = imm;
+        params.IR.op.im = imm;
         break;
     case immediate_wz:
         params.IR.op.wz = imm;
@@ -2332,8 +2358,10 @@ bool P2Asm::optional_wz(P2Params& params)
  */
 bool P2Asm::asm_assign(P2Params& params)
 {
-    params.idx++;
+    params.idx++;           // skip over token
+    params.advance = 0;     // No PC increment
     QVariant value = expression(params);
+    params.IR.opcode = value.toUInt();
     params.symbols.setValue(params.symbol, value);
     return end_of_line(params, false);
 }
@@ -2345,11 +2373,12 @@ bool P2Asm::asm_assign(P2Params& params)
  */
 bool P2Asm::asm_org(P2Params& params)
 {
-    params.idx++;
+    params.idx++;           // skip over token
+    params.advance = 0;     // No PC increment
     QVariant value = expression(params);
     if (value.isNull())
         value = params.last_pc;
-    params.next_pc = value.toUInt();
+    params.IR.opcode = params.curr_pc = params.next_pc = value.toUInt();
     params.symbols.setValue(params.symbol, value);
     return end_of_line(params, false);
 }
@@ -2361,11 +2390,12 @@ bool P2Asm::asm_org(P2Params& params)
  */
 bool P2Asm::asm_orgh(P2Params& params)
 {
-    params.idx++;
+    params.idx++;           // skip over token
+    params.advance = 0;     // No PC increment
     QVariant value = expression(params);
     if (value.isNull())
         value = 0x00400;
-    params.next_pc = value.toUInt();
+    params.IR.opcode = params.next_pc =  params.last_pc = value.toUInt();
     params.symbols.setValue(params.symbol, value);
     return end_of_line(params, false);
 }
@@ -2377,7 +2407,6 @@ bool P2Asm::asm_orgh(P2Params& params)
  */
 bool P2Asm::parse_with_cz(P2Params& params)
 {
-    params.idx++;
     optional_wcz(params);
     return end_of_line(params);
 }
@@ -2389,7 +2418,6 @@ bool P2Asm::parse_with_cz(P2Params& params)
  */
 bool P2Asm::parse_with_c(P2Params& params)
 {
-    params.idx++;
     optional_wc(params);
     return end_of_line(params);
 }
@@ -2402,7 +2430,6 @@ bool P2Asm::parse_with_c(P2Params& params)
  */
 bool P2Asm::parse_with_z(P2Params& params)
 {
-    params.idx++;
     optional_wz(params);
     return end_of_line(params);
 }
@@ -2425,11 +2452,10 @@ bool P2Asm::parse_inst(P2Params& params)
  */
 bool P2Asm::parse_d_imm_s(P2Params& params)
 {
-    params.idx++;
     QVariant dst = expression(params);
     QVariant src = expression(params, immediate_imm);
     params.IR.op.dst = dst.toUInt();
-    params.IR.op.src = dst.toUInt();
+    params.IR.op.src = src.toUInt();
     return end_of_line(params);
 }
 
@@ -2440,7 +2466,6 @@ bool P2Asm::parse_d_imm_s(P2Params& params)
  */
 bool P2Asm::parse_d_cz(P2Params& params)
 {
-    params.idx++;
     QVariant dst = expression(params);
     params.IR.op.dst = dst.toUInt();
     optional_wcz(params);
@@ -2454,7 +2479,6 @@ bool P2Asm::parse_d_cz(P2Params& params)
  */
 bool P2Asm::parse_cz(P2Params& params)
 {
-    params.idx++;
     optional_wcz(params);
     return end_of_line(params);
 }
@@ -2466,7 +2490,6 @@ bool P2Asm::parse_cz(P2Params& params)
  */
 bool P2Asm::parse_cccc_zzzz_cz(P2Params& params)
 {
-    params.idx++;
     p2_cond_e cccc = conditional(params, params.tokens.value(params.idx));
     params.idx++;
     p2_cond_e zzzz = conditional(params, params.tokens.value(params.idx));
@@ -2483,7 +2506,6 @@ bool P2Asm::parse_cccc_zzzz_cz(P2Params& params)
  */
 bool P2Asm::parse_d(P2Params& params)
 {
-    params.idx++;
     QVariant dst = expression(params);
     params.IR.op.dst = dst.toUInt();
     return end_of_line(params);
@@ -2496,7 +2518,6 @@ bool P2Asm::parse_d(P2Params& params)
  */
 bool P2Asm::parse_wz_d(P2Params& params)
 {
-    params.idx++;
     QVariant dst = expression(params, immediate_wz);
     params.IR.op.dst = dst.toUInt();
     return end_of_line(params);
@@ -2509,7 +2530,6 @@ bool P2Asm::parse_wz_d(P2Params& params)
  */
 bool P2Asm::parse_imm_d(P2Params& params)
 {
-    params.idx++;
     QVariant dst = expression(params, immediate_imm);
     params.IR.op.dst = dst.toUInt();
     return end_of_line(params);
@@ -2522,7 +2542,6 @@ bool P2Asm::parse_imm_d(P2Params& params)
  */
 bool P2Asm::parse_imm_d_cz(P2Params& params)
 {
-    params.idx++;
     QVariant dst = expression(params, immediate_imm);
     params.IR.op.dst = dst.toUInt();
     optional_wcz(params);
@@ -2536,7 +2555,6 @@ bool P2Asm::parse_imm_d_cz(P2Params& params)
  */
 bool P2Asm::parse_imm_d_c(P2Params& params)
 {
-    params.idx++;
     QVariant dst = expression(params, immediate_imm);
     params.IR.op.dst = dst.toUInt();
     optional_wc(params);
@@ -2550,11 +2568,10 @@ bool P2Asm::parse_imm_d_c(P2Params& params)
  */
 bool P2Asm::parse_d_imm_s_cz(P2Params& params)
 {
-    params.idx++;
     QVariant dst = expression(params);
     QVariant src = expression(params, immediate_imm);
     params.IR.op.dst = dst.toUInt();
-    params.IR.op.src = dst.toUInt();
+    params.IR.op.src = src.toUInt();
     optional_wcz(params);
     return end_of_line(params);
 }
@@ -2566,11 +2583,10 @@ bool P2Asm::parse_d_imm_s_cz(P2Params& params)
  */
 bool P2Asm::parse_d_imm_s_c(P2Params& params)
 {
-    params.idx++;
     QVariant dst = expression(params);
     QVariant src = expression(params, immediate_imm);
     params.IR.op.dst = dst.toUInt();
-    params.IR.op.src = dst.toUInt();
+    params.IR.op.src = src.toUInt();
     optional_wc(params);
     return end_of_line(params);
 }
@@ -2582,7 +2598,6 @@ bool P2Asm::parse_d_imm_s_c(P2Params& params)
  */
 bool P2Asm::parse_d_imm_s_z(P2Params& params)
 {
-    params.idx++;
     QVariant dst = expression(params);
     QVariant src = expression(params, immediate_imm);
     params.IR.op.dst = dst.toUInt();
@@ -2598,7 +2613,6 @@ bool P2Asm::parse_d_imm_s_z(P2Params& params)
  */
 bool P2Asm::parse_wz_d_imm_s(P2Params& params)
 {
-    params.idx++;
     QVariant dst = expression(params, immediate_wz);
     QVariant src = expression(params, immediate_imm);
     params.IR.op.dst = dst.toUInt();
@@ -2611,9 +2625,8 @@ bool P2Asm::parse_wz_d_imm_s(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_d_imm_s_nnn(P2Params& params)
+bool P2Asm::parse_d_imm_s_nnn(P2Params& params, int max)
 {
-    params.idx++;
     QVariant dst = expression(params);
     QVariant src = expression(params, immediate_imm);
     params.IR.op.dst = dst.toUInt();
@@ -2621,39 +2634,22 @@ bool P2Asm::parse_d_imm_s_nnn(P2Params& params)
     if (params.idx < params.cnt) {
         QVariant n = expression(params);
         if (n.isNull()) {
-            params.error = tr("Expected immediate #n in: %1")
+            params.error = tr("Expected immediate #n in: %1").arg(params.line);
+            return false;
+        }
+        if (n.toInt() < 0 || n.toInt() > max) {
+            params.error = tr("Immediate #n not in 0-%1 (%2): %3")
+                           .arg(max)
+                           .arg(n.toLongLong())
                            .arg(params.line);
             return false;
         }
+        P2LONG opcode = static_cast<P2LONG>(n.toInt() & max) << 18;
+        params.IR.opcode |= opcode;
     } else {
         params.error = tr("Missing immediate #n in: %1")
                        .arg(params.line);
         return false;
-    }
-    return end_of_line(params);
-}
-
-/**
- * @brief Expect parameters for D, and {#}S, and #N (0 … 1)
- * @brief params reference to the assembler parameters
- * @return true on success, or false on error
- */
-bool P2Asm::parse_d_imm_s_n(P2Params& params)
-{
-    params.idx++;
-    QVariant dst = expression(params);
-    QVariant src = expression(params, immediate_imm);
-    params.IR.op.dst = dst.toUInt();
-    params.IR.op.src = dst.toUInt();
-    if (params.idx < params.cnt) {
-        QVariant n = expression(params);
-        if (n.isNull()) {
-            params.error = tr("Expected immediate #n in: %1")
-                           .arg(params.line);
-        }
-    } else {
-        params.error = tr("Missing immediate #n in: %1")
-                       .arg(params.line);
     }
     return end_of_line(params);
 }
@@ -2665,7 +2661,6 @@ bool P2Asm::parse_d_imm_s_n(P2Params& params)
  */
 bool P2Asm::parse_imm_s(P2Params& params)
 {
-    params.idx++;
     QVariant src = expression(params, immediate_imm);
     params.IR.op.src = src.toUInt();
     return end_of_line(params);
@@ -2678,7 +2673,6 @@ bool P2Asm::parse_imm_s(P2Params& params)
  */
 bool P2Asm::parse_imm_s_cz(P2Params& params)
 {
-    params.idx++;
     QVariant src = expression(params, immediate_imm);
     params.IR.op.src = src.toUInt();
     return end_of_line(params);
@@ -2692,7 +2686,6 @@ bool P2Asm::parse_imm_s_cz(P2Params& params)
  */
 bool P2Asm::parse_ptr_pc_abs(P2Params& params)
 {
-    params.idx++;
     p2_token_e dst = params.tokens.value(params.idx);
     switch (dst) {
     case t_PA:
@@ -2727,7 +2720,6 @@ bool P2Asm::parse_ptr_pc_abs(P2Params& params)
  */
 bool P2Asm::parse_pc_abs(P2Params& params)
 {
-    params.idx++;
     quint64 addr = expression(params).toULongLong();
     params.IR.opcode |= addr & A20MASK;
 
@@ -2739,11 +2731,10 @@ bool P2Asm::parse_pc_abs(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_imm23(P2Params& params, QVector<p2_inst_e> aug)
+bool P2Asm::parse_imm23(P2Params& params, QVector<p2_inst7_e> aug)
 {
-    params.idx++;
     quint64 addr = expression(params).toULongLong();
-    params.IR.op.inst = static_cast<p2_inst_e>(params.IR.op.inst | aug[(addr >> 21) & 3]);
+    params.IR.op.inst = static_cast<p2_inst7_e>(params.IR.op.inst | aug[(addr >> 21) & 3]);
 
     return end_of_line(params);
 }
@@ -2758,7 +2749,6 @@ bool P2Asm::asm_byte(P2Params& params)
     params.idx++;
     while (params.idx < params.cnt) {
         QVariant data = expression(params);
-        qDebug("%s: byte %#x", __func__, data.toUInt());
         params.IR.opcode = data.toUInt();
     }
     return end_of_line(params);
@@ -2774,7 +2764,6 @@ bool P2Asm::asm_word(P2Params& params)
     params.idx++;
     while (params.idx < params.cnt) {
         QVariant data = expression(params);
-        qDebug("%s: word %#x", __func__, data.toUInt());
         params.IR.opcode = data.toUInt();
     }
     return end_of_line(params);
@@ -4494,7 +4483,7 @@ bool P2Asm::asm_rolbyte(P2Params& params)
 {
     params.idx++;
     params.IR.op.inst = p2_ROLBYTE;
-    return parse_d_imm_s_nnn(params);
+    return parse_d_imm_s_nnn(params, 3);
 }
 
 /**
@@ -4530,7 +4519,7 @@ bool P2Asm::asm_setword(P2Params& params)
 {
     params.idx++;
     params.IR.op9.inst = p2_SETWORD;
-    return parse_d_imm_s_n(params);
+    return parse_d_imm_s_nnn(params, 1);
 }
 
 /**
@@ -4567,7 +4556,7 @@ bool P2Asm::asm_getword(P2Params& params)
 {
     params.idx++;
     params.IR.op9.inst = p2_GETWORD;
-    return parse_d_imm_s_n(params);
+    return parse_d_imm_s_nnn(params, 1);
 }
 
 /**
@@ -4604,7 +4593,7 @@ bool P2Asm::asm_rolword(P2Params& params)
 {
     params.idx++;
     params.IR.op9.inst = p2_ROLWORD;
-    return parse_d_imm_s_n(params);
+    return parse_d_imm_s_nnn(params, 1);
 }
 
 /**
@@ -5654,7 +5643,7 @@ bool P2Asm::asm_popa(P2Params& params)
 {
     params.idx++;
     params.IR.op.inst = p2_RDLONG;
-    params.IR.op.imm = true;
+    params.IR.op.im = true;
     params.IR.op.src = 0x15f;
     return parse_d_cz(params);
 }
@@ -5676,7 +5665,7 @@ bool P2Asm::asm_popb(P2Params& params)
 {
     params.idx++;
     params.IR.op.inst = p2_RDLONG;
-    params.IR.op.imm = true;
+    params.IR.op.im = true;
     params.IR.op.src = 0x1df;
     return parse_d_cz(params);
 }
@@ -6979,7 +6968,7 @@ bool P2Asm::asm_pusha(P2Params& params)
 {
     params.idx++;
     params.IR.op8.inst = p2_WRLONG;
-    params.IR.op8.imm = true;
+    params.IR.op8.im = true;
     params.IR.op8.src = 0x161;
     return parse_wz_d(params);
 }
@@ -6999,7 +6988,7 @@ bool P2Asm::asm_pushb(P2Params& params)
 {
     params.idx++;
     params.IR.op8.inst = p2_WRLONG;
-    params.IR.op8.imm = true;
+    params.IR.op8.im = true;
     params.IR.op8.src = 0x1e1;
     return parse_wz_d(params);
 }
@@ -7095,7 +7084,7 @@ bool P2Asm::asm_xstop(P2Params& params)
     params.idx++;
     params.IR.op8.inst = p2_XINIT;
     params.IR.op8.wz = true;
-    params.IR.op8.imm = true;
+    params.IR.op8.im = true;
     params.IR.op8.dst = 0x000;
     params.IR.op8.src = 0x000;
     return parse_inst(params);
@@ -8895,7 +8884,7 @@ bool P2Asm::asm_ret(P2Params& params)
 {
     params.idx++;
     params.IR.op.inst = p2_OPSRC;
-    params.IR.op.imm = true;
+    params.IR.op.im = true;
     params.IR.op.dst = 0x000;
     params.IR.op.src = p2_OPSRC_CALL_RET;
     return parse_cz(params);
@@ -8937,7 +8926,7 @@ bool P2Asm::asm_reta(P2Params& params)
 {
     params.idx++;
     params.IR.op.inst = p2_OPSRC;
-    params.IR.op.imm = true;
+    params.IR.op.im = true;
     params.IR.op.dst = 0x000;
     params.IR.op.src = p2_OPSRC_CALLA_RETA;
     return parse_cz(params);
@@ -8979,7 +8968,7 @@ bool P2Asm::asm_retb(P2Params& params)
 {
     params.idx++;
     params.IR.op.inst = p2_OPSRC;
-    params.IR.op.imm = true;
+    params.IR.op.im = true;
     params.IR.op.dst = 0x000;
     params.IR.op.src = p2_OPSRC_CALLB_RETB;
     return parse_cz(params);
@@ -9104,7 +9093,7 @@ bool P2Asm::asm_getbrk(P2Params& params)
 {
     params.idx++;
     params.IR.op.inst = p2_OPSRC;
-    params.IR.op.imm = false;
+    params.IR.op.im = false;
     params.IR.op.src = p2_OPSRC_COGBRK;
     return parse_d_cz(params);
 }
@@ -10807,7 +10796,7 @@ bool P2Asm::asm_loc_ptrb(P2Params& params)
  */
 bool P2Asm::asm_augs(P2Params& params)
 {
-    static const QVector<p2_inst_e> augs = QVector<p2_inst_e>()
+    static const QVector<p2_inst7_e> augs = QVector<p2_inst7_e>()
                                            << p2_AUGS_00
                                            << p2_AUGS_01
                                            << p2_AUGS_10
@@ -10830,7 +10819,7 @@ bool P2Asm::asm_augs(P2Params& params)
  */
 bool P2Asm::asm_augd(P2Params& params)
 {
-    static const QVector<p2_inst_e> augd = QVector<p2_inst_e>()
+    static const QVector<p2_inst7_e> augd = QVector<p2_inst7_e>()
                                            << p2_AUGD_00
                                            << p2_AUGD_01
                                            << p2_AUGD_10

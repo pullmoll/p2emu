@@ -42,7 +42,7 @@
 #include "p2asm.h"
 #include "p2dasm.h"
 
-static const int ncogs = 2;
+static const int ncogs = 4;
 static const QLatin1String key_windowGeometry("windowGeometry");
 static const QLatin1String key_windowState("windowState");
 static const QLatin1String key_opcodes("opcodes");

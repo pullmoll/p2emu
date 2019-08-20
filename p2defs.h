@@ -294,7 +294,7 @@ typedef enum {
     p2_AUGD_10                  = INST7(1,1,1,1,1,1,0),
     p2_AUGD_11                  = INST7(1,1,1,1,1,1,1),
 
-}   p2_inst_e;
+}   p2_inst7_e;
 
 
 typedef enum {
@@ -734,17 +734,17 @@ typedef struct {
 #if (Q_BYTE_ORDER == Q_LITTLE_ENDIAN)
     unsigned src:9;             //!< source (S or #S)
     unsigned dst:9;             //!< destination (D or #D)
-    bool imm:1;                 //!< immediate flag
+    bool im:1;                  //!< immediate flag
     bool wz:1;                  //!< update Z flag
     bool wc:1;                  //!< update C flag
-    p2_inst_e inst:7;           //!< instruction type
+    p2_inst7_e inst:7;          //!< instruction type
     unsigned cond:4;            //!< conditional execution
 #elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
     unsigned cond:4;            //!< conditional execution
-    p2_inst_e inst:7;           //!< instruction type
+    p2_inst7_e inst:7;          //!< instruction type
     bool uc:1;                  //!< update C flag
     bool uz:1;                  //!< update Z flag
-    bool imm:1;                 //!< immediate flag
+    bool im:1;                  //!< immediate flag
     unsigned dst:9;             //!< destination (D or #D)
     unsigned src:9;             //!< source (S or #S)
 #else
@@ -759,7 +759,7 @@ typedef struct {
 #if (Q_BYTE_ORDER == Q_LITTLE_ENDIAN)
     unsigned src:9;             //!< source (S or #S)
     unsigned dst:9;             //!< destination (D or #D)
-    bool imm:1;                 //!< immediate flag
+    bool im:1;                  //!< immediate flag
     bool wz:1;                  //!< update Z flag
     p2_inst8_e inst:8;          //!< instruction type including WC
     unsigned cond:4;            //!< conditional execution
@@ -767,7 +767,7 @@ typedef struct {
     unsigned cond:4;            //!< conditional execution
     p2_inst8_e inst:8;          //!< instruction type including WC
     bool wz:1;                  //!< update Z flag
-    bool imm:1;                 //!< immediate flag
+    bool im:1;                  //!< immediate flag
     unsigned dst:9;             //!< destination (D or #D)
     unsigned src:9;             //!< source (S or #S)
 #else
@@ -782,13 +782,13 @@ typedef struct {
 #if (Q_BYTE_ORDER == Q_LITTLE_ENDIAN)
     unsigned src:9;             //!< source (S or #S)
     unsigned dst:9;             //!< destination (D or #D)
-    bool imm:1;                 //!< immediate flag
+    bool im:1;                  //!< immediate flag
     p2_inst9_e inst:9;          //!< instruction type including WC and WZ
     unsigned cond:4;            //!< conditional execution
 #elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
     unsigned cond:4;            //!< conditional execution
     p2_inst9_e inst:9;          //!< instruction type including WC and WZ
-    bool imm:1;                 //!< immediate flag
+    bool im:1;                  //!< immediate flag
     unsigned dst:9;             //!< destination (D or #D)
     unsigned src:9;             //!< source (S or #S)
 #else

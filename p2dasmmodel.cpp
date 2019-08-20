@@ -35,12 +35,12 @@
 #include "p2dasm.h"
 #include "p2dasmmodel.h"
 
-static const QString str_Address = QStringLiteral("COG[000] ");
-static const QString str_Opcode_binary = QStringLiteral("EEEE_OOOOOOO_CZI_DDDDDDDDD_SSSSSSSSS ");
-static const QString str_Opcode_hexdec = QStringLiteral("FFFFFFFF ");
-static const QString str_Opcode_octal = QStringLiteral("37777777777 ");
-static const QString str_Instruction = QStringLiteral(" IF_NC_AND_NZ  INSTRUCTION #$1ff,#$1ff,#7 XORCZ ");
-static const QString str_Description = QStringLiteral(" Some description string... ");
+static const QString str_address = QStringLiteral("COG[000] ");
+static const QString str_opcode_binary = QStringLiteral("EEEE_OOOOOOO_CZI_DDDDDDDDD_SSSSSSSSS ");
+static const QString str_opcode_hexdec = QStringLiteral("FFFFFFFF ");
+static const QString str_opcode_octal = QStringLiteral("37777777777 ");
+static const QString str_instruction = QStringLiteral(" IF_NC_AND_NZ  INSTRUCTION #$1ff,#$1ff,#7 XORCZ ");
+static const QString str_description = QStringLiteral(" Some description string... ");
 
 static quint32 bin2hex(const QString& str)
 {
@@ -63,16 +63,19 @@ P2DasmModel::P2DasmModel(P2Dasm* dasm, QObject *parent)
     , m_size_normal()
     , m_size_bold()
 {
+    // Header section names
     m_header.insert(c_Address,       tr("Address"));
     m_header.insert(c_Opcode,        tr("Opcode"));
     m_header.insert(c_Instruction,   tr("Instruction"));
     m_header.insert(c_Description,   tr("Description"));
 
+    // Horizontal section alignments
     m_alignment.insert(c_Address,       Qt::AlignLeft | Qt::AlignVCenter);
     m_alignment.insert(c_Opcode,        Qt::AlignLeft | Qt::AlignVCenter);
     m_alignment.insert(c_Instruction,   Qt::AlignLeft | Qt::AlignVCenter);
     m_alignment.insert(c_Description,   Qt::AlignLeft | Qt::AlignVCenter);
 
+    // Horizontal section background colors
     m_background.insert(c_Address,      qRgb(0xff,0xfc,0xf8));
     m_background.insert(c_Opcode,       qRgb(0xf8,0xfc,0xff));
     m_background.insert(c_Instruction,  qRgb(0xff,0xff,0xff));
@@ -120,15 +123,16 @@ int P2DasmModel::rowCount(const QModelIndex &parent) const
     if (parent.isValid())
         return 0;
     // each instruction is 1 long (4 bytes)
-    return m_dasm->memsize() / 4;
+    const int rows = m_dasm->memsize() / 4;
+    return rows;
 }
 
 int P2DasmModel::columnCount(const QModelIndex &parent) const
 {
     if (parent.isValid())
         return 0;
-
-    return 4;
+    const int columns = c_Description + 1;
+    return columns;
 }
 
 QVariant P2DasmModel::data(const QModelIndex &index, int role) const
@@ -144,7 +148,7 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
     QString opcode;
     QString instruction;
     QString description;
-    bool known = m_dasm->dasm(PC, opcode, &instruction, &description);
+    bool known;
     Q_UNUSED(known)
 
     switch (role) {
@@ -162,7 +166,8 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
         case c_Opcode: // Opcode string
             switch (m_opcode_format) {
             case f_binary:
-                result = opcode;
+               known = m_dasm->dasm(PC, &opcode);
+               result = opcode;
                 break;
             case f_hexdec:
                 result = QString("%1").arg(bin2hex(opcode), 8, 16, QChar('0'));
@@ -173,9 +178,11 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
             }
             break;
         case c_Instruction: // Disassembled instruction string
+            known = m_dasm->dasm(PC, nullptr, &instruction);
             result = instruction;
             break;
         case c_Description: // Comments
+            known = m_dasm->dasm(PC, nullptr, nullptr, &description);
             result = description;
             break;
         }
@@ -249,29 +256,29 @@ void P2DasmModel::updateSizes()
 {
     QFontMetrics metrics_normal(m_font);
     QFontMetrics metrics_bold(m_bold);
-    m_size_normal.insert(c_Address,     metrics_normal.size(Qt::TextSingleLine, str_Address));
+    m_size_normal.insert(c_Address,     metrics_normal.size(Qt::TextSingleLine, str_address));
 
-    m_size_bold.insert(c_Address,       metrics_bold.size(Qt::TextSingleLine, str_Address));
+    m_size_bold.insert(c_Address,       metrics_bold.size(Qt::TextSingleLine, str_address));
     switch (m_opcode_format) {
     case f_binary:
         m_header.insert(c_Opcode, QStringLiteral("EEEE_IIIIIII_CZI_DDDDDDDDD_SSSSSSSSS"));
-        m_size_normal.insert(c_Opcode,  metrics_normal.size(Qt::TextSingleLine, str_Opcode_binary));
-        m_size_bold.insert(c_Opcode,    metrics_bold.size(Qt::TextSingleLine, str_Opcode_binary));
+        m_size_normal.insert(c_Opcode,  metrics_normal.size(Qt::TextSingleLine, str_opcode_binary));
+        m_size_bold.insert(c_Opcode,    metrics_bold.size(Qt::TextSingleLine, str_opcode_binary));
         break;
     case f_hexdec:
         m_header.insert(c_Opcode, tr("Op (hex)"));
-        m_size_normal.insert(c_Opcode,  metrics_normal.size(Qt::TextSingleLine, str_Opcode_hexdec));
-        m_size_bold.insert(c_Opcode,    metrics_bold.size(Qt::TextSingleLine, str_Opcode_hexdec));
+        m_size_normal.insert(c_Opcode,  metrics_normal.size(Qt::TextSingleLine, str_opcode_hexdec));
+        m_size_bold.insert(c_Opcode,    metrics_bold.size(Qt::TextSingleLine, str_opcode_hexdec));
         break;
     case f_octal:
         m_header.insert(c_Opcode, tr("Op (oct)"));
-        m_size_normal.insert(c_Opcode,  metrics_normal.size(Qt::TextSingleLine, str_Opcode_octal));
-        m_size_bold.insert(c_Opcode,    metrics_bold.size(Qt::TextSingleLine, str_Opcode_octal));
+        m_size_normal.insert(c_Opcode,  metrics_normal.size(Qt::TextSingleLine, str_opcode_octal));
+        m_size_bold.insert(c_Opcode,    metrics_bold.size(Qt::TextSingleLine, str_opcode_octal));
         break;
     }
-    m_size_normal.insert(c_Instruction, metrics_normal.size(Qt::TextSingleLine, str_Instruction));
-    m_size_bold.insert(c_Instruction,   metrics_bold.size(Qt::TextSingleLine, str_Instruction));
+    m_size_normal.insert(c_Instruction, metrics_normal.size(Qt::TextSingleLine, str_instruction));
+    m_size_bold.insert(c_Instruction,   metrics_bold.size(Qt::TextSingleLine, str_instruction));
 
-    m_size_normal.insert(c_Description, metrics_normal.size(Qt::TextSingleLine, str_Description));
-    m_size_bold.insert(c_Description,   metrics_bold.size(Qt::TextSingleLine, str_Description));
+    m_size_normal.insert(c_Description, metrics_normal.size(Qt::TextSingleLine, str_description));
+    m_size_bold.insert(c_Description,   metrics_bold.size(Qt::TextSingleLine, str_description));
 }

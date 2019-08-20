@@ -53,6 +53,7 @@ public:
         , next_pc(0)
         , curr_pc(0)
         , last_pc(0)
+        , advance(1)
         , IR({0,})
         , words()
         , tokens()
@@ -67,6 +68,7 @@ public:
     P2LONG next_pc;                 //!< next program counter
     P2LONG curr_pc;                 //!< current program counter (origin of the instruction)
     P2LONG last_pc;                 //!< last program counter (maximum of next_pc)
+    P2LONG advance;                 //!< advance by n longs
     p2_opcode_u IR;                 //!< current instruction register
     QStringList words;              //!< current list of words on the line
     QVector<p2_token_e> tokens;     //!< current vector of tokens found on the line
@@ -107,6 +109,7 @@ private:
         immediate_wc
     };
 
+    static void listing(P2Params& params, bool opcode = false);
     static bool split_and_tokenize(P2Params& params, const QString& line);
     static p2_cond_e conditional(P2Params& params, p2_token_e cond);
     static void skip_spc(int& pos, const QString& str);
@@ -138,8 +141,7 @@ private:
     static bool parse_d_imm_s_c(P2Params &params);
     static bool parse_d_imm_s_z(P2Params &params);
     static bool parse_wz_d_imm_s(P2Params &params);
-    static bool parse_d_imm_s_nnn(P2Params &params);
-    static bool parse_d_imm_s_n(P2Params &params);
+    static bool parse_d_imm_s_nnn(P2Params &params, int max = 7);
     static bool parse_d_imm_s(P2Params &params);
     static bool parse_d_cz(P2Params &params);
     static bool parse_cz(P2Params &params);
@@ -153,7 +155,7 @@ private:
     static bool parse_imm_s_cz(P2Params &params);
     static bool parse_pc_abs(P2Params &params);
     static bool parse_ptr_pc_abs(P2Params &params);
-    static bool parse_imm23(P2Params &params, QVector<p2_inst_e> aug);
+    static bool parse_imm23(P2Params &params, QVector<p2_inst7_e> aug);
 
     static bool asm_byte(P2Params &params);
     static bool asm_word(P2Params &params);

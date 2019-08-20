@@ -48,7 +48,7 @@ void P2CogView::updateView()
                        .arg(bin(IR.op.inst, 7))
                        .arg(bin(IR.op.wc, 1))
                        .arg(bin(IR.op.wz, 1))
-                       .arg(bin(IR.op.imm, 1))
+                       .arg(bin(IR.op.im, 1))
                        .arg(bin(IR.op.dst, 9))
                        .arg(bin(IR.op.src, 9)));
     ui->cb_C->setChecked(m_cog->rd_C());
