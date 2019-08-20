@@ -61,26 +61,35 @@ private slots:
     void restoreSettings();
     void about();
     void aboutQt5();
+    void tabChanged(int idx);
+
     void gotoHex(const QString& address = QString());
     void gotoCog();
     void gotoLut();
     void gotoRom();
     void gotoAddress();
+
     void setOpcodes(int mode);
     void setOpcodesBinary();
     void setOpcodesHexDec();
     void setOpcodesOctal();
+
     void setInstructionsLowercase(bool check);
     void dasmHeaderColums(const QPoint& pos);
+
     void hubSingleStep();
+
+    void assemble();
 private:
     Ui::MainWindow *ui;
     QVector<P2CogView*> m_vcog;
-    P2Hub m_hub;
+    P2Hub* m_hub;
     P2Dasm* m_dasm;
     P2DasmModel* m_model;
 
-    void setupToolbar();
+    void setupAssembler();
+    void setupTabWidget();
+    void setupToolbars();
     void updateColumnSizes();
     void setupCogView();
 };

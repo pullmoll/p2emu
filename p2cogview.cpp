@@ -124,6 +124,7 @@ void P2CogView::setCog(const P2Cog* cog)
 {
     m_cog = cog;
     m_dasm = new P2Dasm(cog);
+    m_dasm->setLowercase(true);
     m_model = new P2DasmModel(m_dasm);
     m_model->setOpcodeFormat(P2DasmModel::f_hexdec);
     ui->tvDasm->setModel(m_model);

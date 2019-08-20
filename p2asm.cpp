@@ -32,6 +32,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 #include <QFile>
+#include <QTextStream>
 #include <QString>
 #include <QRegExp>
 #include "p2asm.h"
@@ -1764,7 +1765,8 @@ bool P2Asm::assemble(P2Params& params, const QStringList& source)
         case t_PTRB:
         case t_PTRB_predec:
         case t_PTRB_postinc:
-            emit Error(params.lineno, tr("Not an instruction: %1").arg(line));
+            params.error = tr("Not an instruction: %1").arg(line);
+            emit Error(params.lineno, params.error);
             break;
 
         case t__RET_:
@@ -1782,7 +1784,8 @@ bool P2Asm::assemble(P2Params& params, const QStringList& source)
         case t_IF_NC_OR_Z:
         case t_IF_NZ:
         case t_IF_Z:
-            emit Error(params.lineno, tr("Multiple conditionals in line: %1").arg(line));
+            params.error = tr("Multiple conditionals in line: %1").arg(line);
+            emit Error(params.lineno, params.error);
             break;
 
         default:
@@ -1824,10 +1827,13 @@ bool P2Asm::assemble(P2Params& params, const QString& filename)
         emit Error(0, tr("Can not open '%1' for reading.").arg(filename));
         return false;
     }
-    QByteArray binary;
-    QByteArray source = file.readAll();
-    QStringList lines = QString::fromUtf8(source).split(QChar::LineFeed);
-    return assemble(params, lines);
+    QTextStream stream(&file);
+    QStringList source;
+    while (!stream.atEnd()) {
+        QString line = stream.readLine();
+        source += line;
+    }
+    return assemble(params, source);
 }
 
 /**

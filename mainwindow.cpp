@@ -53,12 +53,16 @@ static const QLatin1String key_column_opcode("hide_opcode");
 static const QLatin1String key_column_instruction("hide_instruction");
 static const QLatin1String key_column_description("hide_description");
 
+static const QLatin1String tab_hub("P2Hub");
+static const QLatin1String tab_asm("P2Asm");
+static const QLatin1String tab_dasm("P2Dasm");
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , m_vcog()
-    , m_hub(ncogs, this)
-    , m_dasm(new P2Dasm(m_hub.cog(0)))
+    , m_hub(new P2Hub(ncogs, this))
+    , m_dasm(new P2Dasm(m_hub->cog(0)))
     , m_model(new P2DasmModel(m_dasm))
 {
     ui->setupUi(this);
@@ -67,9 +71,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->action_AboutQt5, SIGNAL(triggered(bool)), this, SLOT(aboutQt5()));
 
     setWindowTitle(QString("%1 v%2").arg(qApp->applicationName()).arg(qApp->applicationVersion()));
-    setupToolbar();
+    setupAssembler();
+    setupTabWidget();
+    setupToolbars();
 
-    m_hub.load(":/ROM_Booter_v33_01j.bin");
+    m_hub->load(":/ROM_Booter_v33_01j.bin");
 
     ui->tvDasm->setModel(m_model);
     updateColumnSizes();
@@ -80,12 +86,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     restoreSettings();
     setupCogView();
-
-    P2Asm p2asm(this);
-    P2Params result;
-    if (p2asm.assemble(result, QStringLiteral(":/ROM_Booter_v33_01j.spin2"))) {
-        // Inspect result
-    }
 }
 
 MainWindow::~MainWindow()
@@ -134,6 +134,27 @@ void MainWindow::about()
 void MainWindow::aboutQt5()
 {
     qApp->aboutQt();
+}
+
+void MainWindow::tabChanged(int idx)
+{
+    QTabBar* bar = ui->tabWidget->tabBar();
+    QString tab = bar->tabData(idx).toString();
+    if (tab == tab_hub) {
+        ui->toolbarHub->show();
+        ui->toolbarAsm->hide();
+        ui->toolbarDasm->hide();
+    }
+    if (tab == tab_asm) {
+        ui->toolbarHub->hide();
+        ui->toolbarAsm->show();
+        ui->toolbarDasm->hide();
+    }
+    if (tab == tab_dasm) {
+        ui->toolbarHub->hide();
+        ui->toolbarAsm->hide();
+        ui->toolbarDasm->show();
+    }
 }
 
 void MainWindow::gotoHex(const QString& address)
@@ -235,55 +256,89 @@ void MainWindow::dasmHeaderColums(const QPoint& pos)
 
 void MainWindow::hubSingleStep()
 {
-    m_hub.execute(ncogs*2);
+    m_hub->execute(ncogs*2);
     for (int id = 0; id < ncogs; id++)
         m_vcog[id]->updateView();
+}
+
+void MainWindow::assemble()
+{
+    P2Asm p2asm(this);
+    P2Params result;
+    QStringList source = ui->teAsm->toPlainText().split(QChar::LineFeed);
+    if (p2asm.assemble(result, source)) {
+        // Inspect result
+    }
 }
 
 void MainWindow::setInstructionsLowercase(bool check)
 {
     ui->action_setLowercase->setChecked(check);
     m_dasm->setLowercase(check);
-    P2LONG PC = m_hub.cog(0)->rd_PC();
+    P2LONG PC = m_hub->cog(0)->rd_PC();
     int row = static_cast<int>((PC < 0x400) ? PC : PC / 4);
     m_model->invalidate();
     ui->tvDasm->selectRow(row);
 }
 
-void MainWindow::setupToolbar()
+void MainWindow::setupAssembler()
+{
+    QFile file(QStringLiteral(":/ROM_Booter_v33_01j.spin2"));
+    if (!file.open(QIODevice::ReadOnly))
+        return;
+    QTextStream stream(&file);
+    QFont font = ui->teAsm->font();
+    QFontMetrics metrics(font);
+    ui->teAsm->setTabStopDistance(metrics.boundingRect(QStringLiteral("XXXXXXXX4")).width());
+    ui->teAsm->setText(stream.readAll());
+}
+
+void MainWindow::setupTabWidget()
+{
+    QTabBar* bar = ui->tabWidget->tabBar();
+    bar->setTabData(0, tab_hub);
+    bar->setTabData(1, tab_asm);
+    bar->setTabData(2, tab_dasm);
+    connect(ui->tabWidget, SIGNAL(currentChanged(int)), SLOT(tabChanged(int)));
+}
+
+void MainWindow::setupToolbars()
 {
     connect(ui->action_Go_to_COG, SIGNAL(triggered()), SLOT(gotoCog()));
-    ui->mainToolBar->addAction(ui->action_Go_to_COG);
+    ui->toolbarDasm->addAction(ui->action_Go_to_COG);
 
     connect(ui->action_Go_to_LUT, SIGNAL(triggered()), SLOT(gotoLut()));
-    ui->mainToolBar->addAction(ui->action_Go_to_LUT);
+    ui->toolbarDasm->addAction(ui->action_Go_to_LUT);
 
     connect(ui->action_Go_to_ROM, SIGNAL(triggered()), SLOT(gotoRom()));
-    ui->mainToolBar->addAction(ui->action_Go_to_ROM);
+    ui->toolbarDasm->addAction(ui->action_Go_to_ROM);
 
     connect(ui->action_Go_to_address, SIGNAL(triggered()), SLOT(gotoAddress()));
-    ui->mainToolBar->addAction(ui->action_Go_to_address);
+    ui->toolbarDasm->addAction(ui->action_Go_to_address);
 
-    ui->mainToolBar->addSeparator();
+    ui->toolbarDasm->addSeparator();
 
     connect(ui->action_Opcodes_binary, SIGNAL(triggered(bool)), SLOT(setOpcodesBinary()));
-    ui->mainToolBar->addAction(ui->action_Opcodes_binary);
+    ui->toolbarDasm->addAction(ui->action_Opcodes_binary);
 
     connect(ui->action_Opcodes_hexdec, SIGNAL(triggered(bool)), SLOT(setOpcodesHexDec()));
-    ui->mainToolBar->addAction(ui->action_Opcodes_hexdec);
+    ui->toolbarDasm->addAction(ui->action_Opcodes_hexdec);
 
     connect(ui->action_Opcodes_octal, SIGNAL(triggered(bool)), SLOT(setOpcodesOctal()));
-    ui->mainToolBar->addAction(ui->action_Opcodes_octal);
+    ui->toolbarDasm->addAction(ui->action_Opcodes_octal);
 
-    ui->mainToolBar->addSeparator();
+    ui->toolbarDasm->addSeparator();
 
     connect(ui->action_setLowercase, SIGNAL(triggered(bool)), SLOT(setInstructionsLowercase(bool)));
-    ui->mainToolBar->addAction(ui->action_setLowercase);
-
-    ui->mainToolBar->addSeparator();
+    ui->toolbarDasm->addAction(ui->action_setLowercase);
 
     connect(ui->action_SingleStep, SIGNAL(triggered()), SLOT(hubSingleStep()));
-    ui->mainToolBar->addAction(ui->action_SingleStep);
+    ui->toolbarHub->addAction(ui->action_SingleStep);
+
+    connect(ui->action_Assemble, SIGNAL(triggered()), SLOT(assemble()));
+    ui->toolbarAsm->addAction(ui->action_Assemble);
+
+    tabChanged(0);
 }
 
 /**
@@ -312,6 +367,6 @@ void MainWindow::setupCogView()
             vcog->hide();
             continue;
         }
-        vcog->setCog(m_hub.cog(id));
+        vcog->setCog(m_hub->cog(id));
     }
 }
