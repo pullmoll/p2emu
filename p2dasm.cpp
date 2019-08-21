@@ -51,38 +51,38 @@ P2Dasm::P2Dasm(const P2Cog* cog, QObject* parent)
 p2_token_e P2Dasm::conditional(p2_cond_e cond)
 {
     switch (cond) {
-    case cond__ret_:        // execute always
+    case cc__ret_:        // execute always
         return t__RET_;
-    case cond_nc_and_nz:    // execute if C = 0 and Z = 0
+    case cc_nc_and_nz:    // execute if C = 0 and Z = 0
         return t_IF_NC_AND_NZ;
-    case cond_nc_and_z:     // execute if C = 0 and Z = 1
+    case cc_nc_and_z:     // execute if C = 0 and Z = 1
         return t_IF_NC_AND_Z;
-    case cond_nc:           // execute if C = 0
+    case cc_nc:           // execute if C = 0
         return t_IF_NC;
-    case cond_c_and_nz:     // execute if C = 1 and Z = 0
+    case cc_c_and_nz:     // execute if C = 1 and Z = 0
         return t_IF_C_AND_NZ;
-    case cond_nz:           // execute if Z = 0
+    case cc_nz:           // execute if Z = 0
         return t_IF_NZ;
-    case cond_c_ne_z:       // execute if C != Z
+    case cc_c_ne_z:       // execute if C != Z
         return t_IF_C_NE_Z;
-    case cond_nc_or_nz:     // execute if C = 0 or Z = 0
+    case cc_nc_or_nz:     // execute if C = 0 or Z = 0
         return t_IF_NC_OR_NZ;
-    case cond_c_and_z:      // execute if C = 1 and Z = 1
+    case cc_c_and_z:      // execute if C = 1 and Z = 1
         return t_IF_C_AND_Z;
-    case cond_c_eq_z:       // execute if C = Z
+    case cc_c_eq_z:       // execute if C = Z
         return t_IF_C_EQ_Z;
-    case cond_z:            // execute if Z = 1
+    case cc_z:            // execute if Z = 1
         return t_IF_Z;
-    case cond_nc_or_z:      // execute if C = 0 or Z = 1
+    case cc_nc_or_z:      // execute if C = 0 or Z = 1
         return t_IF_NC_OR_Z;
-    case cond_c:            // execute if C = 1
+    case cc_c:            // execute if C = 1
         return t_IF_C;
-    case cond_c_or_nz:      // execute if C = 1 or Z = 0
+    case cc_c_or_nz:      // execute if C = 1 or Z = 0
         return t_IF_C_OR_NZ;
-    case cond_c_or_z:       // execute if C = 1 or Z = 1
+    case cc_c_or_z:       // execute if C = 1 or Z = 1
         return t_IF_C_OR_Z;
-    case cond_always:
-        return t_ALWAYS;
+    case cc_always:
+        return t_IF_ALWAYS;
     }
     return t_invalid;
 }

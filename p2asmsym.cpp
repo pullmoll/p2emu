@@ -45,6 +45,15 @@ P2AsmSymbol::P2AsmSymbol(const QString& name, const QVariant& value)
 {}
 
 /**
+ * @brief Return true, if the symbol value is null (undefined)
+ * @return true if empty, false otherwise
+ */
+bool P2AsmSymbol::isNull() const
+{
+    return m_value.isNull();
+}
+
+/**
  * @brief Return true, if the symbol is empty (undefined)
  * @return true if empty, false otherwise
  */

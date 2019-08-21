@@ -6,19 +6,29 @@ static const QString str_tokens = QStringLiteral("T");
 static const QString str_opcode_binary = QStringLiteral("EEEE_OOOOOOO_CZI_DDDDDDDDD_SSSSSSSSS ");
 static const QString str_opcode_hexdec = QStringLiteral("FFFFFFFF ");
 static const QString str_opcode_octal = QStringLiteral("37777777777 ");
-static const QString str_errors = QStringLiteral("E");
+static const QString str_symbols = QStringLiteral("S");
+static const QString str_errors = QStringLiteral("😞");
 static const QString str_instruction = QStringLiteral(" IF_NC_AND_NZ  INSTRUCTION #$1ff,#$1ff,#7 XORCZ AND SOME MORE COLUMNS ");
+
+static const QString style_nowrap = QStringLiteral(" style=\"white-space:nowrap;\"");
+static const QString style_background_error = QStringLiteral("style=\"background:#fff0f0;\"");
+static const QString style_background_symbols = QStringLiteral("style=\"background:#f0ffff;\"");
 
 P2AsmModel::P2AsmModel(P2Params* params, QObject *parent)
     : QAbstractTableModel(parent)
     , m_params(params)
     , m_opcode_format(f_bin)
-    , m_font(QStringLiteral("Monospace"), 8, QFont::Normal, false)
-    , m_bold(QStringLiteral("Monospace"), 8, QFont::Bold, false)
+    , m_font()
+    , m_bold()
     , m_error()
     , m_size_normal()
     , m_size_bold()
+    , m_header_alignment()
+    , m_text_alignment()
 {
+    m_font.setPointSize(8);
+    m_bold.setPointSize(8);
+    m_bold.setBold(true);
     QImage image(":/icons/error.png");
     QPixmap pixmap = QPixmap::fromImage(image.scaled(16,16,Qt::KeepAspectRatio,Qt::SmoothTransformation));
     m_error = QIcon(pixmap);
@@ -27,21 +37,32 @@ P2AsmModel::P2AsmModel(P2Params* params, QObject *parent)
     m_header.insert(c_Tokens,       tr("Tokens"));
     m_header.insert(c_Errors,       tr("Errors"));
     m_header.insert(c_Opcode,       tr("Opcode"));
+    m_header.insert(c_Symbols,      tr("Symbols"));
     m_header.insert(c_Source,       tr("Source"));
+    // Horizontal section background colors
+
+    m_background.insert(c_Origin,   qRgb(0xff,0xfc,0xf8));
+    m_background.insert(c_Tokens,   qRgb(0x10,0xfc,0xff));
+    m_background.insert(c_Opcode,   qRgb(0xf8,0xfc,0xff));
+    m_background.insert(c_Symbols,  qRgb(0xff,0xf0,0xff));
+    m_background.insert(c_Errors,   qRgb(0xff,0xf0,0xf0));
+    m_background.insert(c_Source,   qRgb(0xff,0xff,0xff));
 
     // Horizontal section alignments
-    m_alignment.insert(c_Origin,    Qt::AlignLeft | Qt::AlignVCenter);
-    m_alignment.insert(c_Tokens,    Qt::AlignLeft | Qt::AlignVCenter);
-    m_alignment.insert(c_Errors,    Qt::AlignLeft | Qt::AlignVCenter);
-    m_alignment.insert(c_Opcode,    Qt::AlignLeft | Qt::AlignVCenter);
-    m_alignment.insert(c_Source,    Qt::AlignLeft | Qt::AlignVCenter);
+    m_header_alignment.insert(c_Origin,     Qt::AlignLeft | Qt::AlignVCenter);
+    m_header_alignment.insert(c_Tokens,     Qt::AlignLeft | Qt::AlignVCenter);
+    m_header_alignment.insert(c_Opcode,     Qt::AlignLeft | Qt::AlignVCenter);
+    m_header_alignment.insert(c_Errors,     Qt::AlignLeft | Qt::AlignVCenter);
+    m_header_alignment.insert(c_Symbols,    Qt::AlignLeft | Qt::AlignVCenter);
+    m_header_alignment.insert(c_Source,     Qt::AlignLeft | Qt::AlignVCenter);
 
-    // Horizontal section background colors
-    m_background.insert(c_Origin,   qRgb(0xff,0xfc,0xf8));
-    m_background.insert(c_Tokens,   qRgb(0xc0,0xc0,0xff));
-    m_background.insert(c_Errors,   qRgb(0xff,0xf0,0xf0));
-    m_background.insert(c_Opcode,   qRgb(0xf8,0xfc,0xff));
-    m_background.insert(c_Source,   qRgb(0xff,0xff,0xff));
+    // Item alignments
+    m_text_alignment.insert(c_Origin,       Qt::AlignLeft | Qt::AlignVCenter);
+    m_text_alignment.insert(c_Tokens,       Qt::AlignCenter);
+    m_text_alignment.insert(c_Opcode,       Qt::AlignRight | Qt::AlignVCenter);
+    m_text_alignment.insert(c_Errors,       Qt::AlignCenter);
+    m_text_alignment.insert(c_Symbols,      Qt::AlignCenter);
+    m_text_alignment.insert(c_Source,       Qt::AlignLeft | Qt::AlignVCenter);
 
     updateSizes();
 }
@@ -69,7 +90,7 @@ QVariant P2AsmModel::headerData(int section, Qt::Orientation orientation, int ro
             break;
 
         case Qt::TextAlignmentRole:
-            result = m_alignment.value(column);
+            result = m_header_alignment.value(column);
             break;
 
         case Qt::ToolTipRole:
@@ -85,6 +106,9 @@ QVariant P2AsmModel::headerData(int section, Qt::Orientation orientation, int ro
                 break;
             case c_Opcode:
                 result = tr("Opcode of the current instruction, or value of assignment.");
+                break;
+            case c_Symbols:
+                result = tr("Number of defined / referenced symbols.");
                 break;
             case c_Source:
                 result = tr("Source code line.");
@@ -148,7 +172,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
 
         case c_Tokens:
             {
-                P2Tokens tokens = m_params->h_tokens.value(lineno);
+                p2_token_v tokens = m_params->h_tokens.value(lineno);
                 if (!tokens.isEmpty())
                     result = QString::number(tokens.count());
             }
@@ -157,7 +181,15 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
         case c_Errors:  // Error messages
             {
                 if (m_params->h_errors.contains(lineno))
-                    result = m_error;
+                    result = QStringLiteral("😞");
+            }
+            break;
+
+        case c_Symbols:
+            {
+                QStringList symrefs = m_params->symbols.defined_in(lineno);
+                if (!symrefs.isEmpty())
+                    result = QString::number(symrefs.count());
             }
             break;
 
@@ -226,7 +258,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
         switch (column) {
         case c_Tokens:
             {
-                P2Tokens tokens = m_params->h_tokens.value(lineno);
+                p2_token_v tokens = m_params->h_tokens.value(lineno);
                 QStringList tt;
                 foreach(const p2_token_e tok, tokens)
                     if (tok != t_invalid)
@@ -237,17 +269,20 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
                     result = tr("Token: %1").arg(tt.join(QChar::Space));
             }
             break;
+
         case c_Errors:
             {
                 QStringList errors = m_params->h_errors.values(lineno);
                 if (!errors.isEmpty()) {
                     QStringList html;
                     html += QStringLiteral("<html>");
-                    html += QString("<table style=\"%1\">")
-                            .arg(QStringLiteral("background:#fff0f0;"));
+                    html += QString("<table%1>")
+                            .arg(style_background_error);
                     foreach (const QString& error, errors) {
                         html += QStringLiteral("<tr>");
-                        html += QString("<td style=\"%1\">%2</td>").arg("white-space:nowrap;").arg(error);
+                        html += QString("<td %1>%2</td>")
+                                .arg(style_nowrap)
+                                .arg(error);
                         html += QStringLiteral("</tr>");
                     }
                     html += QStringLiteral("</table>");
@@ -256,6 +291,34 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
                 }
             }
             break;
+
+        case c_Symbols:
+            {
+                QStringList symrefs = m_params->symbols.defined_in(lineno);
+                if (!symrefs.isEmpty()) {
+                    QStringList html;
+                    html += QStringLiteral("<html>");
+                    html += QString("<table%1>")
+                            .arg(style_background_symbols);
+                    foreach (const QString& symbol, symrefs) {
+                        P2AsmSymbol sym = m_params->symbols.value(symbol);
+                        html += QStringLiteral("<tr>");
+                        html += QString("<td%1>%2</td>")
+                                .arg(style_nowrap)
+                                .arg(sym.name());
+                        html += QString("<td%1>= $%2</td>")
+                                .arg(style_nowrap)
+                                .arg(sym.value<P2LONG>(), 0, 16, QChar(0));
+                        html += QStringLiteral("</tr>");
+                    }
+                    html += QStringLiteral("</table>");
+                    html += QStringLiteral("</html>");
+                    result = html.join(QChar::LineFeed);
+                }
+
+            }
+            break;
+
         default:
             result.clear();
         }
@@ -272,7 +335,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
         break;
 
     case Qt::TextAlignmentRole:
-        result = m_alignment.value(column);
+        result = m_text_alignment.value(column);
         break;
 
     case Qt::BackgroundRole:
@@ -367,6 +430,9 @@ void P2AsmModel::updateSizes()
     }
     m_size_normal.insert(c_Errors, metrics_n.size(Qt::TextSingleLine, str_errors));
     m_size_bold.insert(c_Errors,   metrics_b.size(Qt::TextSingleLine, str_errors));
+
+    m_size_normal.insert(c_Symbols,metrics_n.size(Qt::TextSingleLine, str_symbols));
+    m_size_bold.insert(c_Symbols,  metrics_b.size(Qt::TextSingleLine, str_symbols));
 
     m_size_normal.insert(c_Source, metrics_n.size(Qt::TextSingleLine, str_instruction));
     m_size_bold.insert(c_Source,   metrics_b.size(Qt::TextSingleLine, str_instruction));

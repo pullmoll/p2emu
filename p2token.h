@@ -43,7 +43,6 @@ typedef enum {
     t_invalid = -1,
     t_nothing,
     t_comma,
-    t_immediate,
     t_string,
     t_value_bin,
     t_value_oct,
@@ -90,7 +89,6 @@ typedef enum {
     t_IF_Z_OR_C,        //!< alias for cond_c_or_z
     t_IF_LE,            //!< alias for cond_c_or_z
     t_IF_ALWAYS,        //!< cond_always
-    t_ALWAYS,
 
     // MODCZ parameters
     t_MODCZ__CLR,       //!< cond_never
@@ -526,7 +524,8 @@ typedef enum {
     t__MUL,             //!< "*"
     t__DIV,             //!< "/"
     t__MOD,             //!< "%"
-    t__NOT,             //!< "!"
+    t__NEG,             //!< "!"
+    t__NOT,             //!< "~"
     t__AND,             //!< "&"
     t__OR,              //!< "|"
     t__XOR,             //!< "^"
@@ -534,20 +533,69 @@ typedef enum {
     t__DEC,             //!< "--"
     t__SHL,             //!< "<<"
     t__SHR,             //!< ">>"
+    t__REV,             //!< "<>"
 }   p2_token_e;
+
+typedef QVector<p2_token_e> p2_token_v;
+
+typedef enum {
+    tt_none,
+    tt_unary,
+    tt_binops,
+    tt_addops,
+    tt_mulops,
+    tt_conditional,
+    tt_modcz_param,
+
+}   p2_tokentype_e;
 
 class P2Token
 {
 public:
     P2Token();
-    QString string(p2_token_e token, bool lowercase = false);
-    p2_token_e token(const QString& string);
+    QString string(p2_token_e tok, bool lowercase = false) const;
+    p2_token_e token(const QString& str) const;
+
+    p2_tokentype_e type(p2_token_e tok);
+    p2_tokentype_e type(const QString& str);
+
+    p2_token_e at_token(int& pos, const QString& str, QList<p2_token_e> tokens, p2_token_e dflt = t_invalid) const;
+    p2_token_e at_token(const QString& str, QList<p2_token_e> tokens, p2_token_e dflt = t_invalid) const;
+
+    p2_token_e at_type(int& pos, const QString& str, p2_tokentype_e type, p2_token_e dflt = t_invalid) const;
+    p2_token_e at_type(const QString& str, p2_tokentype_e type, p2_token_e dflt = t_invalid) const;
+
+    p2_token_e at_unary(int& pos, const QString& str, p2_token_e dflt = t_invalid) const;
+    p2_token_e at_unary(const QString& str, p2_token_e dflt = t_invalid) const;
+
+    p2_token_e at_binop(int& pos, const QString& str, p2_token_e dflt = t_invalid) const;
+    p2_token_e at_binop(const QString& str, p2_token_e dflt = t_invalid) const;
+
+    p2_token_e at_addop(int& pos, const QString& str, p2_token_e dflt = t_invalid) const;
+    p2_token_e at_addop(const QString& str, p2_token_e dflt = t_invalid) const;
+
+    p2_token_e at_mulop(int& pos, const QString& str, p2_token_e dflt = t_invalid) const;
+    p2_token_e at_mulop(const QString& str, p2_token_e dflt = t_invalid) const;
+
+    p2_token_e at_conditional(int& pos, const QString& str, p2_token_e dflt = t_invalid) const;
+    p2_token_e at_conditional(const QString& str, p2_token_e dflt = t_invalid) const;
+
+    p2_token_e at_modcz_param(int& pos, const QString& str, p2_token_e dflt = t_invalid) const;
+    p2_token_e at_modcz_param(const QString& str, p2_token_e dflt = t_invalid) const;
+
+    p2_cond_e conditional(p2_token_e cond, p2_cond_e dflt = cc_always) const;
+    p2_cond_e conditional(const QString& str, p2_cond_e dflt = cc_always) const;
+
+    p2_cond_e modcz_param(p2_token_e cond, p2_cond_e dflt = cc_clr) const;
+    p2_cond_e modcz_param(const QString& str, p2_cond_e dflt = cc_clr) const;
 
 private:
     QMultiHash<p2_token_e, QString> m_token_string;
     QMultiHash<QString, p2_token_e> m_string_token;
+    QMultiHash<p2_token_e, p2_tokentype_e> m_token_types;
+    QMultiHash<p2_tokentype_e, p2_token_e> m_type_tokens;
+    QHash<p2_token_e, p2_cond_e> m_lookup_cond;
+    QHash<p2_token_e, p2_cond_e> m_lookup_modcz;
 };
-
-typedef QVector<p2_token_e> P2Tokens;
 
 extern P2Token Token;

@@ -11,21 +11,23 @@ static const QString hex_digits = QStringLiteral("0123456789ABCDEF");
 P2Token::P2Token()
     : m_token_string()
     , m_string_token()
+    , m_token_types()
+    , m_type_tokens()
 {
     m_token_string.insert(t_invalid,        QStringLiteral("<invalid>"));
     m_token_string.insert(t_nothing,        QStringLiteral("«»"));
     m_token_string.insert(t_comma,          QStringLiteral(","));
-    m_token_string.insert(t_immediate,      QStringLiteral("«immediate»"));
     m_token_string.insert(t_string,         QStringLiteral("«string»"));
     m_token_string.insert(t_value_bin,      QStringLiteral("«binary»"));
     m_token_string.insert(t_value_oct,      QStringLiteral("«octal»"));
     m_token_string.insert(t_value_dec,      QStringLiteral("«decimal»"));
     m_token_string.insert(t_value_hex,      QStringLiteral("«hexadecimal»"));
-    m_token_string.insert(t_local,     QStringLiteral("«local.name»"));
+    m_token_string.insert(t_local,          QStringLiteral("«local.name»"));
     m_token_string.insert(t_name,           QStringLiteral("«name»"));
 
     m_token_string.insert(t_empty,          QStringLiteral("<empty>"));
     m_token_string.insert(t__RET_,          QStringLiteral("_RET_"));
+
     m_token_string.insert(t_IF_NZ_AND_NC,   QStringLiteral("IF_NZ_AND_NC"));
     m_token_string.insert(t_IF_NC_AND_NZ,   QStringLiteral("IF_NC_AND_NZ"));
     m_token_string.insert(t_IF_A,           QStringLiteral("IF_A"));
@@ -61,7 +63,6 @@ P2Token::P2Token()
     m_token_string.insert(t_IF_BE,          QStringLiteral("IF_BE"));
     m_token_string.insert(t_IF_LE,          QStringLiteral("IF_LE"));
     m_token_string.insert(t_IF_ALWAYS,      QStringLiteral("IF_ALWAYS"));
-    m_token_string.insert(t_ALWAYS,         QStringLiteral(""));        // empty string
 
     m_token_string.insert(t_MODCZ__CLR,         QStringLiteral("_CLR"));
     m_token_string.insert(t_MODCZ__NC_AND_NZ,   QStringLiteral("_NC_AND_NZ"));
@@ -497,8 +498,9 @@ P2Token::P2Token()
     m_token_string.insert(t__SUB,           QStringLiteral("-"));
     m_token_string.insert(t__MUL,           QStringLiteral("*"));
     m_token_string.insert(t__DIV,           QStringLiteral("/"));
-    m_token_string.insert(t__MOD,           QStringLiteral("MOD"));
-    m_token_string.insert(t__NOT,           QStringLiteral("!"));
+    m_token_string.insert(t__MOD,           QStringLiteral("\\"));
+    m_token_string.insert(t__NEG,           QStringLiteral("!"));
+    m_token_string.insert(t__NOT,           QStringLiteral("~"));
     m_token_string.insert(t__AND,           QStringLiteral("&"));
     m_token_string.insert(t__OR,            QStringLiteral("|"));
     m_token_string.insert(t__XOR,           QStringLiteral("^"));
@@ -506,11 +508,183 @@ P2Token::P2Token()
     m_token_string.insert(t__DEC,           QStringLiteral("--"));
     m_token_string.insert(t__SHL,           QStringLiteral("<<"));
     m_token_string.insert(t__SHR,           QStringLiteral(">>"));
+    m_token_string.insert(t__REV,           QStringLiteral("<>"));
 
     // Build the reverse QMultiHash for string lookup
     foreach(p2_token_e tok, m_token_string.keys())
         foreach(const QString& str, m_token_string.values(tok))
             m_string_token.insert(str, tok);
+
+    // Set the unary operators
+    m_token_types.insert(t__NEG,                      tt_unary);
+    m_token_types.insert(t__NOT,                      tt_unary);
+    m_token_types.insert(t__SUB,                      tt_unary);
+
+    // Set the binary operators
+    m_token_types.insert(t__AND,                      tt_binops);
+    m_token_types.insert(t__OR,                       tt_binops);
+    m_token_types.insert(t__XOR,                      tt_binops);
+    m_token_types.insert(t__SHL,                      tt_binops);
+    m_token_types.insert(t__SHR,                      tt_binops);
+
+    // Set the addition operators
+    m_token_types.insert(t__ADD,                      tt_addops);
+    m_token_types.insert(t__SUB,                      tt_addops);
+
+    // Set the multiplication operators
+    m_token_types.insert(t__MUL,                      tt_mulops);
+    m_token_types.insert(t__DIV,                      tt_mulops);
+    m_token_types.insert(t__MOD,                      tt_mulops);
+
+    // Set the conditionals
+    m_token_types.insert(t__RET_,                     tt_conditional);
+    m_token_types.insert(t_IF_NZ_AND_NC,              tt_conditional);
+    m_token_types.insert(t_IF_NC_AND_NZ,              tt_conditional);
+    m_token_types.insert(t_IF_A,                      tt_conditional);
+    m_token_types.insert(t_IF_GT,                     tt_conditional);
+    m_token_types.insert(t_IF_Z_AND_NC,               tt_conditional);
+    m_token_types.insert(t_IF_NC_AND_Z,               tt_conditional);
+    m_token_types.insert(t_IF_NC,                     tt_conditional);
+    m_token_types.insert(t_IF_AE,                     tt_conditional);
+    m_token_types.insert(t_IF_GE,                     tt_conditional);
+    m_token_types.insert(t_IF_NZ_AND_C,               tt_conditional);
+    m_token_types.insert(t_IF_C_AND_NZ,               tt_conditional);
+    m_token_types.insert(t_IF_NZ,                     tt_conditional);
+    m_token_types.insert(t_IF_NE,                     tt_conditional);
+    m_token_types.insert(t_IF_Z_NE_C,                 tt_conditional);
+    m_token_types.insert(t_IF_C_NE_Z,                 tt_conditional);
+    m_token_types.insert(t_IF_NZ_OR_NC,               tt_conditional);
+    m_token_types.insert(t_IF_NC_OR_NZ,               tt_conditional);
+    m_token_types.insert(t_IF_Z_AND_C,                tt_conditional);
+    m_token_types.insert(t_IF_C_AND_Z,                tt_conditional);
+    m_token_types.insert(t_IF_Z_EQ_C,                 tt_conditional);
+    m_token_types.insert(t_IF_C_EQ_Z,                 tt_conditional);
+    m_token_types.insert(t_IF_Z,                      tt_conditional);
+    m_token_types.insert(t_IF_E,                      tt_conditional);
+    m_token_types.insert(t_IF_Z_OR_NC,                tt_conditional);
+    m_token_types.insert(t_IF_NC_OR_Z,                tt_conditional);
+    m_token_types.insert(t_IF_C,                      tt_conditional);
+    m_token_types.insert(t_IF_B,                      tt_conditional);
+    m_token_types.insert(t_IF_LT,                     tt_conditional);
+    m_token_types.insert(t_IF_NZ_OR_C,                tt_conditional);
+    m_token_types.insert(t_IF_C_OR_NZ,                tt_conditional);
+    m_token_types.insert(t_IF_Z_OR_C,                 tt_conditional);
+    m_token_types.insert(t_IF_C_OR_Z,                 tt_conditional);
+    m_token_types.insert(t_IF_BE,                     tt_conditional);
+    m_token_types.insert(t_IF_LE,                     tt_conditional);
+    m_token_types.insert(t_IF_ALWAYS,                 tt_conditional);
+
+    // Set the MODCZ tokens
+    m_token_types.insert(t_MODCZ__CLR,                tt_modcz_param);
+    m_token_types.insert(t_MODCZ__NC_AND_NZ,          tt_modcz_param);
+    m_token_types.insert(t_MODCZ__NZ_AND_NC,          tt_modcz_param);
+    m_token_types.insert(t_MODCZ__GT,                 tt_modcz_param);
+    m_token_types.insert(t_MODCZ__NC_AND_Z,           tt_modcz_param);
+    m_token_types.insert(t_MODCZ__Z_AND_NC,           tt_modcz_param);
+    m_token_types.insert(t_MODCZ__NC,                 tt_modcz_param);
+    m_token_types.insert(t_MODCZ__GE,                 tt_modcz_param);
+    m_token_types.insert(t_MODCZ__C_AND_NZ,           tt_modcz_param);
+    m_token_types.insert(t_MODCZ__NZ_AND_C,           tt_modcz_param);
+    m_token_types.insert(t_MODCZ__NZ,                 tt_modcz_param);
+    m_token_types.insert(t_MODCZ__NE,                 tt_modcz_param);
+    m_token_types.insert(t_MODCZ__C_NE_Z,             tt_modcz_param);
+    m_token_types.insert(t_MODCZ__Z_NE_C,             tt_modcz_param);
+    m_token_types.insert(t_MODCZ__NC_OR_NZ,           tt_modcz_param);
+    m_token_types.insert(t_MODCZ__NZ_OR_NC,           tt_modcz_param);
+    m_token_types.insert(t_MODCZ__C_AND_Z,            tt_modcz_param);
+    m_token_types.insert(t_MODCZ__Z_AND_C,            tt_modcz_param);
+    m_token_types.insert(t_MODCZ__C_EQ_Z,             tt_modcz_param);
+    m_token_types.insert(t_MODCZ__Z_EQ_C,             tt_modcz_param);
+    m_token_types.insert(t_MODCZ__Z,                  tt_modcz_param);
+    m_token_types.insert(t_MODCZ__E,                  tt_modcz_param);
+    m_token_types.insert(t_MODCZ__NC_OR_Z,            tt_modcz_param);
+    m_token_types.insert(t_MODCZ__Z_OR_NC,            tt_modcz_param);
+    m_token_types.insert(t_MODCZ__C,                  tt_modcz_param);
+    m_token_types.insert(t_MODCZ__LT,                 tt_modcz_param);
+    m_token_types.insert(t_MODCZ__C_OR_NZ,            tt_modcz_param);
+    m_token_types.insert(t_MODCZ__NZ_OR_C,            tt_modcz_param);
+    m_token_types.insert(t_MODCZ__C_OR_Z,             tt_modcz_param);
+    m_token_types.insert(t_MODCZ__Z_OR_C,             tt_modcz_param);
+    m_token_types.insert(t_MODCZ__LE,                 tt_modcz_param);
+    m_token_types.insert(t_MODCZ__SET,                tt_modcz_param);
+
+
+    // Build the reverse QMultiHash for types lookup
+    foreach(p2_token_e tok, m_token_types.keys())
+        foreach(p2_tokentype_e typ, m_token_types.values(tok))
+            m_type_tokens.insert(typ, tok);
+
+    // Set the conditionals lookup table
+    m_lookup_cond.insert(t__RET_,               cc__ret_);
+    m_lookup_cond.insert(t_IF_NZ_AND_NC,        cc_nc_and_nz);
+    m_lookup_cond.insert(t_IF_NC_AND_NZ,        cc_nc_and_nz);
+    m_lookup_cond.insert(t_IF_A,                cc_nc_and_nz);
+    m_lookup_cond.insert(t_IF_GT,               cc_nc_and_nz);
+    m_lookup_cond.insert(t_IF_Z_AND_NC,         cc_nc_and_z);
+    m_lookup_cond.insert(t_IF_NC_AND_Z,         cc_nc_and_z);
+    m_lookup_cond.insert(t_IF_NC,               cc_nc);
+    m_lookup_cond.insert(t_IF_AE,               cc_nc);
+    m_lookup_cond.insert(t_IF_GE,               cc_nc);
+    m_lookup_cond.insert(t_IF_NZ_AND_C,         cc_c_and_nz);
+    m_lookup_cond.insert(t_IF_C_AND_NZ,         cc_c_and_nz);
+    m_lookup_cond.insert(t_IF_NZ,               cc_nz);
+    m_lookup_cond.insert(t_IF_NE,               cc_nz);
+    m_lookup_cond.insert(t_IF_Z_NE_C,           cc_c_ne_z);
+    m_lookup_cond.insert(t_IF_C_NE_Z,           cc_c_ne_z);
+    m_lookup_cond.insert(t_IF_NZ_OR_NC,         cc_nc_or_nz);
+    m_lookup_cond.insert(t_IF_NC_OR_NZ,         cc_nc_or_nz);
+    m_lookup_cond.insert(t_IF_Z_AND_C,          cc_c_and_z);
+    m_lookup_cond.insert(t_IF_C_AND_Z,          cc_c_and_z);
+    m_lookup_cond.insert(t_IF_Z_EQ_C,           cc_c_eq_z);
+    m_lookup_cond.insert(t_IF_C_EQ_Z,           cc_c_eq_z);
+    m_lookup_cond.insert(t_IF_Z,                cc_z);
+    m_lookup_cond.insert(t_IF_E,                cc_z);
+    m_lookup_cond.insert(t_IF_Z_OR_NC,          cc_nc_or_z);
+    m_lookup_cond.insert(t_IF_NC_OR_Z,          cc_nc_or_z);
+    m_lookup_cond.insert(t_IF_C,                cc_c);
+    m_lookup_cond.insert(t_IF_B,                cc_c);
+    m_lookup_cond.insert(t_IF_BE,               cc_c);
+    m_lookup_cond.insert(t_IF_LT,               cc_c);
+    m_lookup_cond.insert(t_IF_NZ_OR_C,          cc_c_or_nz);
+    m_lookup_cond.insert(t_IF_C_OR_NZ,          cc_c_or_nz);
+    m_lookup_cond.insert(t_IF_Z_OR_C,           cc_c_or_z);
+    m_lookup_cond.insert(t_IF_C_OR_Z,           cc_c_or_z);
+    m_lookup_cond.insert(t_IF_LE,               cc_c_or_z);
+    m_lookup_cond.insert(t_IF_ALWAYS,           cc_always);
+
+    // Set the MODCZ lookup table
+    m_lookup_modcz.insert(t_MODCZ__CLR,        cc_clr);
+    m_lookup_modcz.insert(t_MODCZ__NC_AND_NZ,  cc_nc_and_nz);
+    m_lookup_modcz.insert(t_MODCZ__NZ_AND_NC,  cc_nc_and_nz);
+    m_lookup_modcz.insert(t_MODCZ__GT,         cc_nc_and_nz);
+    m_lookup_modcz.insert(t_MODCZ__NC_AND_Z,   cc_nc_and_z);
+    m_lookup_modcz.insert(t_MODCZ__Z_AND_NC,   cc_nc_and_z);
+    m_lookup_modcz.insert(t_MODCZ__NC,         cc_nc);
+    m_lookup_modcz.insert(t_MODCZ__GE,         cc_nc);
+    m_lookup_modcz.insert(t_MODCZ__C_AND_NZ,   cc_c_and_nz);
+    m_lookup_modcz.insert(t_MODCZ__NZ_AND_C,   cc_c_and_nz);
+    m_lookup_modcz.insert(t_MODCZ__NZ,         cc_nz);
+    m_lookup_modcz.insert(t_MODCZ__NE,         cc_nz);
+    m_lookup_modcz.insert(t_MODCZ__C_NE_Z,     cc_c_ne_z);
+    m_lookup_modcz.insert(t_MODCZ__Z_NE_C,     cc_c_ne_z);
+    m_lookup_modcz.insert(t_MODCZ__NC_OR_NZ,   cc_nc_or_nz);
+    m_lookup_modcz.insert(t_MODCZ__NZ_OR_NC,   cc_nc_or_nz);
+    m_lookup_modcz.insert(t_MODCZ__C_AND_Z,    cc_c_and_z);
+    m_lookup_modcz.insert(t_MODCZ__Z_AND_C,    cc_c_and_z);
+    m_lookup_modcz.insert(t_MODCZ__C_EQ_Z,     cc_c_eq_z);
+    m_lookup_modcz.insert(t_MODCZ__Z_EQ_C,     cc_c_eq_z);
+    m_lookup_modcz.insert(t_MODCZ__Z,          cc_z);
+    m_lookup_modcz.insert(t_MODCZ__E,          cc_z);
+    m_lookup_modcz.insert(t_MODCZ__NC_OR_Z,    cc_nc_or_z);
+    m_lookup_modcz.insert(t_MODCZ__Z_OR_NC,    cc_nc_or_z);
+    m_lookup_modcz.insert(t_MODCZ__C,          cc_c);
+    m_lookup_modcz.insert(t_MODCZ__LT,         cc_c);
+    m_lookup_modcz.insert(t_MODCZ__C_OR_NZ,    cc_c_or_nz);
+    m_lookup_modcz.insert(t_MODCZ__NZ_OR_C,    cc_c_or_nz);
+    m_lookup_modcz.insert(t_MODCZ__C_OR_Z,     cc_c_or_z);
+    m_lookup_modcz.insert(t_MODCZ__Z_OR_C,     cc_c_or_z);
+    m_lookup_modcz.insert(t_MODCZ__LE,         cc_c_or_z);
+    m_lookup_modcz.insert(t_MODCZ__SET,        cc_always);
 }
 
 /**
@@ -518,9 +692,9 @@ P2Token::P2Token()
  * @param token one of p2_toke_e enume
  * @return QString in uppercase or lowercase
  */
-QString P2Token::string(p2_token_e token, bool lowercase)
+QString P2Token::string(p2_token_e tok, bool lowercase) const
 {
-    QString str = m_token_string.value(token);
+    QString str = m_token_string.value(tok);
     return lowercase ? str.toLower() : str;
 }
 
@@ -529,17 +703,15 @@ QString P2Token::string(p2_token_e token, bool lowercase)
  * @param str QString to scan for
  * @return p2_token_e enumeration value, or t_nothing if not a known string
  */
-p2_token_e P2Token::token(const QString& str)
+p2_token_e P2Token::token(const QString& str) const
 {
-    const QString ustr = str.trimmed().toUpper();
+    QString ustr = str.trimmed().toUpper();
     p2_token_e tok = m_string_token.value(ustr, t_nothing);
 
     if (t_nothing == tok) {
-        // Determin t_xxx by first character
-        if (ustr.startsWith(QChar('#')))
-            return t_immediate;
-        if (ustr.startsWith(QChar('.')))
-            return t_local;
+        while (ustr.startsWith(QChar('#')))
+            ustr.remove(0, 1);
+        // Determine t_xxx by first character
         if (ustr.startsWith(QChar('"')))
             return t_string;
         if (ustr.startsWith(QChar('%')))
@@ -550,7 +722,177 @@ p2_token_e P2Token::token(const QString& str)
             return t_value_oct;
         if (dec_digits.contains(ustr.at(0)))
             return t_value_dec;
+        if (ustr.startsWith(QChar('.')))
+            return t_local;
         return t_name;
     }
     return tok;
 }
+
+p2_tokentype_e P2Token::type(p2_token_e tok)
+{
+    return m_token_types.value(tok, tt_none);
+}
+
+p2_tokentype_e P2Token::type(const QString& str)
+{
+    p2_token_e tok = m_string_token.value(str, t_invalid);
+    return m_token_types.value(tok, tt_none);
+}
+
+p2_token_e P2Token::at_token(int& pos, const QString& str, QList<p2_token_e> tokens, p2_token_e dflt) const
+{
+    const int len = str.length();
+    for (int n = qMin(len, 9); pos + n < len && n < 9; n++) {
+        const QString& substr = str.mid(pos, n);
+        const p2_token_e tok = m_string_token.value(substr.toUpper(), dflt);
+        if (tokens.contains(tok)) {
+            pos += n;
+            return tok;
+        }
+    }
+    return t_invalid;
+}
+
+p2_token_e P2Token::at_token(const QString& str, QList<p2_token_e> tokens, p2_token_e dflt) const
+{
+    int pos = 0;
+    return at_token(pos, str, tokens, dflt);
+}
+
+p2_token_e P2Token::at_type(int& pos, const QString& str, p2_tokentype_e type, p2_token_e dflt) const
+{
+    QList<p2_token_e> tokens = m_token_types.keys(type);
+    return at_token(pos, str, tokens, dflt);
+}
+
+p2_token_e P2Token::at_type(const QString& str, p2_tokentype_e type, p2_token_e dflt) const
+{
+    int pos = 0;
+    return at_type(pos, str, type, dflt);
+}
+
+p2_token_e P2Token::at_unary(int& pos, const QString& str, p2_token_e dflt) const
+{
+    return at_type(pos, str, tt_unary, dflt);
+}
+
+p2_token_e P2Token::at_unary(const QString& str, p2_token_e dflt) const
+{
+    int pos = 0;
+    return at_type(pos, str, tt_unary, dflt);
+}
+
+p2_token_e P2Token::at_binop(int& pos, const QString& str, p2_token_e dflt) const
+{
+    return at_type(pos, str, tt_binops, dflt);
+}
+
+p2_token_e P2Token::at_binop(const QString& str, p2_token_e dflt) const
+{
+    int pos = 0;
+    return at_type(pos, str, tt_binops, dflt);
+}
+
+p2_token_e P2Token::at_addop(int& pos, const QString& str, p2_token_e dflt) const
+{
+    return at_type(pos, str, tt_addops, dflt);
+}
+
+p2_token_e P2Token::at_addop(const QString& str, p2_token_e dflt) const
+{
+    int pos = 0;
+    return at_type(pos, str, tt_addops, dflt);
+}
+
+p2_token_e P2Token::at_mulop(int &pos, const QString& str, p2_token_e dflt) const
+{
+    return at_type(pos, str, tt_mulops, dflt);
+}
+
+p2_token_e P2Token::at_mulop(const QString& str, p2_token_e dflt) const
+{
+    int pos = 0;
+    return at_type(pos, str, tt_mulops, dflt);
+}
+
+p2_token_e P2Token::at_conditional(int& pos, const QString& str, p2_token_e dflt) const
+{
+    return at_type(pos, str, tt_conditional, dflt);
+}
+
+p2_token_e P2Token::at_conditional(const QString& str, p2_token_e dflt) const
+{
+    int pos = 0;
+    return at_type(pos, str, tt_conditional, dflt);
+}
+
+p2_token_e P2Token::at_modcz_param(int& pos, const QString& str, p2_token_e dflt) const
+{
+    return at_type(pos, str, tt_modcz_param, dflt);
+}
+
+p2_token_e P2Token::at_modcz_param(const QString& str, p2_token_e dflt) const
+{
+    int pos = 0;
+    return at_type(pos, str, tt_modcz_param, dflt);
+
+}
+
+/**
+ * @brief Return the value for a conditional execution token
+ * @param cond token with the condition
+ * @param dflt default condition if token is not a conditional
+ * @return One of the 16 p2_cond_e values
+ */
+p2_cond_e P2Token::conditional(p2_token_e cond, p2_cond_e dflt) const
+{
+    return m_lookup_cond.value(cond, dflt);
+}
+
+/**
+ * @brief Return the value for a conditional execution string
+ * @param cond string with the condition
+ * @param dflt default condition if string is not a conditional
+ * @return One of the 16 p2_cond_e values
+ */
+p2_cond_e P2Token::conditional(const QString& str, p2_cond_e dflt) const
+{
+    int pos = 0;
+    p2_token_e cond = at_type(pos, str, tt_conditional);
+    return m_lookup_cond.value(cond, dflt);
+}
+
+/**
+ * @brief Return the value for a MODCZ parameter token
+ * @param cond token with the parameter
+ * @param dflt default condition if token is not a MODCZ parameter
+ * @return One of the 16 p2_cond_e values
+ */
+p2_cond_e P2Token::modcz_param(p2_token_e cond, p2_cond_e dflt) const
+{
+    return m_lookup_modcz.value(cond, dflt);
+}
+
+/**
+ * @brief Return the value for a MODCZ parameter token
+ * @param cond string with the parameter
+ * @param dflt default parameter if string is not a MODCZ parameter
+ * @return One of the 16 p2_cond_e values
+ */
+p2_cond_e P2Token::modcz_param(const QString& str, p2_cond_e dflt) const
+{
+    int pos = 0;
+    p2_token_e cond = at_type(pos, str, tt_modcz_param);
+    return m_lookup_modcz.value(cond, dflt);
+}
+
+#if 0
+static const char *Delimiters[] = {
+    "@@@", "##", "#", ",", "[", "]", "++", "+", "--", "-", "<<",
+    "<", ">>", "><", ">|", ">", "*", "/", "\\", "&", "|<", "|", "(", ")",
+     "@", "==", "=",
+    nullptr
+};
+#endif
+

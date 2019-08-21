@@ -43,6 +43,7 @@ class P2AsmSymbol
 public:
     explicit P2AsmSymbol(const QString& name = QString(), const QVariant& value = QVariant());
 
+    bool isNull() const;
     bool isEmpty() const;
     const QString& name() const;
     template <typename T>

@@ -14,9 +14,10 @@ class P2AsmModel : public QAbstractTableModel
 public:
     enum column_e {
         c_Origin,
-        c_Errors,
         c_Tokens,
         c_Opcode,
+        c_Symbols,
+        c_Errors,
         c_Source,
     };
     enum format_e {
@@ -59,5 +60,6 @@ private:
     QHash<column_e,QSize> m_size_normal;
     QHash<column_e,QSize> m_size_bold;
     QHash<column_e,QRgb> m_background;
-    QHash<column_e,int> m_alignment;
+    QHash<column_e,int> m_header_alignment;
+    QHash<column_e,int> m_text_alignment;
 };

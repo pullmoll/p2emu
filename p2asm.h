@@ -38,6 +38,7 @@
 #include <QHash>
 #include "p2defs.h"
 #include "p2token.h"
+#include "p2atom.h"
 #include "p2asmsymtbl.h"
 
 /**
@@ -47,14 +48,15 @@
 class P2Params
 {
 public:
-    P2Params() : source() { clear(); }
+    P2Params() : pass(0) { clear(); }
 
+    int pass;                               //!< current pass
     QStringList source;                     //!< source code as QStringList
     QStringList listing;                    //!< listing as QStringList
     QHash<int,P2LONG> h_PC;                 //!< optional program counters per line
     QHash<int,p2_opcode_u> h_IR;            //!< optional instruction register (opcode) per line
-    QHash<int,P2Tokens> h_tokens;           //!< optional tokens per line
-    QHash<int,QString> h_errors;            //!< optional (multiple) error messages per line
+    QHash<int,p2_token_v> h_tokens;         //!< optional tokens per line
+    QMultiHash<int,QString> h_errors;       //!< optional (multiple) error messages per line
     P2AsmSymTbl symbols;                    //!< symbol table
     int lineno;                             //!< current line number
     QString line;                           //!< current line of source
@@ -82,12 +84,22 @@ public:
      */
     void clear()
     {
+        pass_clear();
+        if (0 == pass)
+            symbols.clear();
+    }
+
+    /**
+     * @brief Clear the results of the first pass
+     */
+    void pass_clear()
+    {
+        ++pass;                 // next pass
         listing.clear();
         h_PC.clear();
         h_IR.clear();
         h_tokens.clear();
         h_errors.clear();
-        symbols.clear();
         lineno = 0;
         line.clear();
         error.clear();
@@ -105,6 +117,7 @@ public:
         idx = 0;
         memset(MEM.B, 0, sizeof(MEM.B));
     }
+
 };
 
 /**
@@ -118,8 +131,9 @@ public:
     explicit P2Asm(QObject *parent = nullptr);
     ~P2Asm();
 
-    bool assemble(P2Params& params, const QStringList& source);
-    bool assemble(P2Params& params, const QString& filename);
+    bool assemble_pass(P2Params& p);
+    bool assemble(P2Params& p, const QStringList& source);
+    bool assemble(P2Params& p, const QString& filename);
 
 signals:
     void Error(int lineno, QString message);
@@ -132,23 +146,23 @@ private:
         immediate_wc
     };
 
+    static int left(const P2Params& p);
     static void results(P2Params& p, bool opcode = false);
     static bool split_and_tokenize(P2Params& p, const QString& line);
     static p2_cond_e conditional(P2Params& p, p2_token_e cond);
     static p2_cond_e parse_modcz(P2Params& p, p2_token_e cond);
     static void skip_spc(int& pos, const QString& str);
     static void skip_imm(int& pos, const QString& str);
-    static quint64 from_bin(int& pos, const QString& str, const QString& stop);
-    static quint64 from_oct(int& pos, const QString& str, const QString& stop);
-    static quint64 from_dec(int& pos, const QString& str, const QString& stop);
-    static quint64 from_hex(int& pos, const QString& str, const QString& stop);
-    static quint64 from_pfx(int& pos, const QString& str, const QString& stop);
-    static QByteArray from_str(int& pos, const QString& str);
-    static QVariant parse_atom(P2Params& p, int& pos, const QString& word);
-    static QVariant parse_factors(P2Params& p, int& pos, const QString& str);
-    static QVariant parse_summands(P2Params& p, int& pos, const QString& str);
-    static QVariant parse_binops(P2Params& p, int& pos, const QString& str);
-    static QVariant parse_expression(P2Params& p, imm_to_e imm_to = immediate_none);
+    static P2Atom from_bin(int& pos, const QString& str, const QString& stop);
+    static P2Atom from_oct(int& pos, const QString& str, const QString& stop);
+    static P2Atom from_dec(int& pos, const QString& str, const QString& stop);
+    static P2Atom from_hex(int& pos, const QString& str, const QString& stop);
+    static P2Atom from_str(int& pos, const QString& str);
+    static P2Atom parse_atom(P2Params& p, int& pos, const QString& word);
+    static P2Atom parse_factors(P2Params& p, int& pos, const QString& str);
+    static P2Atom parse_summands(P2Params& p, int& pos, const QString& str);
+    static P2Atom parse_binops(P2Params& p, int& pos, const QString& str);
+    static P2Atom parse_expression(P2Params& p, imm_to_e imm_to = immediate_none);
 
     static bool end_of_line(P2Params& p, bool binary = true);
     static bool parse_comma(P2Params& p);
@@ -169,7 +183,7 @@ private:
     static bool parse_d_imm_s_wc(P2Params &params);
     static bool parse_d_imm_s_wz(P2Params &params);
     static bool parse_wz_d_imm_s(P2Params &params);
-    static bool parse_d_imm_s_nnn(P2Params &params, int max = 7);
+    static bool parse_d_imm_s_nnn(P2Params &params, uint max = 7);
     static bool parse_d_imm_s(P2Params &params);
     static bool parse_d_cz(P2Params &params);
     static bool parse_cz(P2Params &params);

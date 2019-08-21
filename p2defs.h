@@ -43,6 +43,9 @@ typedef quint16 P2WORD;
 //!< Type of the Propeller2 long
 typedef quint32 P2LONG;
 
+//!< Intermediate type (unsigned long long); not a Propeller2 type
+typedef quint64 P2QUAD;
+
 //! Size of the COG memory in longs
 static constexpr P2LONG COG_SIZE = 0x200;
 
@@ -126,23 +129,23 @@ typedef union {
  * @brief Enumeration of the 16 conditional execution modes
  */
 typedef enum {
-    cond_clr,                   //!< clear (never)
-    cond__ret_  = cond_clr,     //!< actually always and, if no branch is taken, return
-    cond_nc_and_nz,             //!< if C == 0 and Z == 0
-    cond_nc_and_z,              //!< if C == 0 and Z == 1
-    cond_nc,                    //!< if C == 0
-    cond_c_and_nz,              //!< if C == 1 and Z == 0
-    cond_nz,                    //!< if Z == 0
-    cond_c_ne_z,                //!< if C != Z
-    cond_nc_or_nz,              //!< if C == 0 or Z == 0
-    cond_c_and_z,               //!< if C == 1 and Z == 1
-    cond_c_eq_z,                //!< if C == Z
-    cond_z,                     //!< if Z == 1
-    cond_nc_or_z,               //!< if C == 0 or Z == 1
-    cond_c,                     //!< if C == 1
-    cond_c_or_nz,               //!< if C == 1 or Z == 0
-    cond_c_or_z,                //!< if C == 1 or Z == 1
-    cond_always                 //!< always (default)
+    cc_clr,                     //!< clear (never)
+    cc__ret_  = cc_clr,         //!< actually always and, if no branch is taken, return
+    cc_nc_and_nz,               //!< if C == 0 and Z == 0
+    cc_nc_and_z,                //!< if C == 0 and Z == 1
+    cc_nc,                      //!< if C == 0
+    cc_c_and_nz,                //!< if C == 1 and Z == 0
+    cc_nz,                      //!< if Z == 0
+    cc_c_ne_z,                  //!< if C != Z
+    cc_nc_or_nz,                //!< if C == 0 or Z == 0
+    cc_c_and_z,                 //!< if C == 1 and Z == 1
+    cc_c_eq_z,                  //!< if C == Z
+    cc_z,                       //!< if Z == 1
+    cc_nc_or_z,                 //!< if C == 0 or Z == 1
+    cc_c,                       //!< if C == 1
+    cc_c_or_nz,                 //!< if C == 1 or Z == 0
+    cc_c_or_z,                  //!< if C == 1 or Z == 1
+    cc_always                   //!< always (default)
 }   p2_cond_e;
 
 //! define an instruction with 7 bits

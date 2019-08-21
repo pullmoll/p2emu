@@ -30,6 +30,7 @@ SOURCES += \
 		p2asmmodel.cpp \
 		p2asmsym.cpp \
 		p2asmsymtbl.cpp \
+		p2atom.cpp \
 		p2cog.cpp \
 		p2cogview.cpp \
 		p2dasm.cpp \
@@ -45,6 +46,7 @@ HEADERS += \
 		p2asmmodel.h \
 		p2asmsym.h \
 		p2asmsymtbl.h \
+		p2atom.h \
 		p2cog.h \
 		p2cogview.h \
 		p2dasm.h \

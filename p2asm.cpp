@@ -37,40 +37,11 @@
 #include <QRegExp>
 #include "p2asm.h"
 
-#if 0
-static const char *Delimiters[] = {
-    "@@@", "##", "#", ",", "[", "]", "++", "+", "--", "-", "<<",
-    "<", ">>", "><", ">|", ">", "*", "/", "\\", "&", "|<", "|", "(", ")",
-     "@", "==", "=",
-    nullptr
-};
-#endif
-
-static const QString stop_expr = QStringLiteral("*/\\+-&|^<>()\"");
+static const QString stop_expr = QStringLiteral("*/\\+-&|^<=>()\"'");
 static const QString bin_digits = QStringLiteral("01");
 static const QString oct_digits = QStringLiteral("01234567");
 static const QString dec_digits = QStringLiteral("0123456789");
 static const QString hex_digits = QStringLiteral("0123456789ABCDEF");
-
-static const QStringList factors_operators =
-        QStringList()
-        << QStringLiteral("*")
-        << QStringLiteral("/")
-        << QStringLiteral("\\");
-
-static const QStringList summands_operators =
-        QStringList()
-        << QStringLiteral("+")
-        << QStringLiteral("-");
-
-static const QStringList logical_operators =
-        QStringList()
-        << QStringLiteral("!")
-        << QStringLiteral("&")
-        << QStringLiteral("|")
-        << QStringLiteral("^")
-        << QStringLiteral("<<")
-        << QStringLiteral(">>");
 
 /**
  * @brief P2Asm constructor
@@ -88,198 +59,19 @@ P2Asm::~P2Asm()
 {
 }
 
-/**
- * @brief Return the value for a conditional execution token
- * @brief params reference to the assembler parameters
- * @param cond token with the condition
- * @return One of the 16 p2_cond_e values
- */
 p2_cond_e P2Asm::conditional(P2Params& p, p2_token_e cond)
 {
-    p2_cond_e result = cond__ret_;
-    switch (cond) {
-    case t__RET_:
-        result = cond__ret_;
-        p.idx++;
-        break;
-    case t_IF_NZ_AND_NC:
-    case t_IF_NC_AND_NZ:
-    case t_IF_A:
-    case t_IF_GT:
-        result = cond_nc_and_nz;
-        p.idx++;
-        break;
-    case t_IF_Z_AND_NC:
-    case t_IF_NC_AND_Z:
-        result = cond_nc_and_z;
-        p.idx++;
-        break;
-    case t_IF_NC:
-    case t_IF_AE:
-    case t_IF_GE:
-        result = cond_nc;
-        p.idx++;
-        break;
-    case t_IF_NZ_AND_C:
-    case t_IF_C_AND_NZ:
-        result = cond_c_and_nz;
-        p.idx++;
-        break;
-    case t_IF_NZ:
-    case t_IF_NE:
-        result = cond_nz;
-        p.idx++;
-        break;
-    case t_IF_Z_NE_C:
-    case t_IF_C_NE_Z:
-        result = cond_c_ne_z;
-        p.idx++;
-        break;
-    case t_IF_NZ_OR_NC:
-    case t_IF_NC_OR_NZ:
-        result = cond_nc_or_nz;
-        p.idx++;
-        break;
-    case t_IF_Z_AND_C:
-    case t_IF_C_AND_Z:
-        result = cond_c_and_z;
-        p.idx++;
-        break;
-    case t_IF_Z_EQ_C:
-    case t_IF_C_EQ_Z:
-        result = cond_c_eq_z;
-        p.idx++;
-        break;
-    case t_IF_Z:
-    case t_IF_E:
-        result = cond_z;
-        p.idx++;
-        break;
-    case t_IF_Z_OR_NC:
-    case t_IF_NC_OR_Z:
-    case t_IF_BE:
-        result = cond_nc_or_z;
-        p.idx++;
-        break;
-    case t_IF_C:
-    case t_IF_B:
-    case t_IF_LT:
-        result = cond_c;
-        p.idx++;
-        break;
-    case t_IF_NZ_OR_C:
-    case t_IF_C_OR_NZ:
-        result = cond_c_or_nz;
-        p.idx++;
-        break;
-    case t_IF_Z_OR_C:
-    case t_IF_C_OR_Z:
-    case t_IF_LE:
-        result = cond_c_or_z;
-        p.idx++;
-        break;
-    case t_IF_ALWAYS:
-        result = cond_always;
-        p.idx++;
-        break;
-
-    default:
-        result = cond_always;
-        break;
-    }
-
+    if (Token.type(cond) != tt_conditional)
+        return cc_always;
+    p2_cond_e result = Token.conditional(cond, cc_always);
+    p.idx += 1;
     return result;
 }
 
 p2_cond_e P2Asm::parse_modcz(P2Params& p, p2_token_e cond)
 {
-    p2_cond_e result = cond_clr;
-    switch (cond) {
-    case t_MODCZ__CLR:       // cond_never
-        result = cond_clr;
-        p.idx++;
-        break;
-    case t_MODCZ__NC_AND_NZ: // cond_nc_and_nz
-    case t_MODCZ__NZ_AND_NC: // alias cond_nc_and_nz
-    case t_MODCZ__GT:        // alias cond_nc_and_nz
-        result = cond_nc_and_nz;
-        p.idx++;
-        break;
-    case t_MODCZ__NC_AND_Z:  // cond_nc_and_z
-    case t_MODCZ__Z_AND_NC:  // alias cond_nc_and_z
-        result = cond_nc_and_z;
-        p.idx++;
-        break;
-    case t_MODCZ__NC:        // cond_nc
-    case t_MODCZ__GE:        // alias cond_nc
-        result = cond_nc;
-        p.idx++;
-        break;
-    case t_MODCZ__C_AND_NZ:  // cond_c_and_nz
-    case t_MODCZ__NZ_AND_C:  // alias cond_c_and_nz
-        result = cond_c_and_nz;
-        p.idx++;
-        break;
-    case t_MODCZ__NZ:        // cond_nz
-    case t_MODCZ__NE:        // alias cond_nz
-        result = cond_nz;
-        p.idx++;
-        break;
-    case t_MODCZ__C_NE_Z:    // cond_c_ne_z
-    case t_MODCZ__Z_NE_C:    // alias cond_c_ne_z
-        result = cond_c_ne_z;
-        p.idx++;
-        break;
-    case t_MODCZ__NC_OR_NZ:  // cond_nc_or_nz
-    case t_MODCZ__NZ_OR_NC:  // alias cond_nc_or_nz
-        result = cond_nc_or_nz;
-        p.idx++;
-        break;
-    case t_MODCZ__C_AND_Z:   // cond_c_and_z
-    case t_MODCZ__Z_AND_C:   // alias cond_c_and_z
-        result = cond_c_and_z;
-        p.idx++;
-        break;
-    case t_MODCZ__C_EQ_Z:    // cond_c_eq_z
-    case t_MODCZ__Z_EQ_C:    // alias cond_c_eq_z
-        result = cond_c_eq_z;
-        p.idx++;
-        break;
-    case t_MODCZ__Z:         // cond_z
-    case t_MODCZ__E:         // alias cond_z
-        result = cond_z;
-        p.idx++;
-        break;
-    case t_MODCZ__NC_OR_Z:   // cond_nc_or_z
-    case t_MODCZ__Z_OR_NC:   // alias cond_nc_or_z
-        result = cond_nc_or_z;
-        p.idx++;
-        break;
-    case t_MODCZ__C:         // cond_c
-    case t_MODCZ__LT:        // alias cond_c
-        result = cond_c;
-        p.idx++;
-        break;
-    case t_MODCZ__C_OR_NZ:   // cond_c_or_nz
-    case t_MODCZ__NZ_OR_C:   // alias cond_c_or_nz
-        result = cond_c_or_nz;
-        p.idx++;
-        break;
-    case t_MODCZ__C_OR_Z:    // cond_c_or_z
-    case t_MODCZ__Z_OR_C:    // alias cond_c_or_z
-    case t_MODCZ__LE:        // alias cond_c_or_z
-        result = cond_c_or_z;
-        p.idx++;
-        break;
-    case t_MODCZ__SET:       // cond_always
-        result = cond_always;
-        p.idx++;
-        break;
-    default:
-        result = cond_clr;
-        break;
-    }
-
+    p2_cond_e result = Token.modcz_param(cond, cc_clr);
+    p.idx += 1;
     return result;
 }
 
@@ -295,13 +87,13 @@ p2_cond_e P2Asm::parse_modcz(P2Params& p, p2_token_e cond)
  */
 bool P2Asm::split_and_tokenize(P2Params& p, const QString& line)
 {
+    QStringList words;
     QString word;
     QChar instring = QChar::Null;
     bool escaped = false;
     bool comment = false;
 
     p.words.clear();
-    p.tokens.clear();
     foreach(QChar ch, line) {
 
         // previous character was an escape (\)
@@ -326,7 +118,7 @@ bool P2Asm::split_and_tokenize(P2Params& p, const QString& line)
             if (word.isEmpty())
                 continue;
             // non empty white space separated word
-            p.words += word;
+            words += word;
             word.clear();
             continue;
         }
@@ -340,10 +132,10 @@ bool P2Asm::split_and_tokenize(P2Params& p, const QString& line)
         // a comma?
         if (ch == QChar(',')) {
             if (!word.isEmpty())
-                p.words += word;
+                words += word;
             // make comma (,) a separate token
             word = ch;
-            p.words += word;
+            words += word;
             word.clear();
             continue;
         }
@@ -361,11 +153,15 @@ bool P2Asm::split_and_tokenize(P2Params& p, const QString& line)
 
     // Append last word, if it isn't the trailing comment
     if (!comment && !word.isEmpty())
-        p.words += word;
+        words += word;
 
     // Now tokenize the words
-    foreach(const QString& word, p.words)
-        p.tokens += Token.token(word);
+    p2_token_v tokens;
+    foreach(const QString& word, words)
+        tokens += Token.token(word);
+
+    p.tokens = tokens;
+    p.words = words;
     p.cnt = p.tokens.count();
     p.idx = 0;
 
@@ -374,18 +170,16 @@ bool P2Asm::split_and_tokenize(P2Params& p, const QString& line)
 
 /**
  * @brief Assemble a QStringList of lines of SPIN2 source code
- * @param params reference to the P2Params assembler state
+ * @param p reference to the P2Params assembler state
  * @param source code
  * @return true on success
  */
-bool P2Asm::assemble(P2Params& p, const QStringList& source)
+bool P2Asm::assemble_pass(P2Params& p)
 {
+    p.pass_clear();
     bool multi_comment = false;
-    p.source = source;
 
-    foreach(QString line, source) {
-        // line.remove(QRegExp("\\r$"));
-
+    foreach(QString line, p.source) {
         // Parse the next line
         p.line = line;
         p.lineno += 1;
@@ -471,11 +265,14 @@ bool P2Asm::assemble(P2Params& p, const QStringList& source)
                 if (sym.isEmpty()) {
                     // Not defined yet
                     p.symbols.insert(symbol, p.curr_pc);
+                } else if (p.pass > 1) {
+                    p.symbols.setValue(symbol, p.curr_pc);
                 } else {
                     // Already defined
-                    p.error = tr("Symbol '%1' already defined in line %2: %3")
-                                   .arg(symbol)
-                                   .arg(sym.reference(0));
+                    p.error = tr("Symbol '%1' already defined in line %2: $%3")
+                            .arg(symbol)
+                            .arg(sym.reference(0))
+                            .arg(sym.value<P2LONG>(), 6, 16, QChar('0'));
                     emit Error(p.lineno, p.error);
                 }
                 p.symbol = symbol;
@@ -492,8 +289,7 @@ bool P2Asm::assemble(P2Params& p, const QStringList& source)
         p.IR.opcode = 0;
 
         // Conditional execution prefix
-        const p2_token_e cond = p.tokens.at(p.idx);
-        p.IR.op.cond = conditional(p, cond);
+        p.IR.op.cond = conditional(p, p.tokens.at(p.idx));
 
         // Expect a token for an instruction
         const p2_token_e inst = p.tokens.at(p.idx);
@@ -2009,6 +1805,15 @@ bool P2Asm::assemble(P2Params& p, const QStringList& source)
     return true;
 }
 
+bool P2Asm::assemble(P2Params& p, const QStringList& source)
+{
+    bool success = true;
+    p.source = source;
+    success = assemble_pass(p) &&
+              assemble_pass(p);
+    return success;
+}
+
 /**
  * @brief Assemble a source file
  * @param filename name of the SPIN2 source
@@ -2031,8 +1836,18 @@ bool P2Asm::assemble(P2Params& p, const QString& filename)
 }
 
 /**
+ * @brief Return number of tokens/words left
+ * @param p reference to P2Params
+ * @return
+ */
+int P2Asm::left(const P2Params& p)
+{
+    return p.cnt - p.idx;
+}
+
+/**
  * @brief Store the results and append a line to the listing
- * @param params reference to P2Params
+ * @param p reference to P2Params
  * @param opcode true, if the p.IR field contains an opcode
  */
 void P2Asm::results(P2Params& p, bool opcode)
@@ -2083,18 +1898,31 @@ void P2Asm::results(P2Params& p, bool opcode)
  * @param str binary digits
  * @return value of binary digits in str
  */
-quint64 P2Asm::from_bin(int& pos, const QString& str, const QString& stop)
+P2Atom P2Asm::from_bin(int& pos, const QString& str, const QString& stop)
 {
-    quint64 value = 0;
+    P2QUAD bits = 0;
+    int nbits = 0;
+    P2Atom value;
+
     if (QChar('%') == str.at(pos))
         ++pos;
-    while (pos < str.length()) {
-        QChar ch = str.at(pos);
+
+    for (/**/; pos < str.length(); pos++) {
+        QChar ch = str[pos];
         if (stop.contains(ch))
-            return value;
-        value = value * 2 + static_cast<uint>(bin_digits.indexOf(ch, Qt::CaseInsensitive));
-        pos++;
+            break;
+        const int idx = bin_digits.indexOf(ch);
+        if (idx < 0)
+            continue;
+        bits = (bits << 1) | static_cast<uint>(idx);
+        nbits += 1;
+        while (nbits >= 32) {
+            value.append(32, bits);
+            bits >>= 32;
+            nbits -= 32;
+        }
     }
+    value.append(nbits, bits);
     return value;
 }
 
@@ -2104,18 +1932,32 @@ quint64 P2Asm::from_bin(int& pos, const QString& str, const QString& stop)
  * @param str octal digits
  * @return value of octal digits in str
  */
-quint64 P2Asm::from_oct(int& pos, const QString& str, const QString& stop)
+P2Atom P2Asm::from_oct(int& pos, const QString& str, const QString& stop)
 {
-    quint64 value = 0;
-    if (QChar('0') == str.at(pos))
+    P2QUAD bits = 0;
+    int nbits = 0;
+    P2Atom value;
+
+    if (QChar('%') == str.at(pos))
         ++pos;
-    while (pos < str.length()) {
-        QChar ch = str.at(pos);
+
+    for (/**/; pos < str.length(); pos++) {
+        QChar ch = str[pos];
         if (stop.contains(ch))
-            return value;
-        value = value * 8 + static_cast<uint>(oct_digits.indexOf(ch, Qt::CaseInsensitive));
-        pos++;
+            break;
+        const int idx = oct_digits.indexOf(ch);
+        if (idx < 0)
+            continue;
+        bits = (bits << 3) | static_cast<uint>(idx);
+        nbits += 3;
+        while (nbits >= 32) {
+            value.append(32, bits);
+            bits >>= 32;
+            nbits -= 32;
+        }
     }
+
+    value.append(nbits, bits);
     return value;
 }
 
@@ -2125,15 +1967,28 @@ quint64 P2Asm::from_oct(int& pos, const QString& str, const QString& stop)
  * @param str decimal digits
  * @return value of decimal digits in str
  */
-quint64 P2Asm::from_dec(int& pos, const QString& str, const QString& stop)
+P2Atom P2Asm::from_dec(int& pos, const QString& str, const QString& stop)
 {
-    quint64 value = 0;
-    while (pos < str.length()) {
-        QChar ch = str.at(pos);
+    P2QUAD bits = 0;
+    P2Atom value;
+
+    if (QChar('%') == str.at(pos))
+        ++pos;
+
+    for (/**/; pos < str.length(); pos++) {
+        QChar ch = str[pos];
         if (stop.contains(ch))
-            return value;
-        value = value * 10 + static_cast<uint>(dec_digits.indexOf(ch, Qt::CaseInsensitive));
-        pos++;
+            break;
+        const int idx = dec_digits.indexOf(ch);
+        if (idx < 0)
+            continue;
+        bits = (bits * 10) | static_cast<uint>(idx);
+        // no way to handle overflow ?
+    }
+    // append all significant bits
+    while (bits) {
+        value.append(8, bits);
+        bits >>= 8;
     }
     return value;
 }
@@ -2143,52 +1998,32 @@ quint64 P2Asm::from_dec(int& pos, const QString& str, const QString& stop)
  * @param str hexadecimal digits
  * @return value of hexadecimal digits in str
  */
-quint64 P2Asm::from_hex(int& pos, const QString& str, const QString& stop)
+P2Atom P2Asm::from_hex(int& pos, const QString& str, const QString& stop)
 {
-    quint64 value = 0;
-    if (QChar('$') == str.at(pos))
+    P2QUAD bits = 0;
+    int nbits = 0;
+    P2Atom value;
+
+    if (QChar('%') == str.at(pos))
         ++pos;
-    while (pos < str.length()) {
-        QChar ch = str.at(pos);
+
+    for (/**/; pos < str.length(); pos++) {
+        QChar ch = str[pos];
         if (stop.contains(ch))
-            return value;
-        value = value * 16 + static_cast<uint>(hex_digits.indexOf(ch, Qt::CaseInsensitive));
-        pos++;
+            break;
+        const int idx = hex_digits.indexOf(ch);
+        if (idx < 0)
+            continue;
+        bits = (bits << 4) | static_cast<uint>(idx);
+        nbits += 4;
+        while (nbits >= 32) {
+            value.append(32, bits);
+            bits >>= 32;
+            nbits -= 32;
+        }
     }
-    return value;
-}
 
-/**
- * @brief Convert a string of digits into an unsigned value
- * @param str digits with prefix (0?)
- * @return value of digits in str
- */
-quint64 P2Asm::from_pfx(int& pos, const QString& str, const QString& stop)
-{
-    quint64 value = 0;
-    if (pos >= str.length())
-        return value;
-
-    QChar ch = str.at(pos);
-    if (QChar('0') != ch)
-        return value;
-    pos++;
-    if (pos >= str.length())
-        return value;
-    ch = str.at(pos);
-    switch (ch.toLatin1()) {
-    case 'B': case 'b':
-        value = from_bin(pos, str, stop);
-        break;
-    case 'O': case 'o':
-        value = from_oct(pos, str, stop);
-        break;
-    case 'X': case 'x':
-        value = from_hex(pos, str, stop);
-        break;
-    default:
-        value = from_oct(pos, str, stop);
-    }
+    value.append(nbits, bits);
     return value;
 }
 
@@ -2198,28 +2033,35 @@ quint64 P2Asm::from_pfx(int& pos, const QString& str, const QString& stop)
  * @param stop characters to stop at
  * @return value as 64 bit unsigned
  */
-QByteArray P2Asm::from_str(int& pos, const QString& str)
+P2Atom P2Asm::from_str(int& pos, const QString& str)
 {
-    QByteArray value;
+    P2Atom value;
     QChar instring = str.at(pos++);
     bool escaped = false;
+
     while (pos < str.length()) {
         QChar ch = str.at(pos);
         if (escaped) {
-            value += ch.toLatin1();
+            value.append(8, static_cast<P2QUAD>(ch.toLatin1()));
             escaped = false;
         } else if (ch == instring) {
             return value;
         } else if (ch == QChar('\\')) {
             escaped = true;
         } else {
-            value += ch.toLatin1();
+            value.append(8, static_cast<P2QUAD>(ch.toLatin1()));
         }
         pos++;
     }
+
     return value;
 }
 
+/**
+ * @brief Skip over spaces in %str at %pos
+ * @param pos position in string
+ * @param str reference to string
+ */
 void P2Asm::skip_spc(int &pos, const QString& str)
 {
     while (pos < str.length() && str.at(pos).isSpace())
@@ -2228,158 +2070,139 @@ void P2Asm::skip_spc(int &pos, const QString& str)
 
 /**
  * @brief Parse an atomic part of an expression
- * @param params reference to P2Params
+ * @param p reference to P2Params
  * @param pos position in word where to start
  * @param str string to parse
  * @return value of the atom
  */
-QVariant P2Asm::parse_atom(P2Params& p, int& pos, const QString& str)
+P2Atom P2Asm::parse_atom(P2Params& p, int& pos, const QString& str)
 {
+    P2Atom atom;
+
     // Unary minus
-    bool minus = false;
+    bool negate = false;
     for (/* */; pos < str.length(); pos++) {
         skip_spc(pos, str);
         if (QChar('-') == str.at(pos)) {
-            minus = !minus;
+            negate = !negate;
             continue;
         }
         break;
     }
-    QVariant value;
+
+    // Rest of the string
     QString rest = str.mid(pos);
+
     QString symbol;
     if (rest.startsWith(QChar('.'))) {
         symbol = QString("%1::%2%3").arg(p.section).arg(p.function).arg(rest);
     } else {
         symbol = QString("%1::%2").arg(p.section).arg(rest);
     }
-    bool is_symbol = p.symbols.contains(symbol);
-    p2_token_e tok = p.tokens.value(p.idx, t_nothing);
-    QChar ch;
 
+    // TODO: find symbol in other sections?
+    bool is_symbol = p.symbols.contains(symbol);
+
+    const p2_token_e tok = p.tokens.value(p.idx, t_nothing);
     switch (tok) {
     case t_nothing:
+        break;
     case t_local:
     case t_name:
+        p.symbols.addReference(symbol, p.lineno);
         if (is_symbol) {
-            p.symbols.addReference(symbol, p.lineno);
-            value = p.symbols.value<QVariant>(symbol);
-        }
-        // Negate result?
-        if (minus)
-            value = - value.toULongLong();
-        break;
-
-    case t_immediate:
-        ch = pos < str.length() ? str.at(pos) : QChar::Null;
-        while (QChar('#') == ch) {
-            ch = str.at(++pos);
-        }
-        switch (ch.toLatin1()) {
-        case '%':
-            value = from_bin(pos, str, stop_expr);
-            break;
-        case '0':
-            value = from_pfx(pos, str, stop_expr);
-            break;
-        case '$':
-            value = from_hex(pos, str, stop_expr);
-            break;
-        case '"':
-            value = from_str(pos, str);
-            break;
-        default:
-            if (dec_digits.contains(ch))
-                value = from_dec(pos, str, stop_expr);
-            break;
+            atom.append(32, p.symbols.value<P2LONG>(symbol));
         }
         break;
 
     case t_value_bin:
-        value = from_bin(pos, str, stop_expr);
+        atom = from_bin(pos, str, stop_expr);
         break;
 
     case t_value_oct:
-        value = from_oct(pos, str, stop_expr);
+        atom = from_oct(pos, str, stop_expr);
         break;
 
     case t_value_dec:
-        value = from_dec(pos, str, stop_expr);
+        atom = from_dec(pos, str, stop_expr);
         break;
 
     case t_value_hex:
-        value = from_hex(pos, str, stop_expr);
+        atom = from_hex(pos, str, stop_expr);
         break;
 
     case t_string:
-        value = from_str(pos, str);
+        atom = from_str(pos, str);
         break;
 
     case t_PA:
         pos += 2;
-        value = offs_PA;
+        atom = offs_PA;
         break;
 
     case t_PB:
         pos += 2;
-        value = offs_PB;
+        atom = offs_PB;
         break;
 
     case t_PTRA:
         pos += 4;
-        value = offs_PTRA;
+        atom = offs_PTRA;
         break;
 
     case t_PTRB:
         pos += 4;
-        value = offs_PTRB;
+        atom = offs_PTRB;
         break;
 
     default:
         p.error = tr("Reserved word used as parameter: %1").arg(str);
-        return value;
+        return atom;
     }
-    return value;
+    return atom;
 }
 
 /**
  * @brief Parse an an expression of factors (multiplicators or divisors)
- * @param params reference to P2Params
- * @param pos position in word where to start
+ * @param p reference to P2Params
+ * @param pos position in %str where to start
  * @param str string to parse
- * @return value of the factors
+ * @return P2Atom containing the result
  */
-QVariant P2Asm::parse_factors(P2Params& p, int& pos, const QString& str)
+P2Atom P2Asm::parse_factors(P2Params& p, int& pos, const QString& str)
 {
-    QVariant value = parse_atom(p, pos, str);
+    P2Atom atom = parse_atom(p, pos, str);
+
     for (;;) {
         skip_spc(pos, str);
         if (pos >= str.length())
-            return value;
+            return atom;
 
-        QString s = str.mid(pos, 1);
-        int op = factors_operators.indexOf(s);
-
-        if (op < 0)
-            return value;
+        p2_token_e op = Token.at_mulop(pos, str);
+        if (t_invalid == op)
+            return atom;
 
         pos += 1;
-        QVariant value2 = parse_atom(p, pos, str);
-        if (!value2.isValid()) {
+        P2Atom atom2 = parse_atom(p, pos, str);
+        if (!atom2.isValid()) {
             p.error = tr("Invalid character in expression (factors): %1").arg(str.mid(pos));
-            return value;
+            return atom;
         }
 
+        P2QUAD value1 = atom.toQUAD();
+        P2QUAD value2 = atom2.toQUAD();
         switch (op) {
-        case 0: // Multiplication
-            value = value.toULongLong() * value2.toULongLong();
+        case t__MUL:
+            atom = value1 * value2;
             break;
-        case 1: // Division
-            value = value.toULongLong() / value2.toULongLong();
+        case t__DIV:
+            atom = value2 ? value1 / value2 : ~Q_UINT64_C(0);
             break;
-        case 2: // Modulus
-            value = value.toULongLong() % value2.toULongLong();
+        case t__MOD:
+            atom = value2 ? value1 % value2 : ~Q_UINT64_C(0);
             break;
+        default:
+            Q_ASSERT_X(false, "factors ops", "invalid op");
         }
     }
 }
@@ -2387,114 +2210,112 @@ QVariant P2Asm::parse_factors(P2Params& p, int& pos, const QString& str)
 
 /**
  * @brief Parse an an expression of summands (addends and minuends)
- * @param params reference to P2Params
- * @param pos position in word where to start
+ * @param p reference to P2Params
+ * @param pos position in %str where to start
  * @param str string to parse
- * @param tok token found when trying to tokenize the string
- * @return value of the factors
+ * @return P2Atom containing the result
  */
-QVariant P2Asm::parse_summands(P2Params& p, int& pos, const QString& str)
+P2Atom P2Asm::parse_summands(P2Params& p, int& pos, const QString& str)
 {
-    QVariant value = parse_factors(p, pos, str);
+    P2Atom atom = parse_factors(p, pos, str);
+
     for (;;) {
         skip_spc(pos, str);
         if (pos >= str.length())
-            return value;
+            return atom;
 
-        QString s = str.mid(pos, 1);
-        int op = summands_operators.indexOf(s);
-
-        if (op < 0)
-            return value;
+        p2_token_e op = Token.at_addop(pos, str);
+        if (t_invalid == op)
+            return atom;
 
         pos += 1;
-        QVariant value2 = parse_factors(p, pos, str);
-        if (!value2.isValid()) {
+        P2Atom atom2 = parse_factors(p, pos, str);
+        if (!atom2.isValid()) {
             p.error = tr("Invalid character in expression (summands): %1").arg(str.mid(pos));
-            return value;
+            return atom;
         }
 
+        P2QUAD value1 = atom.toQUAD();
+        P2QUAD value2 = atom2.toQUAD();
         switch (op) {
-        case 0: // Addition
-            value = value.toULongLong() + value2.toULongLong();
+        case t__ADD:
+            value1 = value1 + value2;
+            atom.set(64, value1);
             break;
-        case 1: // Subtraction
-            value = value.toULongLong() - value2.toULongLong();
+        case t__SUB:
+            value1 = value1 - value2;
+            atom.set(64, value1);
             break;
+        default:
+            Q_ASSERT_X(false, "summands ops", "Invalid op");
         }
     }
 }
 
 /**
  * @brief Parse an an expression of binary operations (and, or, xor, left shift, right shift)
- * @param params reference to P2Params
- * @param pos position in word where to start
+ * @param p reference to P2Params
+ * @param pos position in %str where to start
  * @param str string to parse
- * @param tok token found when trying to tokenize the string
- * @return value of the factors
+ * @return P2Atom containing the result
  */
-QVariant P2Asm::parse_binops(P2Params& p, int& pos, const QString& str)
+P2Atom P2Asm::parse_binops(P2Params& p, int& pos, const QString& str)
 {
-    QVariant value = parse_summands(p, pos, str);
+    P2Atom atom = parse_summands(p, pos, str);
+
     for (;;) {
         skip_spc(pos, str);
         if (pos >= str.length())
-            return value;
+            return atom;
 
-        QString s = str.mid(pos, 1);
-        int op = logical_operators.indexOf(s);
-        if (op < 0) {
-            s = str.mid(pos, 2);
-            op = logical_operators.indexOf(s);
-            if (op < 0)
-                return value;
-            pos += 2;
-        } else {
-            pos += 1;
-        }
+        p2_token_e op = Token.at_binop(pos, str);
+        if (t_invalid == op)
+            return atom;
 
-        QVariant value2 = parse_summands(p, pos, str);
-        if (!value2.isValid()) {
+        P2Atom atom2 = parse_summands(p, pos, str);
+        if (!atom2.isValid()) {
             p.error = tr("Invalid character in expression (summands): %1").arg(str.mid(pos));
-            return value;
+            return atom;
         }
 
+        P2QUAD value1 = atom.toQUAD();
+        P2QUAD value2 = atom2.toQUAD();
         switch (op) {
-        case 0: // Logical NOT
-            value = ~value.toULongLong();
+        case t__AND:
+            atom = value1 & value2;
             break;
-        case 1: // Logical AND
-            value = value.toULongLong() & value2.toULongLong();
+        case t__OR:
+            atom = value1 | value2;
             break;
-        case 2: // Logical OR
-            value = value.toULongLong() | value2.toULongLong();
+        case t__XOR:
+            atom = value1 ^ value2;
             break;
-        case 3: // Logical XOR
-            value = value.toULongLong() ^ value2.toULongLong();
+        case t__SHL:
+            atom = value1 << value2;
             break;
-        case 4: // Logical SHL
-            value = value.toULongLong() << value2.toULongLong();
+        case t__SHR:
+            atom = value1 >> value2;
             break;
-        case 5: // Logical SHR
-            value = value.toULongLong() >> value2.toULongLong();
-            break;
+        default:
+            Q_ASSERT_X(false, "binary ops", "Invalid op");
         }
     }
 }
 
 /**
  * @brief Evaluate an expression
- * @param params reference to P2Params
+ * @param p reference to P2Params
  * @param imm_to put immediate flag into: -1=nowhere (default), 0=imm, 1=wz, 2=wc
  * @return QVariant with the value of the expression
  */
-QVariant P2Asm::parse_expression(P2Params& p, imm_to_e imm_to)
+P2Atom P2Asm::parse_expression(P2Params& p, imm_to_e imm_to)
 {
     if (p.idx >= p.cnt)
-        return QVariant();
+        return P2Atom();
+
     QString str = p.words.value(p.idx);
-    p2_token_e tok = p.tokens.value(p.idx);
-    bool imm = t_immediate == tok;
+    bool imm = str.startsWith(QChar('#'));
+    bool imm2 = false;
 
     int pos = 0;
     if (imm) {
@@ -2504,11 +2325,14 @@ QVariant P2Asm::parse_expression(P2Params& p, imm_to_e imm_to)
     skip_spc(pos, str);
 
     // skip a second immediate
-    // TODO: special meaning of this?
-    if (pos < str.length() && QChar('#') == str.at(pos))
+    if (pos < str.length() && QChar('#') == str.at(pos)) {
+        imm2 = true;
         pos++;
+    }
+    // TODO: special meaning of this?
+    Q_UNUSED(imm2)
 
-    QVariant value = parse_binops(p, pos, str);
+    P2Atom value = parse_binops(p, pos, str);
 
     // Set immediate flag, if specified
     switch (imm_to) {
@@ -2680,8 +2504,9 @@ bool P2Asm::asm_assign(P2Params& p)
 {
     p.idx++;           // skip over token
     p.advance = 0;     // No PC increment
-    QVariant value = parse_expression(p);
-    p.IR.opcode = value.toUInt();
+    P2Atom atom = parse_expression(p);
+    const P2LONG value = atom.toLONG();
+    p.IR.opcode = value;
     p.symbols.setValue(p.symbol, value);
     return end_of_line(p, false);
 }
@@ -2695,10 +2520,11 @@ bool P2Asm::asm_org(P2Params& p)
 {
     p.idx++;           // skip over token
     p.advance = 0;     // No PC increment
-    QVariant value = parse_expression(p);
-    if (value.isNull())
+    P2Atom atom = parse_expression(p);
+    P2LONG value = atom.toLONG();
+    if (atom.isEmpty())
         value = p.last_pc;
-    p.IR.opcode = p.curr_pc = p.next_pc = value.toUInt();
+    p.IR.opcode = p.curr_pc = p.next_pc = value;
     p.symbols.setValue(p.symbol, value);
     return end_of_line(p, false);
 }
@@ -2712,10 +2538,11 @@ bool P2Asm::asm_orgh(P2Params& p)
 {
     p.idx++;           // skip over token
     p.advance = 0;     // No PC increment
-    QVariant value = parse_expression(p);
-    if (value.isNull())
-        value = 0x00400;
-    p.IR.opcode = p.next_pc =  p.last_pc = value.toUInt();
+    P2Atom atom = parse_expression(p);
+    P2LONG value = atom.toLONG();
+    if (atom.isEmpty())
+        value = HUB_ADDR;
+    p.IR.opcode = p.next_pc =  p.last_pc = value;
     p.symbols.setValue(p.symbol, value);
     return end_of_line(p, false);
 }
@@ -2772,12 +2599,12 @@ bool P2Asm::parse_inst(P2Params& p)
  */
 bool P2Asm::parse_d_imm_s(P2Params& p)
 {
-    QVariant dst = parse_expression(p);
+    P2Atom dst = parse_expression(p);
     if (!parse_comma(p))
         return false;
-    QVariant src = parse_expression(p, immediate_imm);
-    p.IR.op.dst = dst.toUInt();
-    p.IR.op.src = src.toUInt();
+    P2Atom src = parse_expression(p, immediate_imm);
+    p.IR.op.dst = dst.toLONG();
+    p.IR.op.src = src.toLONG();
     return end_of_line(p);
 }
 
@@ -2788,8 +2615,8 @@ bool P2Asm::parse_d_imm_s(P2Params& p)
  */
 bool P2Asm::parse_d_cz(P2Params& p)
 {
-    QVariant dst = parse_expression(p);
-    p.IR.op.dst = dst.toUInt();
+    P2Atom dst = parse_expression(p);
+    p.IR.op.dst = dst.toLONG();
     optional_wcz(p);
     return end_of_line(p);
 }
@@ -2828,8 +2655,8 @@ bool P2Asm::parse_cccc_zzzz_wcz(P2Params& p)
  */
 bool P2Asm::parse_d(P2Params& p)
 {
-    QVariant dst = parse_expression(p);
-    p.IR.op.dst = dst.toUInt();
+    P2Atom dst = parse_expression(p);
+    p.IR.op.dst = dst.toLONG();
     return end_of_line(p);
 }
 
@@ -2840,8 +2667,8 @@ bool P2Asm::parse_d(P2Params& p)
  */
 bool P2Asm::parse_wz_d(P2Params& p)
 {
-    QVariant dst = parse_expression(p, immediate_wz);
-    p.IR.op.dst = dst.toUInt();
+    P2Atom dst = parse_expression(p, immediate_wz);
+    p.IR.op.dst = dst.toLONG();
     return end_of_line(p);
 }
 
@@ -2852,8 +2679,8 @@ bool P2Asm::parse_wz_d(P2Params& p)
  */
 bool P2Asm::parse_imm_d(P2Params& p)
 {
-    QVariant dst = parse_expression(p, immediate_imm);
-    p.IR.op.dst = dst.toUInt();
+    P2Atom dst = parse_expression(p, immediate_imm);
+    p.IR.op.dst = dst.toLONG();
     return end_of_line(p);
 }
 
@@ -2864,8 +2691,8 @@ bool P2Asm::parse_imm_d(P2Params& p)
  */
 bool P2Asm::parse_imm_d_wcz(P2Params& p)
 {
-    QVariant dst = parse_expression(p, immediate_imm);
-    p.IR.op.dst = dst.toUInt();
+    P2Atom dst = parse_expression(p, immediate_imm);
+    p.IR.op.dst = dst.toLONG();
     optional_wcz(p);
     return end_of_line(p);
 }
@@ -2877,8 +2704,8 @@ bool P2Asm::parse_imm_d_wcz(P2Params& p)
  */
 bool P2Asm::parse_imm_d_wc(P2Params& p)
 {
-    QVariant dst = parse_expression(p, immediate_imm);
-    p.IR.op.dst = dst.toUInt();
+    P2Atom dst = parse_expression(p, immediate_imm);
+    p.IR.op.dst = dst.toLONG();
     optional_wc(p);
     return end_of_line(p);
 }
@@ -2890,12 +2717,12 @@ bool P2Asm::parse_imm_d_wc(P2Params& p)
  */
 bool P2Asm::parse_d_imm_s_wcz(P2Params& p)
 {
-    QVariant dst = parse_expression(p);
+    P2Atom dst = parse_expression(p);
     if (!parse_comma(p))
         return false;
-    QVariant src = parse_expression(p, immediate_imm);
-    p.IR.op.dst = dst.toUInt();
-    p.IR.op.src = src.toUInt();
+    P2Atom src = parse_expression(p, immediate_imm);
+    p.IR.op.dst = dst.toLONG();
+    p.IR.op.src = src.toLONG();
     optional_wcz(p);
     return end_of_line(p);
 }
@@ -2907,12 +2734,12 @@ bool P2Asm::parse_d_imm_s_wcz(P2Params& p)
  */
 bool P2Asm::parse_d_imm_s_wc(P2Params& p)
 {
-    QVariant dst = parse_expression(p);
+    P2Atom dst = parse_expression(p);
     if (!parse_comma(p))
         return false;
-    QVariant src = parse_expression(p, immediate_imm);
-    p.IR.op.dst = dst.toUInt();
-    p.IR.op.src = src.toUInt();
+    P2Atom src = parse_expression(p, immediate_imm);
+    p.IR.op.dst = dst.toLONG();
+    p.IR.op.src = src.toLONG();
     optional_wc(p);
     return end_of_line(p);
 }
@@ -2924,12 +2751,12 @@ bool P2Asm::parse_d_imm_s_wc(P2Params& p)
  */
 bool P2Asm::parse_d_imm_s_wz(P2Params& p)
 {
-    QVariant dst = parse_expression(p);
+    P2Atom dst = parse_expression(p);
     if (!parse_comma(p))
         return false;
-    QVariant src = parse_expression(p, immediate_imm);
-    p.IR.op.dst = dst.toUInt();
-    p.IR.op.src = src.toUInt();
+    P2Atom src = parse_expression(p, immediate_imm);
+    p.IR.op.dst = dst.toLONG();
+    p.IR.op.src = src.toLONG();
     optional_wz(p);
     return end_of_line(p);
 }
@@ -2941,12 +2768,12 @@ bool P2Asm::parse_d_imm_s_wz(P2Params& p)
  */
 bool P2Asm::parse_wz_d_imm_s(P2Params& p)
 {
-    QVariant dst = parse_expression(p, immediate_wz);
+    P2Atom dst = parse_expression(p, immediate_wz);
     if (!parse_comma(p))
         return false;
-    QVariant src = parse_expression(p, immediate_imm);
-    p.IR.op.dst = dst.toUInt();
-    p.IR.op.src = src.toUInt();
+    P2Atom src = parse_expression(p, immediate_imm);
+    p.IR.op.dst = dst.toLONG();
+    p.IR.op.src = src.toLONG();
     return end_of_line(p);
 }
 
@@ -2955,33 +2782,35 @@ bool P2Asm::parse_wz_d_imm_s(P2Params& p)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_d_imm_s_nnn(P2Params& p, int max)
+bool P2Asm::parse_d_imm_s_nnn(P2Params& p, uint max)
 {
-    QVariant dst = parse_expression(p);
+    P2Atom dst = parse_expression(p);
     if (!parse_comma(p))
         return false;
-    QVariant src = parse_expression(p, immediate_imm);
-    p.IR.op.dst = dst.toUInt();
-    p.IR.op.src = src.toUInt();
-    if (!parse_comma(p))
-        return false;
-    if (p.idx < p.cnt) {
-        QVariant n = parse_expression(p);
-        if (n.isNull()) {
-            p.error = tr("Expected immediate #n");
+    P2Atom src = parse_expression(p, immediate_imm);
+    p.IR.op.dst = dst.toLONG();
+    p.IR.op.src = src.toLONG();
+    if (parse_comma(p)) {
+        if (p.idx < p.cnt) {
+            P2Atom n = parse_expression(p);
+            if (n.isEmpty()) {
+                p.error = tr("Expected immediate #n");
+                return false;
+            }
+            if (n.toLONG() > max) {
+                p.error = tr("Immediate #n not in 0-%1 (%2)")
+                          .arg(max)
+                          .arg(n.toLONG());
+                return false;
+            }
+            P2LONG opcode = static_cast<P2LONG>(n.toLONG() & max) << 18;
+            p.IR.opcode |= opcode;
+        } else {
+            p.error = tr("Missing immediate #n");
             return false;
         }
-        if (n.toInt() < 0 || n.toInt() > max) {
-            p.error = tr("Immediate #n not in 0-%1 (%2)")
-                           .arg(max)
-                           .arg(n.toLongLong());
-            return false;
-        }
-        P2LONG opcode = static_cast<P2LONG>(n.toInt() & max) << 18;
-        p.IR.opcode |= opcode;
     } else {
-        p.error = tr("Missing immediate #n");
-        return false;
+        // Default is 0
     }
     return end_of_line(p);
 }
@@ -2993,8 +2822,8 @@ bool P2Asm::parse_d_imm_s_nnn(P2Params& p, int max)
  */
 bool P2Asm::parse_imm_s(P2Params& p)
 {
-    QVariant src = parse_expression(p, immediate_imm);
-    p.IR.op.src = src.toUInt();
+    P2Atom src = parse_expression(p, immediate_imm);
+    p.IR.op.src = src.toLONG();
     return end_of_line(p);
 }
 
@@ -3005,8 +2834,8 @@ bool P2Asm::parse_imm_s(P2Params& p)
  */
 bool P2Asm::parse_imm_s_wcz(P2Params& p)
 {
-    QVariant src = parse_expression(p, immediate_imm);
-    p.IR.op.src = src.toUInt();
+    P2Atom src = parse_expression(p, immediate_imm);
+    p.IR.op.src = src.toLONG();
     return end_of_line(p);
 }
 
@@ -3041,7 +2870,8 @@ bool P2Asm::parse_ptr_pc_abs(P2Params& p)
     if (!parse_comma(p))
         return false;
 
-    quint64 addr = parse_expression(p).toULongLong();
+    P2Atom atom = parse_expression(p);
+    P2LONG addr = atom.toLONG();
     p.IR.opcode |= addr & A20MASK;
 
     return end_of_line(p);
@@ -3054,7 +2884,8 @@ bool P2Asm::parse_ptr_pc_abs(P2Params& p)
  */
 bool P2Asm::parse_pc_abs(P2Params& p)
 {
-    quint64 addr = parse_expression(p).toULongLong();
+    P2Atom atom = parse_expression(p);
+    P2LONG addr = atom.toLONG();
     p.IR.opcode |= addr & A20MASK;
 
     return end_of_line(p);
@@ -3067,7 +2898,8 @@ bool P2Asm::parse_pc_abs(P2Params& p)
  */
 bool P2Asm::parse_imm23(P2Params& p, QVector<p2_inst7_e> aug)
 {
-    quint64 addr = parse_expression(p).toULongLong();
+    P2Atom atom = parse_expression(p);
+    P2LONG addr = atom.toLONG();
     p.IR.op.inst = static_cast<p2_inst7_e>(p.IR.op.inst | aug[(addr >> 21) & 3]);
 
     return end_of_line(p);
@@ -3082,8 +2914,8 @@ bool P2Asm::asm_byte(P2Params& p)
 {
     p.idx++;
     while (p.idx < p.cnt) {
-        QVariant data = parse_expression(p);
-        p.IR.opcode = data.toUInt();
+        P2Atom data = parse_expression(p);
+        p.IR.opcode = data.toLONG();
         optional_comma(p);
     }
     return end_of_line(p);
@@ -3098,8 +2930,8 @@ bool P2Asm::asm_word(P2Params& p)
 {
     p.idx++;
     while (p.idx < p.cnt) {
-        QVariant data = parse_expression(p);
-        p.IR.opcode = data.toUInt();
+        P2Atom data = parse_expression(p);
+        p.IR.opcode = data.toLONG();
         optional_comma(p);
     }
     return end_of_line(p);
@@ -3114,8 +2946,8 @@ bool P2Asm::asm_long(P2Params& p)
 {
     p.idx++;
     while (p.idx < p.cnt) {
-        QVariant data = parse_expression(p);
-        p.IR.opcode = data.toUInt();
+        P2Atom data = parse_expression(p);
+        p.IR.opcode = data.toLONG();
         optional_comma(p);
     }
     return end_of_line(p);
@@ -3130,7 +2962,7 @@ bool P2Asm::asm_res(P2Params& p)
 {
     p.idx++;
     while (p.idx < p.cnt) {
-        QVariant data = parse_expression(p);
+        P2Atom data = parse_expression(p);
         p.IR.opcode = 0;
         optional_comma(p);
     }
@@ -3145,8 +2977,11 @@ bool P2Asm::asm_res(P2Params& p)
 bool P2Asm::asm_fit(P2Params& p)
 {
     p.idx++;
-    while (p.idx < p.cnt) {
-        QVariant data = parse_expression(p);
+    P2Atom data = parse_expression(p);
+    if (data.toLONG() <= p.curr_pc) {
+        p.error = tr("Code does not fit below $%1 (origin == $%2)")
+                  .arg(data.toLONG(), 0, 16)
+                  .arg(p.curr_pc, 0, 16);
     }
     return end_of_line(p);
 }
@@ -3159,7 +2994,7 @@ bool P2Asm::asm_fit(P2Params& p)
  * NOP
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_nop(P2Params& p)
 {
@@ -3180,7 +3015,7 @@ bool P2Asm::asm_nop(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_ror(P2Params& p)
 {
@@ -3201,7 +3036,7 @@ bool P2Asm::asm_ror(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rol(P2Params& p)
 {
@@ -3222,7 +3057,7 @@ bool P2Asm::asm_rol(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_shr(P2Params& p)
 {
@@ -3243,7 +3078,7 @@ bool P2Asm::asm_shr(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_shl(P2Params& p)
 {
@@ -3264,7 +3099,7 @@ bool P2Asm::asm_shl(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rcr(P2Params& p)
 {
@@ -3285,7 +3120,7 @@ bool P2Asm::asm_rcr(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rcl(P2Params& p)
 {
@@ -3306,7 +3141,7 @@ bool P2Asm::asm_rcl(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_sar(P2Params& p)
 {
@@ -3327,7 +3162,7 @@ bool P2Asm::asm_sar(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_sal(P2Params& p)
 {
@@ -3348,7 +3183,7 @@ bool P2Asm::asm_sal(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_add(P2Params& p)
 {
@@ -3369,7 +3204,7 @@ bool P2Asm::asm_add(P2Params& p)
  * Z = Z AND (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_addx(P2Params& p)
 {
@@ -3390,7 +3225,7 @@ bool P2Asm::asm_addx(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_adds(P2Params& p)
 {
@@ -3411,7 +3246,7 @@ bool P2Asm::asm_adds(P2Params& p)
  * Z = Z AND (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_addsx(P2Params& p)
 {
@@ -3432,7 +3267,7 @@ bool P2Asm::asm_addsx(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_sub(P2Params& p)
 {
@@ -3453,7 +3288,7 @@ bool P2Asm::asm_sub(P2Params& p)
  * Z = Z AND (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_subx(P2Params& p)
 {
@@ -3474,7 +3309,7 @@ bool P2Asm::asm_subx(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_subs(P2Params& p)
 {
@@ -3495,7 +3330,7 @@ bool P2Asm::asm_subs(P2Params& p)
  * Z = Z AND (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_subsx(P2Params& p)
 {
@@ -3515,7 +3350,7 @@ bool P2Asm::asm_subsx(P2Params& p)
  * Z = (D == S).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_cmp(P2Params& p)
 {
@@ -3535,7 +3370,7 @@ bool P2Asm::asm_cmp(P2Params& p)
  * Z = Z AND (D == S + C).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_cmpx(P2Params& p)
 {
@@ -3555,7 +3390,7 @@ bool P2Asm::asm_cmpx(P2Params& p)
  * Z = (D == S).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_cmps(P2Params& p)
 {
@@ -3575,7 +3410,7 @@ bool P2Asm::asm_cmps(P2Params& p)
  * Z = Z AND (D == S + C).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_cmpsx(P2Params& p)
 {
@@ -3595,7 +3430,7 @@ bool P2Asm::asm_cmpsx(P2Params& p)
  * Z = (D == S).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_cmpr(P2Params& p)
 {
@@ -3615,7 +3450,7 @@ bool P2Asm::asm_cmpr(P2Params& p)
  * Z = (D == S).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_cmpm(P2Params& p)
 {
@@ -3636,7 +3471,7 @@ bool P2Asm::asm_cmpm(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_subr(P2Params& p)
 {
@@ -3656,7 +3491,7 @@ bool P2Asm::asm_subr(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_cmpsub(P2Params& p)
 {
@@ -3676,7 +3511,7 @@ bool P2Asm::asm_cmpsub(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_fge(P2Params& p)
 {
@@ -3696,7 +3531,7 @@ bool P2Asm::asm_fge(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_fle(P2Params& p)
 {
@@ -3716,7 +3551,7 @@ bool P2Asm::asm_fle(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_fges(P2Params& p)
 {
@@ -3736,7 +3571,7 @@ bool P2Asm::asm_fges(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_fles(P2Params& p)
 {
@@ -3757,7 +3592,7 @@ bool P2Asm::asm_fles(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_sumc(P2Params& p)
 {
@@ -3778,7 +3613,7 @@ bool P2Asm::asm_sumc(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_sumnc(P2Params& p)
 {
@@ -3799,7 +3634,7 @@ bool P2Asm::asm_sumnc(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_sumz(P2Params& p)
 {
@@ -3820,7 +3655,7 @@ bool P2Asm::asm_sumz(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_sumnz(P2Params& p)
 {
@@ -3839,7 +3674,7 @@ bool P2Asm::asm_sumnz(P2Params& p)
  * C/Z =          D[S[4:0]].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_testb_w(P2Params& p)
 {
@@ -3858,7 +3693,7 @@ bool P2Asm::asm_testb_w(P2Params& p)
  * C/Z =         !D[S[4:0]].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_testbn_w(P2Params& p)
 {
@@ -3877,7 +3712,7 @@ bool P2Asm::asm_testbn_w(P2Params& p)
  * C/Z = C/Z AND  D[S[4:0]].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_testb_and(P2Params& p)
 {
@@ -3896,7 +3731,7 @@ bool P2Asm::asm_testb_and(P2Params& p)
  * C/Z = C/Z AND !D[S[4:0]].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_testbn_and(P2Params& p)
 {
@@ -3915,7 +3750,7 @@ bool P2Asm::asm_testbn_and(P2Params& p)
  * C/Z = C/Z OR   D[S[4:0]].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_testb_or(P2Params& p)
 {
@@ -3934,7 +3769,7 @@ bool P2Asm::asm_testb_or(P2Params& p)
  * C/Z = C/Z OR  !D[S[4:0]].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_testbn_or(P2Params& p)
 {
@@ -3953,7 +3788,7 @@ bool P2Asm::asm_testbn_or(P2Params& p)
  * C/Z = C/Z XOR  D[S[4:0]].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_testb_xor(P2Params& p)
 {
@@ -3972,7 +3807,7 @@ bool P2Asm::asm_testb_xor(P2Params& p)
  * C/Z = C/Z XOR !D[S[4:0]].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_testbn_xor(P2Params& p)
 {
@@ -3990,7 +3825,7 @@ bool P2Asm::asm_testbn_xor(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_bitl(P2Params& p)
 {
@@ -4008,7 +3843,7 @@ bool P2Asm::asm_bitl(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_bith(P2Params& p)
 {
@@ -4026,7 +3861,7 @@ bool P2Asm::asm_bith(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_bitc(P2Params& p)
 {
@@ -4044,7 +3879,7 @@ bool P2Asm::asm_bitc(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_bitnc(P2Params& p)
 {
@@ -4062,7 +3897,7 @@ bool P2Asm::asm_bitnc(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_bitz(P2Params& p)
 {
@@ -4080,7 +3915,7 @@ bool P2Asm::asm_bitz(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_bitnz(P2Params& p)
 {
@@ -4098,7 +3933,7 @@ bool P2Asm::asm_bitnz(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_bitrnd(P2Params& p)
 {
@@ -4116,7 +3951,7 @@ bool P2Asm::asm_bitrnd(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_bitnot(P2Params& p)
 {
@@ -4137,7 +3972,7 @@ bool P2Asm::asm_bitnot(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_and(P2Params& p)
 {
@@ -4158,7 +3993,7 @@ bool P2Asm::asm_and(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_andn(P2Params& p)
 {
@@ -4179,7 +4014,7 @@ bool P2Asm::asm_andn(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_or(P2Params& p)
 {
@@ -4200,7 +4035,7 @@ bool P2Asm::asm_or(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_xor(P2Params& p)
 {
@@ -4221,7 +4056,7 @@ bool P2Asm::asm_xor(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_muxc(P2Params& p)
 {
@@ -4242,7 +4077,7 @@ bool P2Asm::asm_muxc(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_muxnc(P2Params& p)
 {
@@ -4263,7 +4098,7 @@ bool P2Asm::asm_muxnc(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_muxz(P2Params& p)
 {
@@ -4284,7 +4119,7 @@ bool P2Asm::asm_muxz(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_muxnz(P2Params& p)
 {
@@ -4305,7 +4140,7 @@ bool P2Asm::asm_muxnz(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_mov(P2Params& p)
 {
@@ -4326,7 +4161,7 @@ bool P2Asm::asm_mov(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_not(P2Params& p)
 {
@@ -4347,7 +4182,7 @@ bool P2Asm::asm_not(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_abs(P2Params& p)
 {
@@ -4368,7 +4203,7 @@ bool P2Asm::asm_abs(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_neg(P2Params& p)
 {
@@ -4389,7 +4224,7 @@ bool P2Asm::asm_neg(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_negc(P2Params& p)
 {
@@ -4410,7 +4245,7 @@ bool P2Asm::asm_negc(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_negnc(P2Params& p)
 {
@@ -4431,7 +4266,7 @@ bool P2Asm::asm_negnc(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_negz(P2Params& p)
 {
@@ -4452,7 +4287,7 @@ bool P2Asm::asm_negz(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_negnz(P2Params& p)
 {
@@ -4472,7 +4307,7 @@ bool P2Asm::asm_negnz(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_incmod(P2Params& p)
 {
@@ -4492,7 +4327,7 @@ bool P2Asm::asm_incmod(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_decmod(P2Params& p)
 {
@@ -4512,7 +4347,7 @@ bool P2Asm::asm_decmod(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_zerox(P2Params& p)
 {
@@ -4532,7 +4367,7 @@ bool P2Asm::asm_zerox(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_signx(P2Params& p)
 {
@@ -4553,7 +4388,7 @@ bool P2Asm::asm_signx(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_encod(P2Params& p)
 {
@@ -4574,7 +4409,7 @@ bool P2Asm::asm_encod(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_ones(P2Params& p)
 {
@@ -4594,7 +4429,7 @@ bool P2Asm::asm_ones(P2Params& p)
  * Z = ((D & S) == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_test(P2Params& p)
 {
@@ -4614,7 +4449,7 @@ bool P2Asm::asm_test(P2Params& p)
  * Z = ((D & !S) == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_testn(P2Params& p)
 {
@@ -4632,10 +4467,12 @@ bool P2Asm::asm_testn(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setnib(P2Params& p)
 {
+    if (left(p) < 3)
+        return asm_setnib_altsn(p);
     p.idx++;
     p.IR.op.inst = p2_SETNIB_0;
     return parse_d_imm_s_nnn(p);
@@ -4650,7 +4487,7 @@ bool P2Asm::asm_setnib(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setnib_altsn(P2Params& p)
 {
@@ -4669,10 +4506,12 @@ bool P2Asm::asm_setnib_altsn(P2Params& p)
  * D = {28'b0, S.NIBBLE[N]).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_getnib(P2Params& p)
 {
+    if (left(p) < 3)
+        return asm_getnib_altgn(p);
     p.idx++;
     p.IR.op.inst = p2_GETNIB_0;
     return parse_d_imm_s_nnn(p);
@@ -4687,7 +4526,7 @@ bool P2Asm::asm_getnib(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_getnib_altgn(P2Params& p)
 {
@@ -4705,10 +4544,12 @@ bool P2Asm::asm_getnib_altgn(P2Params& p)
  * D = {D[27:0], S.NIBBLE[N]).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rolnib(P2Params& p)
 {
+    if (left(p) < 3)
+        return asm_rolnib_altgn(p);
     p.idx++;
     p.IR.op.inst = p2_ROLNIB_0;
     return parse_d_imm_s_nnn(p);
@@ -4723,7 +4564,7 @@ bool P2Asm::asm_rolnib(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rolnib_altgn(P2Params& p)
 {
@@ -4741,10 +4582,12 @@ bool P2Asm::asm_rolnib_altgn(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setbyte(P2Params& p)
 {
+    if (left(p) < 3)
+        return asm_setbyte_altsb(p);
     p.idx++;
     p.IR.op.inst = p2_SETBYTE;
     return parse_d_imm_s_nnn(p);
@@ -4759,7 +4602,7 @@ bool P2Asm::asm_setbyte(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setbyte_altsb(P2Params& p)
 {
@@ -4778,10 +4621,12 @@ bool P2Asm::asm_setbyte_altsb(P2Params& p)
  * D = {24'b0, S.BYTE[N]).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_getbyte(P2Params& p)
 {
+    if (left(p) < 3)
+        return asm_getbyte_altgb(p);
     p.idx++;
     p.IR.op.inst = p2_GETBYTE;
     return parse_d_imm_s_nnn(p);
@@ -4796,7 +4641,7 @@ bool P2Asm::asm_getbyte(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_getbyte_altgb(P2Params& p)
 {
@@ -4815,10 +4660,12 @@ bool P2Asm::asm_getbyte_altgb(P2Params& p)
  * D = {D[23:0], S.BYTE[N]).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rolbyte(P2Params& p)
 {
+    if (left(p) < 3)
+        return asm_rolbyte_altgb(p);
     p.idx++;
     p.IR.op.inst = p2_ROLBYTE;
     return parse_d_imm_s_nnn(p, 3);
@@ -4833,7 +4680,7 @@ bool P2Asm::asm_rolbyte(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rolbyte_altgb(P2Params& p)
 {
@@ -4851,10 +4698,12 @@ bool P2Asm::asm_rolbyte_altgb(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setword(P2Params& p)
 {
+    if (left(p) < 3)
+        return asm_setword_altsw(p);
     p.idx++;
     p.IR.op9.inst = p2_SETWORD;
     return parse_d_imm_s_nnn(p, 1);
@@ -4869,7 +4718,7 @@ bool P2Asm::asm_setword(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setword_altsw(P2Params& p)
 {
@@ -4888,10 +4737,12 @@ bool P2Asm::asm_setword_altsw(P2Params& p)
  * D = {16'b0, S.WORD[N]).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_getword(P2Params& p)
 {
+    if (left(p) < 3)
+        return asm_getword_altgw(p);
     p.idx++;
     p.IR.op9.inst = p2_GETWORD;
     return parse_d_imm_s_nnn(p, 1);
@@ -4906,7 +4757,7 @@ bool P2Asm::asm_getword(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_getword_altgw(P2Params& p)
 {
@@ -4925,10 +4776,12 @@ bool P2Asm::asm_getword_altgw(P2Params& p)
  * D = {D[15:0], S.WORD[N]).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rolword(P2Params& p)
 {
+    if (left(p) < 3)
+        return asm_rolword_altgw(p);
     p.idx++;
     p.IR.op9.inst = p2_ROLWORD;
     return parse_d_imm_s_nnn(p, 1);
@@ -4943,7 +4796,7 @@ bool P2Asm::asm_rolword(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rolword_altgw(P2Params& p)
 {
@@ -4963,10 +4816,12 @@ bool P2Asm::asm_rolword_altgw(P2Params& p)
  * D += sign-extended S[17:9].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_altsn(P2Params& p)
 {
+    if (left(p) < 3)
+        return asm_altsn_d(p);
     p.idx++;
     p.IR.op9.inst = p2_ALTSN;
     return parse_d_imm_s(p);
@@ -4982,7 +4837,7 @@ bool P2Asm::asm_altsn(P2Params& p)
  * Next D field = D[11:3], N field = D[2:0].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_altsn_d(P2Params& p)
 {
@@ -5002,10 +4857,12 @@ bool P2Asm::asm_altsn_d(P2Params& p)
  * D += sign-extended S[17:9].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_altgn(P2Params& p)
 {
+    if (left(p) < 3)
+        return asm_altgn_d(p);
     p.idx++;
     p.IR.op9.inst = p2_ALTGN;
     return parse_d_imm_s(p);
@@ -5021,7 +4878,7 @@ bool P2Asm::asm_altgn(P2Params& p)
  * Next S field = D[11:3], N field = D[2:0].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_altgn_d(P2Params& p)
 {
@@ -5041,10 +4898,12 @@ bool P2Asm::asm_altgn_d(P2Params& p)
  * D += sign-extended S[17:9].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_altsb(P2Params& p)
 {
+    if (left(p) < 3)
+        return asm_altsb_d(p);
     p.idx++;
     p.IR.op9.inst = p2_ALTSB;
     return parse_d_imm_s(p);
@@ -5060,7 +4919,7 @@ bool P2Asm::asm_altsb(P2Params& p)
  * Next D field = D[10:2], N field = D[1:0].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_altsb_d(P2Params& p)
 {
@@ -5080,10 +4939,12 @@ bool P2Asm::asm_altsb_d(P2Params& p)
  * D += sign-extended S[17:9].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_altgb(P2Params& p)
 {
+    if (left(p) < 3)
+        return asm_altgb_d(p);
     p.idx++;
     p.IR.op9.inst = p2_ALTGB;
     return parse_d_imm_s(p);
@@ -5099,7 +4960,7 @@ bool P2Asm::asm_altgb(P2Params& p)
  * Next S field = D[10:2], N field = D[1:0].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_altgb_d(P2Params& p)
 {
@@ -5119,10 +4980,12 @@ bool P2Asm::asm_altgb_d(P2Params& p)
  * D += sign-extended S[17:9].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_altsw(P2Params& p)
 {
+    if (left(p) < 3)
+        return asm_altsw_d(p);
     p.idx++;
     p.IR.op9.inst = p2_ALTSW;
     return parse_d_imm_s(p);
@@ -5138,7 +5001,7 @@ bool P2Asm::asm_altsw(P2Params& p)
  * Next D field = D[9:1], N field = D[0].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_altsw_d(P2Params& p)
 {
@@ -5158,10 +5021,12 @@ bool P2Asm::asm_altsw_d(P2Params& p)
  * D += sign-extended S[17:9].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_altgw(P2Params& p)
 {
+    if (left(p) < 3)
+        return asm_altgw_d(p);
     p.idx++;
     p.IR.op9.inst = p2_ALTGW;
     return parse_d_imm_s(p);
@@ -5177,7 +5042,7 @@ bool P2Asm::asm_altgw(P2Params& p)
  * Next S field = D[9:1], N field = D[0].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_altgw_d(P2Params& p)
 {
@@ -5196,10 +5061,12 @@ bool P2Asm::asm_altgw_d(P2Params& p)
  * D += sign-extended S[17:9].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_altr(P2Params& p)
 {
+    if (left(p) < 3)
+        return asm_altr_d(p);
     p.idx++;
     p.IR.op9.inst = p2_ALTR;
     return parse_d_imm_s(p);
@@ -5214,7 +5081,7 @@ bool P2Asm::asm_altr(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_altr_d(P2Params& p)
 {
@@ -5233,10 +5100,12 @@ bool P2Asm::asm_altr_d(P2Params& p)
  * D += sign-extended S[17:9].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_altd(P2Params& p)
 {
+    if (left(p) < 3)
+        return asm_altd_d(p);
     p.idx++;
     p.IR.op9.inst = p2_ALTD;
     return parse_d_imm_s(p);
@@ -5251,7 +5120,7 @@ bool P2Asm::asm_altd(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_altd_d(P2Params& p)
 {
@@ -5270,10 +5139,12 @@ bool P2Asm::asm_altd_d(P2Params& p)
  * D += sign-extended S[17:9].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_alts(P2Params& p)
 {
+    if (left(p) < 3)
+        return asm_alts_d(p);
     p.idx++;
     p.IR.op9.inst = p2_ALTS;
     return parse_d_imm_s(p);
@@ -5288,7 +5159,7 @@ bool P2Asm::asm_alts(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_alts_d(P2Params& p)
 {
@@ -5307,10 +5178,12 @@ bool P2Asm::asm_alts_d(P2Params& p)
  * D += sign-extended S[17:9].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_altb(P2Params& p)
 {
+    if (left(p) < 3)
+        return asm_altb_d(p);
     p.idx++;
     p.IR.op9.inst = p2_ALTB;
     return parse_d_imm_s(p);
@@ -5325,7 +5198,7 @@ bool P2Asm::asm_altb(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_altb_d(P2Params& p)
 {
@@ -5344,10 +5217,12 @@ bool P2Asm::asm_altb_d(P2Params& p)
  * Modify D per S.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_alti(P2Params& p)
 {
+    if (left(p) < 3)
+        return asm_alti_d(p);
     p.idx++;
     p.IR.op9.inst = p2_ALTI;
     return parse_d_imm_s(p);
@@ -5363,7 +5238,7 @@ bool P2Asm::asm_alti(P2Params& p)
  * D stays same.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_alti_d(P2Params& p)
 {
@@ -5382,7 +5257,7 @@ bool P2Asm::asm_alti_d(P2Params& p)
  * D = {D[31:28], S[8:0], D[18:0]}.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setr(P2Params& p)
 {
@@ -5401,7 +5276,7 @@ bool P2Asm::asm_setr(P2Params& p)
  * D = {D[31:18], S[8:0], D[8:0]}.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setd(P2Params& p)
 {
@@ -5420,7 +5295,7 @@ bool P2Asm::asm_setd(P2Params& p)
  * D = {D[31:9], S[8:0]}.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_sets(P2Params& p)
 {
@@ -5439,7 +5314,7 @@ bool P2Asm::asm_sets(P2Params& p)
  * D = 1 << S[4:0].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_decod(P2Params& p)
 {
@@ -5458,7 +5333,7 @@ bool P2Asm::asm_decod(P2Params& p)
  * D = 1 << D[4:0].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_decod_d(P2Params& p)
 {
@@ -5477,7 +5352,7 @@ bool P2Asm::asm_decod_d(P2Params& p)
  * D = ($0000_0002 << S[4:0]) - 1.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_bmask(P2Params& p)
 {
@@ -5496,7 +5371,7 @@ bool P2Asm::asm_bmask(P2Params& p)
  * D = ($0000_0002 << D[4:0]) - 1.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_bmask_d(P2Params& p)
 {
@@ -5515,7 +5390,7 @@ bool P2Asm::asm_bmask_d(P2Params& p)
  * If (C XOR D[0]) then D = (D >> 1) XOR S, else D = (D >> 1).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_crcbit(P2Params& p)
 {
@@ -5536,7 +5411,7 @@ bool P2Asm::asm_crcbit(P2Params& p)
  * Use SETQ+CRCNIB+CRCNIB+CRCNIB.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_crcnib(P2Params& p)
 {
@@ -5554,7 +5429,7 @@ bool P2Asm::asm_crcnib(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_muxnits(P2Params& p)
 {
@@ -5572,7 +5447,7 @@ bool P2Asm::asm_muxnits(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_muxnibs(P2Params& p)
 {
@@ -5592,7 +5467,7 @@ bool P2Asm::asm_muxnibs(P2Params& p)
  * D = (D & !Q) | (S & Q).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_muxq(P2Params& p)
 {
@@ -5611,7 +5486,7 @@ bool P2Asm::asm_muxq(P2Params& p)
  * D = {D.BYTE[S[7:6]], D.BYTE[S[5:4]], D.BYTE[S[3:2]], D.BYTE[S[1:0]]}.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_movbyts(P2Params& p)
 {
@@ -5630,7 +5505,7 @@ bool P2Asm::asm_movbyts(P2Params& p)
  * Z = (S == 0) | (D == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_mul(P2Params& p)
 {
@@ -5649,7 +5524,7 @@ bool P2Asm::asm_mul(P2Params& p)
  * Z = (S == 0) | (D == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_muls(P2Params& p)
 {
@@ -5668,7 +5543,7 @@ bool P2Asm::asm_muls(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_sca(P2Params& p)
 {
@@ -5688,7 +5563,7 @@ bool P2Asm::asm_sca(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_scas(P2Params& p)
 {
@@ -5706,7 +5581,7 @@ bool P2Asm::asm_scas(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_addpix(P2Params& p)
 {
@@ -5725,7 +5600,7 @@ bool P2Asm::asm_addpix(P2Params& p)
  * 0.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_mulpix(P2Params& p)
 {
@@ -5743,7 +5618,7 @@ bool P2Asm::asm_mulpix(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_blnpix(P2Params& p)
 {
@@ -5761,7 +5636,7 @@ bool P2Asm::asm_blnpix(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_mixpix(P2Params& p)
 {
@@ -5780,7 +5655,7 @@ bool P2Asm::asm_mixpix(P2Params& p)
  * Adds S into D.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_addct1(P2Params& p)
 {
@@ -5799,7 +5674,7 @@ bool P2Asm::asm_addct1(P2Params& p)
  * Adds S into D.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_addct2(P2Params& p)
 {
@@ -5818,7 +5693,7 @@ bool P2Asm::asm_addct2(P2Params& p)
  * Adds S into D.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_addct3(P2Params& p)
 {
@@ -5837,7 +5712,7 @@ bool P2Asm::asm_addct3(P2Params& p)
  * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_wmlong(P2Params& p)
 {
@@ -5856,7 +5731,7 @@ bool P2Asm::asm_wmlong(P2Params& p)
  * C = modal result.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rqpin(P2Params& p)
 {
@@ -5875,7 +5750,7 @@ bool P2Asm::asm_rqpin(P2Params& p)
  * C = modal result.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rdpin(P2Params& p)
 {
@@ -5895,7 +5770,7 @@ bool P2Asm::asm_rdpin(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rdlut(P2Params& p)
 {
@@ -5915,7 +5790,7 @@ bool P2Asm::asm_rdlut(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rdbyte(P2Params& p)
 {
@@ -5935,7 +5810,7 @@ bool P2Asm::asm_rdbyte(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rdword(P2Params& p)
 {
@@ -5955,7 +5830,7 @@ bool P2Asm::asm_rdword(P2Params& p)
  * *   Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rdlong(P2Params& p)
 {
@@ -5975,7 +5850,7 @@ bool P2Asm::asm_rdlong(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_popa(P2Params& p)
 {
@@ -5997,7 +5872,7 @@ bool P2Asm::asm_popa(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_popb(P2Params& p)
 {
@@ -6018,7 +5893,7 @@ bool P2Asm::asm_popb(P2Params& p)
  * C = S[31], Z = S[30].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_calld(P2Params& p)
 {
@@ -6037,7 +5912,7 @@ bool P2Asm::asm_calld(P2Params& p)
  * (CALLD $1F0,$1F1 WC,WZ).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_resi3(P2Params& p)
 {
@@ -6060,7 +5935,7 @@ bool P2Asm::asm_resi3(P2Params& p)
  * (CALLD $1F2,$1F3 WC,WZ).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_resi2(P2Params& p)
 {
@@ -6083,7 +5958,7 @@ bool P2Asm::asm_resi2(P2Params& p)
  * (CALLD $1F4,$1F5 WC,WZ).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_resi1(P2Params& p)
 {
@@ -6106,7 +5981,7 @@ bool P2Asm::asm_resi1(P2Params& p)
  * (CALLD $1FE,$1FF WC,WZ).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_resi0(P2Params& p)
 {
@@ -6129,7 +6004,7 @@ bool P2Asm::asm_resi0(P2Params& p)
  * (CALLD $1FF,$1F1 WC,WZ).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_reti3(P2Params& p)
 {
@@ -6152,7 +6027,7 @@ bool P2Asm::asm_reti3(P2Params& p)
  * (CALLD $1FF,$1F3 WC,WZ).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_reti2(P2Params& p)
 {
@@ -6175,7 +6050,7 @@ bool P2Asm::asm_reti2(P2Params& p)
  * (CALLD $1FF,$1F5 WC,WZ).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_reti1(P2Params& p)
 {
@@ -6198,7 +6073,7 @@ bool P2Asm::asm_reti1(P2Params& p)
  * (CALLD $1FF,$1FF WC,WZ).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_reti0(P2Params& p)
 {
@@ -6220,7 +6095,7 @@ bool P2Asm::asm_reti0(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_callpa(P2Params& p)
 {
@@ -6238,7 +6113,7 @@ bool P2Asm::asm_callpa(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_callpb(P2Params& p)
 {
@@ -6256,7 +6131,7 @@ bool P2Asm::asm_callpb(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_djz(P2Params& p)
 {
@@ -6274,7 +6149,7 @@ bool P2Asm::asm_djz(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_djnz(P2Params& p)
 {
@@ -6292,7 +6167,7 @@ bool P2Asm::asm_djnz(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_djf(P2Params& p)
 {
@@ -6310,7 +6185,7 @@ bool P2Asm::asm_djf(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_djnf(P2Params& p)
 {
@@ -6328,7 +6203,7 @@ bool P2Asm::asm_djnf(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_ijz(P2Params& p)
 {
@@ -6346,7 +6221,7 @@ bool P2Asm::asm_ijz(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_ijnz(P2Params& p)
 {
@@ -6364,7 +6239,7 @@ bool P2Asm::asm_ijnz(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_tjz(P2Params& p)
 {
@@ -6382,7 +6257,7 @@ bool P2Asm::asm_tjz(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_tjnz(P2Params& p)
 {
@@ -6400,7 +6275,7 @@ bool P2Asm::asm_tjnz(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_tjf(P2Params& p)
 {
@@ -6418,7 +6293,7 @@ bool P2Asm::asm_tjf(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_tjnf(P2Params& p)
 {
@@ -6436,7 +6311,7 @@ bool P2Asm::asm_tjnf(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_tjs(P2Params& p)
 {
@@ -6454,7 +6329,7 @@ bool P2Asm::asm_tjs(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_tjns(P2Params& p)
 {
@@ -6472,7 +6347,7 @@ bool P2Asm::asm_tjns(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_tjv(P2Params& p)
 {
@@ -6490,7 +6365,7 @@ bool P2Asm::asm_tjv(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jint(P2Params& p)
 {
@@ -6509,7 +6384,7 @@ bool P2Asm::asm_jint(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jct1(P2Params& p)
 {
@@ -6528,7 +6403,7 @@ bool P2Asm::asm_jct1(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jct2(P2Params& p)
 {
@@ -6547,7 +6422,7 @@ bool P2Asm::asm_jct2(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jct3(P2Params& p)
 {
@@ -6566,7 +6441,7 @@ bool P2Asm::asm_jct3(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jse1(P2Params& p)
 {
@@ -6585,7 +6460,7 @@ bool P2Asm::asm_jse1(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jse2(P2Params& p)
 {
@@ -6604,7 +6479,7 @@ bool P2Asm::asm_jse2(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jse3(P2Params& p)
 {
@@ -6623,7 +6498,7 @@ bool P2Asm::asm_jse3(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jse4(P2Params& p)
 {
@@ -6642,7 +6517,7 @@ bool P2Asm::asm_jse4(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jpat(P2Params& p)
 {
@@ -6661,7 +6536,7 @@ bool P2Asm::asm_jpat(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jfbw(P2Params& p)
 {
@@ -6680,7 +6555,7 @@ bool P2Asm::asm_jfbw(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jxmt(P2Params& p)
 {
@@ -6699,7 +6574,7 @@ bool P2Asm::asm_jxmt(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jxfi(P2Params& p)
 {
@@ -6718,7 +6593,7 @@ bool P2Asm::asm_jxfi(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jxro(P2Params& p)
 {
@@ -6737,7 +6612,7 @@ bool P2Asm::asm_jxro(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jxrl(P2Params& p)
 {
@@ -6756,7 +6631,7 @@ bool P2Asm::asm_jxrl(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jatn(P2Params& p)
 {
@@ -6775,7 +6650,7 @@ bool P2Asm::asm_jatn(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jqmt(P2Params& p)
 {
@@ -6794,7 +6669,7 @@ bool P2Asm::asm_jqmt(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jnint(P2Params& p)
 {
@@ -6813,7 +6688,7 @@ bool P2Asm::asm_jnint(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jnct1(P2Params& p)
 {
@@ -6832,7 +6707,7 @@ bool P2Asm::asm_jnct1(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jnct2(P2Params& p)
 {
@@ -6851,7 +6726,7 @@ bool P2Asm::asm_jnct2(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jnct3(P2Params& p)
 {
@@ -6870,7 +6745,7 @@ bool P2Asm::asm_jnct3(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jnse1(P2Params& p)
 {
@@ -6889,7 +6764,7 @@ bool P2Asm::asm_jnse1(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jnse2(P2Params& p)
 {
@@ -6908,7 +6783,7 @@ bool P2Asm::asm_jnse2(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jnse3(P2Params& p)
 {
@@ -6927,7 +6802,7 @@ bool P2Asm::asm_jnse3(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jnse4(P2Params& p)
 {
@@ -6946,7 +6821,7 @@ bool P2Asm::asm_jnse4(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jnpat(P2Params& p)
 {
@@ -6965,7 +6840,7 @@ bool P2Asm::asm_jnpat(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jnfbw(P2Params& p)
 {
@@ -6984,7 +6859,7 @@ bool P2Asm::asm_jnfbw(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jnxmt(P2Params& p)
 {
@@ -7003,7 +6878,7 @@ bool P2Asm::asm_jnxmt(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jnxfi(P2Params& p)
 {
@@ -7022,7 +6897,7 @@ bool P2Asm::asm_jnxfi(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jnxro(P2Params& p)
 {
@@ -7041,7 +6916,7 @@ bool P2Asm::asm_jnxro(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jnxrl(P2Params& p)
 {
@@ -7060,7 +6935,7 @@ bool P2Asm::asm_jnxrl(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jnatn(P2Params& p)
 {
@@ -7079,7 +6954,7 @@ bool P2Asm::asm_jnatn(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jnqmt(P2Params& p)
 {
@@ -7098,7 +6973,7 @@ bool P2Asm::asm_jnqmt(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_1011110_1(P2Params& p)
 {
@@ -7116,7 +6991,7 @@ bool P2Asm::asm_1011110_1(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_1011111_0(P2Params& p)
 {
@@ -7135,7 +7010,7 @@ bool P2Asm::asm_1011111_0(P2Params& p)
  * C selects INA/INB, Z selects =/!=, D provides mask value, S provides match value.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setpat(P2Params& p)
 {
@@ -7153,7 +7028,7 @@ bool P2Asm::asm_setpat(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_wrpin(P2Params& p)
 {
@@ -7171,7 +7046,7 @@ bool P2Asm::asm_wrpin(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_akpin(P2Params& p)
 {
@@ -7191,7 +7066,7 @@ bool P2Asm::asm_akpin(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_wxpin(P2Params& p)
 {
@@ -7209,7 +7084,7 @@ bool P2Asm::asm_wxpin(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_wypin(P2Params& p)
 {
@@ -7227,7 +7102,7 @@ bool P2Asm::asm_wypin(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_wrlut(P2Params& p)
 {
@@ -7245,7 +7120,7 @@ bool P2Asm::asm_wrlut(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_wrbyte(P2Params& p)
 {
@@ -7263,7 +7138,7 @@ bool P2Asm::asm_wrbyte(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_wrword(P2Params& p)
 {
@@ -7282,7 +7157,7 @@ bool P2Asm::asm_wrword(P2Params& p)
  * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_wrlong(P2Params& p)
 {
@@ -7300,7 +7175,7 @@ bool P2Asm::asm_wrlong(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_pusha(P2Params& p)
 {
@@ -7320,7 +7195,7 @@ bool P2Asm::asm_pusha(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_pushb(P2Params& p)
 {
@@ -7341,7 +7216,7 @@ bool P2Asm::asm_pushb(P2Params& p)
  * D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rdfast(P2Params& p)
 {
@@ -7360,7 +7235,7 @@ bool P2Asm::asm_rdfast(P2Params& p)
  * D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_wrfast(P2Params& p)
 {
@@ -7379,7 +7254,7 @@ bool P2Asm::asm_wrfast(P2Params& p)
  * D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_fblock(P2Params& p)
 {
@@ -7397,7 +7272,7 @@ bool P2Asm::asm_fblock(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_xinit(P2Params& p)
 {
@@ -7415,7 +7290,7 @@ bool P2Asm::asm_xinit(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_xstop(P2Params& p)
 {
@@ -7437,7 +7312,7 @@ bool P2Asm::asm_xstop(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_xzero(P2Params& p)
 {
@@ -7455,7 +7330,7 @@ bool P2Asm::asm_xzero(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_xcont(P2Params& p)
 {
@@ -7475,7 +7350,7 @@ bool P2Asm::asm_xcont(P2Params& p)
  * If D[8:0] = 0, nothing repeats.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rep(P2Params& p)
 {
@@ -7495,7 +7370,7 @@ bool P2Asm::asm_rep(P2Params& p)
  * Prior SETQ sets PTRA of cog.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_coginit(P2Params& p)
 {
@@ -7514,7 +7389,7 @@ bool P2Asm::asm_coginit(P2Params& p)
  * GETQX/GETQY retrieves lower/upper product.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_qmul(P2Params& p)
 {
@@ -7533,7 +7408,7 @@ bool P2Asm::asm_qmul(P2Params& p)
  * GETQX/GETQY retrieves quotient/remainder.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_qdiv(P2Params& p)
 {
@@ -7552,7 +7427,7 @@ bool P2Asm::asm_qdiv(P2Params& p)
  * GETQX/GETQY retrieves quotient/remainder.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_qfrac(P2Params& p)
 {
@@ -7571,7 +7446,7 @@ bool P2Asm::asm_qfrac(P2Params& p)
  * GETQX retrieves root.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_qsqrt(P2Params& p)
 {
@@ -7590,7 +7465,7 @@ bool P2Asm::asm_qsqrt(P2Params& p)
  * GETQX/GETQY retrieves X/Y.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_qrotate(P2Params& p)
 {
@@ -7609,7 +7484,7 @@ bool P2Asm::asm_qrotate(P2Params& p)
  * GETQX/GETQY retrieves length/angle.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_qvector(P2Params& p)
 {
@@ -7627,7 +7502,7 @@ bool P2Asm::asm_qvector(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_hubset(P2Params& p)
 {
@@ -7647,7 +7522,7 @@ bool P2Asm::asm_hubset(P2Params& p)
  * If WC, check status of cog D[3:0], C = 1 if on.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_cogid(P2Params& p)
 {
@@ -7666,7 +7541,7 @@ bool P2Asm::asm_cogid(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_cogstop(P2Params& p)
 {
@@ -7687,7 +7562,7 @@ bool P2Asm::asm_cogstop(P2Params& p)
  * C = 1 if no LOCK available.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_locknew(P2Params& p)
 {
@@ -7706,7 +7581,7 @@ bool P2Asm::asm_locknew(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_lockret(P2Params& p)
 {
@@ -7728,7 +7603,7 @@ bool P2Asm::asm_lockret(P2Params& p)
  * LOCK is also released if owner cog stops or restarts.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_locktry(P2Params& p)
 {
@@ -7748,7 +7623,7 @@ bool P2Asm::asm_locktry(P2Params& p)
  * If D is a register and WC, get current/last cog id of LOCK owner into D and LOCK status into C.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_lockrel(P2Params& p)
 {
@@ -7768,7 +7643,7 @@ bool P2Asm::asm_lockrel(P2Params& p)
  * GETQX retrieves log {5'whole_exponent, 27'fractional_exponent}.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_qlog(P2Params& p)
 {
@@ -7788,7 +7663,7 @@ bool P2Asm::asm_qlog(P2Params& p)
  * GETQX retrieves number.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_qexp(P2Params& p)
 {
@@ -7809,7 +7684,7 @@ bool P2Asm::asm_qexp(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rfbyte(P2Params& p)
 {
@@ -7830,7 +7705,7 @@ bool P2Asm::asm_rfbyte(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rfword(P2Params& p)
 {
@@ -7851,7 +7726,7 @@ bool P2Asm::asm_rfword(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rflong(P2Params& p)
 {
@@ -7872,7 +7747,7 @@ bool P2Asm::asm_rflong(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rfvar(P2Params& p)
 {
@@ -7893,7 +7768,7 @@ bool P2Asm::asm_rfvar(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rfvars(P2Params& p)
 {
@@ -7912,7 +7787,7 @@ bool P2Asm::asm_rfvars(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_wfbyte(P2Params& p)
 {
@@ -7931,7 +7806,7 @@ bool P2Asm::asm_wfbyte(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_wfword(P2Params& p)
 {
@@ -7950,7 +7825,7 @@ bool P2Asm::asm_wfword(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_wflong(P2Params& p)
 {
@@ -7972,7 +7847,7 @@ bool P2Asm::asm_wflong(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_getqx(P2Params& p)
 {
@@ -7994,7 +7869,7 @@ bool P2Asm::asm_getqx(P2Params& p)
  * Z = (result == 0).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_getqy(P2Params& p)
 {
@@ -8014,7 +7889,7 @@ bool P2Asm::asm_getqy(P2Params& p)
  * CT is the free-running 32-bit system counter that increments on every clock.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_getct(P2Params& p)
 {
@@ -8035,7 +7910,7 @@ bool P2Asm::asm_getct(P2Params& p)
  * D = RND[31:0], C = RND[31], Z = RND[30], unique per cog.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_getrnd(P2Params& p)
 {
@@ -8055,7 +7930,7 @@ bool P2Asm::asm_getrnd(P2Params& p)
  * C = RND[31], Z = RND[30], unique per cog.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_getrnd_cz(P2Params& p)
 {
@@ -8074,7 +7949,7 @@ bool P2Asm::asm_getrnd_cz(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setdacs(P2Params& p)
 {
@@ -8093,7 +7968,7 @@ bool P2Asm::asm_setdacs(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setxfrq(P2Params& p)
 {
@@ -8112,7 +7987,7 @@ bool P2Asm::asm_setxfrq(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_getxacc(P2Params& p)
 {
@@ -8133,7 +8008,7 @@ bool P2Asm::asm_getxacc(P2Params& p)
  * C/Z = 0.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_waitx(P2Params& p)
 {
@@ -8152,7 +8027,7 @@ bool P2Asm::asm_waitx(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setse1(P2Params& p)
 {
@@ -8171,7 +8046,7 @@ bool P2Asm::asm_setse1(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setse2(P2Params& p)
 {
@@ -8190,7 +8065,7 @@ bool P2Asm::asm_setse2(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setse3(P2Params& p)
 {
@@ -8209,7 +8084,7 @@ bool P2Asm::asm_setse3(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setse4(P2Params& p)
 {
@@ -8228,7 +8103,7 @@ bool P2Asm::asm_setse4(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_pollint(P2Params& p)
 {
@@ -8248,7 +8123,7 @@ bool P2Asm::asm_pollint(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_pollct1(P2Params& p)
 {
@@ -8268,7 +8143,7 @@ bool P2Asm::asm_pollct1(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_pollct2(P2Params& p)
 {
@@ -8288,7 +8163,7 @@ bool P2Asm::asm_pollct2(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_pollct3(P2Params& p)
 {
@@ -8308,7 +8183,7 @@ bool P2Asm::asm_pollct3(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_pollse1(P2Params& p)
 {
@@ -8328,7 +8203,7 @@ bool P2Asm::asm_pollse1(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_pollse2(P2Params& p)
 {
@@ -8348,7 +8223,7 @@ bool P2Asm::asm_pollse2(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_pollse3(P2Params& p)
 {
@@ -8368,7 +8243,7 @@ bool P2Asm::asm_pollse3(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_pollse4(P2Params& p)
 {
@@ -8388,7 +8263,7 @@ bool P2Asm::asm_pollse4(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_pollpat(P2Params& p)
 {
@@ -8408,7 +8283,7 @@ bool P2Asm::asm_pollpat(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_pollfbw(P2Params& p)
 {
@@ -8428,7 +8303,7 @@ bool P2Asm::asm_pollfbw(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_pollxmt(P2Params& p)
 {
@@ -8448,7 +8323,7 @@ bool P2Asm::asm_pollxmt(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_pollxfi(P2Params& p)
 {
@@ -8468,7 +8343,7 @@ bool P2Asm::asm_pollxfi(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_pollxro(P2Params& p)
 {
@@ -8488,7 +8363,7 @@ bool P2Asm::asm_pollxro(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_pollxrl(P2Params& p)
 {
@@ -8508,7 +8383,7 @@ bool P2Asm::asm_pollxrl(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_pollatn(P2Params& p)
 {
@@ -8528,7 +8403,7 @@ bool P2Asm::asm_pollatn(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_pollqmt(P2Params& p)
 {
@@ -8550,7 +8425,7 @@ bool P2Asm::asm_pollqmt(P2Params& p)
  * C/Z = timeout.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_waitint(P2Params& p)
 {
@@ -8572,7 +8447,7 @@ bool P2Asm::asm_waitint(P2Params& p)
  * C/Z = timeout.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_waitct1(P2Params& p)
 {
@@ -8594,7 +8469,7 @@ bool P2Asm::asm_waitct1(P2Params& p)
  * C/Z = timeout.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_waitct2(P2Params& p)
 {
@@ -8616,7 +8491,7 @@ bool P2Asm::asm_waitct2(P2Params& p)
  * C/Z = timeout.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_waitct3(P2Params& p)
 {
@@ -8638,7 +8513,7 @@ bool P2Asm::asm_waitct3(P2Params& p)
  * C/Z = timeout.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_waitse1(P2Params& p)
 {
@@ -8660,7 +8535,7 @@ bool P2Asm::asm_waitse1(P2Params& p)
  * C/Z = timeout.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_waitse2(P2Params& p)
 {
@@ -8682,7 +8557,7 @@ bool P2Asm::asm_waitse2(P2Params& p)
  * C/Z = timeout.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_waitse3(P2Params& p)
 {
@@ -8704,7 +8579,7 @@ bool P2Asm::asm_waitse3(P2Params& p)
  * C/Z = timeout.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_waitse4(P2Params& p)
 {
@@ -8726,7 +8601,7 @@ bool P2Asm::asm_waitse4(P2Params& p)
  * C/Z = timeout.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_waitpat(P2Params& p)
 {
@@ -8748,7 +8623,7 @@ bool P2Asm::asm_waitpat(P2Params& p)
  * C/Z = timeout.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_waitfbw(P2Params& p)
 {
@@ -8770,7 +8645,7 @@ bool P2Asm::asm_waitfbw(P2Params& p)
  * C/Z = timeout.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_waitxmt(P2Params& p)
 {
@@ -8792,7 +8667,7 @@ bool P2Asm::asm_waitxmt(P2Params& p)
  * C/Z = timeout.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_waitxfi(P2Params& p)
 {
@@ -8814,7 +8689,7 @@ bool P2Asm::asm_waitxfi(P2Params& p)
  * C/Z = timeout.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_waitxro(P2Params& p)
 {
@@ -8836,7 +8711,7 @@ bool P2Asm::asm_waitxro(P2Params& p)
  * C/Z = timeout.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_waitxrl(P2Params& p)
 {
@@ -8858,7 +8733,7 @@ bool P2Asm::asm_waitxrl(P2Params& p)
  * C/Z = timeout.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_waitatn(P2Params& p)
 {
@@ -8878,7 +8753,7 @@ bool P2Asm::asm_waitatn(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_allowi(P2Params& p)
 {
@@ -8898,7 +8773,7 @@ bool P2Asm::asm_allowi(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_stalli(P2Params& p)
 {
@@ -8918,7 +8793,7 @@ bool P2Asm::asm_stalli(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_trgint1(P2Params& p)
 {
@@ -8938,7 +8813,7 @@ bool P2Asm::asm_trgint1(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_trgint2(P2Params& p)
 {
@@ -8958,7 +8833,7 @@ bool P2Asm::asm_trgint2(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_trgint3(P2Params& p)
 {
@@ -8978,7 +8853,7 @@ bool P2Asm::asm_trgint3(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_nixint1(P2Params& p)
 {
@@ -8998,7 +8873,7 @@ bool P2Asm::asm_nixint1(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_nixint2(P2Params& p)
 {
@@ -9018,7 +8893,7 @@ bool P2Asm::asm_nixint2(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_nixint3(P2Params& p)
 {
@@ -9038,7 +8913,7 @@ bool P2Asm::asm_nixint3(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setint1(P2Params& p)
 {
@@ -9057,7 +8932,7 @@ bool P2Asm::asm_setint1(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setint2(P2Params& p)
 {
@@ -9076,7 +8951,7 @@ bool P2Asm::asm_setint2(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setint3(P2Params& p)
 {
@@ -9097,7 +8972,7 @@ bool P2Asm::asm_setint3(P2Params& p)
  * Also used before MUXQ/COGINIT/QDIV/QFRAC/QROTATE/WAITxxx.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setq(P2Params& p)
 {
@@ -9117,7 +8992,7 @@ bool P2Asm::asm_setq(P2Params& p)
  * Use before RDLONG/WRLONG/WMLONG to set LUT block transfer.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setq2(P2Params& p)
 {
@@ -9136,7 +9011,7 @@ bool P2Asm::asm_setq2(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_push(P2Params& p)
 {
@@ -9156,7 +9031,7 @@ bool P2Asm::asm_push(P2Params& p)
  * C = K[31], Z = K[30], D = K.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_pop(P2Params& p)
 {
@@ -9176,7 +9051,7 @@ bool P2Asm::asm_pop(P2Params& p)
  * C = D[31], Z = D[30], PC = D[19:0].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jmp(P2Params& p)
 {
@@ -9196,7 +9071,7 @@ bool P2Asm::asm_jmp(P2Params& p)
  * C = D[31], Z = D[30], PC = D[19:0].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_call(P2Params& p)
 {
@@ -9216,7 +9091,7 @@ bool P2Asm::asm_call(P2Params& p)
  * C = K[31], Z = K[30], PC = K[19:0].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_ret(P2Params& p)
 {
@@ -9238,7 +9113,7 @@ bool P2Asm::asm_ret(P2Params& p)
  * C = D[31], Z = D[30], PC = D[19:0].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_calla(P2Params& p)
 {
@@ -9258,7 +9133,7 @@ bool P2Asm::asm_calla(P2Params& p)
  * C = L[31], Z = L[30], PC = L[19:0].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_reta(P2Params& p)
 {
@@ -9280,7 +9155,7 @@ bool P2Asm::asm_reta(P2Params& p)
  * C = D[31], Z = D[30], PC = D[19:0].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_callb(P2Params& p)
 {
@@ -9300,7 +9175,7 @@ bool P2Asm::asm_callb(P2Params& p)
  * C = L[31], Z = L[30], PC = L[19:0].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_retb(P2Params& p)
 {
@@ -9323,7 +9198,7 @@ bool P2Asm::asm_retb(P2Params& p)
  * For hubex, PC += D[17:0] << 2.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jmprel(P2Params& p)
 {
@@ -9345,7 +9220,7 @@ bool P2Asm::asm_jmprel(P2Params& p)
  * D[31].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_skip(P2Params& p)
 {
@@ -9365,7 +9240,7 @@ bool P2Asm::asm_skip(P2Params& p)
  * Like SKIP, but instead of cancelling instructions, the PC leaps over them.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_skipf(P2Params& p)
 {
@@ -9385,7 +9260,7 @@ bool P2Asm::asm_skipf(P2Params& p)
  * PC = {10'b0, D[9:0]}.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_execf(P2Params& p)
 {
@@ -9404,7 +9279,7 @@ bool P2Asm::asm_execf(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_getptr(P2Params& p)
 {
@@ -9425,7 +9300,7 @@ bool P2Asm::asm_getptr(P2Params& p)
  * Z = 0.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_getbrk(P2Params& p)
 {
@@ -9446,7 +9321,7 @@ bool P2Asm::asm_getbrk(P2Params& p)
  * Cog D[3:0] must have asynchronous breakpoint enabled.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_cogbrk(P2Params& p)
 {
@@ -9466,7 +9341,7 @@ bool P2Asm::asm_cogbrk(P2Params& p)
  * Else, trigger break if enabled, conditionally write break code to D[7:0].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_brk(P2Params& p)
 {
@@ -9485,7 +9360,7 @@ bool P2Asm::asm_brk(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setluts(P2Params& p)
 {
@@ -9504,7 +9379,7 @@ bool P2Asm::asm_setluts(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setcy(P2Params& p)
 {
@@ -9523,7 +9398,7 @@ bool P2Asm::asm_setcy(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setci(P2Params& p)
 {
@@ -9542,7 +9417,7 @@ bool P2Asm::asm_setci(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setcq(P2Params& p)
 {
@@ -9561,7 +9436,7 @@ bool P2Asm::asm_setcq(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setcfrq(P2Params& p)
 {
@@ -9580,7 +9455,7 @@ bool P2Asm::asm_setcfrq(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setcmod(P2Params& p)
 {
@@ -9599,7 +9474,7 @@ bool P2Asm::asm_setcmod(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setpiv(P2Params& p)
 {
@@ -9618,7 +9493,7 @@ bool P2Asm::asm_setpiv(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setpix(P2Params& p)
 {
@@ -9637,7 +9512,7 @@ bool P2Asm::asm_setpix(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_cogatn(P2Params& p)
 {
@@ -9657,7 +9532,7 @@ bool P2Asm::asm_cogatn(P2Params& p)
  * C/Z =          IN[D[5:0]].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_testp_w(P2Params& p)
 {
@@ -9677,7 +9552,7 @@ bool P2Asm::asm_testp_w(P2Params& p)
  * C/Z =         !IN[D[5:0]].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_testpn_w(P2Params& p)
 {
@@ -9697,7 +9572,7 @@ bool P2Asm::asm_testpn_w(P2Params& p)
  * C/Z = C/Z AND  IN[D[5:0]].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_testp_and(P2Params& p)
 {
@@ -9717,7 +9592,7 @@ bool P2Asm::asm_testp_and(P2Params& p)
  * C/Z = C/Z AND !IN[D[5:0]].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_testpn_and(P2Params& p)
 {
@@ -9737,7 +9612,7 @@ bool P2Asm::asm_testpn_and(P2Params& p)
  * C/Z = C/Z OR   IN[D[5:0]].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_testp_or(P2Params& p)
 {
@@ -9757,7 +9632,7 @@ bool P2Asm::asm_testp_or(P2Params& p)
  * C/Z = C/Z OR  !IN[D[5:0]].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_testpn_or(P2Params& p)
 {
@@ -9777,7 +9652,7 @@ bool P2Asm::asm_testpn_or(P2Params& p)
  * C/Z = C/Z XOR  IN[D[5:0]].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_testp_xor(P2Params& p)
 {
@@ -9797,7 +9672,7 @@ bool P2Asm::asm_testp_xor(P2Params& p)
  * C/Z = C/Z XOR !IN[D[5:0]].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_testpn_xor(P2Params& p)
 {
@@ -9817,7 +9692,7 @@ bool P2Asm::asm_testpn_xor(P2Params& p)
  * C,Z = DIR bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_dirl(P2Params& p)
 {
@@ -9837,7 +9712,7 @@ bool P2Asm::asm_dirl(P2Params& p)
  * C,Z = DIR bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_dirh(P2Params& p)
 {
@@ -9857,7 +9732,7 @@ bool P2Asm::asm_dirh(P2Params& p)
  * C,Z = DIR bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_dirc(P2Params& p)
 {
@@ -9877,7 +9752,7 @@ bool P2Asm::asm_dirc(P2Params& p)
  * C,Z = DIR bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_dirnc(P2Params& p)
 {
@@ -9897,7 +9772,7 @@ bool P2Asm::asm_dirnc(P2Params& p)
  * C,Z = DIR bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_dirz(P2Params& p)
 {
@@ -9917,7 +9792,7 @@ bool P2Asm::asm_dirz(P2Params& p)
  * C,Z = DIR bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_dirnz(P2Params& p)
 {
@@ -9937,7 +9812,7 @@ bool P2Asm::asm_dirnz(P2Params& p)
  * C,Z = DIR bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_dirrnd(P2Params& p)
 {
@@ -9957,7 +9832,7 @@ bool P2Asm::asm_dirrnd(P2Params& p)
  * C,Z = DIR bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_dirnot(P2Params& p)
 {
@@ -9977,7 +9852,7 @@ bool P2Asm::asm_dirnot(P2Params& p)
  * C,Z = OUT bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_outl(P2Params& p)
 {
@@ -9997,7 +9872,7 @@ bool P2Asm::asm_outl(P2Params& p)
  * C,Z = OUT bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_outh(P2Params& p)
 {
@@ -10017,7 +9892,7 @@ bool P2Asm::asm_outh(P2Params& p)
  * C,Z = OUT bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_outc(P2Params& p)
 {
@@ -10037,7 +9912,7 @@ bool P2Asm::asm_outc(P2Params& p)
  * C,Z = OUT bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_outnc(P2Params& p)
 {
@@ -10057,7 +9932,7 @@ bool P2Asm::asm_outnc(P2Params& p)
  * C,Z = OUT bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_outz(P2Params& p)
 {
@@ -10077,7 +9952,7 @@ bool P2Asm::asm_outz(P2Params& p)
  * C,Z = OUT bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_outnz(P2Params& p)
 {
@@ -10097,7 +9972,7 @@ bool P2Asm::asm_outnz(P2Params& p)
  * C,Z = OUT bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_outrnd(P2Params& p)
 {
@@ -10117,7 +9992,7 @@ bool P2Asm::asm_outrnd(P2Params& p)
  * C,Z = OUT bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_outnot(P2Params& p)
 {
@@ -10138,7 +10013,7 @@ bool P2Asm::asm_outnot(P2Params& p)
  * C,Z = OUT bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_fltl(P2Params& p)
 {
@@ -10159,7 +10034,7 @@ bool P2Asm::asm_fltl(P2Params& p)
  * C,Z = OUT bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_flth(P2Params& p)
 {
@@ -10180,7 +10055,7 @@ bool P2Asm::asm_flth(P2Params& p)
  * C,Z = OUT bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_fltc(P2Params& p)
 {
@@ -10201,7 +10076,7 @@ bool P2Asm::asm_fltc(P2Params& p)
  * C,Z = OUT bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_fltnc(P2Params& p)
 {
@@ -10222,7 +10097,7 @@ bool P2Asm::asm_fltnc(P2Params& p)
  * C,Z = OUT bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_fltz(P2Params& p)
 {
@@ -10243,7 +10118,7 @@ bool P2Asm::asm_fltz(P2Params& p)
  * C,Z = OUT bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_fltnz(P2Params& p)
 {
@@ -10264,7 +10139,7 @@ bool P2Asm::asm_fltnz(P2Params& p)
  * C,Z = OUT bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_fltrnd(P2Params& p)
 {
@@ -10285,7 +10160,7 @@ bool P2Asm::asm_fltrnd(P2Params& p)
  * C,Z = OUT bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_fltnot(P2Params& p)
 {
@@ -10306,7 +10181,7 @@ bool P2Asm::asm_fltnot(P2Params& p)
  * C,Z = OUT bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_drvl(P2Params& p)
 {
@@ -10327,7 +10202,7 @@ bool P2Asm::asm_drvl(P2Params& p)
  * C,Z = OUT bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_drvh(P2Params& p)
 {
@@ -10348,7 +10223,7 @@ bool P2Asm::asm_drvh(P2Params& p)
  * C,Z = OUT bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_drvc(P2Params& p)
 {
@@ -10369,7 +10244,7 @@ bool P2Asm::asm_drvc(P2Params& p)
  * C,Z = OUT bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_drvnc(P2Params& p)
 {
@@ -10390,7 +10265,7 @@ bool P2Asm::asm_drvnc(P2Params& p)
  * C,Z = OUT bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_drvz(P2Params& p)
 {
@@ -10411,7 +10286,7 @@ bool P2Asm::asm_drvz(P2Params& p)
  * C,Z = OUT bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_drvnz(P2Params& p)
 {
@@ -10432,7 +10307,7 @@ bool P2Asm::asm_drvnz(P2Params& p)
  * C,Z = OUT bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_drvrnd(P2Params& p)
 {
@@ -10453,7 +10328,7 @@ bool P2Asm::asm_drvrnd(P2Params& p)
  * C,Z = OUT bit.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_drvnot(P2Params& p)
 {
@@ -10473,7 +10348,7 @@ bool P2Asm::asm_drvnot(P2Params& p)
  * D = {S[31], S[27], S[23], S[19], ... S[12], S[8], S[4], S[0]}.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_splitb(P2Params& p)
 {
@@ -10493,7 +10368,7 @@ bool P2Asm::asm_splitb(P2Params& p)
  * D = {S[31], S[23], S[15], S[7], ... S[24], S[16], S[8], S[0]}.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_mergeb(P2Params& p)
 {
@@ -10513,7 +10388,7 @@ bool P2Asm::asm_mergeb(P2Params& p)
  * D = {S[31], S[29], S[27], S[25], ... S[6], S[4], S[2], S[0]}.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_splitw(P2Params& p)
 {
@@ -10533,7 +10408,7 @@ bool P2Asm::asm_splitw(P2Params& p)
  * D = {S[31], S[15], S[30], S[14], ... S[17], S[1], S[16], S[0]}.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_mergew(P2Params& p)
 {
@@ -10554,7 +10429,7 @@ bool P2Asm::asm_mergew(P2Params& p)
  * Forward pattern.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_seussf(P2Params& p)
 {
@@ -10575,7 +10450,7 @@ bool P2Asm::asm_seussf(P2Params& p)
  * Reverse pattern.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_seussr(P2Params& p)
 {
@@ -10595,7 +10470,7 @@ bool P2Asm::asm_seussr(P2Params& p)
  * D = {15'b0, S[31:27], S[23:18], S[15:11]}.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rgbsqz(P2Params& p)
 {
@@ -10615,7 +10490,7 @@ bool P2Asm::asm_rgbsqz(P2Params& p)
  * D = {S[15:11,15:13], S[10:5,10:9], S[4:0,4:2], 8'b0}.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rgbexp(P2Params& p)
 {
@@ -10634,7 +10509,7 @@ bool P2Asm::asm_rgbexp(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_xoro32(P2Params& p)
 {
@@ -10654,7 +10529,7 @@ bool P2Asm::asm_xoro32(P2Params& p)
  * D = D[0:31].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rev(P2Params& p)
 {
@@ -10675,7 +10550,7 @@ bool P2Asm::asm_rev(P2Params& p)
  * C = D[1],  Z = D[0].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rczr(P2Params& p)
 {
@@ -10696,7 +10571,7 @@ bool P2Asm::asm_rczr(P2Params& p)
  * C = D[31], Z = D[30].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_rczl(P2Params& p)
 {
@@ -10716,7 +10591,7 @@ bool P2Asm::asm_rczl(P2Params& p)
  * D = {31'b0,  C).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_wrc(P2Params& p)
 {
@@ -10736,7 +10611,7 @@ bool P2Asm::asm_wrc(P2Params& p)
  * D = {31'b0, !C).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_wrnc(P2Params& p)
 {
@@ -10756,7 +10631,7 @@ bool P2Asm::asm_wrnc(P2Params& p)
  * D = {31'b0,  Z).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_wrz(P2Params& p)
 {
@@ -10776,7 +10651,7 @@ bool P2Asm::asm_wrz(P2Params& p)
  * D = {31'b0, !Z).
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_wrnz(P2Params& p)
 {
@@ -10796,7 +10671,7 @@ bool P2Asm::asm_wrnz(P2Params& p)
  * C = cccc[{C,Z}], Z = zzzz[{C,Z}].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_modcz(P2Params& p)
 {
@@ -10819,7 +10694,7 @@ bool P2Asm::asm_modcz(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_setscp(P2Params& p)
 {
@@ -10842,7 +10717,7 @@ bool P2Asm::asm_setscp(P2Params& p)
  * C = cccc[{C,Z}], Z = zzzz[{C,Z}].
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_getscp(P2Params& p)
 {
@@ -10862,7 +10737,7 @@ bool P2Asm::asm_getscp(P2Params& p)
  * If R = 1, PC += A, else PC = A.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_jmp_abs(P2Params& p)
 {
@@ -10882,7 +10757,7 @@ bool P2Asm::asm_jmp_abs(P2Params& p)
  * If R = 1, PC += A, else PC = A.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_call_abs(P2Params& p)
 {
@@ -10902,7 +10777,7 @@ bool P2Asm::asm_call_abs(P2Params& p)
  * If R = 1, PC += A, else PC = A.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_calla_abs(P2Params& p)
 {
@@ -10922,7 +10797,7 @@ bool P2Asm::asm_calla_abs(P2Params& p)
  * If R = 1, PC += A, else PC = A.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_callb_abs(P2Params& p)
 {
@@ -10942,7 +10817,7 @@ bool P2Asm::asm_callb_abs(P2Params& p)
  * If R = 1, PC += A, else PC = A.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_calld_pa_abs(P2Params& p)
 {
@@ -10961,7 +10836,7 @@ bool P2Asm::asm_calld_pa_abs(P2Params& p)
  * If R = 1, PC += A, else PC = A.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_calld_pb_abs(P2Params& p)
 {
@@ -10980,7 +10855,7 @@ bool P2Asm::asm_calld_pb_abs(P2Params& p)
  * If R = 1, PC += A, else PC = A.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_calld_ptra_abs(P2Params& p)
 {
@@ -10999,7 +10874,7 @@ bool P2Asm::asm_calld_ptra_abs(P2Params& p)
  * If R = 1, PC += A, else PC = A.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_calld_ptrb_abs(P2Params& p)
 {
@@ -11018,7 +10893,7 @@ bool P2Asm::asm_calld_ptrb_abs(P2Params& p)
  * If R = 1, address = PC + A, else address = A.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_loc(P2Params& p)
 {
@@ -11064,7 +10939,7 @@ bool P2Asm::asm_loc(P2Params& p)
  * If R = 1, address = PC + A, else address = A.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_loc_pa(P2Params& p)
 {
@@ -11082,7 +10957,7 @@ bool P2Asm::asm_loc_pa(P2Params& p)
  * If R = 1, address = PC + A, else address = A.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_loc_pb(P2Params& p)
 {
@@ -11100,7 +10975,7 @@ bool P2Asm::asm_loc_pb(P2Params& p)
  * If R = 1, address = PC + A, else address = A.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_loc_ptra(P2Params& p)
 {
@@ -11118,7 +10993,7 @@ bool P2Asm::asm_loc_ptra(P2Params& p)
  * If R = 1, address = PC + A, else address = A.
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_loc_ptrb(P2Params& p)
 {
@@ -11135,7 +11010,7 @@ bool P2Asm::asm_loc_ptrb(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_augs(P2Params& p)
 {
@@ -11158,7 +11033,7 @@ bool P2Asm::asm_augs(P2Params& p)
  *
  *
  *
- * @param params reference to the assembler parameters
+ * @param p reference to the assembler parameters
  */
 bool P2Asm::asm_augd(P2Params& p)
 {

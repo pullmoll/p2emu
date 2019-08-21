@@ -44,6 +44,7 @@ P2AsmSymTbl::P2AsmSymTbl()
 void P2AsmSymTbl::clear()
 {
     m_symbols.clear();
+    m_references.clear();
 }
 
 /**
@@ -127,6 +128,11 @@ int P2AsmSymTbl::defined_in(const QString& name) const
     return m_symbols[name].defined_in();
 }
 
+QStringList P2AsmSymTbl::defined_in(int lineno) const
+{
+    return m_references.values(lineno);
+}
+
 int P2AsmSymTbl::reference(const QString& name, int idx) const
 {
     if (!m_symbols.contains(name))
@@ -136,16 +142,18 @@ int P2AsmSymTbl::reference(const QString& name, int idx) const
 
 bool P2AsmSymTbl::addReference(const QString& name, int lineno)
 {
-    if (!m_symbols.contains(name))
-        return false;
+    m_references.insert(lineno, name);
+    if (m_symbols.contains(name)) {
+        m_symbols[name].addReference(lineno);
+        return true;
+    }
+    // Insert an undefined symbol
+    m_symbols.insert(name, P2AsmSymbol(name));
     m_symbols[name].addReference(lineno);
-    return true;
-
+    return false;
 }
 
 const QList<int> P2AsmSymTbl::references(const QString& name) const
 {
-    if (!m_symbols.contains(name))
-        return QList<int>();
-    return m_symbols[name].references();
+    return m_references.keys(name);
 }

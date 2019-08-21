@@ -437,37 +437,37 @@ void P2Cog::updateREP(P2LONG instr, P2LONG times)
 bool P2Cog::conditional(p2_cond_e cond)
 {
     switch (cond) {
-    case cond__ret_:        // execute always
+    case cc__ret_:        // execute always
         return true;
-    case cond_nc_and_nz:    // execute if C = 0 and Z = 0
+    case cc_nc_and_nz:    // execute if C = 0 and Z = 0
         return C == 0 && Z == 0;
-    case cond_nc_and_z:     // execute if C = 0 and Z = 1
+    case cc_nc_and_z:     // execute if C = 0 and Z = 1
         return C == 0 && Z == 1;
-    case cond_nc:           // execute if C = 0
+    case cc_nc:           // execute if C = 0
         return C == 0;
-    case cond_c_and_nz:     // execute if C = 1 and Z = 0
+    case cc_c_and_nz:     // execute if C = 1 and Z = 0
         return C == 1 && Z == 0;
-    case cond_nz:           // execute if Z = 0
+    case cc_nz:           // execute if Z = 0
         return Z == 0;
-    case cond_c_ne_z:       // execute if C != Z
+    case cc_c_ne_z:       // execute if C != Z
         return C != Z;
-    case cond_nc_or_nz:     // execute if C = 0 or Z = 0
+    case cc_nc_or_nz:     // execute if C = 0 or Z = 0
         return C == 0 || Z == 0;
-    case cond_c_and_z:      // execute if C = 1 and Z = 1
+    case cc_c_and_z:      // execute if C = 1 and Z = 1
         return C == 1 && Z == 1;
-    case cond_c_eq_z:       // execute if C = Z
+    case cc_c_eq_z:       // execute if C = Z
         return C == Z;
-    case cond_z:            // execute if Z = 1
+    case cc_z:            // execute if Z = 1
         return Z == 1;
-    case cond_nc_or_z:      // execute if C = 0 or Z = 1
+    case cc_nc_or_z:      // execute if C = 0 or Z = 1
         return C == 0 || Z == 1;
-    case cond_c:            // execute if C = 1
+    case cc_c:            // execute if C = 1
         return C == 1;
-    case cond_c_or_nz:      // execute if C = 1 or Z = 0
+    case cc_c_or_nz:      // execute if C = 1 or Z = 0
         return C == 1 || Z == 0;
-    case cond_c_or_z:       // execute if C = 1 or Z = 1
+    case cc_c_or_z:       // execute if C = 1 or Z = 1
         return C == 1 || Z == 1;
-    case cond_always:
+    case cc_always:
         return true;
     }
     return false;
