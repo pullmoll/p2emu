@@ -36,6 +36,7 @@ SOURCES += \
 		p2dasm.cpp \
 		p2dasmmodel.cpp \
 		p2hub.cpp \
+		p2hubview.cpp \
 		p2token.cpp
 
 HEADERS += \
@@ -53,13 +54,15 @@ HEADERS += \
 		p2dasmmodel.h \
 		p2defs.h \
 		p2hub.h \
+		p2hubview.h \
 		p2token.h
 
 FORMS += \
 		about.ui \
 		gotoaddress.ui \
 		mainwindow.ui \
-		p2cogview.ui
+		p2cogview.ui \
+		p2hubview.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

@@ -93,7 +93,6 @@ private:
     QVector<P2CogView*> m_vcog;
     P2Hub* m_hub;
     P2Asm* m_asm;
-    P2Params* m_params;
     P2AsmModel* m_amodel;
     P2Dasm* m_dasm;
     P2DasmModel* m_dmodel;

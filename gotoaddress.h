@@ -1,6 +1,4 @@
-#ifndef GOTOADDRESS_H
-#define GOTOADDRESS_H
-
+#pragma once
 #include <QDialog>
 
 namespace Ui {
@@ -20,5 +18,3 @@ public:
 private:
     Ui::GotoAddress *ui;
 };
-
-#endif // GOTOADDRESS_H

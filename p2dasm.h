@@ -88,7 +88,7 @@ private:
     void format_imm_d_c(QString* instruction, p2_token_e inst);
     void format_imm_s(QString* instruction, p2_token_e inst);
     void format_imm_s_c(QString* instruction, p2_token_e inst);
-    void format_pc_abs(QString* instruction, p2_token_e inst, p2_token_e dest = t_nothing);
+    void format_pc_abs(QString* instruction, p2_token_e inst, p2_token_e dest = t_unknown);
     void format_imm23(QString* instruction, p2_token_e inst);
 
     void dasm_nop(QString* instruction = nullptr, QString* description = nullptr);

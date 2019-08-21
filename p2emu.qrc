@@ -9,9 +9,9 @@
         <file>icons/go_to_lut.png</file>
         <file>icons/lowercase.png</file>
         <file>icons/go_to_rom.png</file>
-        <file>icons/opcode_binary.png</file>
-        <file>icons/opcode_hexdec.png</file>
-        <file>icons/opcode_octal.png</file>
+        <file>icons/opcode_bin.png</file>
+        <file>icons/opcode_hex.png</file>
+        <file>icons/opcode_oct.png</file>
         <file>icons/single_step.png</file>
         <file>icons/assemble.png</file>
     </qresource>

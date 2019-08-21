@@ -106,6 +106,22 @@ static constexpr quint64 HMAX = Q_UINT64_C(0xffffffff00000000);
 //! lower word max / mask in a 64 bit unsigned
 static constexpr quint64 LMAX = Q_UINT64_C(0x00000000ffffffff);
 
+//! digits of binary numbers
+static constexpr char bin_digits[] = "01_";
+
+//! digits of byte indices
+static constexpr char byt_digits[] = "0123_";
+
+//! digits of octal numbers
+static constexpr char oct_digits[] = "01234567_";
+
+//! digits of decimal numbers
+static constexpr char dec_digits[] = "0123456789_";
+
+//! digits of hexadecimal numbers
+static constexpr char hex_digits[] = "0123456789ABCDEF_";
+
+
 /// Union of bytes, words, and a long in endianess aware ordering
 typedef union {
 #if (Q_BYTE_ORDER == Q_LITTLE_ENDIAN)

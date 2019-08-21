@@ -31,6 +31,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
+#include <QDateTime>
 #include <QFile>
 #include <QTextStream>
 #include <QTimer>
@@ -46,7 +47,7 @@
 #include "p2asmmodel.h"
 #include "p2dasmmodel.h"
 
-static const int ncogs = 4;
+static const int ncogs = 8;
 static const QLatin1String key_windowGeometry("windowGeometry");
 static const QLatin1String key_windowState("windowState");
 static const QLatin1String grp_assembler("assembler");
@@ -75,8 +76,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_vcog()
     , m_hub(new P2Hub(ncogs, this))
     , m_asm(new P2Asm(this))
-    , m_params(new P2Params)
-    , m_amodel(new P2AsmModel(m_params))
+    , m_amodel(new P2AsmModel(m_asm))
     , m_dasm(new P2Dasm(m_hub->cog(0)))
     , m_dmodel(new P2DasmModel(m_dasm))
 {
@@ -354,8 +354,13 @@ void MainWindow::hubSingleStep()
 
 void MainWindow::assemble()
 {
-    QStringList source = m_params->source;
-    if (m_asm->assemble(*m_params, source)) {
+    QStringList source = m_asm->source();
+    qint64 t0 = QDateTime::currentMSecsSinceEpoch();
+    if (m_asm->assemble(source)) {
+        qint64 t1 = QDateTime::currentMSecsSinceEpoch();
+        QLabel* status = ui->statusBar->findChild<QLabel*>(key_status);
+        if (status)
+            status->setText(tr("Assembly took %1 ms.").arg(t1 - t0));
         // Inspect result
         m_amodel->invalidate();
     }
@@ -382,7 +387,7 @@ void MainWindow::setupAssembler()
         QString line = stream.readLine();
         source += line;
     }
-    m_params->source = source;
+    m_asm->setSource(source);
     ui->tvAsm->setModel(m_amodel);
     updateAsmColumnSizes();
     QHeaderView* hh = ui->tvAsm->horizontalHeader();
@@ -491,10 +496,8 @@ void MainWindow::setupCogView()
 {
     m_vcog = QVector<P2CogView*>()
              << ui->cog0 << ui->cog1 << ui->cog2 << ui->cog3
-             << ui->cog4 << ui->cog5 << ui->cog6 << ui->cog7
-             << ui->cog8 << ui->cog9 << ui->cogA << ui->cogB
-             << ui->cogC << ui->cogD << ui->cogE << ui->cogF;
-    for (int id = 0; id < 16; id++) {
+             << ui->cog4 << ui->cog5 << ui->cog6 << ui->cog7;
+    for (int id = 0; id < 8; id++) {
         P2CogView* vcog = m_vcog[id];
         if (!vcog)
             continue;

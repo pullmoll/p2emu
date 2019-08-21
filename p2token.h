@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Propeller2 token (instruction mnemonics) to QString function
+ * Propeller2 token and instruction mnemonics class
  *
  * Copyright (C) 2019 Jürgen Buchmüller <pullmoll@t-online.de>
  *
@@ -37,20 +37,39 @@
 #include "p2defs.h"
 
 /**
+ * @brief enumeration of toke types
+ */
+typedef enum {
+    tt_none,            //!< no specific type
+    tt_unary,           //!< unary operators
+    tt_binop,           //!< binary operators
+    tt_addop,           //!< addition operators
+    tt_mulop,           //!< multiplication operators
+    tt_conditional,     //!< conditional execution
+    tt_modcz_param,     //!< MODCZ parameters
+    tt_section,         //!< section control
+    tt_origin,          //!< origin control
+    tt_data,            //!< data generating
+}   p2_tokentype_e;
+
+/**
  * @brief enumeration of tokens used in mnemonics for the P2 assembler and disassembler
  */
 typedef enum {
-    t_invalid = -1,
-    t_nothing,
-    t_comma,
-    t_string,
-    t_value_bin,
-    t_value_oct,
-    t_value_dec,
-    t_value_hex,
-    t_local,
-    t_name,
-    t_empty,
+    t_invalid = -1,     //!< undefined value
+    t_unknown,          //!< nothing found
+
+    t_comma,            //!< token is a comma (,)
+    t_string,           //!< token is a string starting with doublequote (")
+    t_value_bin,        //!< token is a binary value (%)
+    t_value_byt,        //!< token is a byte index (i.e. base 4) value (%%)
+    t_value_oct,        //!< token is an octal value (0…)
+    t_value_dec,        //!< token is a decimal value (starts with 1…9)
+    t_value_hex,        //!< token is a hexadecimal value ($)
+    t_locsym,           //!< token is a local symbol (starts with .)
+    t_symbol,           //!< token is a symbol (alphanumeric)
+    t_expression,       //!< token is an expression (contains operators)
+    t_empty,            //!< token is empty
 
     // conditials
     t__RET_,            //!< cond_never
@@ -124,6 +143,7 @@ typedef enum {
     t_MODCZ__LE,        //!< alias for cond_c_or_z
     t_MODCZ__SET,       //!< cond_always
 
+    // instructions
     t_ABS,
     t_ADD,
     t_ADDCT1,
@@ -208,7 +228,6 @@ typedef enum {
     t_FBLOCK,
     t_FGE,
     t_FGES,
-    t__FIT,
     t_FLE,
     t_FLES,
     t_FLTC,
@@ -331,11 +350,7 @@ typedef enum {
     t_POPA,
     t_POPB,
     t_PTRA,
-    t_PTRA_predec,
-    t_PTRA_postinc,
     t_PTRB,
-    t_PTRB_predec,
-    t_PTRB_postinc,
     t_PUSH,
     t_PUSHA,
     t_PUSHB,
@@ -499,38 +514,61 @@ typedef enum {
     t_XORC,
     t_XORZ,
 
+    // Section control
     t__DAT,
     t__CON,
     t__PUB,
     t__PRI,
     t__VAR,
+
+    // Origin control
     t__ORG,
     t__ORGH,
+    t__FIT,
+
+    // Data types and space reserving
     t__BYTE,
     t__WORD,
     t__LONG,
     t__RES,
 
+    // assignment
     t__ASSIGN,          //!< "="
+
+    // origin (PC)
     t__DOLLAR,          //!< "$"
+
+    // relations
     t__EQ,              //!< "=="
     t__NE,              //!< "!="
     t__GE,              //!< ">="
     t__GT,              //!< ">"
     t__LE,              //!< "<="
     t__LT,              //!< "<"
-    t__ADD,             //!< "+"
-    t__SUB,             //!< "-"
-    t__MUL,             //!< "*"
-    t__DIV,             //!< "/"
-    t__MOD,             //!< "%"
+
+    // parenthesis
+    t__LPAREN,          //!< "("
+    t__RPAREN,          //!< ")"
+
+    // unary ops
     t__NEG,             //!< "!"
     t__NOT,             //!< "~"
+    t__INC,             //!< "++"
+    t__DEC,             //!< "--"
+
+    // addition ops
+    t__ADD,             //!< "+"
+    t__SUB,             //!< "-"
+
+    // multiplication ops
+    t__MUL,             //!< "*"
+    t__DIV,             //!< "/"
+    t__MOD,             //!< "\"
+
+    // binary ops
     t__AND,             //!< "&"
     t__OR,              //!< "|"
     t__XOR,             //!< "^"
-    t__INC,             //!< "++"
-    t__DEC,             //!< "--"
     t__SHL,             //!< "<<"
     t__SHR,             //!< ">>"
     t__REV,             //!< "<>"
@@ -538,29 +576,28 @@ typedef enum {
 
 typedef QVector<p2_token_e> p2_token_v;
 
-typedef enum {
-    tt_none,
-    tt_unary,
-    tt_binops,
-    tt_addops,
-    tt_mulops,
-    tt_conditional,
-    tt_modcz_param,
-
-}   p2_tokentype_e;
-
 class P2Token
 {
 public:
     P2Token();
     QString string(p2_token_e tok, bool lowercase = false) const;
-    p2_token_e token(const QString& str) const;
+    p2_token_e token(const QString& str, bool chop = false) const;
 
     p2_tokentype_e type(p2_token_e tok);
+    QString typeName(p2_token_e tok);
     p2_tokentype_e type(const QString& str);
 
     p2_token_e at_token(int& pos, const QString& str, QList<p2_token_e> tokens, p2_token_e dflt = t_invalid) const;
     p2_token_e at_token(const QString& str, QList<p2_token_e> tokens, p2_token_e dflt = t_invalid) const;
+
+    bool is_type(p2_token_e tok, p2_tokentype_e type) const;
+    bool is_unary(p2_token_e tok) const;
+    bool is_binop(p2_token_e tok) const;
+    bool is_addop(p2_token_e tok) const;
+    bool is_mulop(p2_token_e tok) const;
+    bool is_operation(p2_token_e tok) const;
+    bool is_conditional(p2_token_e tok) const;
+    bool is_modcz_param(p2_token_e tok) const;
 
     p2_token_e at_type(int& pos, const QString& str, p2_tokentype_e type, p2_token_e dflt = t_invalid) const;
     p2_token_e at_type(const QString& str, p2_tokentype_e type, p2_token_e dflt = t_invalid) const;
@@ -596,6 +633,21 @@ private:
     QMultiHash<p2_tokentype_e, p2_token_e> m_type_tokens;
     QHash<p2_token_e, p2_cond_e> m_lookup_cond;
     QHash<p2_token_e, p2_cond_e> m_lookup_modcz;
+    QHash<p2_tokentype_e, QString> m_tokentype_name;
+
+    QRegExp rx_loc_symbol;
+    QRegExp rx_symbol;
+    QRegExp rx_bin;
+    QRegExp rx_byt;
+    QRegExp rx_oct;
+    QRegExp rx_dec;
+    QRegExp rx_hex;
+    QRegExp rx_string;
+    QRegExp rx_unary;
+    QRegExp rx_mulops;
+    QRegExp rx_addops;
+    QRegExp rx_binops;
+    QRegExp rx_expression;
 };
 
 extern P2Token Token;

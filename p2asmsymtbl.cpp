@@ -35,6 +35,7 @@
 
 P2AsmSymTbl::P2AsmSymTbl()
     : m_symbols()
+    , m_references()
 {
 }
 
@@ -142,7 +143,8 @@ int P2AsmSymTbl::reference(const QString& name, int idx) const
 
 bool P2AsmSymTbl::addReference(const QString& name, int lineno)
 {
-    m_references.insert(lineno, name);
+    if (!m_references.contains(lineno, name))
+        m_references.insert(lineno, name);
     if (m_symbols.contains(name)) {
         m_symbols[name].addReference(lineno);
         return true;

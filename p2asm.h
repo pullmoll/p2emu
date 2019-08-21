@@ -41,84 +41,11 @@
 #include "p2atom.h"
 #include "p2asmsymtbl.h"
 
-/**
- * @brief The P2Params class is used to pass the current state
- * of the assembler to parameter parsing functions
- */
-class P2Params
-{
-public:
-    P2Params() : pass(0) { clear(); }
-
-    int pass;                               //!< current pass
-    QStringList source;                     //!< source code as QStringList
-    QStringList listing;                    //!< listing as QStringList
-    QHash<int,P2LONG> h_PC;                 //!< optional program counters per line
-    QHash<int,p2_opcode_u> h_IR;            //!< optional instruction register (opcode) per line
-    QHash<int,p2_token_v> h_tokens;         //!< optional tokens per line
-    QMultiHash<int,QString> h_errors;       //!< optional (multiple) error messages per line
-    P2AsmSymTbl symbols;                    //!< symbol table
-    int lineno;                             //!< current line number
-    QString line;                           //!< current line of source
-    QString error;                          //!< error message from parameters parser
-    P2LONG next_pc;                         //!< next program counter
-    P2LONG curr_pc;                         //!< current program counter (origin of the instruction)
-    P2LONG last_pc;                         //!< last program counter (maximum of next_pc)
-    P2LONG advance;                         //!< advance by n longs
-    p2_opcode_u IR;                         //!< current instruction register
-    QStringList words;                      //!< current list of words on the line
-    QVector<p2_token_e> tokens;             //!< current vector of tokens found on the line
-    QString symbol;                         //!< currently defined symbol (first name on the line before an instruction token)
-    QString function;                       //!< currently defined function symbol, i.e. w/o initial dot (.)
-    QString section;                        //!< currently selected section
-    int cnt;                                //!< count of (relevant) words
-    int idx;                                //!< token (and word) index
-    union {
-        P2BYTE B[MEM_SIZE];                 //!< as bytes
-        P2WORD W[MEM_SIZE/2];               //!< as words
-        P2LONG L[MEM_SIZE/4];               //!< as longs
-    } MEM;                                  //!< binary data
-
-    /**
-     * @brief Clear the results and restore defaults after a previous assembly
-     */
-    void clear()
-    {
-        pass_clear();
-        if (0 == pass)
-            symbols.clear();
-    }
-
-    /**
-     * @brief Clear the results of the first pass
-     */
-    void pass_clear()
-    {
-        ++pass;                 // next pass
-        listing.clear();
-        h_PC.clear();
-        h_IR.clear();
-        h_tokens.clear();
-        h_errors.clear();
-        lineno = 0;
-        line.clear();
-        error.clear();
-        next_pc = 0;
-        curr_pc = 0;
-        last_pc = 0;
-        advance = 1;
-        IR.opcode = 0;
-        words.clear();
-        tokens.clear();
-        symbol.clear();
-        function.clear();
-        section = QStringLiteral("DAT");
-        cnt = 0;
-        idx = 0;
-        memset(MEM.B, 0, sizeof(MEM.B));
-    }
-
-};
+typedef QHash<int, P2LONG> p2_PC_hash_t;
+typedef QHash<int, p2_opcode_u> p2_IR_hash_t;
+typedef QHash<int, p2_token_v> p2_token_hash_t;
+typedef QHash<int, QStringList> p2_words_hash_t;
+typedef QMultiHash<int, QString> p2_error_hash_t;
 
 /**
  * @brief The P2Asm class implements an Propeller2 assembler
@@ -131,12 +58,60 @@ public:
     explicit P2Asm(QObject *parent = nullptr);
     ~P2Asm();
 
-    bool assemble_pass(P2Params& p);
-    bool assemble(P2Params& p, const QStringList& source);
-    bool assemble(P2Params& p, const QString& filename);
+
+    void clear();
+    void pass_clear();
+
+    const QStringList& source() const;
+    int count() const;
+    const p2_PC_hash_t& hPC() const;
+    const p2_IR_hash_t& hIR() const;
+    const p2_token_hash_t& hTokens() const;
+    const p2_words_hash_t& hWords() const;
+    const p2_error_hash_t& hErrors() const;
+    const P2AsmSymTbl& symbols() const;
+
+    bool assemble_pass();
+    bool assemble(const QStringList& source);
+    bool assemble(const QString& filename);
 
 signals:
-    void Error(int lineno, QString message);
+    void Error(int m_lineno, QString message);
+
+public slots:
+    void setSource(const QStringList& source);
+
+private:
+    int m_pass;                             //!< current pass
+    QStringList m_source;                   //!< source code as QStringList
+    QStringList m_listing;                  //!< listing as QStringList
+    p2_PC_hash_t m_hash_PC;                 //!< optional program counters per line
+    p2_IR_hash_t m_hash_IR;                 //!< optional instruction register (opcode) per line
+    p2_token_hash_t m_hash_token;           //!< optional tokens per line
+    p2_words_hash_t m_hash_words;           //!< optional words per line
+    p2_error_hash_t m_hash_error;          //!< optional (multiple) error messages per line
+    P2AsmSymTbl m_symbols;                  //!< symbol table
+    int m_lineno;                           //!< current line number
+    QString m_line;                         //!< current line of source
+    QString m_error;                        //!< error message from parameters parser
+    P2LONG m_next_PC;                       //!< next program counter
+    P2LONG m_curr_PC;                       //!< current program counter (origin of the instruction)
+    P2LONG m_last_PC;                       //!< last program counter (maximum of next_pc)
+    P2LONG m_advance;                       //!< advance by n longs
+    p2_opcode_u m_IR;                       //!< current instruction register
+    QStringList m_words;                    //!< current list of words on the line
+    p2_token_v m_tokens;                    //!< current vector of tokens found on the line
+    QString m_symbol;                       //!< currently defined symbol (first name on the line before an instruction token)
+    QString m_function;                     //!< currently defined function symbol, i.e. w/o initial dot (.)
+    QString m_section;                      //!< currently selected section
+    int m_cnt;                              //!< count of (relevant) words
+    int m_idx;                              //!< token (and word) index
+
+    union {
+        P2BYTE B[MEM_SIZE];                 //!< as bytes
+        P2WORD W[MEM_SIZE/2];               //!< as words
+        P2LONG L[MEM_SIZE/4];               //!< as longs
+    } MEM;                                  //!< binary data
 
 private:
     enum imm_to_e {
@@ -146,511 +121,512 @@ private:
         immediate_wc
     };
 
-    static int left(const P2Params& p);
-    static void results(P2Params& p, bool opcode = false);
-    static bool split_and_tokenize(P2Params& p, const QString& line);
-    static p2_cond_e conditional(P2Params& p, p2_token_e cond);
-    static p2_cond_e parse_modcz(P2Params& p, p2_token_e cond);
-    static void skip_spc(int& pos, const QString& str);
-    static void skip_imm(int& pos, const QString& str);
-    static P2Atom from_bin(int& pos, const QString& str, const QString& stop);
-    static P2Atom from_oct(int& pos, const QString& str, const QString& stop);
-    static P2Atom from_dec(int& pos, const QString& str, const QString& stop);
-    static P2Atom from_hex(int& pos, const QString& str, const QString& stop);
-    static P2Atom from_str(int& pos, const QString& str);
-    static P2Atom parse_atom(P2Params& p, int& pos, const QString& word);
-    static P2Atom parse_factors(P2Params& p, int& pos, const QString& str);
-    static P2Atom parse_summands(P2Params& p, int& pos, const QString& str);
-    static P2Atom parse_binops(P2Params& p, int& pos, const QString& str);
-    static P2Atom parse_expression(P2Params& p, imm_to_e imm_to = immediate_none);
+    int left();
+    void results(bool opcode = false);
+    bool split_and_tokenize(const QString& m_line);
+    p2_cond_e conditional(p2_token_e cond);
+    p2_cond_e parse_modcz(p2_token_e cond);
+    void skip_spc(int& pos, const QString& str);
+    void skip_imm(int& pos, const QString& str);
+    P2Atom from_bin(int& pos, const QString& str);
+    P2Atom from_byt(int& pos, const QString& str);
+    P2Atom from_oct(int& pos, const QString& str);
+    P2Atom from_dec(int& pos, const QString& str);
+    P2Atom from_hex(int& pos, const QString& str);
+    P2Atom from_str(int& pos, const QString& str);
+    P2Atom parse_atom(int& pos, const QString& word);
+    P2Atom parse_factors(int& pos, const QString& str);
+    P2Atom parse_summands(int& pos, const QString& str);
+    P2Atom parse_binops(int& pos, const QString& str);
+    P2Atom parse_expression(imm_to_e imm_to = immediate_none);
 
-    static bool end_of_line(P2Params& p, bool binary = true);
-    static bool parse_comma(P2Params& p);
-    static void optional_comma(P2Params& p);
-    static bool optional_wcz(P2Params& p);
-    static bool optional_wc(P2Params& p);
-    static bool optional_wz(P2Params& p);
+    bool end_of_line(bool binary = true);
+    bool parse_comma();
+    void optional_comma();
+    bool optional_wcz();
+    bool optional_wc();
+    bool optional_wz();
 
-    static bool asm_assign(P2Params &params);
-    static bool asm_org(P2Params &params);
-    static bool asm_orgh(P2Params &params);
+    bool asm_assign();
+    bool asm_org();
+    bool asm_orgh();
 
-    static bool parse_with_wcz(P2Params &params);
-    static bool parse_with_wc(P2Params &params);
-    static bool parse_with_wz(P2Params &params);
-    static bool parse_inst(P2Params &params);
-    static bool parse_d_imm_s_wcz(P2Params &params);
-    static bool parse_d_imm_s_wc(P2Params &params);
-    static bool parse_d_imm_s_wz(P2Params &params);
-    static bool parse_wz_d_imm_s(P2Params &params);
-    static bool parse_d_imm_s_nnn(P2Params &params, uint max = 7);
-    static bool parse_d_imm_s(P2Params &params);
-    static bool parse_d_cz(P2Params &params);
-    static bool parse_cz(P2Params &params);
-    static bool parse_cccc_zzzz_wcz(P2Params &params);
-    static bool parse_d(P2Params &params);
-    static bool parse_wz_d(P2Params &params);
-    static bool parse_imm_d(P2Params &params);
-    static bool parse_imm_d_wcz(P2Params &params);
-    static bool parse_imm_d_wc(P2Params &params);
-    static bool parse_imm_s(P2Params &params);
-    static bool parse_imm_s_wcz(P2Params &params);
-    static bool parse_pc_abs(P2Params &params);
-    static bool parse_ptr_pc_abs(P2Params &params);
-    static bool parse_imm23(P2Params &params, QVector<p2_inst7_e> aug);
+    bool parse_with_wcz();
+    bool parse_with_wc();
+    bool parse_with_wz();
+    bool parse_inst();
+    bool parse_d_imm_s_wcz();
+    bool parse_d_imm_s_wc();
+    bool parse_d_imm_s_wz();
+    bool parse_wz_d_imm_s();
+    bool parse_d_imm_s_nnn(uint max = 7);
+    bool parse_d_imm_s();
+    bool parse_d_cz();
+    bool parse_cz();
+    bool parse_cccc_zzzz_wcz();
+    bool parse_d();
+    bool parse_wz_d();
+    bool parse_imm_d();
+    bool parse_imm_d_wcz();
+    bool parse_imm_d_wc();
+    bool parse_imm_s();
+    bool parse_imm_s_wcz();
+    bool parse_pc_abs();
+    bool parse_ptr_pc_abs();
+    bool parse_imm23(QVector<p2_inst7_e> aug);
 
-    static bool asm_byte(P2Params &params);
-    static bool asm_word(P2Params &params);
-    static bool asm_long(P2Params &params);
-    static bool asm_res(P2Params &params);
-    static bool asm_fit(P2Params &params);
+    bool asm_byte();
+    bool asm_word();
+    bool asm_long();
+    bool asm_res();
+    bool asm_fit();
 
-    static bool asm_nop(P2Params& p);
-    static bool asm_ror(P2Params& p);
-    static bool asm_rol(P2Params& p);
-    static bool asm_shr(P2Params& p);
-    static bool asm_shl(P2Params& p);
-    static bool asm_rcr(P2Params& p);
-    static bool asm_rcl(P2Params& p);
-    static bool asm_sar(P2Params& p);
-    static bool asm_sal(P2Params& p);
+    bool asm_nop();
+    bool asm_ror();
+    bool asm_rol();
+    bool asm_shr();
+    bool asm_shl();
+    bool asm_rcr();
+    bool asm_rcl();
+    bool asm_sar();
+    bool asm_sal();
 
-    static bool asm_add(P2Params& p);
-    static bool asm_addx(P2Params& p);
-    static bool asm_adds(P2Params& p);
-    static bool asm_addsx(P2Params& p);
-    static bool asm_sub(P2Params& p);
-    static bool asm_subx(P2Params& p);
-    static bool asm_subs(P2Params& p);
-    static bool asm_subsx(P2Params& p);
+    bool asm_add();
+    bool asm_addx();
+    bool asm_adds();
+    bool asm_addsx();
+    bool asm_sub();
+    bool asm_subx();
+    bool asm_subs();
+    bool asm_subsx();
 
-    static bool asm_cmp(P2Params& p);
-    static bool asm_cmpx(P2Params& p);
-    static bool asm_cmps(P2Params& p);
-    static bool asm_cmpsx(P2Params& p);
-    static bool asm_cmpr(P2Params& p);
-    static bool asm_cmpm(P2Params& p);
-    static bool asm_subr(P2Params& p);
-    static bool asm_cmpsub(P2Params& p);
+    bool asm_cmp();
+    bool asm_cmpx();
+    bool asm_cmps();
+    bool asm_cmpsx();
+    bool asm_cmpr();
+    bool asm_cmpm();
+    bool asm_subr();
+    bool asm_cmpsub();
 
-    static bool asm_fge(P2Params& p);
-    static bool asm_fle(P2Params& p);
-    static bool asm_fges(P2Params& p);
-    static bool asm_fles(P2Params& p);
-    static bool asm_sumc(P2Params& p);
-    static bool asm_sumnc(P2Params& p);
-    static bool asm_sumz(P2Params& p);
-    static bool asm_sumnz(P2Params& p);
+    bool asm_fge();
+    bool asm_fle();
+    bool asm_fges();
+    bool asm_fles();
+    bool asm_sumc();
+    bool asm_sumnc();
+    bool asm_sumz();
+    bool asm_sumnz();
 
-    static bool asm_testb_w(P2Params& p);
-    static bool asm_testbn_w(P2Params& p);
-    static bool asm_testb_and(P2Params& p);
-    static bool asm_testbn_and(P2Params& p);
-    static bool asm_testb_or(P2Params& p);
-    static bool asm_testbn_or(P2Params& p);
-    static bool asm_testb_xor(P2Params& p);
-    static bool asm_testbn_xor(P2Params& p);
+    bool asm_testb_w();
+    bool asm_testbn_w();
+    bool asm_testb_and();
+    bool asm_testbn_and();
+    bool asm_testb_or();
+    bool asm_testbn_or();
+    bool asm_testb_xor();
+    bool asm_testbn_xor();
 
-    static bool asm_bitl(P2Params& p);
-    static bool asm_bith(P2Params& p);
-    static bool asm_bitc(P2Params& p);
-    static bool asm_bitnc(P2Params& p);
-    static bool asm_bitz(P2Params& p);
-    static bool asm_bitnz(P2Params& p);
-    static bool asm_bitrnd(P2Params& p);
-    static bool asm_bitnot(P2Params& p);
+    bool asm_bitl();
+    bool asm_bith();
+    bool asm_bitc();
+    bool asm_bitnc();
+    bool asm_bitz();
+    bool asm_bitnz();
+    bool asm_bitrnd();
+    bool asm_bitnot();
 
-    static bool asm_and(P2Params& p);
-    static bool asm_andn(P2Params& p);
-    static bool asm_or(P2Params& p);
-    static bool asm_xor(P2Params& p);
-    static bool asm_muxc(P2Params& p);
-    static bool asm_muxnc(P2Params& p);
-    static bool asm_muxz(P2Params& p);
-    static bool asm_muxnz(P2Params& p);
+    bool asm_and();
+    bool asm_andn();
+    bool asm_or();
+    bool asm_xor();
+    bool asm_muxc();
+    bool asm_muxnc();
+    bool asm_muxz();
+    bool asm_muxnz();
 
-    static bool asm_mov(P2Params& p);
-    static bool asm_not(P2Params& p);
-    static bool asm_not_d(P2Params& p);
-    static bool asm_abs(P2Params& p);
-    static bool asm_neg(P2Params& p);
-    static bool asm_negc(P2Params& p);
-    static bool asm_negnc(P2Params& p);
-    static bool asm_negz(P2Params& p);
-    static bool asm_negnz(P2Params& p);
+    bool asm_mov();
+    bool asm_not();
+    bool asm_not_d();
+    bool asm_abs();
+    bool asm_neg();
+    bool asm_negc();
+    bool asm_negnc();
+    bool asm_negz();
+    bool asm_negnz();
 
-    static bool asm_incmod(P2Params& p);
-    static bool asm_decmod(P2Params& p);
-    static bool asm_zerox(P2Params& p);
-    static bool asm_signx(P2Params& p);
-    static bool asm_encod(P2Params& p);
-    static bool asm_ones(P2Params& p);
-    static bool asm_test(P2Params& p);
-    static bool asm_testn(P2Params& p);
+    bool asm_incmod();
+    bool asm_decmod();
+    bool asm_zerox();
+    bool asm_signx();
+    bool asm_encod();
+    bool asm_ones();
+    bool asm_test();
+    bool asm_testn();
 
-    static bool asm_setnib(P2Params& p);
-    static bool asm_setnib_altsn(P2Params& p);
-    static bool asm_getnib(P2Params& p);
-    static bool asm_getnib_altgn(P2Params& p);
-    static bool asm_rolnib(P2Params& p);
-    static bool asm_rolnib_altgn(P2Params& p);
-    static bool asm_setbyte(P2Params& p);
-    static bool asm_setbyte_altsb(P2Params& p);
-    static bool asm_getbyte(P2Params& p);
-    static bool asm_getbyte_altgb(P2Params& p);
-    static bool asm_rolbyte(P2Params& p);
-    static bool asm_rolbyte_altgb(P2Params& p);
+    bool asm_setnib();
+    bool asm_setnib_altsn();
+    bool asm_getnib();
+    bool asm_getnib_altgn();
+    bool asm_rolnib();
+    bool asm_rolnib_altgn();
+    bool asm_setbyte();
+    bool asm_setbyte_altsb();
+    bool asm_getbyte();
+    bool asm_getbyte_altgb();
+    bool asm_rolbyte();
+    bool asm_rolbyte_altgb();
 
-    static bool asm_setword(P2Params& p);
-    static bool asm_setword_altsw(P2Params& p);
-    static bool asm_getword(P2Params& p);
-    static bool asm_getword_altgw(P2Params& p);
-    static bool asm_rolword(P2Params& p);
-    static bool asm_rolword_altgw(P2Params& p);
+    bool asm_setword();
+    bool asm_setword_altsw();
+    bool asm_getword();
+    bool asm_getword_altgw();
+    bool asm_rolword();
+    bool asm_rolword_altgw();
 
-    static bool asm_altsn(P2Params& p);
-    static bool asm_altsn_d(P2Params& p);
-    static bool asm_altgn(P2Params& p);
-    static bool asm_altgn_d(P2Params& p);
-    static bool asm_altsb(P2Params& p);
-    static bool asm_altsb_d(P2Params& p);
-    static bool asm_altgb(P2Params& p);
-    static bool asm_altgb_d(P2Params& p);
+    bool asm_altsn();
+    bool asm_altsn_d();
+    bool asm_altgn();
+    bool asm_altgn_d();
+    bool asm_altsb();
+    bool asm_altsb_d();
+    bool asm_altgb();
+    bool asm_altgb_d();
 
-    static bool asm_altsw(P2Params& p);
-    static bool asm_altsw_d(P2Params& p);
-    static bool asm_altgw(P2Params& p);
-    static bool asm_altgw_d(P2Params& p);
+    bool asm_altsw();
+    bool asm_altsw_d();
+    bool asm_altgw();
+    bool asm_altgw_d();
 
-    static bool asm_altr(P2Params& p);
-    static bool asm_altr_d(P2Params& p);
-    static bool asm_altd(P2Params& p);
-    static bool asm_altd_d(P2Params& p);
-    static bool asm_alts(P2Params& p);
-    static bool asm_alts_d(P2Params& p);
-    static bool asm_altb(P2Params& p);
-    static bool asm_altb_d(P2Params& p);
-    static bool asm_alti(P2Params& p);
-    static bool asm_alti_d(P2Params& p);
+    bool asm_altr();
+    bool asm_altr_d();
+    bool asm_altd();
+    bool asm_altd_d();
+    bool asm_alts();
+    bool asm_alts_d();
+    bool asm_altb();
+    bool asm_altb_d();
+    bool asm_alti();
+    bool asm_alti_d();
 
-    static bool asm_setr(P2Params& p);
-    static bool asm_setd(P2Params& p);
-    static bool asm_sets(P2Params& p);
-    static bool asm_decod(P2Params& p);
-    static bool asm_decod_d(P2Params& p);
-    static bool asm_bmask(P2Params& p);
-    static bool asm_bmask_d(P2Params& p);
-    static bool asm_crcbit(P2Params& p);
-    static bool asm_crcnib(P2Params& p);
+    bool asm_setr();
+    bool asm_setd();
+    bool asm_sets();
+    bool asm_decod();
+    bool asm_decod_d();
+    bool asm_bmask();
+    bool asm_bmask_d();
+    bool asm_crcbit();
+    bool asm_crcnib();
 
-    static bool asm_muxnits(P2Params& p);
-    static bool asm_muxnibs(P2Params& p);
-    static bool asm_muxq(P2Params& p);
-    static bool asm_movbyts(P2Params& p);
-    static bool asm_mul(P2Params& p);
-    static bool asm_muls(P2Params& p);
-    static bool asm_sca(P2Params& p);
-    static bool asm_scas(P2Params& p);
+    bool asm_muxnits();
+    bool asm_muxnibs();
+    bool asm_muxq();
+    bool asm_movbyts();
+    bool asm_mul();
+    bool asm_muls();
+    bool asm_sca();
+    bool asm_scas();
 
-    static bool asm_addpix(P2Params& p);
-    static bool asm_mulpix(P2Params& p);
-    static bool asm_blnpix(P2Params& p);
-    static bool asm_mixpix(P2Params& p);
-    static bool asm_addct1(P2Params& p);
-    static bool asm_addct2(P2Params& p);
-    static bool asm_addct3(P2Params& p);
+    bool asm_addpix();
+    bool asm_mulpix();
+    bool asm_blnpix();
+    bool asm_mixpix();
+    bool asm_addct1();
+    bool asm_addct2();
+    bool asm_addct3();
 
-    static bool asm_wmlong(P2Params& p);
-    static bool asm_rqpin(P2Params& p);
-    static bool asm_rdpin(P2Params& p);
-    static bool asm_rdlut(P2Params& p);
-    static bool asm_rdbyte(P2Params& p);
-    static bool asm_rdword(P2Params& p);
-    static bool asm_rdlong(P2Params& p);
+    bool asm_wmlong();
+    bool asm_rqpin();
+    bool asm_rdpin();
+    bool asm_rdlut();
+    bool asm_rdbyte();
+    bool asm_rdword();
+    bool asm_rdlong();
 
-    static bool asm_popa(P2Params& p);
-    static bool asm_popb(P2Params& p);
-    static bool asm_calld(P2Params& p);
-    static bool asm_resi3(P2Params& p);
-    static bool asm_resi2(P2Params& p);
-    static bool asm_resi1(P2Params& p);
-    static bool asm_resi0(P2Params& p);
-    static bool asm_reti3(P2Params& p);
-    static bool asm_reti2(P2Params& p);
-    static bool asm_reti1(P2Params& p);
-    static bool asm_reti0(P2Params& p);
-    static bool asm_callpa(P2Params& p);
-    static bool asm_callpb(P2Params& p);
+    bool asm_popa();
+    bool asm_popb();
+    bool asm_calld();
+    bool asm_resi3();
+    bool asm_resi2();
+    bool asm_resi1();
+    bool asm_resi0();
+    bool asm_reti3();
+    bool asm_reti2();
+    bool asm_reti1();
+    bool asm_reti0();
+    bool asm_callpa();
+    bool asm_callpb();
 
-    static bool asm_djz(P2Params& p);
-    static bool asm_djnz(P2Params& p);
-    static bool asm_djf(P2Params& p);
-    static bool asm_djnf(P2Params& p);
-    static bool asm_ijz(P2Params& p);
-    static bool asm_ijnz(P2Params& p);
-    static bool asm_tjz(P2Params& p);
-    static bool asm_tjnz(P2Params& p);
-    static bool asm_tjf(P2Params& p);
-    static bool asm_tjnf(P2Params& p);
-    static bool asm_tjs(P2Params& p);
-    static bool asm_tjns(P2Params& p);
-    static bool asm_tjv(P2Params& p);
+    bool asm_djz();
+    bool asm_djnz();
+    bool asm_djf();
+    bool asm_djnf();
+    bool asm_ijz();
+    bool asm_ijnz();
+    bool asm_tjz();
+    bool asm_tjnz();
+    bool asm_tjf();
+    bool asm_tjnf();
+    bool asm_tjs();
+    bool asm_tjns();
+    bool asm_tjv();
 
-    static bool asm_jint(P2Params& p);
-    static bool asm_jct1(P2Params& p);
-    static bool asm_jct2(P2Params& p);
-    static bool asm_jct3(P2Params& p);
-    static bool asm_jse1(P2Params& p);
-    static bool asm_jse2(P2Params& p);
-    static bool asm_jse3(P2Params& p);
-    static bool asm_jse4(P2Params& p);
-    static bool asm_jpat(P2Params& p);
-    static bool asm_jfbw(P2Params& p);
-    static bool asm_jxmt(P2Params& p);
-    static bool asm_jxfi(P2Params& p);
-    static bool asm_jxro(P2Params& p);
-    static bool asm_jxrl(P2Params& p);
-    static bool asm_jatn(P2Params& p);
-    static bool asm_jqmt(P2Params& p);
+    bool asm_jint();
+    bool asm_jct1();
+    bool asm_jct2();
+    bool asm_jct3();
+    bool asm_jse1();
+    bool asm_jse2();
+    bool asm_jse3();
+    bool asm_jse4();
+    bool asm_jpat();
+    bool asm_jfbw();
+    bool asm_jxmt();
+    bool asm_jxfi();
+    bool asm_jxro();
+    bool asm_jxrl();
+    bool asm_jatn();
+    bool asm_jqmt();
 
-    static bool asm_jnint(P2Params& p);
-    static bool asm_jnct1(P2Params& p);
-    static bool asm_jnct2(P2Params& p);
-    static bool asm_jnct3(P2Params& p);
-    static bool asm_jnse1(P2Params& p);
-    static bool asm_jnse2(P2Params& p);
-    static bool asm_jnse3(P2Params& p);
-    static bool asm_jnse4(P2Params& p);
-    static bool asm_jnpat(P2Params& p);
-    static bool asm_jnfbw(P2Params& p);
-    static bool asm_jnxmt(P2Params& p);
-    static bool asm_jnxfi(P2Params& p);
-    static bool asm_jnxro(P2Params& p);
-    static bool asm_jnxrl(P2Params& p);
-    static bool asm_jnatn(P2Params& p);
-    static bool asm_jnqmt(P2Params& p);
-    static bool asm_1011110_1(P2Params& p);
-    static bool asm_1011111_0(P2Params& p);
-    static bool asm_setpat(P2Params& p);
+    bool asm_jnint();
+    bool asm_jnct1();
+    bool asm_jnct2();
+    bool asm_jnct3();
+    bool asm_jnse1();
+    bool asm_jnse2();
+    bool asm_jnse3();
+    bool asm_jnse4();
+    bool asm_jnpat();
+    bool asm_jnfbw();
+    bool asm_jnxmt();
+    bool asm_jnxfi();
+    bool asm_jnxro();
+    bool asm_jnxrl();
+    bool asm_jnatn();
+    bool asm_jnqmt();
+    bool asm_1011110_1();
+    bool asm_1011111_0();
+    bool asm_setpat();
 
-    static bool asm_wrpin(P2Params& p);
-    static bool asm_akpin(P2Params& p);
-    static bool asm_wxpin(P2Params& p);
-    static bool asm_wypin(P2Params& p);
-    static bool asm_wrlut(P2Params& p);
-    static bool asm_wrbyte(P2Params& p);
-    static bool asm_wrword(P2Params& p);
-    static bool asm_wrlong(P2Params& p);
+    bool asm_wrpin();
+    bool asm_akpin();
+    bool asm_wxpin();
+    bool asm_wypin();
+    bool asm_wrlut();
+    bool asm_wrbyte();
+    bool asm_wrword();
+    bool asm_wrlong();
 
-    static bool asm_pusha(P2Params& p);
-    static bool asm_pushb(P2Params& p);
-    static bool asm_rdfast(P2Params& p);
-    static bool asm_wrfast(P2Params& p);
-    static bool asm_fblock(P2Params& p);
-    static bool asm_xinit(P2Params& p);
-    static bool asm_xstop(P2Params& p);
-    static bool asm_xzero(P2Params& p);
-    static bool asm_xcont(P2Params& p);
+    bool asm_pusha();
+    bool asm_pushb();
+    bool asm_rdfast();
+    bool asm_wrfast();
+    bool asm_fblock();
+    bool asm_xinit();
+    bool asm_xstop();
+    bool asm_xzero();
+    bool asm_xcont();
 
-    static bool asm_rep(P2Params& p);
-    static bool asm_coginit(P2Params& p);
+    bool asm_rep();
+    bool asm_coginit();
 
-    static bool asm_qmul(P2Params& p);
-    static bool asm_qdiv(P2Params& p);
-    static bool asm_qfrac(P2Params& p);
-    static bool asm_qsqrt(P2Params& p);
-    static bool asm_qrotate(P2Params& p);
-    static bool asm_qvector(P2Params& p);
+    bool asm_qmul();
+    bool asm_qdiv();
+    bool asm_qfrac();
+    bool asm_qsqrt();
+    bool asm_qrotate();
+    bool asm_qvector();
 
-    static bool asm_hubset(P2Params& p);
-    static bool asm_cogid(P2Params& p);
-    static bool asm_cogstop(P2Params& p);
-    static bool asm_locknew(P2Params& p);
-    static bool asm_lockret(P2Params& p);
-    static bool asm_locktry(P2Params& p);
-    static bool asm_lockrel(P2Params& p);
-    static bool asm_qlog(P2Params& p);
-    static bool asm_qexp(P2Params& p);
+    bool asm_hubset();
+    bool asm_cogid();
+    bool asm_cogstop();
+    bool asm_locknew();
+    bool asm_lockret();
+    bool asm_locktry();
+    bool asm_lockrel();
+    bool asm_qlog();
+    bool asm_qexp();
 
-    static bool asm_rfbyte(P2Params& p);
-    static bool asm_rfword(P2Params& p);
-    static bool asm_rflong(P2Params& p);
-    static bool asm_rfvar(P2Params& p);
-    static bool asm_rfvars(P2Params& p);
-    static bool asm_wfbyte(P2Params& p);
-    static bool asm_wfword(P2Params& p);
-    static bool asm_wflong(P2Params& p);
+    bool asm_rfbyte();
+    bool asm_rfword();
+    bool asm_rflong();
+    bool asm_rfvar();
+    bool asm_rfvars();
+    bool asm_wfbyte();
+    bool asm_wfword();
+    bool asm_wflong();
 
-    static bool asm_getqx(P2Params& p);
-    static bool asm_getqy(P2Params& p);
-    static bool asm_getct(P2Params& p);
-    static bool asm_getrnd(P2Params& p);
-    static bool asm_getrnd_cz(P2Params& p);
+    bool asm_getqx();
+    bool asm_getqy();
+    bool asm_getct();
+    bool asm_getrnd();
+    bool asm_getrnd_cz();
 
-    static bool asm_setdacs(P2Params& p);
-    static bool asm_setxfrq(P2Params& p);
-    static bool asm_getxacc(P2Params& p);
-    static bool asm_waitx(P2Params& p);
-    static bool asm_setse1(P2Params& p);
-    static bool asm_setse2(P2Params& p);
-    static bool asm_setse3(P2Params& p);
-    static bool asm_setse4(P2Params& p);
-    static bool asm_pollint(P2Params& p);
-    static bool asm_pollct1(P2Params& p);
-    static bool asm_pollct2(P2Params& p);
-    static bool asm_pollct3(P2Params& p);
-    static bool asm_pollse1(P2Params& p);
-    static bool asm_pollse2(P2Params& p);
-    static bool asm_pollse3(P2Params& p);
-    static bool asm_pollse4(P2Params& p);
-    static bool asm_pollpat(P2Params& p);
-    static bool asm_pollfbw(P2Params& p);
-    static bool asm_pollxmt(P2Params& p);
-    static bool asm_pollxfi(P2Params& p);
-    static bool asm_pollxro(P2Params& p);
-    static bool asm_pollxrl(P2Params& p);
-    static bool asm_pollatn(P2Params& p);
-    static bool asm_pollqmt(P2Params& p);
+    bool asm_setdacs();
+    bool asm_setxfrq();
+    bool asm_getxacc();
+    bool asm_waitx();
+    bool asm_setse1();
+    bool asm_setse2();
+    bool asm_setse3();
+    bool asm_setse4();
+    bool asm_pollint();
+    bool asm_pollct1();
+    bool asm_pollct2();
+    bool asm_pollct3();
+    bool asm_pollse1();
+    bool asm_pollse2();
+    bool asm_pollse3();
+    bool asm_pollse4();
+    bool asm_pollpat();
+    bool asm_pollfbw();
+    bool asm_pollxmt();
+    bool asm_pollxfi();
+    bool asm_pollxro();
+    bool asm_pollxrl();
+    bool asm_pollatn();
+    bool asm_pollqmt();
 
-    static bool asm_waitint(P2Params& p);
-    static bool asm_waitct1(P2Params& p);
-    static bool asm_waitct2(P2Params& p);
-    static bool asm_waitct3(P2Params& p);
-    static bool asm_waitse1(P2Params& p);
-    static bool asm_waitse2(P2Params& p);
-    static bool asm_waitse3(P2Params& p);
-    static bool asm_waitse4(P2Params& p);
-    static bool asm_waitpat(P2Params& p);
-    static bool asm_waitfbw(P2Params& p);
-    static bool asm_waitxmt(P2Params& p);
-    static bool asm_waitxfi(P2Params& p);
-    static bool asm_waitxro(P2Params& p);
-    static bool asm_waitxrl(P2Params& p);
-    static bool asm_waitatn(P2Params& p);
+    bool asm_waitint();
+    bool asm_waitct1();
+    bool asm_waitct2();
+    bool asm_waitct3();
+    bool asm_waitse1();
+    bool asm_waitse2();
+    bool asm_waitse3();
+    bool asm_waitse4();
+    bool asm_waitpat();
+    bool asm_waitfbw();
+    bool asm_waitxmt();
+    bool asm_waitxfi();
+    bool asm_waitxro();
+    bool asm_waitxrl();
+    bool asm_waitatn();
 
-    static bool asm_allowi(P2Params& p);
-    static bool asm_stalli(P2Params& p);
-    static bool asm_trgint1(P2Params& p);
-    static bool asm_trgint2(P2Params& p);
-    static bool asm_trgint3(P2Params& p);
-    static bool asm_nixint1(P2Params& p);
-    static bool asm_nixint2(P2Params& p);
-    static bool asm_nixint3(P2Params& p);
-    static bool asm_setint1(P2Params& p);
-    static bool asm_setint2(P2Params& p);
-    static bool asm_setint3(P2Params& p);
-    static bool asm_setq(P2Params& p);
-    static bool asm_setq2(P2Params& p);
+    bool asm_allowi();
+    bool asm_stalli();
+    bool asm_trgint1();
+    bool asm_trgint2();
+    bool asm_trgint3();
+    bool asm_nixint1();
+    bool asm_nixint2();
+    bool asm_nixint3();
+    bool asm_setint1();
+    bool asm_setint2();
+    bool asm_setint3();
+    bool asm_setq();
+    bool asm_setq2();
 
-    static bool asm_push(P2Params& p);
-    static bool asm_pop(P2Params& p);
-    static bool asm_jmp(P2Params& p);
-    static bool asm_call(P2Params& p);
-    static bool asm_ret(P2Params& p);
-    static bool asm_calla(P2Params& p);
-    static bool asm_reta(P2Params& p);
-    static bool asm_callb(P2Params& p);
-    static bool asm_retb(P2Params& p);
+    bool asm_push();
+    bool asm_pop();
+    bool asm_jmp();
+    bool asm_call();
+    bool asm_ret();
+    bool asm_calla();
+    bool asm_reta();
+    bool asm_callb();
+    bool asm_retb();
 
-    static bool asm_jmprel(P2Params& p);
-    static bool asm_skip(P2Params& p);
-    static bool asm_skipf(P2Params& p);
-    static bool asm_execf(P2Params& p);
-    static bool asm_getptr(P2Params& p);
-    static bool asm_getbrk(P2Params& p);
-    static bool asm_cogbrk(P2Params& p);
-    static bool asm_brk(P2Params& p);
+    bool asm_jmprel();
+    bool asm_skip();
+    bool asm_skipf();
+    bool asm_execf();
+    bool asm_getptr();
+    bool asm_getbrk();
+    bool asm_cogbrk();
+    bool asm_brk();
 
-    static bool asm_setluts(P2Params& p);
-    static bool asm_setcy(P2Params& p);
-    static bool asm_setci(P2Params& p);
-    static bool asm_setcq(P2Params& p);
-    static bool asm_setcfrq(P2Params& p);
-    static bool asm_setcmod(P2Params& p);
-    static bool asm_setpiv(P2Params& p);
-    static bool asm_setpix(P2Params& p);
-    static bool asm_cogatn(P2Params& p);
+    bool asm_setluts();
+    bool asm_setcy();
+    bool asm_setci();
+    bool asm_setcq();
+    bool asm_setcfrq();
+    bool asm_setcmod();
+    bool asm_setpiv();
+    bool asm_setpix();
+    bool asm_cogatn();
 
-    static bool asm_testp_w(P2Params& p);
-    static bool asm_testpn_w(P2Params& p);
-    static bool asm_testp_and(P2Params& p);
-    static bool asm_testpn_and(P2Params& p);
-    static bool asm_testp_or(P2Params& p);
-    static bool asm_testpn_or(P2Params& p);
-    static bool asm_testp_xor(P2Params& p);
-    static bool asm_testpn_xor(P2Params& p);
+    bool asm_testp_w();
+    bool asm_testpn_w();
+    bool asm_testp_and();
+    bool asm_testpn_and();
+    bool asm_testp_or();
+    bool asm_testpn_or();
+    bool asm_testp_xor();
+    bool asm_testpn_xor();
 
-    static bool asm_dirl(P2Params& p);
-    static bool asm_dirh(P2Params& p);
-    static bool asm_dirc(P2Params& p);
-    static bool asm_dirnc(P2Params& p);
-    static bool asm_dirz(P2Params& p);
-    static bool asm_dirnz(P2Params& p);
-    static bool asm_dirrnd(P2Params& p);
-    static bool asm_dirnot(P2Params& p);
+    bool asm_dirl();
+    bool asm_dirh();
+    bool asm_dirc();
+    bool asm_dirnc();
+    bool asm_dirz();
+    bool asm_dirnz();
+    bool asm_dirrnd();
+    bool asm_dirnot();
 
-    static bool asm_outl(P2Params& p);
-    static bool asm_outh(P2Params& p);
-    static bool asm_outc(P2Params& p);
-    static bool asm_outnc(P2Params& p);
-    static bool asm_outz(P2Params& p);
-    static bool asm_outnz(P2Params& p);
-    static bool asm_outrnd(P2Params& p);
-    static bool asm_outnot(P2Params& p);
+    bool asm_outl();
+    bool asm_outh();
+    bool asm_outc();
+    bool asm_outnc();
+    bool asm_outz();
+    bool asm_outnz();
+    bool asm_outrnd();
+    bool asm_outnot();
 
-    static bool asm_fltl(P2Params& p);
-    static bool asm_flth(P2Params& p);
-    static bool asm_fltc(P2Params& p);
-    static bool asm_fltnc(P2Params& p);
-    static bool asm_fltz(P2Params& p);
-    static bool asm_fltnz(P2Params& p);
-    static bool asm_fltrnd(P2Params& p);
-    static bool asm_fltnot(P2Params& p);
+    bool asm_fltl();
+    bool asm_flth();
+    bool asm_fltc();
+    bool asm_fltnc();
+    bool asm_fltz();
+    bool asm_fltnz();
+    bool asm_fltrnd();
+    bool asm_fltnot();
 
-    static bool asm_drvl(P2Params& p);
-    static bool asm_drvh(P2Params& p);
-    static bool asm_drvc(P2Params& p);
-    static bool asm_drvnc(P2Params& p);
-    static bool asm_drvz(P2Params& p);
-    static bool asm_drvnz(P2Params& p);
-    static bool asm_drvrnd(P2Params& p);
-    static bool asm_drvnot(P2Params& p);
+    bool asm_drvl();
+    bool asm_drvh();
+    bool asm_drvc();
+    bool asm_drvnc();
+    bool asm_drvz();
+    bool asm_drvnz();
+    bool asm_drvrnd();
+    bool asm_drvnot();
 
-    static bool asm_splitb(P2Params& p);
-    static bool asm_mergeb(P2Params& p);
-    static bool asm_splitw(P2Params& p);
-    static bool asm_mergew(P2Params& p);
-    static bool asm_seussf(P2Params& p);
-    static bool asm_seussr(P2Params& p);
-    static bool asm_rgbsqz(P2Params& p);
-    static bool asm_rgbexp(P2Params& p);
-    static bool asm_xoro32(P2Params& p);
+    bool asm_splitb();
+    bool asm_mergeb();
+    bool asm_splitw();
+    bool asm_mergew();
+    bool asm_seussf();
+    bool asm_seussr();
+    bool asm_rgbsqz();
+    bool asm_rgbexp();
+    bool asm_xoro32();
 
-    static bool asm_rev(P2Params& p);
-    static bool asm_rczr(P2Params& p);
-    static bool asm_rczl(P2Params& p);
-    static bool asm_wrc(P2Params& p);
-    static bool asm_wrnc(P2Params& p);
-    static bool asm_wrz(P2Params& p);
-    static bool asm_wrnz(P2Params& p);
-    static bool asm_modcz(P2Params& p);
-    static bool asm_setscp(P2Params& p);
-    static bool asm_getscp(P2Params& p);
+    bool asm_rev();
+    bool asm_rczr();
+    bool asm_rczl();
+    bool asm_wrc();
+    bool asm_wrnc();
+    bool asm_wrz();
+    bool asm_wrnz();
+    bool asm_modcz();
+    bool asm_setscp();
+    bool asm_getscp();
 
-    static bool asm_jmp_abs(P2Params& p);
-    static bool asm_call_abs(P2Params& p);
-    static bool asm_calla_abs(P2Params& p);
-    static bool asm_callb_abs(P2Params& p);
-    static bool asm_calld_pa_abs(P2Params& p);
-    static bool asm_calld_pb_abs(P2Params& p);
-    static bool asm_calld_ptra_abs(P2Params& p);
-    static bool asm_calld_ptrb_abs(P2Params& p);
-    static bool asm_loc(P2Params& p);
-    static bool asm_loc_pa(P2Params& p);
-    static bool asm_loc_pb(P2Params& p);
-    static bool asm_loc_ptra(P2Params& p);
-    static bool asm_loc_ptrb(P2Params& p);
+    bool asm_jmp_abs();
+    bool asm_call_abs();
+    bool asm_calla_abs();
+    bool asm_callb_abs();
+    bool asm_calld_pa_abs();
+    bool asm_calld_pb_abs();
+    bool asm_calld_ptra_abs();
+    bool asm_calld_ptrb_abs();
+    bool asm_loc();
+    bool asm_loc_pa();
+    bool asm_loc_pb();
+    bool asm_loc_ptra();
+    bool asm_loc_ptrb();
 
-    static bool asm_augs(P2Params& p);
-    static bool asm_augd(P2Params& p);
+    bool asm_augs();
+    bool asm_augd();
 };

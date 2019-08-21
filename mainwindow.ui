@@ -56,7 +56,7 @@
              <number>2</number>
             </property>
             <property name="spacing">
-             <number>0</number>
+             <number>2</number>
             </property>
             <item row="0" column="1">
              <widget class="P2CogView" name="cog0" native="true"/>
@@ -64,47 +64,26 @@
             <item row="0" column="2">
              <widget class="P2CogView" name="cog1" native="true"/>
             </item>
-            <item row="1" column="1">
+            <item row="0" column="3">
              <widget class="P2CogView" name="cog2" native="true"/>
             </item>
+            <item row="1" column="1">
+             <widget class="P2CogView" name="cog7" native="true"/>
+            </item>
             <item row="1" column="2">
+             <widget class="P2HubView" name="hub" native="true"/>
+            </item>
+            <item row="1" column="3">
              <widget class="P2CogView" name="cog3" native="true"/>
             </item>
             <item row="2" column="1">
-             <widget class="P2CogView" name="cog4" native="true"/>
+             <widget class="P2CogView" name="cog6" native="true"/>
             </item>
             <item row="2" column="2">
              <widget class="P2CogView" name="cog5" native="true"/>
             </item>
-            <item row="3" column="1">
-             <widget class="P2CogView" name="cog6" native="true"/>
-            </item>
-            <item row="3" column="2">
-             <widget class="P2CogView" name="cog7" native="true"/>
-            </item>
-            <item row="4" column="1">
-             <widget class="P2CogView" name="cog8" native="true"/>
-            </item>
-            <item row="4" column="2">
-             <widget class="P2CogView" name="cog9" native="true"/>
-            </item>
-            <item row="5" column="1">
-             <widget class="P2CogView" name="cogA" native="true"/>
-            </item>
-            <item row="5" column="2">
-             <widget class="P2CogView" name="cogB" native="true"/>
-            </item>
-            <item row="6" column="1">
-             <widget class="P2CogView" name="cogC" native="true"/>
-            </item>
-            <item row="6" column="2">
-             <widget class="P2CogView" name="cogD" native="true"/>
-            </item>
-            <item row="7" column="1">
-             <widget class="P2CogView" name="cogE" native="true"/>
-            </item>
-            <item row="7" column="2">
-             <widget class="P2CogView" name="cogF" native="true"/>
+            <item row="2" column="3">
+             <widget class="P2CogView" name="cog4" native="true"/>
             </item>
            </layout>
           </widget>
@@ -441,7 +420,7 @@
   <action name="action_Dasm_Opcodes_bin">
    <property name="icon">
     <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/opcode_binary.png</normaloff>:/icons/opcode_binary.png</iconset>
+     <normaloff>:/icons/opcode_bin.png</normaloff>:/icons/opcode_bin.png</iconset>
    </property>
    <property name="text">
     <string>Opcodes &amp;binary</string>
@@ -450,7 +429,7 @@
   <action name="action_Dasm_Opcodes_oct">
    <property name="icon">
     <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/opcode_octal.png</normaloff>:/icons/opcode_octal.png</iconset>
+     <normaloff>:/icons/opcode_oct.png</normaloff>:/icons/opcode_oct.png</iconset>
    </property>
    <property name="text">
     <string>Opcodes &amp;octal</string>
@@ -459,7 +438,7 @@
   <action name="action_Dasm_Opcodes_hex">
    <property name="icon">
     <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/opcode_hexdec.png</normaloff>:/icons/opcode_hexdec.png</iconset>
+     <normaloff>:/icons/opcode_hex.png</normaloff>:/icons/opcode_hex.png</iconset>
    </property>
    <property name="text">
     <string>Opcodes &amp;hexadecimal</string>
@@ -477,7 +456,7 @@
   <action name="action_Asm_Opcodes_bin">
    <property name="icon">
     <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/opcode_binary.png</normaloff>:/icons/opcode_binary.png</iconset>
+     <normaloff>:/icons/opcode_bin.png</normaloff>:/icons/opcode_bin.png</iconset>
    </property>
    <property name="text">
     <string>Opcodes &amp;binary</string>
@@ -486,7 +465,7 @@
   <action name="action_Asm_Opcodes_oct">
    <property name="icon">
     <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/opcode_octal.png</normaloff>:/icons/opcode_octal.png</iconset>
+     <normaloff>:/icons/opcode_oct.png</normaloff>:/icons/opcode_oct.png</iconset>
    </property>
    <property name="text">
     <string>Opcodes &amp;octal</string>
@@ -495,7 +474,7 @@
   <action name="action_Asm_Opcodes_hex">
    <property name="icon">
     <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/opcode_hexdec.png</normaloff>:/icons/opcode_hexdec.png</iconset>
+     <normaloff>:/icons/opcode_hex.png</normaloff>:/icons/opcode_hex.png</iconset>
    </property>
    <property name="text">
     <string>Opcodes &amp;hexadecimal</string>
@@ -508,6 +487,12 @@
    <class>P2CogView</class>
    <extends>QWidget</extends>
    <header location="global">p2cogview.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>P2HubView</class>
+   <extends>QWidget</extends>
+   <header location="global">p2hubview.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

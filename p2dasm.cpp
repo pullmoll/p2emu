@@ -2085,7 +2085,7 @@ void P2Dasm::format_pc_abs(QString* instruction, p2_token_e inst, p2_token_e des
     *instruction = QString("%1%2%3$%4")
                .arg(Token.string(inst, m_lowercase), pad_inst)
                .arg(Token.string(dest, m_lowercase))
-               .arg(dest != t_nothing ? "," : "")
+               .arg(dest != t_unknown ? "," : "")
                .arg(addr, 0, 16);
 }
 
