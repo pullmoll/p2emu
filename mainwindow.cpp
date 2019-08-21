@@ -39,31 +39,46 @@
 #include "ui_mainwindow.h"
 #include "about.h"
 #include "gotoaddress.h"
+#include "p2hub.h"
+#include "p2cog.h"
 #include "p2asm.h"
 #include "p2dasm.h"
+#include "p2asmmodel.h"
+#include "p2dasmmodel.h"
 
 static const int ncogs = 4;
 static const QLatin1String key_windowGeometry("windowGeometry");
 static const QLatin1String key_windowState("windowState");
+static const QLatin1String grp_assembler("assembler");
+static const QLatin1String grp_disassembler("disassembler");
 static const QLatin1String key_opcodes("opcodes");
 static const QLatin1String key_lowercase("lowercase");
 static const QLatin1String key_current_row("current_row");
 static const QLatin1String key_column_address("hide_address");
+static const QLatin1String key_column_origin("hide_origin");
+static const QLatin1String key_column_tokens("hide_tokens");
 static const QLatin1String key_column_opcode("hide_opcode");
+static const QLatin1String key_column_errors("hide_errors");
 static const QLatin1String key_column_instruction("hide_instruction");
+static const QLatin1String key_column_source("hide_source");
 static const QLatin1String key_column_description("hide_description");
 
 static const QLatin1String tab_hub("P2Hub");
 static const QLatin1String tab_asm("P2Asm");
 static const QLatin1String tab_dasm("P2Dasm");
 
+static const QLatin1String key_status("status");
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , m_vcog()
     , m_hub(new P2Hub(ncogs, this))
+    , m_asm(new P2Asm(this))
+    , m_params(new P2Params)
+    , m_amodel(new P2AsmModel(m_params))
     , m_dasm(new P2Dasm(m_hub->cog(0)))
-    , m_model(new P2DasmModel(m_dasm))
+    , m_dmodel(new P2DasmModel(m_dasm))
 {
     ui->setupUi(this);
     connect(ui->action_Quit, SIGNAL(triggered(bool)), this, SLOT(close()));
@@ -71,18 +86,14 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->action_AboutQt5, SIGNAL(triggered(bool)), this, SLOT(aboutQt5()));
 
     setWindowTitle(QString("%1 v%2").arg(qApp->applicationName()).arg(qApp->applicationVersion()));
-    setupAssembler();
     setupTabWidget();
     setupToolbars();
+    setupStatusbar();
 
     m_hub->load(":/ROM_Booter_v33_01j.bin");
 
-    ui->tvDasm->setModel(m_model);
-    updateColumnSizes();
-
-    QHeaderView* hh = ui->tvDasm->horizontalHeader();
-    hh->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(hh, SIGNAL(customContextMenuRequested(QPoint)), SLOT(dasmHeaderColums(QPoint)), Qt::UniqueConnection);
+    setupAssembler();
+    setupDisassembler();
 
     restoreSettings();
     setupCogView();
@@ -99,13 +110,26 @@ void MainWindow::saveSettings()
     QSettings s;
     s.setValue(key_windowGeometry, saveGeometry());
     s.setValue(key_windowState, saveState());
-    s.setValue(key_opcodes, m_model->opcode_format());
-    s.setValue(key_lowercase, ui->action_setLowercase->isChecked());
-    s.setValue(key_current_row, ui->tvDasm->currentIndex().row());
+
+    s.beginGroup(grp_assembler);
+    s.setValue(key_opcodes, m_amodel->opcode_format());
+    s.setValue(key_column_origin, ui->tvAsm->isColumnHidden(P2AsmModel::c_Origin));
+    s.setValue(key_column_tokens, ui->tvDasm->isColumnHidden(P2AsmModel::c_Tokens));
+    s.setValue(key_column_opcode, ui->tvDasm->isColumnHidden(P2AsmModel::c_Opcode));
+    s.setValue(key_column_errors, ui->tvDasm->isColumnHidden(P2AsmModel::c_Errors));
+    s.setValue(key_column_source, ui->tvDasm->isColumnHidden(P2AsmModel::c_Source));
+    s.endGroup();
+
+    s.beginGroup(grp_disassembler);
+    s.setValue(key_opcodes, m_dmodel->opcode_format());
+    s.setValue(key_lowercase, ui->action_Dasm_Lowercase->isChecked());
     s.setValue(key_column_address, ui->tvDasm->isColumnHidden(P2DasmModel::c_Address));
     s.setValue(key_column_opcode, ui->tvDasm->isColumnHidden(P2DasmModel::c_Opcode));
     s.setValue(key_column_instruction, ui->tvDasm->isColumnHidden(P2DasmModel::c_Instruction));
     s.setValue(key_column_description, ui->tvDasm->isColumnHidden(P2DasmModel::c_Description));
+    s.setValue(key_current_row, ui->tvDasm->currentIndex().row());
+    s.endGroup();
+
 }
 
 void MainWindow::restoreSettings()
@@ -113,8 +137,8 @@ void MainWindow::restoreSettings()
     QSettings s;
     restoreGeometry(s.value(key_windowGeometry).toByteArray());
     restoreState(s.value(key_windowState).toByteArray());
-    setOpcodes(s.value(key_opcodes, P2DasmModel::f_binary).toInt());
-    setInstructionsLowercase(s.value(key_lowercase).toBool());
+    setDasmOpcodes(s.value(key_opcodes, P2DasmModel::f_bin).toInt());
+    setDasmLowercase(s.value(key_lowercase).toBool());
     ui->tvDasm->selectRow(s.value(key_current_row).toInt());
     ui->tvDasm->setColumnHidden(P2DasmModel::c_Address, s.value(key_column_address, false).toBool());
     ui->tvDasm->setColumnHidden(P2DasmModel::c_Opcode, s.value(key_column_opcode, false).toBool());
@@ -188,43 +212,110 @@ void MainWindow::gotoAddress()
     }
 }
 
-void MainWindow::setOpcodes(int mode)
+void MainWindow::setAsmOpcodes(int mode)
+{
+    P2AsmModel::format_e format = static_cast<P2AsmModel::format_e>(mode);
+    switch (format) {
+    case P2AsmModel::f_bin:
+        ui->action_Asm_Opcodes_bin->setChecked(true);
+        ui->action_Asm_Opcodes_hex->setChecked(false);
+        ui->action_Asm_Opcodes_oct->setChecked(false);
+        break;
+    case P2AsmModel::f_hex:
+        ui->action_Asm_Opcodes_bin->setChecked(false);
+        ui->action_Asm_Opcodes_hex->setChecked(true);
+        ui->action_Asm_Opcodes_oct->setChecked(false);
+        break;
+    case P2AsmModel::f_oct:
+        ui->action_Asm_Opcodes_bin->setChecked(false);
+        ui->action_Asm_Opcodes_hex->setChecked(false);
+        ui->action_Asm_Opcodes_oct->setChecked(true);
+        break;
+    }
+    m_amodel->setOpcodeFormat(format);
+    updateAsmColumnSizes();
+}
+
+void MainWindow::setAsmOpcodesBinary()
+{
+    setAsmOpcodes(P2AsmModel::f_bin);
+}
+
+void MainWindow::setAsmOpcodesHexDec()
+{
+    setAsmOpcodes(P2AsmModel::f_hex);
+}
+
+void MainWindow::setAsmOpcodesOctal()
+{
+    setAsmOpcodes(P2AsmModel::f_oct);
+}
+
+void MainWindow::setDasmOpcodes(int mode)
 {
     P2DasmModel::format_e format = static_cast<P2DasmModel::format_e>(mode);
     switch (format) {
-    case P2DasmModel::f_binary:
-        ui->action_Opcodes_binary->setChecked(true);
-        ui->action_Opcodes_hexdec->setChecked(false);
-        ui->action_Opcodes_octal->setChecked(false);
+    case P2DasmModel::f_bin:
+        ui->action_Dasm_Opcodes_bin->setChecked(true);
+        ui->action_Dasm_Opcodes_hex->setChecked(false);
+        ui->action_Dasm_Opcodes_oct->setChecked(false);
         break;
-    case P2DasmModel::f_hexdec:
-        ui->action_Opcodes_binary->setChecked(false);
-        ui->action_Opcodes_hexdec->setChecked(true);
-        ui->action_Opcodes_octal->setChecked(false);
+    case P2DasmModel::f_hex:
+        ui->action_Dasm_Opcodes_bin->setChecked(false);
+        ui->action_Dasm_Opcodes_hex->setChecked(true);
+        ui->action_Dasm_Opcodes_oct->setChecked(false);
         break;
-    case P2DasmModel::f_octal:
-        ui->action_Opcodes_binary->setChecked(false);
-        ui->action_Opcodes_hexdec->setChecked(false);
-        ui->action_Opcodes_octal->setChecked(true);
+    case P2DasmModel::f_oct:
+        ui->action_Dasm_Opcodes_bin->setChecked(false);
+        ui->action_Dasm_Opcodes_hex->setChecked(false);
+        ui->action_Dasm_Opcodes_oct->setChecked(true);
         break;
     }
-    m_model->setOpcodeFormat(format);
-    updateColumnSizes();
+    m_dmodel->setOpcodeFormat(format);
+    updateDasmColumnSizes();
 }
 
-void MainWindow::setOpcodesBinary()
+void MainWindow::setDasmOpcodesBinary()
 {
-    setOpcodes(P2DasmModel::f_binary);
+    setDasmOpcodes(P2DasmModel::f_bin);
 }
 
-void MainWindow::setOpcodesHexDec()
+void MainWindow::setDasmOpcodesHexDec()
 {
-    setOpcodes(P2DasmModel::f_hexdec);
+    setDasmOpcodes(P2DasmModel::f_hex);
 }
 
-void MainWindow::setOpcodesOctal()
+void MainWindow::setDasmOpcodesOctal()
 {
-    setOpcodes(P2DasmModel::f_octal);
+    setDasmOpcodes(P2DasmModel::f_oct);
+}
+
+void MainWindow::asmHeaderColums(const QPoint& pos)
+{
+    QList<P2AsmModel::column_e> columns;
+    columns += P2AsmModel::c_Origin;
+    columns += P2AsmModel::c_Tokens;
+    columns += P2AsmModel::c_Opcode;
+    columns += P2AsmModel::c_Errors;
+    columns += P2AsmModel::c_Source;
+
+    QMenu m(tr("Select columns"));
+    foreach(P2AsmModel::column_e column, columns) {
+        QAction* act = new QAction(m_amodel->headerData(column, Qt::Horizontal).toString());
+        act->setData(column);
+        act->setCheckable(true);
+        act->setChecked(!ui->tvAsm->isColumnHidden(column));
+        m.addAction(act);
+    }
+
+    // Popup menu
+    QHeaderView* hv = ui->tvAsm->horizontalHeader();
+    QAction* act = m.exec(hv->mapToGlobal(pos));
+    if (!act)
+        return;
+    // hide or show the selected column
+    P2AsmModel::column_e column = static_cast<P2AsmModel::column_e>(act->data().toInt());
+    ui->tvAsm->setColumnHidden(column, !act->isChecked());
 }
 
 void MainWindow::dasmHeaderColums(const QPoint& pos)
@@ -237,7 +328,7 @@ void MainWindow::dasmHeaderColums(const QPoint& pos)
 
     QMenu m(tr("Select columns"));
     foreach(P2DasmModel::column_e column, columns) {
-        QAction* act = new QAction(m_model->headerData(column, Qt::Horizontal).toString());
+        QAction* act = new QAction(m_dmodel->headerData(column, Qt::Horizontal).toString());
         act->setData(column);
         act->setCheckable(true);
         act->setChecked(!ui->tvDasm->isColumnHidden(column));
@@ -263,21 +354,20 @@ void MainWindow::hubSingleStep()
 
 void MainWindow::assemble()
 {
-    P2Asm p2asm(this);
-    P2Params result;
-    QStringList source = ui->teAsm->toPlainText().split(QChar::LineFeed);
-    if (p2asm.assemble(result, source)) {
+    QStringList source = m_params->source;
+    if (m_asm->assemble(*m_params, source)) {
         // Inspect result
+        m_amodel->invalidate();
     }
 }
 
-void MainWindow::setInstructionsLowercase(bool check)
+void MainWindow::setDasmLowercase(bool check)
 {
-    ui->action_setLowercase->setChecked(check);
+    ui->action_Dasm_Lowercase->setChecked(check);
     m_dasm->setLowercase(check);
     P2LONG PC = m_hub->cog(0)->rd_PC();
-    int row = static_cast<int>((PC < 0x400) ? PC : PC / 4);
-    m_model->invalidate();
+    int row = static_cast<int>((PC < PC_LONGS) ? PC : PC / 4);
+    m_dmodel->invalidate();
     ui->tvDasm->selectRow(row);
 }
 
@@ -287,10 +377,27 @@ void MainWindow::setupAssembler()
     if (!file.open(QIODevice::ReadOnly))
         return;
     QTextStream stream(&file);
-    QFont font = ui->teAsm->font();
-    QFontMetrics metrics(font);
-    ui->teAsm->setTabStopDistance(metrics.boundingRect(QStringLiteral("XXXXXXXX4")).width());
-    ui->teAsm->setText(stream.readAll());
+    QStringList source;
+    while (!stream.atEnd()) {
+        QString line = stream.readLine();
+        source += line;
+    }
+    m_params->source = source;
+    ui->tvAsm->setModel(m_amodel);
+    updateAsmColumnSizes();
+    QHeaderView* hh = ui->tvAsm->horizontalHeader();
+    hh->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(hh, SIGNAL(customContextMenuRequested(QPoint)), SLOT(asmHeaderColums(QPoint)), Qt::UniqueConnection);
+    m_amodel->invalidate();
+}
+
+void MainWindow::setupDisassembler()
+{
+    ui->tvDasm->setModel(m_dmodel);
+    updateDasmColumnSizes();
+    QHeaderView* hh = ui->tvDasm->horizontalHeader();
+    hh->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(hh, SIGNAL(customContextMenuRequested(QPoint)), SLOT(dasmHeaderColums(QPoint)), Qt::UniqueConnection);
 }
 
 void MainWindow::setupTabWidget()
@@ -318,22 +425,35 @@ void MainWindow::setupToolbars()
 
     ui->toolbarDasm->addSeparator();
 
-    connect(ui->action_Opcodes_binary, SIGNAL(triggered(bool)), SLOT(setOpcodesBinary()));
-    ui->toolbarDasm->addAction(ui->action_Opcodes_binary);
+    connect(ui->action_Dasm_Opcodes_bin, SIGNAL(triggered(bool)), SLOT(setDasmOpcodesBinary()));
+    ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_bin);
 
-    connect(ui->action_Opcodes_hexdec, SIGNAL(triggered(bool)), SLOT(setOpcodesHexDec()));
-    ui->toolbarDasm->addAction(ui->action_Opcodes_hexdec);
+    connect(ui->action_Dasm_Opcodes_hex, SIGNAL(triggered(bool)), SLOT(setDasmOpcodesHexDec()));
+    ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_hex);
 
-    connect(ui->action_Opcodes_octal, SIGNAL(triggered(bool)), SLOT(setOpcodesOctal()));
-    ui->toolbarDasm->addAction(ui->action_Opcodes_octal);
+    connect(ui->action_Dasm_Opcodes_oct, SIGNAL(triggered(bool)), SLOT(setDasmOpcodesOctal()));
+    ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_oct);
 
     ui->toolbarDasm->addSeparator();
 
-    connect(ui->action_setLowercase, SIGNAL(triggered(bool)), SLOT(setInstructionsLowercase(bool)));
-    ui->toolbarDasm->addAction(ui->action_setLowercase);
+    connect(ui->action_Dasm_Lowercase, SIGNAL(triggered(bool)), SLOT(setDasmLowercase(bool)));
+    ui->toolbarDasm->addAction(ui->action_Dasm_Lowercase);
+
+
 
     connect(ui->action_SingleStep, SIGNAL(triggered()), SLOT(hubSingleStep()));
     ui->toolbarHub->addAction(ui->action_SingleStep);
+
+    connect(ui->action_Asm_Opcodes_bin, SIGNAL(triggered(bool)), SLOT(setAsmOpcodesBinary()));
+    ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_bin);
+
+    connect(ui->action_Asm_Opcodes_hex, SIGNAL(triggered(bool)), SLOT(setAsmOpcodesHexDec()));
+    ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_hex);
+
+    connect(ui->action_Asm_Opcodes_oct, SIGNAL(triggered(bool)), SLOT(setAsmOpcodesOctal()));
+    ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_oct);
+
+    ui->toolbarAsm->addSeparator();
 
     connect(ui->action_Assemble, SIGNAL(triggered()), SLOT(assemble()));
     ui->toolbarAsm->addAction(ui->action_Assemble);
@@ -341,14 +461,29 @@ void MainWindow::setupToolbars()
     tabChanged(0);
 }
 
+void MainWindow::setupStatusbar()
+{
+    QLabel* status = new QLabel(tr("Status"));
+    status->setObjectName(key_status);
+    ui->statusBar->addWidget(status);
+}
+
+void MainWindow::updateAsmColumnSizes()
+{
+    for (int i = 0; i < m_amodel->columnCount(); i++) {
+        QSize size = m_amodel->sizeHint(static_cast<P2AsmModel::column_e>(i));
+        ui->tvAsm->setColumnWidth(i, size.width());
+    }
+}
+
 /**
  * @brief Update tvDasm column sizes
  */
-void MainWindow::updateColumnSizes()
+void MainWindow::updateDasmColumnSizes()
 {
-    for (int column = 0; column < m_model->columnCount(); column++) {
-        QSize size = m_model->sizeHint(static_cast<P2DasmModel::column_e>(column));
-        ui->tvDasm->setColumnWidth(column, size.width());
+    for (int i = 0; i < m_dmodel->columnCount(); i++) {
+        QSize size = m_dmodel->sizeHint(static_cast<P2DasmModel::column_e>(i));
+        ui->tvDasm->setColumnWidth(i, size.width());
     }
 }
 

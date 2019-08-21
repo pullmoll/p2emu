@@ -89,46 +89,54 @@ P2Cog::P2Cog(int cog_id, P2Hub* hub, QObject* parent)
 
 P2LONG P2Cog::rd_cog(P2LONG addr) const
 {
-    return COG.RAM[addr & 0x1ff];
+    return COG.RAM[addr & COG_MASK];
 }
 
 void P2Cog::wr_cog(P2LONG addr, P2LONG val)
 {
-    COG.RAM[addr & 0x1ff] = val;
+    COG.RAM[addr & COG_MASK] = val;
 }
 
 P2LONG P2Cog::rd_lut(P2LONG addr) const
 {
-    return LUT.RAM[addr & 0x1ff];
+    return LUT.RAM[addr & LUT_MASK];
 }
 
 void P2Cog::wr_lut(P2LONG addr, P2LONG val)
 {
-    LUT.RAM[addr & 0x1ff] = val;
+    LUT.RAM[addr & LUT_MASK] = val;
 }
 
 P2LONG P2Cog::rd_mem(P2LONG addr) const
 {
-    if (addr < 0x200*4)
-        return rd_cog(addr / 4);
-    if (addr < 0x400*4)
-        return rd_lut(addr / 4 - 0x200);
-    Q_ASSERT(HUB);
-    return HUB->rd_LONG(addr);
+    P2LONG result = 0;
+    switch (addr & 0xfffe00) {
+    case 0x000000:
+        result = rd_cog(addr/4);
+        break;
+    case 0x000800:
+        result = rd_lut(addr/4);
+        break;
+    default:
+        Q_ASSERT(HUB);
+        result = HUB->rd_LONG(addr);
+    }
+    return result;
 }
 
 void P2Cog::wr_mem(P2LONG addr, P2LONG val)
 {
-    if (addr < 0x200*4) {
-        wr_cog(addr / 4, val);
-        return;
+    switch (addr & 0xfffe00) {
+    case 0x000000:
+        wr_cog(addr/4, val);
+        break;
+    case 0x000800:
+        wr_lut(addr/4, val);
+        break;
+    default:
+        Q_ASSERT(HUB);
+        HUB->wr_LONG(addr, val);
     }
-    if (addr < 0x400*4) {
-        wr_lut(addr / 4 - 0x200, val);
-        return;
-    }
-    Q_ASSERT(HUB);
-    HUB->wr_LONG(addr, val);
 }
 
 /**
@@ -138,7 +146,7 @@ void P2Cog::wr_mem(P2LONG addr, P2LONG val)
 void P2Cog::wr_PC(P2LONG addr)
 {
     PC = addr & A20MASK;
-    if (PC >= 0x400)
+    if (PC >= HUB_ADDR)
         PC &= ~3u;
 }
 

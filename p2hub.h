@@ -36,9 +36,6 @@
 #include <QVector>
 #include "p2defs.h"
 
-//! Size of the HUB memory in bytes
-#define MEM_SIZE    0x100000
-
 class P2Cog;
 
 class P2Hub : public QObject

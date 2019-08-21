@@ -43,12 +43,23 @@ class P2AsmSymTbl
 public:
     explicit P2AsmSymTbl();
 
+    void clear();
     bool contains(const QString& name);
-    bool insert(const QString& name, const P2AsmSymbol& symbol);
+    bool insert(const P2AsmSymbol& symbol);
     bool insert(const QString& name, const QVariant& value);
     bool setValue(const QString& name, const QVariant& value);
     P2AsmSymbol value(const QString& name) const;
+    QVariant::Type type(const QString& name) const;
+    int defined_in(const QString& name) const;
+    int reference(const QString& name, int idx = 0) const;
+    bool addReference(const QString& name, int lineno);
+    const QList<int> references(const QString& name) const;
 
+    /**
+     * @brief Return a symbol value cast to the type T
+     * The symbol values are stored as QVariant and this
+     * template maps to the qvariant_cast<T> for the value.
+     */
     template <typename T>
     T value(const QString& name) const
     {

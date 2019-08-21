@@ -40,25 +40,92 @@
  * @brief enumeration of tokens used in mnemonics for the P2 assembler and disassembler
  */
 typedef enum {
-    t_invalid,
+    t_invalid = -1,
     t_nothing,
+    t_comma,
+    t_immediate,
+    t_string,
+    t_value_bin,
+    t_value_oct,
+    t_value_dec,
+    t_value_hex,
+    t_local,
+    t_name,
     t_empty,
-    t__RET_,
-    t_IF_C,
-    t_IF_C_AND_NZ,
-    t_IF_C_AND_Z,
-    t_IF_C_EQ_Z,
-    t_IF_C_NE_Z,
-    t_IF_C_OR_NZ,
-    t_IF_C_OR_Z,
-    t_IF_NC,
-    t_IF_NC_AND_NZ,
-    t_IF_NC_AND_Z,
-    t_IF_NC_OR_NZ,
-    t_IF_NC_OR_Z,
-    t_IF_NZ,
-    t_IF_Z,
+
+    // conditials
+    t__RET_,            //!< cond_never
+    t_IF_NC_AND_NZ,     //!< cond_nc_and_nz
+    t_IF_NZ_AND_NC,     //!< alias for cond_nc_and_nz
+    t_IF_A,             //!< alias for cond_nc_and_nz
+    t_IF_GT,            //!< alias for cond_nc_and_nz
+    t_IF_NC_AND_Z,      //!< cond_nc_and_z
+    t_IF_Z_AND_NC,      //!< alias for cond_nc_and_z
+    t_IF_NC,            //!< cond_nc
+    t_IF_AE,            //!< alias for cond_nc
+    t_IF_GE,            //!< alias for cond_nc
+    t_IF_C_AND_NZ,      //!< cond_c_and_nz
+    t_IF_NZ_AND_C,      //!< alias for cond_c_and_nz
+    t_IF_NZ,            //!< cond_nz
+    t_IF_NE,            //!< alias for cond_nz
+    t_IF_C_NE_Z,        //!< cond_c_ne_z
+    t_IF_Z_NE_C,        //!< alias for cond_c_ne_z
+    t_IF_NC_OR_NZ,      //!< cond_nc_or_nz
+    t_IF_NZ_OR_NC,      //!< alias for cond_nc_or_nz
+    t_IF_C_AND_Z,       //!< cond_c_and_z
+    t_IF_Z_AND_C,       //!< alias for cond_c_and_z
+    t_IF_C_EQ_Z,        //!< cond_c_eq_z
+    t_IF_Z_EQ_C,        //!< alias for cond_c_eq_z
+    t_IF_Z,             //!< cond_z
+    t_IF_E,             //!< alias for cond_z
+    t_IF_NC_OR_Z,       //!< cond_nc_or_z
+    t_IF_Z_OR_NC,       //!< alias for cond_nc_or_z
+    t_IF_BE,            //!< alias for cond_nc_or_z
+    t_IF_C,             //!< cond_c
+    t_IF_B,             //!< alias for cond_c
+    t_IF_LT,            //!< alias for cond_c
+    t_IF_C_OR_NZ,       //!< cond_c_or_nz
+    t_IF_NZ_OR_C,       //!< alias for cond_c_or_nz
+    t_IF_C_OR_Z,        //!< cond_c_or_z
+    t_IF_Z_OR_C,        //!< alias for cond_c_or_z
+    t_IF_LE,            //!< alias for cond_c_or_z
+    t_IF_ALWAYS,        //!< cond_always
     t_ALWAYS,
+
+    // MODCZ parameters
+    t_MODCZ__CLR,       //!< cond_never
+    t_MODCZ__NC_AND_NZ, //!< cond_nc_and_nz
+    t_MODCZ__NZ_AND_NC, //!< alias for cond_nc_and_nz
+    t_MODCZ__GT,        //!< alias for cond_nc_and_nz
+    t_MODCZ__NC_AND_Z,  //!< cond_nc_and_z
+    t_MODCZ__Z_AND_NC,  //!< alias for cond_nc_and_z
+    t_MODCZ__NC,        //!< cond_nc
+    t_MODCZ__GE,        //!< alias for cond_nc
+    t_MODCZ__C_AND_NZ,  //!< cond_c_and_nz
+    t_MODCZ__NZ_AND_C,  //!< alias for cond_c_and_nz
+    t_MODCZ__NZ,        //!< cond_nz
+    t_MODCZ__NE,        //!< alias for cond_nz
+    t_MODCZ__C_NE_Z,    //!< cond_c_ne_z
+    t_MODCZ__Z_NE_C,    //!< alias for cond_c_ne_z
+    t_MODCZ__NC_OR_NZ,  //!< cond_nc_or_nz
+    t_MODCZ__NZ_OR_NC,  //!< alias for cond_nc_or_nz
+    t_MODCZ__C_AND_Z,   //!< cond_c_and_z
+    t_MODCZ__Z_AND_C,   //!< alias for cond_c_and_z
+    t_MODCZ__C_EQ_Z,    //!< cond_c_eq_z
+    t_MODCZ__Z_EQ_C,    //!< alias for cond_c_eq_z
+    t_MODCZ__Z,         //!< cond_z
+    t_MODCZ__E,         //!< alias for cond_z
+    t_MODCZ__NC_OR_Z,   //!< cond_nc_or_z
+    t_MODCZ__Z_OR_NC,   //!< alias for cond_nc_or_z
+    t_MODCZ__C,         //!< cond_c
+    t_MODCZ__LT,        //!< alias for cond_c
+    t_MODCZ__C_OR_NZ,   //!< cond_c_or_nz
+    t_MODCZ__NZ_OR_C,   //!< alias for cond_c_or_nz
+    t_MODCZ__C_OR_Z,    //!< cond_c_or_z
+    t_MODCZ__Z_OR_C,    //!< alias for cond_c_or_z
+    t_MODCZ__LE,        //!< alias for cond_c_or_z
+    t_MODCZ__SET,       //!< cond_always
+
     t_ABS,
     t_ADD,
     t_ADDCT1,
@@ -116,7 +183,6 @@ typedef enum {
     t_COGSTOP,
     t_CRCBIT,
     t_CRCNIB,
-    t_DAT,
     t_DECMOD,
     t_DECOD,
     t_DIRC,
@@ -374,7 +440,6 @@ typedef enum {
     t_TESTB,
     t_TESTBN,
     t_TESTN,
-    t_TESTNB,
     t_TESTP,
     t_TESTPN,
     t_TJF,
@@ -435,14 +500,19 @@ typedef enum {
     t_ORZ,
     t_XORC,
     t_XORZ,
-    t__CON,
+
     t__DAT,
+    t__CON,
+    t__PUB,
+    t__PRI,
+    t__VAR,
     t__ORG,
     t__ORGH,
     t__BYTE,
     t__WORD,
     t__LONG,
     t__RES,
+
     t__ASSIGN,          //!< "="
     t__DOLLAR,          //!< "$"
     t__EQ,              //!< "=="
@@ -469,17 +539,15 @@ typedef enum {
 class P2Token
 {
 public:
-    P2Token(bool lowercase = false);
-    QString string(p2_token_e token);
+    P2Token();
+    QString string(p2_token_e token, bool lowercase = false);
     p2_token_e token(const QString& string);
 
-    bool lowercase() const;
-    void setLowercase(bool lowercase = true);
-
 private:
-    bool m_lowercase;
     QMultiHash<p2_token_e, QString> m_token_string;
     QMultiHash<QString, p2_token_e> m_string_token;
 };
+
+typedef QVector<p2_token_e> P2Tokens;
 
 extern P2Token Token;

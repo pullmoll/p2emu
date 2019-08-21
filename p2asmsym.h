@@ -45,14 +45,14 @@ public:
 
     bool isEmpty() const;
     const QString& name() const;
-    void setValue(const QVariant& value);
-    void addReference(int lineno);
-
     template <typename T>
-    T value() const
-    {
-        return qvariant_cast<T>(m_value);
-    }
+    T value() const { return qvariant_cast<T>(m_value); }
+    bool setValue(const QVariant& value);
+    QVariant::Type type() const;
+    int defined_in() const;
+    int reference(int idx = 0) const;
+    void addReference(int lineno);
+    const QList<int> references() const;
 
 private:
     QString m_name;

@@ -38,15 +38,17 @@
 #include <QPushButton>
 #include <QCheckBox>
 #include "p2token.h"
-#include "p2hub.h"
-#include "p2cog.h"
-#include "p2dasmmodel.h"
 
 namespace Ui {
 class MainWindow;
 }
-
+class P2Hub;
 class P2CogView;
+class P2Asm;
+class P2Params;
+class P2AsmModel;
+class P2Dasm;
+class P2DasmModel;
 
 class MainWindow : public QMainWindow
 {
@@ -69,12 +71,18 @@ private slots:
     void gotoRom();
     void gotoAddress();
 
-    void setOpcodes(int mode);
-    void setOpcodesBinary();
-    void setOpcodesHexDec();
-    void setOpcodesOctal();
+    void setAsmOpcodes(int mode);
+    void setAsmOpcodesBinary();
+    void setAsmOpcodesHexDec();
+    void setAsmOpcodesOctal();
 
-    void setInstructionsLowercase(bool check);
+    void setDasmOpcodes(int mode);
+    void setDasmOpcodesBinary();
+    void setDasmOpcodesHexDec();
+    void setDasmOpcodesOctal();
+
+    void setDasmLowercase(bool check);
+    void asmHeaderColums(const QPoint& pos);
     void dasmHeaderColums(const QPoint& pos);
 
     void hubSingleStep();
@@ -84,12 +92,18 @@ private:
     Ui::MainWindow *ui;
     QVector<P2CogView*> m_vcog;
     P2Hub* m_hub;
+    P2Asm* m_asm;
+    P2Params* m_params;
+    P2AsmModel* m_amodel;
     P2Dasm* m_dasm;
-    P2DasmModel* m_model;
+    P2DasmModel* m_dmodel;
 
     void setupAssembler();
+    void setupDisassembler();
     void setupTabWidget();
     void setupToolbars();
-    void updateColumnSizes();
+    void setupStatusbar();
+    void updateAsmColumnSizes();
+    void updateDasmColumnSizes();
     void setupCogView();
 };

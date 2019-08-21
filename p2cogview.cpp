@@ -126,7 +126,7 @@ void P2CogView::setCog(const P2Cog* cog)
     m_dasm = new P2Dasm(cog);
     m_dasm->setLowercase(true);
     m_model = new P2DasmModel(m_dasm);
-    m_model->setOpcodeFormat(P2DasmModel::f_hexdec);
+    m_model->setOpcodeFormat(P2DasmModel::f_hex);
     ui->tvDasm->setModel(m_model);
     // Set column sizes
     for (int column = 0; column < m_model->columnCount(); column++) {

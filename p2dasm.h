@@ -45,12 +45,14 @@ public:
 
     bool dasm(P2LONG addr, QString* opcode = nullptr, QString* instruction = nullptr, QString* description = nullptr);
     P2LONG memsize() const;
+    bool lowercase() const;
 
 public slots:
     void setLowercase(bool flag);
 
 private:
     const P2Cog* COG;
+    bool m_lowercase;
     int pad_opcode;
     int pad_inst;
     int pad_wcz;

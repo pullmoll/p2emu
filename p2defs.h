@@ -34,63 +34,89 @@
 #pragma once
 #include <QtEndian>
 
+//!< Type of the Propeller2 byte
 typedef quint8 P2BYTE;
+
+//!< Type of the Propeller2 word
 typedef quint16 P2WORD;
+
+//!< Type of the Propeller2 long
 typedef quint32 P2LONG;
 
+//! Size of the COG memory in longs
+static constexpr P2LONG COG_SIZE = 0x200;
+
+//! Mask for the COG memory longs
+static constexpr P2LONG COG_MASK = (COG_SIZE-1);
+
+//! Size of the LUT memory in longs
+static constexpr P2LONG LUT_SIZE = 0x200;
+
+//! Mask for the LUT memory longs
+static constexpr P2LONG LUT_MASK = (LUT_SIZE-1);
+
+//! Number of longs where the PC switches from *1 scale to *4 scale
+static constexpr P2LONG PC_LONGS = (COG_SIZE+LUT_SIZE);
+
+//! Lowest HUB memory address
+static constexpr P2LONG HUB_ADDR = (PC_LONGS*4);
+
+//! Size of the HUB memory in bytes (1MiB)
+static constexpr P2LONG MEM_SIZE = 0x100000;
 
 //! most significant bit in a 32 bit word
-static const P2LONG MSB = 1u << 31;
+static constexpr P2LONG MSB = 1u << 31;
 
 //! least significant bit in a 32 bit word
-static const P2LONG LSB = 1u;
+static constexpr P2LONG LSB = 1u;
 
 //! least significant nibble in a 32 bit word
-static const P2LONG LNIBBLE = 0x0000000fu;
+static constexpr P2LONG LNIBBLE = 0x0000000fu;
 
 //! least significant byte in a 32 bit word
-static const P2LONG LBYTE = 0x000000ffu;
+static constexpr P2LONG LBYTE = 0x000000ffu;
 
 //! least significant word in a 32 bit word
-static const P2LONG LWORD = 0x0000ffffu;
+static constexpr P2LONG LWORD = 0x0000ffffu;
 
 //! most significant word in a 32 bit word
-static const P2LONG HWORD = 0xffff0000u;
+static constexpr P2LONG HWORD = 0xffff0000u;
 
 //! bits without sign bit in a 32 bit word
-static const P2LONG IMAX = 0x7fffffffu;
+static constexpr P2LONG IMAX = 0x7fffffffu;
 
 //! no bits in a 32 bit word
-static const P2LONG ZERO = 0x00000000u;
+static constexpr P2LONG ZERO = 0x00000000u;
 
 //! all bits in a 32 bit word
-static const P2LONG FULL = 0xffffffffu;
+static constexpr P2LONG FULL = 0xffffffffu;
 
 //! least significant 20 bits for an address value
-static const P2LONG A20MASK = (1u << 20) - 1;
+static constexpr P2LONG A20MASK = (1u << 20) - 1;
 
 //! most significant 23 bits for an augmentation value
-static const P2LONG AUGMASK = 0xfffffe00;
+static constexpr P2LONG AUGMASK = 0xfffffe00;
 
 //! upper word max / mask in a 64 bit unsigned
-static const quint64 HMAX = Q_UINT64_C(0xffffffff00000000);
+static constexpr quint64 HMAX = Q_UINT64_C(0xffffffff00000000);
 
 //! lower word max / mask in a 64 bit unsigned
-static const quint64 LMAX = Q_UINT64_C(0x00000000ffffffff);
+static constexpr quint64 LMAX = Q_UINT64_C(0x00000000ffffffff);
 
+/// Union of bytes, words, and a long in endianess aware ordering
 typedef union {
 #if (Q_BYTE_ORDER == Q_LITTLE_ENDIAN)
-    P2BYTE b0,b1,b2,b3;
-    P2BYTE b[4];
-    P2WORD w0, w1;
-    P2WORD w[2];
-    P2LONG l;
+    P2LONG l;               //!< long
+    P2WORD w0, w1;          //!< words 0, 1 as least significant word first
+    P2WORD w[2];            //!< 2 words as an array
+    P2BYTE b0, b1, b2, b3;  //!< bytes 0, 1, 2, 3 as least significant byte first
+    P2BYTE b[4];            //!< 4 bytes as an array
 #elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
-    P2BYTE b3,b2,b1,b0;
-    P2BYTE b[4];
-    P2WORD w1, w0;
-    P2WORD w[2];
-    P2LONG l;
+    P2LONG l;               //!< long
+    P2WORD w1, w0;          //!< words 1, 0 as most significant word first
+    P2WORD w[2];            //!< 2 words as an array
+    P2BYTE b3, b2, b1, b0;  //!< bytes 3, 2, 1, 0 as most significant byte first
+    P2BYTE b[4];            //!< 4 bytes as an array
 #else
 #error "Unknown byte order!"
 #endif
@@ -100,22 +126,23 @@ typedef union {
  * @brief Enumeration of the 16 conditional execution modes
  */
 typedef enum {
-    cond__ret_,                 //!< execute always; if no branch is taken, return
-    cond_nc_and_nz,             //!< execute if C == 0 and Z == 0
-    cond_nc_and_z,              //!< execute if C == 0 and Z == 1
-    cond_nc,                    //!< execute if C == 0
-    cond_c_and_nz,              //!< execute if C == 1 and Z == 0
-    cond_nz,                    //!< execute if Z == 0
-    cond_c_ne_z,                //!< execute if C != Z
-    cond_nc_or_nz,              //!< execute if C == 0 or Z == 0
-    cond_c_and_z,               //!< execute if C == 1 and Z == 1
-    cond_c_eq_z,                //!< execute if C == Z
-    cond_z,                     //!< execute if Z == 1
-    cond_nc_or_z,               //!< execute if C == 0 or Z == 1
-    cond_c,                     //!< execute if C == 1
-    cond_c_or_nz,               //!< execute if C == 1 or Z == 0
-    cond_c_or_z,                //!< execute if C == 1 or Z == 1
-    cond_always                 //!< execute always (default)
+    cond_clr,                   //!< clear (never)
+    cond__ret_  = cond_clr,     //!< actually always and, if no branch is taken, return
+    cond_nc_and_nz,             //!< if C == 0 and Z == 0
+    cond_nc_and_z,              //!< if C == 0 and Z == 1
+    cond_nc,                    //!< if C == 0
+    cond_c_and_nz,              //!< if C == 1 and Z == 0
+    cond_nz,                    //!< if Z == 0
+    cond_c_ne_z,                //!< if C != Z
+    cond_nc_or_nz,              //!< if C == 0 or Z == 0
+    cond_c_and_z,               //!< if C == 1 and Z == 1
+    cond_c_eq_z,                //!< if C == Z
+    cond_z,                     //!< if Z == 1
+    cond_nc_or_z,               //!< if C == 0 or Z == 1
+    cond_c,                     //!< if C == 1
+    cond_c_or_nz,               //!< if C == 1 or Z == 0
+    cond_c_or_z,                //!< if C == 1 or Z == 1
+    cond_always                 //!< always (default)
 }   p2_cond_e;
 
 //! define an instruction with 7 bits
@@ -737,11 +764,11 @@ typedef struct {
     bool im:1;                  //!< immediate flag
     bool wz:1;                  //!< update Z flag
     bool wc:1;                  //!< update C flag
-    p2_inst7_e inst:7;          //!< instruction type
+    unsigned inst:7;           //!< instruction type
     unsigned cond:4;            //!< conditional execution
 #elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
     unsigned cond:4;            //!< conditional execution
-    p2_inst7_e inst:7;          //!< instruction type
+    unsigned inst:7;            //!< instruction type
     bool uc:1;                  //!< update C flag
     bool uz:1;                  //!< update Z flag
     bool im:1;                  //!< immediate flag
@@ -761,11 +788,11 @@ typedef struct {
     unsigned dst:9;             //!< destination (D or #D)
     bool im:1;                  //!< immediate flag
     bool wz:1;                  //!< update Z flag
-    p2_inst8_e inst:8;          //!< instruction type including WC
+    unsigned inst:8;            //!< instruction type including WC
     unsigned cond:4;            //!< conditional execution
 #elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
     unsigned cond:4;            //!< conditional execution
-    p2_inst8_e inst:8;          //!< instruction type including WC
+    unsigned inst:8;            //!< instruction type including WC
     bool wz:1;                  //!< update Z flag
     bool im:1;                  //!< immediate flag
     unsigned dst:9;             //!< destination (D or #D)
@@ -783,11 +810,11 @@ typedef struct {
     unsigned src:9;             //!< source (S or #S)
     unsigned dst:9;             //!< destination (D or #D)
     bool im:1;                  //!< immediate flag
-    p2_inst9_e inst:9;          //!< instruction type including WC and WZ
+    unsigned inst:9;            //!< instruction type including WC and WZ
     unsigned cond:4;            //!< conditional execution
 #elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
     unsigned cond:4;            //!< conditional execution
-    p2_inst9_e inst:9;          //!< instruction type including WC and WZ
+    unsigned inst:9;            //!< instruction type including WC and WZ
     bool im:1;                  //!< immediate flag
     unsigned dst:9;             //!< destination (D or #D)
     unsigned src:9;             //!< source (S or #S)

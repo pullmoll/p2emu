@@ -37,6 +37,21 @@
 #include <QRegExp>
 #include "p2asm.h"
 
+#if 0
+static const char *Delimiters[] = {
+    "@@@", "##", "#", ",", "[", "]", "++", "+", "--", "-", "<<",
+    "<", ">>", "><", ">|", ">", "*", "/", "\\", "&", "|<", "|", "(", ")",
+     "@", "==", "=",
+    nullptr
+};
+#endif
+
+static const QString stop_expr = QStringLiteral("*/\\+-&|^<>()\"");
+static const QString bin_digits = QStringLiteral("01");
+static const QString oct_digits = QStringLiteral("01234567");
+static const QString dec_digits = QStringLiteral("0123456789");
+static const QString hex_digits = QStringLiteral("0123456789ABCDEF");
+
 static const QStringList factors_operators =
         QStringList()
         << QStringLiteral("*")
@@ -73,76 +88,199 @@ P2Asm::~P2Asm()
 {
 }
 
-p2_cond_e P2Asm::conditional(P2Params& params, p2_token_e cond)
+/**
+ * @brief Return the value for a conditional execution token
+ * @brief params reference to the assembler parameters
+ * @param cond token with the condition
+ * @return One of the 16 p2_cond_e values
+ */
+p2_cond_e P2Asm::conditional(P2Params& p, p2_token_e cond)
 {
-    p2_cond_e eeee = cond__ret_;
+    p2_cond_e result = cond__ret_;
     switch (cond) {
     case t__RET_:
-        eeee = cond__ret_;
-        params.idx++;
+        result = cond__ret_;
+        p.idx++;
         break;
-    case t_IF_C:
-        eeee = cond_c;
-        params.idx++;
+    case t_IF_NZ_AND_NC:
+    case t_IF_NC_AND_NZ:
+    case t_IF_A:
+    case t_IF_GT:
+        result = cond_nc_and_nz;
+        p.idx++;
         break;
-    case t_IF_C_AND_NZ:
-        eeee = cond_c_and_nz;
-        params.idx++;
-        break;
-    case t_IF_C_AND_Z:
-        eeee = cond_c_and_z;
-        params.idx++;
-        break;
-    case t_IF_C_EQ_Z:
-        eeee = cond_c_eq_z;
-        params.idx++;
-        break;
-    case t_IF_C_NE_Z:
-        eeee = cond_c_ne_z;
-        params.idx++;
-        break;
-    case t_IF_C_OR_NZ:
-        eeee = cond_c_or_nz;
-        params.idx++;
-        break;
-    case t_IF_C_OR_Z:
-        eeee = cond_c_or_z;
-        params.idx++;
+    case t_IF_Z_AND_NC:
+    case t_IF_NC_AND_Z:
+        result = cond_nc_and_z;
+        p.idx++;
         break;
     case t_IF_NC:
-        eeee = cond_nc;
-        params.idx++;
+    case t_IF_AE:
+    case t_IF_GE:
+        result = cond_nc;
+        p.idx++;
         break;
-    case t_IF_NC_AND_NZ:
-        eeee = cond_nc_and_nz;
-        params.idx++;
-        break;
-    case t_IF_NC_AND_Z:
-        eeee = cond_nc_and_z;
-        params.idx++;
-        break;
-    case t_IF_NC_OR_NZ:
-        eeee = cond_nc_or_nz;
-        params.idx++;
-        break;
-    case t_IF_NC_OR_Z:
-        eeee = cond_nc_or_z;
-        params.idx++;
+    case t_IF_NZ_AND_C:
+    case t_IF_C_AND_NZ:
+        result = cond_c_and_nz;
+        p.idx++;
         break;
     case t_IF_NZ:
-        eeee = cond_nz;
-        params.idx++;
+    case t_IF_NE:
+        result = cond_nz;
+        p.idx++;
+        break;
+    case t_IF_Z_NE_C:
+    case t_IF_C_NE_Z:
+        result = cond_c_ne_z;
+        p.idx++;
+        break;
+    case t_IF_NZ_OR_NC:
+    case t_IF_NC_OR_NZ:
+        result = cond_nc_or_nz;
+        p.idx++;
+        break;
+    case t_IF_Z_AND_C:
+    case t_IF_C_AND_Z:
+        result = cond_c_and_z;
+        p.idx++;
+        break;
+    case t_IF_Z_EQ_C:
+    case t_IF_C_EQ_Z:
+        result = cond_c_eq_z;
+        p.idx++;
         break;
     case t_IF_Z:
-        eeee = cond_z;
-        params.idx++;
+    case t_IF_E:
+        result = cond_z;
+        p.idx++;
         break;
+    case t_IF_Z_OR_NC:
+    case t_IF_NC_OR_Z:
+    case t_IF_BE:
+        result = cond_nc_or_z;
+        p.idx++;
+        break;
+    case t_IF_C:
+    case t_IF_B:
+    case t_IF_LT:
+        result = cond_c;
+        p.idx++;
+        break;
+    case t_IF_NZ_OR_C:
+    case t_IF_C_OR_NZ:
+        result = cond_c_or_nz;
+        p.idx++;
+        break;
+    case t_IF_Z_OR_C:
+    case t_IF_C_OR_Z:
+    case t_IF_LE:
+        result = cond_c_or_z;
+        p.idx++;
+        break;
+    case t_IF_ALWAYS:
+        result = cond_always;
+        p.idx++;
+        break;
+
     default:
-        eeee = cond_always;
+        result = cond_always;
         break;
     }
 
-    return eeee;
+    return result;
+}
+
+p2_cond_e P2Asm::parse_modcz(P2Params& p, p2_token_e cond)
+{
+    p2_cond_e result = cond_clr;
+    switch (cond) {
+    case t_MODCZ__CLR:       // cond_never
+        result = cond_clr;
+        p.idx++;
+        break;
+    case t_MODCZ__NC_AND_NZ: // cond_nc_and_nz
+    case t_MODCZ__NZ_AND_NC: // alias cond_nc_and_nz
+    case t_MODCZ__GT:        // alias cond_nc_and_nz
+        result = cond_nc_and_nz;
+        p.idx++;
+        break;
+    case t_MODCZ__NC_AND_Z:  // cond_nc_and_z
+    case t_MODCZ__Z_AND_NC:  // alias cond_nc_and_z
+        result = cond_nc_and_z;
+        p.idx++;
+        break;
+    case t_MODCZ__NC:        // cond_nc
+    case t_MODCZ__GE:        // alias cond_nc
+        result = cond_nc;
+        p.idx++;
+        break;
+    case t_MODCZ__C_AND_NZ:  // cond_c_and_nz
+    case t_MODCZ__NZ_AND_C:  // alias cond_c_and_nz
+        result = cond_c_and_nz;
+        p.idx++;
+        break;
+    case t_MODCZ__NZ:        // cond_nz
+    case t_MODCZ__NE:        // alias cond_nz
+        result = cond_nz;
+        p.idx++;
+        break;
+    case t_MODCZ__C_NE_Z:    // cond_c_ne_z
+    case t_MODCZ__Z_NE_C:    // alias cond_c_ne_z
+        result = cond_c_ne_z;
+        p.idx++;
+        break;
+    case t_MODCZ__NC_OR_NZ:  // cond_nc_or_nz
+    case t_MODCZ__NZ_OR_NC:  // alias cond_nc_or_nz
+        result = cond_nc_or_nz;
+        p.idx++;
+        break;
+    case t_MODCZ__C_AND_Z:   // cond_c_and_z
+    case t_MODCZ__Z_AND_C:   // alias cond_c_and_z
+        result = cond_c_and_z;
+        p.idx++;
+        break;
+    case t_MODCZ__C_EQ_Z:    // cond_c_eq_z
+    case t_MODCZ__Z_EQ_C:    // alias cond_c_eq_z
+        result = cond_c_eq_z;
+        p.idx++;
+        break;
+    case t_MODCZ__Z:         // cond_z
+    case t_MODCZ__E:         // alias cond_z
+        result = cond_z;
+        p.idx++;
+        break;
+    case t_MODCZ__NC_OR_Z:   // cond_nc_or_z
+    case t_MODCZ__Z_OR_NC:   // alias cond_nc_or_z
+        result = cond_nc_or_z;
+        p.idx++;
+        break;
+    case t_MODCZ__C:         // cond_c
+    case t_MODCZ__LT:        // alias cond_c
+        result = cond_c;
+        p.idx++;
+        break;
+    case t_MODCZ__C_OR_NZ:   // cond_c_or_nz
+    case t_MODCZ__NZ_OR_C:   // alias cond_c_or_nz
+        result = cond_c_or_nz;
+        p.idx++;
+        break;
+    case t_MODCZ__C_OR_Z:    // cond_c_or_z
+    case t_MODCZ__Z_OR_C:    // alias cond_c_or_z
+    case t_MODCZ__LE:        // alias cond_c_or_z
+        result = cond_c_or_z;
+        p.idx++;
+        break;
+    case t_MODCZ__SET:       // cond_always
+        result = cond_always;
+        p.idx++;
+        break;
+    default:
+        result = cond_clr;
+        break;
+    }
+
+    return result;
 }
 
 /**
@@ -155,89 +293,105 @@ p2_cond_e P2Asm::conditional(P2Params& params, p2_token_e cond)
  * @param line assembler source line
  * @return QStringList with words
  */
-bool P2Asm::split_and_tokenize(P2Params& params, const QString& line)
+bool P2Asm::split_and_tokenize(P2Params& p, const QString& line)
 {
     QString word;
-    QChar string = QChar::Null;
+    QChar instring = QChar::Null;
     bool escaped = false;
     bool comment = false;
 
-    params.words.clear();
+    p.words.clear();
+    p.tokens.clear();
     foreach(QChar ch, line) {
 
+        // previous character was an escape (\)
         if (escaped) {
             escaped = false;
             word += ch;
             continue;
         }
 
-        if (string != QChar::Null) {
-            if (ch == string) {
-                string = QChar::Null;
+        // inside string?
+        if (instring != QChar::Null) {
+            if (ch == instring) {
+                // end of string
+                instring = QChar::Null;
             }
             word += ch;
             continue;
         }
 
+        // white space?
         if (ch.isSpace()) {
-            if (!word.isEmpty()) {
-                params.words += word;
-                word.clear();
-            }
+            if (word.isEmpty())
+                continue;
+            // non empty white space separated word
+            p.words += word;
+            word.clear();
             continue;
         }
 
+        // start of comment until end of line
         if (ch == QChar('\'')) {
             comment = true;
             break;
         }
 
+        // a comma?
         if (ch == QChar(',')) {
-            params.words += word;
+            if (!word.isEmpty())
+                p.words += word;
+            // make comma (,) a separate token
+            word = ch;
+            p.words += word;
             word.clear();
             continue;
         }
 
+        // start of a string?
         if (ch == QChar('"')) {
             word += ch;
-            string = ch;
+            instring = ch;
             continue;
         }
+
+        // append to word
         word += ch;
     }
 
     // Append last word, if it isn't the trailing comment
     if (!comment && !word.isEmpty())
-        params.words += word;
+        p.words += word;
 
     // Now tokenize the words
-    params.tokens.clear();
-    foreach(const QString& word, params.words) {
-        if (word.startsWith(QChar('\'')))
-            break;
-        params.tokens += Token.token(word);
-    }
-    params.cnt = params.tokens.count();
-    params.idx = 0;
+    foreach(const QString& word, p.words)
+        p.tokens += Token.token(word);
+    p.cnt = p.tokens.count();
+    p.idx = 0;
 
     return true;
 }
 
 /**
  * @brief Assemble a QStringList of lines of SPIN2 source code
+ * @param params reference to the P2Params assembler state
  * @param source code
- * @return P2Params structure
+ * @return true on success
  */
-bool P2Asm::assemble(P2Params& params, const QStringList& source)
+bool P2Asm::assemble(P2Params& p, const QStringList& source)
 {
     bool multi_comment = false;
+    p.source = source;
 
     foreach(QString line, source) {
-        line.remove(QRegExp("\\r$"));
+        // line.remove(QRegExp("\\r$"));
+
         // Parse the next line
-        params.line = line;
-        params.lineno += 1;
-        params.error.clear();
+        p.line = line;
+        p.lineno += 1;
+        p.error.clear();
+        p.words.clear();
+        p.tokens.clear();
 
         if (line.startsWith(QStringLiteral("{")))
             multi_comment = true;
@@ -246,1514 +400,1556 @@ bool P2Asm::assemble(P2Params& params, const QStringList& source)
             if (line.endsWith("}"))
                 multi_comment = false;
             // skip over multi line comment
-            listing(params);
+            results(p);
             continue;
         }
 
         // Skip over empty lines
         if (line.isEmpty()) {
-            listing(params);
+            results(p);
             continue;
         }
 
         // Split line into words and tokenize it
-        split_and_tokenize(params, line);
+        split_and_tokenize(p, line);
 
         // Set current program counter from next
-        params.curr_pc = params.next_pc;
+        p.curr_pc = p.next_pc;
         // Assume the instruction advances by 1 long
-        params.advance = 1;
+        p.advance = 1;
 
         // Whenever the line starts with a token t_nothing, i.e. not an reserved name,
         // the first word is defined as a symbol for the current program counter value
-        params.symbol.clear();
-        if (params.idx < params.cnt && params.tokens.at(params.idx) == t_nothing) {
-            params.symbol = params.words.at(params.idx);
-            params.idx++;   // skip over first word
-            P2AsmSymbol sym = params.symbols.value(params.symbol);
-            if (sym.isEmpty()) {
-                // Not defined yet
-                params.symbols.insert(params.symbol, params.curr_pc);
-            } else {
-                // Already defined
-                params.error = tr("Symbol already defined: %1").arg(params.symbol);
-                emit Error(params.lineno, params.error);
+        p.symbol.clear();
+        if (p.idx < p.cnt) {
+            QString symbol;
+
+            switch (p.tokens.at(p.idx)) {
+            case t_local:
+                // append local name to section::function / section
+                symbol = QString("%1::%2%3")
+                         .arg(p.section)
+                         .arg(p.function)
+                         .arg(p.words.at(p.idx));
+                break;
+
+            case t_name:
+                // append global name to section::symbol
+                p.function = p.words.at(p.idx);
+                symbol = QString("%1::%2%3")
+                         .arg(p.section)
+                         .arg(p.words.at(p.idx));
+                break;
+
+            case t__DAT:
+                p.section = QStringLiteral("DAT");
+                break;
+
+            case t__CON:
+                p.section = QStringLiteral("CON");
+                break;
+
+            case t__PUB:
+                p.section = QStringLiteral("PUB");
+                break;
+
+            case t__PRI:
+                p.section = QStringLiteral("PRI");
+                break;
+
+            case t__VAR:
+                p.section = QStringLiteral("VAR");
+                break;
+
+            default:
+                symbol.clear();
+            }
+            // defining a symbol?
+            if (!symbol.isEmpty()) {
+                p.idx++;   // skip over first word
+                P2AsmSymbol sym = p.symbols.value(symbol);
+                if (sym.isEmpty()) {
+                    // Not defined yet
+                    p.symbols.insert(symbol, p.curr_pc);
+                } else {
+                    // Already defined
+                    p.error = tr("Symbol '%1' already defined in line %2: %3")
+                                   .arg(symbol)
+                                   .arg(sym.reference(0));
+                    emit Error(p.lineno, p.error);
+                }
+                p.symbol = symbol;
             }
         }
 
         // Skip if no more tokens were found
-        if (params.idx >= params.tokens.count()) {
-            listing(params);
+        if (p.idx >= p.tokens.count()) {
+            results(p);
             continue;
         }
 
         // Reset all instruction bits
-        params.IR.opcode = 0;
+        p.IR.opcode = 0;
 
         // Conditional execution prefix
-        const p2_token_e cond = params.tokens.at(params.idx);
-        params.IR.op.cond = conditional(params, cond);
+        const p2_token_e cond = p.tokens.at(p.idx);
+        p.IR.op.cond = conditional(p, cond);
 
         // Expect a token for an instruction
-        const p2_token_e inst = params.tokens.at(params.idx);
+        const p2_token_e inst = p.tokens.at(p.idx);
         bool success = false;
 
         switch (inst) {
         case t_ABS:
-            success = asm_abs(params);
+            success = asm_abs(p);
             break;
 
         case t_ADD:
-            success = asm_add(params);
+            success = asm_add(p);
             break;
 
         case t_ADDCT1:
-            success = asm_addct1(params);
+            success = asm_addct1(p);
             break;
 
         case t_ADDCT2:
-            success = asm_addct2(params);
+            success = asm_addct2(p);
             break;
 
         case t_ADDCT3:
-            success = asm_addct3(params);
+            success = asm_addct3(p);
             break;
 
         case t_ADDPIX:
-            success = asm_addpix(params);
+            success = asm_addpix(p);
             break;
 
         case t_ADDS:
-            success = asm_adds(params);
+            success = asm_adds(p);
             break;
 
         case t_ADDSX:
-            success = asm_addsx(params);
+            success = asm_addsx(p);
             break;
 
         case t_ADDX:
-            success = asm_addx(params);
+            success = asm_addx(p);
             break;
 
         case t_AKPIN:
-            success = asm_akpin(params);
+            success = asm_akpin(p);
             break;
 
         case t_ALLOWI:
-            success = asm_allowi(params);
+            success = asm_allowi(p);
             break;
 
         case t_ALTB:
-            success = asm_altb(params);
+            success = asm_altb(p);
             break;
 
         case t_ALTD:
-            success = asm_altd(params);
+            success = asm_altd(p);
             break;
 
         case t_ALTGB:
-            success = asm_altgb(params);
+            success = asm_altgb(p);
             break;
 
         case t_ALTGN:
-            success = asm_altgn(params);
+            success = asm_altgn(p);
             break;
 
         case t_ALTGW:
-            success = asm_altgw(params);
+            success = asm_altgw(p);
             break;
 
         case t_ALTI:
-            success = asm_alti(params);
+            success = asm_alti(p);
             break;
 
         case t_ALTR:
-            success = asm_altr(params);
+            success = asm_altr(p);
             break;
 
         case t_ALTS:
-            success = asm_alts(params);
+            success = asm_alts(p);
             break;
 
         case t_ALTSB:
-            success = asm_altsb(params);
+            success = asm_altsb(p);
             break;
 
         case t_ALTSN:
-            success = asm_altsn(params);
+            success = asm_altsn(p);
             break;
 
         case t_ALTSW:
-            success = asm_altsw(params);
+            success = asm_altsw(p);
             break;
 
         case t_AND:
-            success = asm_and(params);
+            success = asm_and(p);
             break;
 
         case t_ANDN:
-            success = asm_andn(params);
+            success = asm_andn(p);
             break;
 
         case t_AUGD:
-            success = asm_augd(params);
+            success = asm_augd(p);
             break;
 
         case t_AUGS:
-            success = asm_augs(params);
+            success = asm_augs(p);
             break;
 
         case t_BITC:
-            success = asm_bitc(params);
+            success = asm_bitc(p);
             break;
 
         case t_BITH:
-            success = asm_bith(params);
+            success = asm_bith(p);
             break;
 
         case t_BITL:
-            success = asm_bitl(params);
+            success = asm_bitl(p);
             break;
 
         case t_BITNC:
-            success = asm_bitnc(params);
+            success = asm_bitnc(p);
             break;
 
         case t_BITNOT:
-            success = asm_bitnot(params);
+            success = asm_bitnot(p);
             break;
 
         case t_BITNZ:
-            success = asm_bitnz(params);
+            success = asm_bitnz(p);
             break;
 
         case t_BITRND:
-            success = asm_bitrnd(params);
+            success = asm_bitrnd(p);
             break;
 
         case t_BITZ:
-            success = asm_bitz(params);
+            success = asm_bitz(p);
             break;
 
         case t_BLNPIX:
-            success = asm_blnpix(params);
+            success = asm_blnpix(p);
             break;
 
         case t_BMASK:
-            success = asm_bmask(params);
+            success = asm_bmask(p);
             break;
 
         case t_BRK:
-            success = asm_brk(params);
+            success = asm_brk(p);
             break;
 
         case t_CALL:
-            success = asm_call(params);
+            success = asm_call(p);
             break;
 
         case t_CALLA:
-            success = asm_calla(params);
+            success = asm_calla(p);
             break;
 
         case t_CALLB:
-            success = asm_callb(params);
+            success = asm_callb(p);
             break;
 
         case t_CALLD:
-            success = asm_calld(params);
+            success = asm_calld(p);
             break;
 
         case t_CALLPA:
-            success = asm_callpa(params);
+            success = asm_callpa(p);
             break;
 
         case t_CALLPB:
-            success = asm_callpb(params);
+            success = asm_callpb(p);
             break;
 
         case t_CMP:
-            success = asm_cmp(params);
+            success = asm_cmp(p);
             break;
 
         case t_CMPM:
-            success = asm_cmpm(params);
+            success = asm_cmpm(p);
             break;
 
         case t_CMPR:
-            success = asm_cmpr(params);
+            success = asm_cmpr(p);
             break;
 
         case t_CMPS:
-            success = asm_cmps(params);
+            success = asm_cmps(p);
             break;
 
         case t_CMPSUB:
-            success = asm_cmpsub(params);
+            success = asm_cmpsub(p);
             break;
 
         case t_CMPSX:
-            success = asm_cmpsx(params);
+            success = asm_cmpsx(p);
             break;
 
         case t_CMPX:
-            success = asm_cmpx(params);
+            success = asm_cmpx(p);
             break;
 
         case t_COGATN:
-            success = asm_cogatn(params);
+            success = asm_cogatn(p);
             break;
 
         case t_COGBRK:
-            success = asm_cogbrk(params);
+            success = asm_cogbrk(p);
             break;
 
         case t_COGID:
-            success = asm_cogid(params);
+            success = asm_cogid(p);
             break;
 
         case t_COGINIT:
-            success = asm_coginit(params);
+            success = asm_coginit(p);
             break;
 
         case t_COGSTOP:
-            success = asm_cogstop(params);
+            success = asm_cogstop(p);
             break;
 
         case t_CRCBIT:
-            success = asm_crcbit(params);
+            success = asm_crcbit(p);
             break;
 
         case t_CRCNIB:
-            success = asm_crcnib(params);
+            success = asm_crcnib(p);
             break;
 
         case t_DECMOD:
-            success = asm_decmod(params);
+            success = asm_decmod(p);
             break;
 
         case t_DECOD:
-            success = asm_decod(params);
+            success = asm_decod(p);
             break;
 
         case t_DIRC:
-            success = asm_dirc(params);
+            success = asm_dirc(p);
             break;
 
         case t_DIRH:
-            success = asm_dirh(params);
+            success = asm_dirh(p);
             break;
 
         case t_DIRL:
-            success = asm_dirl(params);
+            success = asm_dirl(p);
             break;
 
         case t_DIRNC:
-            success = asm_dirnc(params);
+            success = asm_dirnc(p);
             break;
 
         case t_DIRNOT:
-            success = asm_dirnot(params);
+            success = asm_dirnot(p);
             break;
 
         case t_DIRNZ:
-            success = asm_dirnz(params);
+            success = asm_dirnz(p);
             break;
 
         case t_DIRRND:
-            success = asm_dirrnd(params);
+            success = asm_dirrnd(p);
             break;
 
         case t_DIRZ:
-            success = asm_dirz(params);
+            success = asm_dirz(p);
             break;
 
         case t_DJF:
-            success = asm_djf(params);
+            success = asm_djf(p);
             break;
 
         case t_DJNF:
-            success = asm_djnf(params);
+            success = asm_djnf(p);
             break;
 
         case t_DJNZ:
-            success = asm_djnz(params);
+            success = asm_djnz(p);
             break;
 
         case t_DJZ:
-            success = asm_djz(params);
+            success = asm_djz(p);
             break;
 
         case t_DRVC:
-            success = asm_drvc(params);
+            success = asm_drvc(p);
             break;
 
         case t_DRVH:
-            success = asm_drvh(params);
+            success = asm_drvh(p);
             break;
 
         case t_DRVL:
-            success = asm_drvl(params);
+            success = asm_drvl(p);
             break;
 
         case t_DRVNC:
-            success = asm_drvnc(params);
+            success = asm_drvnc(p);
             break;
 
         case t_DRVNOT:
-            success = asm_drvnot(params);
+            success = asm_drvnot(p);
             break;
 
         case t_DRVNZ:
-            success = asm_drvnz(params);
+            success = asm_drvnz(p);
             break;
 
         case t_DRVRND:
-            success = asm_drvrnd(params);
+            success = asm_drvrnd(p);
             break;
 
         case t_DRVZ:
-            success = asm_drvz(params);
+            success = asm_drvz(p);
             break;
 
         case t_ENCOD:
-            success = asm_encod(params);
+            success = asm_encod(p);
             break;
 
         case t_EXECF:
-            success = asm_execf(params);
+            success = asm_execf(p);
             break;
 
         case t_FBLOCK:
-            success = asm_fblock(params);
+            success = asm_fblock(p);
             break;
 
         case t_FGE:
-            success = asm_fge(params);
+            success = asm_fge(p);
             break;
 
         case t_FGES:
-            success = asm_fges(params);
+            success = asm_fges(p);
             break;
 
         case t_FLE:
-            success = asm_fle(params);
+            success = asm_fle(p);
             break;
 
         case t_FLES:
-            success = asm_fles(params);
+            success = asm_fles(p);
             break;
 
         case t_FLTC:
-            success = asm_fltc(params);
+            success = asm_fltc(p);
             break;
 
         case t_FLTH:
-            success = asm_flth(params);
+            success = asm_flth(p);
             break;
 
         case t_FLTL:
-            success = asm_fltl(params);
+            success = asm_fltl(p);
             break;
 
         case t_FLTNC:
-            success = asm_fltnc(params);
+            success = asm_fltnc(p);
             break;
 
         case t_FLTNOT:
-            success = asm_fltnot(params);
+            success = asm_fltnot(p);
             break;
 
         case t_FLTNZ:
-            success = asm_fltnz(params);
+            success = asm_fltnz(p);
             break;
 
         case t_FLTRND:
-            success = asm_fltrnd(params);
+            success = asm_fltrnd(p);
             break;
 
         case t_FLTZ:
-            success = asm_fltz(params);
+            success = asm_fltz(p);
             break;
 
         case t_GETBRK:
-            success = asm_getbrk(params);
+            success = asm_getbrk(p);
             break;
 
         case t_GETBYTE:
-            success = asm_getbyte(params);
+            success = asm_getbyte(p);
             break;
 
         case t_GETCT:
-            success = asm_getct(params);
+            success = asm_getct(p);
             break;
 
         case t_GETNIB:
-            success = asm_getnib(params);
+            success = asm_getnib(p);
             break;
 
         case t_GETPTR:
-            success = asm_getptr(params);
+            success = asm_getptr(p);
             break;
 
         case t_GETQX:
-            success = asm_getqx(params);
+            success = asm_getqx(p);
             break;
 
         case t_GETQY:
-            success = asm_getqy(params);
+            success = asm_getqy(p);
             break;
 
         case t_GETRND:
-            success = asm_getrnd(params);
+            success = asm_getrnd(p);
             break;
 
         case t_GETSCP:
-            success = asm_getscp(params);
+            success = asm_getscp(p);
             break;
 
         case t_GETWORD:
-            success = asm_getword(params);
+            success = asm_getword(p);
             break;
 
         case t_GETXACC:
-            success = asm_getxacc(params);
+            success = asm_getxacc(p);
             break;
 
         case t_HUBSET:
-            success = asm_hubset(params);
+            success = asm_hubset(p);
             break;
 
         case t_IJNZ:
-            success = asm_ijnz(params);
+            success = asm_ijnz(p);
             break;
 
         case t_IJZ:
-            success = asm_ijz(params);
+            success = asm_ijz(p);
             break;
 
         case t_INCMOD:
-            success = asm_incmod(params);
+            success = asm_incmod(p);
             break;
 
         case t_JATN:
-            success = asm_jatn(params);
+            success = asm_jatn(p);
             break;
 
         case t_JCT1:
-            success = asm_jct1(params);
+            success = asm_jct1(p);
             break;
 
         case t_JCT2:
-            success = asm_jct2(params);
+            success = asm_jct2(p);
             break;
 
         case t_JCT3:
-            success = asm_jct3(params);
+            success = asm_jct3(p);
             break;
 
         case t_JFBW:
-            success = asm_jfbw(params);
+            success = asm_jfbw(p);
             break;
 
         case t_JINT:
-            success = asm_jint(params);
+            success = asm_jint(p);
             break;
 
         case t_JMP:
-            success = asm_jmp(params);
+            success = asm_jmp(p);
             break;
 
         case t_JMPREL:
-            success = asm_jmprel(params);
+            success = asm_jmprel(p);
             break;
 
         case t_JNATN:
-            success = asm_jnatn(params);
+            success = asm_jnatn(p);
             break;
 
         case t_JNCT1:
-            success = asm_jnct1(params);
+            success = asm_jnct1(p);
             break;
 
         case t_JNCT2:
-            success = asm_jnct2(params);
+            success = asm_jnct2(p);
             break;
 
         case t_JNCT3:
-            success = asm_jnct3(params);
+            success = asm_jnct3(p);
             break;
 
         case t_JNFBW:
-            success = asm_jnfbw(params);
+            success = asm_jnfbw(p);
             break;
 
         case t_JNINT:
-            success = asm_jnint(params);
+            success = asm_jnint(p);
             break;
 
         case t_JNPAT:
-            success = asm_jnpat(params);
+            success = asm_jnpat(p);
             break;
 
         case t_JNQMT:
-            success = asm_jnqmt(params);
+            success = asm_jnqmt(p);
             break;
 
         case t_JNSE1:
-            success = asm_jnse1(params);
+            success = asm_jnse1(p);
             break;
 
         case t_JNSE2:
-            success = asm_jnse2(params);
+            success = asm_jnse2(p);
             break;
 
         case t_JNSE3:
-            success = asm_jnse3(params);
+            success = asm_jnse3(p);
             break;
 
         case t_JNSE4:
-            success = asm_jnse4(params);
+            success = asm_jnse4(p);
             break;
 
         case t_JNXFI:
-            success = asm_jnxfi(params);
+            success = asm_jnxfi(p);
             break;
 
         case t_JNXMT:
-            success = asm_jnxmt(params);
+            success = asm_jnxmt(p);
             break;
 
         case t_JNXRL:
-            success = asm_jnxrl(params);
+            success = asm_jnxrl(p);
             break;
 
         case t_JNXRO:
-            success = asm_jnxro(params);
+            success = asm_jnxro(p);
             break;
 
         case t_JPAT:
-            success = asm_jpat(params);
+            success = asm_jpat(p);
             break;
 
         case t_JQMT:
-            success = asm_jqmt(params);
+            success = asm_jqmt(p);
             break;
 
         case t_JSE1:
-            success = asm_jse1(params);
+            success = asm_jse1(p);
             break;
 
         case t_JSE2:
-            success = asm_jse2(params);
+            success = asm_jse2(p);
             break;
 
         case t_JSE3:
-            success = asm_jse3(params);
+            success = asm_jse3(p);
             break;
 
         case t_JSE4:
-            success = asm_jse4(params);
+            success = asm_jse4(p);
             break;
 
         case t_JXFI:
-            success = asm_jxfi(params);
+            success = asm_jxfi(p);
             break;
 
         case t_JXMT:
-            success = asm_jxmt(params);
+            success = asm_jxmt(p);
             break;
 
         case t_JXRL:
-            success = asm_jxrl(params);
+            success = asm_jxrl(p);
             break;
 
         case t_JXRO:
-            success = asm_jxro(params);
+            success = asm_jxro(p);
             break;
 
         case t_LOC:
-            success = asm_loc_pa(params);
+            success = asm_loc(p);
             break;
 
         case t_LOCKNEW:
-            success = asm_locknew(params);
+            success = asm_locknew(p);
             break;
 
         case t_LOCKREL:
-            success = asm_lockrel(params);
+            success = asm_lockrel(p);
             break;
 
         case t_LOCKRET:
-            success = asm_lockret(params);
+            success = asm_lockret(p);
             break;
 
         case t_LOCKTRY:
-            success = asm_locktry(params);
+            success = asm_locktry(p);
             break;
 
         case t_MERGEB:
-            success = asm_mergeb(params);
+            success = asm_mergeb(p);
             break;
 
         case t_MERGEW:
-            success = asm_mergew(params);
+            success = asm_mergew(p);
             break;
 
         case t_MIXPIX:
-            success = asm_mixpix(params);
+            success = asm_mixpix(p);
             break;
 
         case t_MODCZ:
-            success = asm_modcz(params);
+            success = asm_modcz(p);
             break;
 
         case t_MOV:
-            success = asm_mov(params);
+            success = asm_mov(p);
             break;
 
         case t_MOVBYTS:
-            success = asm_movbyts(params);
+            success = asm_movbyts(p);
             break;
 
         case t_MUL:
-            success = asm_mul(params);
+            success = asm_mul(p);
             break;
 
         case t_MULPIX:
-            success = asm_mulpix(params);
+            success = asm_mulpix(p);
             break;
 
         case t_MULS:
-            success = asm_muls(params);
+            success = asm_muls(p);
             break;
 
         case t_MUXC:
-            success = asm_muxc(params);
+            success = asm_muxc(p);
             break;
 
         case t_MUXNC:
-            success = asm_muxnc(params);
+            success = asm_muxnc(p);
             break;
 
         case t_MUXNIBS:
-            success = asm_muxnibs(params);
+            success = asm_muxnibs(p);
             break;
 
         case t_MUXNITS:
-            success = asm_muxnits(params);
+            success = asm_muxnits(p);
             break;
 
         case t_MUXNZ:
-            success = asm_muxnz(params);
+            success = asm_muxnz(p);
             break;
 
         case t_MUXQ:
-            success = asm_muxq(params);
+            success = asm_muxq(p);
             break;
 
         case t_MUXZ:
-            success = asm_muxz(params);
+            success = asm_muxz(p);
             break;
 
         case t_NEG:
-            success = asm_neg(params);
+            success = asm_neg(p);
             break;
 
         case t_NEGC:
-            success = asm_negc(params);
+            success = asm_negc(p);
             break;
 
         case t_NEGNC:
-            success = asm_negnc(params);
+            success = asm_negnc(p);
             break;
 
         case t_NEGNZ:
-            success = asm_negnz(params);
+            success = asm_negnz(p);
             break;
 
         case t_NEGZ:
-            success = asm_negz(params);
+            success = asm_negz(p);
             break;
 
         case t_NIXINT1:
-            success = asm_nixint1(params);
+            success = asm_nixint1(p);
             break;
 
         case t_NIXINT2:
-            success = asm_nixint2(params);
+            success = asm_nixint2(p);
             break;
 
         case t_NIXINT3:
-            success = asm_nixint3(params);
+            success = asm_nixint3(p);
             break;
 
         case t_NOP:
-            success = asm_nop(params);
+            success = asm_nop(p);
             break;
 
         case t_NOT:
-            success = asm_not(params);
+            success = asm_not(p);
             break;
 
         case t_ONES:
-            success = asm_ones(params);
+            success = asm_ones(p);
             break;
 
         case t_OR:
-            success = asm_or(params);
+            success = asm_or(p);
             break;
 
         case t_OUTC:
-            success = asm_outc(params);
+            success = asm_outc(p);
             break;
 
         case t_OUTH:
-            success = asm_outh(params);
+            success = asm_outh(p);
             break;
 
         case t_OUTL:
-            success = asm_outl(params);
+            success = asm_outl(p);
             break;
 
         case t_OUTNC:
-            success = asm_outnc(params);
+            success = asm_outnc(p);
             break;
 
         case t_OUTNOT:
-            success = asm_outnot(params);
+            success = asm_outnot(p);
             break;
 
         case t_OUTNZ:
-            success = asm_outnz(params);
+            success = asm_outnz(p);
             break;
 
         case t_OUTRND:
-            success = asm_outrnd(params);
+            success = asm_outrnd(p);
             break;
 
         case t_OUTZ:
-            success = asm_outz(params);
+            success = asm_outz(p);
             break;
 
         case t_POLLATN:
-            success = asm_pollatn(params);
+            success = asm_pollatn(p);
             break;
 
         case t_POLLCT1:
-            success = asm_pollct1(params);
+            success = asm_pollct1(p);
             break;
 
         case t_POLLCT2:
-            success = asm_pollct2(params);
+            success = asm_pollct2(p);
             break;
 
         case t_POLLCT3:
-            success = asm_pollct3(params);
+            success = asm_pollct3(p);
             break;
 
         case t_POLLFBW:
-            success = asm_pollfbw(params);
+            success = asm_pollfbw(p);
             break;
 
         case t_POLLINT:
-            success = asm_pollint(params);
+            success = asm_pollint(p);
             break;
 
         case t_POLLPAT:
-            success = asm_pollpat(params);
+            success = asm_pollpat(p);
             break;
 
         case t_POLLQMT:
-            success = asm_pollqmt(params);
+            success = asm_pollqmt(p);
             break;
 
         case t_POLLSE1:
-            success = asm_pollse1(params);
+            success = asm_pollse1(p);
             break;
 
         case t_POLLSE2:
-            success = asm_pollse2(params);
+            success = asm_pollse2(p);
             break;
 
         case t_POLLSE3:
-            success = asm_pollse3(params);
+            success = asm_pollse3(p);
             break;
 
         case t_POLLSE4:
-            success = asm_pollse4(params);
+            success = asm_pollse4(p);
             break;
 
         case t_POLLXFI:
-            success = asm_pollxfi(params);
+            success = asm_pollxfi(p);
             break;
 
         case t_POLLXMT:
-            success = asm_pollxmt(params);
+            success = asm_pollxmt(p);
             break;
 
         case t_POLLXRL:
-            success = asm_pollxrl(params);
+            success = asm_pollxrl(p);
             break;
 
         case t_POLLXRO:
-            success = asm_pollxro(params);
+            success = asm_pollxro(p);
             break;
 
         case t_POP:
-            success = asm_pop(params);
+            success = asm_pop(p);
             break;
 
         case t_POPA:
-            success = asm_popa(params);
+            success = asm_popa(p);
             break;
 
         case t_POPB:
-            success = asm_popb(params);
+            success = asm_popb(p);
             break;
 
         case t_PUSH:
-            success = asm_push(params);
+            success = asm_push(p);
             break;
 
         case t_PUSHA:
-            success = asm_pusha(params);
+            success = asm_pusha(p);
             break;
 
         case t_PUSHB:
-            success = asm_pushb(params);
+            success = asm_pushb(p);
             break;
 
         case t_QDIV:
-            success = asm_qdiv(params);
+            success = asm_qdiv(p);
             break;
 
         case t_QEXP:
-            success = asm_qexp(params);
+            success = asm_qexp(p);
             break;
 
         case t_QFRAC:
-            success = asm_qfrac(params);
+            success = asm_qfrac(p);
             break;
 
         case t_QLOG:
-            success = asm_qlog(params);
+            success = asm_qlog(p);
             break;
 
         case t_QMUL:
-            success = asm_qmul(params);
+            success = asm_qmul(p);
             break;
 
         case t_QROTATE:
-            success = asm_qrotate(params);
+            success = asm_qrotate(p);
             break;
 
         case t_QSQRT:
-            success = asm_qsqrt(params);
+            success = asm_qsqrt(p);
             break;
 
         case t_QVECTOR:
-            success = asm_qvector(params);
+            success = asm_qvector(p);
             break;
 
         case t_RCL:
-            success = asm_rcl(params);
+            success = asm_rcl(p);
             break;
 
         case t_RCR:
-            success = asm_rcr(params);
+            success = asm_rcr(p);
             break;
 
         case t_RCZL:
-            success = asm_rczl(params);
+            success = asm_rczl(p);
             break;
 
         case t_RCZR:
-            success = asm_rczr(params);
+            success = asm_rczr(p);
             break;
 
         case t_RDBYTE:
-            success = asm_rdbyte(params);
+            success = asm_rdbyte(p);
             break;
 
         case t_RDFAST:
-            success = asm_rdfast(params);
+            success = asm_rdfast(p);
             break;
 
         case t_RDLONG:
-            success = asm_rdlong(params);
+            success = asm_rdlong(p);
             break;
 
         case t_RDLUT:
-            success = asm_rdlut(params);
+            success = asm_rdlut(p);
             break;
 
         case t_RDPIN:
-            success = asm_rdpin(params);
+            success = asm_rdpin(p);
             break;
 
         case t_RDWORD:
-            success = asm_rdword(params);
+            success = asm_rdword(p);
             break;
 
         case t_REP:
-            success = asm_rep(params);
+            success = asm_rep(p);
             break;
 
         case t_RESI0:
-            success = asm_resi0(params);
+            success = asm_resi0(p);
             break;
 
         case t_RESI1:
-            success = asm_resi1(params);
+            success = asm_resi1(p);
             break;
 
         case t_RESI2:
-            success = asm_resi2(params);
+            success = asm_resi2(p);
             break;
 
         case t_RESI3:
-            success = asm_resi3(params);
+            success = asm_resi3(p);
             break;
 
         case t_RET:
-            success = asm_ret(params);
+            success = asm_ret(p);
             break;
 
         case t_RETA:
-            success = asm_reta(params);
+            success = asm_reta(p);
             break;
 
         case t_RETB:
-            success = asm_retb(params);
+            success = asm_retb(p);
             break;
 
         case t_RETI0:
-            success = asm_reti0(params);
+            success = asm_reti0(p);
             break;
 
         case t_RETI1:
-            success = asm_reti1(params);
+            success = asm_reti1(p);
             break;
 
         case t_RETI2:
-            success = asm_reti2(params);
+            success = asm_reti2(p);
             break;
 
         case t_RETI3:
-            success = asm_reti3(params);
+            success = asm_reti3(p);
             break;
 
         case t_REV:
-            success = asm_rev(params);
+            success = asm_rev(p);
             break;
 
         case t_RFBYTE:
-            success = asm_rfbyte(params);
+            success = asm_rfbyte(p);
             break;
 
         case t_RFLONG:
-            success = asm_rflong(params);
+            success = asm_rflong(p);
             break;
 
         case t_RFVAR:
-            success = asm_rfvar(params);
+            success = asm_rfvar(p);
             break;
 
         case t_RFVARS:
-            success = asm_rfvars(params);
+            success = asm_rfvars(p);
             break;
 
         case t_RFWORD:
-            success = asm_rfword(params);
+            success = asm_rfword(p);
             break;
 
         case t_RGBEXP:
-            success = asm_rgbexp(params);
+            success = asm_rgbexp(p);
             break;
 
         case t_RGBSQZ:
-            success = asm_rgbsqz(params);
+            success = asm_rgbsqz(p);
             break;
 
         case t_ROL:
-            success = asm_rol(params);
+            success = asm_rol(p);
             break;
 
         case t_ROLBYTE:
-            success = asm_rolbyte(params);
+            success = asm_rolbyte(p);
             break;
 
         case t_ROLNIB:
-            success = asm_rolnib(params);
+            success = asm_rolnib(p);
             break;
 
         case t_ROLWORD:
-            success = asm_rolword(params);
+            success = asm_rolword(p);
             break;
 
         case t_ROR:
-            success = asm_ror(params);
+            success = asm_ror(p);
             break;
 
         case t_RQPIN:
-            success = asm_rqpin(params);
+            success = asm_rqpin(p);
             break;
 
         case t_SAL:
-            success = asm_sal(params);
+            success = asm_sal(p);
             break;
 
         case t_SAR:
-            success = asm_sar(params);
+            success = asm_sar(p);
             break;
 
         case t_SCA:
-            success = asm_sca(params);
+            success = asm_sca(p);
             break;
 
         case t_SCAS:
-            success = asm_scas(params);
+            success = asm_scas(p);
             break;
 
         case t_SETBYTE:
-            success = asm_setbyte(params);
+            success = asm_setbyte(p);
             break;
 
         case t_SETCFRQ:
-            success = asm_setcfrq(params);
+            success = asm_setcfrq(p);
             break;
 
         case t_SETCI:
-            success = asm_setci(params);
+            success = asm_setci(p);
             break;
 
         case t_SETCMOD:
-            success = asm_setcmod(params);
+            success = asm_setcmod(p);
             break;
 
         case t_SETCQ:
-            success = asm_setcq(params);
+            success = asm_setcq(p);
             break;
 
         case t_SETCY:
-            success = asm_setcy(params);
+            success = asm_setcy(p);
             break;
 
         case t_SETD:
-            success = asm_setd(params);
+            success = asm_setd(p);
             break;
 
         case t_SETDACS:
-            success = asm_setdacs(params);
+            success = asm_setdacs(p);
             break;
 
         case t_SETINT1:
-            success = asm_setint1(params);
+            success = asm_setint1(p);
             break;
 
         case t_SETINT2:
-            success = asm_setint2(params);
+            success = asm_setint2(p);
             break;
 
         case t_SETINT3:
-            success = asm_setint3(params);
+            success = asm_setint3(p);
             break;
 
         case t_SETLUTS:
-            success = asm_setluts(params);
+            success = asm_setluts(p);
             break;
 
         case t_SETNIB:
-            success = asm_setnib(params);
+            success = asm_setnib(p);
             break;
 
         case t_SETPAT:
-            success = asm_setpat(params);
+            success = asm_setpat(p);
             break;
 
         case t_SETPIV:
-            success = asm_setpiv(params);
+            success = asm_setpiv(p);
             break;
 
         case t_SETPIX:
-            success = asm_setpix(params);
+            success = asm_setpix(p);
             break;
 
         case t_SETQ:
-            success = asm_setq(params);
+            success = asm_setq(p);
             break;
 
         case t_SETQ2:
-            success = asm_setq2(params);
+            success = asm_setq2(p);
             break;
 
         case t_SETR:
-            success = asm_setr(params);
+            success = asm_setr(p);
             break;
 
         case t_SETS:
-            success = asm_sets(params);
+            success = asm_sets(p);
             break;
 
         case t_SETSCP:
-            success = asm_setscp(params);
+            success = asm_setscp(p);
             break;
 
         case t_SETSE1:
-            success = asm_setse1(params);
+            success = asm_setse1(p);
             break;
 
         case t_SETSE2:
-            success = asm_setse2(params);
+            success = asm_setse2(p);
             break;
 
         case t_SETSE3:
-            success = asm_setse3(params);
+            success = asm_setse3(p);
             break;
 
         case t_SETSE4:
-            success = asm_setse4(params);
+            success = asm_setse4(p);
             break;
 
         case t_SETWORD:
-            success = asm_setword(params);
+            success = asm_setword(p);
             break;
 
         case t_SETXFRQ:
-            success = asm_setxfrq(params);
+            success = asm_setxfrq(p);
             break;
 
         case t_SEUSSF:
-            success = asm_seussf(params);
+            success = asm_seussf(p);
             break;
 
         case t_SEUSSR:
-            success = asm_seussr(params);
+            success = asm_seussr(p);
             break;
 
         case t_SHL:
-            success = asm_shl(params);
+            success = asm_shl(p);
             break;
 
         case t_SHR:
-            success = asm_shr(params);
+            success = asm_shr(p);
             break;
 
         case t_SIGNX:
-            success = asm_signx(params);
+            success = asm_signx(p);
             break;
 
         case t_SKIP:
-            success = asm_skip(params);
+            success = asm_skip(p);
             break;
 
         case t_SKIPF:
-            success = asm_skipf(params);
+            success = asm_skipf(p);
             break;
 
         case t_SPLITB:
-            success = asm_splitb(params);
+            success = asm_splitb(p);
             break;
 
         case t_SPLITW:
-            success = asm_splitw(params);
+            success = asm_splitw(p);
             break;
 
         case t_STALLI:
-            success = asm_stalli(params);
+            success = asm_stalli(p);
             break;
 
         case t_SUB:
-            success = asm_sub(params);
+            success = asm_sub(p);
             break;
 
         case t_SUBR:
-            success = asm_subr(params);
+            success = asm_subr(p);
             break;
 
         case t_SUBS:
-            success = asm_subs(params);
+            success = asm_subs(p);
             break;
 
         case t_SUBSX:
-            success = asm_subsx(params);
+            success = asm_subsx(p);
             break;
 
         case t_SUBX:
-            success = asm_subx(params);
+            success = asm_subx(p);
             break;
 
         case t_SUMC:
-            success = asm_sumc(params);
+            success = asm_sumc(p);
             break;
 
         case t_SUMNC:
-            success = asm_sumnc(params);
+            success = asm_sumnc(p);
             break;
 
         case t_SUMNZ:
-            success = asm_sumnz(params);
+            success = asm_sumnz(p);
             break;
 
         case t_SUMZ:
-            success = asm_sumz(params);
+            success = asm_sumz(p);
             break;
 
         case t_TEST:
-            success = asm_test(params);
+            success = asm_test(p);
             break;
 
         case t_TESTB:
-            success = asm_testb_w(params);
+            success = asm_testb_w(p);
             break;
 
         case t_TESTBN:
-            success = asm_testbn_w(params);
+            success = asm_testbn_w(p);
             break;
 
         case t_TESTN:
-            success = asm_testn(params);
-            break;
-
-        case t_TESTNB:
-            success = asm_testn(params);
+            success = asm_testn(p);
             break;
 
         case t_TESTP:
-            success = asm_testp_w(params);
+            success = asm_testp_w(p);
             break;
 
         case t_TESTPN:
-            success = asm_testpn_w(params);
+            success = asm_testpn_w(p);
             break;
 
         case t_TJF:
-            success = asm_tjf(params);
+            success = asm_tjf(p);
             break;
 
         case t_TJNF:
-            success = asm_tjnf(params);
+            success = asm_tjnf(p);
             break;
 
         case t_TJNS:
-            success = asm_tjns(params);
+            success = asm_tjns(p);
             break;
 
         case t_TJNZ:
-            success = asm_tjnz(params);
+            success = asm_tjnz(p);
             break;
 
         case t_TJS:
-            success = asm_tjs(params);
+            success = asm_tjs(p);
             break;
 
         case t_TJV:
-            success = asm_tjv(params);
+            success = asm_tjv(p);
             break;
 
         case t_TJZ:
-            success = asm_tjz(params);
+            success = asm_tjz(p);
             break;
 
         case t_TRGINT1:
-            success = asm_trgint1(params);
+            success = asm_trgint1(p);
             break;
 
         case t_TRGINT2:
-            success = asm_trgint2(params);
+            success = asm_trgint2(p);
             break;
 
         case t_TRGINT3:
-            success = asm_trgint3(params);
+            success = asm_trgint3(p);
             break;
 
         case t_WAITATN:
-            success = asm_waitatn(params);
+            success = asm_waitatn(p);
             break;
 
         case t_WAITCT1:
-            success = asm_waitct1(params);
+            success = asm_waitct1(p);
             break;
 
         case t_WAITCT2:
-            success = asm_waitct2(params);
+            success = asm_waitct2(p);
             break;
 
         case t_WAITCT3:
-            success = asm_waitct3(params);
+            success = asm_waitct3(p);
             break;
 
         case t_WAITFBW:
-            success = asm_waitfbw(params);
+            success = asm_waitfbw(p);
             break;
 
         case t_WAITINT:
-            success = asm_waitint(params);
+            success = asm_waitint(p);
             break;
 
         case t_WAITPAT:
-            success = asm_waitpat(params);
+            success = asm_waitpat(p);
             break;
 
         case t_WAITSE1:
-            success = asm_waitse1(params);
+            success = asm_waitse1(p);
             break;
 
         case t_WAITSE2:
-            success = asm_waitse2(params);
+            success = asm_waitse2(p);
             break;
 
         case t_WAITSE3:
-            success = asm_waitse3(params);
+            success = asm_waitse3(p);
             break;
 
         case t_WAITSE4:
-            success = asm_waitse4(params);
+            success = asm_waitse4(p);
             break;
 
         case t_WAITX:
-            success = asm_waitx(params);
+            success = asm_waitx(p);
             break;
 
         case t_WAITXFI:
-            success = asm_waitxfi(params);
+            success = asm_waitxfi(p);
             break;
 
         case t_WAITXMT:
-            success = asm_waitxmt(params);
+            success = asm_waitxmt(p);
             break;
 
         case t_WAITXRL:
-            success = asm_waitxrl(params);
+            success = asm_waitxrl(p);
             break;
 
         case t_WAITXRO:
-            success = asm_waitxro(params);
+            success = asm_waitxro(p);
             break;
 
         case t_WFBYTE:
-            success = asm_wfbyte(params);
+            success = asm_wfbyte(p);
             break;
 
         case t_WFLONG:
-            success = asm_wflong(params);
+            success = asm_wflong(p);
             break;
 
         case t_WFWORD:
-            success = asm_wfword(params);
+            success = asm_wfword(p);
             break;
 
         case t_WMLONG:
-            success = asm_wmlong(params);
+            success = asm_wmlong(p);
             break;
 
         case t_WRBYTE:
-            success = asm_wrbyte(params);
+            success = asm_wrbyte(p);
             break;
 
         case t_WRC:
-            success = asm_wrc(params);
+            success = asm_wrc(p);
             break;
 
         case t_WRFAST:
-            success = asm_wrfast(params);
+            success = asm_wrfast(p);
             break;
 
         case t_WRLONG:
-            success = asm_wrlong(params);
+            success = asm_wrlong(p);
             break;
 
         case t_WRLUT:
-            success = asm_wrlut(params);
+            success = asm_wrlut(p);
             break;
 
         case t_WRNC:
-            success = asm_wrnc(params);
+            success = asm_wrnc(p);
             break;
 
         case t_WRNZ:
-            success = asm_wrnz(params);
+            success = asm_wrnz(p);
             break;
 
         case t_WRPIN:
-            success = asm_wrpin(params);
+            success = asm_wrpin(p);
             break;
 
         case t_WRWORD:
-            success = asm_wrword(params);
+            success = asm_wrword(p);
             break;
 
         case t_WRZ:
-            success = asm_wrz(params);
+            success = asm_wrz(p);
             break;
 
         case t_WXPIN:
-            success = asm_wxpin(params);
+            success = asm_wxpin(p);
             break;
 
         case t_WYPIN:
-            success = asm_wypin(params);
+            success = asm_wypin(p);
             break;
 
         case t_XCONT:
-            success = asm_xcont(params);
+            success = asm_xcont(p);
             break;
 
         case t_XINIT:
-            success = asm_xinit(params);
+            success = asm_xinit(p);
             break;
 
         case t_XOR:
-            success = asm_xor(params);
+            success = asm_xor(p);
             break;
 
         case t_XORO32:
-            success = asm_xoro32(params);
+            success = asm_xoro32(p);
             break;
 
         case t_XSTOP:
-            success = asm_xstop(params);
+            success = asm_xstop(p);
             break;
 
         case t_XZERO:
-            success = asm_xzero(params);
+            success = asm_xzero(p);
             break;
 
         case t_ZEROX:
-            success = asm_zerox(params);
+            success = asm_zerox(p);
             break;
 
-
         case t__BYTE:
-            success = asm_byte(params);
+            success = asm_byte(p);
             break;
 
         case t__WORD:
-            success = asm_word(params);
+            success = asm_word(p);
             break;
 
         case t__LONG:
-            success = asm_long(params);
+            success = asm_long(p);
             break;
 
         case t__RES:
-            success = asm_res(params);
+            success = asm_res(p);
             break;
 
         case t__FIT:
-            success = asm_fit(params);
+            success = asm_fit(p);
             break;
 
         case t__ORG:
-            success = asm_org(params);
+            success = asm_org(p);
             break;
 
         case t__ORGH:
-            success = asm_orgh(params);
+            success = asm_orgh(p);
             break;
 
         case t__ASSIGN:
-            success = asm_assign(params);
+            success = asm_assign(p);
             break;
 
         case t__DOLLAR:
@@ -1767,8 +1963,8 @@ bool P2Asm::assemble(P2Params& params, const QStringList& source)
         case t_PTRB:
         case t_PTRB_predec:
         case t_PTRB_postinc:
-            params.error = tr("Not an instruction: %1").arg(line);
-            emit Error(params.lineno, params.error);
+            p.error = tr("Not an instruction: %1").arg(line);
+            emit Error(p.lineno, p.error);
             break;
 
         case t__RET_:
@@ -1786,8 +1982,8 @@ bool P2Asm::assemble(P2Params& params, const QStringList& source)
         case t_IF_NC_OR_Z:
         case t_IF_NZ:
         case t_IF_Z:
-            params.error = tr("Multiple conditionals in line: %1").arg(line);
-            emit Error(params.lineno, params.error);
+            p.error = tr("Multiple conditionals in line: %1").arg(line);
+            emit Error(p.lineno, p.error);
             break;
 
         default:
@@ -1796,17 +1992,17 @@ bool P2Asm::assemble(P2Params& params, const QStringList& source)
         }
 
         if (success) {
-            listing(params, true);
+            results(p, true);
             // Calculate next PC for regular instructions
-            if (params.curr_pc < 0x400) {
-                params.next_pc = params.curr_pc + params.advance;
+            if (p.curr_pc < PC_LONGS) {
+                p.next_pc = p.curr_pc + p.advance;
             } else {
-                params.next_pc = params.curr_pc + params.advance * 4;
+                p.next_pc = p.curr_pc + p.advance * 4;
             }
-            if (params.next_pc > params.last_pc)
-                params.last_pc = params.next_pc;
+            if (p.next_pc > p.last_pc)
+                p.last_pc = p.next_pc;
         } else {
-            listing(params);
+            results(p);
         }
     }
 
@@ -1818,7 +2014,7 @@ bool P2Asm::assemble(P2Params& params, const QStringList& source)
  * @param filename name of the SPIN2 source
  * @return QByteArray containing the binary
  */
-bool P2Asm::assemble(P2Params& params, const QString& filename)
+bool P2Asm::assemble(P2Params& p, const QString& filename)
 {
     QFile file(filename);
     if (!file.open(QIODevice::ReadOnly)) {
@@ -1831,32 +2027,54 @@ bool P2Asm::assemble(P2Params& params, const QString& filename)
         QString line = stream.readLine();
         source += line;
     }
-    return assemble(params, source);
+    return assemble(p, source);
 }
 
 /**
- * @brief Append a line to the listing
- * @param params
+ * @brief Store the results and append a line to the listing
+ * @param params reference to P2Params
+ * @param opcode true, if the p.IR field contains an opcode
  */
-void P2Asm::listing(P2Params& params, bool opcode)
+void P2Asm::results(P2Params& p, bool opcode)
 {
+    const QString line = p.line;
+    const int lineno = p.lineno;
+    const P2LONG PC = p.curr_pc;
+    const p2_opcode_u IR = p.IR;
+
+    QString output;
     if (opcode) {
-        if (params.advance) {
-            // opcode was built
-            qDebug("%s: line=%-5d cnt=%-3d pc=$%06x [%08x] : %s", __func__,
-                params.lineno, params.cnt, params.curr_pc, params.IR.opcode, qPrintable(params.line));
+        if (p.advance) {
+            p.h_PC.insert(lineno, PC);
+            p.h_IR.insert(lineno, IR);
+            // opcode was constructed
+            output = QString("%1 %2 [%3] %4")
+                      .arg(lineno, -6)
+                      .arg(PC, 6, 16, QChar('0'))
+                      .arg(IR.opcode, 8, 16, QChar('0'))
+                      .arg(line);
         } else {
-            // assignment
-            qDebug("%s: line=%-5d cnt=%-3d pc=$%06x <%08x> : %s", __func__,
-                params.lineno, params.cnt, params.curr_pc, params.IR.opcode, qPrintable(params.line));
+            // assignment to symbol
+            p.h_IR.insert(lineno, IR);
+            output = QString("%1 %2 <%3> %4")
+                      .arg(lineno, -6)
+                      .arg(PC, 6, 16, QChar('0'))
+                      .arg(IR.opcode, 8, 16, QChar('0'))
+                      .arg(line);
         }
     } else {
         // comment or non code generating instruction
-        qDebug("%s: line=%-5d cnt=%-3d pc=$%06x %-10s : %s", __func__,
-            params.lineno, params.cnt, params.curr_pc, "----------", qPrintable(params.line));
+        output = QString("%1 %2 -%3- %4")
+                  .arg(lineno, -6)
+                  .arg(PC, 6, 16, QChar('0'))
+                  .arg(QStringLiteral("--------"))
+                  .arg(line);
     }
-    if (!params.error.isEmpty())
-        qDebug("%s: %s", __func__, qPrintable(params.error));
+    p.listing.append(output);
+    p.h_tokens.insert(lineno, p.tokens);
+    if (p.error.isEmpty())
+        return;
+    p.h_errors.insert(p.lineno, p.error);
 }
 
 /**
@@ -1867,13 +2085,14 @@ void P2Asm::listing(P2Params& params, bool opcode)
  */
 quint64 P2Asm::from_bin(int& pos, const QString& str, const QString& stop)
 {
-    static const QString digits = QLatin1String("01");
     quint64 value = 0;
+    if (QChar('%') == str.at(pos))
+        ++pos;
     while (pos < str.length()) {
         QChar ch = str.at(pos);
         if (stop.contains(ch))
             return value;
-        value = value * 2 + static_cast<uint>(digits.indexOf(ch, Qt::CaseInsensitive));
+        value = value * 2 + static_cast<uint>(bin_digits.indexOf(ch, Qt::CaseInsensitive));
         pos++;
     }
     return value;
@@ -1887,13 +2106,14 @@ quint64 P2Asm::from_bin(int& pos, const QString& str, const QString& stop)
  */
 quint64 P2Asm::from_oct(int& pos, const QString& str, const QString& stop)
 {
-    static const QString digits = QLatin1String("01234567");
     quint64 value = 0;
+    if (QChar('0') == str.at(pos))
+        ++pos;
     while (pos < str.length()) {
         QChar ch = str.at(pos);
         if (stop.contains(ch))
             return value;
-        value = value * 8 + static_cast<uint>(digits.indexOf(ch, Qt::CaseInsensitive));
+        value = value * 8 + static_cast<uint>(oct_digits.indexOf(ch, Qt::CaseInsensitive));
         pos++;
     }
     return value;
@@ -1907,13 +2127,12 @@ quint64 P2Asm::from_oct(int& pos, const QString& str, const QString& stop)
  */
 quint64 P2Asm::from_dec(int& pos, const QString& str, const QString& stop)
 {
-    static const QString digits = QLatin1String("0123456789");
     quint64 value = 0;
     while (pos < str.length()) {
         QChar ch = str.at(pos);
         if (stop.contains(ch))
             return value;
-        value = value * 10 + static_cast<uint>(digits.indexOf(ch, Qt::CaseInsensitive));
+        value = value * 10 + static_cast<uint>(dec_digits.indexOf(ch, Qt::CaseInsensitive));
         pos++;
     }
     return value;
@@ -1926,14 +2145,49 @@ quint64 P2Asm::from_dec(int& pos, const QString& str, const QString& stop)
  */
 quint64 P2Asm::from_hex(int& pos, const QString& str, const QString& stop)
 {
-    static const QString digits = QLatin1String("0123456789ABCDEF");
     quint64 value = 0;
+    if (QChar('$') == str.at(pos))
+        ++pos;
     while (pos < str.length()) {
         QChar ch = str.at(pos);
         if (stop.contains(ch))
             return value;
-        value = value * 16 + static_cast<uint>(digits.indexOf(ch, Qt::CaseInsensitive));
+        value = value * 16 + static_cast<uint>(hex_digits.indexOf(ch, Qt::CaseInsensitive));
         pos++;
+    }
+    return value;
+}
+
+/**
+ * @brief Convert a string of digits into an unsigned value
+ * @param str digits with prefix (0?)
+ * @return value of digits in str
+ */
+quint64 P2Asm::from_pfx(int& pos, const QString& str, const QString& stop)
+{
+    quint64 value = 0;
+    if (pos >= str.length())
+        return value;
+
+    QChar ch = str.at(pos);
+    if (QChar('0') != ch)
+        return value;
+    pos++;
+    if (pos >= str.length())
+        return value;
+    ch = str.at(pos);
+    switch (ch.toLatin1()) {
+    case 'B': case 'b':
+        value = from_bin(pos, str, stop);
+        break;
+    case 'O': case 'o':
+        value = from_oct(pos, str, stop);
+        break;
+    case 'X': case 'x':
+        value = from_hex(pos, str, stop);
+        break;
+    default:
+        value = from_oct(pos, str, stop);
     }
     return value;
 }
@@ -1944,14 +2198,23 @@ quint64 P2Asm::from_hex(int& pos, const QString& str, const QString& stop)
  * @param stop characters to stop at
  * @return value as 64 bit unsigned
  */
-quint64 P2Asm::from_str(int& pos, const QString& str, const QString& stop)
+QByteArray P2Asm::from_str(int& pos, const QString& str)
 {
-    quint64 value = 0;
+    QByteArray value;
+    QChar instring = str.at(pos++);
+    bool escaped = false;
     while (pos < str.length()) {
         QChar ch = str.at(pos);
-        if (stop.contains(ch))
+        if (escaped) {
+            value += ch.toLatin1();
+            escaped = false;
+        } else if (ch == instring) {
             return value;
-        value = value * 256 + static_cast<uint>(ch.toLatin1());
+        } else if (ch == QChar('\\')) {
+            escaped = true;
+        } else {
+            value += ch.toLatin1();
+        }
         pos++;
     }
     return value;
@@ -1968,80 +2231,112 @@ void P2Asm::skip_spc(int &pos, const QString& str)
  * @param params reference to P2Params
  * @param pos position in word where to start
  * @param str string to parse
- * @param tok token found when trying to tokenize the string
  * @return value of the atom
  */
-QVariant P2Asm::parse_atom(P2Params& params, int& pos, const QString& str, p2_token_e tok)
+QVariant P2Asm::parse_atom(P2Params& p, int& pos, const QString& str)
 {
-    static const QString stop = QStringLiteral("*/\\+-&|^<>()\"");
-    static const QString stop_str = QChar('"');
-
     // Unary minus
     bool minus = false;
     for (/* */; pos < str.length(); pos++) {
         skip_spc(pos, str);
-        if (str.at(pos) == QChar('-')) {
+        if (QChar('-') == str.at(pos)) {
             minus = !minus;
             continue;
         }
         break;
     }
-    QString rem = str.mid(pos);
-    P2AsmSymbol sym = params.symbols.value(rem);
     QVariant value;
+    QString rest = str.mid(pos);
+    QString symbol;
+    if (rest.startsWith(QChar('.'))) {
+        symbol = QString("%1::%2%3").arg(p.section).arg(p.function).arg(rest);
+    } else {
+        symbol = QString("%1::%2").arg(p.section).arg(rest);
+    }
+    bool is_symbol = p.symbols.contains(symbol);
+    p2_token_e tok = p.tokens.value(p.idx, t_nothing);
+    QChar ch;
 
     switch (tok) {
-
     case t_nothing:
-        if (sym.isEmpty()) {
-            skip_spc(pos, str);
-            // Not a symbolic name
-            if (pos >= str.length()) {
-                value = 0;
-            } else {
-                switch (str.at(pos).toLatin1()) {
-                case '$':   // Hexadecimal constant
-                    pos++;
-                    value = from_hex(pos, str, stop);
-                    break;
-                case '%':   // Binary constant
-                    pos++;
-                    value = from_bin(pos, str, stop);
-                    break;
-                case '0':   // Octal constant
-                    pos++;
-                    value = from_oct(pos, str, stop);
-                    break;
-                case '1': case '2': case '3':
-                case '4': case '5': case '6':
-                case '7': case '8': case '9':   // decimal constant
-                    value = from_dec(pos, str, stop);
-                    break;
-                case '"':   // string constant
-                    pos++;
-                    value = from_str(pos, str, stop_str);
-                    break;
-                default:
-                    // undefined symbol
-                    value = 0;
-                    break;
-                }
-            }
-        } else {
-            // Symbolic name
-            value = sym.value<quint64>();
-            if (value.isValid()) {
-                sym.addReference(params.lineno);
-            }
+    case t_local:
+    case t_name:
+        if (is_symbol) {
+            p.symbols.addReference(symbol, p.lineno);
+            value = p.symbols.value<QVariant>(symbol);
         }
-
         // Negate result?
         if (minus)
             value = - value.toULongLong();
         break;
 
+    case t_immediate:
+        ch = pos < str.length() ? str.at(pos) : QChar::Null;
+        while (QChar('#') == ch) {
+            ch = str.at(++pos);
+        }
+        switch (ch.toLatin1()) {
+        case '%':
+            value = from_bin(pos, str, stop_expr);
+            break;
+        case '0':
+            value = from_pfx(pos, str, stop_expr);
+            break;
+        case '$':
+            value = from_hex(pos, str, stop_expr);
+            break;
+        case '"':
+            value = from_str(pos, str);
+            break;
+        default:
+            if (dec_digits.contains(ch))
+                value = from_dec(pos, str, stop_expr);
+            break;
+        }
+        break;
+
+    case t_value_bin:
+        value = from_bin(pos, str, stop_expr);
+        break;
+
+    case t_value_oct:
+        value = from_oct(pos, str, stop_expr);
+        break;
+
+    case t_value_dec:
+        value = from_dec(pos, str, stop_expr);
+        break;
+
+    case t_value_hex:
+        value = from_hex(pos, str, stop_expr);
+        break;
+
+    case t_string:
+        value = from_str(pos, str);
+        break;
+
+    case t_PA:
+        pos += 2;
+        value = offs_PA;
+        break;
+
+    case t_PB:
+        pos += 2;
+        value = offs_PB;
+        break;
+
+    case t_PTRA:
+        pos += 4;
+        value = offs_PTRA;
+        break;
+
+    case t_PTRB:
+        pos += 4;
+        value = offs_PTRB;
+        break;
+
     default:
-        params.error = tr("Reserved word used as parameter: %1").arg(str);
+        p.error = tr("Reserved word used as parameter: %1").arg(str);
         return value;
     }
     return value;
@@ -2052,12 +2347,11 @@ QVariant P2Asm::parse_atom(P2Params& params, int& pos, const QString& str, p2_to
  * @param params reference to P2Params
  * @param pos position in word where to start
  * @param str string to parse
- * @param tok token found when trying to tokenize the string
  * @return value of the factors
  */
-QVariant P2Asm::parse_factors(P2Params& params, int& pos, const QString& str, p2_token_e tok)
+QVariant P2Asm::parse_factors(P2Params& p, int& pos, const QString& str)
 {
-    QVariant value = parse_atom(params, pos, str, tok);
+    QVariant value = parse_atom(p, pos, str);
     for (;;) {
         skip_spc(pos, str);
         if (pos >= str.length())
@@ -2070,9 +2364,9 @@ QVariant P2Asm::parse_factors(P2Params& params, int& pos, const QString& str, p2
             return value;
 
         pos += 1;
-        QVariant value2 = parse_atom(params, pos, str, tok);
+        QVariant value2 = parse_atom(p, pos, str);
         if (!value2.isValid()) {
-            params.error = tr("Invalid character in expression (factors): %1").arg(str.mid(pos));
+            p.error = tr("Invalid character in expression (factors): %1").arg(str.mid(pos));
             return value;
         }
 
@@ -2099,9 +2393,9 @@ QVariant P2Asm::parse_factors(P2Params& params, int& pos, const QString& str, p2
  * @param tok token found when trying to tokenize the string
  * @return value of the factors
  */
-QVariant P2Asm::parse_summands(P2Params& params, int& pos, const QString& str, p2_token_e tok)
+QVariant P2Asm::parse_summands(P2Params& p, int& pos, const QString& str)
 {
-    QVariant value = parse_factors(params, pos, str, tok);
+    QVariant value = parse_factors(p, pos, str);
     for (;;) {
         skip_spc(pos, str);
         if (pos >= str.length())
@@ -2114,9 +2408,9 @@ QVariant P2Asm::parse_summands(P2Params& params, int& pos, const QString& str, p
             return value;
 
         pos += 1;
-        QVariant value2 = parse_factors(params, pos, str, tok);
+        QVariant value2 = parse_factors(p, pos, str);
         if (!value2.isValid()) {
-            params.error = tr("Invalid character in expression (summands): %1").arg(str.mid(pos));
+            p.error = tr("Invalid character in expression (summands): %1").arg(str.mid(pos));
             return value;
         }
 
@@ -2139,9 +2433,9 @@ QVariant P2Asm::parse_summands(P2Params& params, int& pos, const QString& str, p
  * @param tok token found when trying to tokenize the string
  * @return value of the factors
  */
-QVariant P2Asm::parse_binops(P2Params& params, int& pos, const QString& str, p2_token_e tok)
+QVariant P2Asm::parse_binops(P2Params& p, int& pos, const QString& str)
 {
-    QVariant value = parse_summands(params, pos, str, tok);
+    QVariant value = parse_summands(p, pos, str);
     for (;;) {
         skip_spc(pos, str);
         if (pos >= str.length())
@@ -2159,9 +2453,9 @@ QVariant P2Asm::parse_binops(P2Params& params, int& pos, const QString& str, p2_
             pos += 1;
         }
 
-        QVariant value2 = parse_summands(params, pos, str, tok);
+        QVariant value2 = parse_summands(p, pos, str);
         if (!value2.isValid()) {
-            params.error = tr("Invalid character in expression (summands): %1").arg(str.mid(pos));
+            p.error = tr("Invalid character in expression (summands): %1").arg(str.mid(pos));
             return value;
         }
 
@@ -2194,55 +2488,45 @@ QVariant P2Asm::parse_binops(P2Params& params, int& pos, const QString& str, p2_
  * @param imm_to put immediate flag into: -1=nowhere (default), 0=imm, 1=wz, 2=wc
  * @return QVariant with the value of the expression
  */
-QVariant P2Asm::expression(P2Params& params, imm_to_e imm_to)
+QVariant P2Asm::parse_expression(P2Params& p, imm_to_e imm_to)
 {
-    QString str = params.words.value(params.idx);
-    p2_token_e tok = params.tokens.value(params.idx);
-    if (params.idx >= params.tokens.count())
+    if (p.idx >= p.cnt)
         return QVariant();
-    params.idx++;
+    QString str = p.words.value(p.idx);
+    p2_token_e tok = p.tokens.value(p.idx);
+    bool imm = t_immediate == tok;
 
     int pos = 0;
+    if (imm) {
+        pos++;
+    }
+
     skip_spc(pos, str);
-    bool imm = str.startsWith(QChar('#'));
-    if (imm)
+
+    // skip a second immediate
+    // TODO: special meaning of this?
+    if (pos < str.length() && QChar('#') == str.at(pos))
         pos++;
 
-    QVariant value;
-
-    switch (tok) {
-    case t_PA:
-        value = offs_PA;
-        break;
-    case t_PB:
-        value = offs_PB;
-        break;
-    case t_PTRA:
-        value = offs_PTRA;
-        break;
-    case t_PTRB:
-        value = offs_PTRB;
-        break;
-    default:
-        value = parse_binops(params, pos, str, tok);
-    }
+    QVariant value = parse_binops(p, pos, str);
 
     // Set immediate flag, if specified
     switch (imm_to) {
     case immediate_imm:
-        params.IR.op.im = imm;
+        p.IR.op.im = imm;
         break;
     case immediate_wz:
-        params.IR.op.wz = imm;
+        p.IR.op.wz = imm;
         break;
     case immediate_wc:
-        params.IR.op.wc = imm;
+        p.IR.op.wc = imm;
         break;
     default:
         // silence compiler warnings
         break;
     }
 
+    p.idx++;
     return value;
 }
 
@@ -2251,23 +2535,59 @@ QVariant P2Asm::expression(P2Params& params, imm_to_e imm_to)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::end_of_line(P2Params& params, bool binary)
+bool P2Asm::end_of_line(P2Params& p, bool binary)
 {
-    if (params.idx < params.cnt) {
+    if (p.idx < p.cnt) {
         // ignore extra parameters?
-        params.error = tr("Found extra parameters: %1")
-                       .arg(params.words.mid(params.idx).join(QChar::Space));
+        p.error = tr("Found extra parameters: %1")
+                       .arg(p.words.mid(p.idx).join(QChar::Space));
         return false;
     }
 
     if (binary) {
-        if (params.curr_pc < 0x400) {
-            params.binary.l[params.curr_pc] = params.IR.opcode;
-        } else {
-            params.binary.l[params.curr_pc / 4] = params.IR.opcode;
+        if (p.curr_pc < PC_LONGS) {
+            p.MEM.L[p.curr_pc] = p.IR.opcode;
+        } else if (p.curr_pc < MEM_SIZE) {
+            p.MEM.L[p.curr_pc / 4] = p.IR.opcode;
         }
     }
     return true;
+}
+
+/**
+ * @brief A comma is expected
+ * @brief params reference to the assembler parameters
+ * @return true if comma found, false otherwise
+ */
+bool P2Asm::parse_comma(P2Params& p)
+{
+    if (p.idx >= p.cnt) {
+        p.error = tr("Expected %1 but found %2.")
+                       .arg(Token.string(t_comma))
+                       .arg(tr("end of line"));
+        return false;
+    }
+    if (t_comma != p.tokens.at(p.idx)) {
+        p.error = tr("Expected %1 but found %2.")
+                       .arg(Token.string(t_comma))
+                       .arg(Token.string(p.tokens.at(p.idx)));
+        return false;
+    }
+    p.idx++;
+    return true;
+}
+
+/**
+ * @brief An optioncal comma is skipped
+ * @brief params reference to the assembler parameters
+ */
+void P2Asm::optional_comma(P2Params& p)
+{
+    if (p.idx >= p.cnt)
+        return;
+    if (t_comma != p.tokens.at(p.idx))
+        return;
+    p.idx++;
 }
 
 /**
@@ -2275,28 +2595,28 @@ bool P2Asm::end_of_line(P2Params& params, bool binary)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::optional_wcz(P2Params& params)
+bool P2Asm::optional_wcz(P2Params& p)
 {
-    if (params.idx < params.cnt) {
-        p2_token_e tok = params.tokens.value(params.idx);
+    if (p.idx < p.cnt) {
+        p2_token_e tok = p.tokens.value(p.idx);
         switch (tok) {
         case t_WC:
-            params.IR.op.wc = true;
-            params.idx++;
+            p.IR.op.wc = true;
+            p.idx++;
             break;
         case t_WZ:
-            params.IR.op.wz = true;
-            params.idx++;
+            p.IR.op.wz = true;
+            p.idx++;
             break;
         case t_WCZ:
-            params.IR.op.wc = true;
-            params.IR.op.wz = true;
-            params.idx++;
+            p.IR.op.wc = true;
+            p.IR.op.wz = true;
+            p.idx++;
             break;
         default:
-            params.error = tr("Unexpected flag update '%1' in: %2")
-                           .arg(params.words.value(params.idx))
-                           .arg(params.line);
+            p.error = tr("Unexpected flag update '%1' not %2")
+                           .arg(p.words.value(p.idx))
+                           .arg(tr("WC, WZ, or WCZ"));
             return false;
         }
     }
@@ -2308,19 +2628,19 @@ bool P2Asm::optional_wcz(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::optional_wc(P2Params& params)
+bool P2Asm::optional_wc(P2Params& p)
 {
-    if (params.idx < params.cnt) {
-        p2_token_e tok = params.tokens.value(params.idx);
+    if (p.idx < p.cnt) {
+        p2_token_e tok = p.tokens.value(p.idx);
         switch (tok) {
         case t_WC:
-            params.IR.op.wc = true;
-            params.idx++;
+            p.IR.op.wc = true;
+            p.idx++;
             break;
         default:
-            params.error = tr("Unexpected flag update '%1' in: %2")
-                           .arg(params.words.value(params.idx))
-                           .arg(params.line);
+            p.error = tr("Unexpected flag update '%1' not %2")
+                           .arg(p.words.value(p.idx)
+                                .arg(tr("WC")));
             return false;
         }
     }
@@ -2332,19 +2652,19 @@ bool P2Asm::optional_wc(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::optional_wz(P2Params& params)
+bool P2Asm::optional_wz(P2Params& p)
 {
-    if (params.idx < params.cnt) {
-        p2_token_e tok = params.tokens.value(params.idx);
+    if (p.idx < p.cnt) {
+        p2_token_e tok = p.tokens.value(p.idx);
         switch (tok) {
         case t_WZ:
-            params.IR.op.wz = true;
-            params.idx++;
+            p.IR.op.wz = true;
+            p.idx++;
             break;
         default:
-            params.error = tr("Unexpected flag update '%1' in: %2")
-                           .arg(params.words.value(params.idx))
-                           .arg(params.line);
+            p.error = tr("Unexpected flag update '%1' not %2")
+                           .arg(p.words.value(p.idx))
+                           .arg(tr("WZ"));
             return false;
         }
     }
@@ -2356,14 +2676,14 @@ bool P2Asm::optional_wz(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::asm_assign(P2Params& params)
+bool P2Asm::asm_assign(P2Params& p)
 {
-    params.idx++;           // skip over token
-    params.advance = 0;     // No PC increment
-    QVariant value = expression(params);
-    params.IR.opcode = value.toUInt();
-    params.symbols.setValue(params.symbol, value);
-    return end_of_line(params, false);
+    p.idx++;           // skip over token
+    p.advance = 0;     // No PC increment
+    QVariant value = parse_expression(p);
+    p.IR.opcode = value.toUInt();
+    p.symbols.setValue(p.symbol, value);
+    return end_of_line(p, false);
 }
 
 /**
@@ -2371,16 +2691,16 @@ bool P2Asm::asm_assign(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::asm_org(P2Params& params)
+bool P2Asm::asm_org(P2Params& p)
 {
-    params.idx++;           // skip over token
-    params.advance = 0;     // No PC increment
-    QVariant value = expression(params);
+    p.idx++;           // skip over token
+    p.advance = 0;     // No PC increment
+    QVariant value = parse_expression(p);
     if (value.isNull())
-        value = params.last_pc;
-    params.IR.opcode = params.curr_pc = params.next_pc = value.toUInt();
-    params.symbols.setValue(params.symbol, value);
-    return end_of_line(params, false);
+        value = p.last_pc;
+    p.IR.opcode = p.curr_pc = p.next_pc = value.toUInt();
+    p.symbols.setValue(p.symbol, value);
+    return end_of_line(p, false);
 }
 
 /**
@@ -2388,16 +2708,16 @@ bool P2Asm::asm_org(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::asm_orgh(P2Params& params)
+bool P2Asm::asm_orgh(P2Params& p)
 {
-    params.idx++;           // skip over token
-    params.advance = 0;     // No PC increment
-    QVariant value = expression(params);
+    p.idx++;           // skip over token
+    p.advance = 0;     // No PC increment
+    QVariant value = parse_expression(p);
     if (value.isNull())
         value = 0x00400;
-    params.IR.opcode = params.next_pc =  params.last_pc = value.toUInt();
-    params.symbols.setValue(params.symbol, value);
-    return end_of_line(params, false);
+    p.IR.opcode = p.next_pc =  p.last_pc = value.toUInt();
+    p.symbols.setValue(p.symbol, value);
+    return end_of_line(p, false);
 }
 
 /**
@@ -2405,10 +2725,10 @@ bool P2Asm::asm_orgh(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_with_cz(P2Params& params)
+bool P2Asm::parse_with_wcz(P2Params& p)
 {
-    optional_wcz(params);
-    return end_of_line(params);
+    optional_wcz(p);
+    return end_of_line(p);
 }
 
 /**
@@ -2416,10 +2736,10 @@ bool P2Asm::parse_with_cz(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_with_c(P2Params& params)
+bool P2Asm::parse_with_wc(P2Params& p)
 {
-    optional_wc(params);
-    return end_of_line(params);
+    optional_wc(p);
+    return end_of_line(p);
 }
 
 
@@ -2428,10 +2748,10 @@ bool P2Asm::parse_with_c(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_with_z(P2Params& params)
+bool P2Asm::parse_with_wz(P2Params& p)
 {
-    optional_wz(params);
-    return end_of_line(params);
+    optional_wz(p);
+    return end_of_line(p);
 }
 
 /**
@@ -2439,9 +2759,9 @@ bool P2Asm::parse_with_z(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_inst(P2Params& params)
+bool P2Asm::parse_inst(P2Params& p)
 {
-    return end_of_line(params);
+    return end_of_line(p);
 }
 
 
@@ -2450,13 +2770,15 @@ bool P2Asm::parse_inst(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_d_imm_s(P2Params& params)
+bool P2Asm::parse_d_imm_s(P2Params& p)
 {
-    QVariant dst = expression(params);
-    QVariant src = expression(params, immediate_imm);
-    params.IR.op.dst = dst.toUInt();
-    params.IR.op.src = src.toUInt();
-    return end_of_line(params);
+    QVariant dst = parse_expression(p);
+    if (!parse_comma(p))
+        return false;
+    QVariant src = parse_expression(p, immediate_imm);
+    p.IR.op.dst = dst.toUInt();
+    p.IR.op.src = src.toUInt();
+    return end_of_line(p);
 }
 
 /**
@@ -2464,12 +2786,12 @@ bool P2Asm::parse_d_imm_s(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_d_cz(P2Params& params)
+bool P2Asm::parse_d_cz(P2Params& p)
 {
-    QVariant dst = expression(params);
-    params.IR.op.dst = dst.toUInt();
-    optional_wcz(params);
-    return end_of_line(params);
+    QVariant dst = parse_expression(p);
+    p.IR.op.dst = dst.toUInt();
+    optional_wcz(p);
+    return end_of_line(p);
 }
 
 /**
@@ -2477,10 +2799,10 @@ bool P2Asm::parse_d_cz(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_cz(P2Params& params)
+bool P2Asm::parse_cz(P2Params& p)
 {
-    optional_wcz(params);
-    return end_of_line(params);
+    optional_wcz(p);
+    return end_of_line(p);
 }
 
 /**
@@ -2488,15 +2810,15 @@ bool P2Asm::parse_cz(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_cccc_zzzz_cz(P2Params& params)
+bool P2Asm::parse_cccc_zzzz_wcz(P2Params& p)
 {
-    p2_cond_e cccc = conditional(params, params.tokens.value(params.idx));
-    params.idx++;
-    p2_cond_e zzzz = conditional(params, params.tokens.value(params.idx));
-    params.idx++;
-    params.IR.op.dst = static_cast<P2LONG>((cccc << 4) | zzzz);
-    optional_wcz(params);
-    return end_of_line(params);
+    p2_cond_e cccc = parse_modcz(p, p.tokens.value(p.idx));
+    if (!parse_comma(p))
+        return false;
+    p2_cond_e zzzz = parse_modcz(p, p.tokens.value(p.idx));
+    p.IR.op.dst = static_cast<P2LONG>((cccc << 4) | zzzz);
+    optional_wcz(p);
+    return end_of_line(p);
 }
 
 /**
@@ -2504,11 +2826,11 @@ bool P2Asm::parse_cccc_zzzz_cz(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_d(P2Params& params)
+bool P2Asm::parse_d(P2Params& p)
 {
-    QVariant dst = expression(params);
-    params.IR.op.dst = dst.toUInt();
-    return end_of_line(params);
+    QVariant dst = parse_expression(p);
+    p.IR.op.dst = dst.toUInt();
+    return end_of_line(p);
 }
 
 /**
@@ -2516,11 +2838,11 @@ bool P2Asm::parse_d(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_wz_d(P2Params& params)
+bool P2Asm::parse_wz_d(P2Params& p)
 {
-    QVariant dst = expression(params, immediate_wz);
-    params.IR.op.dst = dst.toUInt();
-    return end_of_line(params);
+    QVariant dst = parse_expression(p, immediate_wz);
+    p.IR.op.dst = dst.toUInt();
+    return end_of_line(p);
 }
 
 /**
@@ -2528,11 +2850,11 @@ bool P2Asm::parse_wz_d(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_imm_d(P2Params& params)
+bool P2Asm::parse_imm_d(P2Params& p)
 {
-    QVariant dst = expression(params, immediate_imm);
-    params.IR.op.dst = dst.toUInt();
-    return end_of_line(params);
+    QVariant dst = parse_expression(p, immediate_imm);
+    p.IR.op.dst = dst.toUInt();
+    return end_of_line(p);
 }
 
 /**
@@ -2540,12 +2862,12 @@ bool P2Asm::parse_imm_d(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_imm_d_cz(P2Params& params)
+bool P2Asm::parse_imm_d_wcz(P2Params& p)
 {
-    QVariant dst = expression(params, immediate_imm);
-    params.IR.op.dst = dst.toUInt();
-    optional_wcz(params);
-    return end_of_line(params);
+    QVariant dst = parse_expression(p, immediate_imm);
+    p.IR.op.dst = dst.toUInt();
+    optional_wcz(p);
+    return end_of_line(p);
 }
 
 /**
@@ -2553,12 +2875,12 @@ bool P2Asm::parse_imm_d_cz(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_imm_d_c(P2Params& params)
+bool P2Asm::parse_imm_d_wc(P2Params& p)
 {
-    QVariant dst = expression(params, immediate_imm);
-    params.IR.op.dst = dst.toUInt();
-    optional_wc(params);
-    return end_of_line(params);
+    QVariant dst = parse_expression(p, immediate_imm);
+    p.IR.op.dst = dst.toUInt();
+    optional_wc(p);
+    return end_of_line(p);
 }
 
 /**
@@ -2566,14 +2888,16 @@ bool P2Asm::parse_imm_d_c(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_d_imm_s_cz(P2Params& params)
+bool P2Asm::parse_d_imm_s_wcz(P2Params& p)
 {
-    QVariant dst = expression(params);
-    QVariant src = expression(params, immediate_imm);
-    params.IR.op.dst = dst.toUInt();
-    params.IR.op.src = src.toUInt();
-    optional_wcz(params);
-    return end_of_line(params);
+    QVariant dst = parse_expression(p);
+    if (!parse_comma(p))
+        return false;
+    QVariant src = parse_expression(p, immediate_imm);
+    p.IR.op.dst = dst.toUInt();
+    p.IR.op.src = src.toUInt();
+    optional_wcz(p);
+    return end_of_line(p);
 }
 
 /**
@@ -2581,14 +2905,16 @@ bool P2Asm::parse_d_imm_s_cz(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_d_imm_s_c(P2Params& params)
+bool P2Asm::parse_d_imm_s_wc(P2Params& p)
 {
-    QVariant dst = expression(params);
-    QVariant src = expression(params, immediate_imm);
-    params.IR.op.dst = dst.toUInt();
-    params.IR.op.src = src.toUInt();
-    optional_wc(params);
-    return end_of_line(params);
+    QVariant dst = parse_expression(p);
+    if (!parse_comma(p))
+        return false;
+    QVariant src = parse_expression(p, immediate_imm);
+    p.IR.op.dst = dst.toUInt();
+    p.IR.op.src = src.toUInt();
+    optional_wc(p);
+    return end_of_line(p);
 }
 
 /**
@@ -2596,14 +2922,16 @@ bool P2Asm::parse_d_imm_s_c(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_d_imm_s_z(P2Params& params)
+bool P2Asm::parse_d_imm_s_wz(P2Params& p)
 {
-    QVariant dst = expression(params);
-    QVariant src = expression(params, immediate_imm);
-    params.IR.op.dst = dst.toUInt();
-    params.IR.op.src = src.toUInt();
-    optional_wz(params);
-    return end_of_line(params);
+    QVariant dst = parse_expression(p);
+    if (!parse_comma(p))
+        return false;
+    QVariant src = parse_expression(p, immediate_imm);
+    p.IR.op.dst = dst.toUInt();
+    p.IR.op.src = src.toUInt();
+    optional_wz(p);
+    return end_of_line(p);
 }
 
 /**
@@ -2611,13 +2939,15 @@ bool P2Asm::parse_d_imm_s_z(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_wz_d_imm_s(P2Params& params)
+bool P2Asm::parse_wz_d_imm_s(P2Params& p)
 {
-    QVariant dst = expression(params, immediate_wz);
-    QVariant src = expression(params, immediate_imm);
-    params.IR.op.dst = dst.toUInt();
-    params.IR.op.src = src.toUInt();
-    return end_of_line(params);
+    QVariant dst = parse_expression(p, immediate_wz);
+    if (!parse_comma(p))
+        return false;
+    QVariant src = parse_expression(p, immediate_imm);
+    p.IR.op.dst = dst.toUInt();
+    p.IR.op.src = src.toUInt();
+    return end_of_line(p);
 }
 
 /**
@@ -2625,33 +2955,35 @@ bool P2Asm::parse_wz_d_imm_s(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_d_imm_s_nnn(P2Params& params, int max)
+bool P2Asm::parse_d_imm_s_nnn(P2Params& p, int max)
 {
-    QVariant dst = expression(params);
-    QVariant src = expression(params, immediate_imm);
-    params.IR.op.dst = dst.toUInt();
-    params.IR.op.src = src.toUInt();
-    if (params.idx < params.cnt) {
-        QVariant n = expression(params);
+    QVariant dst = parse_expression(p);
+    if (!parse_comma(p))
+        return false;
+    QVariant src = parse_expression(p, immediate_imm);
+    p.IR.op.dst = dst.toUInt();
+    p.IR.op.src = src.toUInt();
+    if (!parse_comma(p))
+        return false;
+    if (p.idx < p.cnt) {
+        QVariant n = parse_expression(p);
         if (n.isNull()) {
-            params.error = tr("Expected immediate #n in: %1").arg(params.line);
+            p.error = tr("Expected immediate #n");
             return false;
         }
         if (n.toInt() < 0 || n.toInt() > max) {
-            params.error = tr("Immediate #n not in 0-%1 (%2): %3")
+            p.error = tr("Immediate #n not in 0-%1 (%2)")
                            .arg(max)
-                           .arg(n.toLongLong())
-                           .arg(params.line);
+                           .arg(n.toLongLong());
             return false;
         }
         P2LONG opcode = static_cast<P2LONG>(n.toInt() & max) << 18;
-        params.IR.opcode |= opcode;
+        p.IR.opcode |= opcode;
     } else {
-        params.error = tr("Missing immediate #n in: %1")
-                       .arg(params.line);
+        p.error = tr("Missing immediate #n");
         return false;
     }
-    return end_of_line(params);
+    return end_of_line(p);
 }
 
 /**
@@ -2659,11 +2991,11 @@ bool P2Asm::parse_d_imm_s_nnn(P2Params& params, int max)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_imm_s(P2Params& params)
+bool P2Asm::parse_imm_s(P2Params& p)
 {
-    QVariant src = expression(params, immediate_imm);
-    params.IR.op.src = src.toUInt();
-    return end_of_line(params);
+    QVariant src = parse_expression(p, immediate_imm);
+    p.IR.op.src = src.toUInt();
+    return end_of_line(p);
 }
 
 /**
@@ -2671,11 +3003,11 @@ bool P2Asm::parse_imm_s(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_imm_s_cz(P2Params& params)
+bool P2Asm::parse_imm_s_wcz(P2Params& p)
 {
-    QVariant src = expression(params, immediate_imm);
-    params.IR.op.src = src.toUInt();
-    return end_of_line(params);
+    QVariant src = parse_expression(p, immediate_imm);
+    p.IR.op.src = src.toUInt();
+    return end_of_line(p);
 }
 
 
@@ -2684,33 +3016,35 @@ bool P2Asm::parse_imm_s_cz(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_ptr_pc_abs(P2Params& params)
+bool P2Asm::parse_ptr_pc_abs(P2Params& p)
 {
-    p2_token_e dst = params.tokens.value(params.idx);
+    p2_token_e dst = p.tokens.value(p.idx);
     switch (dst) {
     case t_PA:
         break;
     case t_PB:
-        params.IR.op.wz = true;
+        p.IR.op.wz = true;
         break;
     case t_PTRA:
-        params.IR.op.wc = true;
+        p.IR.op.wc = true;
         break;
     case t_PTRB:
-        params.IR.op.wz = true;
-        params.IR.op.wc = true;
+        p.IR.op.wz = true;
+        p.IR.op.wc = true;
         break;
     default:
-        params.error = tr("Invalid pointer parameter: %1")
-                       .arg(params.words.mid(params.idx).join(QChar::Space));
+        p.error = tr("Invalid pointer parameter: %1")
+                       .arg(p.words.mid(p.idx).join(QChar::Space));
         return false;
     }
-    params.idx++;
+    p.idx++;
+    if (!parse_comma(p))
+        return false;
 
-    quint64 addr = expression(params).toULongLong();
-    params.IR.opcode |= addr & A20MASK;
+    quint64 addr = parse_expression(p).toULongLong();
+    p.IR.opcode |= addr & A20MASK;
 
-    return end_of_line(params);
+    return end_of_line(p);
 }
 
 /**
@@ -2718,12 +3052,12 @@ bool P2Asm::parse_ptr_pc_abs(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_pc_abs(P2Params& params)
+bool P2Asm::parse_pc_abs(P2Params& p)
 {
-    quint64 addr = expression(params).toULongLong();
-    params.IR.opcode |= addr & A20MASK;
+    quint64 addr = parse_expression(p).toULongLong();
+    p.IR.opcode |= addr & A20MASK;
 
-    return end_of_line(params);
+    return end_of_line(p);
 }
 
 /**
@@ -2731,12 +3065,12 @@ bool P2Asm::parse_pc_abs(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::parse_imm23(P2Params& params, QVector<p2_inst7_e> aug)
+bool P2Asm::parse_imm23(P2Params& p, QVector<p2_inst7_e> aug)
 {
-    quint64 addr = expression(params).toULongLong();
-    params.IR.op.inst = static_cast<p2_inst7_e>(params.IR.op.inst | aug[(addr >> 21) & 3]);
+    quint64 addr = parse_expression(p).toULongLong();
+    p.IR.op.inst = static_cast<p2_inst7_e>(p.IR.op.inst | aug[(addr >> 21) & 3]);
 
-    return end_of_line(params);
+    return end_of_line(p);
 }
 
 /**
@@ -2744,14 +3078,15 @@ bool P2Asm::parse_imm23(P2Params& params, QVector<p2_inst7_e> aug)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::asm_byte(P2Params& params)
+bool P2Asm::asm_byte(P2Params& p)
 {
-    params.idx++;
-    while (params.idx < params.cnt) {
-        QVariant data = expression(params);
-        params.IR.opcode = data.toUInt();
+    p.idx++;
+    while (p.idx < p.cnt) {
+        QVariant data = parse_expression(p);
+        p.IR.opcode = data.toUInt();
+        optional_comma(p);
     }
-    return end_of_line(params);
+    return end_of_line(p);
 }
 
 /**
@@ -2759,14 +3094,15 @@ bool P2Asm::asm_byte(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::asm_word(P2Params& params)
+bool P2Asm::asm_word(P2Params& p)
 {
-    params.idx++;
-    while (params.idx < params.cnt) {
-        QVariant data = expression(params);
-        params.IR.opcode = data.toUInt();
+    p.idx++;
+    while (p.idx < p.cnt) {
+        QVariant data = parse_expression(p);
+        p.IR.opcode = data.toUInt();
+        optional_comma(p);
     }
-    return end_of_line(params);
+    return end_of_line(p);
 }
 
 /**
@@ -2774,14 +3110,15 @@ bool P2Asm::asm_word(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::asm_long(P2Params& params)
+bool P2Asm::asm_long(P2Params& p)
 {
-    params.idx++;
-    while (params.idx < params.cnt) {
-        QVariant data = expression(params);
-        params.IR.opcode = data.toUInt();
+    p.idx++;
+    while (p.idx < p.cnt) {
+        QVariant data = parse_expression(p);
+        p.IR.opcode = data.toUInt();
+        optional_comma(p);
     }
-    return end_of_line(params);
+    return end_of_line(p);
 }
 
 /**
@@ -2789,28 +3126,29 @@ bool P2Asm::asm_long(P2Params& params)
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::asm_res(P2Params& params)
+bool P2Asm::asm_res(P2Params& p)
 {
-    params.idx++;
-    while (params.idx < params.cnt) {
-        QVariant data = expression(params);
-        params.IR.opcode = 0;
+    p.idx++;
+    while (p.idx < p.cnt) {
+        QVariant data = parse_expression(p);
+        p.IR.opcode = 0;
+        optional_comma(p);
     }
-    return end_of_line(params);
+    return end_of_line(p);
 }
 
 /**
- * @brief Expect an address which is checked for being >= params.curr_pc
+ * @brief Expect an address which is checked for being >= p.curr_pc
  * @brief params reference to the assembler parameters
  * @return true on success, or false on error
  */
-bool P2Asm::asm_fit(P2Params& params)
+bool P2Asm::asm_fit(P2Params& p)
 {
-    params.idx++;
-    while (params.idx < params.cnt) {
-        QVariant data = expression(params);
+    p.idx++;
+    while (p.idx < p.cnt) {
+        QVariant data = parse_expression(p);
     }
-    return end_of_line(params);
+    return end_of_line(p);
 }
 
 /**
@@ -2823,11 +3161,11 @@ bool P2Asm::asm_fit(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_nop(P2Params& params)
+bool P2Asm::asm_nop(P2Params& p)
 {
-    params.idx++;
-    params.IR.opcode = p2_ROR;
-    return parse_inst(params);
+    p.idx++;
+    p.IR.opcode = 0;
+    return parse_inst(p);
 }
 
 /**
@@ -2844,11 +3182,11 @@ bool P2Asm::asm_nop(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_ror(P2Params& params)
+bool P2Asm::asm_ror(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_ROR;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_ROR;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -2865,11 +3203,11 @@ bool P2Asm::asm_ror(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rol(P2Params& params)
+bool P2Asm::asm_rol(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_ROR;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_ROR;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -2886,11 +3224,11 @@ bool P2Asm::asm_rol(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_shr(P2Params& params)
+bool P2Asm::asm_shr(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_SHR;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_SHR;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -2907,11 +3245,11 @@ bool P2Asm::asm_shr(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_shl(P2Params& params)
+bool P2Asm::asm_shl(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_SHL;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_SHL;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -2928,11 +3266,11 @@ bool P2Asm::asm_shl(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rcr(P2Params& params)
+bool P2Asm::asm_rcr(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_RCR;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_RCR;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -2949,11 +3287,11 @@ bool P2Asm::asm_rcr(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rcl(P2Params& params)
+bool P2Asm::asm_rcl(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_RCL;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_RCL;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -2970,11 +3308,11 @@ bool P2Asm::asm_rcl(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_sar(P2Params& params)
+bool P2Asm::asm_sar(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_SAR;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_SAR;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -2991,11 +3329,11 @@ bool P2Asm::asm_sar(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_sal(P2Params& params)
+bool P2Asm::asm_sal(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_SAL;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_SAL;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3012,11 +3350,11 @@ bool P2Asm::asm_sal(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_add(P2Params& params)
+bool P2Asm::asm_add(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_ADD;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_ADD;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3033,11 +3371,11 @@ bool P2Asm::asm_add(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_addx(P2Params& params)
+bool P2Asm::asm_addx(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_ADDX;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_ADDX;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3054,11 +3392,11 @@ bool P2Asm::asm_addx(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_adds(P2Params& params)
+bool P2Asm::asm_adds(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_ADDS;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_ADDS;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3075,11 +3413,11 @@ bool P2Asm::asm_adds(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_addsx(P2Params& params)
+bool P2Asm::asm_addsx(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_ADDSX;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_ADDSX;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3096,11 +3434,11 @@ bool P2Asm::asm_addsx(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_sub(P2Params& params)
+bool P2Asm::asm_sub(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_SUB;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_SUB;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3117,11 +3455,11 @@ bool P2Asm::asm_sub(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_subx(P2Params& params)
+bool P2Asm::asm_subx(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_SUBX;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_SUBX;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3138,11 +3476,11 @@ bool P2Asm::asm_subx(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_subs(P2Params& params)
+bool P2Asm::asm_subs(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_SUBS;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_SUBS;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3159,11 +3497,11 @@ bool P2Asm::asm_subs(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_subsx(P2Params& params)
+bool P2Asm::asm_subsx(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_SUBSX;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_SUBSX;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3179,11 +3517,11 @@ bool P2Asm::asm_subsx(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_cmp(P2Params& params)
+bool P2Asm::asm_cmp(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_CMP;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_CMP;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3199,11 +3537,11 @@ bool P2Asm::asm_cmp(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_cmpx(P2Params& params)
+bool P2Asm::asm_cmpx(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_CMPX;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_CMPX;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3219,11 +3557,11 @@ bool P2Asm::asm_cmpx(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_cmps(P2Params& params)
+bool P2Asm::asm_cmps(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_CMPS;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_CMPS;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3239,11 +3577,11 @@ bool P2Asm::asm_cmps(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_cmpsx(P2Params& params)
+bool P2Asm::asm_cmpsx(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_CMPSX;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_CMPSX;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3259,11 +3597,11 @@ bool P2Asm::asm_cmpsx(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_cmpr(P2Params& params)
+bool P2Asm::asm_cmpr(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_CMPR;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_CMPR;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3279,11 +3617,11 @@ bool P2Asm::asm_cmpr(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_cmpm(P2Params& params)
+bool P2Asm::asm_cmpm(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_CMPM;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_CMPM;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3300,11 +3638,11 @@ bool P2Asm::asm_cmpm(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_subr(P2Params& params)
+bool P2Asm::asm_subr(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_SUBR;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_SUBR;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3320,11 +3658,11 @@ bool P2Asm::asm_subr(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_cmpsub(P2Params& params)
+bool P2Asm::asm_cmpsub(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_CMPSUB;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_CMPSUB;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3340,11 +3678,11 @@ bool P2Asm::asm_cmpsub(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_fge(P2Params& params)
+bool P2Asm::asm_fge(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_FGE;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_FGE;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3360,11 +3698,11 @@ bool P2Asm::asm_fge(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_fle(P2Params& params)
+bool P2Asm::asm_fle(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_FLE;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_FLE;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3380,11 +3718,11 @@ bool P2Asm::asm_fle(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_fges(P2Params& params)
+bool P2Asm::asm_fges(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_FGES;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_FGES;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3400,11 +3738,11 @@ bool P2Asm::asm_fges(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_fles(P2Params& params)
+bool P2Asm::asm_fles(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_FLES;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_FLES;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3421,11 +3759,11 @@ bool P2Asm::asm_fles(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_sumc(P2Params& params)
+bool P2Asm::asm_sumc(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_SUMC;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_SUMC;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3442,11 +3780,11 @@ bool P2Asm::asm_sumc(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_sumnc(P2Params& params)
+bool P2Asm::asm_sumnc(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_SUMNC;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_SUMNC;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3463,11 +3801,11 @@ bool P2Asm::asm_sumnc(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_sumz(P2Params& params)
+bool P2Asm::asm_sumz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_SUMZ;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_SUMZ;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3484,11 +3822,11 @@ bool P2Asm::asm_sumz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_sumnz(P2Params& params)
+bool P2Asm::asm_sumnz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_SUMNZ;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_SUMNZ;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3503,11 +3841,11 @@ bool P2Asm::asm_sumnz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_testb_w(P2Params& params)
+bool P2Asm::asm_testb_w(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_TESTB_W;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_TESTB_W;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3522,11 +3860,11 @@ bool P2Asm::asm_testb_w(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_testbn_w(P2Params& params)
+bool P2Asm::asm_testbn_w(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_TESTBN_W;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_TESTBN_W;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3541,11 +3879,11 @@ bool P2Asm::asm_testbn_w(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_testb_and(P2Params& params)
+bool P2Asm::asm_testb_and(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_TESTB_AND;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_TESTB_AND;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3560,11 +3898,11 @@ bool P2Asm::asm_testb_and(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_testbn_and(P2Params& params)
+bool P2Asm::asm_testbn_and(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_TESTBN_AND;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_TESTBN_AND;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3579,11 +3917,11 @@ bool P2Asm::asm_testbn_and(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_testb_or(P2Params& params)
+bool P2Asm::asm_testb_or(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_TESTB_OR;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_TESTB_OR;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3598,11 +3936,11 @@ bool P2Asm::asm_testb_or(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_testbn_or(P2Params& params)
+bool P2Asm::asm_testbn_or(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_TESTBN_OR;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_TESTBN_OR;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3617,11 +3955,11 @@ bool P2Asm::asm_testbn_or(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_testb_xor(P2Params& params)
+bool P2Asm::asm_testb_xor(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_TESTB_XOR;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_TESTB_XOR;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3636,11 +3974,11 @@ bool P2Asm::asm_testb_xor(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_testbn_xor(P2Params& params)
+bool P2Asm::asm_testbn_xor(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_TESTBN_XOR;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_TESTBN_XOR;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3654,11 +3992,11 @@ bool P2Asm::asm_testbn_xor(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_bitl(P2Params& params)
+bool P2Asm::asm_bitl(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_BITL;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_BITL;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3672,11 +4010,11 @@ bool P2Asm::asm_bitl(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_bith(P2Params& params)
+bool P2Asm::asm_bith(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_BITH;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_BITH;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3690,11 +4028,11 @@ bool P2Asm::asm_bith(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_bitc(P2Params& params)
+bool P2Asm::asm_bitc(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_BITC;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_BITC;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3708,11 +4046,11 @@ bool P2Asm::asm_bitc(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_bitnc(P2Params& params)
+bool P2Asm::asm_bitnc(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_BITNC;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_BITNC;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3726,11 +4064,11 @@ bool P2Asm::asm_bitnc(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_bitz(P2Params& params)
+bool P2Asm::asm_bitz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_BITZ;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_BITZ;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3744,11 +4082,11 @@ bool P2Asm::asm_bitz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_bitnz(P2Params& params)
+bool P2Asm::asm_bitnz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_BITNZ;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_BITNZ;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3762,11 +4100,11 @@ bool P2Asm::asm_bitnz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_bitrnd(P2Params& params)
+bool P2Asm::asm_bitrnd(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_BITRND;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_BITRND;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3780,11 +4118,11 @@ bool P2Asm::asm_bitrnd(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_bitnot(P2Params& params)
+bool P2Asm::asm_bitnot(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_BITNOT;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_BITNOT;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3801,11 +4139,11 @@ bool P2Asm::asm_bitnot(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_and(P2Params& params)
+bool P2Asm::asm_and(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_AND;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_AND;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3822,11 +4160,11 @@ bool P2Asm::asm_and(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_andn(P2Params& params)
+bool P2Asm::asm_andn(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_ANDN;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_ANDN;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3843,11 +4181,11 @@ bool P2Asm::asm_andn(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_or(P2Params& params)
+bool P2Asm::asm_or(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OR;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OR;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3864,11 +4202,11 @@ bool P2Asm::asm_or(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_xor(P2Params& params)
+bool P2Asm::asm_xor(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_XOR;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_XOR;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3885,11 +4223,11 @@ bool P2Asm::asm_xor(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_muxc(P2Params& params)
+bool P2Asm::asm_muxc(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_MUXC;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_MUXC;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3906,11 +4244,11 @@ bool P2Asm::asm_muxc(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_muxnc(P2Params& params)
+bool P2Asm::asm_muxnc(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_MUXNC;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_MUXNC;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3927,11 +4265,11 @@ bool P2Asm::asm_muxnc(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_muxz(P2Params& params)
+bool P2Asm::asm_muxz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_MUXZ;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_MUXZ;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3948,11 +4286,11 @@ bool P2Asm::asm_muxz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_muxnz(P2Params& params)
+bool P2Asm::asm_muxnz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_MUXNZ;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_MUXNZ;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3969,11 +4307,11 @@ bool P2Asm::asm_muxnz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_mov(P2Params& params)
+bool P2Asm::asm_mov(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_MOV;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_MOV;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -3990,11 +4328,11 @@ bool P2Asm::asm_mov(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_not(P2Params& params)
+bool P2Asm::asm_not(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_NOT;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_NOT;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -4011,11 +4349,11 @@ bool P2Asm::asm_not(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_abs(P2Params& params)
+bool P2Asm::asm_abs(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_ABS;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_ABS;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -4032,11 +4370,11 @@ bool P2Asm::asm_abs(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_neg(P2Params& params)
+bool P2Asm::asm_neg(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_NEG;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_NEG;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -4053,11 +4391,11 @@ bool P2Asm::asm_neg(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_negc(P2Params& params)
+bool P2Asm::asm_negc(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_NEGC;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_NEGC;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -4074,11 +4412,11 @@ bool P2Asm::asm_negc(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_negnc(P2Params& params)
+bool P2Asm::asm_negnc(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_NEGNC;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_NEGNC;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -4095,11 +4433,11 @@ bool P2Asm::asm_negnc(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_negz(P2Params& params)
+bool P2Asm::asm_negz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_NEGZ;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_NEGZ;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -4116,11 +4454,11 @@ bool P2Asm::asm_negz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_negnz(P2Params& params)
+bool P2Asm::asm_negnz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_NEGNZ;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_NEGNZ;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -4136,11 +4474,11 @@ bool P2Asm::asm_negnz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_incmod(P2Params& params)
+bool P2Asm::asm_incmod(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_INCMOD;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_INCMOD;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -4156,11 +4494,11 @@ bool P2Asm::asm_incmod(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_decmod(P2Params& params)
+bool P2Asm::asm_decmod(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_DECMOD;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_DECMOD;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -4176,11 +4514,11 @@ bool P2Asm::asm_decmod(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_zerox(P2Params& params)
+bool P2Asm::asm_zerox(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_ZEROX;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_ZEROX;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -4196,11 +4534,11 @@ bool P2Asm::asm_zerox(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_signx(P2Params& params)
+bool P2Asm::asm_signx(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_SIGNX;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_SIGNX;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -4217,11 +4555,11 @@ bool P2Asm::asm_signx(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_encod(P2Params& params)
+bool P2Asm::asm_encod(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_ENCOD;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_ENCOD;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -4238,11 +4576,11 @@ bool P2Asm::asm_encod(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_ones(P2Params& params)
+bool P2Asm::asm_ones(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_ONES;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_ONES;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -4258,11 +4596,11 @@ bool P2Asm::asm_ones(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_test(P2Params& params)
+bool P2Asm::asm_test(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_TEST;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_TEST;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -4278,11 +4616,11 @@ bool P2Asm::asm_test(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_testn(P2Params& params)
+bool P2Asm::asm_testn(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_TESTN;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_TESTN;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -4296,11 +4634,11 @@ bool P2Asm::asm_testn(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setnib(P2Params& params)
+bool P2Asm::asm_setnib(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_SETNIB_0;
-    return parse_d_imm_s_nnn(params);
+    p.idx++;
+    p.IR.op.inst = p2_SETNIB_0;
+    return parse_d_imm_s_nnn(p);
 }
 
 /**
@@ -4314,11 +4652,11 @@ bool P2Asm::asm_setnib(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setnib_altsn(P2Params& params)
+bool P2Asm::asm_setnib_altsn(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_SETNIB_0;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op.inst = p2_SETNIB_0;
+    return parse_imm_s(p);
 }
 
 /**
@@ -4333,11 +4671,11 @@ bool P2Asm::asm_setnib_altsn(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_getnib(P2Params& params)
+bool P2Asm::asm_getnib(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_GETNIB_0;
-    return parse_d_imm_s_nnn(params);
+    p.idx++;
+    p.IR.op.inst = p2_GETNIB_0;
+    return parse_d_imm_s_nnn(p);
 }
 
 /**
@@ -4351,10 +4689,10 @@ bool P2Asm::asm_getnib(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_getnib_altgn(P2Params& params)
+bool P2Asm::asm_getnib_altgn(P2Params& p)
 {
-    params.IR.op.inst = p2_GETNIB_0;
-    return parse_imm_s(params);
+    p.IR.op.inst = p2_GETNIB_0;
+    return parse_imm_s(p);
 }
 
 /**
@@ -4369,11 +4707,11 @@ bool P2Asm::asm_getnib_altgn(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rolnib(P2Params& params)
+bool P2Asm::asm_rolnib(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_ROLNIB_0;
-    return parse_d_imm_s_nnn(params);
+    p.idx++;
+    p.IR.op.inst = p2_ROLNIB_0;
+    return parse_d_imm_s_nnn(p);
 }
 
 /**
@@ -4387,11 +4725,11 @@ bool P2Asm::asm_rolnib(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rolnib_altgn(P2Params& params)
+bool P2Asm::asm_rolnib_altgn(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_ROLNIB_0;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_ROLNIB_0;
+    return parse_d(p);
 }
 
 /**
@@ -4405,11 +4743,11 @@ bool P2Asm::asm_rolnib_altgn(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setbyte(P2Params& params)
+bool P2Asm::asm_setbyte(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_SETBYTE;
-    return parse_d_imm_s_nnn(params);
+    p.idx++;
+    p.IR.op.inst = p2_SETBYTE;
+    return parse_d_imm_s_nnn(p);
 }
 
 /**
@@ -4423,11 +4761,11 @@ bool P2Asm::asm_setbyte(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setbyte_altsb(P2Params& params)
+bool P2Asm::asm_setbyte_altsb(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_SETBYTE;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op.inst = p2_SETBYTE;
+    return parse_imm_s(p);
 }
 
 /**
@@ -4442,11 +4780,11 @@ bool P2Asm::asm_setbyte_altsb(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_getbyte(P2Params& params)
+bool P2Asm::asm_getbyte(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_GETBYTE;
-    return parse_d_imm_s_nnn(params);
+    p.idx++;
+    p.IR.op.inst = p2_GETBYTE;
+    return parse_d_imm_s_nnn(p);
 }
 
 /**
@@ -4460,11 +4798,11 @@ bool P2Asm::asm_getbyte(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_getbyte_altgb(P2Params& params)
+bool P2Asm::asm_getbyte_altgb(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_GETBYTE;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_GETBYTE;
+    return parse_d(p);
 }
 
 /**
@@ -4479,11 +4817,11 @@ bool P2Asm::asm_getbyte_altgb(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rolbyte(P2Params& params)
+bool P2Asm::asm_rolbyte(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_ROLBYTE;
-    return parse_d_imm_s_nnn(params, 3);
+    p.idx++;
+    p.IR.op.inst = p2_ROLBYTE;
+    return parse_d_imm_s_nnn(p, 3);
 }
 
 /**
@@ -4497,11 +4835,11 @@ bool P2Asm::asm_rolbyte(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rolbyte_altgb(P2Params& params)
+bool P2Asm::asm_rolbyte_altgb(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_ROLBYTE;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_ROLBYTE;
+    return parse_d(p);
 }
 
 /**
@@ -4515,11 +4853,11 @@ bool P2Asm::asm_rolbyte_altgb(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setword(P2Params& params)
+bool P2Asm::asm_setword(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_SETWORD;
-    return parse_d_imm_s_nnn(params, 1);
+    p.idx++;
+    p.IR.op9.inst = p2_SETWORD;
+    return parse_d_imm_s_nnn(p, 1);
 }
 
 /**
@@ -4533,11 +4871,11 @@ bool P2Asm::asm_setword(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setword_altsw(P2Params& params)
+bool P2Asm::asm_setword_altsw(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_SETWORD_ALTSW;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_SETWORD_ALTSW;
+    return parse_imm_s(p);
 }
 
 /**
@@ -4552,11 +4890,11 @@ bool P2Asm::asm_setword_altsw(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_getword(P2Params& params)
+bool P2Asm::asm_getword(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_GETWORD;
-    return parse_d_imm_s_nnn(params, 1);
+    p.idx++;
+    p.IR.op9.inst = p2_GETWORD;
+    return parse_d_imm_s_nnn(p, 1);
 }
 
 /**
@@ -4570,11 +4908,11 @@ bool P2Asm::asm_getword(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_getword_altgw(P2Params& params)
+bool P2Asm::asm_getword_altgw(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_GETWORD_ALTGW;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op9.inst = p2_GETWORD_ALTGW;
+    return parse_d(p);
 }
 
 /**
@@ -4589,11 +4927,11 @@ bool P2Asm::asm_getword_altgw(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rolword(P2Params& params)
+bool P2Asm::asm_rolword(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ROLWORD;
-    return parse_d_imm_s_nnn(params, 1);
+    p.idx++;
+    p.IR.op9.inst = p2_ROLWORD;
+    return parse_d_imm_s_nnn(p, 1);
 }
 
 /**
@@ -4607,11 +4945,11 @@ bool P2Asm::asm_rolword(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rolword_altgw(P2Params& params)
+bool P2Asm::asm_rolword_altgw(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ROLWORD_ALTGW;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ROLWORD_ALTGW;
+    return parse_d(p);
 }
 
 /**
@@ -4627,11 +4965,11 @@ bool P2Asm::asm_rolword_altgw(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_altsn(P2Params& params)
+bool P2Asm::asm_altsn(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ALTSN;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ALTSN;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -4646,11 +4984,11 @@ bool P2Asm::asm_altsn(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_altsn_d(P2Params& params)
+bool P2Asm::asm_altsn_d(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ALTSN;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ALTSN;
+    return parse_d(p);
 }
 
 /**
@@ -4666,11 +5004,11 @@ bool P2Asm::asm_altsn_d(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_altgn(P2Params& params)
+bool P2Asm::asm_altgn(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ALTGN;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ALTGN;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -4685,11 +5023,11 @@ bool P2Asm::asm_altgn(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_altgn_d(P2Params& params)
+bool P2Asm::asm_altgn_d(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ALTGN;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ALTGN;
+    return parse_d(p);
 }
 
 /**
@@ -4705,11 +5043,11 @@ bool P2Asm::asm_altgn_d(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_altsb(P2Params& params)
+bool P2Asm::asm_altsb(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ALTSB;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ALTSB;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -4724,11 +5062,11 @@ bool P2Asm::asm_altsb(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_altsb_d(P2Params& params)
+bool P2Asm::asm_altsb_d(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ALTSB;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ALTSB;
+    return parse_d(p);
 }
 
 /**
@@ -4744,11 +5082,11 @@ bool P2Asm::asm_altsb_d(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_altgb(P2Params& params)
+bool P2Asm::asm_altgb(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ALTGB;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ALTGB;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -4763,11 +5101,11 @@ bool P2Asm::asm_altgb(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_altgb_d(P2Params& params)
+bool P2Asm::asm_altgb_d(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ALTGB;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ALTGB;
+    return parse_d(p);
 }
 
 /**
@@ -4783,11 +5121,11 @@ bool P2Asm::asm_altgb_d(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_altsw(P2Params& params)
+bool P2Asm::asm_altsw(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ALTSW;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ALTSW;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -4802,11 +5140,11 @@ bool P2Asm::asm_altsw(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_altsw_d(P2Params& params)
+bool P2Asm::asm_altsw_d(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ALTSW;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ALTSW;
+    return parse_d(p);
 }
 
 /**
@@ -4822,11 +5160,11 @@ bool P2Asm::asm_altsw_d(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_altgw(P2Params& params)
+bool P2Asm::asm_altgw(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ALTGW;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ALTGW;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -4841,11 +5179,11 @@ bool P2Asm::asm_altgw(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_altgw_d(P2Params& params)
+bool P2Asm::asm_altgw_d(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ALTGW;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ALTGW;
+    return parse_d(p);
 }
 
 /**
@@ -4860,11 +5198,11 @@ bool P2Asm::asm_altgw_d(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_altr(P2Params& params)
+bool P2Asm::asm_altr(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ALTR;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ALTR;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -4878,11 +5216,11 @@ bool P2Asm::asm_altr(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_altr_d(P2Params& params)
+bool P2Asm::asm_altr_d(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ALTD;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ALTD;
+    return parse_d(p);
 }
 
 /**
@@ -4897,11 +5235,11 @@ bool P2Asm::asm_altr_d(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_altd(P2Params& params)
+bool P2Asm::asm_altd(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ALTD;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ALTD;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -4915,11 +5253,11 @@ bool P2Asm::asm_altd(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_altd_d(P2Params& params)
+bool P2Asm::asm_altd_d(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ALTD;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ALTD;
+    return parse_d(p);
 }
 
 /**
@@ -4934,11 +5272,11 @@ bool P2Asm::asm_altd_d(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_alts(P2Params& params)
+bool P2Asm::asm_alts(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ALTS;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ALTS;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -4952,11 +5290,11 @@ bool P2Asm::asm_alts(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_alts_d(P2Params& params)
+bool P2Asm::asm_alts_d(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ALTS;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ALTS;
+    return parse_d(p);
 }
 
 /**
@@ -4971,11 +5309,11 @@ bool P2Asm::asm_alts_d(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_altb(P2Params& params)
+bool P2Asm::asm_altb(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ALTB;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ALTB;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -4989,11 +5327,11 @@ bool P2Asm::asm_altb(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_altb_d(P2Params& params)
+bool P2Asm::asm_altb_d(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ALTB;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ALTB;
+    return parse_d(p);
 }
 
 /**
@@ -5008,11 +5346,11 @@ bool P2Asm::asm_altb_d(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_alti(P2Params& params)
+bool P2Asm::asm_alti(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ALTI;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ALTI;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -5027,11 +5365,11 @@ bool P2Asm::asm_alti(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_alti_d(P2Params& params)
+bool P2Asm::asm_alti_d(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ALTI;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ALTI;
+    return parse_d(p);
 }
 
 /**
@@ -5046,11 +5384,11 @@ bool P2Asm::asm_alti_d(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setr(P2Params& params)
+bool P2Asm::asm_setr(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_SETR;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_SETR;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -5065,11 +5403,11 @@ bool P2Asm::asm_setr(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setd(P2Params& params)
+bool P2Asm::asm_setd(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_SETD;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_SETD;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -5084,11 +5422,11 @@ bool P2Asm::asm_setd(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_sets(P2Params& params)
+bool P2Asm::asm_sets(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_SETS;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_SETS;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -5103,11 +5441,11 @@ bool P2Asm::asm_sets(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_decod(P2Params& params)
+bool P2Asm::asm_decod(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_DECOD;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_DECOD;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -5122,11 +5460,11 @@ bool P2Asm::asm_decod(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_decod_d(P2Params& params)
+bool P2Asm::asm_decod_d(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_DECOD;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op9.inst = p2_DECOD;
+    return parse_d(p);
 }
 
 /**
@@ -5141,11 +5479,11 @@ bool P2Asm::asm_decod_d(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_bmask(P2Params& params)
+bool P2Asm::asm_bmask(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_BMASK;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_BMASK;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -5160,11 +5498,11 @@ bool P2Asm::asm_bmask(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_bmask_d(P2Params& params)
+bool P2Asm::asm_bmask_d(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_BMASK;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op9.inst = p2_BMASK;
+    return parse_d(p);
 }
 
 /**
@@ -5179,11 +5517,11 @@ bool P2Asm::asm_bmask_d(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_crcbit(P2Params& params)
+bool P2Asm::asm_crcbit(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_CRCBIT;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_CRCBIT;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -5200,11 +5538,11 @@ bool P2Asm::asm_crcbit(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_crcnib(P2Params& params)
+bool P2Asm::asm_crcnib(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_CRCNIB;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_CRCNIB;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -5218,11 +5556,11 @@ bool P2Asm::asm_crcnib(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_muxnits(P2Params& params)
+bool P2Asm::asm_muxnits(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_MUXNITS;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_MUXNITS;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -5236,11 +5574,11 @@ bool P2Asm::asm_muxnits(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_muxnibs(P2Params& params)
+bool P2Asm::asm_muxnibs(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_MUXNIBS;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_MUXNIBS;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -5256,11 +5594,11 @@ bool P2Asm::asm_muxnibs(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_muxq(P2Params& params)
+bool P2Asm::asm_muxq(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_MUXQ;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_MUXQ;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -5275,11 +5613,11 @@ bool P2Asm::asm_muxq(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_movbyts(P2Params& params)
+bool P2Asm::asm_movbyts(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_MOVBYTS;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_MOVBYTS;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -5294,11 +5632,11 @@ bool P2Asm::asm_movbyts(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_mul(P2Params& params)
+bool P2Asm::asm_mul(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_MUL;
-    return parse_d_imm_s_z(params);
+    p.idx++;
+    p.IR.op8.inst = p2_MUL;
+    return parse_d_imm_s_wz(p);
 }
 
 /**
@@ -5313,11 +5651,11 @@ bool P2Asm::asm_mul(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_muls(P2Params& params)
+bool P2Asm::asm_muls(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_MULS;
-    return parse_d_imm_s_z(params);
+    p.idx++;
+    p.IR.op8.inst = p2_MULS;
+    return parse_d_imm_s_wz(p);
 }
 
 /**
@@ -5332,11 +5670,11 @@ bool P2Asm::asm_muls(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_sca(P2Params& params)
+bool P2Asm::asm_sca(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_SCA;
-    return parse_d_imm_s_z(params);
+    p.idx++;
+    p.IR.op8.inst = p2_SCA;
+    return parse_d_imm_s_wz(p);
 }
 
 /**
@@ -5352,11 +5690,11 @@ bool P2Asm::asm_sca(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_scas(P2Params& params)
+bool P2Asm::asm_scas(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_SCAS;
-    return parse_d_imm_s_z(params);
+    p.idx++;
+    p.IR.op8.inst = p2_SCAS;
+    return parse_d_imm_s_wz(p);
 }
 
 /**
@@ -5370,11 +5708,11 @@ bool P2Asm::asm_scas(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_addpix(P2Params& params)
+bool P2Asm::asm_addpix(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ADDPIX;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ADDPIX;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -5389,11 +5727,11 @@ bool P2Asm::asm_addpix(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_mulpix(P2Params& params)
+bool P2Asm::asm_mulpix(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_MULPIX;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_MULPIX;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -5407,11 +5745,11 @@ bool P2Asm::asm_mulpix(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_blnpix(P2Params& params)
+bool P2Asm::asm_blnpix(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_BLNPIX;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_BLNPIX;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -5425,11 +5763,11 @@ bool P2Asm::asm_blnpix(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_mixpix(P2Params& params)
+bool P2Asm::asm_mixpix(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_MIXPIX;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_MIXPIX;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -5444,11 +5782,11 @@ bool P2Asm::asm_mixpix(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_addct1(P2Params& params)
+bool P2Asm::asm_addct1(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ADDCT1;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ADDCT1;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -5463,11 +5801,11 @@ bool P2Asm::asm_addct1(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_addct2(P2Params& params)
+bool P2Asm::asm_addct2(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ADDCT2;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ADDCT2;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -5482,11 +5820,11 @@ bool P2Asm::asm_addct2(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_addct3(P2Params& params)
+bool P2Asm::asm_addct3(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_ADDCT3;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_ADDCT3;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -5501,11 +5839,11 @@ bool P2Asm::asm_addct3(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_wmlong(P2Params& params)
+bool P2Asm::asm_wmlong(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_WMLONG;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_WMLONG;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -5520,11 +5858,11 @@ bool P2Asm::asm_wmlong(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rqpin(P2Params& params)
+bool P2Asm::asm_rqpin(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_RQPIN;
-    return parse_d_imm_s_c(params);
+    p.idx++;
+    p.IR.op8.inst = p2_RQPIN;
+    return parse_d_imm_s_wc(p);
 }
 
 /**
@@ -5539,11 +5877,11 @@ bool P2Asm::asm_rqpin(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rdpin(P2Params& params)
+bool P2Asm::asm_rdpin(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_RDPIN;
-    return parse_d_imm_s_c(params);
+    p.idx++;
+    p.IR.op8.inst = p2_RDPIN;
+    return parse_d_imm_s_wc(p);
 }
 
 /**
@@ -5559,11 +5897,11 @@ bool P2Asm::asm_rdpin(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rdlut(P2Params& params)
+bool P2Asm::asm_rdlut(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_RDLUT;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_RDLUT;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -5579,11 +5917,11 @@ bool P2Asm::asm_rdlut(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rdbyte(P2Params& params)
+bool P2Asm::asm_rdbyte(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_RDBYTE;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_RDBYTE;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -5599,11 +5937,11 @@ bool P2Asm::asm_rdbyte(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rdword(P2Params& params)
+bool P2Asm::asm_rdword(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_RDWORD;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_RDWORD;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -5619,11 +5957,11 @@ bool P2Asm::asm_rdword(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rdlong(P2Params& params)
+bool P2Asm::asm_rdlong(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_RDLONG;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_RDLONG;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -5639,13 +5977,13 @@ bool P2Asm::asm_rdlong(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_popa(P2Params& params)
+bool P2Asm::asm_popa(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_RDLONG;
-    params.IR.op.im = true;
-    params.IR.op.src = 0x15f;
-    return parse_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_RDLONG;
+    p.IR.op.im = true;
+    p.IR.op.src = 0x15f;
+    return parse_d_cz(p);
 }
 
 /**
@@ -5661,13 +5999,13 @@ bool P2Asm::asm_popa(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_popb(P2Params& params)
+bool P2Asm::asm_popb(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_RDLONG;
-    params.IR.op.im = true;
-    params.IR.op.src = 0x1df;
-    return parse_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_RDLONG;
+    p.IR.op.im = true;
+    p.IR.op.src = 0x1df;
+    return parse_d_cz(p);
 }
 
 /**
@@ -5682,11 +6020,11 @@ bool P2Asm::asm_popb(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_calld(P2Params& params)
+bool P2Asm::asm_calld(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_CALLD;
-    return parse_d_imm_s_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_CALLD;
+    return parse_d_imm_s_wcz(p);
 }
 
 /**
@@ -5701,15 +6039,15 @@ bool P2Asm::asm_calld(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_resi3(P2Params& params)
+bool P2Asm::asm_resi3(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_CALLD;
-    params.IR.op.wc = true;
-    params.IR.op.wz = true;
-    params.IR.op.dst = offs_IJMP3;
-    params.IR.op.src = offs_IRET3;
-    return parse_inst(params);
+    p.idx++;
+    p.IR.op.inst = p2_CALLD;
+    p.IR.op.wc = true;
+    p.IR.op.wz = true;
+    p.IR.op.dst = offs_IJMP3;
+    p.IR.op.src = offs_IRET3;
+    return parse_inst(p);
 }
 
 /**
@@ -5724,15 +6062,15 @@ bool P2Asm::asm_resi3(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_resi2(P2Params& params)
+bool P2Asm::asm_resi2(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_CALLD;
-    params.IR.op.wc = true;
-    params.IR.op.wz = true;
-    params.IR.op.dst = offs_IJMP2;
-    params.IR.op.src = offs_IRET2;
-    return parse_inst(params);
+    p.idx++;
+    p.IR.op.inst = p2_CALLD;
+    p.IR.op.wc = true;
+    p.IR.op.wz = true;
+    p.IR.op.dst = offs_IJMP2;
+    p.IR.op.src = offs_IRET2;
+    return parse_inst(p);
 }
 
 /**
@@ -5747,15 +6085,15 @@ bool P2Asm::asm_resi2(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_resi1(P2Params& params)
+bool P2Asm::asm_resi1(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_CALLD;
-    params.IR.op.wc = true;
-    params.IR.op.wz = true;
-    params.IR.op.dst = offs_IJMP1;
-    params.IR.op.src = offs_IRET1;
-    return parse_inst(params);
+    p.idx++;
+    p.IR.op.inst = p2_CALLD;
+    p.IR.op.wc = true;
+    p.IR.op.wz = true;
+    p.IR.op.dst = offs_IJMP1;
+    p.IR.op.src = offs_IRET1;
+    return parse_inst(p);
 }
 
 /**
@@ -5770,15 +6108,15 @@ bool P2Asm::asm_resi1(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_resi0(P2Params& params)
+bool P2Asm::asm_resi0(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_CALLD;
-    params.IR.op.wc = true;
-    params.IR.op.wz = true;
-    params.IR.op.dst = offs_INA;
-    params.IR.op.src = offs_INB;
-    return parse_inst(params);
+    p.idx++;
+    p.IR.op.inst = p2_CALLD;
+    p.IR.op.wc = true;
+    p.IR.op.wz = true;
+    p.IR.op.dst = offs_INA;
+    p.IR.op.src = offs_INB;
+    return parse_inst(p);
 }
 
 /**
@@ -5793,15 +6131,15 @@ bool P2Asm::asm_resi0(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_reti3(P2Params& params)
+bool P2Asm::asm_reti3(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_CALLD;
-    params.IR.op.wc = true;
-    params.IR.op.wz = true;
-    params.IR.op.dst = offs_INB;
-    params.IR.op.src = offs_IRET3;
-    return parse_inst(params);
+    p.idx++;
+    p.IR.op.inst = p2_CALLD;
+    p.IR.op.wc = true;
+    p.IR.op.wz = true;
+    p.IR.op.dst = offs_INB;
+    p.IR.op.src = offs_IRET3;
+    return parse_inst(p);
 }
 
 /**
@@ -5816,15 +6154,15 @@ bool P2Asm::asm_reti3(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_reti2(P2Params& params)
+bool P2Asm::asm_reti2(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_CALLD;
-    params.IR.op.wc = true;
-    params.IR.op.wz = true;
-    params.IR.op.dst = offs_INB;
-    params.IR.op.src = offs_IRET2;
-    return parse_inst(params);
+    p.idx++;
+    p.IR.op.inst = p2_CALLD;
+    p.IR.op.wc = true;
+    p.IR.op.wz = true;
+    p.IR.op.dst = offs_INB;
+    p.IR.op.src = offs_IRET2;
+    return parse_inst(p);
 }
 
 /**
@@ -5839,15 +6177,15 @@ bool P2Asm::asm_reti2(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_reti1(P2Params& params)
+bool P2Asm::asm_reti1(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_CALLD;
-    params.IR.op.wc = true;
-    params.IR.op.wz = true;
-    params.IR.op.dst = offs_INB;
-    params.IR.op.src = offs_IRET1;
-    return parse_inst(params);
+    p.idx++;
+    p.IR.op.inst = p2_CALLD;
+    p.IR.op.wc = true;
+    p.IR.op.wz = true;
+    p.IR.op.dst = offs_INB;
+    p.IR.op.src = offs_IRET1;
+    return parse_inst(p);
 }
 
 /**
@@ -5862,15 +6200,15 @@ bool P2Asm::asm_reti1(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_reti0(P2Params& params)
+bool P2Asm::asm_reti0(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_CALLD;
-    params.IR.op.wc = true;
-    params.IR.op.wz = true;
-    params.IR.op.dst = offs_INB;
-    params.IR.op.src = offs_INB;
-    return parse_inst(params);
+    p.idx++;
+    p.IR.op.inst = p2_CALLD;
+    p.IR.op.wc = true;
+    p.IR.op.wz = true;
+    p.IR.op.dst = offs_INB;
+    p.IR.op.src = offs_INB;
+    return parse_inst(p);
 }
 
 /**
@@ -5884,11 +6222,11 @@ bool P2Asm::asm_reti0(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_callpa(P2Params& params)
+bool P2Asm::asm_callpa(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_CALLPA;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op8.inst = p2_CALLPA;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -5902,11 +6240,11 @@ bool P2Asm::asm_callpa(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_callpb(P2Params& params)
+bool P2Asm::asm_callpb(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_CALLPB;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op8.inst = p2_CALLPB;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -5920,11 +6258,11 @@ bool P2Asm::asm_callpb(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_djz(P2Params& params)
+bool P2Asm::asm_djz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_DJZ;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_DJZ;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -5938,11 +6276,11 @@ bool P2Asm::asm_djz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_djnz(P2Params& params)
+bool P2Asm::asm_djnz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_DJNZ;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_DJNZ;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -5956,11 +6294,11 @@ bool P2Asm::asm_djnz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_djf(P2Params& params)
+bool P2Asm::asm_djf(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_DJF;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_DJF;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -5974,11 +6312,11 @@ bool P2Asm::asm_djf(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_djnf(P2Params& params)
+bool P2Asm::asm_djnf(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_DJNF;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_DJNF;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -5992,11 +6330,11 @@ bool P2Asm::asm_djnf(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_ijz(P2Params& params)
+bool P2Asm::asm_ijz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_IJZ;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_IJZ;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -6010,11 +6348,11 @@ bool P2Asm::asm_ijz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_ijnz(P2Params& params)
+bool P2Asm::asm_ijnz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_IJNZ;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_IJNZ;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -6028,11 +6366,11 @@ bool P2Asm::asm_ijnz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_tjz(P2Params& params)
+bool P2Asm::asm_tjz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_TJZ;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_TJZ;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -6046,11 +6384,11 @@ bool P2Asm::asm_tjz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_tjnz(P2Params& params)
+bool P2Asm::asm_tjnz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_TJNZ;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_TJNZ;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -6064,11 +6402,11 @@ bool P2Asm::asm_tjnz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_tjf(P2Params& params)
+bool P2Asm::asm_tjf(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_TJF;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_TJF;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -6082,11 +6420,11 @@ bool P2Asm::asm_tjf(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_tjnf(P2Params& params)
+bool P2Asm::asm_tjnf(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_TJNF;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_TJNF;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -6100,11 +6438,11 @@ bool P2Asm::asm_tjnf(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_tjs(P2Params& params)
+bool P2Asm::asm_tjs(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_TJS;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_TJS;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -6118,11 +6456,11 @@ bool P2Asm::asm_tjs(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_tjns(P2Params& params)
+bool P2Asm::asm_tjns(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_TJNS;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_TJNS;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -6136,11 +6474,11 @@ bool P2Asm::asm_tjns(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_tjv(P2Params& params)
+bool P2Asm::asm_tjv(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_TJV;
-    return parse_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_TJV;
+    return parse_d_imm_s(p);
 }
 
 /**
@@ -6154,12 +6492,12 @@ bool P2Asm::asm_tjv(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jint(P2Params& params)
+bool P2Asm::asm_jint(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JINT;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JINT;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6173,12 +6511,12 @@ bool P2Asm::asm_jint(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jct1(P2Params& params)
+bool P2Asm::asm_jct1(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JCT1;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JCT1;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6192,12 +6530,12 @@ bool P2Asm::asm_jct1(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jct2(P2Params& params)
+bool P2Asm::asm_jct2(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JCT2;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JCT2;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6211,12 +6549,12 @@ bool P2Asm::asm_jct2(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jct3(P2Params& params)
+bool P2Asm::asm_jct3(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JCT3;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JCT3;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6230,12 +6568,12 @@ bool P2Asm::asm_jct3(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jse1(P2Params& params)
+bool P2Asm::asm_jse1(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JSE1;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JSE1;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6249,12 +6587,12 @@ bool P2Asm::asm_jse1(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jse2(P2Params& params)
+bool P2Asm::asm_jse2(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JSE2;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JSE2;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6268,12 +6606,12 @@ bool P2Asm::asm_jse2(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jse3(P2Params& params)
+bool P2Asm::asm_jse3(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JSE3;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JSE3;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6287,12 +6625,12 @@ bool P2Asm::asm_jse3(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jse4(P2Params& params)
+bool P2Asm::asm_jse4(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JSE4;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JSE4;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6306,12 +6644,12 @@ bool P2Asm::asm_jse4(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jpat(P2Params& params)
+bool P2Asm::asm_jpat(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JPAT;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JPAT;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6325,12 +6663,12 @@ bool P2Asm::asm_jpat(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jfbw(P2Params& params)
+bool P2Asm::asm_jfbw(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JFBW;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JFBW;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6344,12 +6682,12 @@ bool P2Asm::asm_jfbw(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jxmt(P2Params& params)
+bool P2Asm::asm_jxmt(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JXMT;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JXMT;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6363,12 +6701,12 @@ bool P2Asm::asm_jxmt(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jxfi(P2Params& params)
+bool P2Asm::asm_jxfi(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JXFI;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JXFI;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6382,12 +6720,12 @@ bool P2Asm::asm_jxfi(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jxro(P2Params& params)
+bool P2Asm::asm_jxro(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JXRO;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JXRO;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6401,12 +6739,12 @@ bool P2Asm::asm_jxro(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jxrl(P2Params& params)
+bool P2Asm::asm_jxrl(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JXRL;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JXRL;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6420,12 +6758,12 @@ bool P2Asm::asm_jxrl(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jatn(P2Params& params)
+bool P2Asm::asm_jatn(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JATN;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JATN;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6439,12 +6777,12 @@ bool P2Asm::asm_jatn(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jqmt(P2Params& params)
+bool P2Asm::asm_jqmt(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JQMT;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JQMT;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6458,12 +6796,12 @@ bool P2Asm::asm_jqmt(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jnint(P2Params& params)
+bool P2Asm::asm_jnint(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JNINT;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JNINT;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6477,12 +6815,12 @@ bool P2Asm::asm_jnint(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jnct1(P2Params& params)
+bool P2Asm::asm_jnct1(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JNCT1;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JNCT1;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6496,12 +6834,12 @@ bool P2Asm::asm_jnct1(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jnct2(P2Params& params)
+bool P2Asm::asm_jnct2(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JNCT2;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JNCT2;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6515,12 +6853,12 @@ bool P2Asm::asm_jnct2(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jnct3(P2Params& params)
+bool P2Asm::asm_jnct3(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JNCT3;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JNCT3;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6534,12 +6872,12 @@ bool P2Asm::asm_jnct3(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jnse1(P2Params& params)
+bool P2Asm::asm_jnse1(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JNSE1;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JNSE1;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6553,12 +6891,12 @@ bool P2Asm::asm_jnse1(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jnse2(P2Params& params)
+bool P2Asm::asm_jnse2(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JNSE2;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JNSE2;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6572,12 +6910,12 @@ bool P2Asm::asm_jnse2(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jnse3(P2Params& params)
+bool P2Asm::asm_jnse3(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JNSE3;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JNSE3;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6591,12 +6929,12 @@ bool P2Asm::asm_jnse3(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jnse4(P2Params& params)
+bool P2Asm::asm_jnse4(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JNSE4;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JNSE4;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6610,12 +6948,12 @@ bool P2Asm::asm_jnse4(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jnpat(P2Params& params)
+bool P2Asm::asm_jnpat(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JNPAT;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JNPAT;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6629,12 +6967,12 @@ bool P2Asm::asm_jnpat(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jnfbw(P2Params& params)
+bool P2Asm::asm_jnfbw(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JNFBW;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JNFBW;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6648,12 +6986,12 @@ bool P2Asm::asm_jnfbw(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jnxmt(P2Params& params)
+bool P2Asm::asm_jnxmt(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JNXMT;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JNXMT;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6667,12 +7005,12 @@ bool P2Asm::asm_jnxmt(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jnxfi(P2Params& params)
+bool P2Asm::asm_jnxfi(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JNXFI;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JNXFI;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6686,12 +7024,12 @@ bool P2Asm::asm_jnxfi(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jnxro(P2Params& params)
+bool P2Asm::asm_jnxro(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JNXRO;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JNXRO;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6705,12 +7043,12 @@ bool P2Asm::asm_jnxro(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jnxrl(P2Params& params)
+bool P2Asm::asm_jnxrl(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JNXRL;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JNXRL;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6724,12 +7062,12 @@ bool P2Asm::asm_jnxrl(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jnatn(P2Params& params)
+bool P2Asm::asm_jnatn(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JNATN;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JNATN;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6743,12 +7081,12 @@ bool P2Asm::asm_jnatn(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jnqmt(P2Params& params)
+bool P2Asm::asm_jnqmt(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_OPDST;
-    params.IR.op.dst = p2_OPDST_JNQMT;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_OPDST;
+    p.IR.op.dst = p2_OPDST_JNQMT;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6762,11 +7100,11 @@ bool P2Asm::asm_jnqmt(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_1011110_1(P2Params& params)
+bool P2Asm::asm_1011110_1(P2Params& p)
 {
-    params.idx++;
-    params.IR.op9.inst = p2_1011110_10;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op9.inst = p2_1011110_10;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -6780,11 +7118,11 @@ bool P2Asm::asm_1011110_1(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_1011111_0(P2Params& params)
+bool P2Asm::asm_1011111_0(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_1011111_0;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op8.inst = p2_1011111_0;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -6799,11 +7137,11 @@ bool P2Asm::asm_1011111_0(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setpat(P2Params& params)
+bool P2Asm::asm_setpat(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_SETPAT;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op8.inst = p2_SETPAT;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -6817,11 +7155,11 @@ bool P2Asm::asm_setpat(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_wrpin(P2Params& params)
+bool P2Asm::asm_wrpin(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_WRPIN;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op8.inst = p2_WRPIN;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -6835,13 +7173,13 @@ bool P2Asm::asm_wrpin(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_akpin(P2Params& params)
+bool P2Asm::asm_akpin(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_WRPIN;
-    params.IR.op8.wz = true;
-    params.IR.op.dst = 1;
-    return parse_imm_s(params);
+    p.idx++;
+    p.IR.op8.inst = p2_WRPIN;
+    p.IR.op8.wz = true;
+    p.IR.op.dst = 1;
+    return parse_imm_s(p);
 }
 
 /**
@@ -6855,11 +7193,11 @@ bool P2Asm::asm_akpin(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_wxpin(P2Params& params)
+bool P2Asm::asm_wxpin(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_WXPIN;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op8.inst = p2_WXPIN;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -6873,11 +7211,11 @@ bool P2Asm::asm_wxpin(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_wypin(P2Params& params)
+bool P2Asm::asm_wypin(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_WYPIN;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op8.inst = p2_WYPIN;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -6891,11 +7229,11 @@ bool P2Asm::asm_wypin(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_wrlut(P2Params& params)
+bool P2Asm::asm_wrlut(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_WRLUT;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op8.inst = p2_WRLUT;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -6909,11 +7247,11 @@ bool P2Asm::asm_wrlut(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_wrbyte(P2Params& params)
+bool P2Asm::asm_wrbyte(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_WRBYTE;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op8.inst = p2_WRBYTE;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -6927,11 +7265,11 @@ bool P2Asm::asm_wrbyte(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_wrword(P2Params& params)
+bool P2Asm::asm_wrword(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_WRWORD;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op8.inst = p2_WRWORD;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -6946,11 +7284,11 @@ bool P2Asm::asm_wrword(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_wrlong(P2Params& params)
+bool P2Asm::asm_wrlong(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_WRLONG;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op8.inst = p2_WRLONG;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -6964,13 +7302,13 @@ bool P2Asm::asm_wrlong(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_pusha(P2Params& params)
+bool P2Asm::asm_pusha(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_WRLONG;
-    params.IR.op8.im = true;
-    params.IR.op8.src = 0x161;
-    return parse_wz_d(params);
+    p.idx++;
+    p.IR.op8.inst = p2_WRLONG;
+    p.IR.op8.im = true;
+    p.IR.op8.src = 0x161;
+    return parse_wz_d(p);
 }
 
 /**
@@ -6984,13 +7322,13 @@ bool P2Asm::asm_pusha(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_pushb(P2Params& params)
+bool P2Asm::asm_pushb(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_WRLONG;
-    params.IR.op8.im = true;
-    params.IR.op8.src = 0x1e1;
-    return parse_wz_d(params);
+    p.idx++;
+    p.IR.op8.inst = p2_WRLONG;
+    p.IR.op8.im = true;
+    p.IR.op8.src = 0x1e1;
+    return parse_wz_d(p);
 }
 
 /**
@@ -7005,11 +7343,11 @@ bool P2Asm::asm_pushb(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rdfast(P2Params& params)
+bool P2Asm::asm_rdfast(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_RDFAST;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op8.inst = p2_RDFAST;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -7024,11 +7362,11 @@ bool P2Asm::asm_rdfast(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_wrfast(P2Params& params)
+bool P2Asm::asm_wrfast(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_WRFAST;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op8.inst = p2_WRFAST;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -7043,11 +7381,11 @@ bool P2Asm::asm_wrfast(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_fblock(P2Params& params)
+bool P2Asm::asm_fblock(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_FBLOCK;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op8.inst = p2_FBLOCK;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -7061,11 +7399,11 @@ bool P2Asm::asm_fblock(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_xinit(P2Params& params)
+bool P2Asm::asm_xinit(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_XINIT;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op8.inst = p2_XINIT;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -7079,15 +7417,15 @@ bool P2Asm::asm_xinit(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_xstop(P2Params& params)
+bool P2Asm::asm_xstop(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_XINIT;
-    params.IR.op8.wz = true;
-    params.IR.op8.im = true;
-    params.IR.op8.dst = 0x000;
-    params.IR.op8.src = 0x000;
-    return parse_inst(params);
+    p.idx++;
+    p.IR.op8.inst = p2_XINIT;
+    p.IR.op8.wz = true;
+    p.IR.op8.im = true;
+    p.IR.op8.dst = 0x000;
+    p.IR.op8.src = 0x000;
+    return parse_inst(p);
 }
 
 /**
@@ -7101,11 +7439,11 @@ bool P2Asm::asm_xstop(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_xzero(P2Params& params)
+bool P2Asm::asm_xzero(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_XZERO;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op8.inst = p2_XZERO;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -7119,11 +7457,11 @@ bool P2Asm::asm_xzero(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_xcont(P2Params& params)
+bool P2Asm::asm_xcont(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_XCONT;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op8.inst = p2_XCONT;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -7139,11 +7477,11 @@ bool P2Asm::asm_xcont(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rep(P2Params& params)
+bool P2Asm::asm_rep(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_REP;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op8.inst = p2_REP;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -7159,11 +7497,11 @@ bool P2Asm::asm_rep(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_coginit(P2Params& params)
+bool P2Asm::asm_coginit(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_COGINIT;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op.inst = p2_COGINIT;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -7178,11 +7516,11 @@ bool P2Asm::asm_coginit(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_qmul(P2Params& params)
+bool P2Asm::asm_qmul(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_QMUL;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op8.inst = p2_QMUL;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -7197,11 +7535,11 @@ bool P2Asm::asm_qmul(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_qdiv(P2Params& params)
+bool P2Asm::asm_qdiv(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_QDIV;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op8.inst = p2_QDIV;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -7216,11 +7554,11 @@ bool P2Asm::asm_qdiv(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_qfrac(P2Params& params)
+bool P2Asm::asm_qfrac(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_QFRAC;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op8.inst = p2_QFRAC;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -7235,11 +7573,11 @@ bool P2Asm::asm_qfrac(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_qsqrt(P2Params& params)
+bool P2Asm::asm_qsqrt(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_QSQRT;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op8.inst = p2_QSQRT;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -7254,11 +7592,11 @@ bool P2Asm::asm_qsqrt(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_qrotate(P2Params& params)
+bool P2Asm::asm_qrotate(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_QROTATE;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op8.inst = p2_QROTATE;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -7273,11 +7611,11 @@ bool P2Asm::asm_qrotate(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_qvector(P2Params& params)
+bool P2Asm::asm_qvector(P2Params& p)
 {
-    params.idx++;
-    params.IR.op8.inst = p2_QVECTOR;
-    return parse_wz_d_imm_s(params);
+    p.idx++;
+    p.IR.op8.inst = p2_QVECTOR;
+    return parse_wz_d_imm_s(p);
 }
 
 /**
@@ -7291,12 +7629,12 @@ bool P2Asm::asm_qvector(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_hubset(P2Params& params)
+bool P2Asm::asm_hubset(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_HUBSET;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_HUBSET;
+    return parse_imm_d(p);
 }
 
 /**
@@ -7311,12 +7649,12 @@ bool P2Asm::asm_hubset(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_cogid(P2Params& params)
+bool P2Asm::asm_cogid(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_COGID;
-    return parse_imm_d_c(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_COGID;
+    return parse_imm_d_wc(p);
 }
 
 /**
@@ -7330,12 +7668,12 @@ bool P2Asm::asm_cogid(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_cogstop(P2Params& params)
+bool P2Asm::asm_cogstop(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_COGSTOP;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_COGSTOP;
+    return parse_imm_d(p);
 }
 
 /**
@@ -7351,12 +7689,12 @@ bool P2Asm::asm_cogstop(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_locknew(P2Params& params)
+bool P2Asm::asm_locknew(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_LOCKNEW;
-    return parse_imm_d_c(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_LOCKNEW;
+    return parse_imm_d_wc(p);
 }
 
 /**
@@ -7370,12 +7708,12 @@ bool P2Asm::asm_locknew(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_lockret(P2Params& params)
+bool P2Asm::asm_lockret(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_LOCKRET;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_LOCKRET;
+    return parse_imm_d(p);
 }
 
 /**
@@ -7392,12 +7730,12 @@ bool P2Asm::asm_lockret(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_locktry(P2Params& params)
+bool P2Asm::asm_locktry(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_LOCKTRY;
-    return parse_imm_d_c(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_LOCKTRY;
+    return parse_imm_d_wc(p);
 }
 
 /**
@@ -7412,12 +7750,12 @@ bool P2Asm::asm_locktry(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_lockrel(P2Params& params)
+bool P2Asm::asm_lockrel(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_LOCKREL;
-    return parse_imm_d_c(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_LOCKREL;
+    return parse_imm_d_wc(p);
 }
 
 /**
@@ -7432,12 +7770,12 @@ bool P2Asm::asm_lockrel(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_qlog(P2Params& params)
+bool P2Asm::asm_qlog(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_QLOG;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_QLOG;
+    return parse_imm_d(p);
 }
 
 /**
@@ -7452,12 +7790,12 @@ bool P2Asm::asm_qlog(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_qexp(P2Params& params)
+bool P2Asm::asm_qexp(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_QEXP;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_QEXP;
+    return parse_imm_d(p);
 }
 
 /**
@@ -7473,12 +7811,12 @@ bool P2Asm::asm_qexp(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rfbyte(P2Params& params)
+bool P2Asm::asm_rfbyte(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_RFBYTE;
-    return parse_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_RFBYTE;
+    return parse_d_cz(p);
 }
 
 /**
@@ -7494,12 +7832,12 @@ bool P2Asm::asm_rfbyte(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rfword(P2Params& params)
+bool P2Asm::asm_rfword(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_RFWORD;
-    return parse_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_RFWORD;
+    return parse_d_cz(p);
 }
 
 /**
@@ -7515,12 +7853,12 @@ bool P2Asm::asm_rfword(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rflong(P2Params& params)
+bool P2Asm::asm_rflong(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_RFLONG;
-    return parse_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_RFLONG;
+    return parse_d_cz(p);
 }
 
 /**
@@ -7536,12 +7874,12 @@ bool P2Asm::asm_rflong(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rfvar(P2Params& params)
+bool P2Asm::asm_rfvar(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_RFVAR;
-    return parse_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_RFVAR;
+    return parse_d_cz(p);
 }
 
 /**
@@ -7557,12 +7895,12 @@ bool P2Asm::asm_rfvar(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rfvars(P2Params& params)
+bool P2Asm::asm_rfvars(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_RFVARS;
-    return parse_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_RFVARS;
+    return parse_d_cz(p);
 }
 
 /**
@@ -7576,12 +7914,12 @@ bool P2Asm::asm_rfvars(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_wfbyte(P2Params& params)
+bool P2Asm::asm_wfbyte(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_WFBYTE;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_WFBYTE;
+    return parse_imm_d(p);
 }
 
 /**
@@ -7595,12 +7933,12 @@ bool P2Asm::asm_wfbyte(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_wfword(P2Params& params)
+bool P2Asm::asm_wfword(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_WFWORD;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_WFWORD;
+    return parse_imm_d(p);
 }
 
 /**
@@ -7614,12 +7952,12 @@ bool P2Asm::asm_wfword(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_wflong(P2Params& params)
+bool P2Asm::asm_wflong(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_WFLONG;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_WFLONG;
+    return parse_imm_d(p);
 }
 
 /**
@@ -7636,12 +7974,12 @@ bool P2Asm::asm_wflong(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_getqx(P2Params& params)
+bool P2Asm::asm_getqx(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_GETQX;
-    return parse_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_GETQX;
+    return parse_d_cz(p);
 }
 
 /**
@@ -7658,12 +7996,12 @@ bool P2Asm::asm_getqx(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_getqy(P2Params& params)
+bool P2Asm::asm_getqy(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_GETQY;
-    return parse_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_GETQY;
+    return parse_d_cz(p);
 }
 
 /**
@@ -7678,12 +8016,12 @@ bool P2Asm::asm_getqy(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_getct(P2Params& params)
+bool P2Asm::asm_getct(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_GETCT;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_GETCT;
+    return parse_d(p);
 }
 
 /**
@@ -7699,12 +8037,12 @@ bool P2Asm::asm_getct(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_getrnd(P2Params& params)
+bool P2Asm::asm_getrnd(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_GETRND;
-    return parse_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_GETRND;
+    return parse_d_cz(p);
 }
 
 /**
@@ -7719,12 +8057,12 @@ bool P2Asm::asm_getrnd(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_getrnd_cz(P2Params& params)
+bool P2Asm::asm_getrnd_cz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_GETRND;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_GETRND;
+    return parse_cz(p);
 }
 
 /**
@@ -7738,12 +8076,12 @@ bool P2Asm::asm_getrnd_cz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setdacs(P2Params& params)
+bool P2Asm::asm_setdacs(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SETDACS;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SETDACS;
+    return parse_imm_d(p);
 }
 
 /**
@@ -7757,12 +8095,12 @@ bool P2Asm::asm_setdacs(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setxfrq(P2Params& params)
+bool P2Asm::asm_setxfrq(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SETXFRQ;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SETXFRQ;
+    return parse_imm_d(p);
 }
 
 /**
@@ -7776,12 +8114,12 @@ bool P2Asm::asm_setxfrq(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_getxacc(P2Params& params)
+bool P2Asm::asm_getxacc(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_GETXACC;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_GETXACC;
+    return parse_d(p);
 }
 
 /**
@@ -7797,12 +8135,12 @@ bool P2Asm::asm_getxacc(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_waitx(P2Params& params)
+bool P2Asm::asm_waitx(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_WAITX;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_WAITX;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -7816,12 +8154,12 @@ bool P2Asm::asm_waitx(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setse1(P2Params& params)
+bool P2Asm::asm_setse1(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SETSE1;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SETSE1;
+    return parse_imm_d(p);
 }
 
 /**
@@ -7835,12 +8173,12 @@ bool P2Asm::asm_setse1(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setse2(P2Params& params)
+bool P2Asm::asm_setse2(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SETSE2;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SETSE2;
+    return parse_imm_d(p);
 }
 
 /**
@@ -7854,12 +8192,12 @@ bool P2Asm::asm_setse2(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setse3(P2Params& params)
+bool P2Asm::asm_setse3(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SETSE3;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SETSE3;
+    return parse_imm_d(p);
 }
 
 /**
@@ -7873,12 +8211,12 @@ bool P2Asm::asm_setse3(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setse4(P2Params& params)
+bool P2Asm::asm_setse4(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SETSE4;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SETSE4;
+    return parse_imm_d(p);
 }
 
 /**
@@ -7892,13 +8230,13 @@ bool P2Asm::asm_setse4(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_pollint(P2Params& params)
+bool P2Asm::asm_pollint(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_POLLINT;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_POLLINT;
+    return parse_cz(p);
 }
 
 /**
@@ -7912,13 +8250,13 @@ bool P2Asm::asm_pollint(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_pollct1(P2Params& params)
+bool P2Asm::asm_pollct1(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_POLLCT1;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_POLLCT1;
+    return parse_cz(p);
 }
 
 /**
@@ -7932,13 +8270,13 @@ bool P2Asm::asm_pollct1(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_pollct2(P2Params& params)
+bool P2Asm::asm_pollct2(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_POLLCT2;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_POLLCT2;
+    return parse_cz(p);
 }
 
 /**
@@ -7952,13 +8290,13 @@ bool P2Asm::asm_pollct2(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_pollct3(P2Params& params)
+bool P2Asm::asm_pollct3(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_POLLCT3;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_POLLCT3;
+    return parse_cz(p);
 }
 
 /**
@@ -7972,13 +8310,13 @@ bool P2Asm::asm_pollct3(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_pollse1(P2Params& params)
+bool P2Asm::asm_pollse1(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_POLLSE1;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_POLLSE1;
+    return parse_cz(p);
 }
 
 /**
@@ -7992,13 +8330,13 @@ bool P2Asm::asm_pollse1(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_pollse2(P2Params& params)
+bool P2Asm::asm_pollse2(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_POLLSE2;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_POLLSE2;
+    return parse_cz(p);
 }
 
 /**
@@ -8012,13 +8350,13 @@ bool P2Asm::asm_pollse2(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_pollse3(P2Params& params)
+bool P2Asm::asm_pollse3(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_POLLSE3;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_POLLSE3;
+    return parse_cz(p);
 }
 
 /**
@@ -8032,13 +8370,13 @@ bool P2Asm::asm_pollse3(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_pollse4(P2Params& params)
+bool P2Asm::asm_pollse4(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_POLLSE4;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_POLLSE4;
+    return parse_cz(p);
 }
 
 /**
@@ -8052,13 +8390,13 @@ bool P2Asm::asm_pollse4(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_pollpat(P2Params& params)
+bool P2Asm::asm_pollpat(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_POLLPAT;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_POLLPAT;
+    return parse_cz(p);
 }
 
 /**
@@ -8072,13 +8410,13 @@ bool P2Asm::asm_pollpat(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_pollfbw(P2Params& params)
+bool P2Asm::asm_pollfbw(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_POLLFBW;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_POLLFBW;
+    return parse_cz(p);
 }
 
 /**
@@ -8092,13 +8430,13 @@ bool P2Asm::asm_pollfbw(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_pollxmt(P2Params& params)
+bool P2Asm::asm_pollxmt(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_POLLXMT;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_POLLXMT;
+    return parse_cz(p);
 }
 
 /**
@@ -8112,13 +8450,13 @@ bool P2Asm::asm_pollxmt(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_pollxfi(P2Params& params)
+bool P2Asm::asm_pollxfi(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_POLLXFI;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_POLLXFI;
+    return parse_cz(p);
 }
 
 /**
@@ -8132,13 +8470,13 @@ bool P2Asm::asm_pollxfi(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_pollxro(P2Params& params)
+bool P2Asm::asm_pollxro(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_POLLXRO;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_POLLXRO;
+    return parse_cz(p);
 }
 
 /**
@@ -8152,13 +8490,13 @@ bool P2Asm::asm_pollxro(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_pollxrl(P2Params& params)
+bool P2Asm::asm_pollxrl(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_POLLXRL;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_POLLXRL;
+    return parse_cz(p);
 }
 
 /**
@@ -8172,13 +8510,13 @@ bool P2Asm::asm_pollxrl(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_pollatn(P2Params& params)
+bool P2Asm::asm_pollatn(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_POLLATN;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_POLLATN;
+    return parse_cz(p);
 }
 
 /**
@@ -8192,13 +8530,13 @@ bool P2Asm::asm_pollatn(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_pollqmt(P2Params& params)
+bool P2Asm::asm_pollqmt(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_POLLQMT;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_POLLQMT;
+    return parse_cz(p);
 }
 
 /**
@@ -8214,13 +8552,13 @@ bool P2Asm::asm_pollqmt(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_waitint(P2Params& params)
+bool P2Asm::asm_waitint(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_WAITINT;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_WAITINT;
+    return parse_cz(p);
 }
 
 /**
@@ -8236,13 +8574,13 @@ bool P2Asm::asm_waitint(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_waitct1(P2Params& params)
+bool P2Asm::asm_waitct1(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_WAITCT1;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_WAITCT1;
+    return parse_cz(p);
 }
 
 /**
@@ -8258,13 +8596,13 @@ bool P2Asm::asm_waitct1(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_waitct2(P2Params& params)
+bool P2Asm::asm_waitct2(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_WAITCT2;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_WAITCT2;
+    return parse_cz(p);
 }
 
 /**
@@ -8280,13 +8618,13 @@ bool P2Asm::asm_waitct2(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_waitct3(P2Params& params)
+bool P2Asm::asm_waitct3(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_WAITCT3;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_WAITCT3;
+    return parse_cz(p);
 }
 
 /**
@@ -8302,13 +8640,13 @@ bool P2Asm::asm_waitct3(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_waitse1(P2Params& params)
+bool P2Asm::asm_waitse1(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_WAITSE1;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_WAITSE1;
+    return parse_cz(p);
 }
 
 /**
@@ -8324,13 +8662,13 @@ bool P2Asm::asm_waitse1(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_waitse2(P2Params& params)
+bool P2Asm::asm_waitse2(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_WAITSE2;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_WAITSE2;
+    return parse_cz(p);
 }
 
 /**
@@ -8346,13 +8684,13 @@ bool P2Asm::asm_waitse2(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_waitse3(P2Params& params)
+bool P2Asm::asm_waitse3(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_WAITSE3;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_WAITSE3;
+    return parse_cz(p);
 }
 
 /**
@@ -8368,13 +8706,13 @@ bool P2Asm::asm_waitse3(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_waitse4(P2Params& params)
+bool P2Asm::asm_waitse4(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_WAITSE4;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_WAITSE4;
+    return parse_cz(p);
 }
 
 /**
@@ -8390,13 +8728,13 @@ bool P2Asm::asm_waitse4(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_waitpat(P2Params& params)
+bool P2Asm::asm_waitpat(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_WAITPAT;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_WAITPAT;
+    return parse_cz(p);
 }
 
 /**
@@ -8412,13 +8750,13 @@ bool P2Asm::asm_waitpat(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_waitfbw(P2Params& params)
+bool P2Asm::asm_waitfbw(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_WAITFBW;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_WAITFBW;
+    return parse_cz(p);
 }
 
 /**
@@ -8434,13 +8772,13 @@ bool P2Asm::asm_waitfbw(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_waitxmt(P2Params& params)
+bool P2Asm::asm_waitxmt(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_WAITXMT;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_WAITXMT;
+    return parse_cz(p);
 }
 
 /**
@@ -8456,13 +8794,13 @@ bool P2Asm::asm_waitxmt(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_waitxfi(P2Params& params)
+bool P2Asm::asm_waitxfi(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_WAITXFI;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_WAITXFI;
+    return parse_cz(p);
 }
 
 /**
@@ -8478,13 +8816,13 @@ bool P2Asm::asm_waitxfi(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_waitxro(P2Params& params)
+bool P2Asm::asm_waitxro(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_WAITXRO;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_WAITXRO;
+    return parse_cz(p);
 }
 
 /**
@@ -8500,13 +8838,13 @@ bool P2Asm::asm_waitxro(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_waitxrl(P2Params& params)
+bool P2Asm::asm_waitxrl(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_WAITXRL;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_WAITXRL;
+    return parse_cz(p);
 }
 
 /**
@@ -8522,13 +8860,13 @@ bool P2Asm::asm_waitxrl(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_waitatn(P2Params& params)
+bool P2Asm::asm_waitatn(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_WAITATN;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_WAITATN;
+    return parse_cz(p);
 }
 
 /**
@@ -8542,13 +8880,13 @@ bool P2Asm::asm_waitatn(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_allowi(P2Params& params)
+bool P2Asm::asm_allowi(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_ALLOWI;
-    return parse_inst(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_ALLOWI;
+    return parse_inst(p);
 }
 
 /**
@@ -8562,13 +8900,13 @@ bool P2Asm::asm_allowi(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_stalli(P2Params& params)
+bool P2Asm::asm_stalli(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_STALLI;
-    return parse_inst(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_STALLI;
+    return parse_inst(p);
 }
 
 /**
@@ -8582,13 +8920,13 @@ bool P2Asm::asm_stalli(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_trgint1(P2Params& params)
+bool P2Asm::asm_trgint1(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_TRGINT1;
-    return parse_inst(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_TRGINT1;
+    return parse_inst(p);
 }
 
 /**
@@ -8602,13 +8940,13 @@ bool P2Asm::asm_trgint1(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_trgint2(P2Params& params)
+bool P2Asm::asm_trgint2(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_TRGINT2;
-    return parse_inst(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_TRGINT2;
+    return parse_inst(p);
 }
 
 /**
@@ -8622,13 +8960,13 @@ bool P2Asm::asm_trgint2(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_trgint3(P2Params& params)
+bool P2Asm::asm_trgint3(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_TRGINT3;
-    return parse_inst(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_TRGINT3;
+    return parse_inst(p);
 }
 
 /**
@@ -8642,13 +8980,13 @@ bool P2Asm::asm_trgint3(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_nixint1(P2Params& params)
+bool P2Asm::asm_nixint1(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_NIXINT1;
-    return parse_inst(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_NIXINT1;
+    return parse_inst(p);
 }
 
 /**
@@ -8662,13 +9000,13 @@ bool P2Asm::asm_nixint1(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_nixint2(P2Params& params)
+bool P2Asm::asm_nixint2(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_NIXINT2;
-    return parse_inst(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_NIXINT2;
+    return parse_inst(p);
 }
 
 /**
@@ -8682,13 +9020,13 @@ bool P2Asm::asm_nixint2(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_nixint3(P2Params& params)
+bool P2Asm::asm_nixint3(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_X24;
-    params.IR.op.dst = p2_OPX24_NIXINT3;
-    return parse_inst(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_X24;
+    p.IR.op.dst = p2_OPX24_NIXINT3;
+    return parse_inst(p);
 }
 
 /**
@@ -8702,12 +9040,12 @@ bool P2Asm::asm_nixint3(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setint1(P2Params& params)
+bool P2Asm::asm_setint1(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SETINT1;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SETINT1;
+    return parse_imm_d(p);
 }
 
 /**
@@ -8721,12 +9059,12 @@ bool P2Asm::asm_setint1(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setint2(P2Params& params)
+bool P2Asm::asm_setint2(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SETINT2;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SETINT2;
+    return parse_imm_d(p);
 }
 
 /**
@@ -8740,12 +9078,12 @@ bool P2Asm::asm_setint2(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setint3(P2Params& params)
+bool P2Asm::asm_setint3(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SETINT3;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SETINT3;
+    return parse_imm_d(p);
 }
 
 /**
@@ -8761,12 +9099,12 @@ bool P2Asm::asm_setint3(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setq(P2Params& params)
+bool P2Asm::asm_setq(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SETQ;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SETQ;
+    return parse_imm_d(p);
 }
 
 /**
@@ -8781,12 +9119,12 @@ bool P2Asm::asm_setq(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setq2(P2Params& params)
+bool P2Asm::asm_setq2(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SETQ2;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SETQ2;
+    return parse_imm_d(p);
 }
 
 /**
@@ -8800,12 +9138,12 @@ bool P2Asm::asm_setq2(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_push(P2Params& params)
+bool P2Asm::asm_push(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_PUSH;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_PUSH;
+    return parse_imm_d(p);
 }
 
 /**
@@ -8820,12 +9158,12 @@ bool P2Asm::asm_push(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_pop(P2Params& params)
+bool P2Asm::asm_pop(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_POP;
-    return parse_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_POP;
+    return parse_d_cz(p);
 }
 
 /**
@@ -8840,12 +9178,12 @@ bool P2Asm::asm_pop(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jmp(P2Params& params)
+bool P2Asm::asm_jmp(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_JMP;
-    return parse_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_JMP;
+    return parse_d_cz(p);
 }
 
 /**
@@ -8860,12 +9198,12 @@ bool P2Asm::asm_jmp(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_call(P2Params& params)
+bool P2Asm::asm_call(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_CALL_RET;
-    return parse_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_CALL_RET;
+    return parse_d_cz(p);
 }
 
 /**
@@ -8880,14 +9218,14 @@ bool P2Asm::asm_call(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_ret(P2Params& params)
+bool P2Asm::asm_ret(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.im = true;
-    params.IR.op.dst = 0x000;
-    params.IR.op.src = p2_OPSRC_CALL_RET;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.im = true;
+    p.IR.op.dst = 0x000;
+    p.IR.op.src = p2_OPSRC_CALL_RET;
+    return parse_cz(p);
 }
 
 /**
@@ -8902,12 +9240,12 @@ bool P2Asm::asm_ret(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_calla(P2Params& params)
+bool P2Asm::asm_calla(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_CALLA_RETA;
-    return parse_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_CALLA_RETA;
+    return parse_d_cz(p);
 }
 
 /**
@@ -8922,14 +9260,14 @@ bool P2Asm::asm_calla(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_reta(P2Params& params)
+bool P2Asm::asm_reta(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.im = true;
-    params.IR.op.dst = 0x000;
-    params.IR.op.src = p2_OPSRC_CALLA_RETA;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.im = true;
+    p.IR.op.dst = 0x000;
+    p.IR.op.src = p2_OPSRC_CALLA_RETA;
+    return parse_cz(p);
 }
 
 /**
@@ -8944,12 +9282,12 @@ bool P2Asm::asm_reta(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_callb(P2Params& params)
+bool P2Asm::asm_callb(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_CALLB_RETB;
-    return parse_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_CALLB_RETB;
+    return parse_d_cz(p);
 }
 
 /**
@@ -8964,14 +9302,14 @@ bool P2Asm::asm_callb(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_retb(P2Params& params)
+bool P2Asm::asm_retb(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.im = true;
-    params.IR.op.dst = 0x000;
-    params.IR.op.src = p2_OPSRC_CALLB_RETB;
-    return parse_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.im = true;
+    p.IR.op.dst = 0x000;
+    p.IR.op.src = p2_OPSRC_CALLB_RETB;
+    return parse_cz(p);
 }
 
 /**
@@ -8987,12 +9325,12 @@ bool P2Asm::asm_retb(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jmprel(P2Params& params)
+bool P2Asm::asm_jmprel(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_JMPREL;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_JMPREL;
+    return parse_imm_d(p);
 }
 
 /**
@@ -9009,12 +9347,12 @@ bool P2Asm::asm_jmprel(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_skip(P2Params& params)
+bool P2Asm::asm_skip(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SKIP;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SKIP;
+    return parse_imm_d(p);
 }
 
 /**
@@ -9029,12 +9367,12 @@ bool P2Asm::asm_skip(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_skipf(P2Params& params)
+bool P2Asm::asm_skipf(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SKIPF;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SKIPF;
+    return parse_imm_d(p);
 }
 
 /**
@@ -9049,12 +9387,12 @@ bool P2Asm::asm_skipf(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_execf(P2Params& params)
+bool P2Asm::asm_execf(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_EXECF;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_EXECF;
+    return parse_imm_d(p);
 }
 
 /**
@@ -9068,12 +9406,12 @@ bool P2Asm::asm_execf(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_getptr(P2Params& params)
+bool P2Asm::asm_getptr(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_GETPTR;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_GETPTR;
+    return parse_d(p);
 }
 
 /**
@@ -9089,13 +9427,13 @@ bool P2Asm::asm_getptr(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_getbrk(P2Params& params)
+bool P2Asm::asm_getbrk(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.im = false;
-    params.IR.op.src = p2_OPSRC_COGBRK;
-    return parse_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.im = false;
+    p.IR.op.src = p2_OPSRC_COGBRK;
+    return parse_d_cz(p);
 }
 
 /**
@@ -9110,12 +9448,12 @@ bool P2Asm::asm_getbrk(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_cogbrk(P2Params& params)
+bool P2Asm::asm_cogbrk(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_COGBRK;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_COGBRK;
+    return parse_imm_d(p);
 }
 
 /**
@@ -9130,12 +9468,12 @@ bool P2Asm::asm_cogbrk(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_brk(P2Params& params)
+bool P2Asm::asm_brk(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_BRK;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_BRK;
+    return parse_imm_d(p);
 }
 
 /**
@@ -9149,12 +9487,12 @@ bool P2Asm::asm_brk(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setluts(P2Params& params)
+bool P2Asm::asm_setluts(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SETLUTS;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SETLUTS;
+    return parse_imm_d(p);
 }
 
 /**
@@ -9168,12 +9506,12 @@ bool P2Asm::asm_setluts(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setcy(P2Params& params)
+bool P2Asm::asm_setcy(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SETCY;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SETCY;
+    return parse_imm_d(p);
 }
 
 /**
@@ -9187,12 +9525,12 @@ bool P2Asm::asm_setcy(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setci(P2Params& params)
+bool P2Asm::asm_setci(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SETCI;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SETCI;
+    return parse_imm_d(p);
 }
 
 /**
@@ -9206,12 +9544,12 @@ bool P2Asm::asm_setci(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setcq(P2Params& params)
+bool P2Asm::asm_setcq(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SETCQ;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SETCQ;
+    return parse_imm_d(p);
 }
 
 /**
@@ -9225,12 +9563,12 @@ bool P2Asm::asm_setcq(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setcfrq(P2Params& params)
+bool P2Asm::asm_setcfrq(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SETCFRQ;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SETCFRQ;
+    return parse_imm_d(p);
 }
 
 /**
@@ -9244,12 +9582,12 @@ bool P2Asm::asm_setcfrq(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setcmod(P2Params& params)
+bool P2Asm::asm_setcmod(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SETCMOD;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SETCMOD;
+    return parse_imm_d(p);
 }
 
 /**
@@ -9263,12 +9601,12 @@ bool P2Asm::asm_setcmod(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setpiv(P2Params& params)
+bool P2Asm::asm_setpiv(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SETPIV;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SETPIV;
+    return parse_imm_d(p);
 }
 
 /**
@@ -9282,12 +9620,12 @@ bool P2Asm::asm_setpiv(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setpix(P2Params& params)
+bool P2Asm::asm_setpix(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SETPIX;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SETPIX;
+    return parse_imm_d(p);
 }
 
 /**
@@ -9301,12 +9639,12 @@ bool P2Asm::asm_setpix(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_cogatn(P2Params& params)
+bool P2Asm::asm_cogatn(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_COGATN;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_COGATN;
+    return parse_imm_d(p);
 }
 
 /**
@@ -9321,12 +9659,12 @@ bool P2Asm::asm_cogatn(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_testp_w(P2Params& params)
+bool P2Asm::asm_testp_w(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_TESTP_W_DIRL;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_TESTP_W_DIRL;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9341,12 +9679,12 @@ bool P2Asm::asm_testp_w(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_testpn_w(P2Params& params)
+bool P2Asm::asm_testpn_w(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_TESTPN_W;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_TESTPN_W;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9361,12 +9699,12 @@ bool P2Asm::asm_testpn_w(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_testp_and(P2Params& params)
+bool P2Asm::asm_testp_and(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_TESTP_AND;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_TESTP_AND;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9381,12 +9719,12 @@ bool P2Asm::asm_testp_and(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_testpn_and(P2Params& params)
+bool P2Asm::asm_testpn_and(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_TESTPN_AND;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_TESTPN_AND;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9401,12 +9739,12 @@ bool P2Asm::asm_testpn_and(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_testp_or(P2Params& params)
+bool P2Asm::asm_testp_or(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_TESTP_OR;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_TESTP_OR;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9421,12 +9759,12 @@ bool P2Asm::asm_testp_or(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_testpn_or(P2Params& params)
+bool P2Asm::asm_testpn_or(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_TESTPN_OR;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_TESTPN_OR;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9441,12 +9779,12 @@ bool P2Asm::asm_testpn_or(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_testp_xor(P2Params& params)
+bool P2Asm::asm_testp_xor(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_TESTP_XOR;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_TESTP_XOR;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9461,12 +9799,12 @@ bool P2Asm::asm_testp_xor(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_testpn_xor(P2Params& params)
+bool P2Asm::asm_testpn_xor(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_TESTPN_XOR;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_TESTPN_XOR;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9481,12 +9819,12 @@ bool P2Asm::asm_testpn_xor(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_dirl(P2Params& params)
+bool P2Asm::asm_dirl(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_DIRL;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_DIRL;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9501,12 +9839,12 @@ bool P2Asm::asm_dirl(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_dirh(P2Params& params)
+bool P2Asm::asm_dirh(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_DIRH;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_DIRH;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9521,12 +9859,12 @@ bool P2Asm::asm_dirh(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_dirc(P2Params& params)
+bool P2Asm::asm_dirc(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_DIRC;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_DIRC;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9541,12 +9879,12 @@ bool P2Asm::asm_dirc(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_dirnc(P2Params& params)
+bool P2Asm::asm_dirnc(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_DIRNC;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_DIRNC;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9561,12 +9899,12 @@ bool P2Asm::asm_dirnc(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_dirz(P2Params& params)
+bool P2Asm::asm_dirz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_DIRZ;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_DIRZ;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9581,12 +9919,12 @@ bool P2Asm::asm_dirz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_dirnz(P2Params& params)
+bool P2Asm::asm_dirnz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_DIRNZ;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_DIRNZ;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9601,12 +9939,12 @@ bool P2Asm::asm_dirnz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_dirrnd(P2Params& params)
+bool P2Asm::asm_dirrnd(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_DIRRND;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_DIRRND;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9621,12 +9959,12 @@ bool P2Asm::asm_dirrnd(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_dirnot(P2Params& params)
+bool P2Asm::asm_dirnot(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_DIRNOT;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_DIRNOT;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9641,12 +9979,12 @@ bool P2Asm::asm_dirnot(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_outl(P2Params& params)
+bool P2Asm::asm_outl(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_OUTL;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_OUTL;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9661,12 +9999,12 @@ bool P2Asm::asm_outl(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_outh(P2Params& params)
+bool P2Asm::asm_outh(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_OUTH;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_OUTH;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9681,12 +10019,12 @@ bool P2Asm::asm_outh(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_outc(P2Params& params)
+bool P2Asm::asm_outc(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_OUTC;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_OUTC;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9701,12 +10039,12 @@ bool P2Asm::asm_outc(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_outnc(P2Params& params)
+bool P2Asm::asm_outnc(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_OUTNC;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_OUTNC;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9721,12 +10059,12 @@ bool P2Asm::asm_outnc(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_outz(P2Params& params)
+bool P2Asm::asm_outz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_OUTZ;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_OUTZ;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9741,12 +10079,12 @@ bool P2Asm::asm_outz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_outnz(P2Params& params)
+bool P2Asm::asm_outnz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_OUTNZ;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_OUTNZ;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9761,12 +10099,12 @@ bool P2Asm::asm_outnz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_outrnd(P2Params& params)
+bool P2Asm::asm_outrnd(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_OUTRND;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_OUTRND;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9781,12 +10119,12 @@ bool P2Asm::asm_outrnd(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_outnot(P2Params& params)
+bool P2Asm::asm_outnot(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_OUTNOT;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_OUTNOT;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9802,12 +10140,12 @@ bool P2Asm::asm_outnot(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_fltl(P2Params& params)
+bool P2Asm::asm_fltl(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_FLTL;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_FLTL;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9823,12 +10161,12 @@ bool P2Asm::asm_fltl(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_flth(P2Params& params)
+bool P2Asm::asm_flth(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_FLTH;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_FLTH;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9844,12 +10182,12 @@ bool P2Asm::asm_flth(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_fltc(P2Params& params)
+bool P2Asm::asm_fltc(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_FLTC;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_FLTC;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9865,12 +10203,12 @@ bool P2Asm::asm_fltc(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_fltnc(P2Params& params)
+bool P2Asm::asm_fltnc(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_FLTNC;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_FLTNC;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9886,12 +10224,12 @@ bool P2Asm::asm_fltnc(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_fltz(P2Params& params)
+bool P2Asm::asm_fltz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_FLTZ;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_FLTZ;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9907,12 +10245,12 @@ bool P2Asm::asm_fltz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_fltnz(P2Params& params)
+bool P2Asm::asm_fltnz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_FLTNZ;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_FLTNZ;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9928,12 +10266,12 @@ bool P2Asm::asm_fltnz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_fltrnd(P2Params& params)
+bool P2Asm::asm_fltrnd(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_FLTRND;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_FLTRND;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9949,12 +10287,12 @@ bool P2Asm::asm_fltrnd(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_fltnot(P2Params& params)
+bool P2Asm::asm_fltnot(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_FLTNOT;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_FLTNOT;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9970,12 +10308,12 @@ bool P2Asm::asm_fltnot(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_drvl(P2Params& params)
+bool P2Asm::asm_drvl(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_DRVL;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_DRVL;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -9991,12 +10329,12 @@ bool P2Asm::asm_drvl(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_drvh(P2Params& params)
+bool P2Asm::asm_drvh(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_DRVH;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_DRVH;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -10012,12 +10350,12 @@ bool P2Asm::asm_drvh(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_drvc(P2Params& params)
+bool P2Asm::asm_drvc(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_DRVC;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_DRVC;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -10033,12 +10371,12 @@ bool P2Asm::asm_drvc(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_drvnc(P2Params& params)
+bool P2Asm::asm_drvnc(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_DRVNC;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_DRVNC;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -10054,12 +10392,12 @@ bool P2Asm::asm_drvnc(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_drvz(P2Params& params)
+bool P2Asm::asm_drvz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_DRVZ;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_DRVZ;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -10075,12 +10413,12 @@ bool P2Asm::asm_drvz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_drvnz(P2Params& params)
+bool P2Asm::asm_drvnz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_DRVNZ;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_DRVNZ;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -10096,12 +10434,12 @@ bool P2Asm::asm_drvnz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_drvrnd(P2Params& params)
+bool P2Asm::asm_drvrnd(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_DRVRND;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_DRVRND;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -10117,12 +10455,12 @@ bool P2Asm::asm_drvrnd(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_drvnot(P2Params& params)
+bool P2Asm::asm_drvnot(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_DRVNOT;
-    return parse_imm_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_DRVNOT;
+    return parse_imm_d_wcz(p);
 }
 
 /**
@@ -10137,12 +10475,12 @@ bool P2Asm::asm_drvnot(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_splitb(P2Params& params)
+bool P2Asm::asm_splitb(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SPLITB;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SPLITB;
+    return parse_d(p);
 }
 
 /**
@@ -10157,12 +10495,12 @@ bool P2Asm::asm_splitb(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_mergeb(P2Params& params)
+bool P2Asm::asm_mergeb(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_MERGEB;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_MERGEB;
+    return parse_d(p);
 }
 
 /**
@@ -10177,12 +10515,12 @@ bool P2Asm::asm_mergeb(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_splitw(P2Params& params)
+bool P2Asm::asm_splitw(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SPLITW;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SPLITW;
+    return parse_d(p);
 }
 
 /**
@@ -10197,12 +10535,12 @@ bool P2Asm::asm_splitw(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_mergew(P2Params& params)
+bool P2Asm::asm_mergew(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_MERGEW;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_MERGEW;
+    return parse_d(p);
 }
 
 /**
@@ -10218,12 +10556,12 @@ bool P2Asm::asm_mergew(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_seussf(P2Params& params)
+bool P2Asm::asm_seussf(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SEUSSF;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SEUSSF;
+    return parse_d(p);
 }
 
 /**
@@ -10239,12 +10577,12 @@ bool P2Asm::asm_seussf(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_seussr(P2Params& params)
+bool P2Asm::asm_seussr(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SEUSSR;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SEUSSR;
+    return parse_d(p);
 }
 
 /**
@@ -10259,12 +10597,12 @@ bool P2Asm::asm_seussr(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rgbsqz(P2Params& params)
+bool P2Asm::asm_rgbsqz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_RGBSQZ;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_RGBSQZ;
+    return parse_d(p);
 }
 
 /**
@@ -10279,12 +10617,12 @@ bool P2Asm::asm_rgbsqz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rgbexp(P2Params& params)
+bool P2Asm::asm_rgbexp(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_RGBEXP;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_RGBEXP;
+    return parse_d(p);
 }
 
 /**
@@ -10298,12 +10636,12 @@ bool P2Asm::asm_rgbexp(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_xoro32(P2Params& params)
+bool P2Asm::asm_xoro32(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_XORO32;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_XORO32;
+    return parse_d(p);
 }
 
 /**
@@ -10318,12 +10656,12 @@ bool P2Asm::asm_xoro32(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rev(P2Params& params)
+bool P2Asm::asm_rev(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_REV;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_REV;
+    return parse_d(p);
 }
 
 /**
@@ -10339,12 +10677,12 @@ bool P2Asm::asm_rev(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rczr(P2Params& params)
+bool P2Asm::asm_rczr(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_RCZR;
-    return parse_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_RCZR;
+    return parse_d_cz(p);
 }
 
 /**
@@ -10360,12 +10698,12 @@ bool P2Asm::asm_rczr(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_rczl(P2Params& params)
+bool P2Asm::asm_rczl(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_RCZL;
-    return parse_d_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_RCZL;
+    return parse_d_cz(p);
 }
 
 /**
@@ -10380,12 +10718,12 @@ bool P2Asm::asm_rczl(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_wrc(P2Params& params)
+bool P2Asm::asm_wrc(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_WRC;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_WRC;
+    return parse_d(p);
 }
 
 /**
@@ -10400,12 +10738,12 @@ bool P2Asm::asm_wrc(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_wrnc(P2Params& params)
+bool P2Asm::asm_wrnc(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_WRNC;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_WRNC;
+    return parse_d(p);
 }
 
 /**
@@ -10420,12 +10758,12 @@ bool P2Asm::asm_wrnc(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_wrz(P2Params& params)
+bool P2Asm::asm_wrz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_WRZ;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_WRZ;
+    return parse_d(p);
 }
 
 /**
@@ -10440,12 +10778,12 @@ bool P2Asm::asm_wrz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_wrnz(P2Params& params)
+bool P2Asm::asm_wrnz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_WRNZ_MODCZ;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_WRNZ_MODCZ;
+    return parse_d(p);
 }
 
 /**
@@ -10460,12 +10798,12 @@ bool P2Asm::asm_wrnz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_modcz(P2Params& params)
+bool P2Asm::asm_modcz(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_WRNZ_MODCZ;
-    return parse_cccc_zzzz_cz(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_WRNZ_MODCZ;
+    return parse_cccc_zzzz_wcz(p);
 }
 
 /**
@@ -10483,12 +10821,12 @@ bool P2Asm::asm_modcz(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_setscp(P2Params& params)
+bool P2Asm::asm_setscp(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_SETSCP;
-    return parse_imm_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_SETSCP;
+    return parse_imm_d(p);
 }
 
 /**
@@ -10506,12 +10844,12 @@ bool P2Asm::asm_setscp(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_getscp(P2Params& params)
+bool P2Asm::asm_getscp(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_GETSCP;
-    return parse_d(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_GETSCP;
+    return parse_d(p);
 }
 
 /**
@@ -10526,12 +10864,12 @@ bool P2Asm::asm_getscp(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_jmp_abs(P2Params& params)
+bool P2Asm::asm_jmp_abs(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_JMP;
-    return parse_pc_abs(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_JMP;
+    return parse_pc_abs(p);
 }
 
 /**
@@ -10546,12 +10884,12 @@ bool P2Asm::asm_jmp_abs(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_call_abs(P2Params& params)
+bool P2Asm::asm_call_abs(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_CALL_RET;
-    return parse_pc_abs(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_CALL_RET;
+    return parse_pc_abs(p);
 }
 
 /**
@@ -10566,12 +10904,12 @@ bool P2Asm::asm_call_abs(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_calla_abs(P2Params& params)
+bool P2Asm::asm_calla_abs(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_CALLA_RETA;
-    return parse_pc_abs(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_CALLA_RETA;
+    return parse_pc_abs(p);
 }
 
 /**
@@ -10586,12 +10924,12 @@ bool P2Asm::asm_calla_abs(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_callb_abs(P2Params& params)
+bool P2Asm::asm_callb_abs(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_OPSRC;
-    params.IR.op.src = p2_OPSRC_CALLB_RETB;
-    return parse_pc_abs(params);
+    p.idx++;
+    p.IR.op.inst = p2_OPSRC;
+    p.IR.op.src = p2_OPSRC_CALLB_RETB;
+    return parse_pc_abs(p);
 }
 
 /**
@@ -10606,11 +10944,11 @@ bool P2Asm::asm_callb_abs(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_calld_pa_abs(P2Params& params)
+bool P2Asm::asm_calld_pa_abs(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_CALLD_PA_ABS;
-    return parse_pc_abs(params);
+    p.idx++;
+    p.IR.op.inst = p2_CALLD_PA_ABS;
+    return parse_pc_abs(p);
 }
 
 /**
@@ -10625,11 +10963,11 @@ bool P2Asm::asm_calld_pa_abs(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_calld_pb_abs(P2Params& params)
+bool P2Asm::asm_calld_pb_abs(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_CALLD_PB_ABS;
-    return parse_pc_abs(params);
+    p.idx++;
+    p.IR.op.inst = p2_CALLD_PB_ABS;
+    return parse_pc_abs(p);
 }
 
 /**
@@ -10644,11 +10982,11 @@ bool P2Asm::asm_calld_pb_abs(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_calld_ptra_abs(P2Params& params)
+bool P2Asm::asm_calld_ptra_abs(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_CALLD_PTRA_ABS;
-    return parse_pc_abs(params);
+    p.idx++;
+    p.IR.op.inst = p2_CALLD_PTRA_ABS;
+    return parse_pc_abs(p);
 }
 
 /**
@@ -10663,11 +11001,11 @@ bool P2Asm::asm_calld_ptra_abs(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_calld_ptrb_abs(P2Params& params)
+bool P2Asm::asm_calld_ptrb_abs(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_CALLD_PTRB_ABS;
-    return parse_pc_abs(params);
+    p.idx++;
+    p.IR.op.inst = p2_CALLD_PTRB_ABS;
+    return parse_pc_abs(p);
 }
 
 /**
@@ -10682,27 +11020,36 @@ bool P2Asm::asm_calld_ptrb_abs(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_loc(P2Params& params)
+bool P2Asm::asm_loc(P2Params& p)
 {
-    params.idx++;
-    p2_token_e tok = params.tokens.value(params.idx);
+    p.idx++;
+    p2_token_e tok = p.tokens.value(p.idx);
     bool success = false;
     switch (tok) {
     case t_PA:
-        success = asm_loc_pa(params);
+        p.idx++;
+        parse_comma(p);
+        success = asm_loc_pa(p);
         break;
     case t_PB:
-        success = asm_loc_pb(params);
+        p.idx++;
+        parse_comma(p);
+        success = asm_loc_pb(p);
         break;
     case t_PTRA:
-        success = asm_loc_ptra(params);
+        p.idx++;
+        parse_comma(p);
+        success = asm_loc_ptra(p);
         break;
     case t_PTRB:
-        success = asm_loc_ptrb(params);
+        p.idx++;
+        parse_comma(p);
+        success = asm_loc_ptrb(p);
         break;
     default:
-        params.error = tr("Invalid pointer type '%1' (expected one of PA,PB,PTRA,PTRB).")
-                       .arg(params.words.value(params.idx));
+        p.error = tr("Invalid pointer type '%1'; expected one of %2.")
+                       .arg(p.words.value(p.idx))
+                       .arg(tr("PA, PB, PTRA, or PTRB"));
     }
     return success;
 }
@@ -10719,11 +11066,10 @@ bool P2Asm::asm_loc(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_loc_pa(P2Params& params)
+bool P2Asm::asm_loc_pa(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_LOC_PA;
-    return parse_pc_abs(params);
+    p.IR.op.inst = p2_LOC_PA;
+    return parse_pc_abs(p);
 }
 
 /**
@@ -10738,11 +11084,10 @@ bool P2Asm::asm_loc_pa(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_loc_pb(P2Params& params)
+bool P2Asm::asm_loc_pb(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_LOC_PB;
-    return parse_pc_abs(params);
+    p.IR.op.inst = p2_LOC_PB;
+    return parse_pc_abs(p);
 }
 
 /**
@@ -10757,11 +11102,10 @@ bool P2Asm::asm_loc_pb(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_loc_ptra(P2Params& params)
+bool P2Asm::asm_loc_ptra(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_LOC_PTRA;
-    return parse_pc_abs(params);
+    p.IR.op.inst = p2_LOC_PTRA;
+    return parse_pc_abs(p);
 }
 
 /**
@@ -10776,11 +11120,10 @@ bool P2Asm::asm_loc_ptra(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_loc_ptrb(P2Params& params)
+bool P2Asm::asm_loc_ptrb(P2Params& p)
 {
-    params.idx++;
-    params.IR.op.inst = p2_LOC_PTRB;
-    return parse_pc_abs(params);
+    p.IR.op.inst = p2_LOC_PTRB;
+    return parse_pc_abs(p);
 }
 
 /**
@@ -10794,16 +11137,16 @@ bool P2Asm::asm_loc_ptrb(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_augs(P2Params& params)
+bool P2Asm::asm_augs(P2Params& p)
 {
     static const QVector<p2_inst7_e> augs = QVector<p2_inst7_e>()
                                            << p2_AUGS_00
                                            << p2_AUGS_01
                                            << p2_AUGS_10
                                            << p2_AUGS_11;
-    params.idx++;
-    params.IR.op.inst = p2_AUGS_00;
-    return parse_imm23(params, augs);
+    p.idx++;
+    p.IR.op.inst = p2_AUGS_00;
+    return parse_imm23(p, augs);
 }
 
 /**
@@ -10817,14 +11160,14 @@ bool P2Asm::asm_augs(P2Params& params)
  *
  * @param params reference to the assembler parameters
  */
-bool P2Asm::asm_augd(P2Params& params)
+bool P2Asm::asm_augd(P2Params& p)
 {
     static const QVector<p2_inst7_e> augd = QVector<p2_inst7_e>()
                                            << p2_AUGD_00
                                            << p2_AUGD_01
                                            << p2_AUGD_10
                                            << p2_AUGD_11;
-    params.idx++;
-    params.IR.op.inst = p2_AUGD_00;
-    return parse_imm23(params, augd);
+    p.idx++;
+    p.IR.op.inst = p2_AUGD_00;
+    return parse_imm23(p, augd);
 }

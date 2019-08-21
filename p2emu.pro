@@ -19,9 +19,7 @@ QMAKE_CXXFLAGS += -Wno-signed-enum-bitfield
 # You can also make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
-#DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
-
-#CONFIG += c++11
+DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
 		about.cpp \
@@ -29,6 +27,7 @@ SOURCES += \
 		main.cpp \
 		mainwindow.cpp \
 		p2asm.cpp \
+		p2asmmodel.cpp \
 		p2asmsym.cpp \
 		p2asmsymtbl.cpp \
 		p2cog.cpp \
@@ -43,6 +42,7 @@ HEADERS += \
 		gotoaddress.h \
 		mainwindow.h \
 		p2asm.h \
+		p2asmmodel.h \
 		p2asmsym.h \
 		p2asmsymtbl.h \
 		p2cog.h \
@@ -71,4 +71,5 @@ DISTFILES += \
 		README.md \
 		ROM_Booter_v33_01j.spin2 \
 		csv.cpp \
-		csv.h
+		csv.h \
+		icons/error.png

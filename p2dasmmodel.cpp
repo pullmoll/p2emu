@@ -57,7 +57,7 @@ static quint32 bin2hex(const QString& str)
 P2DasmModel::P2DasmModel(P2Dasm* dasm, QObject *parent)
     : QAbstractTableModel(parent)
     , m_dasm(dasm)
-    , m_opcode_format(f_binary)
+    , m_opcode_format(f_bin)
     , m_font(QStringLiteral("Monospace"), 8, QFont::Normal, false)
     , m_bold(QStringLiteral("Monospace"), 8, QFont::Bold, false)
     , m_size_normal()
@@ -165,14 +165,14 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
             break;
         case c_Opcode: // Opcode string
             switch (m_opcode_format) {
-            case f_binary:
+            case f_bin:
                known = m_dasm->dasm(PC, &opcode);
                result = opcode;
                 break;
-            case f_hexdec:
+            case f_hex:
                 result = QString("%1").arg(bin2hex(opcode), 8, 16, QChar('0'));
                 break;
-            case f_octal:
+            case f_oct:
                 result = QString("%1").arg(bin2hex(opcode), 11, 8, QChar('0'));
                 break;
             }
@@ -260,17 +260,17 @@ void P2DasmModel::updateSizes()
 
     m_size_bold.insert(c_Address,       metrics_bold.size(Qt::TextSingleLine, str_address));
     switch (m_opcode_format) {
-    case f_binary:
+    case f_bin:
         m_header.insert(c_Opcode, QStringLiteral("EEEE_IIIIIII_CZI_DDDDDDDDD_SSSSSSSSS"));
         m_size_normal.insert(c_Opcode,  metrics_normal.size(Qt::TextSingleLine, str_opcode_binary));
         m_size_bold.insert(c_Opcode,    metrics_bold.size(Qt::TextSingleLine, str_opcode_binary));
         break;
-    case f_hexdec:
+    case f_hex:
         m_header.insert(c_Opcode, tr("Op (hex)"));
         m_size_normal.insert(c_Opcode,  metrics_normal.size(Qt::TextSingleLine, str_opcode_hexdec));
         m_size_bold.insert(c_Opcode,    metrics_bold.size(Qt::TextSingleLine, str_opcode_hexdec));
         break;
-    case f_octal:
+    case f_oct:
         m_header.insert(c_Opcode, tr("Op (oct)"));
         m_size_normal.insert(c_Opcode,  metrics_normal.size(Qt::TextSingleLine, str_opcode_octal));
         m_size_bold.insert(c_Opcode,    metrics_bold.size(Qt::TextSingleLine, str_opcode_octal));

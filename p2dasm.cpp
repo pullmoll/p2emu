@@ -38,6 +38,7 @@
 P2Dasm::P2Dasm(const P2Cog* cog, QObject* parent)
     : QObject(parent)
     , COG(cog)
+    , m_lowercase(false)
     , pad_opcode(40)
     , pad_inst(-10)
     , pad_wcz(24)
@@ -100,7 +101,7 @@ bool P2Dasm::dasm(P2LONG addr, QString* opcode, QString* instruction, QString* d
     D = COG->rd_cog(IR.op.dst);
 
     // check for the condition
-    QString cond = Token.string(conditional(IR.op.cond));
+    QString cond = Token.string(conditional(IR.op.cond), m_lowercase);
     cond.resize(14, QChar::Space);
 
     if (opcode) {
@@ -1617,9 +1618,14 @@ P2LONG P2Dasm::memsize() const
     return hub->memsize();
 }
 
+bool P2Dasm::lowercase() const
+{
+    return m_lowercase;
+}
+
 void P2Dasm::setLowercase(bool flag)
 {
-    Token.setLowercase(flag);
+    m_lowercase = flag;
 }
 
 /**
@@ -1657,7 +1663,7 @@ void P2Dasm::format_inst(QString* instruction, p2_token_e inst)
 {
     if (nullptr == instruction)
         return;
-    *instruction = Token.string(inst);
+    *instruction = Token.string(inst, m_lowercase);
 }
 
 /**
@@ -1698,11 +1704,11 @@ void P2Dasm::format_with_cz(QString* instruction, p2_token_e wcz)
     if (IR.op.wc || IR.op.wz) {
         instruction->resize(pad_wcz, QChar::Space);
         if (IR.op.wc && IR.op.wz) {
-            instruction->append(Token.string(wcz));
+            instruction->append(Token.string(wcz, m_lowercase));
         } else if (IR.op.wc) {
-            instruction->append(Token.string(wc));
+            instruction->append(Token.string(wc, m_lowercase));
         } else {
-            instruction->append(Token.string(wz));
+            instruction->append(Token.string(wz, m_lowercase));
         }
     }
 }
@@ -1713,7 +1719,7 @@ void P2Dasm::format_with_c(QString* instruction, p2_token_e wc)
         return;
     if (IR.op.wc) {
         instruction->resize(pad_wcz, QChar::Space);
-        instruction->append(Token.string(wc));
+        instruction->append(Token.string(wc, m_lowercase));
     }
 }
 
@@ -1723,7 +1729,7 @@ void P2Dasm::format_with_z(QString* instruction, p2_token_e wz)
         return;
     if (IR.op.wz) {
         instruction->resize(pad_wcz, QChar::Space);
-        instruction->append(Token.string(wz));
+        instruction->append(Token.string(wz, m_lowercase));
     }
 }
 
@@ -1741,7 +1747,7 @@ void P2Dasm::format_d_imm_s_wcz(QString* instruction, p2_token_e inst, p2_token_
     if (nullptr == instruction)
         return;
     *instruction = QString("%1%2,%3%4")
-               .arg(Token.string(inst), pad_inst)
+               .arg(Token.string(inst, m_lowercase), pad_inst)
                .arg(format_num(IR.op.dst))
                .arg(IR.op.im ? "#" : "")
                .arg(format_num(IR.op.src));
@@ -1762,7 +1768,7 @@ void P2Dasm::format_d_imm_s_wc(QString* instruction, p2_token_e inst)
     if (nullptr == instruction)
         return;
     *instruction = QString("%1%2,%3%4")
-               .arg(Token.string(inst), pad_inst)
+               .arg(Token.string(inst, m_lowercase), pad_inst)
                .arg(format_num(IR.op.dst))
                .arg(IR.op.im ? "#" : "")
                .arg(format_num(IR.op.src));
@@ -1783,7 +1789,7 @@ void P2Dasm::format_d_imm_s_wz(QString* instruction, p2_token_e inst, p2_token_e
     if (nullptr == instruction)
         return;
     *instruction = QString("%1%2,%3%4")
-               .arg(Token.string(inst), pad_inst)
+               .arg(Token.string(inst, m_lowercase), pad_inst)
                .arg(format_num(IR.op.dst))
                .arg(IR.op.im ? "#" : "")                // I
                .arg(format_num(IR.op.src));
@@ -1804,7 +1810,7 @@ void P2Dasm::format_wz_d_imm_s(QString* instruction, p2_token_e inst)
     if (nullptr == instruction)
         return;
     *instruction = QString("%1%2%3,%4%5")
-               .arg(Token.string(inst), pad_inst)
+               .arg(Token.string(inst, m_lowercase), pad_inst)
                .arg(IR.op.wz ? "#" : "")                // L
                .arg(format_num(IR.op.dst))
                .arg(IR.op.im ? "#" : "")                // I
@@ -1824,7 +1830,7 @@ void P2Dasm::format_wz_d_imm_s_wc(QString* instruction, p2_token_e inst)
     if (nullptr == instruction)
         return;
     *instruction = QString("%1%2%3,%4%5")
-               .arg(Token.string(inst), pad_inst)
+               .arg(Token.string(inst, m_lowercase), pad_inst)
                .arg(IR.op.wz ? "#" : "")                   // L
                .arg(format_num(IR.op.dst))
                .arg(IR.op.im ? "#" : "")                  // I
@@ -1846,7 +1852,7 @@ void P2Dasm::format_d_imm_s_nnn(QString* instruction, p2_token_e inst, int max)
         return;
     int nnn = static_cast<int>(IR.opcode >> 18) & max;
     *instruction = QString("%1%2,%3%4,#%5")
-               .arg(Token.string(inst), pad_inst)
+               .arg(Token.string(inst, m_lowercase), pad_inst)
                .arg(format_num(IR.op.dst))
                .arg(IR.op.im ? "#" : "")
                .arg(format_num(IR.op.src))
@@ -1866,7 +1872,7 @@ void P2Dasm::format_d_imm_s(QString* instruction, p2_token_e inst)
     if (nullptr == instruction)
         return;
     *instruction = QString("%1%2,%3%4")
-               .arg(Token.string(inst), pad_inst)
+               .arg(Token.string(inst, m_lowercase), pad_inst)
                .arg(format_num(IR.op.dst))
                .arg(IR.op.im ? "#" : "")
                .arg(format_num(IR.op.src));
@@ -1886,7 +1892,7 @@ void P2Dasm::format_d_cz(QString* instruction, p2_token_e inst, p2_token_e with)
     if (nullptr == instruction)
         return;
     *instruction = QString("%1%2")
-               .arg(Token.string(inst), pad_inst)
+               .arg(Token.string(inst, m_lowercase), pad_inst)
                .arg(format_num(IR.op.dst));
     format_with_cz(instruction, with);
 }
@@ -1905,7 +1911,7 @@ void P2Dasm::format_cz(QString* instruction, p2_token_e inst, p2_token_e with)
     if (nullptr == instruction)
         return;
     *instruction = QString("%1")
-               .arg(Token.string(inst), pad_inst);
+               .arg(Token.string(inst, m_lowercase), pad_inst);
     format_with_cz(instruction, with);
 }
 
@@ -1926,7 +1932,7 @@ void P2Dasm::format_cz_cz(QString* instruction, p2_token_e inst, p2_token_e with
     const uint cccc = (IR.op.dst >> 4) & 15;
     const uint zzzz = (IR.op.dst >> 0) & 15;
     *instruction = QString("%1%2,%3")
-               .arg(Token.string(inst), pad_inst)
+               .arg(Token.string(inst, m_lowercase), pad_inst)
                .arg(conditional(cccc))
                .arg(conditional(zzzz));
     format_with_cz(instruction, with);
@@ -1945,7 +1951,7 @@ void P2Dasm::format_d(QString* instruction, p2_token_e inst)
     if (nullptr == instruction)
         return;
     *instruction = QString("%1%2%3")
-               .arg(Token.string(inst), pad_inst)
+               .arg(Token.string(inst, m_lowercase), pad_inst)
                .arg(format_num(IR.op.dst));
 }
 
@@ -1962,7 +1968,7 @@ void P2Dasm::format_wz_d(QString* instruction, p2_token_e inst)
     if (nullptr == instruction)
         return;
     *instruction = QString("%1%2%3")
-               .arg(Token.string(inst), pad_inst)
+               .arg(Token.string(inst, m_lowercase), pad_inst)
                .arg(IR.op.wz ? "#" : "")
                .arg(format_num(IR.op.dst));
 }
@@ -1980,7 +1986,7 @@ void P2Dasm::format_imm_d(QString* instruction, p2_token_e inst)
     if (nullptr == instruction)
         return;
     *instruction = QString("%1%2%3")
-               .arg(Token.string(inst), pad_inst)
+               .arg(Token.string(inst, m_lowercase), pad_inst)
                .arg(IR.op.im ? "#" : "")
                .arg(format_num(IR.op.dst));
 }
@@ -1999,7 +2005,7 @@ void P2Dasm::format_imm_d_cz(QString* instruction, p2_token_e inst, p2_token_e w
     if (nullptr == instruction)
         return;
     *instruction = QString("%1%2%3")
-               .arg(Token.string(inst), pad_inst)
+               .arg(Token.string(inst, m_lowercase), pad_inst)
                .arg(IR.op.im ? "#" : "")
                .arg(format_num(IR.op.dst));
     format_with_cz(instruction, with);
@@ -2018,7 +2024,7 @@ void P2Dasm::format_imm_d_c(QString* instruction, p2_token_e inst)
     if (nullptr == instruction)
         return;
     *instruction = QString("%1%2%3")
-               .arg(Token.string(inst), pad_inst)
+               .arg(Token.string(inst, m_lowercase), pad_inst)
                .arg(IR.op.im ? "#" : "")
                .arg(format_num(IR.op.dst));
     format_with_c(instruction, t_WC);
@@ -2074,12 +2080,11 @@ void P2Dasm::format_pc_abs(QString* instruction, p2_token_e inst, p2_token_e des
 {
     if (nullptr == instruction)
         return;
-    const P2LONG mask = ((1u << 20) - 1);
-    const P2LONG aaaa = IR.opcode & mask;
-    const P2LONG addr = IR.op.wz ? (PC + aaaa) & mask : aaaa;
+    const P2LONG aaaa = IR.opcode & A20MASK;
+    const P2LONG addr = IR.op.wz ? (PC + aaaa) & A20MASK : aaaa;
     *instruction = QString("%1%2%3$%4")
-               .arg(Token.string(inst), pad_inst)
-               .arg(Token.string(dest))
+               .arg(Token.string(inst, m_lowercase), pad_inst)
+               .arg(Token.string(dest, m_lowercase))
                .arg(dest != t_nothing ? "," : "")
                .arg(addr, 0, 16);
 }
@@ -2096,9 +2101,9 @@ void P2Dasm::format_imm23(QString* instruction, p2_token_e inst)
 {
     if (nullptr == instruction)
         return;
-    const P2LONG nnnn = IR.opcode & ((1u << 23) - 1);
+    const P2LONG nnnn = (IR.opcode << 9) & AUGMASK;
     *instruction = QString("%1#$%2")
-               .arg(Token.string(inst), pad_inst)
+               .arg(Token.string(inst, m_lowercase), pad_inst)
                .arg(nnnn << 9, 0, 16, QChar('0'));
 }
 
@@ -6025,7 +6030,7 @@ void P2Dasm::dasm_jnqmt(QString* instruction, QString* description)
 void P2Dasm::dasm_1011110_1(QString* instruction, QString* description)
 {
     if (description)
-        *description = tr("<empty>.");
+        *description = tr("Undefined instruction <empty> %1011110_1.");
     format_wz_d_imm_s(instruction, t_empty);
 }
 
@@ -6043,7 +6048,7 @@ void P2Dasm::dasm_1011110_1(QString* instruction, QString* description)
 void P2Dasm::dasm_1011111_0(QString* instruction, QString* description)
 {
     if (description)
-        *description = tr("<empty>.");
+        *description = tr("Undefined instruction <empty> %1011111_0.");
     format_wz_d_imm_s(instruction, t_empty);
 }
 

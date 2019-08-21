@@ -3,28 +3,98 @@
 
 P2Token Token;
 
-P2Token::P2Token(bool lowercase)
-    : m_lowercase(lowercase)
+static const QString bin_digits = QStringLiteral("01");
+static const QString oct_digits = QStringLiteral("01234567");
+static const QString dec_digits = QStringLiteral("0123456789");
+static const QString hex_digits = QStringLiteral("0123456789ABCDEF");
+
+P2Token::P2Token()
+    : m_token_string()
+    , m_string_token()
 {
     m_token_string.insert(t_invalid,        QStringLiteral("<invalid>"));
-    m_token_string.insert(t_nothing,        QStringLiteral(""));
+    m_token_string.insert(t_nothing,        QStringLiteral("«»"));
+    m_token_string.insert(t_comma,          QStringLiteral(","));
+    m_token_string.insert(t_immediate,      QStringLiteral("«immediate»"));
+    m_token_string.insert(t_string,         QStringLiteral("«string»"));
+    m_token_string.insert(t_value_bin,      QStringLiteral("«binary»"));
+    m_token_string.insert(t_value_oct,      QStringLiteral("«octal»"));
+    m_token_string.insert(t_value_dec,      QStringLiteral("«decimal»"));
+    m_token_string.insert(t_value_hex,      QStringLiteral("«hexadecimal»"));
+    m_token_string.insert(t_local,     QStringLiteral("«local.name»"));
+    m_token_string.insert(t_name,           QStringLiteral("«name»"));
+
     m_token_string.insert(t_empty,          QStringLiteral("<empty>"));
     m_token_string.insert(t__RET_,          QStringLiteral("_RET_"));
-    m_token_string.insert(t_IF_C,           QStringLiteral("IF_C"));
-    m_token_string.insert(t_IF_C_AND_NZ,    QStringLiteral("IF_C_AND_NZ"));
-    m_token_string.insert(t_IF_C_AND_Z,     QStringLiteral("IF_C_AND_Z"));
-    m_token_string.insert(t_IF_C_EQ_Z,      QStringLiteral("IF_C_EQ_Z"));
-    m_token_string.insert(t_IF_C_NE_Z,      QStringLiteral("IF_C_NE_Z"));
-    m_token_string.insert(t_IF_C_OR_NZ,     QStringLiteral("IF_C_OR_NZ"));
-    m_token_string.insert(t_IF_C_OR_Z,      QStringLiteral("IF_C_OR_Z"));
-    m_token_string.insert(t_IF_NC,          QStringLiteral("IF_NC"));
+    m_token_string.insert(t_IF_NZ_AND_NC,   QStringLiteral("IF_NZ_AND_NC"));
     m_token_string.insert(t_IF_NC_AND_NZ,   QStringLiteral("IF_NC_AND_NZ"));
+    m_token_string.insert(t_IF_A,           QStringLiteral("IF_A"));
+    m_token_string.insert(t_IF_GT,          QStringLiteral("IF_GT"));
+    m_token_string.insert(t_IF_Z_AND_NC,    QStringLiteral("IF_Z_AND_NC"));
     m_token_string.insert(t_IF_NC_AND_Z,    QStringLiteral("IF_NC_AND_Z"));
-    m_token_string.insert(t_IF_NC_OR_NZ,    QStringLiteral("IF_NC_OR_NZ"));
-    m_token_string.insert(t_IF_NC_OR_Z,     QStringLiteral("IF_NC_OR_Z"));
+    m_token_string.insert(t_IF_NC,          QStringLiteral("IF_NC"));
+    m_token_string.insert(t_IF_AE,          QStringLiteral("IF_AE"));
+    m_token_string.insert(t_IF_GE,          QStringLiteral("IF_GE"));
+    m_token_string.insert(t_IF_NZ_AND_C,    QStringLiteral("IF_NZ_AND_C"));
+    m_token_string.insert(t_IF_C_AND_NZ,    QStringLiteral("IF_C_AND_NZ"));
     m_token_string.insert(t_IF_NZ,          QStringLiteral("IF_NZ"));
+    m_token_string.insert(t_IF_NE,          QStringLiteral("IF_NE"));
+    m_token_string.insert(t_IF_Z_NE_C,      QStringLiteral("IF_Z_NE_C"));
+    m_token_string.insert(t_IF_C_NE_Z,      QStringLiteral("IF_C_NE_Z"));
+    m_token_string.insert(t_IF_NZ_OR_NC,    QStringLiteral("IF_NZ_OR_NC"));
+    m_token_string.insert(t_IF_NC_OR_NZ,    QStringLiteral("IF_NC_OR_NZ"));
+    m_token_string.insert(t_IF_Z_AND_C,     QStringLiteral("IF_Z_AND_C"));
+    m_token_string.insert(t_IF_C_AND_Z,     QStringLiteral("IF_C_AND_Z"));
+    m_token_string.insert(t_IF_Z_EQ_C,      QStringLiteral("IF_Z_EQ_C"));
+    m_token_string.insert(t_IF_C_EQ_Z,      QStringLiteral("IF_C_EQ_Z"));
     m_token_string.insert(t_IF_Z,           QStringLiteral("IF_Z"));
+    m_token_string.insert(t_IF_E,           QStringLiteral("IF_E"));
+    m_token_string.insert(t_IF_Z_OR_NC,     QStringLiteral("IF_Z_OR_NC"));
+    m_token_string.insert(t_IF_NC_OR_Z,     QStringLiteral("IF_NC_OR_Z"));
+    m_token_string.insert(t_IF_C,           QStringLiteral("IF_C"));
+    m_token_string.insert(t_IF_B,           QStringLiteral("IF_B"));
+    m_token_string.insert(t_IF_LT,          QStringLiteral("IF_LT"));
+    m_token_string.insert(t_IF_NZ_OR_C,     QStringLiteral("IF_NZ_OR_C"));
+    m_token_string.insert(t_IF_C_OR_NZ,     QStringLiteral("IF_C_OR_NZ"));
+    m_token_string.insert(t_IF_Z_OR_C,      QStringLiteral("IF_Z_OR_C"));
+    m_token_string.insert(t_IF_C_OR_Z,      QStringLiteral("IF_C_OR_Z"));
+    m_token_string.insert(t_IF_BE,          QStringLiteral("IF_BE"));
+    m_token_string.insert(t_IF_LE,          QStringLiteral("IF_LE"));
+    m_token_string.insert(t_IF_ALWAYS,      QStringLiteral("IF_ALWAYS"));
     m_token_string.insert(t_ALWAYS,         QStringLiteral(""));        // empty string
+
+    m_token_string.insert(t_MODCZ__CLR,         QStringLiteral("_CLR"));
+    m_token_string.insert(t_MODCZ__NC_AND_NZ,   QStringLiteral("_NC_AND_NZ"));
+    m_token_string.insert(t_MODCZ__NZ_AND_NC,   QStringLiteral("_NZ_AND_NC"));
+    m_token_string.insert(t_MODCZ__GT,          QStringLiteral("_GT"));
+    m_token_string.insert(t_MODCZ__NC_AND_Z,    QStringLiteral("_NC_AND_Z"));
+    m_token_string.insert(t_MODCZ__Z_AND_NC,    QStringLiteral("_Z_AND_NC"));
+    m_token_string.insert(t_MODCZ__NC,          QStringLiteral("_NC"));
+    m_token_string.insert(t_MODCZ__GE,          QStringLiteral("_GE"));
+    m_token_string.insert(t_MODCZ__C_AND_NZ,    QStringLiteral("_C_AND_NZ"));
+    m_token_string.insert(t_MODCZ__NZ_AND_C,    QStringLiteral("_NZ_AND_C"));
+    m_token_string.insert(t_MODCZ__NZ,          QStringLiteral("_NZ"));
+    m_token_string.insert(t_MODCZ__NE,          QStringLiteral("_NE"));
+    m_token_string.insert(t_MODCZ__C_NE_Z,      QStringLiteral("_C_NE_Z"));
+    m_token_string.insert(t_MODCZ__Z_NE_C,      QStringLiteral("_Z_NE_C"));
+    m_token_string.insert(t_MODCZ__NC_OR_NZ,    QStringLiteral("_NC_OR_NZ"));
+    m_token_string.insert(t_MODCZ__NZ_OR_NC,    QStringLiteral("_NZ_OR_NC"));
+    m_token_string.insert(t_MODCZ__C_AND_Z,     QStringLiteral("_C_AND_Z"));
+    m_token_string.insert(t_MODCZ__Z_AND_C,     QStringLiteral("_Z_AND_C"));
+    m_token_string.insert(t_MODCZ__C_EQ_Z,      QStringLiteral("_C_EQ_Z"));
+    m_token_string.insert(t_MODCZ__Z_EQ_C,      QStringLiteral("_Z_EQ_C"));
+    m_token_string.insert(t_MODCZ__Z,           QStringLiteral("_Z"));
+    m_token_string.insert(t_MODCZ__E,           QStringLiteral("_E"));
+    m_token_string.insert(t_MODCZ__NC_OR_Z,     QStringLiteral("_NC_OR_Z"));
+    m_token_string.insert(t_MODCZ__Z_OR_NC,     QStringLiteral("_Z_OR_NC"));
+    m_token_string.insert(t_MODCZ__C,           QStringLiteral("_C"));
+    m_token_string.insert(t_MODCZ__LT,          QStringLiteral("_LT"));
+    m_token_string.insert(t_MODCZ__C_OR_NZ,     QStringLiteral("_C_OR_NZ"));
+    m_token_string.insert(t_MODCZ__NZ_OR_C,     QStringLiteral("_NZ_OR_C"));
+    m_token_string.insert(t_MODCZ__C_OR_Z,      QStringLiteral("_C_OR_Z"));
+    m_token_string.insert(t_MODCZ__Z_OR_C,      QStringLiteral("_Z_OR_C"));
+    m_token_string.insert(t_MODCZ__LE,          QStringLiteral("_LE"));
+    m_token_string.insert(t_MODCZ__SET,         QStringLiteral("_SET"));
 
     m_token_string.insert(t_ABS,            QStringLiteral("ABS"));
     m_token_string.insert(t_ADD,            QStringLiteral("ADD"));
@@ -83,7 +153,6 @@ P2Token::P2Token(bool lowercase)
     m_token_string.insert(t_COGSTOP,        QStringLiteral("COGSTOP"));
     m_token_string.insert(t_CRCBIT,         QStringLiteral("CRCBIT"));
     m_token_string.insert(t_CRCNIB,         QStringLiteral("CRCNIB"));
-    m_token_string.insert(t_DAT,            QStringLiteral("DAT"));
     m_token_string.insert(t_DECMOD,         QStringLiteral("DECMOD"));
     m_token_string.insert(t_DECOD,          QStringLiteral("DECOD"));
     m_token_string.insert(t_DIRC,           QStringLiteral("DIRC"));
@@ -340,7 +409,6 @@ P2Token::P2Token(bool lowercase)
     m_token_string.insert(t_TESTB,          QStringLiteral("TESTB"));
     m_token_string.insert(t_TESTBN,         QStringLiteral("TESTBN"));
     m_token_string.insert(t_TESTN,          QStringLiteral("TESTN"));
-    m_token_string.insert(t_TESTBN,         QStringLiteral("TESTNB"));
     m_token_string.insert(t_TESTP,          QStringLiteral("TESTP"));
     m_token_string.insert(t_TESTPN,         QStringLiteral("TESTPN"));
     m_token_string.insert(t_TJF,            QStringLiteral("TJF"));
@@ -408,8 +476,13 @@ P2Token::P2Token(bool lowercase)
     m_token_string.insert(t__LONG,          QStringLiteral("LONG"));
     m_token_string.insert(t__RES,           QStringLiteral("RES"));
     m_token_string.insert(t__FIT,           QStringLiteral("FIT"));
-    m_token_string.insert(t__CON,           QStringLiteral("CON"));
+
     m_token_string.insert(t__DAT,           QStringLiteral("DAT"));
+    m_token_string.insert(t__CON,           QStringLiteral("CON"));
+    m_token_string.insert(t__PUB,           QStringLiteral("PUB"));
+    m_token_string.insert(t__PRI,           QStringLiteral("PRI"));
+    m_token_string.insert(t__VAR,           QStringLiteral("VAR"));
+
     m_token_string.insert(t__ORG,           QStringLiteral("ORG"));
     m_token_string.insert(t__ORGH,          QStringLiteral("ORGH"));
     m_token_string.insert(t__ASSIGN,        QStringLiteral("="));
@@ -441,32 +514,14 @@ P2Token::P2Token(bool lowercase)
 }
 
 /**
- * @brief Return the current lowercase enable state
- * @return
- */
-bool P2Token::lowercase() const
-{
-    return m_lowercase;
-}
-
-/**
- * @brief Set the lowercase enable true or false
- * @param flag lowercase enable (true), disable (false)
- */
-void P2Token::setLowercase(bool flag)
-{
-    m_lowercase = flag;
-}
-
-/**
  * @brief Return a QString for the given %token
  * @param token one of p2_toke_e enume
  * @return QString in uppercase or lowercase
  */
-QString P2Token::string(p2_token_e token)
+QString P2Token::string(p2_token_e token, bool lowercase)
 {
     QString str = m_token_string.value(token);
-    return m_lowercase ? str.toLower() : str;
+    return lowercase ? str.toLower() : str;
 }
 
 /**
@@ -476,6 +531,26 @@ QString P2Token::string(p2_token_e token)
  */
 p2_token_e P2Token::token(const QString& str)
 {
-    const QString token = str.trimmed().toUpper();
-    return m_string_token.value(token, t_nothing);
+    const QString ustr = str.trimmed().toUpper();
+    p2_token_e tok = m_string_token.value(ustr, t_nothing);
+
+    if (t_nothing == tok) {
+        // Determin t_xxx by first character
+        if (ustr.startsWith(QChar('#')))
+            return t_immediate;
+        if (ustr.startsWith(QChar('.')))
+            return t_local;
+        if (ustr.startsWith(QChar('"')))
+            return t_string;
+        if (ustr.startsWith(QChar('%')))
+            return t_value_bin;
+        if (ustr.startsWith(QChar('$')))
+            return t_value_hex;
+        if (ustr.startsWith(QChar('0')))
+            return t_value_oct;
+        if (dec_digits.contains(ustr.at(0)))
+            return t_value_dec;
+        return t_name;
+    }
+    return tok;
 }

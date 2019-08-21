@@ -49,9 +49,9 @@ public:
         c_Description
     };
     enum format_e {
-        f_binary,
-        f_hexdec,
-        f_octal
+        f_bin,
+        f_hex,
+        f_oct
     };
 
     explicit P2DasmModel(P2Dasm* dasm, QObject *parent = nullptr);
