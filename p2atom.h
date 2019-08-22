@@ -20,7 +20,7 @@ class P2Atom
 {
 public:
     enum Type {
-        Invalid, Byte, Word, Long, Quad
+        Invalid, Byte, Word, Long, Quad, String
     };
 
     P2Atom();
@@ -44,22 +44,22 @@ public:
     p2_LONG toLONG(bool *ok = nullptr) const;
     p2_QUAD toQUAD(bool *ok = nullptr) const;
 
-    p2_BYTEs toBYTES() const;
-    p2_WORDs toWORDS() const;
-    p2_LONGs toLONGS() const;
+    p2_BYTES toBYTES() const;
+    p2_WORDS toWORDS() const;
+    p2_LONGS toLONGS() const;
 
     template <typename T>
     T operator= (T newval)
     {
+        clear();
         if (set(sizeof(T), newval))
             return newval;
         return value<T>();
     }
 
-    bool operator== (const P2Atom& other)
-    {
-        return m_data == other.m_data;
-    }
+    bool operator== (const P2Atom& other);
+
+    P2Atom& operator+= (const P2Atom& other);
 
 private:
 
@@ -73,18 +73,30 @@ private:
         switch (bits) {
         case  8: // append a byte
             m_data.append(static_cast<char>(value));
+            // Initial assignment sets type
+            if (m_type == Invalid) {
+                m_type = Byte;
+            } else if (m_data.size() > 1) {
+                m_type = String;
+            }
             break;
         case 16: // append a word
             m_data.append(static_cast<char>(value>>0));
             m_data.append(static_cast<char>(value>>8));
+            // Initial assignment sets type
+            if (m_type == Invalid)
+                m_type = Word;
             break;
         case 32: // append a long
             m_data.append(static_cast<char>(value>> 0));
             m_data.append(static_cast<char>(value>> 8));
             m_data.append(static_cast<char>(value>>16));
             m_data.append(static_cast<char>(value>>24));
+            // Initial assignment sets type
+            if (m_type == Invalid)
+                m_type = Long;
             break;
-        case 64: // append a long
+        case 64: // append a quad
             m_data.append(static_cast<char>(value>> 0));
             m_data.append(static_cast<char>(value>> 8));
             m_data.append(static_cast<char>(value>>16));
@@ -93,26 +105,10 @@ private:
             m_data.append(static_cast<char>(value>>40));
             m_data.append(static_cast<char>(value>>48));
             m_data.append(static_cast<char>(value>>56));
-            break;
-        }
-        switch (m_type) {
-        case Quad:
-            break;
-        case Long:
-            if (m_data.size() > 4)
+            // Initial assignment sets type
+            if (m_type == Invalid)
                 m_type = Quad;
             break;
-        case Word:
-            if (m_data.size() > 2)
-                m_type = Long;
-            break;
-        case Byte:
-            if (m_data.size() > 0)
-                m_type = Word;
-            break;
-        default:
-            if (m_data.size() > 0)
-                m_type = Byte;
         }
         return m_type != Invalid;
     }
@@ -120,6 +116,8 @@ private:
     template<typename T>
     T at(const int offs, bool *ok = nullptr) const
     {
+        if (m_type == Invalid)
+            return static_cast<T>(0);
         const uchar* data = reinterpret_cast<const uchar *>(m_data.constData());
         const int need = sizeof(T) * 8;
         const int bits = m_data.size() * 8;

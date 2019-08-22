@@ -40,6 +40,8 @@
 
 #include "p2asm.h"
 
+#define OVERRIDE_FLAGS  0
+
 class P2AsmModel : public QAbstractTableModel
 {
     Q_OBJECT
@@ -56,22 +58,16 @@ public:
 
     explicit P2AsmModel(P2Asm* p2asm, QObject *parent = nullptr);
 
-    // Header:
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
-
-    // Basic functionality:
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
-
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
-
-    // Editable:
-    bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
-
+#if OVERRIDE_FLAGS
     Qt::ItemFlags flags(const QModelIndex& index) const override;
+#endif
 
-    p2_opcode_format_e opcode_format() const { return m_opcode_format; }
-    QSize sizeHint(column_e column) const { return m_size_normal.value(column); }
+    p2_opcode_format_e opcode_format() const { return m_format; }
+    QSize sizeHint(column_e column) const;
 
 public slots:
     void invalidate();
@@ -80,13 +76,11 @@ public slots:
 
 private:
     P2Asm* m_asm;
-    p2_opcode_format_e m_opcode_format;
+    p2_opcode_format_e m_format;
     QFont m_font;
     QFont m_bold;
     QIcon m_error;
     QHash<column_e,QString> m_header;
-    QHash<column_e,QSize> m_size_normal;
-    QHash<column_e,QSize> m_size_bold;
     QHash<column_e,QRgb> m_background;
     QHash<column_e,int> m_header_alignment;
     QHash<column_e,int> m_text_alignment;

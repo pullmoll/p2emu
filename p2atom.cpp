@@ -102,8 +102,9 @@ bool P2Atom::set(int nbits, p2_QUAD value)
     clear();
     if (nbits <= 0)
         return false;
-    if (nbits <= 8)
+    if (nbits <= 8) {
         return append<8>(value);
+    }
     if (nbits <= 16)
         return append<16>(value);
     if (nbits <= 32)
@@ -155,12 +156,12 @@ p2_QUAD P2Atom::toQUAD(bool* ok) const
  * @brief Return data as a vector of bytes
  * @return p2_BYTEs of all data
  */
-p2_BYTEs P2Atom::toBYTES() const
+p2_BYTES P2Atom::toBYTES() const
 {
     const int bytes = m_data.size();
-    p2_BYTEs result(bytes);
-    for (int i = 0; i < bytes; i++)
-        result[i] = at<p2_BYTE>(i*8);
+    p2_BYTES result(bytes, 0);
+    if (bytes > 0)
+        memcpy(result.data(), m_data.constData(), static_cast<size_t>(bytes));
     return result;
 }
 
@@ -168,12 +169,12 @@ p2_BYTEs P2Atom::toBYTES() const
  * @brief Return data as a vector of words
  * @return p2_WORDs of all data
  */
-p2_WORDs P2Atom::toWORDS() const
+p2_WORDS P2Atom::toWORDS() const
 {
     const int bytes = m_data.size();
-    p2_WORDs result(bytes/2);
-    for (int i = 0; i < bytes; i += 2)
-        result[i] = at<p2_WORD>(i*16);
+    p2_WORDS result((bytes + 1)  / 2, 0);
+    if (bytes > 0)
+        memcpy(result.data(), m_data.constData(), static_cast<size_t>(bytes));
     return result;
 }
 
@@ -181,11 +182,22 @@ p2_WORDs P2Atom::toWORDS() const
  * @brief Return data as a vector of longs
  * @return p2_LONGs of all data
  */
-p2_LONGs P2Atom::toLONGS() const
+p2_LONGS P2Atom::toLONGS() const
 {
     const int bytes = m_data.size();
-    p2_LONGs result(bytes/4);
-    for (int i = 0; i < bytes; i += 4)
-        result[i] = at<p2_LONG>(i*32);
+    p2_LONGS result((bytes + 3) / 4);
+    if (bytes > 0)
+        memcpy(result.data(), m_data.constData(), static_cast<size_t>(bytes));
     return result;
+}
+
+bool P2Atom::operator==(const P2Atom& other)
+{
+    return m_data == other.m_data;
+}
+
+P2Atom& P2Atom::operator+=(const P2Atom& other)
+{
+    m_data += other.m_data;
+    return *this;
 }

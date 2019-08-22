@@ -47,13 +47,13 @@ typedef quint32 p2_LONG;
 typedef quint64 p2_QUAD;
 
 //!< Type for an array (vector) of BYTEs
-typedef QVector<p2_BYTE> p2_BYTEs;
+typedef QVector<p2_BYTE> p2_BYTES;
 
 //!< Type for an array (vector) of WORDs
-typedef QVector<p2_WORD> p2_WORDs;
+typedef QVector<p2_WORD> p2_WORDS;
 
 //!< Type for an array (vector) of LONGs
-typedef QVector<p2_LONG> p2_LONGs;
+typedef QVector<p2_LONG> p2_LONGS;
 
 /// Union of bytes, words, and a long in endianess aware ordering
 typedef union {
@@ -305,240 +305,241 @@ typedef enum {
 
 }   p2_inst7_e;
 
+Q_STATIC_ASSERT(p2_AUGD_11 == 127u);
 
 typedef enum {
 
-    p2_OPDST_JINT               = 0x00,
-    p2_OPDST_JCT1               = 0x01,
-    p2_OPDST_JCT2               = 0x02,
-    p2_OPDST_JCT3               = 0x03,
-    p2_OPDST_JSE1               = 0x04,
-    p2_OPDST_JSE2               = 0x05,
-    p2_OPDST_JSE3               = 0x06,
-    p2_OPDST_JSE4               = 0x07,
-    p2_OPDST_JPAT               = 0x08,
-    p2_OPDST_JFBW               = 0x09,
-    p2_OPDST_JXMT               = 0x0a,
-    p2_OPDST_JXFI               = 0x0b,
-    p2_OPDST_JXRO               = 0x0c,
-    p2_OPDST_JXRL               = 0x0d,
-    p2_OPDST_JATN               = 0x0e,
-    p2_OPDST_JQMT               = 0x0f,
+    p2_OPDST_JINT               = 0x000,
+    p2_OPDST_JCT1               = 0x001,
+    p2_OPDST_JCT2               = 0x002,
+    p2_OPDST_JCT3               = 0x003,
+    p2_OPDST_JSE1               = 0x004,
+    p2_OPDST_JSE2               = 0x005,
+    p2_OPDST_JSE3               = 0x006,
+    p2_OPDST_JSE4               = 0x007,
+    p2_OPDST_JPAT               = 0x008,
+    p2_OPDST_JFBW               = 0x009,
+    p2_OPDST_JXMT               = 0x00a,
+    p2_OPDST_JXFI               = 0x00b,
+    p2_OPDST_JXRO               = 0x00c,
+    p2_OPDST_JXRL               = 0x00d,
+    p2_OPDST_JATN               = 0x00e,
+    p2_OPDST_JQMT               = 0x00f,
 
-    p2_OPDST_JNINT              = 0x10,
-    p2_OPDST_JNCT1              = 0x11,
-    p2_OPDST_JNCT2              = 0x12,
-    p2_OPDST_JNCT3              = 0x13,
-    p2_OPDST_JNSE1              = 0x14,
-    p2_OPDST_JNSE2              = 0x15,
-    p2_OPDST_JNSE3              = 0x16,
-    p2_OPDST_JNSE4              = 0x17,
-    p2_OPDST_JNPAT              = 0x18,
-    p2_OPDST_JNFBW              = 0x19,
-    p2_OPDST_JNXMT              = 0x1a,
-    p2_OPDST_JNXFI              = 0x1b,
-    p2_OPDST_JNXRO              = 0x1c,
-    p2_OPDST_JNXRL              = 0x1d,
-    p2_OPDST_JNATN              = 0x1e,
-    p2_OPDST_JNQMT              = 0x1f,
+    p2_OPDST_JNINT              = 0x010,
+    p2_OPDST_JNCT1              = 0x011,
+    p2_OPDST_JNCT2              = 0x012,
+    p2_OPDST_JNCT3              = 0x013,
+    p2_OPDST_JNSE1              = 0x014,
+    p2_OPDST_JNSE2              = 0x015,
+    p2_OPDST_JNSE3              = 0x016,
+    p2_OPDST_JNSE4              = 0x017,
+    p2_OPDST_JNPAT              = 0x018,
+    p2_OPDST_JNFBW              = 0x019,
+    p2_OPDST_JNXMT              = 0x01a,
+    p2_OPDST_JNXFI              = 0x01b,
+    p2_OPDST_JNXRO              = 0x01c,
+    p2_OPDST_JNXRL              = 0x01d,
+    p2_OPDST_JNATN              = 0x01e,
+    p2_OPDST_JNQMT              = 0x01f,
 }   p2_opdst_e;
 
 typedef enum {
-    p2_OPSRC_HUBSET             = 0x00,
-    p2_OPSRC_COGID              = 0x01,
-    p2_OPSRC_COGSTOP            = 0x03,
-    p2_OPSRC_LOCKNEW            = 0x04,
-    p2_OPSRC_LOCKRET            = 0x05,
-    p2_OPSRC_LOCKTRY            = 0x06,
-    p2_OPSRC_LOCKREL            = 0x07,
-    p2_OPSRC_QLOG               = 0x0e,
-    p2_OPSRC_QEXP               = 0x0f,
+    p2_OPSRC_HUBSET             = 0x000,
+    p2_OPSRC_COGID              = 0x001,
+    p2_OPSRC_COGSTOP            = 0x003,
+    p2_OPSRC_LOCKNEW            = 0x004,
+    p2_OPSRC_LOCKRET            = 0x005,
+    p2_OPSRC_LOCKTRY            = 0x006,
+    p2_OPSRC_LOCKREL            = 0x007,
+    p2_OPSRC_QLOG               = 0x00e,
+    p2_OPSRC_QEXP               = 0x00f,
 
-    p2_OPSRC_RFBYTE             = 0x10,
-    p2_OPSRC_RFWORD             = 0x11,
-    p2_OPSRC_RFLONG             = 0x12,
-    p2_OPSRC_RFVAR              = 0x13,
-    p2_OPSRC_RFVARS             = 0x14,
-    p2_OPSRC_WFBYTE             = 0x15,
-    p2_OPSRC_WFWORD             = 0x16,
-    p2_OPSRC_WFLONG             = 0x17,
+    p2_OPSRC_RFBYTE             = 0x010,
+    p2_OPSRC_RFWORD             = 0x011,
+    p2_OPSRC_RFLONG             = 0x012,
+    p2_OPSRC_RFVAR              = 0x013,
+    p2_OPSRC_RFVARS             = 0x014,
+    p2_OPSRC_WFBYTE             = 0x015,
+    p2_OPSRC_WFWORD             = 0x016,
+    p2_OPSRC_WFLONG             = 0x017,
 
-    p2_OPSRC_GETQX              = 0x18,
-    p2_OPSRC_GETQY              = 0x19,
-    p2_OPSRC_GETCT              = 0x1a,
-    p2_OPSRC_GETRND             = 0x1b,
-    p2_OPSRC_SETDACS            = 0x1c,
-    p2_OPSRC_SETXFRQ            = 0x1d,
-    p2_OPSRC_GETXACC            = 0x1e,
-    p2_OPSRC_WAITX              = 0x1f,
+    p2_OPSRC_GETQX              = 0x018,
+    p2_OPSRC_GETQY              = 0x019,
+    p2_OPSRC_GETCT              = 0x01a,
+    p2_OPSRC_GETRND             = 0x01b,
+    p2_OPSRC_SETDACS            = 0x01c,
+    p2_OPSRC_SETXFRQ            = 0x01d,
+    p2_OPSRC_GETXACC            = 0x01e,
+    p2_OPSRC_WAITX              = 0x01f,
 
-    p2_OPSRC_SETSE1             = 0x20,
-    p2_OPSRC_SETSE2             = 0x21,
-    p2_OPSRC_SETSE3             = 0x22,
-    p2_OPSRC_SETSE4             = 0x23,
-    p2_OPSRC_X24                = 0x24,
-    p2_OPSRC_SETINT1            = 0x25,
-    p2_OPSRC_SETINT2            = 0x26,
-    p2_OPSRC_SETINT3            = 0x27,
+    p2_OPSRC_SETSE1             = 0x020,
+    p2_OPSRC_SETSE2             = 0x021,
+    p2_OPSRC_SETSE3             = 0x022,
+    p2_OPSRC_SETSE4             = 0x023,
+    p2_OPSRC_X24                = 0x024,
+    p2_OPSRC_SETINT1            = 0x025,
+    p2_OPSRC_SETINT2            = 0x026,
+    p2_OPSRC_SETINT3            = 0x027,
 
-    p2_OPSRC_SETQ               = 0x28,
-    p2_OPSRC_SETQ2              = 0x29,
-    p2_OPSRC_PUSH               = 0x2a,
-    p2_OPSRC_POP                = 0x2b,
-    p2_OPSRC_JMP                = 0x2c,
-    p2_OPSRC_CALL_RET           = 0x2d,
-    p2_OPSRC_CALLA_RETA         = 0x2e,
-    p2_OPSRC_CALLB_RETB         = 0x2f,
+    p2_OPSRC_SETQ               = 0x028,
+    p2_OPSRC_SETQ2              = 0x029,
+    p2_OPSRC_PUSH               = 0x02a,
+    p2_OPSRC_POP                = 0x02b,
+    p2_OPSRC_JMP                = 0x02c,
+    p2_OPSRC_CALL_RET           = 0x02d,
+    p2_OPSRC_CALLA_RETA         = 0x02e,
+    p2_OPSRC_CALLB_RETB         = 0x02f,
 
-    p2_OPSRC_JMPREL             = 0x30,
-    p2_OPSRC_SKIP               = 0x31,
-    p2_OPSRC_SKIPF              = 0x32,
-    p2_OPSRC_EXECF              = 0x33,
-    p2_OPSRC_GETPTR             = 0x34,
-    p2_OPSRC_COGBRK             = 0x35,
-    p2_OPSRC_BRK                = 0x36,
-    p2_OPSRC_SETLUTS            = 0x37,
+    p2_OPSRC_JMPREL             = 0x030,
+    p2_OPSRC_SKIP               = 0x031,
+    p2_OPSRC_SKIPF              = 0x032,
+    p2_OPSRC_EXECF              = 0x033,
+    p2_OPSRC_GETPTR             = 0x034,
+    p2_OPSRC_COGBRK             = 0x035,
+    p2_OPSRC_BRK                = 0x036,
+    p2_OPSRC_SETLUTS            = 0x037,
 
-    p2_OPSRC_SETCY              = 0x38,
-    p2_OPSRC_SETCI              = 0x39,
-    p2_OPSRC_SETCQ              = 0x3a,
-    p2_OPSRC_SETCFRQ            = 0x3b,
-    p2_OPSRC_SETCMOD            = 0x3c,
-    p2_OPSRC_SETPIV             = 0x3d,
-    p2_OPSRC_SETPIX             = 0x3e,
-    p2_OPSRC_COGATN             = 0x3f,
+    p2_OPSRC_SETCY              = 0x038,
+    p2_OPSRC_SETCI              = 0x039,
+    p2_OPSRC_SETCQ              = 0x03a,
+    p2_OPSRC_SETCFRQ            = 0x03b,
+    p2_OPSRC_SETCMOD            = 0x03c,
+    p2_OPSRC_SETPIV             = 0x03d,
+    p2_OPSRC_SETPIX             = 0x03e,
+    p2_OPSRC_COGATN             = 0x03f,
 
-    p2_OPSRC_TESTP_W_DIRL       = 0x40,
+    p2_OPSRC_TESTP_W_DIRL       = 0x040,
         p2_OPSRC_TESTP_W        = p2_OPSRC_TESTP_W_DIRL,
         p2_OPSRC_DIRL           = p2_OPSRC_TESTP_W_DIRL,
-    p2_OPSRC_TESTPN_W_DIRH      = 0x41,
+    p2_OPSRC_TESTPN_W_DIRH      = 0x041,
         p2_OPSRC_TESTPN_W       = p2_OPSRC_TESTPN_W_DIRH,
         p2_OPSRC_DIRH           = p2_OPSRC_TESTPN_W_DIRH,
-    p2_OPSRC_TESTP_AND_DIRC     = 0x42,
+    p2_OPSRC_TESTP_AND_DIRC     = 0x042,
         p2_OPSRC_TESTP_AND      = p2_OPSRC_TESTP_AND_DIRC,
         p2_OPSRC_DIRC           = p2_OPSRC_TESTP_AND_DIRC,
-    p2_OPSRC_TESTPN_AND_DIRNC   = 0x43,
+    p2_OPSRC_TESTPN_AND_DIRNC   = 0x043,
         p2_OPSRC_TESTPN_AND     = p2_OPSRC_TESTPN_AND_DIRNC,
         p2_OPSRC_DIRNC          = p2_OPSRC_TESTPN_AND_DIRNC,
-    p2_OPSRC_TESTP_OR_DIRZ      = 0x44,
+    p2_OPSRC_TESTP_OR_DIRZ      = 0x044,
         p2_OPSRC_TESTP_OR       = p2_OPSRC_TESTP_OR_DIRZ,
         p2_OPSRC_DIRZ           = p2_OPSRC_TESTP_OR_DIRZ,
-    p2_OPSRC_TESTPN_OR_DIRNZ    = 0x45,
+    p2_OPSRC_TESTPN_OR_DIRNZ    = 0x045,
         p2_OPSRC_TESTPN_OR      = p2_OPSRC_TESTPN_OR_DIRNZ,
         p2_OPSRC_DIRNZ          = p2_OPSRC_TESTPN_OR_DIRNZ,
-    p2_OPSRC_TESTP_XOR_DIRRND   = 0x46,
+    p2_OPSRC_TESTP_XOR_DIRRND   = 0x046,
         p2_OPSRC_TESTP_XOR      = p2_OPSRC_TESTP_XOR_DIRRND,
         p2_OPSRC_DIRRND         = p2_OPSRC_TESTP_XOR_DIRRND,
-    p2_OPSRC_TESTPN_XOR_DIRNOT  = 0x47,
+    p2_OPSRC_TESTPN_XOR_DIRNOT  = 0x047,
         p2_OPSRC_TESTPN_XOR     = p2_OPSRC_TESTPN_XOR_DIRNOT,
         p2_OPSRC_DIRNOT         = p2_OPSRC_TESTPN_XOR_DIRNOT,
 
-    p2_OPSRC_OUTL               = 0x48,
-    p2_OPSRC_OUTH               = 0x49,
-    p2_OPSRC_OUTC               = 0x4a,
-    p2_OPSRC_OUTNC              = 0x4b,
-    p2_OPSRC_OUTZ               = 0x4c,
-    p2_OPSRC_OUTNZ              = 0x4d,
-    p2_OPSRC_OUTRND             = 0x4e,
-    p2_OPSRC_OUTNOT             = 0x4f,
+    p2_OPSRC_OUTL               = 0x048,
+    p2_OPSRC_OUTH               = 0x049,
+    p2_OPSRC_OUTC               = 0x04a,
+    p2_OPSRC_OUTNC              = 0x04b,
+    p2_OPSRC_OUTZ               = 0x04c,
+    p2_OPSRC_OUTNZ              = 0x04d,
+    p2_OPSRC_OUTRND             = 0x04e,
+    p2_OPSRC_OUTNOT             = 0x04f,
 
-    p2_OPSRC_FLTL               = 0x50,
-    p2_OPSRC_FLTH               = 0x51,
-    p2_OPSRC_FLTC               = 0x52,
-    p2_OPSRC_FLTNC              = 0x53,
-    p2_OPSRC_FLTZ               = 0x54,
-    p2_OPSRC_FLTNZ              = 0x55,
-    p2_OPSRC_FLTRND             = 0x56,
-    p2_OPSRC_FLTNOT             = 0x57,
+    p2_OPSRC_FLTL               = 0x050,
+    p2_OPSRC_FLTH               = 0x051,
+    p2_OPSRC_FLTC               = 0x052,
+    p2_OPSRC_FLTNC              = 0x053,
+    p2_OPSRC_FLTZ               = 0x054,
+    p2_OPSRC_FLTNZ              = 0x055,
+    p2_OPSRC_FLTRND             = 0x056,
+    p2_OPSRC_FLTNOT             = 0x057,
 
-    p2_OPSRC_DRVL               = 0x58,
-    p2_OPSRC_DRVH               = 0x59,
-    p2_OPSRC_DRVC               = 0x5a,
-    p2_OPSRC_DRVNC              = 0x5b,
-    p2_OPSRC_DRVZ               = 0x5c,
-    p2_OPSRC_DRVNZ              = 0x5d,
-    p2_OPSRC_DRVRND             = 0x5e,
-    p2_OPSRC_DRVNOT             = 0x5f,
+    p2_OPSRC_DRVL               = 0x058,
+    p2_OPSRC_DRVH               = 0x059,
+    p2_OPSRC_DRVC               = 0x05a,
+    p2_OPSRC_DRVNC              = 0x05b,
+    p2_OPSRC_DRVZ               = 0x05c,
+    p2_OPSRC_DRVNZ              = 0x05d,
+    p2_OPSRC_DRVRND             = 0x05e,
+    p2_OPSRC_DRVNOT             = 0x05f,
 
-    p2_OPSRC_SPLITB             = 0x60,
-    p2_OPSRC_MERGEB             = 0x61,
-    p2_OPSRC_SPLITW             = 0x62,
-    p2_OPSRC_MERGEW             = 0x63,
-    p2_OPSRC_SEUSSF             = 0x64,
-    p2_OPSRC_SEUSSR             = 0x65,
-    p2_OPSRC_RGBSQZ             = 0x66,
-    p2_OPSRC_RGBEXP             = 0x67,
+    p2_OPSRC_SPLITB             = 0x060,
+    p2_OPSRC_MERGEB             = 0x061,
+    p2_OPSRC_SPLITW             = 0x062,
+    p2_OPSRC_MERGEW             = 0x063,
+    p2_OPSRC_SEUSSF             = 0x064,
+    p2_OPSRC_SEUSSR             = 0x065,
+    p2_OPSRC_RGBSQZ             = 0x066,
+    p2_OPSRC_RGBEXP             = 0x067,
 
-    p2_OPSRC_XORO32             = 0x68,
-    p2_OPSRC_REV                = 0x69,
-    p2_OPSRC_RCZR               = 0x6a,
-    p2_OPSRC_RCZL               = 0x6b,
-    p2_OPSRC_WRC                = 0x6c,
-    p2_OPSRC_WRNC               = 0x6d,
-    p2_OPSRC_WRZ                = 0x6e,
-    p2_OPSRC_WRNZ_MODCZ         = 0x6f,
+    p2_OPSRC_XORO32             = 0x068,
+    p2_OPSRC_REV                = 0x069,
+    p2_OPSRC_RCZR               = 0x06a,
+    p2_OPSRC_RCZL               = 0x06b,
+    p2_OPSRC_WRC                = 0x06c,
+    p2_OPSRC_WRNC               = 0x06d,
+    p2_OPSRC_WRZ                = 0x06e,
+    p2_OPSRC_WRNZ_MODCZ         = 0x06f,
 
-    p2_OPSRC_SETSCP             = 0x70,
-    p2_OPSRC_GETSCP             = 0x71,
+    p2_OPSRC_SETSCP             = 0x070,
+    p2_OPSRC_GETSCP             = 0x071,
 }   p2_opsrc_e;
 
 typedef enum {
-    p2_OPX24_POLLINT            = 0x00,
-    p2_OPX24_POLLCT1            = 0x01,
-    p2_OPX24_POLLCT2            = 0x02,
-    p2_OPX24_POLLCT3            = 0x03,
-    p2_OPX24_POLLSE1            = 0x04,
-    p2_OPX24_POLLSE2            = 0x05,
-    p2_OPX24_POLLSE3            = 0x06,
-    p2_OPX24_POLLSE4            = 0x07,
-    p2_OPX24_POLLPAT            = 0x08,
-    p2_OPX24_POLLFBW            = 0x09,
-    p2_OPX24_POLLXMT            = 0x0a,
-    p2_OPX24_POLLXFI            = 0x0b,
-    p2_OPX24_POLLXRO            = 0x0c,
-    p2_OPX24_POLLXRL            = 0x0d,
-    p2_OPX24_POLLATN            = 0x0e,
-    p2_OPX24_POLLQMT            = 0x0f,
+    p2_OPX24_POLLINT            = 0x000,
+    p2_OPX24_POLLCT1            = 0x001,
+    p2_OPX24_POLLCT2            = 0x002,
+    p2_OPX24_POLLCT3            = 0x003,
+    p2_OPX24_POLLSE1            = 0x004,
+    p2_OPX24_POLLSE2            = 0x005,
+    p2_OPX24_POLLSE3            = 0x006,
+    p2_OPX24_POLLSE4            = 0x007,
+    p2_OPX24_POLLPAT            = 0x008,
+    p2_OPX24_POLLFBW            = 0x009,
+    p2_OPX24_POLLXMT            = 0x00a,
+    p2_OPX24_POLLXFI            = 0x00b,
+    p2_OPX24_POLLXRO            = 0x00c,
+    p2_OPX24_POLLXRL            = 0x00d,
+    p2_OPX24_POLLATN            = 0x00e,
+    p2_OPX24_POLLQMT            = 0x00f,
 
-    p2_OPX24_WAITINT            = 0x10,
-    p2_OPX24_WAITCT1            = 0x11,
-    p2_OPX24_WAITCT2            = 0x12,
-    p2_OPX24_WAITCT3            = 0x13,
-    p2_OPX24_WAITSE1            = 0x14,
-    p2_OPX24_WAITSE2            = 0x15,
-    p2_OPX24_WAITSE3            = 0x16,
-    p2_OPX24_WAITSE4            = 0x17,
-    p2_OPX24_WAITPAT            = 0x18,
-    p2_OPX24_WAITFBW            = 0x19,
-    p2_OPX24_WAITXMT            = 0x1a,
-    p2_OPX24_WAITXFI            = 0x1b,
-    p2_OPX24_WAITXRO            = 0x1c,
-    p2_OPX24_WAITXRL            = 0x1d,
-    p2_OPX24_WAITATN            = 0x1e,
+    p2_OPX24_WAITINT            = 0x010,
+    p2_OPX24_WAITCT1            = 0x011,
+    p2_OPX24_WAITCT2            = 0x012,
+    p2_OPX24_WAITCT3            = 0x013,
+    p2_OPX24_WAITSE1            = 0x014,
+    p2_OPX24_WAITSE2            = 0x015,
+    p2_OPX24_WAITSE3            = 0x016,
+    p2_OPX24_WAITSE4            = 0x017,
+    p2_OPX24_WAITPAT            = 0x018,
+    p2_OPX24_WAITFBW            = 0x019,
+    p2_OPX24_WAITXMT            = 0x01a,
+    p2_OPX24_WAITXFI            = 0x01b,
+    p2_OPX24_WAITXRO            = 0x01c,
+    p2_OPX24_WAITXRL            = 0x01d,
+    p2_OPX24_WAITATN            = 0x01e,
 
-    p2_OPX24_ALLOWI             = 0x20,
-    p2_OPX24_STALLI             = 0x21,
-    p2_OPX24_TRGINT1            = 0x22,
-    p2_OPX24_TRGINT2            = 0x23,
-    p2_OPX24_TRGINT3            = 0x24,
-    p2_OPX24_NIXINT1            = 0x25,
-    p2_OPX24_NIXINT2            = 0x26,
-    p2_OPX24_NIXINT3            = 0x27,
+    p2_OPX24_ALLOWI             = 0x020,
+    p2_OPX24_STALLI             = 0x021,
+    p2_OPX24_TRGINT1            = 0x022,
+    p2_OPX24_TRGINT2            = 0x023,
+    p2_OPX24_TRGINT3            = 0x024,
+    p2_OPX24_NIXINT1            = 0x025,
+    p2_OPX24_NIXINT2            = 0x026,
+    p2_OPX24_NIXINT3            = 0x027,
 }   p2_opx24_e;
 
 typedef enum {
-    p2_OPCODE_WMLONG            = 0x53,
-    p2_OPCODE_RDBYTE            = 0x56,
-    p2_OPCODE_RDWORD            = 0x57,
-    p2_OPCODE_RDLONG            = 0x58,
-    p2_OPCODE_CALLD             = 0x59,
-    p2_OPCODE_CALLPB            = 0x5e,
-    p2_OPCODE_JINT              = 0x5f,
-    p2_OPCODE_WRBYTE            = 0x62,
-    p2_OPCODE_WRWORD            = 0x62,
-    p2_OPCODE_WRLONG            = 0x63,
-    p2_OPCODE_QMUL              = 0x68,
-    p2_OPCODE_QVECTOR           = 0x6a,
+    p2_OPCODE_WMLONG            = 0x053,
+    p2_OPCODE_RDBYTE            = 0x056,
+    p2_OPCODE_RDWORD            = 0x057,
+    p2_OPCODE_RDLONG            = 0x058,
+    p2_OPCODE_CALLD             = 0x059,
+    p2_OPCODE_CALLPB            = 0x05e,
+    p2_OPCODE_JINT              = 0x05f,
+    p2_OPCODE_WRBYTE            = 0x062,
+    p2_OPCODE_WRWORD            = 0x062,
+    p2_OPCODE_WRLONG            = 0x063,
+    p2_OPCODE_QMUL              = 0x068,
+    p2_OPCODE_QVECTOR           = 0x06a,
 }   p2_opcode_e;
 
 typedef enum {
@@ -564,7 +565,8 @@ typedef enum {
 }   p2_instx2_e;
 
 /**
- * @brief Enumeration of the 8 bit instruction types including WC
+ * @brief Enumeration of the 8 bit instruction types
+ * This is the 7 bit instruction with appended WC
  */
 typedef enum {
     p2_MUL                      = INST8(p2_MUL_MULS,0),
@@ -615,7 +617,8 @@ typedef enum {
 }   p2_inst8_e;
 
 /**
- * @brief Enumeration of the 9 bit instruction types including WC and WZ
+ * @brief Enumeration of the 9 bit instruction types
+ * This is the 7 bit instruction with appended WC and WZ
  */
 typedef enum {
     p2_BITL_eol                 = INST9(p2_TESTB_W_BITL,0,0),
@@ -730,10 +733,9 @@ typedef enum {
 
 }   p2_inst9_e;
 
-Q_STATIC_ASSERT(p2_AUGD_11 == 127u);
 
 /**
- * @brief Structure of the Propeller2 opcode words with 7 bits instruction, wc, wz, and imm
+ * @brief Structure of the Propeller2 opcode words with 7 bits instruction, wc, wz, and im
  *
  * Note: To have the bit fields work for both, little
  * and big endian machines, the order has to match
@@ -741,65 +743,65 @@ Q_STATIC_ASSERT(p2_AUGD_11 == 127u);
  */
 typedef struct {
 #if (Q_BYTE_ORDER == Q_LITTLE_ENDIAN)
-    unsigned src:9;             //!< source (S or #S)
-    unsigned dst:9;             //!< destination (D or #D)
+    uint src:9;                 //!< source (S or #S)
+    uint dst:9;                 //!< destination (D or #D)
     bool im:1;                  //!< immediate flag
     bool wz:1;                  //!< update Z flag
     bool wc:1;                  //!< update C flag
-    unsigned inst:7;           //!< instruction type
-    unsigned cond:4;            //!< conditional execution
+    uint inst:7;                //!< instruction type
+    uint cond:4;                //!< conditional execution
 #elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
-    unsigned cond:4;            //!< conditional execution
-    unsigned inst:7;            //!< instruction type
+    uint cond:4;                //!< conditional execution
+    uint inst:7;                //!< instruction type
     bool uc:1;                  //!< update C flag
     bool uz:1;                  //!< update Z flag
     bool im:1;                  //!< immediate flag
-    unsigned dst:9;             //!< destination (D or #D)
-    unsigned src:9;             //!< source (S or #S)
+    uint dst:9;                 //!< destination (D or #D)
+    uint src:9;                 //!< source (S or #S)
 #else
 #error "Unknown byte order!"
 #endif
 }   p2_opcode7_t;
 
 /**
- * @brief Structure of the Propeller2 opcode words with 8 bits of instruction, wz, and imm
+ * @brief Structure of the Propeller2 opcode words with 8 bits of instruction, wz, and im
  */
 typedef struct {
 #if (Q_BYTE_ORDER == Q_LITTLE_ENDIAN)
-    unsigned src:9;             //!< source (S or #S)
-    unsigned dst:9;             //!< destination (D or #D)
+    uint src:9;                 //!< source (S or #S)
+    uint dst:9;                 //!< destination (D or #D)
     bool im:1;                  //!< immediate flag
     bool wz:1;                  //!< update Z flag
-    unsigned inst:8;            //!< instruction type including WC
-    unsigned cond:4;            //!< conditional execution
+    uint inst:8;                //!< instruction type including WC
+    uint cond:4;                //!< conditional execution
 #elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
-    unsigned cond:4;            //!< conditional execution
-    unsigned inst:8;            //!< instruction type including WC
+    uint cond:4;                //!< conditional execution
+    uint inst:8;                //!< instruction type including WC
     bool wz:1;                  //!< update Z flag
     bool im:1;                  //!< immediate flag
-    unsigned dst:9;             //!< destination (D or #D)
-    unsigned src:9;             //!< source (S or #S)
+    uint dst:9;                 //!< destination (D or #D)
+    uint src:9;                 //!< source (S or #S)
 #else
 #error "Unknown byte order!"
 #endif
 }   p2_opcode8_t;
 
 /**
- * @brief Structure of the Propeller2 opcode words with 9 bits of instruction and imm
+ * @brief Structure of the Propeller2 opcode words with 9 bits of instruction and im
  */
 typedef struct {
 #if (Q_BYTE_ORDER == Q_LITTLE_ENDIAN)
-    unsigned src:9;             //!< source (S or #S)
-    unsigned dst:9;             //!< destination (D or #D)
+    uint src:9;                 //!< source (S or #S)
+    uint dst:9;                 //!< destination (D or #D)
     bool im:1;                  //!< immediate flag
-    unsigned inst:9;            //!< instruction type including WC and WZ
-    unsigned cond:4;            //!< conditional execution
+    uint inst:9;                //!< instruction type including WC and WZ
+    uint cond:4;                //!< conditional execution
 #elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
-    unsigned cond:4;            //!< conditional execution
-    unsigned inst:9;            //!< instruction type including WC and WZ
+    uint cond:4;                //!< conditional execution
+    uint inst:9;                //!< instruction type including WC and WZ
     bool im:1;                  //!< immediate flag
-    unsigned dst:9;             //!< destination (D or #D)
-    unsigned src:9;             //!< source (S or #S)
+    uint dst:9;                 //!< destination (D or #D)
+    uint src:9;                 //!< source (S or #S)
 #else
 #error "Unknown byte order!"
 #endif
@@ -809,35 +811,38 @@ typedef struct {
  * @brief union of a 32 bit word and the opcode bit fields
  */
 typedef union {
-    p2_LONG opcode;              //!< opcode as 32 bit word
+    p2_LONG opcode;             //!< opcode as 32 bit word
     p2_opcode7_t op;            //!< ocpode as bit fields (version with 7 bits instruction)
     p2_opcode8_t op8;           //!< ocpode as bit fields (version including WC)
     p2_opcode9_t op9;           //!< ocpode as bit fields (version including WC and WZ)
 }   p2_opcode_u;
 
 /**
- * @brief structure of the shadow registers at the end of LUT
+ * @brief Structure of the LUT and the shadow registers in the last 16 LONGs
  */
 typedef struct {
-    p2_LONG RAM[512-16];         //!< general-use code/data registers
-    p2_LONG IJMP3;               //!< interrupt call address for INT3
-    p2_LONG IRET3;               //!< interrupt return address for INT3
-    p2_LONG IJMP2;               //!< interrupt call address for INT2
-    p2_LONG IRET2;               //!< interrupt return address for INT2
-    p2_LONG IJMP1;               //!< interrupt call address for INT1
-    p2_LONG IRET1;               //!< interrupt return address for INT1
-    p2_LONG PA;                  //!< CALLD-imm return, CALLPA parameter, or LOC address
-    p2_LONG PB;                  //!< CALLD-imm return, CALLPB parameter, or LOC address
-    p2_LONG PTRA;                //!< pointer A to hub RAM
-    p2_LONG PTRB;                //!< pointer B to hub RAM
-    p2_LONG DIRA;                //!< output enables for P31 ... P0
-    p2_LONG DIRB;                //!< output enables for P63 ... P32
-    p2_LONG OUTA;                //!< output states for P31 ... P0
-    p2_LONG OUTB;                //!< output states for P63 ... P32
-    p2_LONG INA;                 //!< input states for P31 ... P0
-    p2_LONG INB;                 //!< input states for P63 ... P32
+    p2_LONG RAM[512-16];        //!< general-use code/data registers
+    p2_LONG IJMP3;              //!< interrupt call address for INT3
+    p2_LONG IRET3;              //!< interrupt return address for INT3
+    p2_LONG IJMP2;              //!< interrupt call address for INT2
+    p2_LONG IRET2;              //!< interrupt return address for INT2
+    p2_LONG IJMP1;              //!< interrupt call address for INT1
+    p2_LONG IRET1;              //!< interrupt return address for INT1
+    p2_LONG PA;                 //!< CALLD-imm return, CALLPA parameter, or LOC address
+    p2_LONG PB;                 //!< CALLD-imm return, CALLPB parameter, or LOC address
+    p2_LONG PTRA;               //!< pointer A to hub RAM
+    p2_LONG PTRB;               //!< pointer B to hub RAM
+    p2_LONG DIRA;               //!< output enables for P31 ... P0
+    p2_LONG DIRB;               //!< output enables for P63 ... P32
+    p2_LONG OUTA;               //!< output states for P31 ... P0
+    p2_LONG OUTB;               //!< output states for P63 ... P32
+    p2_LONG INA;                //!< input states for P31 ... P0
+    p2_LONG INB;                //!< input states for P63 ... P32
 }   p2_lutregs_t;
 
+/**
+ * @brief Offsets of the LUT shadow registers
+ */
 typedef enum {
     offs_IJMP3 = offsetof(p2_lutregs_t, IJMP3) / sizeof(p2_LONG),
     offs_IRET3 = offsetof(p2_lutregs_t, IRET3) / sizeof(p2_LONG),
@@ -958,7 +963,7 @@ typedef struct {
  */
 typedef union {
     p2_LONG bits;               //!< interrupt flags as LONG
-    p2_int_flags_t flags;
+    p2_int_flags_t flags;       //!< interrupt flags as bit masks
 }   p2_int_bits_u;
 
 /**
@@ -1026,7 +1031,32 @@ typedef struct {
 }   p2_queue_t;
 
 typedef enum {
-    f_bin,
-    f_hex,
-    f_oct
+    fmt_bin,
+    fmt_byt,
+    fmt_oct,
+    fmt_hex,
 }   p2_opcode_format_e;
+
+extern const QString template_str_address;
+extern const QString template_str_opcode_bin;
+extern const QString template_str_opcode_byt;
+extern const QString template_str_opcode_oct;
+extern const QString template_str_opcode_hex;
+extern const QString template_str_tokens;
+extern const QString template_str_symbols;
+extern const QString template_str_errors;
+extern const QString template_str_instruction;
+extern const QString template_str_description;
+
+extern QString format_opcode_bin(const p2_opcode_u& IR);
+extern QString format_opcode_byt(const p2_opcode_u& IR);
+extern QString format_opcode_oct(const p2_opcode_u& IR);
+extern QString format_opcode_hex(const p2_opcode_u& IR);
+
+extern QString format_data_bin(const p2_opcode_u& IR);
+extern QString format_data_byt(const p2_opcode_u& IR);
+extern QString format_data_oct(const p2_opcode_u& IR);
+extern QString format_data_hex(const p2_opcode_u& IR);
+
+extern QString format_opcode(const p2_opcode_u& IR, const p2_opcode_format_e fmt = fmt_bin);
+extern QString format_data(const p2_opcode_u& IR, const p2_opcode_format_e fmt = fmt_bin);

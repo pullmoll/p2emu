@@ -32,7 +32,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 #include <QDateTime>
+#include <QDir>
 #include <QFile>
+#include <QFileDialog>
+#include <QUrl>
+#include <QStandardPaths>
 #include <QTextStream>
 #include <QTimer>
 #include <QSettings>
@@ -65,6 +69,11 @@ static const QLatin1String key_column_instruction("hide_instruction");
 static const QLatin1String key_column_source("hide_source");
 static const QLatin1String key_column_description("hide_description");
 
+static const QLatin1String key_source("source");
+static const QLatin1String key_directory("directory");
+static const QLatin1String key_filename("filename");
+static const QLatin1String key_history("directory");
+
 static const QLatin1String tab_hub("P2Hub");
 static const QLatin1String tab_asm("P2Asm");
 static const QLatin1String tab_dasm("P2Dasm");
@@ -87,6 +96,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->action_AboutQt5, SIGNAL(triggered(bool)), this, SLOT(aboutQt5()));
 
     setWindowTitle(QString("%1 v%2").arg(qApp->applicationName()).arg(qApp->applicationVersion()));
+    setupMenu();
     setupTabWidget();
     setupToolbars();
     setupStatusbar();
@@ -141,7 +151,7 @@ void MainWindow::restoreSettings()
     restoreState(s.value(key_windowState).toByteArray());
 
     s.beginGroup(grp_assembler);
-    setAsmOpcodes(s.value(key_opcodes, f_bin).toInt());
+    setAsmOpcodes(s.value(key_opcodes, fmt_bin).toInt());
     ui->tvDasm->selectRow(s.value(key_current_row).toInt());
     ui->tvDasm->setColumnHidden(P2AsmModel::c_Origin, s.value(key_column_origin, false).toBool());
     ui->tvDasm->setColumnHidden(P2AsmModel::c_Opcode, s.value(key_column_opcode, false).toBool());
@@ -152,7 +162,7 @@ void MainWindow::restoreSettings()
     s.endGroup();
 
     s.beginGroup(grp_disassembler);
-    setDasmOpcodes(s.value(key_opcodes, f_bin).toInt());
+    setDasmOpcodes(s.value(key_opcodes, fmt_bin).toInt());
     setDasmLowercase(s.value(key_lowercase).toBool());
     ui->tvDasm->selectRow(s.value(key_current_row).toInt());
     ui->tvDasm->setColumnHidden(P2DasmModel::c_Address, s.value(key_column_address, false).toBool());
@@ -189,11 +199,13 @@ void MainWindow::setActionsEnabled(ui_tab_e which, bool enable)
     case id_asm: // Asm
         ui->action_Assemble->setEnabled(enable);
         ui->action_Asm_Opcodes_bin->setEnabled(enable);
+        ui->action_Asm_Opcodes_byt->setEnabled(enable);
         ui->action_Asm_Opcodes_oct->setEnabled(enable);
         ui->action_Asm_Opcodes_hex->setEnabled(enable);
         break;
     case id_dasm: // Dasm
         ui->action_Dasm_Opcodes_bin->setEnabled(enable);
+        ui->action_Dasm_Opcodes_byt->setEnabled(enable);
         ui->action_Dasm_Opcodes_oct->setEnabled(enable);
         ui->action_Dasm_Opcodes_hex->setEnabled(enable);
         ui->action_Dasm_Lowercase->setEnabled(enable);
@@ -245,86 +257,115 @@ void MainWindow::setAsmOpcodes(int mode)
 {
     p2_opcode_format_e format = static_cast<p2_opcode_format_e>(mode);
     switch (format) {
-    case f_bin:
+    case fmt_bin:
         ui->action_Asm_Opcodes_bin->setChecked(true);
-        ui->action_Asm_Opcodes_hex->setChecked(false);
+        ui->action_Asm_Opcodes_byt->setChecked(false);
         ui->action_Asm_Opcodes_oct->setChecked(false);
-        break;
-    case f_hex:
-        ui->action_Asm_Opcodes_bin->setChecked(false);
-        ui->action_Asm_Opcodes_hex->setChecked(true);
-        ui->action_Asm_Opcodes_oct->setChecked(false);
-        break;
-    case f_oct:
-        ui->action_Asm_Opcodes_bin->setChecked(false);
         ui->action_Asm_Opcodes_hex->setChecked(false);
+        break;
+    case fmt_byt:
+        ui->action_Asm_Opcodes_bin->setChecked(false);
+        ui->action_Asm_Opcodes_byt->setChecked(true);
+        ui->action_Asm_Opcodes_oct->setChecked(false);
+        ui->action_Asm_Opcodes_hex->setChecked(false);
+        break;
+    case fmt_oct:
+        ui->action_Asm_Opcodes_bin->setChecked(false);
+        ui->action_Asm_Opcodes_byt->setChecked(false);
         ui->action_Asm_Opcodes_oct->setChecked(true);
+        ui->action_Asm_Opcodes_hex->setChecked(false);
+        break;
+    case fmt_hex:
+        ui->action_Asm_Opcodes_bin->setChecked(false);
+        ui->action_Asm_Opcodes_byt->setChecked(false);
+        ui->action_Asm_Opcodes_oct->setChecked(false);
+        ui->action_Asm_Opcodes_hex->setChecked(true);
         break;
     }
     m_amodel->setOpcodeFormat(format);
     updateAsmColumnSizes();
 }
 
-void MainWindow::setAsmOpcodesBinary()
+void MainWindow::setAsmOpcodesBin()
 {
-    setAsmOpcodes(f_bin);
+    setAsmOpcodes(fmt_bin);
 }
 
-void MainWindow::setAsmOpcodesHexDec()
+void MainWindow::setAsmOpcodesByt()
 {
-    setAsmOpcodes(f_hex);
+    setAsmOpcodes(fmt_byt);
 }
 
-void MainWindow::setAsmOpcodesOctal()
+void MainWindow::setAsmOpcodesHex()
 {
-    setAsmOpcodes(f_oct);
+    setAsmOpcodes(fmt_hex);
+}
+
+void MainWindow::setAsmOpcodesOct()
+{
+    setAsmOpcodes(fmt_oct);
 }
 
 void MainWindow::setDasmOpcodes(int mode)
 {
     p2_opcode_format_e format = static_cast<p2_opcode_format_e>(mode);
     switch (format) {
-    case f_bin:
+    case fmt_bin:
         ui->action_Dasm_Opcodes_bin->setChecked(true);
-        ui->action_Dasm_Opcodes_hex->setChecked(false);
+        ui->action_Dasm_Opcodes_byt->setChecked(false);
         ui->action_Dasm_Opcodes_oct->setChecked(false);
-        break;
-    case f_hex:
-        ui->action_Dasm_Opcodes_bin->setChecked(false);
-        ui->action_Dasm_Opcodes_hex->setChecked(true);
-        ui->action_Dasm_Opcodes_oct->setChecked(false);
-        break;
-    case f_oct:
-        ui->action_Dasm_Opcodes_bin->setChecked(false);
         ui->action_Dasm_Opcodes_hex->setChecked(false);
+        break;
+    case fmt_byt:
+        ui->action_Dasm_Opcodes_bin->setChecked(false);
+        ui->action_Dasm_Opcodes_byt->setChecked(true);
+        ui->action_Dasm_Opcodes_oct->setChecked(false);
+        ui->action_Dasm_Opcodes_hex->setChecked(false);
+        break;
+    case fmt_oct:
+        ui->action_Dasm_Opcodes_bin->setChecked(false);
+        ui->action_Dasm_Opcodes_byt->setChecked(false);
         ui->action_Dasm_Opcodes_oct->setChecked(true);
+        ui->action_Dasm_Opcodes_hex->setChecked(false);
+        break;
+    case fmt_hex:
+        ui->action_Dasm_Opcodes_bin->setChecked(false);
+        ui->action_Dasm_Opcodes_byt->setChecked(false);
+        ui->action_Dasm_Opcodes_oct->setChecked(false);
+        ui->action_Dasm_Opcodes_hex->setChecked(true);
         break;
     }
     m_dmodel->setOpcodeFormat(format);
     updateDasmColumnSizes();
 }
 
-void MainWindow::setDasmOpcodesBinary()
+void MainWindow::setDasmOpcodesBin()
 {
-    setDasmOpcodes(f_bin);
+    setDasmOpcodes(fmt_bin);
 }
 
-void MainWindow::setDasmOpcodesHexDec()
+void MainWindow::setDasmOpcodesByt()
 {
-    setDasmOpcodes(f_hex);
+    setDasmOpcodes(fmt_oct);
 }
 
-void MainWindow::setDasmOpcodesOctal()
+void MainWindow::setDasmOpcodesOct()
 {
-    setDasmOpcodes(f_oct);
+    setDasmOpcodes(fmt_oct);
+}
+
+void MainWindow::setDasmOpcodesHex()
+{
+    setDasmOpcodes(fmt_hex);
 }
 
 void MainWindow::asmHeaderColums(const QPoint& pos)
 {
     QList<P2AsmModel::column_e> columns;
     columns += P2AsmModel::c_Origin;
-    columns += P2AsmModel::c_Tokens;
     columns += P2AsmModel::c_Opcode;
+    columns += P2AsmModel::c_Tokens;
+    columns += P2AsmModel::c_Symbols;
     columns += P2AsmModel::c_Errors;
     columns += P2AsmModel::c_Source;
 
@@ -381,6 +422,66 @@ void MainWindow::hubSingleStep()
         m_vcog[id]->updateView();
 }
 
+void MainWindow::openSource(const QString& sourcefile)
+{
+    QSettings s;
+    s.beginGroup(key_source);
+    QString directory = s.value(key_directory).toString();
+    QString filename = s.value(key_filename).toString();
+    QStringList history = s.value(key_history).toStringList();
+    s.endGroup();
+
+    if (sourcefile.isEmpty()) {
+        QFileDialog dlg(this);
+
+        dlg.setAcceptMode(QFileDialog::AcceptOpen);
+        dlg.setDefaultSuffix(QStringLiteral("spin2"));
+        dlg.setDirectory(directory);
+        dlg.setFilter(QDir::AllEntries | QDir::Readable);
+        dlg.setHistory(history);
+        dlg.setNameFilter(tr("Spin2 source files (*.spin2)"));
+        QString propeller2_path = QString("%1/Propeller2").arg(QDir::homePath());
+        QString appdata_path = QStandardPaths::standardLocations(QStandardPaths::AppDataLocation).first();
+        QList<QUrl> urls = QList<QUrl>()
+            << QUrl::fromLocalFile(propeller2_path)
+            << QUrl::fromLocalFile(appdata_path);
+
+        dlg.exec();
+        QStringList selected = dlg.selectedFiles();
+        if (selected.isEmpty())
+            return;
+
+        directory = dlg.directory().path();
+        filename = selected.first();
+        filename.remove(QDir::cleanPath(directory) + QStringLiteral("/"));
+        history = dlg.history();
+        s.beginGroup(key_source);
+        s.setValue(key_directory, directory);
+        s.setValue(key_filename, filename);
+        s.setValue(key_history, history);
+        s.endGroup();
+
+        filename = QString("%1/%2")
+                   .arg(directory)
+                   .arg(filename);
+    } else {
+        filename = sourcefile;
+    }
+
+    QFile file(filename);
+    if (!file.open(QIODevice::ReadOnly))
+        return;
+    QTextStream stream(&file);
+    QStringList source;
+    while (!stream.atEnd()) {
+        QString line = stream.readLine();
+        source += line;
+    }
+    m_asm->setSource(source);
+    m_amodel->invalidate();
+    updateAsmColumnSizes();
+}
+
 void MainWindow::assemble()
 {
     QStringList source = m_asm->source();
@@ -391,7 +492,9 @@ void MainWindow::assemble()
         if (status)
             status->setText(tr("Assembly took %1 ms.").arg(t1 - t0));
         // Inspect result
+        const int row = ui->tvAsm->currentIndex().row();
         m_amodel->invalidate();
+        ui->tvAsm->selectRow(row);
     }
 }
 
@@ -407,32 +510,22 @@ void MainWindow::setDasmLowercase(bool check)
 
 void MainWindow::setupAssembler()
 {
-    // QFile file(QStringLiteral(":/ROM_Booter_v33_01j.spin2"));
-    QFile file(QStringLiteral(":/P2-qz80-rr032.spin2"));
-    if (!file.open(QIODevice::ReadOnly))
-        return;
-    QTextStream stream(&file);
-    QStringList source;
-    while (!stream.atEnd()) {
-        QString line = stream.readLine();
-        source += line;
-    }
-    m_asm->setSource(source);
     ui->tvAsm->setModel(m_amodel);
     updateAsmColumnSizes();
-    QHeaderView* hh = ui->tvAsm->horizontalHeader();
-    hh->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(hh, SIGNAL(customContextMenuRequested(QPoint)), SLOT(asmHeaderColums(QPoint)), Qt::UniqueConnection);
-    m_amodel->invalidate();
+    // QString sourcecode = QStringLiteral(":/ROM_Booter_v33_01j.spin2");
+    QString sourcecode = QStringLiteral(":/P2-qz80-rr032.spin2");
+    openSource(sourcecode);
 }
 
 void MainWindow::setupDisassembler()
 {
     ui->tvDasm->setModel(m_dmodel);
     updateDasmColumnSizes();
-    QHeaderView* hh = ui->tvDasm->horizontalHeader();
-    hh->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(hh, SIGNAL(customContextMenuRequested(QPoint)), SLOT(dasmHeaderColums(QPoint)), Qt::UniqueConnection);
+}
+
+void MainWindow::setupMenu()
+{
+    connect(ui->action_Open, SIGNAL(triggered()), SLOT(openSource()));
 }
 
 void MainWindow::setupTabWidget()
@@ -447,6 +540,26 @@ void MainWindow::setupTabWidget()
 
 void MainWindow::setupToolbars()
 {
+    connect(ui->action_SingleStep, SIGNAL(triggered()), SLOT(hubSingleStep()));
+    ui->toolbarHub->addAction(ui->action_SingleStep);
+
+    connect(ui->action_Asm_Opcodes_bin, SIGNAL(triggered(bool)), SLOT(setAsmOpcodesBin()));
+    ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_bin);
+
+    connect(ui->action_Asm_Opcodes_byt, SIGNAL(triggered(bool)), SLOT(setAsmOpcodesByt()));
+    ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_byt);
+
+    connect(ui->action_Asm_Opcodes_oct, SIGNAL(triggered(bool)), SLOT(setAsmOpcodesOct()));
+    ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_oct);
+
+    connect(ui->action_Asm_Opcodes_hex, SIGNAL(triggered(bool)), SLOT(setAsmOpcodesHex()));
+    ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_hex);
+
+    ui->toolbarAsm->addSeparator();
+
+    connect(ui->action_Assemble, SIGNAL(triggered()), SLOT(assemble()));
+    ui->toolbarAsm->addAction(ui->action_Assemble);
+
     connect(ui->action_Go_to_COG, SIGNAL(triggered()), SLOT(gotoCog()));
     ui->toolbarDasm->addAction(ui->action_Go_to_COG);
 
@@ -461,38 +574,22 @@ void MainWindow::setupToolbars()
 
     ui->toolbarDasm->addSeparator();
 
-    connect(ui->action_Dasm_Opcodes_bin, SIGNAL(triggered(bool)), SLOT(setDasmOpcodesBinary()));
+    connect(ui->action_Dasm_Opcodes_bin, SIGNAL(triggered(bool)), SLOT(setDasmOpcodesBin()));
     ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_bin);
 
-    connect(ui->action_Dasm_Opcodes_hex, SIGNAL(triggered(bool)), SLOT(setDasmOpcodesHexDec()));
-    ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_hex);
+    connect(ui->action_Dasm_Opcodes_byt, SIGNAL(triggered(bool)), SLOT(setDasmOpcodesByt()));
+    ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_byt);
 
-    connect(ui->action_Dasm_Opcodes_oct, SIGNAL(triggered(bool)), SLOT(setDasmOpcodesOctal()));
+    connect(ui->action_Dasm_Opcodes_oct, SIGNAL(triggered(bool)), SLOT(setDasmOpcodesOct()));
     ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_oct);
+
+    connect(ui->action_Dasm_Opcodes_hex, SIGNAL(triggered(bool)), SLOT(setDasmOpcodesHex()));
+    ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_hex);
 
     ui->toolbarDasm->addSeparator();
 
     connect(ui->action_Dasm_Lowercase, SIGNAL(triggered(bool)), SLOT(setDasmLowercase(bool)));
     ui->toolbarDasm->addAction(ui->action_Dasm_Lowercase);
-
-
-
-    connect(ui->action_SingleStep, SIGNAL(triggered()), SLOT(hubSingleStep()));
-    ui->toolbarHub->addAction(ui->action_SingleStep);
-
-    connect(ui->action_Asm_Opcodes_bin, SIGNAL(triggered(bool)), SLOT(setAsmOpcodesBinary()));
-    ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_bin);
-
-    connect(ui->action_Asm_Opcodes_hex, SIGNAL(triggered(bool)), SLOT(setAsmOpcodesHexDec()));
-    ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_hex);
-
-    connect(ui->action_Asm_Opcodes_oct, SIGNAL(triggered(bool)), SLOT(setAsmOpcodesOctal()));
-    ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_oct);
-
-    ui->toolbarAsm->addSeparator();
-
-    connect(ui->action_Assemble, SIGNAL(triggered()), SLOT(assemble()));
-    ui->toolbarAsm->addAction(ui->action_Assemble);
 
     tabChanged(0);
 }
@@ -506,6 +603,15 @@ void MainWindow::setupStatusbar()
 
 void MainWindow::updateAsmColumnSizes()
 {
+    QFont font = ui->tvAsm->font();
+    QFontMetrics metrics(font);
+    QHeaderView* vh = ui->tvAsm->verticalHeader();
+    vh->setEnabled(true);
+    vh->setDefaultSectionSize(metrics.ascent() + metrics.descent());
+    QHeaderView* hh = ui->tvAsm->horizontalHeader();
+    connect(hh, SIGNAL(customContextMenuRequested(QPoint)), SLOT(asmHeaderColums(QPoint)), Qt::UniqueConnection);
+    hh->setContextMenuPolicy(Qt::CustomContextMenu);
+    hh->setStretchLastSection(true);
     for (int i = 0; i < m_amodel->columnCount(); i++) {
         QSize size = m_amodel->sizeHint(static_cast<P2AsmModel::column_e>(i));
         ui->tvAsm->setColumnWidth(i, size.width());
@@ -517,6 +623,9 @@ void MainWindow::updateAsmColumnSizes()
  */
 void MainWindow::updateDasmColumnSizes()
 {
+    QHeaderView* hh = ui->tvDasm->horizontalHeader();
+    hh->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(hh, SIGNAL(customContextMenuRequested(QPoint)), SLOT(dasmHeaderColums(QPoint)), Qt::UniqueConnection);
     for (int i = 0; i < m_dmodel->columnCount(); i++) {
         QSize size = m_dmodel->sizeHint(static_cast<P2DasmModel::column_e>(i));
         ui->tvDasm->setColumnWidth(i, size.width());

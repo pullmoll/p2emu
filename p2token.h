@@ -37,20 +37,62 @@
 #include "p2defs.h"
 
 /**
- * @brief enumeration of toke types
+ * @brief enumeration of token types
  */
 typedef enum {
     tt_none,            //!< no specific type
-    tt_unary,           //!< unary operators
-    tt_binop,           //!< binary operators
-    tt_addop,           //!< addition operators
-    tt_mulop,           //!< multiplication operators
+    tt_primary,         //!< precedence  1: primary operators (++, --)
+    tt_unary,           //!< precedence  2: unary operators (+, -, !, ~, more?)
+    tt_mulop,           //!< precedence  3: multiplication operators (*, /, \)
+    tt_addop,           //!< precedence  4: addition operators (+, -)
+    tt_shiftop,         //!< precedence  5: shift operators (<<, >>)
+    tt_relation,        //!< precedence  6: comparisons (<, <=, >, >=)
+    tt_equality,        //!< precedence  7: comparisons (==, !=)
+    tt_binop_and,       //!< precedence  8: binary and (&)
+    tt_binop_xor,       //!< precedence  9: binary xor (^)
+    tt_binop_or,        //!< precedence 10: binary or (|)
+    tt_binop_rev,       //!< precedence 11: binary or (><)
+    tt_logop_and,       //!< precedence 12: logical and (&&)
+    tt_logop_or,        //!< precedence 13: logical or (||)
+    tt_ternary,         //!< precedence 14: ternary operator (?:)
+    tt_assignment,      //!< precedence 15: assignment (=)
     tt_conditional,     //!< conditional execution
     tt_modcz_param,     //!< MODCZ parameters
+    tt_inst,            //!< instruction
     tt_section,         //!< section control
     tt_origin,          //!< origin control
     tt_data,            //!< data generating
+    tt_lexer,           //!< pseudo token from lexing a string
 }   p2_tokentype_e;
+
+/**
+ * @brief bit masks for token types
+ */
+
+#define TTMASK(tt) (Q_UINT64_C(1) << (tt))
+static constexpr quint64 tm_none        = 0;
+static constexpr quint64 tm_primary     = TTMASK(tt_primary);
+static constexpr quint64 tm_unary       = TTMASK(tt_unary);
+static constexpr quint64 tm_mulop       = TTMASK(tt_mulop);
+static constexpr quint64 tm_addop       = TTMASK(tt_addop);
+static constexpr quint64 tm_shiftop     = TTMASK(tt_shiftop);
+static constexpr quint64 tm_relation    = TTMASK(tt_relation);
+static constexpr quint64 tm_equality    = TTMASK(tt_equality);
+static constexpr quint64 tm_binop_and   = TTMASK(tt_binop_and);
+static constexpr quint64 tm_binop_xor   = TTMASK(tt_binop_xor);
+static constexpr quint64 tm_binop_or    = TTMASK(tt_binop_or);
+static constexpr quint64 tm_binop_rev   = TTMASK(tt_binop_rev);
+static constexpr quint64 tm_logop_and   = TTMASK(tt_logop_and);
+static constexpr quint64 tm_logop_or    = TTMASK(tt_logop_or);
+static constexpr quint64 tm_ternary     = TTMASK(tt_ternary);
+static constexpr quint64 tm_assignment  = TTMASK(tt_assignment);
+static constexpr quint64 tm_conditional = TTMASK(tt_conditional);
+static constexpr quint64 tm_modcz_param = TTMASK(tt_modcz_param);
+static constexpr quint64 tm_inst        = TTMASK(tt_inst);
+static constexpr quint64 tm_section     = TTMASK(tt_section);
+static constexpr quint64 tm_origin      = TTMASK(tt_origin);
+static constexpr quint64 tm_data        = TTMASK(tt_data);
+static constexpr quint64 tm_lexer       = TTMASK(tt_lexer);
 
 /**
  * @brief enumeration of tokens used in mnemonics for the P2 assembler and disassembler
@@ -350,7 +392,15 @@ typedef enum {
     t_POPA,
     t_POPB,
     t_PTRA,
+    t_PTRA_postinc,
+    t_PTRA_postdec,
+    t_PTRA_preinc,
+    t_PTRA_predec,
     t_PTRB,
+    t_PTRB_postinc,
+    t_PTRB_postdec,
+    t_PTRB_preinc,
+    t_PTRB_predec,
     t_PUSH,
     t_PUSHA,
     t_PUSHB,
@@ -539,39 +589,46 @@ typedef enum {
     t__DOLLAR,          //!< "$"
 
     // relations
-    t__EQ,              //!< "=="
-    t__NE,              //!< "!="
-    t__GE,              //!< ">="
-    t__GT,              //!< ">"
     t__LE,              //!< "<="
     t__LT,              //!< "<"
+    t__GE,              //!< ">="
+    t__GT,              //!< ">"
+    t__EQ,              //!< "=="
+    t__NE,              //!< "!="
 
     // parenthesis
     t__LPAREN,          //!< "("
     t__RPAREN,          //!< ")"
 
-    // unary ops
-    t__NEG,             //!< "!"
-    t__NOT,             //!< "~"
+    // primary ops
     t__INC,             //!< "++"
     t__DEC,             //!< "--"
 
-    // addition ops
-    t__ADD,             //!< "+"
-    t__SUB,             //!< "-"
+    // unary ops
+    t__NEG,             //!< "!"
+    t__NOT,             //!< "~"
 
     // multiplication ops
     t__MUL,             //!< "*"
     t__DIV,             //!< "/"
     t__MOD,             //!< "\"
 
+    // addition ops
+    t__ADD,             //!< "+"
+    t__SUB,             //!< "-"
+
+    // shift ops
+    t__SHL,             //!< "<<"
+    t__SHR,             //!< ">>"
+
     // binary ops
     t__AND,             //!< "&"
     t__OR,              //!< "|"
     t__XOR,             //!< "^"
-    t__SHL,             //!< "<<"
-    t__SHR,             //!< ">>"
-    t__REV,             //!< "<>"
+    t__REV,             //!< "><"
+
+    t__ANDAND,          //!< "&&"
+    t__OROR,            //!< "||"
 }   p2_token_e;
 
 typedef QVector<p2_token_e> p2_token_v;
@@ -583,36 +640,23 @@ public:
     QString string(p2_token_e tok, bool lowercase = false) const;
     p2_token_e token(const QString& str, bool chop = false, int* plen = nullptr) const;
 
-    p2_tokentype_e type(p2_token_e tok);
-    QString typeName(p2_token_e tok);
-    p2_tokentype_e type(const QString& str);
+    bool is_type(p2_token_e tok, p2_tokentype_e type) const;
+    bool is_type(const QString& str, p2_tokentype_e type) const;
+    QStringList typeNames(p2_token_e tok) const;
+
+    bool is_operation(p2_token_e tok) const;
 
     p2_token_e at_token(int& pos, const QString& str, QList<p2_token_e> tokens, p2_token_e dflt = t_invalid) const;
     p2_token_e at_token(const QString& str, QList<p2_token_e> tokens, p2_token_e dflt = t_invalid) const;
 
-    bool is_type(p2_token_e tok, p2_tokentype_e type) const;
-    bool is_unary(p2_token_e tok) const;
-    bool is_binop(p2_token_e tok) const;
-    bool is_addop(p2_token_e tok) const;
-    bool is_mulop(p2_token_e tok) const;
-    bool is_operation(p2_token_e tok) const;
     bool is_conditional(p2_token_e tok) const;
     bool is_modcz_param(p2_token_e tok) const;
 
     p2_token_e at_type(int& pos, const QString& str, p2_tokentype_e type, p2_token_e dflt = t_invalid) const;
     p2_token_e at_type(const QString& str, p2_tokentype_e type, p2_token_e dflt = t_invalid) const;
 
-    p2_token_e at_unary(int& pos, const QString& str, p2_token_e dflt = t_invalid) const;
-    p2_token_e at_unary(const QString& str, p2_token_e dflt = t_invalid) const;
-
-    p2_token_e at_binop(int& pos, const QString& str, p2_token_e dflt = t_invalid) const;
-    p2_token_e at_binop(const QString& str, p2_token_e dflt = t_invalid) const;
-
-    p2_token_e at_addop(int& pos, const QString& str, p2_token_e dflt = t_invalid) const;
-    p2_token_e at_addop(const QString& str, p2_token_e dflt = t_invalid) const;
-
-    p2_token_e at_mulop(int& pos, const QString& str, p2_token_e dflt = t_invalid) const;
-    p2_token_e at_mulop(const QString& str, p2_token_e dflt = t_invalid) const;
+    p2_token_e at_types(int& pos, const QString& str, const QList<p2_tokentype_e>& types, p2_token_e dflt = t_invalid) const;
+    p2_token_e at_types(const QString& str, const QList<p2_tokentype_e>& types, p2_token_e dflt = t_invalid) const;
 
     p2_token_e at_conditional(int& pos, const QString& str, p2_token_e dflt = t_invalid) const;
     p2_token_e at_conditional(const QString& str, p2_token_e dflt = t_invalid) const;
@@ -627,10 +671,10 @@ public:
     p2_cond_e modcz_param(const QString& str, p2_cond_e dflt = cc_clr) const;
 
 private:
-    QMultiHash<p2_token_e, QString> m_token_string;
-    QMultiHash<QString, p2_token_e> m_string_token;
-    QMultiHash<p2_token_e, p2_tokentype_e> m_token_types;
-    QMultiHash<p2_tokentype_e, p2_token_e> m_type_tokens;
+    QMultiHash<p2_token_e, QString> m_token_name;
+    QMultiHash<QString, p2_token_e> m_name_token;
+    QHash<p2_token_e, quint64> m_token_type;
+    QMultiHash<quint64, p2_token_e> m_type_token;
     QHash<p2_token_e, p2_cond_e> m_lookup_cond;
     QHash<p2_token_e, p2_cond_e> m_lookup_modcz;
     QHash<p2_tokentype_e, QString> m_tokentype_name;
@@ -648,6 +692,10 @@ private:
     QRegExp rx_addops;
     QRegExp rx_binops;
     QRegExp rx_expression;
+
+    void tt_set(p2_token_e tok, p2_tokentype_e type);
+    void tt_clr(p2_token_e tok, p2_tokentype_e type);
+    bool tt_chk(p2_token_e tok, p2_tokentype_e type) const;
 };
 
 extern P2Token Token;

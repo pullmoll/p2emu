@@ -33,40 +33,31 @@
  ****************************************************************************/
 #include "p2asmmodel.h"
 
-static const QString str_address = QStringLiteral("COG[000] ");
-static const QString str_opcode_binary = QStringLiteral("EEEE_OOOOOOO_CZI_DDDDDDDDD_SSSSSSSSS ");
-static const QString str_opcode_hexdec = QStringLiteral("FFFFFFFF ");
-static const QString str_opcode_octal = QStringLiteral("37777777777 ");
-static const QString str_tokens = QStringLiteral("T");
-static const QString str_symbols = QStringLiteral("S");
-static const QString str_errors = QStringLiteral("😞");
-static const QString str_instruction = QStringLiteral(" IF_NC_AND_NZ  INSTRUCTION #$1ff,#$1ff,#7 XORCZ AND SOME MORE COLUMNS ");
-
 static const QString style_nowrap = QStringLiteral("style='white-space:nowrap;'");
 static const QString style_left = QStringLiteral("style='text-align:left;'");
-static const QString style_padding = QStringLiteral("style='padding:4px;'");
-static const QString style_background_error = QStringLiteral("style='background:#ffc0c0;'");
-static const QString style_background_tokens = QStringLiteral("style='background:#10fcff;'");
-static const QString style_background_symbols = QStringLiteral("style='background:#fff0ff;'");
+static const QString style_padding = QStringLiteral("style='padding:0px 4px 0px 4px;'");
+static const QString style_background_error = QStringLiteral("style='background:#ffc0c0; border: 1px solid #ddd;'");
+static const QString style_background_tokens = QStringLiteral("style='background:#10fcff; border: 1px solid #ddd;'");
+static const QString style_background_symbols = QStringLiteral("style='background:#fff0ff; border: 1px solid #ddd;'");
 
 P2AsmModel::P2AsmModel(P2Asm* p2asm, QObject *parent)
     : QAbstractTableModel(parent)
     , m_asm(p2asm)
-    , m_opcode_format(f_bin)
-    , m_font()
-    , m_bold()
+    , m_format(fmt_bin)
+    , m_font(QStringLiteral("Monospace"))
+    , m_bold(QStringLiteral("Monospace"))
     , m_error()
-    , m_size_normal()
-    , m_size_bold()
     , m_header_alignment()
     , m_text_alignment()
 {
     m_font.setPointSize(8);
     m_bold.setPointSize(8);
     m_bold.setBold(true);
+
     QImage image(":/icons/error.png");
     QPixmap pixmap = QPixmap::fromImage(image.scaled(16,16,Qt::KeepAspectRatio,Qt::SmoothTransformation));
     m_error = QIcon(pixmap);
+
     // Header section names
     m_header.insert(c_Origin,       tr("Origin"));
     m_header.insert(c_Errors,       tr("Errors"));
@@ -121,7 +112,7 @@ QVariant P2AsmModel::headerData(int section, Qt::Orientation orientation, int ro
             break;
 
         case Qt::SizeHintRole:
-            result = m_size_bold.value(column);
+            result = sizeHint(column);
             break;
 
         case Qt::TextAlignmentRole:
@@ -154,7 +145,7 @@ QVariant P2AsmModel::headerData(int section, Qt::Orientation orientation, int ro
         break;
 
     case Qt::Vertical:
-        result = row + 1;
+        result = QString::number(row + 1);
         break;
     }
     return result;
@@ -233,7 +224,7 @@ QString P2AsmModel::tokenToolTip(const p2_token_v& tokenv, const QStringList& wo
     QStringList tokens;
 
     foreach(const p2_token_e tok, tokenv) {
-        types += Token.typeName(tok);
+        types += Token.typeNames(tok);
         tokens += Token.string(tok);
     }
 
@@ -241,15 +232,15 @@ QString P2AsmModel::tokenToolTip(const p2_token_v& tokenv, const QStringList& wo
 
     // heading
     html += html_tr_init();
-    html += html_th(tr("Type"));
     html += html_th(tr("Token"));
-    html += html_th(tr("Source"));
+    html += html_th(tr("Token type"));
+    html += html_th(tr("Source code word"));
     html += html_tr_exit();
 
     for (int i = 0; i < types.count(); i++) {
         html += html_tr_init();
-        html += html_td(types.value(i));
         html += html_td(tokens.value(i));
+        html += html_td(types.value(i));
         html += html_td(words.value(i));
         html += html_tr_exit();
     }
@@ -312,8 +303,8 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     case Qt::DisplayRole:
         switch (column) {
         case c_Origin: // Address as COG[xxx], LUT[xxx], or xxxxxx in RAM
-            if (m_asm->hPC().contains(lineno)) {
-                const p2_LONG PC = m_asm->hPC().value(lineno);
+            if (m_asm->PC_hash().contains(lineno)) {
+                const p2_LONG PC = m_asm->PC_hash().value(lineno);
                 if (PC < 0x200) {
                     result = QString("COG[%1]").arg(PC, 3, 16, QChar('0'));
                 } else if (PC < PC_LONGS) {
@@ -326,7 +317,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
 
         case c_Tokens:
             {
-                p2_token_v tokens = m_asm->hTokens().value(lineno);
+                p2_token_v tokens = m_asm->token_hash().value(lineno);
                 if (!tokens.isEmpty())
                     result = QString::number(tokens.count());
             }
@@ -334,8 +325,8 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
 
         case c_Errors:  // Error messages
             {
-                if (m_asm->hErrors().contains(lineno))
-                    result = str_errors;
+                if (m_asm->error_hash().contains(lineno))
+                    result = template_str_errors;
             }
             break;
 
@@ -348,43 +339,12 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
             break;
 
         case c_Opcode: // Opcode string
-            if (m_asm->hPC().contains(lineno)) {
-                const p2_opcode_u IR = m_asm->hIR().value(lineno);
-                switch (m_opcode_format) {
-                case f_bin:
-                    result = QString("%1_%2_%3%4%5_%6_%7")
-                             .arg(IR.op.cond, 4, 2, QChar('0'))
-                             .arg(IR.op.inst, 7, 2, QChar('0'))
-                             .arg(IR.op.wc, 1, 2, QChar('0'))
-                             .arg(IR.op.wz, 1, 2, QChar('0'))
-                             .arg(IR.op.im, 1, 2, QChar('0'))
-                             .arg(IR.op.dst, 9, 2, QChar('0'))
-                             .arg(IR.op.src, 9, 2, QChar('0'));
-                    break;
-                case f_oct:
-                    result = QString("%1").arg(IR.opcode, 11, 8, QChar('0'));
-                    break;
-                case f_hex:
-                    result = QString("%1").arg(IR.opcode, 8, 16, QChar('0'));
-                    break;
-                }
-            } else if (m_asm->hIR().contains(lineno)) {
-                const p2_opcode_u IR = m_asm->hIR().value(lineno);
-                switch (m_opcode_format) {
-                case f_bin:
-                    result = QString("%1_%2_%3_%4")
-                             .arg((IR.opcode >> 24) & 0xff, 8, 2, QChar('0'))
-                             .arg((IR.opcode >> 16) & 0xff, 8, 2, QChar('0'))
-                             .arg((IR.opcode >>  8) & 0xff, 8, 2, QChar('0'))
-                             .arg((IR.opcode >>  0) & 0xff, 8, 2, QChar('0'));
-                    break;
-                case f_oct:
-                    result = QString("%1").arg(IR.opcode, 11, 8, QChar('0'));
-                    break;
-                case f_hex:
-                    result = QString("%1").arg(IR.opcode, 8, 16, QChar('0'));
-                    break;
-                }
+            if (m_asm->PC_hash().contains(lineno)) {
+                const p2_opcode_u IR = m_asm->IR_hash().value(lineno);
+                result = format_opcode(IR, m_format);
+            } else if (m_asm->IR_hash().contains(lineno)) {
+                const p2_opcode_u IR = m_asm->IR_hash().value(lineno);
+                result = format_data(IR, m_format);
             }
             break;
 
@@ -397,7 +357,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     case Qt::DecorationRole:
         switch (column) {
         case c_Errors:
-            if (m_asm->hErrors().contains(lineno))
+            if (m_asm->error_hash().contains(lineno))
                 result = m_error;
             break;
         default:
@@ -412,8 +372,8 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
         switch (column) {
         case c_Tokens:
             {
-                const p2_token_v& tokens = m_asm->hTokens().value(lineno);
-                const QStringList& words = m_asm->hWords().value(lineno);
+                const p2_token_v& tokens = m_asm->token_hash().value(lineno);
+                const QStringList& words = m_asm->words_hash().value(lineno);
                 if (words.isEmpty())
                     break;
                 result = tokenToolTip(tokens, words, style_background_tokens);
@@ -432,7 +392,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
 
         case c_Errors:
             {
-                QStringList list = m_asm->hErrors().values(lineno);
+                QStringList list = m_asm->error_hash().values(lineno);
                 if (list.isEmpty())
                     break;
                 result = errorsToolTip(list, style_background_error);
@@ -475,7 +435,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
         break;
 
     case Qt::SizeHintRole:
-        result = m_size_normal.value(column);
+        result = sizeHint(column);
         break;
 
     case Qt::InitialSortOrderRole:
@@ -484,16 +444,43 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     return result;
 }
 
-bool P2AsmModel::setData(const QModelIndex &index, const QVariant &value, int role)
+QSize P2AsmModel::sizeHint(P2AsmModel::column_e column) const
 {
-    if (data(index, role) != value) {
-        // FIXME: Implement me!
-        emit dataChanged(index, index, QVector<int>() << role);
-        return true;
+    QFontMetrics metrics(m_font);
+
+    switch (column) {
+    case c_Origin:
+        return metrics.size(Qt::TextSingleLine, template_str_address);
+
+    case c_Opcode:
+        switch (m_format) {
+        case fmt_bin:
+            return metrics.size(Qt::TextSingleLine, template_str_opcode_bin);
+        case fmt_byt:
+            return metrics.size(Qt::TextSingleLine, template_str_opcode_byt);
+        case fmt_oct:
+            return metrics.size(Qt::TextSingleLine, template_str_opcode_oct);
+        case fmt_hex:
+            return metrics.size(Qt::TextSingleLine, template_str_opcode_hex);
+        }
+        break;
+
+    case c_Symbols:
+        return metrics.size(Qt::TextSingleLine, template_str_symbols);
+
+    case c_Tokens:
+        return metrics.size(Qt::TextSingleLine, template_str_tokens);
+
+    case c_Errors:
+        return metrics.size(Qt::TextSingleLine, template_str_errors);
+
+    case c_Source:
+        return metrics.size(Qt::TextSingleLine, template_str_instruction);
     }
-    return false;
+    return QSize();
 }
 
+#if OVERRIDE_FLAGS
 Qt::ItemFlags P2AsmModel::flags(const QModelIndex &index) const
 {
     if (!index.isValid())
@@ -504,6 +491,7 @@ Qt::ItemFlags P2AsmModel::flags(const QModelIndex &index) const
         flags |= Qt::ItemIsEditable;
     return flags;
 }
+#endif
 
 void P2AsmModel::invalidate()
 {
@@ -514,46 +502,26 @@ void P2AsmModel::invalidate()
 
 void P2AsmModel::setOpcodeFormat(p2_opcode_format_e format)
 {
-    if (format == m_opcode_format)
+    if (format == m_format)
         return;
-    m_opcode_format = format;
+    m_format = format;
+    switch (format) {
+    case fmt_bin:
+        m_header.insert(c_Opcode, tr("Opcode bit fields"));
+        break;
+    case fmt_byt:
+        m_header.insert(c_Opcode, tr("Opcode BYTES hex"));
+        break;
+    case fmt_oct:
+        m_header.insert(c_Opcode, tr("Opcode LONG oct"));
+        break;
+    case fmt_hex:
+        m_header.insert(c_Opcode, tr("Opcode LONG hex"));
+        break;
+    }
     invalidate();
 }
 
 void P2AsmModel::updateSizes()
 {
-    QFontMetrics metrics_n(m_font);
-    QFontMetrics metrics_b(m_bold);
-
-    m_size_normal.insert(c_Origin,      metrics_n.size(Qt::TextSingleLine, str_address));
-    m_size_bold.insert(c_Origin,        metrics_b.size(Qt::TextSingleLine, str_address));
-
-    m_size_normal.insert(c_Tokens,   metrics_n.size(Qt::TextSingleLine, str_tokens));
-    m_size_bold.insert(c_Tokens,     metrics_b.size(Qt::TextSingleLine, str_tokens));
-
-    switch (m_opcode_format) {
-    case f_bin:
-        m_header.insert(c_Opcode, QStringLiteral("EEEE_IIIIIII_CZI_DDDDDDDDD_SSSSSSSSS"));
-        m_size_normal.insert(c_Opcode,  metrics_n.size(Qt::TextSingleLine, str_opcode_binary));
-        m_size_bold.insert(c_Opcode,    metrics_b.size(Qt::TextSingleLine, str_opcode_binary));
-        break;
-    case f_hex:
-        m_header.insert(c_Opcode, tr("Op (hex)"));
-        m_size_normal.insert(c_Opcode,  metrics_n.size(Qt::TextSingleLine, str_opcode_hexdec));
-        m_size_bold.insert(c_Opcode,    metrics_b.size(Qt::TextSingleLine, str_opcode_hexdec));
-        break;
-    case f_oct:
-        m_header.insert(c_Opcode, tr("Op (oct)"));
-        m_size_normal.insert(c_Opcode,  metrics_n.size(Qt::TextSingleLine, str_opcode_octal));
-        m_size_bold.insert(c_Opcode,    metrics_b.size(Qt::TextSingleLine, str_opcode_octal));
-        break;
-    }
-    m_size_normal.insert(c_Errors, metrics_n.size(Qt::TextSingleLine, str_errors));
-    m_size_bold.insert(c_Errors,   metrics_b.size(Qt::TextSingleLine, str_errors));
-
-    m_size_normal.insert(c_Symbols,metrics_n.size(Qt::TextSingleLine, str_symbols));
-    m_size_bold.insert(c_Symbols,  metrics_b.size(Qt::TextSingleLine, str_symbols));
-
-    m_size_normal.insert(c_Source, metrics_n.size(Qt::TextSingleLine, str_instruction));
-    m_size_bold.insert(c_Source,   metrics_b.size(Qt::TextSingleLine, str_instruction));
 }

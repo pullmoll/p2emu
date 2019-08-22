@@ -79,14 +79,16 @@ private slots:
     void gotoAddress();
 
     void setAsmOpcodes(int mode);
-    void setAsmOpcodesBinary();
-    void setAsmOpcodesHexDec();
-    void setAsmOpcodesOctal();
+    void setAsmOpcodesBin();
+    void setAsmOpcodesByt();
+    void setAsmOpcodesOct();
+    void setAsmOpcodesHex();
 
     void setDasmOpcodes(int mode);
-    void setDasmOpcodesBinary();
-    void setDasmOpcodesHexDec();
-    void setDasmOpcodesOctal();
+    void setDasmOpcodesBin();
+    void setDasmOpcodesByt();
+    void setDasmOpcodesOct();
+    void setDasmOpcodesHex();
 
     void setDasmLowercase(bool check);
     void asmHeaderColums(const QPoint& pos);
@@ -94,6 +96,7 @@ private slots:
 
     void hubSingleStep();
 
+    void openSource(const QString& filename = QString());
     void assemble();
 private:
     Ui::MainWindow *ui;
@@ -106,9 +109,11 @@ private:
 
     void setupAssembler();
     void setupDisassembler();
+    void setupMenu();
     void setupTabWidget();
     void setupToolbars();
     void setupStatusbar();
+
     void updateAsmColumnSizes();
     void updateDasmColumnSizes();
     void setupCogView();

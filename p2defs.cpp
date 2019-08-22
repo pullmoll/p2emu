@@ -31,6 +31,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
+#include <QString>
 #include "p2defs.h"
 
 //! digits of binary numbers
@@ -108,3 +109,104 @@ const p2_QUAD HMAX = Q_UINT64_C(0xffffffff00000000);
 
 //! lower word max / mask in a 64 bit unsigned
 const p2_QUAD LMAX = Q_UINT64_C(0x00000000ffffffff);
+
+const QString template_str_address = QStringLiteral("COG[000] ");
+
+const QString template_str_opcode_bin = QStringLiteral("EEEE OOOOOOO CZI DDDDDDDDD SSSSSSSSS ");
+const QString template_str_opcode_byt = QStringLiteral("F FF FFF FFF FFF ");
+const QString template_str_opcode_oct = QStringLiteral("37777777777 ");
+const QString template_str_opcode_hex = QStringLiteral("FFFFFFFF ");
+
+const QString template_str_tokens = QStringLiteral("T");
+const QString template_str_symbols = QStringLiteral("S");
+const QString template_str_errors = QStringLiteral("😞");
+const QString template_str_instruction = QStringLiteral(" label_name IF_NC_AND_NZ  INSTRUCTION #$1ff,#$1ff,#7 XORCZ ");
+const QString template_str_description = QStringLiteral(" Some description string... ");
+
+QString format_opcode_bin(const p2_opcode_u& IR)
+{
+    return QString("%1 %2 %3%4%5 %6 %7")
+            .arg(IR.op.cond, 4, 2, QChar('0'))
+            .arg(IR.op.inst, 7, 2, QChar('0'))
+            .arg(IR.op.wc,   1, 2, QChar('0'))
+            .arg(IR.op.wz,   1, 2, QChar('0'))
+            .arg(IR.op.im,   1, 2, QChar('0'))
+            .arg(IR.op.dst,  9, 2, QChar('0'))
+            .arg(IR.op.src,  9, 2, QChar('0'));
+}
+
+QString format_opcode_byt(const p2_opcode_u& IR)
+{
+    return QString("%1 %2 %3%4%5 %6 %7")
+            .arg(IR.op.cond, 1, 16, QChar('0'))
+            .arg(IR.op.inst, 2, 16, QChar('0'))
+            .arg(IR.op.wc,   1, 16, QChar('0'))
+            .arg(IR.op.wz,   1, 16, QChar('0'))
+            .arg(IR.op.im,   1, 16, QChar('0'))
+            .arg(IR.op.dst,  3, 16, QChar('0'))
+            .arg(IR.op.src,  3, 16, QChar('0'));
+}
+
+QString format_opcode_oct(const p2_opcode_u& IR)
+{
+    return QString("%1")
+            .arg(IR.opcode, 11, 8, QChar('0'));
+}
+
+QString format_opcode_hex(const p2_opcode_u& IR)
+{
+    return QString("%1")
+            .arg(IR.opcode, 8, 16, QChar('0'));
+}
+
+QString format_data_bin(const p2_opcode_u& IR)
+{
+    return QString("%1 %2 %3 %4")
+            .arg((IR.opcode >> 24) & 0xff, 8, 2, QChar('0'))
+            .arg((IR.opcode >> 16) & 0xff, 8, 2, QChar('0'))
+            .arg((IR.opcode >>  8) & 0xff, 8, 2, QChar('0'))
+            .arg((IR.opcode >>  0) & 0xff, 8, 2, QChar('0'));
+}
+
+QString format_data_byt(const p2_opcode_u& IR)
+{
+    return QString("%1 %2 %3 %4")
+             .arg((IR.opcode >> 24) & 0xff, 2, 16, QChar('0'))
+             .arg((IR.opcode >> 16) & 0xff, 2, 16, QChar('0'))
+             .arg((IR.opcode >>  8) & 0xff, 2, 16, QChar('0'))
+             .arg((IR.opcode >>  0) & 0xff, 2, 16, QChar('0'));
+}
+
+QString format_data_oct(const p2_opcode_u& IR)
+{
+    return QString("%1")
+            .arg(IR.opcode, 11, 8, QChar('0'));
+}
+
+QString format_data_hex(const p2_opcode_u& IR)
+{
+    return QString("%1")
+            .arg(IR.opcode, 8, 16, QChar('0'));
+}
+
+QString format_opcode(const p2_opcode_u& IR, const p2_opcode_format_e fmt)
+{
+    switch (fmt) {
+    case fmt_bin: return format_opcode_bin(IR);
+    case fmt_byt: return format_opcode_byt(IR);
+    case fmt_oct: return format_opcode_oct(IR);
+    case fmt_hex: return format_opcode_hex(IR);
+    }
+    return QStringLiteral("<invalid format>");
+}
+
+QString format_data(const p2_opcode_u& IR, const p2_opcode_format_e fmt)
+{
+    switch (fmt) {
+    case fmt_bin: return format_data_bin(IR);
+    case fmt_byt: return format_data_byt(IR);
+    case fmt_oct: return format_data_oct(IR);
+    case fmt_hex: return format_data_hex(IR);
+    }
+    return QStringLiteral("<invalid format>");
+}

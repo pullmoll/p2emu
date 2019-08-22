@@ -56,22 +56,19 @@ public:
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 
-    p2_opcode_format_e opcode_format() const { return m_opcode_format; }
-    QSize sizeHint(column_e column) const { return m_size_normal.value(column); }
+    p2_opcode_format_e opcode_format() const { return m_format; }
+    QSize sizeHint(column_e column) const;
 
 public slots:
     void invalidate();
     void setOpcodeFormat(p2_opcode_format_e format);
-    void updateSizes();
 
 private:
     P2Dasm* m_dasm;
-    p2_opcode_format_e m_opcode_format;
+    p2_opcode_format_e m_format;
     QFont m_font;
     QFont m_bold;
     QHash<column_e,QString> m_header;
-    QHash<column_e,QSize> m_size_normal;
-    QHash<column_e,QSize> m_size_bold;
     QHash<column_e,QRgb> m_background;
     QHash<column_e,int> m_alignment;
 };
