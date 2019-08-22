@@ -53,11 +53,6 @@ public:
         c_Errors,
         c_Source,
     };
-    enum format_e {
-        f_bin,
-        f_hex,
-        f_oct
-    };
 
     explicit P2AsmModel(P2Asm* p2asm, QObject *parent = nullptr);
 
@@ -75,17 +70,17 @@ public:
 
     Qt::ItemFlags flags(const QModelIndex& index) const override;
 
-    format_e opcode_format() const { return m_opcode_format; }
+    p2_opcode_format_e opcode_format() const { return m_opcode_format; }
     QSize sizeHint(column_e column) const { return m_size_normal.value(column); }
 
 public slots:
     void invalidate();
-    void setOpcodeFormat(format_e format);
+    void setOpcodeFormat(p2_opcode_format_e format);
     void updateSizes();
 
 private:
     P2Asm* m_asm;
-    format_e m_opcode_format;
+    p2_opcode_format_e m_opcode_format;
     QFont m_font;
     QFont m_bold;
     QIcon m_error;

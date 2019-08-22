@@ -1061,3 +1061,9 @@ typedef struct {
     P2LONG D;
     P2LONG S;
 }   p2_queue_t;
+
+typedef enum {
+    f_bin,
+    f_hex,
+    f_oct
+}   p2_opcode_format_e;

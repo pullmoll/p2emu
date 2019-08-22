@@ -36,7 +36,7 @@
 #include <QColor>
 #include <QFont>
 #include <QFontMetrics>
-class P2Dasm;
+#include "p2dasm.h"
 
 class P2DasmModel : public QAbstractTableModel
 {
@@ -48,11 +48,6 @@ public:
         c_Instruction,
         c_Description
     };
-    enum format_e {
-        f_bin,
-        f_hex,
-        f_oct
-    };
 
     explicit P2DasmModel(P2Dasm* dasm, QObject *parent = nullptr);
 
@@ -61,17 +56,17 @@ public:
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 
-    format_e opcode_format() const { return m_opcode_format; }
+    p2_opcode_format_e opcode_format() const { return m_opcode_format; }
     QSize sizeHint(column_e column) const { return m_size_normal.value(column); }
 
 public slots:
     void invalidate();
-    void setOpcodeFormat(format_e format);
+    void setOpcodeFormat(p2_opcode_format_e format);
     void updateSizes();
 
 private:
     P2Dasm* m_dasm;
-    format_e m_opcode_format;
+    p2_opcode_format_e m_opcode_format;
     QFont m_font;
     QFont m_bold;
     QHash<column_e,QString> m_header;

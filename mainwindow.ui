@@ -18,9 +18,12 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="tabHub">
+       <property name="accessibleName">
+        <string>tabHub</string>
+       </property>
        <attribute name="title">
         <string>HUB</string>
        </attribute>
@@ -101,6 +104,9 @@
          <pointsize>9</pointsize>
         </font>
        </property>
+       <property name="accessibleName">
+        <string>tabAsm</string>
+       </property>
        <attribute name="title">
         <string>Assembler</string>
        </attribute>
@@ -166,6 +172,9 @@
         <font>
          <family>DejaVu Sans Mono</family>
         </font>
+       </property>
+       <property name="accessibleName">
+        <string>tabDasm</string>
        </property>
        <attribute name="title">
         <string>Disassembler</string>

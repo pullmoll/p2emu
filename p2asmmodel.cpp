@@ -512,7 +512,7 @@ void P2AsmModel::invalidate()
     endResetModel();
 }
 
-void P2AsmModel::setOpcodeFormat(P2AsmModel::format_e format)
+void P2AsmModel::setOpcodeFormat(p2_opcode_format_e format)
 {
     if (format == m_opcode_format)
         return;

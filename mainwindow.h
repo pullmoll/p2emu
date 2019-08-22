@@ -55,6 +55,12 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
+    enum ui_tab_e {
+        id_hub,
+        id_asm,
+        id_dasm
+    };
+
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
@@ -63,6 +69,7 @@ private slots:
     void restoreSettings();
     void about();
     void aboutQt5();
+    void setActionsEnabled(ui_tab_e which, bool enable);
     void tabChanged(int idx);
 
     void gotoHex(const QString& address = QString());
