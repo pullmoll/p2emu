@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>2</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tabHub">
        <property name="accessibleName">
@@ -427,6 +427,9 @@
    </property>
   </action>
   <action name="action_Dasm_Opcodes_bin">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset resource="p2emu.qrc">
      <normaloff>:/icons/opcode_bin.png</normaloff>:/icons/opcode_bin.png</iconset>
@@ -436,6 +439,9 @@
    </property>
   </action>
   <action name="action_Dasm_Opcodes_oct">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset resource="p2emu.qrc">
      <normaloff>:/icons/opcode_oct.png</normaloff>:/icons/opcode_oct.png</iconset>
@@ -445,6 +451,9 @@
    </property>
   </action>
   <action name="action_Dasm_Opcodes_hex">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset resource="p2emu.qrc">
      <normaloff>:/icons/opcode_hex.png</normaloff>:/icons/opcode_hex.png</iconset>
@@ -454,6 +463,9 @@
    </property>
   </action>
   <action name="action_Dasm_Lowercase">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset resource="p2emu.qrc">
      <normaloff>:/icons/lowercase.png</normaloff>:/icons/lowercase.png</iconset>
@@ -463,6 +475,9 @@
    </property>
   </action>
   <action name="action_Asm_Opcodes_bin">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset resource="p2emu.qrc">
      <normaloff>:/icons/opcode_bin.png</normaloff>:/icons/opcode_bin.png</iconset>
@@ -472,6 +487,9 @@
    </property>
   </action>
   <action name="action_Asm_Opcodes_oct">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset resource="p2emu.qrc">
      <normaloff>:/icons/opcode_oct.png</normaloff>:/icons/opcode_oct.png</iconset>
@@ -481,6 +499,9 @@
    </property>
   </action>
   <action name="action_Asm_Opcodes_hex">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset resource="p2emu.qrc">
      <normaloff>:/icons/opcode_hex.png</normaloff>:/icons/opcode_hex.png</iconset>
