@@ -41,7 +41,7 @@
 #include "p2atom.h"
 #include "p2asmsymtbl.h"
 
-typedef QHash<int, P2LONG> p2_PC_hash_t;
+typedef QHash<int, p2_LONG> p2_PC_hash_t;
 typedef QHash<int, p2_opcode_u> p2_IR_hash_t;
 typedef QHash<int, p2_token_v> p2_token_hash_t;
 typedef QHash<int, QStringList> p2_words_hash_t;
@@ -94,10 +94,10 @@ private:
     int m_lineno;                           //!< current line number
     QString m_line;                         //!< current line of source
     QString m_error;                        //!< error message from parameters parser
-    P2LONG m_next_PC;                       //!< next program counter
-    P2LONG m_curr_PC;                       //!< current program counter (origin of the instruction)
-    P2LONG m_last_PC;                       //!< last program counter (maximum of next_pc)
-    P2LONG m_advance;                       //!< advance by n longs
+    p2_LONG m_next_PC;                       //!< next program counter
+    p2_LONG m_curr_PC;                       //!< current program counter (origin of the instruction)
+    p2_LONG m_last_PC;                       //!< last program counter (maximum of next_pc)
+    p2_LONG m_advance;                       //!< advance by n longs
     p2_opcode_u m_IR;                       //!< current instruction register
     QStringList m_words;                    //!< current list of words on the line
     p2_token_v m_tokens;                    //!< current vector of tokens found on the line
@@ -108,9 +108,9 @@ private:
     int m_idx;                              //!< token (and word) index
 
     union {
-        P2BYTE B[MEM_SIZE];                 //!< as bytes
-        P2WORD W[MEM_SIZE/2];               //!< as words
-        P2LONG L[MEM_SIZE/4];               //!< as longs
+        p2_BYTE B[MEM_SIZE];                 //!< as bytes
+        p2_WORD W[MEM_SIZE/2];               //!< as words
+        p2_LONG L[MEM_SIZE/4];               //!< as longs
     } MEM;                                  //!< binary data
 
 private:
@@ -126,7 +126,7 @@ private:
     bool split_and_tokenize(const QString& m_line);
     p2_cond_e conditional(p2_token_e cond);
     p2_cond_e parse_modcz(p2_token_e cond);
-    void skip_spc(int& pos, const QString& str);
+    bool skip_spc(int& pos, const QString& str);
     void skip_imm(int& pos, const QString& str);
     P2Atom from_bin(int& pos, const QString& str);
     P2Atom from_byt(int& pos, const QString& str);
@@ -134,10 +134,12 @@ private:
     P2Atom from_dec(int& pos, const QString& str);
     P2Atom from_hex(int& pos, const QString& str);
     P2Atom from_str(int& pos, const QString& str);
+    QString find_symbol(const QString& sect = QString(), const QString& func = QString(), const QString& local = QString());
     P2Atom parse_atom(int& pos, const QString& word);
     P2Atom parse_factors(int& pos, const QString& str);
     P2Atom parse_summands(int& pos, const QString& str);
     P2Atom parse_binops(int& pos, const QString& str);
+    P2Atom parse_subexpression(int& pos, const QString& str);
     P2Atom parse_expression(imm_to_e imm_to = immediate_none);
 
     bool end_of_line(bool binary = true);

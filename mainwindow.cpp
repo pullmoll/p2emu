@@ -213,7 +213,7 @@ void MainWindow::tabChanged(int idx)
 void MainWindow::gotoHex(const QString& address)
 {
     bool ok;
-    P2LONG addr = address.toUInt(&ok, 16);
+    p2_LONG addr = address.toUInt(&ok, 16);
     if (ok)
         ui->tvDasm->selectRow(static_cast<int>(addr / 4));
 }
@@ -399,7 +399,7 @@ void MainWindow::setDasmLowercase(bool check)
 {
     ui->action_Dasm_Lowercase->setChecked(check);
     m_dasm->setLowercase(check);
-    P2LONG PC = m_hub->cog(0)->rd_PC();
+    p2_LONG PC = m_hub->cog(0)->rd_PC();
     int row = static_cast<int>((PC < PC_LONGS) ? PC : PC / 4);
     m_dmodel->invalidate();
     ui->tvDasm->selectRow(row);
@@ -407,7 +407,8 @@ void MainWindow::setDasmLowercase(bool check)
 
 void MainWindow::setupAssembler()
 {
-    QFile file(QStringLiteral(":/ROM_Booter_v33_01j.spin2"));
+    // QFile file(QStringLiteral(":/ROM_Booter_v33_01j.spin2"));
+    QFile file(QStringLiteral(":/P2-qz80-rr032.spin2"));
     if (!file.open(QIODevice::ReadOnly))
         return;
     QTextStream stream(&file);

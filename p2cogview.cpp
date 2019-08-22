@@ -37,12 +37,12 @@
 #include "p2dasm.h"
 #include "p2dasmmodel.h"
 
-static QString bin(P2LONG val, int digits = 1)
+static QString bin(p2_LONG val, int digits = 1)
 {
     return QString("%1").arg(val, digits, 2, QChar('0'));
 }
 
-static QString hex(P2LONG val, int digits = 8)
+static QString hex(p2_LONG val, int digits = 8)
 {
     return QString("%1").arg(val, digits, 16, QChar('0'));
 }
@@ -65,14 +65,14 @@ P2CogView::~P2CogView()
 void P2CogView::updateView()
 {
     ui->group_PC->setTitle(QString("COG ID #%1").arg(m_cog->rd_ID()));
-    const P2LONG PC = m_cog->rd_PC();
+    const p2_LONG PC = m_cog->rd_PC();
     ui->le_PC->setText(hex(PC, 6));
 
     p2_opcode_u IR = { m_cog->rd_mem(PC), };
     QVariant D_aug = m_cog->rd_D_aug();
     QVariant S_aug = m_cog->rd_S_aug();
-    P2LONG D = D_aug.isValid() ? D_aug.toUInt() | IR.op.dst : IR.op.dst;
-    P2LONG S = S_aug.isValid() ? S_aug.toUInt() | IR.op.src : IR.op.src;
+    p2_LONG D = D_aug.isValid() ? D_aug.toUInt() | IR.op.dst : IR.op.dst;
+    p2_LONG S = S_aug.isValid() ? S_aug.toUInt() | IR.op.src : IR.op.src;
     ui->le_DST->setText(hex(D, 3));
     ui->le_SRC->setText(hex(S, 3));
 

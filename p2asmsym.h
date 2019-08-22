@@ -34,6 +34,7 @@
 #pragma once
 #include <QString>
 #include <QVariant>
+#include "p2atom.h"
 
 /**
  * @brief The P2AsmSymbol class is a wrapper for one symbolic name for a value
@@ -41,15 +42,15 @@
 class P2AsmSymbol
 {
 public:
-    explicit P2AsmSymbol(const QString& name = QString(), const QVariant& value = QVariant());
+    explicit P2AsmSymbol(const QString& name = QString(), const P2Atom& value = P2Atom());
 
     bool isNull() const;
     bool isEmpty() const;
     const QString& name() const;
     template <typename T>
-    T value() const { return qvariant_cast<T>(m_value); }
-    bool setValue(const QVariant& value);
-    QVariant::Type type() const;
+    T value() const { return m_value.value<T>(); }
+    bool setValue(const P2Atom& value);
+    P2Atom::Type type() const;
     int defined_in() const;
     int reference(int idx = 0) const;
     void addReference(int lineno);
@@ -57,7 +58,7 @@ public:
 
 private:
     QString m_name;
-    QVariant m_value;
+    P2Atom m_value;
     QList<int> m_references;
 };
 

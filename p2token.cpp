@@ -176,10 +176,10 @@ P2Token::P2Token()
     m_token_string.insert(t_unknown,            QStringLiteral("«expr»"));
     m_token_string.insert(t_comma,              QStringLiteral(","));
     m_token_string.insert(t_string,             QStringLiteral("«string»"));
-    m_token_string.insert(t_value_bin,          QStringLiteral("«bin»"));
-    m_token_string.insert(t_value_oct,          QStringLiteral("«oct»"));
-    m_token_string.insert(t_value_dec,          QStringLiteral("«dec»"));
-    m_token_string.insert(t_value_hex,          QStringLiteral("«hex»"));
+    m_token_string.insert(t_bin_const,          QStringLiteral("«bin»"));
+    m_token_string.insert(t_oct_const,          QStringLiteral("«oct»"));
+    m_token_string.insert(t_dec_const,          QStringLiteral("«dec»"));
+    m_token_string.insert(t_hex_const,          QStringLiteral("«hex»"));
     m_token_string.insert(t_locsym,             QStringLiteral("«locsym»"));
     m_token_string.insert(t_symbol,             QStringLiteral("«symbol»"));
     m_token_string.insert(t_expression,         QStringLiteral("«expression»"));
@@ -896,11 +896,12 @@ QString P2Token::string(p2_token_e tok, bool lowercase) const
  * @brief Return a p2_token_e enumeration value for the QString %str
  * @param str QString to scan for
  * @param chop if true, chop off characters until a a token other than t_nothing is matched
+ * @param plen optional pointer to an int to receive the length of the token
  * @return p2_token_e enumeration value, or t_nothing if not a known string
  */
-p2_token_e P2Token::token(const QString& str, bool chop) const
+p2_token_e P2Token::token(const QString& str, bool chop, int* plen) const
 {
-    QString ustr = str.toUpper().remove(QRegExp("\\s"));
+    QString ustr = str.toUpper().simplified().remove(QChar::Space);
 
     // Ignore leading '#' characters (for immediate modes)
     while (ustr.startsWith(QChar('#')))
@@ -929,27 +930,27 @@ p2_token_e P2Token::token(const QString& str, bool chop) const
         }
 
         if (0 == ustr.indexOf(rx_bin)) {
-            tok = t_value_bin;
+            tok = t_bin_const;
             break;
         }
 
         if (0 == ustr.indexOf(rx_byt)) {
-            tok = t_value_byt;
+            tok = t_byt_const;
             break;
         }
 
         if (0 == ustr.indexOf(rx_oct)) {
-            tok = t_value_oct;
+            tok = t_oct_const;
             break;
         }
 
         if (0 == ustr.indexOf(rx_hex)) {
-            tok = t_value_hex;
+            tok = t_hex_const;
             break;
         }
 
         if (0 == ustr.indexOf(rx_dec)) {
-            tok = t_value_dec;
+            tok = t_dec_const;
             break;
         }
 
@@ -960,7 +961,12 @@ p2_token_e P2Token::token(const QString& str, bool chop) const
 
         if (!chop)
             break;
+
         ustr.chop(1);
+        tok = m_string_token.value(ustr, t_unknown);
+    }
+    if (plen) {
+        *plen = ustr.length();
     }
     return tok;
 }

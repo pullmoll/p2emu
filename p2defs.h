@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Propeller2 enumerations and opcode structure
+ * Propeller2 constants, enumerations, and opcode structure
  *
  * Copyright (C) 2019 Jürgen Buchmüller <pullmoll@t-online.de>
  *
@@ -34,112 +34,75 @@
 #pragma once
 #include <QtEndian>
 
-//!< Type of the Propeller2 byte
-typedef quint8 P2BYTE;
+//!< Type of the Propeller2 BYTE
+typedef quint8 p2_BYTE;
 
-//!< Type of the Propeller2 word
-typedef quint16 P2WORD;
+//!< Type of the Propeller2 WORD
+typedef quint16 p2_WORD;
 
-//!< Type of the Propeller2 long
-typedef quint32 P2LONG;
+//!< Type of the Propeller2 LONG
+typedef quint32 p2_LONG;
 
 //!< Intermediate type (unsigned long long); not a Propeller2 type
-typedef quint64 P2QUAD;
+typedef quint64 p2_QUAD;
 
-//! Size of the COG memory in longs
-static constexpr P2LONG COG_SIZE = 0x200;
+//!< Type for an array (vector) of BYTEs
+typedef QVector<p2_BYTE> p2_BYTEs;
 
-//! Mask for the COG memory longs
-static constexpr P2LONG COG_MASK = (COG_SIZE-1);
+//!< Type for an array (vector) of WORDs
+typedef QVector<p2_WORD> p2_WORDs;
 
-//! Size of the LUT memory in longs
-static constexpr P2LONG LUT_SIZE = 0x200;
-
-//! Mask for the LUT memory longs
-static constexpr P2LONG LUT_MASK = (LUT_SIZE-1);
-
-//! Number of longs where the PC switches from *1 scale to *4 scale
-static constexpr P2LONG PC_LONGS = (COG_SIZE+LUT_SIZE);
-
-//! Lowest HUB memory address
-static constexpr P2LONG HUB_ADDR = (PC_LONGS*4);
-
-//! Size of the HUB memory in bytes (1MiB)
-static constexpr P2LONG MEM_SIZE = 0x100000;
-
-//! most significant bit in a 32 bit word
-static constexpr P2LONG MSB = 1u << 31;
-
-//! least significant bit in a 32 bit word
-static constexpr P2LONG LSB = 1u;
-
-//! least significant nibble in a 32 bit word
-static constexpr P2LONG LNIBBLE = 0x0000000fu;
-
-//! least significant byte in a 32 bit word
-static constexpr P2LONG LBYTE = 0x000000ffu;
-
-//! least significant word in a 32 bit word
-static constexpr P2LONG LWORD = 0x0000ffffu;
-
-//! most significant word in a 32 bit word
-static constexpr P2LONG HWORD = 0xffff0000u;
-
-//! bits without sign bit in a 32 bit word
-static constexpr P2LONG IMAX = 0x7fffffffu;
-
-//! no bits in a 32 bit word
-static constexpr P2LONG ZERO = 0x00000000u;
-
-//! all bits in a 32 bit word
-static constexpr P2LONG FULL = 0xffffffffu;
-
-//! least significant 20 bits for an address value
-static constexpr P2LONG A20MASK = (1u << 20) - 1;
-
-//! most significant 23 bits for an augmentation value
-static constexpr P2LONG AUGMASK = 0xfffffe00;
-
-//! upper word max / mask in a 64 bit unsigned
-static constexpr quint64 HMAX = Q_UINT64_C(0xffffffff00000000);
-
-//! lower word max / mask in a 64 bit unsigned
-static constexpr quint64 LMAX = Q_UINT64_C(0x00000000ffffffff);
-
-//! digits of binary numbers
-static constexpr char bin_digits[] = "01_";
-
-//! digits of byte indices
-static constexpr char byt_digits[] = "0123_";
-
-//! digits of octal numbers
-static constexpr char oct_digits[] = "01234567_";
-
-//! digits of decimal numbers
-static constexpr char dec_digits[] = "0123456789_";
-
-//! digits of hexadecimal numbers
-static constexpr char hex_digits[] = "0123456789ABCDEF_";
-
+//!< Type for an array (vector) of LONGs
+typedef QVector<p2_LONG> p2_LONGs;
 
 /// Union of bytes, words, and a long in endianess aware ordering
 typedef union {
 #if (Q_BYTE_ORDER == Q_LITTLE_ENDIAN)
-    P2LONG l;               //!< long
-    P2WORD w0, w1;          //!< words 0, 1 as least significant word first
-    P2WORD w[2];            //!< 2 words as an array
-    P2BYTE b0, b1, b2, b3;  //!< bytes 0, 1, 2, 3 as least significant byte first
-    P2BYTE b[4];            //!< 4 bytes as an array
+    p2_LONG l;               //!< long
+    p2_WORD w0, w1;          //!< words 0, 1 as least significant word first
+    p2_WORD w[2];            //!< 2 words as an array
+    p2_BYTE b0, b1, b2, b3;  //!< bytes 0, 1, 2, 3 as least significant byte first
+    p2_BYTE b[4];            //!< 4 bytes as an array
 #elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
-    P2LONG l;               //!< long
-    P2WORD w1, w0;          //!< words 1, 0 as most significant word first
-    P2WORD w[2];            //!< 2 words as an array
-    P2BYTE b3, b2, b1, b0;  //!< bytes 3, 2, 1, 0 as most significant byte first
-    P2BYTE b[4];            //!< 4 bytes as an array
+    p2_LONG l;               //!< long
+    p2_WORD w1, w0;          //!< words 1, 0 as most significant word first
+    p2_WORD w[2];            //!< 2 words as an array
+    p2_BYTE b3, b2, b1, b0;  //!< bytes 3, 2, 1, 0 as most significant byte first
+    p2_BYTE b[4];            //!< 4 bytes as an array
 #else
 #error "Unknown byte order!"
 #endif
 }   p2_BWL;
+
+//! Size of the HUB memory in bytes (1MiB)
+constexpr p2_LONG MEM_SIZE = 0x100000;
+
+extern const p2_LONG COG_SIZE;
+extern const p2_LONG COG_MASK;
+extern const p2_LONG LUT_SIZE;
+extern const p2_LONG LUT_MASK;
+
+extern const p2_LONG PC_LONGS;
+extern const p2_LONG HUB_ADDR;
+extern const p2_LONG MSB;
+extern const p2_LONG LSB;
+extern const p2_LONG LNIBBLE;
+extern const p2_LONG LBYTE;
+extern const p2_LONG LWORD;
+extern const p2_LONG HWORD;
+extern const p2_LONG IMAX;
+extern const p2_LONG ZERO;
+extern const p2_LONG FULL;
+extern const p2_LONG A20MASK;
+extern const p2_LONG AUGMASK;
+extern const p2_QUAD HMAX;
+extern const p2_QUAD LMAX;
+
+extern const char bin_digits[];
+extern const char byt_digits[];
+extern const char oct_digits[];
+extern const char dec_digits[];
+extern const char hex_digits[];
 
 /**
  * @brief Enumeration of the 16 conditional execution modes
@@ -846,7 +809,7 @@ typedef struct {
  * @brief union of a 32 bit word and the opcode bit fields
  */
 typedef union {
-    P2LONG opcode;              //!< opcode as 32 bit word
+    p2_LONG opcode;              //!< opcode as 32 bit word
     p2_opcode7_t op;            //!< ocpode as bit fields (version with 7 bits instruction)
     p2_opcode8_t op8;           //!< ocpode as bit fields (version including WC)
     p2_opcode9_t op9;           //!< ocpode as bit fields (version including WC and WZ)
@@ -856,42 +819,42 @@ typedef union {
  * @brief structure of the shadow registers at the end of LUT
  */
 typedef struct {
-    P2LONG RAM[512-16];         //!< general-use code/data registers
-    P2LONG IJMP3;               //!< interrupt call address for INT3
-    P2LONG IRET3;               //!< interrupt return address for INT3
-    P2LONG IJMP2;               //!< interrupt call address for INT2
-    P2LONG IRET2;               //!< interrupt return address for INT2
-    P2LONG IJMP1;               //!< interrupt call address for INT1
-    P2LONG IRET1;               //!< interrupt return address for INT1
-    P2LONG PA;                  //!< CALLD-imm return, CALLPA parameter, or LOC address
-    P2LONG PB;                  //!< CALLD-imm return, CALLPB parameter, or LOC address
-    P2LONG PTRA;                //!< pointer A to hub RAM
-    P2LONG PTRB;                //!< pointer B to hub RAM
-    P2LONG DIRA;                //!< output enables for P31 ... P0
-    P2LONG DIRB;                //!< output enables for P63 ... P32
-    P2LONG OUTA;                //!< output states for P31 ... P0
-    P2LONG OUTB;                //!< output states for P63 ... P32
-    P2LONG INA;                 //!< input states for P31 ... P0
-    P2LONG INB;                 //!< input states for P63 ... P32
+    p2_LONG RAM[512-16];         //!< general-use code/data registers
+    p2_LONG IJMP3;               //!< interrupt call address for INT3
+    p2_LONG IRET3;               //!< interrupt return address for INT3
+    p2_LONG IJMP2;               //!< interrupt call address for INT2
+    p2_LONG IRET2;               //!< interrupt return address for INT2
+    p2_LONG IJMP1;               //!< interrupt call address for INT1
+    p2_LONG IRET1;               //!< interrupt return address for INT1
+    p2_LONG PA;                  //!< CALLD-imm return, CALLPA parameter, or LOC address
+    p2_LONG PB;                  //!< CALLD-imm return, CALLPB parameter, or LOC address
+    p2_LONG PTRA;                //!< pointer A to hub RAM
+    p2_LONG PTRB;                //!< pointer B to hub RAM
+    p2_LONG DIRA;                //!< output enables for P31 ... P0
+    p2_LONG DIRB;                //!< output enables for P63 ... P32
+    p2_LONG OUTA;                //!< output states for P31 ... P0
+    p2_LONG OUTB;                //!< output states for P63 ... P32
+    p2_LONG INA;                 //!< input states for P31 ... P0
+    p2_LONG INB;                 //!< input states for P63 ... P32
 }   p2_lutregs_t;
 
 typedef enum {
-    offs_IJMP3 = offsetof(p2_lutregs_t, IJMP3) / sizeof(P2LONG),
-    offs_IRET3 = offsetof(p2_lutregs_t, IRET3) / sizeof(P2LONG),
-    offs_IJMP2 = offsetof(p2_lutregs_t, IJMP2) / sizeof(P2LONG),
-    offs_IRET2 = offsetof(p2_lutregs_t, IRET2) / sizeof(P2LONG),
-    offs_IJMP1 = offsetof(p2_lutregs_t, IJMP1) / sizeof(P2LONG),
-    offs_IRET1 = offsetof(p2_lutregs_t, IRET1) / sizeof(P2LONG),
-    offs_PA    = offsetof(p2_lutregs_t,    PA) / sizeof(P2LONG),
-    offs_PB    = offsetof(p2_lutregs_t,    PB) / sizeof(P2LONG),
-    offs_PTRA  = offsetof(p2_lutregs_t,  PTRA) / sizeof(P2LONG),
-    offs_PTRB  = offsetof(p2_lutregs_t,  PTRB) / sizeof(P2LONG),
-    offs_DIRA  = offsetof(p2_lutregs_t,  DIRA) / sizeof(P2LONG),
-    offs_DIRB  = offsetof(p2_lutregs_t,  DIRB) / sizeof(P2LONG),
-    offs_OUTA  = offsetof(p2_lutregs_t,  OUTA) / sizeof(P2LONG),
-    offs_OUTB  = offsetof(p2_lutregs_t,  OUTB) / sizeof(P2LONG),
-    offs_INA   = offsetof(p2_lutregs_t,   INA) / sizeof(P2LONG),
-    offs_INB   = offsetof(p2_lutregs_t,   INB) / sizeof(P2LONG)
+    offs_IJMP3 = offsetof(p2_lutregs_t, IJMP3) / sizeof(p2_LONG),
+    offs_IRET3 = offsetof(p2_lutregs_t, IRET3) / sizeof(p2_LONG),
+    offs_IJMP2 = offsetof(p2_lutregs_t, IJMP2) / sizeof(p2_LONG),
+    offs_IRET2 = offsetof(p2_lutregs_t, IRET2) / sizeof(p2_LONG),
+    offs_IJMP1 = offsetof(p2_lutregs_t, IJMP1) / sizeof(p2_LONG),
+    offs_IRET1 = offsetof(p2_lutregs_t, IRET1) / sizeof(p2_LONG),
+    offs_PA    = offsetof(p2_lutregs_t,    PA) / sizeof(p2_LONG),
+    offs_PB    = offsetof(p2_lutregs_t,    PB) / sizeof(p2_LONG),
+    offs_PTRA  = offsetof(p2_lutregs_t,  PTRA) / sizeof(p2_LONG),
+    offs_PTRB  = offsetof(p2_lutregs_t,  PTRB) / sizeof(p2_LONG),
+    offs_DIRA  = offsetof(p2_lutregs_t,  DIRA) / sizeof(p2_LONG),
+    offs_DIRB  = offsetof(p2_lutregs_t,  DIRB) / sizeof(p2_LONG),
+    offs_OUTA  = offsetof(p2_lutregs_t,  OUTA) / sizeof(p2_LONG),
+    offs_OUTB  = offsetof(p2_lutregs_t,  OUTB) / sizeof(p2_LONG),
+    offs_INA   = offsetof(p2_lutregs_t,   INA) / sizeof(p2_LONG),
+    offs_INB   = offsetof(p2_lutregs_t,   INB) / sizeof(p2_LONG)
 }   p2_lutregs_e;
 
 Q_STATIC_ASSERT(offs_INB == 0x1ff);
@@ -900,14 +863,14 @@ Q_STATIC_ASSERT(offs_INB == 0x1ff);
  * @brief Structure of the COG memory
  */
 typedef union {
-    P2LONG RAM[512];
+    p2_LONG RAM[512];
 }   p2_cog_t;
 
 /**
  * @brief Union of the LUT memory and shadow registers
  */
 typedef union {
-    P2LONG RAM[512];
+    p2_LONG RAM[512];
     p2_lutregs_t REG;
 }   p2_lut_t;
 
@@ -949,8 +912,8 @@ typedef enum {
  */
 typedef struct {
     p2_pat_mode_e mode;         //!< pattern matching mode
-    P2LONG mask;               //!< mask value
-    P2LONG match;              //!< match value
+    p2_LONG mask;               //!< mask value
+    p2_LONG match;              //!< match value
 }   p2_pat_t;
 
 /**
@@ -968,8 +931,8 @@ typedef enum {
  */
 typedef struct {
     p2_pin_mode_e mode;         //!< pin edge mode
-    P2LONG edge;               //!< pin edge type
-    P2LONG num;                //!< pin number
+    p2_LONG edge;               //!< pin edge type
+    p2_LONG num;                //!< pin number
 }   p2_pin_t;
 
 /**
@@ -994,7 +957,7 @@ typedef struct {
  * @brief union of INT flags and bits
  */
 typedef union {
-    P2LONG bits;               //!< interrupt flags as LONG
+    p2_LONG bits;               //!< interrupt flags as LONG
     p2_int_flags_t flags;
 }   p2_int_bits_u;
 
@@ -1012,10 +975,10 @@ typedef enum {
  * @brief LOCK edge data
  */
 typedef struct {
-    P2LONG num:4;              //!< LOCK COG id
+    p2_LONG num:4;              //!< LOCK COG id
     p2_lock_mode_e mode:2;      //!< LOCK edge mode
-    P2LONG edge:2;             //!< LOCK edge
-    P2LONG prev:1;             //!< LOCK previous state
+    p2_LONG edge:2;             //!< LOCK edge
+    p2_LONG prev:1;             //!< LOCK previous state
 }   p2_lock_t;
 
 /**
@@ -1035,7 +998,7 @@ typedef enum {
  * @brief wait status
  */
 typedef struct {
-    P2LONG flag;               //!< non-zero if waiting
+    p2_LONG flag;               //!< non-zero if waiting
     p2_wait_mode_e mode;        //!< current wait mode
 }   p2_wait_t;
 
@@ -1043,23 +1006,23 @@ typedef struct {
  * @brief FIFO configuration and status
  */
 typedef struct {
-    P2LONG buff[16];           //!< buffer of 16 longs read from / written to the HUB
-    P2LONG rindex;             //!< current read index
-    P2LONG windex;             //!< current write index
-    P2LONG head_addr;          //!< head address
-    P2LONG tail_addr;          //!< tail address
-    P2LONG addr0;              //!< 1st address
-    P2LONG addr1;              //!< 2nd address
-    P2LONG mode;               //!< FIFO mode
-    P2LONG opcode;               //!< FIFO word
-    P2LONG flag;               //!< FIFO flags
+    p2_LONG buff[16];           //!< buffer of 16 longs read from / written to the HUB
+    p2_LONG rindex;             //!< current read index
+    p2_LONG windex;             //!< current write index
+    p2_LONG head_addr;          //!< head address
+    p2_LONG tail_addr;          //!< tail address
+    p2_LONG addr0;              //!< 1st address
+    p2_LONG addr1;              //!< 2nd address
+    p2_LONG mode;               //!< FIFO mode
+    p2_LONG word;               //!< FIFO word
+    p2_LONG flag;               //!< FIFO flags
 }   p2_fifo_t;
 
 typedef struct {
     p2_opcode_u IR;
-    P2LONG R;
-    P2LONG D;
-    P2LONG S;
+    p2_LONG R;
+    p2_LONG D;
+    p2_LONG S;
 }   p2_queue_t;
 
 typedef enum {

@@ -44,7 +44,7 @@ static const QString str_instruction = QStringLiteral(" IF_NC_AND_NZ  INSTRUCTIO
 
 static const QString style_nowrap = QStringLiteral("style='white-space:nowrap;'");
 static const QString style_left = QStringLiteral("style='text-align:left;'");
-static const QString style_padding = QStringLiteral("style='padding:2px;'");
+static const QString style_padding = QStringLiteral("style='padding:4px;'");
 static const QString style_background_error = QStringLiteral("style='background:#ffc0c0;'");
 static const QString style_background_tokens = QStringLiteral("style='background:#10fcff;'");
 static const QString style_background_symbols = QStringLiteral("style='background:#fff0ff;'");
@@ -270,7 +270,7 @@ QString P2AsmModel::symbolsToolTip(const P2AsmSymTbl& symbols, const QStringList
 
     foreach (const QString& symbol, defined) {
         P2AsmSymbol sym = symbols.value(symbol);
-        P2LONG val = sym.value<P2LONG>();
+        p2_LONG val = sym.value<p2_LONG>();
         html += html_tr_init();
         html += html_td(sym.name());
         html += html_td(QString("%1").arg(val));
@@ -313,7 +313,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
         switch (column) {
         case c_Origin: // Address as COG[xxx], LUT[xxx], or xxxxxx in RAM
             if (m_asm->hPC().contains(lineno)) {
-                const P2LONG PC = m_asm->hPC().value(lineno);
+                const p2_LONG PC = m_asm->hPC().value(lineno);
                 if (PC < 0x200) {
                     result = QString("COG[%1]").arg(PC, 3, 16, QChar('0'));
                 } else if (PC < PC_LONGS) {

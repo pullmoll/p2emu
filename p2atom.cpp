@@ -1,7 +1,30 @@
 #include "p2atom.h"
 
-P2Atom::P2Atom() : m_data()
+P2Atom::P2Atom()
+    : m_type(Invalid)
+    , m_data()
 {
+}
+
+P2Atom::P2Atom(p2_BYTE value)
+    : m_type(Invalid)
+    , m_data()
+{
+    append(8, value);
+}
+
+P2Atom::P2Atom(p2_LONG value)
+    : m_type(Invalid)
+    , m_data()
+{
+    append(32, value);
+}
+
+P2Atom::P2Atom(p2_WORD value)
+    : m_type(Invalid)
+    , m_data()
+{
+    append(16, value);
 }
 
 /**
@@ -10,19 +33,52 @@ P2Atom::P2Atom() : m_data()
 void P2Atom::clear()
 {
     m_data.clear();
+    m_type = Invalid;
 }
 
-bool P2Atom::isValid() const
+/**
+ * @brief Return true, if the atom is invalid
+ * @return true if empty, or false otherwise
+ */
+bool P2Atom::isNull() const
 {
-    return !m_data.isEmpty();
+    return m_type == Invalid;
 }
 
+/**
+ * @brief Return true, if the atom contains no data
+ * @return true if empty, or false otherwise
+ */
 bool P2Atom::isEmpty() const
 {
     return m_data.isEmpty();
 }
 
-bool P2Atom::append(int nbits, P2QUAD value)
+/**
+ * @brief Return true, if the atom is valid, i.e. contains data
+ * @return true if valid, or false otherwise
+ */
+bool P2Atom::isValid() const
+{
+    return m_type != Invalid;
+}
+
+/**
+ * @brief Return the type of the atom, i.e. max size inserted
+ * @return One of the %Type enumeration values
+ */
+P2Atom::Type P2Atom::type() const
+{
+    return m_type;
+}
+
+/**
+ * @brief Append a number of bytes to the data
+ * @param nbits number of bits to append
+ * @param value with lower %nbits valid
+ * @return truen on success, or false on error
+ */
+bool P2Atom::append(int nbits, p2_QUAD value)
 {
     if (nbits <= 0)
         return false;
@@ -35,7 +91,13 @@ bool P2Atom::append(int nbits, P2QUAD value)
     return append<64>(value);
 }
 
-bool P2Atom::set(int nbits, P2QUAD value)
+/**
+ * @brief Set the data to a new value
+ * @param nbits number of bits to set
+ * @param value with lower %nbits valid
+ * @return true on success, or false on error
+ */
+bool P2Atom::set(int nbits, p2_QUAD value)
 {
     clear();
     if (nbits <= 0)
@@ -52,78 +114,78 @@ bool P2Atom::set(int nbits, P2QUAD value)
 /**
  * @brief Return data as a single byte
  * @param ok optional pointer to a bool set to true if data is available
- * @return One P2BYTE
+ * @return One p2_BYTE
  */
-P2BYTE P2Atom::toBYTE(bool* ok) const
+p2_BYTE P2Atom::toBYTE(bool* ok) const
 {
-    return value<P2BYTE>(ok);
+    return value<p2_BYTE>(ok);
 }
 
 /**
  * @brief Return data as a single word
  * @param ok optional pointer to a bool set to true if data is available
- * @return One P2WORD
+ * @return One p2_WORD
  */
-P2WORD P2Atom::toWORD(bool* ok) const
+p2_WORD P2Atom::toWORD(bool* ok) const
 {
-    return value<P2WORD>(ok);
+    return value<p2_WORD>(ok);
 }
 
 /**
  * @brief Return data as a single long
  * @param ok optional pointer to a bool set to true if data is available
- * @return One P2LONG
+ * @return One p2_LONG
  */
-P2LONG P2Atom::toLONG(bool* ok) const
+p2_LONG P2Atom::toLONG(bool* ok) const
 {
-    return value<P2LONG>(ok);
+    return value<p2_LONG>(ok);
 }
 
 /**
  * @brief Return data as a single quad
  * @param ok optional pointer to a bool set to true if data is available
- * @return One P2LONG
+ * @return One p2_LONG
  */
-P2QUAD P2Atom::toQUAD(bool* ok) const
+p2_QUAD P2Atom::toQUAD(bool* ok) const
 {
-    return value<P2QUAD>(ok);
+    return value<p2_QUAD>(ok);
 }
 
 /**
  * @brief Return data as a vector of bytes
- * @return QVector<P2BYTE> of all data
+ * @return p2_BYTEs of all data
  */
-QVector<P2BYTE> P2Atom::BYTES() const
+p2_BYTEs P2Atom::toBYTES() const
 {
     const int bytes = m_data.size();
-    QVector<P2BYTE> result(bytes);
+    p2_BYTEs result(bytes);
     for (int i = 0; i < bytes; i++)
-        result[i] = at<P2BYTE>(i*8);
+        result[i] = at<p2_BYTE>(i*8);
     return result;
 }
 
 /**
  * @brief Return data as a vector of words
- * @return QVector<P2WORD> of all data
+ * @return p2_WORDs of all data
  */
-QVector<P2WORD> P2Atom::WORDS() const
+p2_WORDs P2Atom::toWORDS() const
 {
     const int bytes = m_data.size();
-    QVector<P2WORD> result(bytes/2);
+    p2_WORDs result(bytes/2);
     for (int i = 0; i < bytes; i += 2)
-        result[i] = at<P2WORD>(i*16);
+        result[i] = at<p2_WORD>(i*16);
     return result;
 }
 
 /**
  * @brief Return data as a vector of longs
- * @return QVector<P2LONG> of all data
+ * @return p2_LONGs of all data
  */
-QVector<P2LONG> P2Atom::LONGS() const
+p2_LONGs P2Atom::toLONGS() const
 {
     const int bytes = m_data.size();
-    QVector<P2LONG> result(bytes/4);
+    p2_LONGs result(bytes/4);
     for (int i = 0; i < bytes; i += 4)
-        result[i] = at<P2LONG>(i*32);
+        result[i] = at<p2_LONG>(i*32);
     return result;
 }

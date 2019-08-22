@@ -61,11 +61,11 @@ typedef enum {
 
     t_comma,            //!< token is a comma (,)
     t_string,           //!< token is a string starting with doublequote (")
-    t_value_bin,        //!< token is a binary value (%)
-    t_value_byt,        //!< token is a byte index (i.e. base 4) value (%%)
-    t_value_oct,        //!< token is an octal value (0…)
-    t_value_dec,        //!< token is a decimal value (starts with 1…9)
-    t_value_hex,        //!< token is a hexadecimal value ($)
+    t_bin_const,        //!< token is a binary value (%)
+    t_byt_const,        //!< token is a byte index (i.e. base 4) value (%%)
+    t_oct_const,        //!< token is an octal value (0…)
+    t_dec_const,        //!< token is a decimal value (starts with 1…9)
+    t_hex_const,        //!< token is a hexadecimal value ($)
     t_locsym,           //!< token is a local symbol (starts with .)
     t_symbol,           //!< token is a symbol (alphanumeric)
     t_expression,       //!< token is an expression (contains operators)
@@ -581,7 +581,7 @@ class P2Token
 public:
     P2Token();
     QString string(p2_token_e tok, bool lowercase = false) const;
-    p2_token_e token(const QString& str, bool chop = false) const;
+    p2_token_e token(const QString& str, bool chop = false, int* plen = nullptr) const;
 
     p2_tokentype_e type(p2_token_e tok);
     QString typeName(p2_token_e tok);

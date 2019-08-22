@@ -35,6 +35,7 @@ SOURCES += \
 		p2cogview.cpp \
 		p2dasm.cpp \
 		p2dasmmodel.cpp \
+		p2defs.cpp \
 		p2hub.cpp \
 		p2hubview.cpp \
 		p2token.cpp
@@ -73,6 +74,7 @@ RESOURCES += \
 	p2emu.qrc
 
 DISTFILES += \
+		P2-qz80-rr032.spin2 \
 		README.md \
 		ROM_Booter_v33_01j.spin2 \
 		csv.cpp \

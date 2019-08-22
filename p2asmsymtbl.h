@@ -46,10 +46,10 @@ public:
     void clear();
     bool contains(const QString& name);
     bool insert(const P2AsmSymbol& symbol);
-    bool insert(const QString& name, const QVariant& value);
-    bool setValue(const QString& name, const QVariant& value);
+    bool insert(const QString& name, const P2Atom& value);
+    bool setValue(const QString& name, const P2Atom& value);
     P2AsmSymbol value(const QString& name) const;
-    QVariant::Type type(const QString& name) const;
+    P2Atom::Type type(const QString& name) const;
     int defined_in(const QString& name) const;
     QStringList defined_in(int lineno) const;
     int reference(const QString& name, int idx = 0) const;

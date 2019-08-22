@@ -92,7 +92,7 @@ p2_token_e P2Dasm::conditional(unsigned cond)
     return conditional(static_cast<p2_cond_e>(cond));
 }
 
-bool P2Dasm::dasm(P2LONG addr, QString* opcode, QString* instruction, QString* description)
+bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* description)
 {
 
     IR.opcode = COG->rd_mem(addr*4);
@@ -1610,7 +1610,7 @@ bool P2Dasm::dasm(P2LONG addr, QString* opcode, QString* instruction, QString* d
  * @brief Return the memory size in the HUB
  * @return memory size in bytes
  */
-P2LONG P2Dasm::memsize() const
+p2_LONG P2Dasm::memsize() const
 {
     P2Hub* hub = qobject_cast<P2Hub *>(COG->parent());
     if (!hub)
@@ -2080,8 +2080,8 @@ void P2Dasm::format_pc_abs(QString* instruction, p2_token_e inst, p2_token_e des
 {
     if (nullptr == instruction)
         return;
-    const P2LONG aaaa = IR.opcode & A20MASK;
-    const P2LONG addr = IR.op.wz ? (PC + aaaa) & A20MASK : aaaa;
+    const p2_LONG aaaa = IR.opcode & A20MASK;
+    const p2_LONG addr = IR.op.wz ? (PC + aaaa) & A20MASK : aaaa;
     *instruction = QString("%1%2%3$%4")
                .arg(Token.string(inst, m_lowercase), pad_inst)
                .arg(Token.string(dest, m_lowercase))
@@ -2101,7 +2101,7 @@ void P2Dasm::format_imm23(QString* instruction, p2_token_e inst)
 {
     if (nullptr == instruction)
         return;
-    const P2LONG nnnn = (IR.opcode << 9) & AUGMASK;
+    const p2_LONG nnnn = (IR.opcode << 9) & AUGMASK;
     *instruction = QString("%1#$%2")
                .arg(Token.string(inst, m_lowercase), pad_inst)
                .arg(nnnn << 9, 0, 16, QChar('0'));

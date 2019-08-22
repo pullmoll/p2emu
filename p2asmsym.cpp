@@ -38,7 +38,7 @@
  * @param name optional initial name
  * @param value optional initial value
  */
-P2AsmSymbol::P2AsmSymbol(const QString& name, const QVariant& value)
+P2AsmSymbol::P2AsmSymbol(const QString& name, const P2Atom& value)
     : m_name(name)
     , m_value(value)
     , m_references()
@@ -50,7 +50,7 @@ P2AsmSymbol::P2AsmSymbol(const QString& name, const QVariant& value)
  */
 bool P2AsmSymbol::isNull() const
 {
-    return m_value.isNull();
+    return m_value.isEmpty();
 }
 
 /**
@@ -97,9 +97,9 @@ int P2AsmSymbol::defined_in() const
  * @param value new value
  * @return true if modified, false if unmodified
  */
-bool P2AsmSymbol::setValue(const QVariant& value)
+bool P2AsmSymbol::setValue(const P2Atom& value)
 {
-    if (value == m_value)
+    if (m_value == value)
         return false;
     m_value = value;
     return true;
@@ -109,7 +109,7 @@ bool P2AsmSymbol::setValue(const QVariant& value)
  * @brief Return the type of the value in this symbol
  * @return QVariant::Type of the value
  */
-QVariant::Type P2AsmSymbol::type() const
+P2Atom::Type P2AsmSymbol::type() const
 {
     return m_value.type();
 }

@@ -77,7 +77,7 @@ bool P2AsmSymTbl::insert(const P2AsmSymbol& symbol)
  * @param value initial value of the new symbol
  * @return false if the symbol was already in the table, or true if inserted
  */
-bool P2AsmSymTbl::insert(const QString& name, const QVariant& value)
+bool P2AsmSymTbl::insert(const QString& name, const P2Atom& value)
 {
     if (m_symbols.contains(name))
         return false;
@@ -92,7 +92,7 @@ bool P2AsmSymTbl::insert(const QString& name, const QVariant& value)
  * @param value new symbol value
  * @return
  */
-bool P2AsmSymTbl::setValue(const QString& name, const QVariant& value)
+bool P2AsmSymTbl::setValue(const QString& name, const P2Atom& value)
 {
     if (!m_symbols.contains(name))
         return false;
@@ -110,17 +110,19 @@ P2AsmSymbol P2AsmSymTbl::value(const QString& name) const
     return m_symbols.value(name);
 }
 
+P2Atom::Type P2AsmSymTbl::type(const QString& name) const
+{
+    if (!m_symbols.contains(name))
+        return P2Atom::Invalid;
+    return m_symbols[name].type();
+}
+
 /**
  * @brief Return the QVariant::Type for the value of the symbol with %name
  * @param name of the symbol to check for
  * @return QVariant::Type of the value
  */
-QVariant::Type P2AsmSymTbl::type(const QString& name) const
-{
-    if (!m_symbols.contains(name))
-        return QVariant::Invalid;
-    return m_symbols[name].type();
-}
+
 
 int P2AsmSymTbl::defined_in(const QString& name) const
 {

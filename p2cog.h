@@ -46,86 +46,86 @@ public:
     int decode();
 
     p2_opcode_u rd_IR() const { return IR; }
-    P2LONG rd_ID() const { return ID; }
-    P2LONG rd_PC() const { return PC; }
+    p2_LONG rd_ID() const { return ID; }
+    p2_LONG rd_PC() const { return PC; }
     p2_wait_t rd_WAIT() const { return WAIT; }
     p2_flags_t rd_FLAGS() const { return FLAGS; }
-    P2LONG rd_CT1() const { return CT1; }
-    P2LONG rd_CT2() const { return CT2; }
-    P2LONG rd_CT3() const { return CT3; }
+    p2_LONG rd_CT1() const { return CT1; }
+    p2_LONG rd_CT2() const { return CT2; }
+    p2_LONG rd_CT3() const { return CT3; }
     p2_pat_t rd_PAT() const { return PAT; }
     p2_pin_t rd_PIN() const { return PIN; }
     p2_int_bits_u rd_INT() const { return INT; }
     p2_lock_t rd_LOCK() const { return LOCK; }
-    P2LONG rd_D() const { return D; }
-    P2LONG rd_S() const { return S; }
-    P2LONG rd_Q() const { return Q; }
-    P2LONG rd_C() const { return C; }
-    P2LONG rd_Z() const { return Z; }
+    p2_LONG rd_D() const { return D; }
+    p2_LONG rd_S() const { return S; }
+    p2_LONG rd_Q() const { return Q; }
+    p2_LONG rd_C() const { return C; }
+    p2_LONG rd_Z() const { return Z; }
     QVariant rd_D_aug() const { return D_aug; }
     QVariant rd_S_aug() const { return S_aug; }
     QVariant rd_R_aug() const { return R_aug; }
-    P2LONG rd_cog(P2LONG addr) const;
-    P2LONG rd_lut(P2LONG addr) const;
-    P2LONG rd_mem(P2LONG addr) const;
+    p2_LONG rd_cog(p2_LONG addr) const;
+    p2_LONG rd_lut(p2_LONG addr) const;
+    p2_LONG rd_mem(p2_LONG addr) const;
 
 public slots:
-    void wr_cog(P2LONG addr, P2LONG val);
-    void wr_lut(P2LONG addr, P2LONG val);
-    void wr_mem(P2LONG addr, P2LONG val);
-    void wr_PC(P2LONG addr);
-    void wr_PTRA(P2LONG addr);
-    void wr_PTRB(P2LONG addr);
+    void wr_cog(p2_LONG addr, p2_LONG val);
+    void wr_lut(p2_LONG addr, p2_LONG val);
+    void wr_mem(p2_LONG addr, p2_LONG val);
+    void wr_PC(p2_LONG addr);
+    void wr_PTRA(p2_LONG addr);
+    void wr_PTRB(p2_LONG addr);
 
 private:
     P2Hub* HUB;             //!< pointer to the HUB, i.e. the parent of this P2Cog
-    P2LONG ID;              //!< COG ID (0 … number of COGs - 1)
-    P2LONG PC;              //!< program counter
+    p2_LONG ID;              //!< COG ID (0 … number of COGs - 1)
+    p2_LONG PC;              //!< program counter
     p2_wait_t WAIT;         //!< waiting conidition
     p2_flags_t FLAGS;       //!< flags register
-    P2LONG CT1;             //!< counter CT1 value
-    P2LONG CT2;             //!< counter CT2 value
-    P2LONG CT3;             //!< counter CT3 value
+    p2_LONG CT1;             //!< counter CT1 value
+    p2_LONG CT2;             //!< counter CT2 value
+    p2_LONG CT3;             //!< counter CT3 value
     p2_pat_t PAT;           //!< PAT mode, mask, and match
     p2_pin_t PIN;           //!< PIN mode, mask, and match
     p2_int_bits_u INT;      //!< INT disable / active / source bits union
     p2_lock_t LOCK;         //!<
     p2_opcode_u IR;         //!< instruction register
-    P2LONG D;               //!< value of D
-    P2LONG S;               //!< value of S
-    P2LONG Q;               //!< value of Q
-    P2LONG C;               //!< current carry flag
-    P2LONG Z;               //!< current zero flag
+    p2_LONG D;               //!< value of D
+    p2_LONG S;               //!< value of S
+    p2_LONG Q;               //!< value of Q
+    p2_LONG C;               //!< current carry flag
+    p2_LONG Z;               //!< current zero flag
     p2_fifo_t FIFO;         //!< stream FIFO
-    P2LONG K;               //!< stack pointer (0 … 7)
-    P2LONG STACK[8];        //!< stack of 8 levels
+    p2_LONG K;               //!< stack pointer (0 … 7)
+    p2_LONG STACK[8];        //!< stack of 8 levels
     QVariant S_next;        //!< next instruction's S value
     QVariant S_aug;         //!< augment next S with this value, if set
     QVariant D_aug;         //!< augment next D with this value, if set
     QVariant R_aug;         //!< augment next R with this value, if set
     QVariant IR_aug;        //!< augment next IR with this value, if set
     QVariant REP_instr;     //!< if REP is active, number of instructions to repeat
-    P2LONG REP_offset;      //!< if REP is active, current instruction to repeat
-    P2LONG REP_times;       //!< if REP is active, number of times to repeat
-    P2LONG SKIP;            //!< if SKIP is active, then if b0 is set, the current instruction is cancelled
-    P2LONG SKIPF;           //!< if SKIPF is active, then if b0 is set, the current instruction is skipped
-    P2LONG PTRA0;           //!< actual pointer A to hub RAM
-    P2LONG PTRB0;           //!< actual pointer B to hub RAM
-    P2LONG HUBOP;           //!< non-zero if HUB operation
-    P2LONG CORDIC_count;    //!< non-zero if CORDIC solver running
+    p2_LONG REP_offset;      //!< if REP is active, current instruction to repeat
+    p2_LONG REP_times;       //!< if REP is active, number of times to repeat
+    p2_LONG SKIP;            //!< if SKIP is active, then if b0 is set, the current instruction is cancelled
+    p2_LONG SKIPF;           //!< if SKIPF is active, then if b0 is set, the current instruction is skipped
+    p2_LONG PTRA0;           //!< actual pointer A to hub RAM
+    p2_LONG PTRB0;           //!< actual pointer B to hub RAM
+    p2_LONG HUBOP;           //!< non-zero if HUB operation
+    p2_LONG CORDIC_count;    //!< non-zero if CORDIC solver running
     bool QX_posted;         //!< true if CORDIC solver X is posted
     bool QY_posted;         //!< true if CORDIC solver Y is posted
     bool RW_repeat;         //!< true if read/write HUB repeated
-    P2LONG RDL_mask;        //!<
-    P2LONG RDL_flags0;      //!<
-    P2LONG RDL_flags1;      //!<
-    P2LONG WRL_mask;        //!<
-    P2LONG WRL_flags0;      //!<
-    P2LONG WRL_flags1;      //!<
+    p2_LONG RDL_mask;        //!<
+    p2_LONG RDL_flags0;      //!<
+    p2_LONG RDL_flags1;      //!<
+    p2_LONG WRL_mask;        //!<
+    p2_LONG WRL_flags0;      //!<
+    p2_LONG WRL_flags1;      //!<
     p2_cog_t COG;           //!< COG memory (512 longs)
     p2_lut_t LUT;           //!< LUT memory (512 longs) and shadow registers
     uchar *MEM;             //!< HUB memory pointer
-    P2LONG MEMSIZE;         //!< HUB memory size
+    p2_LONG MEMSIZE;         //!< HUB memory size
 
     //! return a signed 32 bit value for val[15:0]
     template <typename T>
@@ -135,8 +135,8 @@ private:
 
     //! return the usigned 32 bit value for val[15:0]
     template <typename T>
-    P2LONG U16(T val) {
-        return static_cast<P2LONG>(static_cast<P2WORD>(val));
+    p2_LONG U16(T val) {
+        return static_cast<p2_LONG>(static_cast<p2_WORD>(val));
     }
 
     //! return the signed 32 bit value for val[31:0]
@@ -147,8 +147,8 @@ private:
 
     //! return the usigned 32 bit value for val[31:0]
     template <typename T>
-    P2LONG U32(T val) {
-        return static_cast<P2LONG>(val);
+    p2_LONG U32(T val) {
+        return static_cast<p2_LONG>(val);
     }
 
     //! return the 64 bit sign extended value
@@ -159,60 +159,60 @@ private:
 
     //! return the usigned 64 bit value
     template <typename T>
-    quint64 U64(T val) {
-        return static_cast<quint64>(val);
+    p2_QUAD U64(T val) {
+        return static_cast<p2_QUAD>(val);
     }
 
     //! return the upper half of a 64 bit value as 32 bit unsigned
     template <typename T>
-    P2LONG U32H(T val) {
-        return static_cast<P2LONG>(static_cast<quint64>(val) >> 32);
+    p2_LONG U32H(T val) {
+        return static_cast<p2_LONG>(static_cast<p2_QUAD>(val) >> 32);
     }
 
     //! return the lower half of a 64 bit value as 32 bit unsigned
     template <typename T>
-    P2LONG U32L(T val) {
-        return static_cast<P2LONG>(val);
+    p2_LONG U32L(T val) {
+        return static_cast<p2_LONG>(val);
     }
 
     bool conditional(p2_cond_e cond);
     bool conditional(unsigned cond);
-    P2BYTE msbit(P2LONG val);
-    P2BYTE ones(P2LONG val);
-    P2BYTE parity(P2LONG val);
-    P2LONG seuss(P2LONG val, bool forward = true);
-    P2LONG reverse(P2LONG val);
-    P2LONG fifo_level();
+    p2_BYTE msbit(p2_LONG val);
+    p2_BYTE ones(p2_LONG val);
+    p2_BYTE parity(p2_LONG val);
+    p2_LONG seuss(p2_LONG val, bool forward = true);
+    p2_LONG reverse(p2_LONG val);
+    p2_LONG fifo_level();
     void check_interrupt_flags();
     void check_wait_int_state();
-    P2LONG check_wait_flag(p2_opcode_u IR, P2LONG value1, P2LONG value2, bool streamflag);
-    P2LONG get_pointer(P2LONG inst, P2LONG size);
+    p2_LONG check_wait_flag(p2_opcode_u IR, p2_LONG value1, p2_LONG value2, bool streamflag);
+    p2_LONG get_pointer(p2_LONG inst, p2_LONG size);
     void save_regs();
     void update_regs();
     void updateC(bool c);
     void updateZ(bool c);
-    void updateD(P2LONG d);
-    void updatePC(P2LONG d);
-    void updateLUT(P2LONG addr, P2LONG d);
-    void updateSKIP(P2LONG d);
-    void updateSKIPF(P2LONG d);
-    void pushK(P2LONG val);
-    P2LONG popK();
-    void pushPA(P2LONG val);
-    void pushPB(P2LONG val);
-    void pushPTRA(P2LONG val);
-    P2LONG popPTRA();
-    void pushPTRB(P2LONG val);
-    P2LONG popPTRB();
+    void updateD(p2_LONG d);
+    void updatePC(p2_LONG d);
+    void updateLUT(p2_LONG addr, p2_LONG d);
+    void updateSKIP(p2_LONG d);
+    void updateSKIPF(p2_LONG d);
+    void pushK(p2_LONG val);
+    p2_LONG popK();
+    void pushPA(p2_LONG val);
+    void pushPB(p2_LONG val);
+    void pushPTRA(p2_LONG val);
+    p2_LONG popPTRA();
+    void pushPTRB(p2_LONG val);
+    p2_LONG popPTRB();
     void augmentS(bool f);
     void augmentD(bool f);
-    void updatePA(P2LONG d);
-    void updatePB(P2LONG d);
-    void updatePTRA(P2LONG d);
-    void updatePTRB(P2LONG d);
-    void updateDIR(P2LONG pin, bool v);
-    void updateOUT(P2LONG pin, bool v);
-    void updateREP(P2LONG instr, P2LONG times);
+    void updatePA(p2_LONG d);
+    void updatePB(p2_LONG d);
+    void updatePTRA(p2_LONG d);
+    void updatePTRB(p2_LONG d);
+    void updateDIR(p2_LONG pin, bool v);
+    void updateOUT(p2_LONG pin, bool v);
+    void updateREP(p2_LONG instr, p2_LONG times);
 
     int op_nop();
     int op_ror();

@@ -43,8 +43,8 @@ class P2Dasm : public QObject
 public:
     P2Dasm(const P2Cog* cog, QObject* parent = nullptr);
 
-    bool dasm(P2LONG addr, QString* opcode = nullptr, QString* instruction = nullptr, QString* description = nullptr);
-    P2LONG memsize() const;
+    bool dasm(p2_LONG addr, QString* opcode = nullptr, QString* instruction = nullptr, QString* description = nullptr);
+    p2_LONG memsize() const;
     bool lowercase() const;
 
 public slots:
