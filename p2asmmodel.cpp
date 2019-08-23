@@ -232,16 +232,16 @@ QString P2AsmModel::tokenToolTip(const p2_token_v& tokenv, const QStringList& wo
 
     // heading
     html += html_tr_init();
-    html += html_th(tr("Token"));
-    html += html_th(tr("Token type"));
     html += html_th(tr("Source code word"));
+    html += html_th(tr("Token"));
+    html += html_th(tr("Type"));
     html += html_tr_exit();
 
     for (int i = 0; i < types.count(); i++) {
         html += html_tr_init();
+        html += html_td(words.value(i));
         html += html_td(tokens.value(i));
         html += html_td(types.value(i));
-        html += html_td(words.value(i));
         html += html_tr_exit();
     }
     html += html_table_exit();

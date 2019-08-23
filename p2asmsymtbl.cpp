@@ -79,11 +79,7 @@ bool P2AsmSymTbl::insert(const P2AsmSymbol& symbol)
  */
 bool P2AsmSymTbl::insert(const QString& name, const P2Atom& value)
 {
-    if (m_symbols.contains(name))
-        return false;
-    P2AsmSymbol sym(name, value);
-    m_symbols.insert(name, sym);
-    return true;
+    return insert(P2AsmSymbol(name, value));
 }
 
 /**
@@ -147,14 +143,10 @@ bool P2AsmSymTbl::addReference(const QString& name, int lineno)
 {
     if (!m_references.contains(lineno, name))
         m_references.insert(lineno, name);
-    if (m_symbols.contains(name)) {
-        m_symbols[name].addReference(lineno);
-        return true;
-    }
-    // Insert an undefined symbol
-    m_symbols.insert(name, P2AsmSymbol(name));
+    if (!m_symbols.contains(name))
+        return false;
     m_symbols[name].addReference(lineno);
-    return false;
+    return true;
 }
 
 const QList<int> P2AsmSymTbl::references(const QString& name) const

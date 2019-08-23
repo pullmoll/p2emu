@@ -33,6 +33,7 @@
  ****************************************************************************/
 #pragma once
 #include <QtEndian>
+#include <QChar>
 
 //!< Type of the Propeller2 BYTE
 typedef quint8 p2_BYTE;
@@ -98,11 +99,12 @@ extern const p2_LONG AUGMASK;
 extern const p2_QUAD HMAX;
 extern const p2_QUAD LMAX;
 
-extern const char bin_digits[];
-extern const char byt_digits[];
-extern const char oct_digits[];
-extern const char dec_digits[];
-extern const char hex_digits[];
+static const QChar skip_digit('_');
+extern const QString bin_digits;
+extern const QString byt_digits;
+extern const QString oct_digits;
+extern const QString dec_digits;
+extern const QString hex_digits;
 
 /**
  * @brief Enumeration of the 16 conditional execution modes

@@ -78,6 +78,7 @@ P2Asm::P2Asm(QObject *parent)
     , m_advance(4)
     , m_IR()
     , m_words()
+    , m_instr()
     , m_tokens()
     , m_symbol()
     , m_function()
@@ -127,6 +128,7 @@ void P2Asm::pass_clear()
     m_IR.opcode = 0;
     m_data.clear();
     m_words.clear();
+    m_instr = t_invalid;
     m_tokens.clear();
     m_symbol.clear();
     m_function.clear();
@@ -309,6 +311,9 @@ bool P2Asm::split_and_tokenize(const QString& line)
                 words[i-1].append(word);
                 words.removeAt(i);
             }
+            // re-tokenize
+            const QString& word = words[i-1];
+            tokens[i-1] = Token.token(word);
             continue;
         }
         tokens.append(tok);
@@ -332,7 +337,6 @@ bool P2Asm::split_and_tokenize(const QString& line)
 bool P2Asm::assemble_pass()
 {
     pass_clear();
-    bool multi_comment = false;
 
     foreach(m_line, m_source) {
         // Parse the next line
@@ -340,17 +344,6 @@ bool P2Asm::assemble_pass()
         m_error.clear();
         m_words.clear();
         m_tokens.clear();
-
-        if (m_line.startsWith(QStringLiteral("{")))
-            multi_comment = true;
-
-        if (multi_comment) {
-            if (m_line.endsWith("}"))
-                multi_comment = false;
-            // skip over multi line comment
-            results();
-            continue;
-        }
 
         // Skip over empty lines
         if (m_line.isEmpty()) {
@@ -375,18 +368,13 @@ bool P2Asm::assemble_pass()
             switch (m_tokens.at(m_idx)) {
             case t_locsym:
                 // append local name to section::function / section
-                m_symbol = QString("%1::%2%3")
-                         .arg(m_section)
-                         .arg(m_function)
-                         .arg(m_words.at(m_idx));
+                m_symbol = find_symbol(m_section, m_function, m_words.at(m_idx));
                 break;
 
             case t_symbol:
                 // append global name to section::symbol
                 m_function = m_words.at(m_idx);
-                m_symbol = QString("%1::%2")
-                         .arg(m_section)
-                         .arg(m_function);
+                m_symbol = find_symbol(m_section, m_function);
                 break;
 
             case t__DAT:
@@ -447,10 +435,10 @@ bool P2Asm::assemble_pass()
         m_IR.op.cond = conditional(m_tokens.at(m_idx));
 
         // Expect a token for an instruction
-        const p2_token_e inst = m_tokens.at(m_idx);
+        m_instr = m_tokens.at(m_idx);
         bool success = false;
 
-        switch (inst) {
+        switch (m_instr) {
         case t_ABS:
             success = asm_abs();
             break;
@@ -2088,21 +2076,33 @@ void P2Asm::results(bool opcode)
         m_hash_error.insert(m_lineno, m_error);
 }
 
-static int digit(const char* digits, char ch)
+static inline int digit(const QString& digits, QChar ch)
 {
-    const char* pos = strchr(digits, ch);
-    return pos ? static_cast<int>(pos - digits) : -1;
+    return digits.indexOf(ch);
+}
+
+P2Atom P2Asm::make_atom()
+{
+    P2Atom atom;
+    switch (m_instr) {
+    case t__BYTE: atom.setType(P2Atom::Byte); break;
+    case t__WORD: atom.setType(P2Atom::Word); break;
+    case t__LONG: atom.setType(P2Atom::Long); break;
+    default:      atom.setType(P2Atom::Quad);
+    }
+    return atom;
 }
 
 /**
  * @brief Convert a string of binary digits into an unsigned value
  * @param pos current position in str
  * @param str binary digits
- * @return value of binary digits in str
+ * @return P2Atom value of binary digits in str
  */
 P2Atom P2Asm::from_bin(int& pos, const QString& str)
 {
-    P2Atom value;
+    static const QString& digits = bin_digits;
+    P2Atom atom = make_atom();
     p2_QUAD bits = 0;
     int nbits = 0;
 
@@ -2111,32 +2111,34 @@ P2Atom P2Asm::from_bin(int& pos, const QString& str)
 
     for (/**/; pos < str.length(); pos++) {
         QChar ch = str[pos].toUpper();
-        const int idx = digit(bin_digits, ch.toLatin1());
+        const int idx = digit(digits, ch);
         if (idx < 0)
             break;
-        if (idx >= 2)
+        if (skip_digit == digits.at(idx))
             continue;
-        bits = (bits << 1) | static_cast<uint>(idx);
+        bits = (bits << 1) + static_cast<uint>(idx);
         nbits += 1;
         while (nbits >= 32) {
-            value.append(32, bits);
+            atom.append(bits);
             bits >>= 32;
             nbits -= 32;
         }
     }
-    value.append(nbits, bits);
-    return value;
+    atom.append(nbits, bits);
+    return atom;
 }
+
 /**
  * @brief Convert a string of byte indices into an unsigned value
  * @param pos current position in str
  * @param str byte inidex digits
- * @return value of byte indices in str
+ * @return P2Atom value of byte indices in str
  */
 
 P2Atom P2Asm::from_byt(int& pos, const QString& str)
 {
-    P2Atom value;
+    static const QString& digits = byt_digits;
+    P2Atom atom = make_atom();
     p2_QUAD bits = 0;
     int nbits = 0;
 
@@ -2145,89 +2147,92 @@ P2Atom P2Asm::from_byt(int& pos, const QString& str)
 
     for (/**/; pos < str.length(); pos++) {
         QChar ch = str[pos].toUpper();
-        const int idx = digit(byt_digits, ch.toLatin1());
+        const int idx = digit(digits, ch);
         if (idx < 0)
             break;
-        if (idx >= 4)
+        if (skip_digit == digits.at(idx))
             continue;
-        bits = (bits << 2) | static_cast<uint>(idx);
+        bits = (bits << 2) + static_cast<uint>(idx);
         nbits += 2;
         while (nbits >= 32) {
-            value.append(32, bits);
+            atom.append(bits);
             bits >>= 32;
             nbits -= 32;
         }
     }
-    value.append(nbits, bits);
-    return value;
+    atom.append(nbits, bits);
+    return atom;
 }
 
 /**
  * @brief Convert a string of octal digits into an unsigned value
  * @param pos current position in str
  * @param str octal digits
- * @return value of octal digits in str
+ * @return P2Atom value of octal digits in str
  */
 P2Atom P2Asm::from_oct(int& pos, const QString& str)
 {
-    P2Atom value;
+    static const QString& digits = oct_digits;
+    P2Atom atom = make_atom();
     p2_QUAD bits = 0;
     int nbits = 0;
 
     for (/**/; pos < str.length(); pos++) {
         QChar ch = str[pos].toUpper();
-        const int idx = digit(oct_digits, ch.toLatin1());
+        const int idx = digit(digits, ch);
         if (idx < 0)
             break;
-        if (idx >= 8)
+        if (skip_digit == digits.at(idx))
             continue;
-        bits = (bits << 3) | static_cast<uint>(idx);
+        bits = (bits << 3) + static_cast<uint>(idx);
         nbits += 3;
         while (nbits >= 32) {
-            value.append(32, bits);
+            atom.append(bits);
             bits >>= 32;
             nbits -= 32;
         }
     }
 
-    value.append(nbits, bits);
-    return value;
+    atom.append(nbits, bits);
+    return atom;
 }
 
 /**
  * @brief Convert a string of decimal digits into an unsigned value
  * @param pos current position in str
  * @param str decimal digits
- * @return value of decimal digits in str
+ * @return P2Atom value of decimal digits in str
  */
 P2Atom P2Asm::from_dec(int& pos, const QString& str)
 {
-    P2Atom value;
+    static const QString& digits = dec_digits;
+    P2Atom atom = make_atom();
     p2_QUAD bits = 0;
 
     for (/**/; pos < str.length(); pos++) {
         QChar ch = str[pos].toUpper();
-        const int idx = digit(dec_digits, ch.toLatin1());
+        const int idx = digit(digits, ch);
         if (idx < 0)
             break;
-        if (idx >= 10)
+        if (skip_digit == digits.at(idx))
             continue;
-        bits = (bits * 10) | static_cast<uint>(idx);
+        bits = (bits * 10) + static_cast<uint>(idx);
         // no way to handle overflow ?
     }
     // append all significant bits
-    value.append(32, bits);
-    return value;
+    atom.append(bits);
+    return atom;
 }
 
 /**
  * @brief Convert a string of hexadecimal digits into an unsigned value
  * @param str hexadecimal digits
- * @return value of hexadecimal digits in str
+ * @return P2Atom value of hexadecimal digits in str
  */
 P2Atom P2Asm::from_hex(int& pos, const QString& str)
 {
-    P2Atom value;
+    static const QString& digits = hex_digits;
+    P2Atom atom = make_atom();
     p2_QUAD bits = 0;
     int nbits = 0;
 
@@ -2236,52 +2241,51 @@ P2Atom P2Asm::from_hex(int& pos, const QString& str)
 
     for (/**/; pos < str.length(); pos++) {
         QChar ch = str[pos].toUpper();
-        const int idx = digit(hex_digits, ch.toLatin1());
+        const int idx = digit(digits, ch);
         if (idx < 0)
             break;
-        if (idx >= 16)
+        if (skip_digit == digits.at(idx))
             continue;
-        bits = (bits << 4) | static_cast<uint>(idx);
+        bits = (bits << 4) + static_cast<uint>(idx);
         nbits += 4;
         while (nbits >= 32) {
-            value.append(32, bits);
+            atom.append(bits);
             bits >>= 32;
             nbits -= 32;
         }
     }
-
-    value.append(nbits, bits);
-    return value;
+    atom.append(nbits, bits);
+    return atom;
 }
 
 /**
  * @brief Convert a string of ASCII characters into an unsigned value
  * @param str ASCII characters
  * @param stop characters to stop at
- * @return value as 64 bit unsigned
+ * @return P2Atom value of in string
  */
 P2Atom P2Asm::from_str(int& pos, const QString& str)
 {
-    P2Atom value;
+    P2Atom atom = make_atom();
     QChar instring = str.at(pos++);
     bool escaped = false;
 
     while (pos < str.length()) {
         QChar ch = str.at(pos);
         if (escaped) {
-            value.append(8, static_cast<p2_QUAD>(ch.toLatin1()));
+            atom.append(static_cast<p2_QUAD>(ch.toLatin1()));
             escaped = false;
         } else if (ch == instring) {
-            return value;
+            return atom;
         } else if (ch == QChar('\\')) {
             escaped = true;
         } else {
-            value.append(8, static_cast<p2_QUAD>(ch.toLatin1()));
+            atom.append(static_cast<p2_QUAD>(ch.toLatin1()));
         }
         pos++;
     }
 
-    return value;
+    return atom;
 }
 
 /**
@@ -2320,16 +2324,27 @@ QString P2Asm::find_symbol(const QString& sect, const QString& func, const QStri
     foreach (const QString& section, sections) {
         if (local.isEmpty()) {
             symbol = QString("%1::%2")
-                     .arg(section)
-                     .arg(func);
+                     .arg(section.toUpper())
+                     .arg(func.toUpper());
         } else {
             symbol = QString("%1::%2%3")
-                     .arg(section)
-                     .arg(func)
-                     .arg(local);
+                     .arg(section.toUpper())
+                     .arg(func.toUpper())
+                     .arg(local.toUpper());
         }
         if (m_symbols.contains(symbol))
-            break;
+            return symbol;
+    }
+    // use original section
+    if (local.isEmpty()) {
+        symbol = QString("%1::%2")
+                 .arg(sect.toUpper())
+                 .arg(func.toUpper());
+    } else {
+        symbol = QString("%1::%2%3")
+                 .arg(sect)
+                 .arg(func.toUpper())
+                 .arg(local.toUpper());
     }
     return symbol;
 }
@@ -2343,51 +2358,44 @@ QString P2Asm::find_symbol(const QString& sect, const QString& func, const QStri
  */
 P2Atom P2Asm::parse_atom(int& pos, const QString& str)
 {
-    static const QList<p2_tokentype_e> primary_unary =
-            QList<p2_tokentype_e>()
-            << tt_primary
-            << tt_unary;
     p2_token_e tok = t_invalid;
     int epos = str.length();
-    bool tobool = false;
-    bool negate = false;
-    bool complement = false;
-    bool increment = false;
-    bool decrement = false;
+    bool do_not = false;
+    bool do_neg = false;
+    bool do_comp = false;
+    bool do_inc = false;
+    bool do_dec = false;
     P2Atom atom;
     QString symbol;
     QString rest;
 
-    tok = Token.at_types(pos, str, primary_unary);
+    tok = Token.at_types(pos, str, tm_primary_unary);
     while (tok != t_invalid) {
         switch (tok) {
         // Handle primary operators (precedence 1)
         case t__INC:    // ++
-            increment = true;
+            do_inc = true;
             break;
         case t__DEC:    // --
-            decrement = true;
+            do_dec = true;
             break;
         // Handle unary operators (precedence 2)
         case t__NEG:    // !
-            skip_spc(pos, str);
-            negate = !negate;
-            tobool = true;
+            do_not = !do_not;
             break;
         case t__NOT:    // ~
-            skip_spc(pos, str);
-            complement = !complement;
+            do_comp = !do_comp;
             break;
         case t__SUB:    // -
-            skip_spc(pos, str);
-            negate = !negate;
+            do_neg = !do_neg;
             break;
         case t__ADD:    // +
             break;
         default:
             Q_ASSERT_X(false, "unary ops", "invalid op");
         }
-        tok = Token.at_types(pos, str, primary_unary);
+        skip_spc(pos, str);
+        tok = Token.at_types(pos, str, tm_primary_unary);
     }
 
     // Rest of the string
@@ -2412,7 +2420,7 @@ P2Atom P2Asm::parse_atom(int& pos, const QString& str)
     case t_locsym:
         symbol = find_symbol(m_section, m_function, rest.mid(0, epos));
         if (m_symbols.contains(symbol))
-            atom = m_symbols.value<p2_LONG>(symbol);
+            atom = m_symbols.value<P2Atom>(symbol);
         m_symbols.addReference(symbol, m_lineno);
         pos = epos;
         break;
@@ -2420,7 +2428,7 @@ P2Atom P2Asm::parse_atom(int& pos, const QString& str)
     case t_symbol:
         symbol = find_symbol(m_section, rest.mid(0, epos));
         if (m_symbols.contains(symbol))
-            atom = m_symbols.value<p2_LONG>(symbol);
+            atom = m_symbols.value<P2Atom>(symbol);
         m_symbols.addReference(symbol, m_lineno);
         pos = epos;
         break;
@@ -2450,27 +2458,27 @@ P2Atom P2Asm::parse_atom(int& pos, const QString& str)
         break;
 
     case t_PA:
-        atom = offs_PA;
+        atom.set(P2Atom::Long, offs_PA);
         pos = epos;
         break;
 
     case t_PB:
-        atom = offs_PB;
+        atom.set(P2Atom::Long, offs_PB);
         pos = epos;
         break;
 
     case t_PTRA:
-        atom = offs_PTRA;
+        atom.set(P2Atom::Long, offs_PTRA);
         pos = epos;
         break;
 
     case t_PTRB:
-        atom = offs_PTRB;
+        atom.set(P2Atom::Long, offs_PTRB);
         pos = epos;
         break;
 
     case t__DOLLAR:
-        atom = m_curr_PC;
+        atom.set(P2Atom::Long, m_curr_PC);
         pos = epos;
         break;
 
@@ -2481,18 +2489,12 @@ P2Atom P2Asm::parse_atom(int& pos, const QString& str)
     }
 
     // apply unary ops
-    if (complement)
-        atom = ~atom.toQUAD();
-    if (negate)
-        atom = -atom.toQUAD();
-    if (tobool)
-        atom = atom.toQUAD() ? 1 : 0;
-
+    atom.complement1(do_comp);
+    atom.complement2(do_neg);
+    atom.make_bool(do_not);
     // apply primary ops
-    if (decrement)
-        atom = atom.toQUAD() - 1;
-    if (increment)
-        atom = atom.toQUAD() + 1;
+    atom.unary_dec(do_dec);
+    atom.unary_inc(do_inc);
 
     return atom;
 }
@@ -2516,23 +2518,22 @@ P2Atom P2Asm::parse_mulops(int& pos, const QString& str)
         if (t_invalid == op)
             break;
 
-        P2Atom atom2 = parse_atom(pos, str);
-        if (!atom2.isValid()) {
+        P2Atom rvalue = parse_atom(pos, str);
+        if (!rvalue.isValid()) {
             m_error = tr("Invalid character in expression (mulops): %1").arg(str.mid(pos));
             break;
         }
 
-        p2_QUAD l = lvalue.toQUAD();
-        p2_QUAD r = atom2.toQUAD();
+        p2_QUAD r = rvalue.toQuad();
         switch (op) {
         case t__MUL:
-            lvalue = l * r;
+            lvalue.arith_mul(r);
             break;
         case t__DIV:
-            lvalue = r ? l / r : ~Q_UINT64_C(0);
+            lvalue.arith_div(r);
             break;
         case t__MOD:
-            lvalue = r ? l % r : ~Q_UINT64_C(0);
+            lvalue.arith_mod(r);
             break;
         default:
             Q_ASSERT_X(false, "mulops", "invalid op");
@@ -2566,14 +2567,13 @@ P2Atom P2Asm::parse_addops(int& pos, const QString& str)
             break;
         }
 
-        p2_QUAD l = lvalue.toQUAD();
-        p2_QUAD r = rvalue.toQUAD();
+        p2_QUAD r = rvalue.toQuad();
         switch (op) {
         case t__ADD:
-            lvalue = l + r;
+            lvalue.arith_add(r);
             break;
         case t__SUB:
-            lvalue = l - r;
+            lvalue.arith_sub(r);
             break;
         default:
             Q_ASSERT_X(false, "addops", "Invalid op");
@@ -2608,14 +2608,13 @@ P2Atom P2Asm::parse_shiftops(int& pos, const QString& str)
             break;
         }
 
-        p2_QUAD l = lvalue.toQUAD();
-        p2_QUAD r = rvalue.toQUAD();
+        p2_QUAD r = rvalue.toQuad();
         switch (op) {
         case t__SHL:
-            lvalue = l << r;
+            lvalue.binary_shl(r);
             break;
         case t__SHR:
-            lvalue = l >> r;
+            lvalue.binary_shr(r);
             break;
         default:
             Q_ASSERT_X(false, "shiftops", "Invalid op");
@@ -2633,11 +2632,6 @@ P2Atom P2Asm::parse_shiftops(int& pos, const QString& str)
  */
 P2Atom P2Asm::parse_binops(int& pos, const QString& str)
 {
-    QList<p2_tokentype_e> binops =
-            QList<p2_tokentype_e>()
-            << tt_binop_and
-            << tt_binop_xor
-            << tt_binop_or;
     P2Atom lvalue = parse_shiftops(pos, str);
 
     for (;;) {
@@ -2645,7 +2639,7 @@ P2Atom P2Asm::parse_binops(int& pos, const QString& str)
         if (!skip_spc(pos, str))
             break;
 
-        p2_token_e op = Token.at_types(pos, str, binops);
+        p2_token_e op = Token.at_type(pos, str, tm_binops);
         if (t_invalid == op)
             break;
 
@@ -2655,17 +2649,16 @@ P2Atom P2Asm::parse_binops(int& pos, const QString& str)
             break;
         }
 
-        p2_QUAD l = lvalue.toQUAD();
-        p2_QUAD r = rvalue.toQUAD();
+        p2_QUAD r = rvalue.toQuad();
         switch (op) {
         case t__AND:
-            lvalue = l & r;
+            lvalue.binary_and(r);
             break;
         case t__OR:
-            lvalue = l | r;
+            lvalue.binary_or(r);
             break;
         case t__XOR:
-            lvalue = l ^ r;
+            lvalue.binary_xor(r);
             break;
         default:
             Q_ASSERT_X(false, "binops", "Invalid op");
@@ -2955,7 +2948,7 @@ bool P2Asm::asm_assign()
     m_idx++;           // skip over token
     m_advance = 0;     // No PC increment
     P2Atom atom = parse_expression();
-    const p2_LONG value = atom.toLONG();
+    const p2_LONG value = atom.toLong();
     m_IR.opcode = value;
     m_symbols.setValue(m_symbol, value);
     return end_of_line(false);
@@ -2971,7 +2964,7 @@ bool P2Asm::asm_org()
     m_idx++;           // skip over token
     m_advance = 0;     // No PC increment
     P2Atom atom = parse_expression();
-    p2_LONG value = atom.toLONG();
+    p2_LONG value = atom.toLong();
     if (atom.isEmpty())
         value = m_last_PC;
     m_IR.opcode = m_curr_PC = m_next_PC = value;
@@ -2989,7 +2982,7 @@ bool P2Asm::asm_orgh()
     m_idx++;           // skip over token
     m_advance = 0;     // No PC increment
     P2Atom atom = parse_expression();
-    p2_LONG value = atom.toLONG();
+    p2_LONG value = atom.toLong();
     if (atom.isEmpty())
         value = HUB_ADDR;
     m_IR.opcode = m_next_PC =  m_last_PC = value;
@@ -3052,8 +3045,8 @@ bool P2Asm::parse_d_imm_s()
     if (!parse_comma())
         return false;
     P2Atom src = parse_expression(immediate_imm);
-    m_IR.op.dst = dst.toLONG();
-    m_IR.op.src = src.toLONG();
+    m_IR.op.dst = dst.toLong();
+    m_IR.op.src = src.toLong();
     return end_of_line();
 }
 
@@ -3065,7 +3058,7 @@ bool P2Asm::parse_d_imm_s()
 bool P2Asm::parse_d_cz()
 {
     P2Atom dst = parse_expression();
-    m_IR.op.dst = dst.toLONG();
+    m_IR.op.dst = dst.toLong();
     optional_wcz();
     return end_of_line();
 }
@@ -3105,7 +3098,7 @@ bool P2Asm::parse_cccc_zzzz_wcz()
 bool P2Asm::parse_d()
 {
     P2Atom dst = parse_expression();
-    m_IR.op.dst = dst.toLONG();
+    m_IR.op.dst = dst.toLong();
     return end_of_line();
 }
 
@@ -3117,7 +3110,7 @@ bool P2Asm::parse_d()
 bool P2Asm::parse_wz_d()
 {
     P2Atom dst = parse_expression(immediate_wz);
-    m_IR.op.dst = dst.toLONG();
+    m_IR.op.dst = dst.toLong();
     return end_of_line();
 }
 
@@ -3129,7 +3122,7 @@ bool P2Asm::parse_wz_d()
 bool P2Asm::parse_imm_d()
 {
     P2Atom dst = parse_expression(immediate_imm);
-    m_IR.op.dst = dst.toLONG();
+    m_IR.op.dst = dst.toLong();
     return end_of_line();
 }
 
@@ -3141,7 +3134,7 @@ bool P2Asm::parse_imm_d()
 bool P2Asm::parse_imm_d_wcz()
 {
     P2Atom dst = parse_expression(immediate_imm);
-    m_IR.op.dst = dst.toLONG();
+    m_IR.op.dst = dst.toLong();
     optional_wcz();
     return end_of_line();
 }
@@ -3154,7 +3147,7 @@ bool P2Asm::parse_imm_d_wcz()
 bool P2Asm::parse_imm_d_wc()
 {
     P2Atom dst = parse_expression(immediate_imm);
-    m_IR.op.dst = dst.toLONG();
+    m_IR.op.dst = dst.toLong();
     optional_wc();
     return end_of_line();
 }
@@ -3170,8 +3163,8 @@ bool P2Asm::parse_d_imm_s_wcz()
     if (!parse_comma())
         return false;
     P2Atom src = parse_expression(immediate_imm);
-    m_IR.op.dst = dst.toLONG();
-    m_IR.op.src = src.toLONG();
+    m_IR.op.dst = dst.toLong();
+    m_IR.op.src = src.toLong();
     optional_wcz();
     return end_of_line();
 }
@@ -3187,8 +3180,8 @@ bool P2Asm::parse_d_imm_s_wc()
     if (!parse_comma())
         return false;
     P2Atom src = parse_expression(immediate_imm);
-    m_IR.op.dst = dst.toLONG();
-    m_IR.op.src = src.toLONG();
+    m_IR.op.dst = dst.toLong();
+    m_IR.op.src = src.toLong();
     optional_wc();
     return end_of_line();
 }
@@ -3204,8 +3197,8 @@ bool P2Asm::parse_d_imm_s_wz()
     if (!parse_comma())
         return false;
     P2Atom src = parse_expression(immediate_imm);
-    m_IR.op.dst = dst.toLONG();
-    m_IR.op.src = src.toLONG();
+    m_IR.op.dst = dst.toLong();
+    m_IR.op.src = src.toLong();
     optional_wz();
     return end_of_line();
 }
@@ -3221,8 +3214,8 @@ bool P2Asm::parse_wz_d_imm_s()
     if (!parse_comma())
         return false;
     P2Atom src = parse_expression(immediate_imm);
-    m_IR.op.dst = dst.toLONG();
-    m_IR.op.src = src.toLONG();
+    m_IR.op.dst = dst.toLong();
+    m_IR.op.src = src.toLong();
     return end_of_line();
 }
 
@@ -3237,8 +3230,8 @@ bool P2Asm::parse_d_imm_s_nnn(uint max)
     if (!parse_comma())
         return false;
     P2Atom src = parse_expression(immediate_imm);
-    m_IR.op.dst = dst.toLONG();
-    m_IR.op.src = src.toLONG();
+    m_IR.op.dst = dst.toLong();
+    m_IR.op.src = src.toLong();
     if (parse_comma()) {
         if (m_idx < m_cnt) {
             P2Atom n = parse_expression();
@@ -3246,13 +3239,13 @@ bool P2Asm::parse_d_imm_s_nnn(uint max)
                 m_error = tr("Expected immediate #n");
                 return false;
             }
-            if (n.toLONG() > max) {
+            if (n.toLong() > max) {
                 m_error = tr("Immediate #n not in 0-%1 (%2)")
                           .arg(max)
-                          .arg(n.toLONG());
+                          .arg(n.toLong());
                 return false;
             }
-            p2_LONG opcode = static_cast<p2_LONG>(n.toLONG() & max) << 18;
+            p2_LONG opcode = static_cast<p2_LONG>(n.toLong() & max) << 18;
             m_IR.opcode |= opcode;
         } else {
             m_error = tr("Missing immediate #n");
@@ -3272,7 +3265,7 @@ bool P2Asm::parse_d_imm_s_nnn(uint max)
 bool P2Asm::parse_imm_s()
 {
     P2Atom src = parse_expression(immediate_imm);
-    m_IR.op.src = src.toLONG();
+    m_IR.op.src = src.toLong();
     return end_of_line();
 }
 
@@ -3284,7 +3277,7 @@ bool P2Asm::parse_imm_s()
 bool P2Asm::parse_imm_s_wcz()
 {
     P2Atom src = parse_expression(immediate_imm);
-    m_IR.op.src = src.toLONG();
+    m_IR.op.src = src.toLong();
     return end_of_line();
 }
 
@@ -3320,7 +3313,7 @@ bool P2Asm::parse_ptr_pc_abs()
         return false;
 
     P2Atom atom = parse_expression();
-    p2_LONG addr = atom.toLONG();
+    p2_LONG addr = atom.toLong();
     m_IR.opcode |= addr & A20MASK;
 
     return end_of_line();
@@ -3334,7 +3327,7 @@ bool P2Asm::parse_ptr_pc_abs()
 bool P2Asm::parse_pc_abs()
 {
     P2Atom atom = parse_expression();
-    p2_LONG addr = atom.toLONG();
+    p2_LONG addr = atom.toLong();
     m_IR.opcode |= addr & A20MASK;
 
     return end_of_line();
@@ -3348,7 +3341,7 @@ bool P2Asm::parse_pc_abs()
 bool P2Asm::parse_imm23(QVector<p2_inst7_e> aug)
 {
     P2Atom atom = parse_expression();
-    p2_LONG addr = atom.toLONG();
+    p2_LONG addr = atom.toLong();
     m_IR.op.inst = static_cast<p2_inst7_e>(m_IR.op.inst | aug[(addr >> 21) & 3]);
 
     return end_of_line();
@@ -3364,7 +3357,7 @@ bool P2Asm::asm_byte()
     m_idx++;
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
-        m_data += atom;
+        m_data.append(atom);
         optional_comma();
     }
     // TODO: put data into output
@@ -3419,7 +3412,7 @@ bool P2Asm::asm_res()
     m_advance = 0;
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
-        m_advance += atom.toLONG();
+        m_advance += atom.toLong();
         optional_comma();
     }
     return end_of_line();
@@ -3434,9 +3427,9 @@ bool P2Asm::asm_fit()
 {
     m_idx++;
     P2Atom atom = parse_expression();
-    if (atom.toLONG() <= m_curr_PC) {
+    if (atom.toLong() <= m_curr_PC) {
         m_error = tr("Code does not fit below $%1 (origin == $%2)")
-                  .arg(atom.toLONG(), 0, 16)
+                  .arg(atom.toLong(), 0, 16)
                   .arg(m_curr_PC, 0, 16);
     }
     return end_of_line();

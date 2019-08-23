@@ -50,7 +50,7 @@ static const char *Delimiters[] = {
  * leading "."
  * then any number of "A"…"Z", "0"…"9", or "_"
  */
-static const QString re_local = QStringLiteral("\\.[A-Z_][A-Z0-9_]*");
+static const QString re_loc_symbol = QStringLiteral("\\.[A-Z_][A-Z0-9_]*");
 
 /**
  * @brief Regular expression for alphanumeric
@@ -58,7 +58,7 @@ static const QString re_local = QStringLiteral("\\.[A-Z_][A-Z0-9_]*");
  * leading "A"…"Z", or "_"
  * then any number of "A"…"Z", "0"…"9", or "_"
  */
-static const QString re_alnum = QStringLiteral("[A-Z_][A-Z0-9_]*");
+static const QString re_symbol = QStringLiteral("[A-Z_][A-Z0-9_]*");
 
 /**
  * @brief Regular expression for a string enclosed in doublequotes, possibly containing escaped doublequotes
@@ -145,8 +145,8 @@ P2Token::P2Token()
     , m_lookup_cond()
     , m_lookup_modcz()
     , m_tokentype_name()
-    , rx_loc_symbol(QString("^%1$").arg(re_local))
-    , rx_symbol(QString("^%1$").arg(re_alnum))
+    , rx_loc_symbol(QString("^%1").arg(re_loc_symbol))
+    , rx_symbol(QString("^%1").arg(re_symbol))
     , rx_bin(QString("^%1$").arg(re_bin))
     , rx_byt(QString("^%1$").arg(re_byt))
     , rx_oct(QString("^%1$").arg(re_oct))
@@ -172,660 +172,541 @@ P2Token::P2Token()
     Q_ASSERT(rx_addops.isValid());
     Q_ASSERT(rx_binops.isValid());
 
-    m_token_name.insert(t_ABS,              QStringLiteral("ABS"));
-    m_token_name.insert(t_ADD,              QStringLiteral("ADD"));
-    m_token_name.insert(t_ADDCT1,           QStringLiteral("ADDCT1"));
-    m_token_name.insert(t_ADDCT2,           QStringLiteral("ADDCT2"));
-    m_token_name.insert(t_ADDCT3,           QStringLiteral("ADDCT3"));
-    m_token_name.insert(t_ADDPIX,           QStringLiteral("ADDPIX"));
-    m_token_name.insert(t_ADDS,             QStringLiteral("ADDS"));
-    m_token_name.insert(t_ADDSX,            QStringLiteral("ADDSX"));
-    m_token_name.insert(t_ADDX,             QStringLiteral("ADDX"));
-    m_token_name.insert(t_AKPIN,            QStringLiteral("AKPIN"));
-    m_token_name.insert(t_ALLOWI,           QStringLiteral("ALLOWI"));
-    m_token_name.insert(t_ALTB,             QStringLiteral("ALTB"));
-    m_token_name.insert(t_ALTD,             QStringLiteral("ALTD"));
-    m_token_name.insert(t_ALTGB,            QStringLiteral("ALTGB"));
-    m_token_name.insert(t_ALTGN,            QStringLiteral("ALTGN"));
-    m_token_name.insert(t_ALTGW,            QStringLiteral("ALTGW"));
-    m_token_name.insert(t_ALTI,             QStringLiteral("ALTI"));
-    m_token_name.insert(t_ALTR,             QStringLiteral("ALTR"));
-    m_token_name.insert(t_ALTS,             QStringLiteral("ALTS"));
-    m_token_name.insert(t_ALTSB,            QStringLiteral("ALTSB"));
-    m_token_name.insert(t_ALTSN,            QStringLiteral("ALTSN"));
-    m_token_name.insert(t_ALTSW,            QStringLiteral("ALTSW"));
-    m_token_name.insert(t_AND,              QStringLiteral("AND"));
-    m_token_name.insert(t_ANDN,             QStringLiteral("ANDN"));
-    m_token_name.insert(t_AUGD,             QStringLiteral("AUGD"));
-    m_token_name.insert(t_AUGS,             QStringLiteral("AUGS"));
-    m_token_name.insert(t_BITC,             QStringLiteral("BITC"));
-    m_token_name.insert(t_BITH,             QStringLiteral("BITH"));
-    m_token_name.insert(t_BITL,             QStringLiteral("BITL"));
-    m_token_name.insert(t_BITNC,            QStringLiteral("BITNC"));
-    m_token_name.insert(t_BITNOT,           QStringLiteral("BITNOT"));
-    m_token_name.insert(t_BITNZ,            QStringLiteral("BITNZ"));
-    m_token_name.insert(t_BITRND,           QStringLiteral("BITRND"));
-    m_token_name.insert(t_BITZ,             QStringLiteral("BITZ"));
-    m_token_name.insert(t_BLNPIX,           QStringLiteral("BLNPIX"));
-    m_token_name.insert(t_BMASK,            QStringLiteral("BMASK"));
-    m_token_name.insert(t_BRK,              QStringLiteral("BRK"));
-    m_token_name.insert(t_CALL,             QStringLiteral("CALL"));
-    m_token_name.insert(t_CALLA,            QStringLiteral("CALLA"));
-    m_token_name.insert(t_CALLB,            QStringLiteral("CALLB"));
-    m_token_name.insert(t_CALLD,            QStringLiteral("CALLD"));
-    m_token_name.insert(t_CALLPA,           QStringLiteral("CALLPA"));
-    m_token_name.insert(t_CALLPB,           QStringLiteral("CALLPB"));
-    m_token_name.insert(t_CMP,              QStringLiteral("CMP"));
-    m_token_name.insert(t_CMPM,             QStringLiteral("CMPM"));
-    m_token_name.insert(t_CMPR,             QStringLiteral("CMPR"));
-    m_token_name.insert(t_CMPS,             QStringLiteral("CMPS"));
-    m_token_name.insert(t_CMPSUB,           QStringLiteral("CMPSUB"));
-    m_token_name.insert(t_CMPSX,            QStringLiteral("CMPSX"));
-    m_token_name.insert(t_CMPX,             QStringLiteral("CMPX"));
-    m_token_name.insert(t_COGATN,           QStringLiteral("COGATN"));
-    m_token_name.insert(t_COGBRK,           QStringLiteral("COGBRK"));
-    m_token_name.insert(t_COGID,            QStringLiteral("COGID"));
-    m_token_name.insert(t_COGINIT,          QStringLiteral("COGINIT"));
-    m_token_name.insert(t_COGSTOP,          QStringLiteral("COGSTOP"));
-    m_token_name.insert(t_CRCBIT,           QStringLiteral("CRCBIT"));
-    m_token_name.insert(t_CRCNIB,           QStringLiteral("CRCNIB"));
-    m_token_name.insert(t_DECMOD,           QStringLiteral("DECMOD"));
-    m_token_name.insert(t_DECOD,            QStringLiteral("DECOD"));
-    m_token_name.insert(t_DIRC,             QStringLiteral("DIRC"));
-    m_token_name.insert(t_DIRH,             QStringLiteral("DIRH"));
-    m_token_name.insert(t_DIRL,             QStringLiteral("DIRL"));
-    m_token_name.insert(t_DIRNC,            QStringLiteral("DIRNC"));
-    m_token_name.insert(t_DIRNOT,           QStringLiteral("DIRNOT"));
-    m_token_name.insert(t_DIRNZ,            QStringLiteral("DIRNZ"));
-    m_token_name.insert(t_DIRRND,           QStringLiteral("DIRRND"));
-    m_token_name.insert(t_DIRZ,             QStringLiteral("DIRZ"));
-    m_token_name.insert(t_DJF,              QStringLiteral("DJF"));
-    m_token_name.insert(t_DJNF,             QStringLiteral("DJNF"));
-    m_token_name.insert(t_DJNZ,             QStringLiteral("DJNZ"));
-    m_token_name.insert(t_DJZ,              QStringLiteral("DJZ"));
-    m_token_name.insert(t_DRVC,             QStringLiteral("DRVC"));
-    m_token_name.insert(t_DRVH,             QStringLiteral("DRVH"));
-    m_token_name.insert(t_DRVL,             QStringLiteral("DRVL"));
-    m_token_name.insert(t_DRVNC,            QStringLiteral("DRVNC"));
-    m_token_name.insert(t_DRVNOT,           QStringLiteral("DRVNOT"));
-    m_token_name.insert(t_DRVNZ,            QStringLiteral("DRVNZ"));
-    m_token_name.insert(t_DRVRND,           QStringLiteral("DRVRND"));
-    m_token_name.insert(t_DRVZ,             QStringLiteral("DRVZ"));
-    m_token_name.insert(t_ENCOD,            QStringLiteral("ENCOD"));
-    m_token_name.insert(t_EXECF,            QStringLiteral("EXECF"));
-    m_token_name.insert(t_FBLOCK,           QStringLiteral("FBLOCK"));
-    m_token_name.insert(t_FGE,              QStringLiteral("FGE"));
-    m_token_name.insert(t_FGES,             QStringLiteral("FGES"));
-    m_token_name.insert(t_FLE,              QStringLiteral("FLE"));
-    m_token_name.insert(t_FLES,             QStringLiteral("FLES"));
-    m_token_name.insert(t_FLTC,             QStringLiteral("FLTC"));
-    m_token_name.insert(t_FLTH,             QStringLiteral("FLTH"));
-    m_token_name.insert(t_FLTL,             QStringLiteral("FLTL"));
-    m_token_name.insert(t_FLTNC,            QStringLiteral("FLTNC"));
-    m_token_name.insert(t_FLTNOT,           QStringLiteral("FLTNOT"));
-    m_token_name.insert(t_FLTNZ,            QStringLiteral("FLTNZ"));
-    m_token_name.insert(t_FLTRND,           QStringLiteral("FLTRND"));
-    m_token_name.insert(t_FLTZ,             QStringLiteral("FLTZ"));
-    m_token_name.insert(t_GETBRK,           QStringLiteral("GETBRK"));
-    m_token_name.insert(t_GETBYTE,          QStringLiteral("GETBYTE"));
-    m_token_name.insert(t_GETCT,            QStringLiteral("GETCT"));
-    m_token_name.insert(t_GETNIB,           QStringLiteral("GETNIB"));
-    m_token_name.insert(t_GETPTR,           QStringLiteral("GETPTR"));
-    m_token_name.insert(t_GETQX,            QStringLiteral("GETQX"));
-    m_token_name.insert(t_GETQY,            QStringLiteral("GETQY"));
-    m_token_name.insert(t_GETRND,           QStringLiteral("GETRND"));
-    m_token_name.insert(t_GETSCP,           QStringLiteral("GETSCP"));
-    m_token_name.insert(t_GETWORD,          QStringLiteral("GETWORD"));
-    m_token_name.insert(t_GETXACC,          QStringLiteral("GETXACC"));
-    m_token_name.insert(t_HUBSET,           QStringLiteral("HUBSET"));
-    m_token_name.insert(t_IJNZ,             QStringLiteral("IJNZ"));
-    m_token_name.insert(t_IJZ,              QStringLiteral("IJZ"));
-    m_token_name.insert(t_INCMOD,           QStringLiteral("INCMOD"));
-    m_token_name.insert(t_JATN,             QStringLiteral("JATN"));
-    m_token_name.insert(t_JCT1,             QStringLiteral("JCT1"));
-    m_token_name.insert(t_JCT2,             QStringLiteral("JCT2"));
-    m_token_name.insert(t_JCT3,             QStringLiteral("JCT3"));
-    m_token_name.insert(t_JFBW,             QStringLiteral("JFBW"));
-    m_token_name.insert(t_JINT,             QStringLiteral("JINT"));
-    m_token_name.insert(t_JMP,              QStringLiteral("JMP"));
-    m_token_name.insert(t_JMPREL,           QStringLiteral("JMPREL"));
-    m_token_name.insert(t_JNATN,            QStringLiteral("JNATN"));
-    m_token_name.insert(t_JNCT1,            QStringLiteral("JNCT1"));
-    m_token_name.insert(t_JNCT2,            QStringLiteral("JNCT2"));
-    m_token_name.insert(t_JNCT3,            QStringLiteral("JNCT3"));
-    m_token_name.insert(t_JNFBW,            QStringLiteral("JNFBW"));
-    m_token_name.insert(t_JNINT,            QStringLiteral("JNINT"));
-    m_token_name.insert(t_JNPAT,            QStringLiteral("JNPAT"));
-    m_token_name.insert(t_JNQMT,            QStringLiteral("JNQMT"));
-    m_token_name.insert(t_JNSE1,            QStringLiteral("JNSE1"));
-    m_token_name.insert(t_JNSE2,            QStringLiteral("JNSE2"));
-    m_token_name.insert(t_JNSE3,            QStringLiteral("JNSE3"));
-    m_token_name.insert(t_JNSE4,            QStringLiteral("JNSE4"));
-    m_token_name.insert(t_JNXFI,            QStringLiteral("JNXFI"));
-    m_token_name.insert(t_JNXMT,            QStringLiteral("JNXMT"));
-    m_token_name.insert(t_JNXRL,            QStringLiteral("JNXRL"));
-    m_token_name.insert(t_JNXRO,            QStringLiteral("JNXRO"));
-    m_token_name.insert(t_JPAT,             QStringLiteral("JPAT"));
-    m_token_name.insert(t_JQMT,             QStringLiteral("JQMT"));
-    m_token_name.insert(t_JSE1,             QStringLiteral("JSE1"));
-    m_token_name.insert(t_JSE2,             QStringLiteral("JSE2"));
-    m_token_name.insert(t_JSE3,             QStringLiteral("JSE3"));
-    m_token_name.insert(t_JSE4,             QStringLiteral("JSE4"));
-    m_token_name.insert(t_JXFI,             QStringLiteral("JXFI"));
-    m_token_name.insert(t_JXMT,             QStringLiteral("JXMT"));
-    m_token_name.insert(t_JXRL,             QStringLiteral("JXRL"));
-    m_token_name.insert(t_JXRO,             QStringLiteral("JXRO"));
-    m_token_name.insert(t_LOC,              QStringLiteral("LOC"));
-    m_token_name.insert(t_LOCKNEW,          QStringLiteral("LOCKNEW"));
-    m_token_name.insert(t_LOCKREL,          QStringLiteral("LOCKREL"));
-    m_token_name.insert(t_LOCKRET,          QStringLiteral("LOCKRET"));
-    m_token_name.insert(t_LOCKTRY,          QStringLiteral("LOCKTRY"));
-    m_token_name.insert(t_MERGEB,           QStringLiteral("MERGEB"));
-    m_token_name.insert(t_MERGEW,           QStringLiteral("MERGEW"));
-    m_token_name.insert(t_MIXPIX,           QStringLiteral("MIXPIX"));
-    m_token_name.insert(t_MODCZ,            QStringLiteral("MODCZ"));
-    m_token_name.insert(t_MOV,              QStringLiteral("MOV"));
-    m_token_name.insert(t_MOVBYTS,          QStringLiteral("MOVBYTS"));
-    m_token_name.insert(t_MUL,              QStringLiteral("MUL"));
-    m_token_name.insert(t_MULPIX,           QStringLiteral("MULPIX"));
-    m_token_name.insert(t_MULS,             QStringLiteral("MULS"));
-    m_token_name.insert(t_MUXC,             QStringLiteral("MUXC"));
-    m_token_name.insert(t_MUXNC,            QStringLiteral("MUXNC"));
-    m_token_name.insert(t_MUXNIBS,          QStringLiteral("MUXNIBS"));
-    m_token_name.insert(t_MUXNITS,          QStringLiteral("MUXNITS"));
-    m_token_name.insert(t_MUXNZ,            QStringLiteral("MUXNZ"));
-    m_token_name.insert(t_MUXQ,             QStringLiteral("MUXQ"));
-    m_token_name.insert(t_MUXZ,             QStringLiteral("MUXZ"));
-    m_token_name.insert(t_NEG,              QStringLiteral("NEG"));
-    m_token_name.insert(t_NEGC,             QStringLiteral("NEGC"));
-    m_token_name.insert(t_NEGNC,            QStringLiteral("NEGNC"));
-    m_token_name.insert(t_NEGNZ,            QStringLiteral("NEGNZ"));
-    m_token_name.insert(t_NEGZ,             QStringLiteral("NEGZ"));
-    m_token_name.insert(t_NIXINT1,          QStringLiteral("NIXINT1"));
-    m_token_name.insert(t_NIXINT2,          QStringLiteral("NIXINT2"));
-    m_token_name.insert(t_NIXINT3,          QStringLiteral("NIXINT3"));
-    m_token_name.insert(t_NOP,              QStringLiteral("NOP"));
-    m_token_name.insert(t_NOT,              QStringLiteral("NOT"));
-    m_token_name.insert(t_ONES,             QStringLiteral("ONES"));
-    m_token_name.insert(t_OR,               QStringLiteral("OR"));
-    m_token_name.insert(t_OUTC,             QStringLiteral("OUTC"));
-    m_token_name.insert(t_OUTH,             QStringLiteral("OUTH"));
-    m_token_name.insert(t_OUTL,             QStringLiteral("OUTL"));
-    m_token_name.insert(t_OUTNC,            QStringLiteral("OUTNC"));
-    m_token_name.insert(t_OUTNOT,           QStringLiteral("OUTNOT"));
-    m_token_name.insert(t_OUTNZ,            QStringLiteral("OUTNZ"));
-    m_token_name.insert(t_OUTRND,           QStringLiteral("OUTRND"));
-    m_token_name.insert(t_OUTZ,             QStringLiteral("OUTZ"));
-    m_token_name.insert(t_PA,               QStringLiteral("PA"));
-    m_token_name.insert(t_PB,               QStringLiteral("PB"));
-    m_token_name.insert(t_POLLATN,          QStringLiteral("POLLATN"));
-    m_token_name.insert(t_POLLCT1,          QStringLiteral("POLLCT1"));
-    m_token_name.insert(t_POLLCT2,          QStringLiteral("POLLCT2"));
-    m_token_name.insert(t_POLLCT3,          QStringLiteral("POLLCT3"));
-    m_token_name.insert(t_POLLFBW,          QStringLiteral("POLLFBW"));
-    m_token_name.insert(t_POLLINT,          QStringLiteral("POLLINT"));
-    m_token_name.insert(t_POLLPAT,          QStringLiteral("POLLPAT"));
-    m_token_name.insert(t_POLLQMT,          QStringLiteral("POLLQMT"));
-    m_token_name.insert(t_POLLSE1,          QStringLiteral("POLLSE1"));
-    m_token_name.insert(t_POLLSE2,          QStringLiteral("POLLSE2"));
-    m_token_name.insert(t_POLLSE3,          QStringLiteral("POLLSE3"));
-    m_token_name.insert(t_POLLSE4,          QStringLiteral("POLLSE4"));
-    m_token_name.insert(t_POLLXFI,          QStringLiteral("POLLXFI"));
-    m_token_name.insert(t_POLLXMT,          QStringLiteral("POLLXMT"));
-    m_token_name.insert(t_POLLXRL,          QStringLiteral("POLLXRL"));
-    m_token_name.insert(t_POLLXRO,          QStringLiteral("POLLXRO"));
-    m_token_name.insert(t_POP,              QStringLiteral("POP"));
-    m_token_name.insert(t_POPA,             QStringLiteral("POPA"));
-    m_token_name.insert(t_POPB,             QStringLiteral("POPB"));
-    m_token_name.insert(t_PTRA,             QStringLiteral("PTRA"));
-    m_token_name.insert(t_PTRA_postinc,     QStringLiteral("PTRA++"));
-    m_token_name.insert(t_PTRA_postdec,     QStringLiteral("PTRA--"));
-    m_token_name.insert(t_PTRA_preinc,      QStringLiteral("++PTRA"));
-    m_token_name.insert(t_PTRA_predec,      QStringLiteral("--PTRA"));
-    m_token_name.insert(t_PTRB,             QStringLiteral("PTRB"));
-    m_token_name.insert(t_PTRB_postinc,     QStringLiteral("PTRB++"));
-    m_token_name.insert(t_PTRB_postdec,     QStringLiteral("PTRB--"));
-    m_token_name.insert(t_PTRB_preinc,      QStringLiteral("++PTRB"));
-    m_token_name.insert(t_PTRB_predec,      QStringLiteral("--PTRB"));
-    m_token_name.insert(t_PUSH,             QStringLiteral("PUSH"));
-    m_token_name.insert(t_PUSHA,            QStringLiteral("PUSHA"));
-    m_token_name.insert(t_PUSHB,            QStringLiteral("PUSHB"));
-    m_token_name.insert(t_QDIV,             QStringLiteral("QDIV"));
-    m_token_name.insert(t_QEXP,             QStringLiteral("QEXP"));
-    m_token_name.insert(t_QFRAC,            QStringLiteral("QFRAC"));
-    m_token_name.insert(t_QLOG,             QStringLiteral("QLOG"));
-    m_token_name.insert(t_QMUL,             QStringLiteral("QMUL"));
-    m_token_name.insert(t_QROTATE,          QStringLiteral("QROTATE"));
-    m_token_name.insert(t_QSQRT,            QStringLiteral("QSQRT"));
-    m_token_name.insert(t_QVECTOR,          QStringLiteral("QVECTOR"));
-    m_token_name.insert(t_RCL,              QStringLiteral("RCL"));
-    m_token_name.insert(t_RCR,              QStringLiteral("RCR"));
-    m_token_name.insert(t_RCZL,             QStringLiteral("RCZL"));
-    m_token_name.insert(t_RCZR,             QStringLiteral("RCZR"));
-    m_token_name.insert(t_RDBYTE,           QStringLiteral("RDBYTE"));
-    m_token_name.insert(t_RDFAST,           QStringLiteral("RDFAST"));
-    m_token_name.insert(t_RDLONG,           QStringLiteral("RDLONG"));
-    m_token_name.insert(t_RDLUT,            QStringLiteral("RDLUT"));
-    m_token_name.insert(t_RDPIN,            QStringLiteral("RDPIN"));
-    m_token_name.insert(t_RDWORD,           QStringLiteral("RDWORD"));
-    m_token_name.insert(t_REP,              QStringLiteral("REP"));
-    m_token_name.insert(t_RESI0,            QStringLiteral("RESI0"));
-    m_token_name.insert(t_RESI1,            QStringLiteral("RESI1"));
-    m_token_name.insert(t_RESI2,            QStringLiteral("RESI2"));
-    m_token_name.insert(t_RESI3,            QStringLiteral("RESI3"));
-    m_token_name.insert(t_RET,              QStringLiteral("RET"));
-    m_token_name.insert(t_RETA,             QStringLiteral("RETA"));
-    m_token_name.insert(t_RETB,             QStringLiteral("RETB"));
-    m_token_name.insert(t_RETI0,            QStringLiteral("RETI0"));
-    m_token_name.insert(t_RETI1,            QStringLiteral("RETI1"));
-    m_token_name.insert(t_RETI2,            QStringLiteral("RETI2"));
-    m_token_name.insert(t_RETI3,            QStringLiteral("RETI3"));
-    m_token_name.insert(t_REV,              QStringLiteral("REV"));
-    m_token_name.insert(t_RFBYTE,           QStringLiteral("RFBYTE"));
-    m_token_name.insert(t_RFLONG,           QStringLiteral("RFLONG"));
-    m_token_name.insert(t_RFVAR,            QStringLiteral("RFVAR"));
-    m_token_name.insert(t_RFVARS,           QStringLiteral("RFVARS"));
-    m_token_name.insert(t_RFWORD,           QStringLiteral("RFWORD"));
-    m_token_name.insert(t_RGBEXP,           QStringLiteral("RGBEXP"));
-    m_token_name.insert(t_RGBSQZ,           QStringLiteral("RGBSQZ"));
-    m_token_name.insert(t_ROL,              QStringLiteral("ROL"));
-    m_token_name.insert(t_ROLBYTE,          QStringLiteral("ROLBYTE"));
-    m_token_name.insert(t_ROLNIB,           QStringLiteral("ROLNIB"));
-    m_token_name.insert(t_ROLWORD,          QStringLiteral("ROLWORD"));
-    m_token_name.insert(t_ROR,              QStringLiteral("ROR"));
-    m_token_name.insert(t_RQPIN,            QStringLiteral("RQPIN"));
-    m_token_name.insert(t_SAL,              QStringLiteral("SAL"));
-    m_token_name.insert(t_SAR,              QStringLiteral("SAR"));
-    m_token_name.insert(t_SCA,              QStringLiteral("SCA"));
-    m_token_name.insert(t_SCAS,             QStringLiteral("SCAS"));
-    m_token_name.insert(t_SETBYTE,          QStringLiteral("SETBYTE"));
-    m_token_name.insert(t_SETCFRQ,          QStringLiteral("SETCFRQ"));
-    m_token_name.insert(t_SETCI,            QStringLiteral("SETCI"));
-    m_token_name.insert(t_SETCMOD,          QStringLiteral("SETCMOD"));
-    m_token_name.insert(t_SETCQ,            QStringLiteral("SETCQ"));
-    m_token_name.insert(t_SETCY,            QStringLiteral("SETCY"));
-    m_token_name.insert(t_SETD,             QStringLiteral("SETD"));
-    m_token_name.insert(t_SETDACS,          QStringLiteral("SETDACS"));
-    m_token_name.insert(t_SETINT1,          QStringLiteral("SETINT1"));
-    m_token_name.insert(t_SETINT2,          QStringLiteral("SETINT2"));
-    m_token_name.insert(t_SETINT3,          QStringLiteral("SETINT3"));
-    m_token_name.insert(t_SETLUTS,          QStringLiteral("SETLUTS"));
-    m_token_name.insert(t_SETNIB,           QStringLiteral("SETNIB"));
-    m_token_name.insert(t_SETPAT,           QStringLiteral("SETPAT"));
-    m_token_name.insert(t_SETPIV,           QStringLiteral("SETPIV"));
-    m_token_name.insert(t_SETPIX,           QStringLiteral("SETPIX"));
-    m_token_name.insert(t_SETQ,             QStringLiteral("SETQ"));
-    m_token_name.insert(t_SETQ2,            QStringLiteral("SETQ2"));
-    m_token_name.insert(t_SETR,             QStringLiteral("SETR"));
-    m_token_name.insert(t_SETS,             QStringLiteral("SETS"));
-    m_token_name.insert(t_SETSCP,           QStringLiteral("SETSCP"));
-    m_token_name.insert(t_SETSE1,           QStringLiteral("SETSE1"));
-    m_token_name.insert(t_SETSE2,           QStringLiteral("SETSE2"));
-    m_token_name.insert(t_SETSE3,           QStringLiteral("SETSE3"));
-    m_token_name.insert(t_SETSE4,           QStringLiteral("SETSE4"));
-    m_token_name.insert(t_SETWORD,          QStringLiteral("SETWORD"));
-    m_token_name.insert(t_SETXFRQ,          QStringLiteral("SETXFRQ"));
-    m_token_name.insert(t_SEUSSF,           QStringLiteral("SEUSSF"));
-    m_token_name.insert(t_SEUSSR,           QStringLiteral("SEUSSR"));
-    m_token_name.insert(t_SHL,              QStringLiteral("SHL"));
-    m_token_name.insert(t_SHR,              QStringLiteral("SHR"));
-    m_token_name.insert(t_SIGNX,            QStringLiteral("SIGNX"));
-    m_token_name.insert(t_SKIP,             QStringLiteral("SKIP"));
-    m_token_name.insert(t_SKIPF,            QStringLiteral("SKIPF"));
-    m_token_name.insert(t_SPACE,            QStringLiteral("SPACE"));
-    m_token_name.insert(t_SPLITB,           QStringLiteral("SPLITB"));
-    m_token_name.insert(t_SPLITW,           QStringLiteral("SPLITW"));
-    m_token_name.insert(t_STALLI,           QStringLiteral("STALLI"));
-    m_token_name.insert(t_SUB,              QStringLiteral("SUB"));
-    m_token_name.insert(t_SUBR,             QStringLiteral("SUBR"));
-    m_token_name.insert(t_SUBS,             QStringLiteral("SUBS"));
-    m_token_name.insert(t_SUBSX,            QStringLiteral("SUBSX"));
-    m_token_name.insert(t_SUBX,             QStringLiteral("SUBX"));
-    m_token_name.insert(t_SUMC,             QStringLiteral("SUMC"));
-    m_token_name.insert(t_SUMNC,            QStringLiteral("SUMNC"));
-    m_token_name.insert(t_SUMNZ,            QStringLiteral("SUMNZ"));
-    m_token_name.insert(t_SUMZ,             QStringLiteral("SUMZ"));
-    m_token_name.insert(t_TEST,             QStringLiteral("TEST"));
-    m_token_name.insert(t_TESTB,            QStringLiteral("TESTB"));
-    m_token_name.insert(t_TESTBN,           QStringLiteral("TESTBN"));
-    m_token_name.insert(t_TESTN,            QStringLiteral("TESTN"));
-    m_token_name.insert(t_TESTP,            QStringLiteral("TESTP"));
-    m_token_name.insert(t_TESTPN,           QStringLiteral("TESTPN"));
-    m_token_name.insert(t_TJF,              QStringLiteral("TJF"));
-    m_token_name.insert(t_TJNF,             QStringLiteral("TJNF"));
-    m_token_name.insert(t_TJNS,             QStringLiteral("TJNS"));
-    m_token_name.insert(t_TJNZ,             QStringLiteral("TJNZ"));
-    m_token_name.insert(t_TJS,              QStringLiteral("TJS"));
-    m_token_name.insert(t_TJV,              QStringLiteral("TJV"));
-    m_token_name.insert(t_TJZ,              QStringLiteral("TJZ"));
-    m_token_name.insert(t_TRGINT1,          QStringLiteral("TRGINT1"));
-    m_token_name.insert(t_TRGINT2,          QStringLiteral("TRGINT2"));
-    m_token_name.insert(t_TRGINT3,          QStringLiteral("TRGINT3"));
-    m_token_name.insert(t_WAITATN,          QStringLiteral("WAITATN"));
-    m_token_name.insert(t_WAITCT1,          QStringLiteral("WAITCT1"));
-    m_token_name.insert(t_WAITCT2,          QStringLiteral("WAITCT2"));
-    m_token_name.insert(t_WAITCT3,          QStringLiteral("WAITCT3"));
-    m_token_name.insert(t_WAITFBW,          QStringLiteral("WAITFBW"));
-    m_token_name.insert(t_WAITINT,          QStringLiteral("WAITINT"));
-    m_token_name.insert(t_WAITPAT,          QStringLiteral("WAITPAT"));
-    m_token_name.insert(t_WAITSE1,          QStringLiteral("WAITSE1"));
-    m_token_name.insert(t_WAITSE2,          QStringLiteral("WAITSE2"));
-    m_token_name.insert(t_WAITSE3,          QStringLiteral("WAITSE3"));
-    m_token_name.insert(t_WAITSE4,          QStringLiteral("WAITSE4"));
-    m_token_name.insert(t_WAITX,            QStringLiteral("WAITX"));
-    m_token_name.insert(t_WAITXFI,          QStringLiteral("WAITXFI"));
-    m_token_name.insert(t_WAITXMT,          QStringLiteral("WAITXMT"));
-    m_token_name.insert(t_WAITXRL,          QStringLiteral("WAITXRL"));
-    m_token_name.insert(t_WAITXRO,          QStringLiteral("WAITXRO"));
-    m_token_name.insert(t_WFBYTE,           QStringLiteral("WFBYTE"));
-    m_token_name.insert(t_WFLONG,           QStringLiteral("WFLONG"));
-    m_token_name.insert(t_WFWORD,           QStringLiteral("WFWORD"));
-    m_token_name.insert(t_WMLONG,           QStringLiteral("WMLONG"));
-    m_token_name.insert(t_WRBYTE,           QStringLiteral("WRBYTE"));
-    m_token_name.insert(t_WRC,              QStringLiteral("WRC"));
-    m_token_name.insert(t_WRFAST,           QStringLiteral("WRFAST"));
-    m_token_name.insert(t_WRLONG,           QStringLiteral("WRLONG"));
-    m_token_name.insert(t_WRLUT,            QStringLiteral("WRLUT"));
-    m_token_name.insert(t_WRNC,             QStringLiteral("WRNC"));
-    m_token_name.insert(t_WRNZ,             QStringLiteral("WRNZ"));
-    m_token_name.insert(t_WRPIN,            QStringLiteral("WRPIN"));
-    m_token_name.insert(t_WRWORD,           QStringLiteral("WRWORD"));
-    m_token_name.insert(t_WRZ,              QStringLiteral("WRZ"));
-    m_token_name.insert(t_WXPIN,            QStringLiteral("WXPIN"));
-    m_token_name.insert(t_WYPIN,            QStringLiteral("WYPIN"));
-    m_token_name.insert(t_XCONT,            QStringLiteral("XCONT"));
-    m_token_name.insert(t_XINIT,            QStringLiteral("XINIT"));
-    m_token_name.insert(t_XOR,              QStringLiteral("XOR"));
-    m_token_name.insert(t_XORO32,           QStringLiteral("XORO32"));
-    m_token_name.insert(t_XSTOP,            QStringLiteral("XSTOP"));
-    m_token_name.insert(t_XZERO,            QStringLiteral("XZERO"));
-    m_token_name.insert(t_ZEROX,            QStringLiteral("ZEROX"));
+    tn_add(t_ABS,              tt_inst, QStringLiteral("ABS"));
+    tn_add(t_ADD,              tt_inst, QStringLiteral("ADD"));
+    tn_add(t_ADDCT1,           tt_inst, QStringLiteral("ADDCT1"));
+    tn_add(t_ADDCT2,           tt_inst, QStringLiteral("ADDCT2"));
+    tn_add(t_ADDCT3,           tt_inst, QStringLiteral("ADDCT3"));
+    tn_add(t_ADDPIX,           tt_inst, QStringLiteral("ADDPIX"));
+    tn_add(t_ADDS,             tt_inst, QStringLiteral("ADDS"));
+    tn_add(t_ADDSX,            tt_inst, QStringLiteral("ADDSX"));
+    tn_add(t_ADDX,             tt_inst, QStringLiteral("ADDX"));
+    tn_add(t_AKPIN,            tt_inst, QStringLiteral("AKPIN"));
+    tn_add(t_ALLOWI,           tt_inst, QStringLiteral("ALLOWI"));
+    tn_add(t_ALTB,             tt_inst, QStringLiteral("ALTB"));
+    tn_add(t_ALTD,             tt_inst, QStringLiteral("ALTD"));
+    tn_add(t_ALTGB,            tt_inst, QStringLiteral("ALTGB"));
+    tn_add(t_ALTGN,            tt_inst, QStringLiteral("ALTGN"));
+    tn_add(t_ALTGW,            tt_inst, QStringLiteral("ALTGW"));
+    tn_add(t_ALTI,             tt_inst, QStringLiteral("ALTI"));
+    tn_add(t_ALTR,             tt_inst, QStringLiteral("ALTR"));
+    tn_add(t_ALTS,             tt_inst, QStringLiteral("ALTS"));
+    tn_add(t_ALTSB,            tt_inst, QStringLiteral("ALTSB"));
+    tn_add(t_ALTSN,            tt_inst, QStringLiteral("ALTSN"));
+    tn_add(t_ALTSW,            tt_inst, QStringLiteral("ALTSW"));
+    tn_add(t_AND,              tt_inst, QStringLiteral("AND"));
+    tn_add(t_ANDN,             tt_inst, QStringLiteral("ANDN"));
+    tn_add(t_AUGD,             tt_inst, QStringLiteral("AUGD"));
+    tn_add(t_AUGS,             tt_inst, QStringLiteral("AUGS"));
+    tn_add(t_BITC,             tt_inst, QStringLiteral("BITC"));
+    tn_add(t_BITH,             tt_inst, QStringLiteral("BITH"));
+    tn_add(t_BITL,             tt_inst, QStringLiteral("BITL"));
+    tn_add(t_BITNC,            tt_inst, QStringLiteral("BITNC"));
+    tn_add(t_BITNOT,           tt_inst, QStringLiteral("BITNOT"));
+    tn_add(t_BITNZ,            tt_inst, QStringLiteral("BITNZ"));
+    tn_add(t_BITRND,           tt_inst, QStringLiteral("BITRND"));
+    tn_add(t_BITZ,             tt_inst, QStringLiteral("BITZ"));
+    tn_add(t_BLNPIX,           tt_inst, QStringLiteral("BLNPIX"));
+    tn_add(t_BMASK,            tt_inst, QStringLiteral("BMASK"));
+    tn_add(t_BRK,              tt_inst, QStringLiteral("BRK"));
+    tn_add(t_CALL,             tt_inst, QStringLiteral("CALL"));
+    tn_add(t_CALLA,            tt_inst, QStringLiteral("CALLA"));
+    tn_add(t_CALLB,            tt_inst, QStringLiteral("CALLB"));
+    tn_add(t_CALLD,            tt_inst, QStringLiteral("CALLD"));
+    tn_add(t_CALLPA,           tt_inst, QStringLiteral("CALLPA"));
+    tn_add(t_CALLPB,           tt_inst, QStringLiteral("CALLPB"));
+    tn_add(t_CMP,              tt_inst, QStringLiteral("CMP"));
+    tn_add(t_CMPM,             tt_inst, QStringLiteral("CMPM"));
+    tn_add(t_CMPR,             tt_inst, QStringLiteral("CMPR"));
+    tn_add(t_CMPS,             tt_inst, QStringLiteral("CMPS"));
+    tn_add(t_CMPSUB,           tt_inst, QStringLiteral("CMPSUB"));
+    tn_add(t_CMPSX,            tt_inst, QStringLiteral("CMPSX"));
+    tn_add(t_CMPX,             tt_inst, QStringLiteral("CMPX"));
+    tn_add(t_COGATN,           tt_inst, QStringLiteral("COGATN"));
+    tn_add(t_COGBRK,           tt_inst, QStringLiteral("COGBRK"));
+    tn_add(t_COGID,            tt_inst, QStringLiteral("COGID"));
+    tn_add(t_COGINIT,          tt_inst, QStringLiteral("COGINIT"));
+    tn_add(t_COGSTOP,          tt_inst, QStringLiteral("COGSTOP"));
+    tn_add(t_CRCBIT,           tt_inst, QStringLiteral("CRCBIT"));
+    tn_add(t_CRCNIB,           tt_inst, QStringLiteral("CRCNIB"));
+    tn_add(t_DECMOD,           tt_inst, QStringLiteral("DECMOD"));
+    tn_add(t_DECOD,            tt_inst, QStringLiteral("DECOD"));
+    tn_add(t_DIRC,             tt_inst, QStringLiteral("DIRC"));
+    tn_add(t_DIRH,             tt_inst, QStringLiteral("DIRH"));
+    tn_add(t_DIRL,             tt_inst, QStringLiteral("DIRL"));
+    tn_add(t_DIRNC,            tt_inst, QStringLiteral("DIRNC"));
+    tn_add(t_DIRNOT,           tt_inst, QStringLiteral("DIRNOT"));
+    tn_add(t_DIRNZ,            tt_inst, QStringLiteral("DIRNZ"));
+    tn_add(t_DIRRND,           tt_inst, QStringLiteral("DIRRND"));
+    tn_add(t_DIRZ,             tt_inst, QStringLiteral("DIRZ"));
+    tn_add(t_DJF,              tt_inst, QStringLiteral("DJF"));
+    tn_add(t_DJNF,             tt_inst, QStringLiteral("DJNF"));
+    tn_add(t_DJNZ,             tt_inst, QStringLiteral("DJNZ"));
+    tn_add(t_DJZ,              tt_inst, QStringLiteral("DJZ"));
+    tn_add(t_DRVC,             tt_inst, QStringLiteral("DRVC"));
+    tn_add(t_DRVH,             tt_inst, QStringLiteral("DRVH"));
+    tn_add(t_DRVL,             tt_inst, QStringLiteral("DRVL"));
+    tn_add(t_DRVNC,            tt_inst, QStringLiteral("DRVNC"));
+    tn_add(t_DRVNOT,           tt_inst, QStringLiteral("DRVNOT"));
+    tn_add(t_DRVNZ,            tt_inst, QStringLiteral("DRVNZ"));
+    tn_add(t_DRVRND,           tt_inst, QStringLiteral("DRVRND"));
+    tn_add(t_DRVZ,             tt_inst, QStringLiteral("DRVZ"));
+    tn_add(t_ENCOD,            tt_inst, QStringLiteral("ENCOD"));
+    tn_add(t_EXECF,            tt_inst, QStringLiteral("EXECF"));
+    tn_add(t_FBLOCK,           tt_inst, QStringLiteral("FBLOCK"));
+    tn_add(t_FGE,              tt_inst, QStringLiteral("FGE"));
+    tn_add(t_FGES,             tt_inst, QStringLiteral("FGES"));
+    tn_add(t_FLE,              tt_inst, QStringLiteral("FLE"));
+    tn_add(t_FLES,             tt_inst, QStringLiteral("FLES"));
+    tn_add(t_FLTC,             tt_inst, QStringLiteral("FLTC"));
+    tn_add(t_FLTH,             tt_inst, QStringLiteral("FLTH"));
+    tn_add(t_FLTL,             tt_inst, QStringLiteral("FLTL"));
+    tn_add(t_FLTNC,            tt_inst, QStringLiteral("FLTNC"));
+    tn_add(t_FLTNOT,           tt_inst, QStringLiteral("FLTNOT"));
+    tn_add(t_FLTNZ,            tt_inst, QStringLiteral("FLTNZ"));
+    tn_add(t_FLTRND,           tt_inst, QStringLiteral("FLTRND"));
+    tn_add(t_FLTZ,             tt_inst, QStringLiteral("FLTZ"));
+    tn_add(t_GETBRK,           tt_inst, QStringLiteral("GETBRK"));
+    tn_add(t_GETBYTE,          tt_inst, QStringLiteral("GETBYTE"));
+    tn_add(t_GETCT,            tt_inst, QStringLiteral("GETCT"));
+    tn_add(t_GETNIB,           tt_inst, QStringLiteral("GETNIB"));
+    tn_add(t_GETPTR,           tt_inst, QStringLiteral("GETPTR"));
+    tn_add(t_GETQX,            tt_inst, QStringLiteral("GETQX"));
+    tn_add(t_GETQY,            tt_inst, QStringLiteral("GETQY"));
+    tn_add(t_GETRND,           tt_inst, QStringLiteral("GETRND"));
+    tn_add(t_GETSCP,           tt_inst, QStringLiteral("GETSCP"));
+    tn_add(t_GETWORD,          tt_inst, QStringLiteral("GETWORD"));
+    tn_add(t_GETXACC,          tt_inst, QStringLiteral("GETXACC"));
+    tn_add(t_HUBSET,           tt_inst, QStringLiteral("HUBSET"));
+    tn_add(t_IJNZ,             tt_inst, QStringLiteral("IJNZ"));
+    tn_add(t_IJZ,              tt_inst, QStringLiteral("IJZ"));
+    tn_add(t_INCMOD,           tt_inst, QStringLiteral("INCMOD"));
+    tn_add(t_JATN,             tt_inst, QStringLiteral("JATN"));
+    tn_add(t_JCT1,             tt_inst, QStringLiteral("JCT1"));
+    tn_add(t_JCT2,             tt_inst, QStringLiteral("JCT2"));
+    tn_add(t_JCT3,             tt_inst, QStringLiteral("JCT3"));
+    tn_add(t_JFBW,             tt_inst, QStringLiteral("JFBW"));
+    tn_add(t_JINT,             tt_inst, QStringLiteral("JINT"));
+    tn_add(t_JMP,              tt_inst, QStringLiteral("JMP"));
+    tn_add(t_JMPREL,           tt_inst, QStringLiteral("JMPREL"));
+    tn_add(t_JNATN,            tt_inst, QStringLiteral("JNATN"));
+    tn_add(t_JNCT1,            tt_inst, QStringLiteral("JNCT1"));
+    tn_add(t_JNCT2,            tt_inst, QStringLiteral("JNCT2"));
+    tn_add(t_JNCT3,            tt_inst, QStringLiteral("JNCT3"));
+    tn_add(t_JNFBW,            tt_inst, QStringLiteral("JNFBW"));
+    tn_add(t_JNINT,            tt_inst, QStringLiteral("JNINT"));
+    tn_add(t_JNPAT,            tt_inst, QStringLiteral("JNPAT"));
+    tn_add(t_JNQMT,            tt_inst, QStringLiteral("JNQMT"));
+    tn_add(t_JNSE1,            tt_inst, QStringLiteral("JNSE1"));
+    tn_add(t_JNSE2,            tt_inst, QStringLiteral("JNSE2"));
+    tn_add(t_JNSE3,            tt_inst, QStringLiteral("JNSE3"));
+    tn_add(t_JNSE4,            tt_inst, QStringLiteral("JNSE4"));
+    tn_add(t_JNXFI,            tt_inst, QStringLiteral("JNXFI"));
+    tn_add(t_JNXMT,            tt_inst, QStringLiteral("JNXMT"));
+    tn_add(t_JNXRL,            tt_inst, QStringLiteral("JNXRL"));
+    tn_add(t_JNXRO,            tt_inst, QStringLiteral("JNXRO"));
+    tn_add(t_JPAT,             tt_inst, QStringLiteral("JPAT"));
+    tn_add(t_JQMT,             tt_inst, QStringLiteral("JQMT"));
+    tn_add(t_JSE1,             tt_inst, QStringLiteral("JSE1"));
+    tn_add(t_JSE2,             tt_inst, QStringLiteral("JSE2"));
+    tn_add(t_JSE3,             tt_inst, QStringLiteral("JSE3"));
+    tn_add(t_JSE4,             tt_inst, QStringLiteral("JSE4"));
+    tn_add(t_JXFI,             tt_inst, QStringLiteral("JXFI"));
+    tn_add(t_JXMT,             tt_inst, QStringLiteral("JXMT"));
+    tn_add(t_JXRL,             tt_inst, QStringLiteral("JXRL"));
+    tn_add(t_JXRO,             tt_inst, QStringLiteral("JXRO"));
+    tn_add(t_LOC,              tt_inst, QStringLiteral("LOC"));
+    tn_add(t_LOCKNEW,          tt_inst, QStringLiteral("LOCKNEW"));
+    tn_add(t_LOCKREL,          tt_inst, QStringLiteral("LOCKREL"));
+    tn_add(t_LOCKRET,          tt_inst, QStringLiteral("LOCKRET"));
+    tn_add(t_LOCKTRY,          tt_inst, QStringLiteral("LOCKTRY"));
+    tn_add(t_MERGEB,           tt_inst, QStringLiteral("MERGEB"));
+    tn_add(t_MERGEW,           tt_inst, QStringLiteral("MERGEW"));
+    tn_add(t_MIXPIX,           tt_inst, QStringLiteral("MIXPIX"));
+    tn_add(t_MODCZ,            tt_inst, QStringLiteral("MODCZ"));
+    tn_add(t_MOV,              tt_inst, QStringLiteral("MOV"));
+    tn_add(t_MOVBYTS,          tt_inst, QStringLiteral("MOVBYTS"));
+    tn_add(t_MUL,              tt_inst, QStringLiteral("MUL"));
+    tn_add(t_MULPIX,           tt_inst, QStringLiteral("MULPIX"));
+    tn_add(t_MULS,             tt_inst, QStringLiteral("MULS"));
+    tn_add(t_MUXC,             tt_inst, QStringLiteral("MUXC"));
+    tn_add(t_MUXNC,            tt_inst, QStringLiteral("MUXNC"));
+    tn_add(t_MUXNIBS,          tt_inst, QStringLiteral("MUXNIBS"));
+    tn_add(t_MUXNITS,          tt_inst, QStringLiteral("MUXNITS"));
+    tn_add(t_MUXNZ,            tt_inst, QStringLiteral("MUXNZ"));
+    tn_add(t_MUXQ,             tt_inst, QStringLiteral("MUXQ"));
+    tn_add(t_MUXZ,             tt_inst, QStringLiteral("MUXZ"));
+    tn_add(t_NEG,              tt_inst, QStringLiteral("NEG"));
+    tn_add(t_NEGC,             tt_inst, QStringLiteral("NEGC"));
+    tn_add(t_NEGNC,            tt_inst, QStringLiteral("NEGNC"));
+    tn_add(t_NEGNZ,            tt_inst, QStringLiteral("NEGNZ"));
+    tn_add(t_NEGZ,             tt_inst, QStringLiteral("NEGZ"));
+    tn_add(t_NIXINT1,          tt_inst, QStringLiteral("NIXINT1"));
+    tn_add(t_NIXINT2,          tt_inst, QStringLiteral("NIXINT2"));
+    tn_add(t_NIXINT3,          tt_inst, QStringLiteral("NIXINT3"));
+    tn_add(t_NOP,              tt_inst, QStringLiteral("NOP"));
+    tn_add(t_NOT,              tt_inst, QStringLiteral("NOT"));
+    tn_add(t_ONES,             tt_inst, QStringLiteral("ONES"));
+    tn_add(t_OR,               tt_inst, QStringLiteral("OR"));
+    tn_add(t_OUTC,             tt_inst, QStringLiteral("OUTC"));
+    tn_add(t_OUTH,             tt_inst, QStringLiteral("OUTH"));
+    tn_add(t_OUTL,             tt_inst, QStringLiteral("OUTL"));
+    tn_add(t_OUTNC,            tt_inst, QStringLiteral("OUTNC"));
+    tn_add(t_OUTNOT,           tt_inst, QStringLiteral("OUTNOT"));
+    tn_add(t_OUTNZ,            tt_inst, QStringLiteral("OUTNZ"));
+    tn_add(t_OUTRND,           tt_inst, QStringLiteral("OUTRND"));
+    tn_add(t_OUTZ,             tt_inst, QStringLiteral("OUTZ"));
+    tn_add(t_PA,               tt_inst, QStringLiteral("PA"));
+    tn_add(t_PB,               tt_inst, QStringLiteral("PB"));
+    tn_add(t_POLLATN,          tt_inst, QStringLiteral("POLLATN"));
+    tn_add(t_POLLCT1,          tt_inst, QStringLiteral("POLLCT1"));
+    tn_add(t_POLLCT2,          tt_inst, QStringLiteral("POLLCT2"));
+    tn_add(t_POLLCT3,          tt_inst, QStringLiteral("POLLCT3"));
+    tn_add(t_POLLFBW,          tt_inst, QStringLiteral("POLLFBW"));
+    tn_add(t_POLLINT,          tt_inst, QStringLiteral("POLLINT"));
+    tn_add(t_POLLPAT,          tt_inst, QStringLiteral("POLLPAT"));
+    tn_add(t_POLLQMT,          tt_inst, QStringLiteral("POLLQMT"));
+    tn_add(t_POLLSE1,          tt_inst, QStringLiteral("POLLSE1"));
+    tn_add(t_POLLSE2,          tt_inst, QStringLiteral("POLLSE2"));
+    tn_add(t_POLLSE3,          tt_inst, QStringLiteral("POLLSE3"));
+    tn_add(t_POLLSE4,          tt_inst, QStringLiteral("POLLSE4"));
+    tn_add(t_POLLXFI,          tt_inst, QStringLiteral("POLLXFI"));
+    tn_add(t_POLLXMT,          tt_inst, QStringLiteral("POLLXMT"));
+    tn_add(t_POLLXRL,          tt_inst, QStringLiteral("POLLXRL"));
+    tn_add(t_POLLXRO,          tt_inst, QStringLiteral("POLLXRO"));
+    tn_add(t_POP,              tt_inst, QStringLiteral("POP"));
+    tn_add(t_POPA,             tt_inst, QStringLiteral("POPA"));
+    tn_add(t_POPB,             tt_inst, QStringLiteral("POPB"));
+    tn_add(t_PTRA,             tt_inst, QStringLiteral("PTRA"));
+    tn_add(t_PTRA_postinc,     tt_inst, QStringLiteral("PTRA++"));
+    tn_add(t_PTRA_postdec,     tt_inst, QStringLiteral("PTRA--"));
+    tn_add(t_PTRA_preinc,      tt_inst, QStringLiteral("++PTRA"));
+    tn_add(t_PTRA_predec,      tt_inst, QStringLiteral("--PTRA"));
+    tn_add(t_PTRB,             tt_inst, QStringLiteral("PTRB"));
+    tn_add(t_PTRB_postinc,     tt_inst, QStringLiteral("PTRB++"));
+    tn_add(t_PTRB_postdec,     tt_inst, QStringLiteral("PTRB--"));
+    tn_add(t_PTRB_preinc,      tt_inst, QStringLiteral("++PTRB"));
+    tn_add(t_PTRB_predec,      tt_inst, QStringLiteral("--PTRB"));
+    tn_add(t_PUSH,             tt_inst, QStringLiteral("PUSH"));
+    tn_add(t_PUSHA,            tt_inst, QStringLiteral("PUSHA"));
+    tn_add(t_PUSHB,            tt_inst, QStringLiteral("PUSHB"));
+    tn_add(t_QDIV,             tt_inst, QStringLiteral("QDIV"));
+    tn_add(t_QEXP,             tt_inst, QStringLiteral("QEXP"));
+    tn_add(t_QFRAC,            tt_inst, QStringLiteral("QFRAC"));
+    tn_add(t_QLOG,             tt_inst, QStringLiteral("QLOG"));
+    tn_add(t_QMUL,             tt_inst, QStringLiteral("QMUL"));
+    tn_add(t_QROTATE,          tt_inst, QStringLiteral("QROTATE"));
+    tn_add(t_QSQRT,            tt_inst, QStringLiteral("QSQRT"));
+    tn_add(t_QVECTOR,          tt_inst, QStringLiteral("QVECTOR"));
+    tn_add(t_RCL,              tt_inst, QStringLiteral("RCL"));
+    tn_add(t_RCR,              tt_inst, QStringLiteral("RCR"));
+    tn_add(t_RCZL,             tt_inst, QStringLiteral("RCZL"));
+    tn_add(t_RCZR,             tt_inst, QStringLiteral("RCZR"));
+    tn_add(t_RDBYTE,           tt_inst, QStringLiteral("RDBYTE"));
+    tn_add(t_RDFAST,           tt_inst, QStringLiteral("RDFAST"));
+    tn_add(t_RDLONG,           tt_inst, QStringLiteral("RDLONG"));
+    tn_add(t_RDLUT,            tt_inst, QStringLiteral("RDLUT"));
+    tn_add(t_RDPIN,            tt_inst, QStringLiteral("RDPIN"));
+    tn_add(t_RDWORD,           tt_inst, QStringLiteral("RDWORD"));
+    tn_add(t_REP,              tt_inst, QStringLiteral("REP"));
+    tn_add(t_RESI0,            tt_inst, QStringLiteral("RESI0"));
+    tn_add(t_RESI1,            tt_inst, QStringLiteral("RESI1"));
+    tn_add(t_RESI2,            tt_inst, QStringLiteral("RESI2"));
+    tn_add(t_RESI3,            tt_inst, QStringLiteral("RESI3"));
+    tn_add(t_RET,              tt_inst, QStringLiteral("RET"));
+    tn_add(t_RETA,             tt_inst, QStringLiteral("RETA"));
+    tn_add(t_RETB,             tt_inst, QStringLiteral("RETB"));
+    tn_add(t_RETI0,            tt_inst, QStringLiteral("RETI0"));
+    tn_add(t_RETI1,            tt_inst, QStringLiteral("RETI1"));
+    tn_add(t_RETI2,            tt_inst, QStringLiteral("RETI2"));
+    tn_add(t_RETI3,            tt_inst, QStringLiteral("RETI3"));
+    tn_add(t_REV,              tt_inst, QStringLiteral("REV"));
+    tn_add(t_RFBYTE,           tt_inst, QStringLiteral("RFBYTE"));
+    tn_add(t_RFLONG,           tt_inst, QStringLiteral("RFLONG"));
+    tn_add(t_RFVAR,            tt_inst, QStringLiteral("RFVAR"));
+    tn_add(t_RFVARS,           tt_inst, QStringLiteral("RFVARS"));
+    tn_add(t_RFWORD,           tt_inst, QStringLiteral("RFWORD"));
+    tn_add(t_RGBEXP,           tt_inst, QStringLiteral("RGBEXP"));
+    tn_add(t_RGBSQZ,           tt_inst, QStringLiteral("RGBSQZ"));
+    tn_add(t_ROL,              tt_inst, QStringLiteral("ROL"));
+    tn_add(t_ROLBYTE,          tt_inst, QStringLiteral("ROLBYTE"));
+    tn_add(t_ROLNIB,           tt_inst, QStringLiteral("ROLNIB"));
+    tn_add(t_ROLWORD,          tt_inst, QStringLiteral("ROLWORD"));
+    tn_add(t_ROR,              tt_inst, QStringLiteral("ROR"));
+    tn_add(t_RQPIN,            tt_inst, QStringLiteral("RQPIN"));
+    tn_add(t_SAL,              tt_inst, QStringLiteral("SAL"));
+    tn_add(t_SAR,              tt_inst, QStringLiteral("SAR"));
+    tn_add(t_SCA,              tt_inst, QStringLiteral("SCA"));
+    tn_add(t_SCAS,             tt_inst, QStringLiteral("SCAS"));
+    tn_add(t_SETBYTE,          tt_inst, QStringLiteral("SETBYTE"));
+    tn_add(t_SETCFRQ,          tt_inst, QStringLiteral("SETCFRQ"));
+    tn_add(t_SETCI,            tt_inst, QStringLiteral("SETCI"));
+    tn_add(t_SETCMOD,          tt_inst, QStringLiteral("SETCMOD"));
+    tn_add(t_SETCQ,            tt_inst, QStringLiteral("SETCQ"));
+    tn_add(t_SETCY,            tt_inst, QStringLiteral("SETCY"));
+    tn_add(t_SETD,             tt_inst, QStringLiteral("SETD"));
+    tn_add(t_SETDACS,          tt_inst, QStringLiteral("SETDACS"));
+    tn_add(t_SETINT1,          tt_inst, QStringLiteral("SETINT1"));
+    tn_add(t_SETINT2,          tt_inst, QStringLiteral("SETINT2"));
+    tn_add(t_SETINT3,          tt_inst, QStringLiteral("SETINT3"));
+    tn_add(t_SETLUTS,          tt_inst, QStringLiteral("SETLUTS"));
+    tn_add(t_SETNIB,           tt_inst, QStringLiteral("SETNIB"));
+    tn_add(t_SETPAT,           tt_inst, QStringLiteral("SETPAT"));
+    tn_add(t_SETPIV,           tt_inst, QStringLiteral("SETPIV"));
+    tn_add(t_SETPIX,           tt_inst, QStringLiteral("SETPIX"));
+    tn_add(t_SETQ,             tt_inst, QStringLiteral("SETQ"));
+    tn_add(t_SETQ2,            tt_inst, QStringLiteral("SETQ2"));
+    tn_add(t_SETR,             tt_inst, QStringLiteral("SETR"));
+    tn_add(t_SETS,             tt_inst, QStringLiteral("SETS"));
+    tn_add(t_SETSCP,           tt_inst, QStringLiteral("SETSCP"));
+    tn_add(t_SETSE1,           tt_inst, QStringLiteral("SETSE1"));
+    tn_add(t_SETSE2,           tt_inst, QStringLiteral("SETSE2"));
+    tn_add(t_SETSE3,           tt_inst, QStringLiteral("SETSE3"));
+    tn_add(t_SETSE4,           tt_inst, QStringLiteral("SETSE4"));
+    tn_add(t_SETWORD,          tt_inst, QStringLiteral("SETWORD"));
+    tn_add(t_SETXFRQ,          tt_inst, QStringLiteral("SETXFRQ"));
+    tn_add(t_SEUSSF,           tt_inst, QStringLiteral("SEUSSF"));
+    tn_add(t_SEUSSR,           tt_inst, QStringLiteral("SEUSSR"));
+    tn_add(t_SHL,              tt_inst, QStringLiteral("SHL"));
+    tn_add(t_SHR,              tt_inst, QStringLiteral("SHR"));
+    tn_add(t_SIGNX,            tt_inst, QStringLiteral("SIGNX"));
+    tn_add(t_SKIP,             tt_inst, QStringLiteral("SKIP"));
+    tn_add(t_SKIPF,            tt_inst, QStringLiteral("SKIPF"));
+    tn_add(t_SPACE,            tt_inst, QStringLiteral("SPACE"));
+    tn_add(t_SPLITB,           tt_inst, QStringLiteral("SPLITB"));
+    tn_add(t_SPLITW,           tt_inst, QStringLiteral("SPLITW"));
+    tn_add(t_STALLI,           tt_inst, QStringLiteral("STALLI"));
+    tn_add(t_SUB,              tt_inst, QStringLiteral("SUB"));
+    tn_add(t_SUBR,             tt_inst, QStringLiteral("SUBR"));
+    tn_add(t_SUBS,             tt_inst, QStringLiteral("SUBS"));
+    tn_add(t_SUBSX,            tt_inst, QStringLiteral("SUBSX"));
+    tn_add(t_SUBX,             tt_inst, QStringLiteral("SUBX"));
+    tn_add(t_SUMC,             tt_inst, QStringLiteral("SUMC"));
+    tn_add(t_SUMNC,            tt_inst, QStringLiteral("SUMNC"));
+    tn_add(t_SUMNZ,            tt_inst, QStringLiteral("SUMNZ"));
+    tn_add(t_SUMZ,             tt_inst, QStringLiteral("SUMZ"));
+    tn_add(t_TEST,             tt_inst, QStringLiteral("TEST"));
+    tn_add(t_TESTB,            tt_inst, QStringLiteral("TESTB"));
+    tn_add(t_TESTBN,           tt_inst, QStringLiteral("TESTBN"));
+    tn_add(t_TESTN,            tt_inst, QStringLiteral("TESTN"));
+    tn_add(t_TESTP,            tt_inst, QStringLiteral("TESTP"));
+    tn_add(t_TESTPN,           tt_inst, QStringLiteral("TESTPN"));
+    tn_add(t_TJF,              tt_inst, QStringLiteral("TJF"));
+    tn_add(t_TJNF,             tt_inst, QStringLiteral("TJNF"));
+    tn_add(t_TJNS,             tt_inst, QStringLiteral("TJNS"));
+    tn_add(t_TJNZ,             tt_inst, QStringLiteral("TJNZ"));
+    tn_add(t_TJS,              tt_inst, QStringLiteral("TJS"));
+    tn_add(t_TJV,              tt_inst, QStringLiteral("TJV"));
+    tn_add(t_TJZ,              tt_inst, QStringLiteral("TJZ"));
+    tn_add(t_TRGINT1,          tt_inst, QStringLiteral("TRGINT1"));
+    tn_add(t_TRGINT2,          tt_inst, QStringLiteral("TRGINT2"));
+    tn_add(t_TRGINT3,          tt_inst, QStringLiteral("TRGINT3"));
+    tn_add(t_WAITATN,          tt_inst, QStringLiteral("WAITATN"));
+    tn_add(t_WAITCT1,          tt_inst, QStringLiteral("WAITCT1"));
+    tn_add(t_WAITCT2,          tt_inst, QStringLiteral("WAITCT2"));
+    tn_add(t_WAITCT3,          tt_inst, QStringLiteral("WAITCT3"));
+    tn_add(t_WAITFBW,          tt_inst, QStringLiteral("WAITFBW"));
+    tn_add(t_WAITINT,          tt_inst, QStringLiteral("WAITINT"));
+    tn_add(t_WAITPAT,          tt_inst, QStringLiteral("WAITPAT"));
+    tn_add(t_WAITSE1,          tt_inst, QStringLiteral("WAITSE1"));
+    tn_add(t_WAITSE2,          tt_inst, QStringLiteral("WAITSE2"));
+    tn_add(t_WAITSE3,          tt_inst, QStringLiteral("WAITSE3"));
+    tn_add(t_WAITSE4,          tt_inst, QStringLiteral("WAITSE4"));
+    tn_add(t_WAITX,            tt_inst, QStringLiteral("WAITX"));
+    tn_add(t_WAITXFI,          tt_inst, QStringLiteral("WAITXFI"));
+    tn_add(t_WAITXMT,          tt_inst, QStringLiteral("WAITXMT"));
+    tn_add(t_WAITXRL,          tt_inst, QStringLiteral("WAITXRL"));
+    tn_add(t_WAITXRO,          tt_inst, QStringLiteral("WAITXRO"));
+    tn_add(t_WFBYTE,           tt_inst, QStringLiteral("WFBYTE"));
+    tn_add(t_WFLONG,           tt_inst, QStringLiteral("WFLONG"));
+    tn_add(t_WFWORD,           tt_inst, QStringLiteral("WFWORD"));
+    tn_add(t_WMLONG,           tt_inst, QStringLiteral("WMLONG"));
+    tn_add(t_WRBYTE,           tt_inst, QStringLiteral("WRBYTE"));
+    tn_add(t_WRC,              tt_inst, QStringLiteral("WRC"));
+    tn_add(t_WRFAST,           tt_inst, QStringLiteral("WRFAST"));
+    tn_add(t_WRLONG,           tt_inst, QStringLiteral("WRLONG"));
+    tn_add(t_WRLUT,            tt_inst, QStringLiteral("WRLUT"));
+    tn_add(t_WRNC,             tt_inst, QStringLiteral("WRNC"));
+    tn_add(t_WRNZ,             tt_inst, QStringLiteral("WRNZ"));
+    tn_add(t_WRPIN,            tt_inst, QStringLiteral("WRPIN"));
+    tn_add(t_WRWORD,           tt_inst, QStringLiteral("WRWORD"));
+    tn_add(t_WRZ,              tt_inst, QStringLiteral("WRZ"));
+    tn_add(t_WXPIN,            tt_inst, QStringLiteral("WXPIN"));
+    tn_add(t_WYPIN,            tt_inst, QStringLiteral("WYPIN"));
+    tn_add(t_XCONT,            tt_inst, QStringLiteral("XCONT"));
+    tn_add(t_XINIT,            tt_inst, QStringLiteral("XINIT"));
+    tn_add(t_XOR,              tt_inst, QStringLiteral("XOR"));
+    tn_add(t_XORO32,           tt_inst, QStringLiteral("XORO32"));
+    tn_add(t_XSTOP,            tt_inst, QStringLiteral("XSTOP"));
+    tn_add(t_XZERO,            tt_inst, QStringLiteral("XZERO"));
+    tn_add(t_ZEROX,            tt_inst, QStringLiteral("ZEROX"));
+    tn_add(t_empty,            tt_inst, QStringLiteral("<empty>"));
 
-    // Set the type to tt_inst for whats in the hash now
-    foreach(p2_token_e tok, m_token_name.keys())
-            tt_set(tok, tt_inst);
+    tn_add(t_invalid,          tt_lexer, QStringLiteral("<invalid>"));
+    tn_add(t_unknown,          tt_lexer, QStringLiteral("«expr»"));
+    tn_add(t_comma,            tt_lexer, QStringLiteral(","));
+    tn_add(t_string,           tt_lexer, QStringLiteral("«string»"));
+    tn_add(t_bin_const,        tt_lexer, QStringLiteral("«bin»"));
+    tn_add(t_oct_const,        tt_lexer, QStringLiteral("«oct»"));
+    tn_add(t_dec_const,        tt_lexer, QStringLiteral("«dec»"));
+    tn_add(t_hex_const,        tt_lexer, QStringLiteral("«hex»"));
+    tn_add(t_locsym,           tt_lexer, QStringLiteral("«locsym»"));
+    tn_add(t_symbol,           tt_lexer, QStringLiteral("«symbol»"));
+    tn_add(t_expression,       tt_lexer, QStringLiteral("«expression»"));
 
-    m_token_name.insert(t_invalid,          QStringLiteral("<invalid>"));
-    m_token_name.insert(t_unknown,          QStringLiteral("«expr»"));
-    m_token_name.insert(t_comma,            QStringLiteral(","));
-    m_token_name.insert(t_string,           QStringLiteral("«string»"));
-    m_token_name.insert(t_bin_const,        QStringLiteral("«bin»"));
-    m_token_name.insert(t_oct_const,        QStringLiteral("«oct»"));
-    m_token_name.insert(t_dec_const,        QStringLiteral("«dec»"));
-    m_token_name.insert(t_hex_const,        QStringLiteral("«hex»"));
-    m_token_name.insert(t_locsym,           QStringLiteral("«locsym»"));
-    m_token_name.insert(t_symbol,           QStringLiteral("«symbol»"));
-    m_token_name.insert(t_expression,       QStringLiteral("«expression»"));
 
-    tt_set(t_invalid,       tt_lexer);
-    tt_set(t_unknown,       tt_lexer);
-    tt_set(t_comma,         tt_lexer);
-    tt_set(t_string,        tt_lexer);
-    tt_set(t_bin_const,     tt_lexer);
-    tt_set(t_oct_const,     tt_lexer);
-    tt_set(t_dec_const,     tt_lexer);
-    tt_set(t_hex_const,     tt_lexer);
-    tt_set(t_locsym,        tt_lexer);
-    tt_set(t_symbol,        tt_lexer);
-    tt_set(t_expression,    tt_lexer);
+    tn_add(t__RET_,            tt_conditional, QStringLiteral("_RET_"));
+    tn_add(t_IF_NZ_AND_NC,     tt_conditional, QStringLiteral("IF_NZ_AND_NC"));
+    tn_add(t_IF_NC_AND_NZ,     tt_conditional, QStringLiteral("IF_NC_AND_NZ"));
+    tn_add(t_IF_A,             tt_conditional, QStringLiteral("IF_A"));
+    tn_add(t_IF_GT,            tt_conditional, QStringLiteral("IF_GT"));
+    tn_add(t_IF_Z_AND_NC,      tt_conditional, QStringLiteral("IF_Z_AND_NC"));
+    tn_add(t_IF_NC_AND_Z,      tt_conditional, QStringLiteral("IF_NC_AND_Z"));
+    tn_add(t_IF_NC,            tt_conditional, QStringLiteral("IF_NC"));
+    tn_add(t_IF_AE,            tt_conditional, QStringLiteral("IF_AE"));
+    tn_add(t_IF_GE,            tt_conditional, QStringLiteral("IF_GE"));
+    tn_add(t_IF_NZ_AND_C,      tt_conditional, QStringLiteral("IF_NZ_AND_C"));
+    tn_add(t_IF_C_AND_NZ,      tt_conditional, QStringLiteral("IF_C_AND_NZ"));
+    tn_add(t_IF_NZ,            tt_conditional, QStringLiteral("IF_NZ"));
+    tn_add(t_IF_NE,            tt_conditional, QStringLiteral("IF_NE"));
+    tn_add(t_IF_Z_NE_C,        tt_conditional, QStringLiteral("IF_Z_NE_C"));
+    tn_add(t_IF_C_NE_Z,        tt_conditional, QStringLiteral("IF_C_NE_Z"));
+    tn_add(t_IF_NZ_OR_NC,      tt_conditional, QStringLiteral("IF_NZ_OR_NC"));
+    tn_add(t_IF_NC_OR_NZ,      tt_conditional, QStringLiteral("IF_NC_OR_NZ"));
+    tn_add(t_IF_Z_AND_C,       tt_conditional, QStringLiteral("IF_Z_AND_C"));
+    tn_add(t_IF_C_AND_Z,       tt_conditional, QStringLiteral("IF_C_AND_Z"));
+    tn_add(t_IF_Z_EQ_C,        tt_conditional, QStringLiteral("IF_Z_EQ_C"));
+    tn_add(t_IF_C_EQ_Z,        tt_conditional, QStringLiteral("IF_C_EQ_Z"));
+    tn_add(t_IF_Z,             tt_conditional, QStringLiteral("IF_Z"));
+    tn_add(t_IF_E,             tt_conditional, QStringLiteral("IF_E"));
+    tn_add(t_IF_Z_OR_NC,       tt_conditional, QStringLiteral("IF_Z_OR_NC"));
+    tn_add(t_IF_NC_OR_Z,       tt_conditional, QStringLiteral("IF_NC_OR_Z"));
+    tn_add(t_IF_C,             tt_conditional, QStringLiteral("IF_C"));
+    tn_add(t_IF_B,             tt_conditional, QStringLiteral("IF_B"));
+    tn_add(t_IF_LT,            tt_conditional, QStringLiteral("IF_LT"));
+    tn_add(t_IF_NZ_OR_C,       tt_conditional, QStringLiteral("IF_NZ_OR_C"));
+    tn_add(t_IF_C_OR_NZ,       tt_conditional, QStringLiteral("IF_C_OR_NZ"));
+    tn_add(t_IF_Z_OR_C,        tt_conditional, QStringLiteral("IF_Z_OR_C"));
+    tn_add(t_IF_C_OR_Z,        tt_conditional, QStringLiteral("IF_C_OR_Z"));
+    tn_add(t_IF_BE,            tt_conditional, QStringLiteral("IF_BE"));
+    tn_add(t_IF_LE,            tt_conditional, QStringLiteral("IF_LE"));
+    tn_add(t_IF_ALWAYS,        tt_conditional, QStringLiteral("IF_ALWAYS"));
 
-    m_token_name.insert(t_empty,            QStringLiteral("<empty>"));
+    tn_add(t_MODCZ__CLR,       tt_modcz_param, QStringLiteral("_CLR"));
+    tn_add(t_MODCZ__NC_AND_NZ, tt_modcz_param, QStringLiteral("_NC_AND_NZ"));
+    tn_add(t_MODCZ__NZ_AND_NC, tt_modcz_param, QStringLiteral("_NZ_AND_NC"));
+    tn_add(t_MODCZ__GT,        tt_modcz_param, QStringLiteral("_GT"));
+    tn_add(t_MODCZ__NC_AND_Z,  tt_modcz_param, QStringLiteral("_NC_AND_Z"));
+    tn_add(t_MODCZ__Z_AND_NC,  tt_modcz_param, QStringLiteral("_Z_AND_NC"));
+    tn_add(t_MODCZ__NC,        tt_modcz_param, QStringLiteral("_NC"));
+    tn_add(t_MODCZ__GE,        tt_modcz_param, QStringLiteral("_GE"));
+    tn_add(t_MODCZ__C_AND_NZ,  tt_modcz_param, QStringLiteral("_C_AND_NZ"));
+    tn_add(t_MODCZ__NZ_AND_C,  tt_modcz_param, QStringLiteral("_NZ_AND_C"));
+    tn_add(t_MODCZ__NZ,        tt_modcz_param, QStringLiteral("_NZ"));
+    tn_add(t_MODCZ__NE,        tt_modcz_param, QStringLiteral("_NE"));
+    tn_add(t_MODCZ__C_NE_Z,    tt_modcz_param, QStringLiteral("_C_NE_Z"));
+    tn_add(t_MODCZ__Z_NE_C,    tt_modcz_param, QStringLiteral("_Z_NE_C"));
+    tn_add(t_MODCZ__NC_OR_NZ,  tt_modcz_param, QStringLiteral("_NC_OR_NZ"));
+    tn_add(t_MODCZ__NZ_OR_NC,  tt_modcz_param, QStringLiteral("_NZ_OR_NC"));
+    tn_add(t_MODCZ__C_AND_Z,   tt_modcz_param, QStringLiteral("_C_AND_Z"));
+    tn_add(t_MODCZ__Z_AND_C,   tt_modcz_param, QStringLiteral("_Z_AND_C"));
+    tn_add(t_MODCZ__C_EQ_Z,    tt_modcz_param, QStringLiteral("_C_EQ_Z"));
+    tn_add(t_MODCZ__Z_EQ_C,    tt_modcz_param, QStringLiteral("_Z_EQ_C"));
+    tn_add(t_MODCZ__Z,         tt_modcz_param, QStringLiteral("_Z"));
+    tn_add(t_MODCZ__E,         tt_modcz_param, QStringLiteral("_E"));
+    tn_add(t_MODCZ__NC_OR_Z,   tt_modcz_param, QStringLiteral("_NC_OR_Z"));
+    tn_add(t_MODCZ__Z_OR_NC,   tt_modcz_param, QStringLiteral("_Z_OR_NC"));
+    tn_add(t_MODCZ__C,         tt_modcz_param, QStringLiteral("_C"));
+    tn_add(t_MODCZ__LT,        tt_modcz_param, QStringLiteral("_LT"));
+    tn_add(t_MODCZ__C_OR_NZ,   tt_modcz_param, QStringLiteral("_C_OR_NZ"));
+    tn_add(t_MODCZ__NZ_OR_C,   tt_modcz_param, QStringLiteral("_NZ_OR_C"));
+    tn_add(t_MODCZ__C_OR_Z,    tt_modcz_param, QStringLiteral("_C_OR_Z"));
+    tn_add(t_MODCZ__Z_OR_C,    tt_modcz_param, QStringLiteral("_Z_OR_C"));
+    tn_add(t_MODCZ__LE,        tt_modcz_param, QStringLiteral("_LE"));
+    tn_add(t_MODCZ__SET,       tt_modcz_param, QStringLiteral("_SET"));
 
-    m_token_name.insert(t__RET_,            QStringLiteral("_RET_"));
-    m_token_name.insert(t_IF_NZ_AND_NC,     QStringLiteral("IF_NZ_AND_NC"));
-    m_token_name.insert(t_IF_NC_AND_NZ,     QStringLiteral("IF_NC_AND_NZ"));
-    m_token_name.insert(t_IF_A,             QStringLiteral("IF_A"));
-    m_token_name.insert(t_IF_GT,            QStringLiteral("IF_GT"));
-    m_token_name.insert(t_IF_Z_AND_NC,      QStringLiteral("IF_Z_AND_NC"));
-    m_token_name.insert(t_IF_NC_AND_Z,      QStringLiteral("IF_NC_AND_Z"));
-    m_token_name.insert(t_IF_NC,            QStringLiteral("IF_NC"));
-    m_token_name.insert(t_IF_AE,            QStringLiteral("IF_AE"));
-    m_token_name.insert(t_IF_GE,            QStringLiteral("IF_GE"));
-    m_token_name.insert(t_IF_NZ_AND_C,      QStringLiteral("IF_NZ_AND_C"));
-    m_token_name.insert(t_IF_C_AND_NZ,      QStringLiteral("IF_C_AND_NZ"));
-    m_token_name.insert(t_IF_NZ,            QStringLiteral("IF_NZ"));
-    m_token_name.insert(t_IF_NE,            QStringLiteral("IF_NE"));
-    m_token_name.insert(t_IF_Z_NE_C,        QStringLiteral("IF_Z_NE_C"));
-    m_token_name.insert(t_IF_C_NE_Z,        QStringLiteral("IF_C_NE_Z"));
-    m_token_name.insert(t_IF_NZ_OR_NC,      QStringLiteral("IF_NZ_OR_NC"));
-    m_token_name.insert(t_IF_NC_OR_NZ,      QStringLiteral("IF_NC_OR_NZ"));
-    m_token_name.insert(t_IF_Z_AND_C,       QStringLiteral("IF_Z_AND_C"));
-    m_token_name.insert(t_IF_C_AND_Z,       QStringLiteral("IF_C_AND_Z"));
-    m_token_name.insert(t_IF_Z_EQ_C,        QStringLiteral("IF_Z_EQ_C"));
-    m_token_name.insert(t_IF_C_EQ_Z,        QStringLiteral("IF_C_EQ_Z"));
-    m_token_name.insert(t_IF_Z,             QStringLiteral("IF_Z"));
-    m_token_name.insert(t_IF_E,             QStringLiteral("IF_E"));
-    m_token_name.insert(t_IF_Z_OR_NC,       QStringLiteral("IF_Z_OR_NC"));
-    m_token_name.insert(t_IF_NC_OR_Z,       QStringLiteral("IF_NC_OR_Z"));
-    m_token_name.insert(t_IF_C,             QStringLiteral("IF_C"));
-    m_token_name.insert(t_IF_B,             QStringLiteral("IF_B"));
-    m_token_name.insert(t_IF_LT,            QStringLiteral("IF_LT"));
-    m_token_name.insert(t_IF_NZ_OR_C,       QStringLiteral("IF_NZ_OR_C"));
-    m_token_name.insert(t_IF_C_OR_NZ,       QStringLiteral("IF_C_OR_NZ"));
-    m_token_name.insert(t_IF_Z_OR_C,        QStringLiteral("IF_Z_OR_C"));
-    m_token_name.insert(t_IF_C_OR_Z,        QStringLiteral("IF_C_OR_Z"));
-    m_token_name.insert(t_IF_BE,            QStringLiteral("IF_BE"));
-    m_token_name.insert(t_IF_LE,            QStringLiteral("IF_LE"));
-    m_token_name.insert(t_IF_ALWAYS,        QStringLiteral("IF_ALWAYS"));
+    tn_add(t_WC,               tt_wcz_suffix, QStringLiteral("WC"));
+    tn_add(t_WZ,               tt_wcz_suffix, QStringLiteral("WZ"));
+    tn_add(t_WCZ,              tt_wcz_suffix, QStringLiteral("WCZ"));
+    tn_add(t_ANDC,             tt_wcz_suffix, QStringLiteral("ANDC"));
+    tn_add(t_ANDZ,             tt_wcz_suffix, QStringLiteral("ANDZ"));
+    tn_add(t_ORC,              tt_wcz_suffix, QStringLiteral("ORC"));
+    tn_add(t_ORZ,              tt_wcz_suffix, QStringLiteral("ORZ"));
+    tn_add(t_XORC,             tt_wcz_suffix, QStringLiteral("XORC"));
+    tn_add(t_XORZ,             tt_wcz_suffix, QStringLiteral("XORZ"));
 
-    m_token_name.insert(t_MODCZ__CLR,       QStringLiteral("_CLR"));
-    m_token_name.insert(t_MODCZ__NC_AND_NZ, QStringLiteral("_NC_AND_NZ"));
-    m_token_name.insert(t_MODCZ__NZ_AND_NC, QStringLiteral("_NZ_AND_NC"));
-    m_token_name.insert(t_MODCZ__GT,        QStringLiteral("_GT"));
-    m_token_name.insert(t_MODCZ__NC_AND_Z,  QStringLiteral("_NC_AND_Z"));
-    m_token_name.insert(t_MODCZ__Z_AND_NC,  QStringLiteral("_Z_AND_NC"));
-    m_token_name.insert(t_MODCZ__NC,        QStringLiteral("_NC"));
-    m_token_name.insert(t_MODCZ__GE,        QStringLiteral("_GE"));
-    m_token_name.insert(t_MODCZ__C_AND_NZ,  QStringLiteral("_C_AND_NZ"));
-    m_token_name.insert(t_MODCZ__NZ_AND_C,  QStringLiteral("_NZ_AND_C"));
-    m_token_name.insert(t_MODCZ__NZ,        QStringLiteral("_NZ"));
-    m_token_name.insert(t_MODCZ__NE,        QStringLiteral("_NE"));
-    m_token_name.insert(t_MODCZ__C_NE_Z,    QStringLiteral("_C_NE_Z"));
-    m_token_name.insert(t_MODCZ__Z_NE_C,    QStringLiteral("_Z_NE_C"));
-    m_token_name.insert(t_MODCZ__NC_OR_NZ,  QStringLiteral("_NC_OR_NZ"));
-    m_token_name.insert(t_MODCZ__NZ_OR_NC,  QStringLiteral("_NZ_OR_NC"));
-    m_token_name.insert(t_MODCZ__C_AND_Z,   QStringLiteral("_C_AND_Z"));
-    m_token_name.insert(t_MODCZ__Z_AND_C,   QStringLiteral("_Z_AND_C"));
-    m_token_name.insert(t_MODCZ__C_EQ_Z,    QStringLiteral("_C_EQ_Z"));
-    m_token_name.insert(t_MODCZ__Z_EQ_C,    QStringLiteral("_Z_EQ_C"));
-    m_token_name.insert(t_MODCZ__Z,         QStringLiteral("_Z"));
-    m_token_name.insert(t_MODCZ__E,         QStringLiteral("_E"));
-    m_token_name.insert(t_MODCZ__NC_OR_Z,   QStringLiteral("_NC_OR_Z"));
-    m_token_name.insert(t_MODCZ__Z_OR_NC,   QStringLiteral("_Z_OR_NC"));
-    m_token_name.insert(t_MODCZ__C,         QStringLiteral("_C"));
-    m_token_name.insert(t_MODCZ__LT,        QStringLiteral("_LT"));
-    m_token_name.insert(t_MODCZ__C_OR_NZ,   QStringLiteral("_C_OR_NZ"));
-    m_token_name.insert(t_MODCZ__NZ_OR_C,   QStringLiteral("_NZ_OR_C"));
-    m_token_name.insert(t_MODCZ__C_OR_Z,    QStringLiteral("_C_OR_Z"));
-    m_token_name.insert(t_MODCZ__Z_OR_C,    QStringLiteral("_Z_OR_C"));
-    m_token_name.insert(t_MODCZ__LE,        QStringLiteral("_LE"));
-    m_token_name.insert(t_MODCZ__SET,       QStringLiteral("_SET"));
+    // Data
+    tn_add(t__BYTE,            tm_inst | tm_data, QStringLiteral("BYTE"));
+    tn_add(t__WORD,            tm_inst | tm_data, QStringLiteral("WORD"));
+    tn_add(t__LONG,            tm_inst | tm_data, QStringLiteral("LONG"));
+    tn_add(t__RES,             tm_inst | tm_data, QStringLiteral("RES"));
 
-    m_token_name.insert(t_WC,               QStringLiteral("WC"));
-    m_token_name.insert(t_WZ,               QStringLiteral("WZ"));
-    m_token_name.insert(t_WCZ,              QStringLiteral("WCZ"));
-    m_token_name.insert(t_ANDC,             QStringLiteral("ANDC"));
-    m_token_name.insert(t_ANDZ,             QStringLiteral("ANDZ"));
-    m_token_name.insert(t_ORC,              QStringLiteral("ORC"));
-    m_token_name.insert(t_ORZ,              QStringLiteral("ORZ"));
-    m_token_name.insert(t_XORC,             QStringLiteral("XORC"));
-    m_token_name.insert(t_XORZ,             QStringLiteral("XORZ"));
+    // Section control
+    tn_add(t__DAT,             tt_section, QStringLiteral("DAT"));
+    tn_add(t__CON,             tt_section, QStringLiteral("CON"));
+    tn_add(t__PUB,             tt_section, QStringLiteral("PUB"));
+    tn_add(t__PRI,             tt_section, QStringLiteral("PRI"));
+    tn_add(t__VAR,             tt_section, QStringLiteral("VAR"));
 
-    m_token_name.insert(t__BYTE,            QStringLiteral("BYTE"));
-    m_token_name.insert(t__WORD,            QStringLiteral("WORD"));
-    m_token_name.insert(t__LONG,            QStringLiteral("LONG"));
-    m_token_name.insert(t__RES,             QStringLiteral("RES"));
-    m_token_name.insert(t__FIT,             QStringLiteral("FIT"));
+    // Origin control
+    tn_add(t__ORG,             tt_origin, QStringLiteral("ORG"));
+    tn_add(t__ORGH,            tt_origin, QStringLiteral("ORGH"));
+    tn_add(t__FIT,             tt_origin, QStringLiteral("FIT"));
 
-    m_token_name.insert(t__DAT,             QStringLiteral("DAT"));
-    m_token_name.insert(t__CON,             QStringLiteral("CON"));
-    m_token_name.insert(t__PUB,             QStringLiteral("PUB"));
-    m_token_name.insert(t__PRI,             QStringLiteral("PRI"));
-    m_token_name.insert(t__VAR,             QStringLiteral("VAR"));
+    // Assignment
+    tn_add(t__ASSIGN,          tt_assignment, QStringLiteral("="));
 
-    m_token_name.insert(t__ORG,             QStringLiteral("ORG"));
-    m_token_name.insert(t__ORGH,            QStringLiteral("ORGH"));
-    m_token_name.insert(t__ASSIGN,          QStringLiteral("="));
+    // Current PC reference
     m_token_name.insert(t__DOLLAR,          QStringLiteral("$"));
 
-    m_token_name.insert(t__LPAREN,          QStringLiteral("("));
-    m_token_name.insert(t__RPAREN,          QStringLiteral(")"));
+    // Sub expression in parens
+    tn_add(t__LPAREN,          tt_parens, QStringLiteral("("));
+    tn_add(t__RPAREN,          tt_parens, QStringLiteral(")"));
 
     // Set the primary operators
-    m_token_name.insert(t__INC,             QStringLiteral("++"));
-    m_token_name.insert(t__DEC,             QStringLiteral("--"));
-    tt_set(t__INC, tt_primary);
-    tt_set(t__DEC, tt_primary);
+    tn_add(t__INC,             tt_primary, QStringLiteral("++"));
+    tn_add(t__DEC,             tt_primary, QStringLiteral("--"));
 
     // Set the unary operators
-    m_token_name.insert(t__NEG,             QStringLiteral("!"));
-    m_token_name.insert(t__NOT,             QStringLiteral("~"));
-    tt_set(t__NEG, tt_unary);
-    tt_set(t__NOT, tt_unary);
+    tn_add(t__NEG,             tt_unary, QStringLiteral("!"));
+    tn_add(t__NOT,             tt_unary, QStringLiteral("~"));
     tt_set(t__ADD, tt_unary);
     tt_set(t__SUB, tt_unary);
 
     // Set the multiplication operators
-    m_token_name.insert(t__MUL,             QStringLiteral("*"));
-    m_token_name.insert(t__DIV,             QStringLiteral("/"));
-    m_token_name.insert(t__MOD,             QStringLiteral("\\"));
-    tt_set(t__MUL, tt_mulop);
-    tt_set(t__DIV, tt_mulop);
-    tt_set(t__MOD, tt_mulop);
+    tn_add(t__MUL,             tt_mulop, QStringLiteral("*"));
+    tn_add(t__DIV,             tt_mulop, QStringLiteral("/"));
+    tn_add(t__MOD,             tt_mulop, QStringLiteral("\\"));
 
     // Set the addition operators
-    m_token_name.insert(t__ADD,             QStringLiteral("+"));
-    m_token_name.insert(t__SUB,             QStringLiteral("-"));
-    tt_set(t__ADD, tt_addop);
-    tt_set(t__SUB, tt_addop);
-
+    tn_add(t__ADD,             tt_addop, QStringLiteral("+"));
+    tn_add(t__SUB,             tt_addop, QStringLiteral("-"));
 
     // Set the shift operators
-    m_token_name.insert(t__SHL,             QStringLiteral("<<"));
-    m_token_name.insert(t__SHR,             QStringLiteral(">>"));
-    tt_set(t__SHL, tt_shiftop);
-    tt_set(t__SHR, tt_shiftop);
+    tn_add(t__SHL,             tt_shiftop, QStringLiteral("<<"));
+    tn_add(t__SHR,             tt_shiftop, QStringLiteral(">>"));
 
     // Set the less/greater comparison operators
-    m_token_name.insert(t__GE,              QStringLiteral(">="));
-    m_token_name.insert(t__GT,              QStringLiteral(">"));
-    m_token_name.insert(t__LE,              QStringLiteral("<="));
-    m_token_name.insert(t__LT,              QStringLiteral("<"));
-    tt_set(t__GE, tt_relation);
-    tt_set(t__GT, tt_relation);
-    tt_set(t__LE, tt_relation);
-    tt_set(t__LT, tt_relation);
+    tn_add(t__GE,              tt_relation, QStringLiteral(">="));
+    tn_add(t__GT,              tt_relation, QStringLiteral(">"));
+    tn_add(t__LE,              tt_relation, QStringLiteral("<="));
+    tn_add(t__LT,              tt_relation, QStringLiteral("<"));
 
     // Set the equal/unequal comparison operators
-    m_token_name.insert(t__EQ,              QStringLiteral("=="));
-    m_token_name.insert(t__NE,              QStringLiteral("!="));
-    tt_set(t__EQ, tt_equality);
-    tt_set(t__NE, tt_equality);
+    tn_add(t__EQ,              tt_equality, QStringLiteral("=="));
+    tn_add(t__NE,              tt_equality, QStringLiteral("!="));
 
-    // Set the binary and operators
-    m_token_name.insert(t__AND,             QStringLiteral("&"));
-    tt_set(t__AND, tt_binop_and);
+    // Set the binary and operator
+    tn_add(t__AND,             tt_binop_and, QStringLiteral("&"));
 
-    // Set the binary xor operators
-    m_token_name.insert(t__XOR,             QStringLiteral("^"));
-    tt_set(t__XOR, tt_binop_xor);
+    // Set the binary xor operator
+    tn_add(t__XOR,             tt_binop_xor, QStringLiteral("^"));
 
-    // Set the binary xor operators
-    m_token_name.insert(t__OR,              QStringLiteral("|"));
-    tt_set(t__OR, tt_binop_or);
+    // Set the binary or operator
+    tn_add(t__OR,              tt_binop_or,  QStringLiteral("|"));
 
-    m_token_name.insert(t__REV,             QStringLiteral("><"));
-    tt_set(t__REV, tt_binop_rev);
-
-    // Set the conditionals
-    tt_set(t__RET_,               tt_conditional);
-    tt_set(t_IF_NZ_AND_NC,        tt_conditional);
-    tt_set(t_IF_NC_AND_NZ,        tt_conditional);
-    tt_set(t_IF_A,                tt_conditional);
-    tt_set(t_IF_GT,               tt_conditional);
-    tt_set(t_IF_Z_AND_NC,         tt_conditional);
-    tt_set(t_IF_NC_AND_Z,         tt_conditional);
-    tt_set(t_IF_NC,               tt_conditional);
-    tt_set(t_IF_AE,               tt_conditional);
-    tt_set(t_IF_GE,               tt_conditional);
-    tt_set(t_IF_NZ_AND_C,         tt_conditional);
-    tt_set(t_IF_C_AND_NZ,         tt_conditional);
-    tt_set(t_IF_NZ,               tt_conditional);
-    tt_set(t_IF_NE,               tt_conditional);
-    tt_set(t_IF_Z_NE_C,           tt_conditional);
-    tt_set(t_IF_C_NE_Z,           tt_conditional);
-    tt_set(t_IF_NZ_OR_NC,         tt_conditional);
-    tt_set(t_IF_NC_OR_NZ,         tt_conditional);
-    tt_set(t_IF_Z_AND_C,          tt_conditional);
-    tt_set(t_IF_C_AND_Z,          tt_conditional);
-    tt_set(t_IF_Z_EQ_C,           tt_conditional);
-    tt_set(t_IF_C_EQ_Z,           tt_conditional);
-    tt_set(t_IF_Z,                tt_conditional);
-    tt_set(t_IF_E,                tt_conditional);
-    tt_set(t_IF_Z_OR_NC,          tt_conditional);
-    tt_set(t_IF_NC_OR_Z,          tt_conditional);
-    tt_set(t_IF_C,                tt_conditional);
-    tt_set(t_IF_B,                tt_conditional);
-    tt_set(t_IF_LT,               tt_conditional);
-    tt_set(t_IF_NZ_OR_C,          tt_conditional);
-    tt_set(t_IF_C_OR_NZ,          tt_conditional);
-    tt_set(t_IF_Z_OR_C,           tt_conditional);
-    tt_set(t_IF_C_OR_Z,           tt_conditional);
-    tt_set(t_IF_BE,               tt_conditional);
-    tt_set(t_IF_LE,               tt_conditional);
-    tt_set(t_IF_ALWAYS,           tt_conditional);
-
-    // Set the MODCZ tokens
-    tt_set(t_MODCZ__CLR,          tt_modcz_param);
-    tt_set(t_MODCZ__NC_AND_NZ,    tt_modcz_param);
-    tt_set(t_MODCZ__NZ_AND_NC,    tt_modcz_param);
-    tt_set(t_MODCZ__GT,           tt_modcz_param);
-    tt_set(t_MODCZ__NC_AND_Z,     tt_modcz_param);
-    tt_set(t_MODCZ__Z_AND_NC,     tt_modcz_param);
-    tt_set(t_MODCZ__NC,           tt_modcz_param);
-    tt_set(t_MODCZ__GE,           tt_modcz_param);
-    tt_set(t_MODCZ__C_AND_NZ,     tt_modcz_param);
-    tt_set(t_MODCZ__NZ_AND_C,     tt_modcz_param);
-    tt_set(t_MODCZ__NZ,           tt_modcz_param);
-    tt_set(t_MODCZ__NE,           tt_modcz_param);
-    tt_set(t_MODCZ__C_NE_Z,       tt_modcz_param);
-    tt_set(t_MODCZ__Z_NE_C,       tt_modcz_param);
-    tt_set(t_MODCZ__NC_OR_NZ,     tt_modcz_param);
-    tt_set(t_MODCZ__NZ_OR_NC,     tt_modcz_param);
-    tt_set(t_MODCZ__C_AND_Z,      tt_modcz_param);
-    tt_set(t_MODCZ__Z_AND_C,      tt_modcz_param);
-    tt_set(t_MODCZ__C_EQ_Z,       tt_modcz_param);
-    tt_set(t_MODCZ__Z_EQ_C,       tt_modcz_param);
-    tt_set(t_MODCZ__Z,            tt_modcz_param);
-    tt_set(t_MODCZ__E,            tt_modcz_param);
-    tt_set(t_MODCZ__NC_OR_Z,      tt_modcz_param);
-    tt_set(t_MODCZ__Z_OR_NC,      tt_modcz_param);
-    tt_set(t_MODCZ__C,            tt_modcz_param);
-    tt_set(t_MODCZ__LT,           tt_modcz_param);
-    tt_set(t_MODCZ__C_OR_NZ,      tt_modcz_param);
-    tt_set(t_MODCZ__NZ_OR_C,      tt_modcz_param);
-    tt_set(t_MODCZ__C_OR_Z,       tt_modcz_param);
-    tt_set(t_MODCZ__Z_OR_C,       tt_modcz_param);
-    tt_set(t_MODCZ__LE,           tt_modcz_param);
-    tt_set(t_MODCZ__SET,          tt_modcz_param);
-
-    // Section control
-    tt_set(t__DAT, tt_section);
-    tt_set(t__CON, tt_section);
-    tt_set(t__PUB, tt_section);
-    tt_set(t__PRI, tt_section);
-    tt_set(t__VAR, tt_section);
-
-    // Origin control
-    tt_set(t__ORG,  tt_origin);
-    tt_set(t__ORGH, tt_origin);
-    tt_set(t__FIT,  tt_origin);
-
-    // Data types and space reserving
-    tt_set(t__BYTE, tt_data);
-    tt_set(t__WORD, tt_data);
-    tt_set(t__LONG, tt_data);
-    tt_set(t__RES,  tt_data);
+    // Set the unary reverse operator
+    tn_add(t__REV,             tt_binop_rev, QStringLiteral("><"));
 
     // Set the conditionals lookup table
     m_lookup_cond.insert(t__RET_,               cc__ret_);
@@ -910,6 +791,7 @@ P2Token::P2Token()
             m_type_token.insert(mask, tok);
 
     m_tokentype_name.insert(tt_none,            QStringLiteral("-"));
+    m_tokentype_name.insert(tt_parens,          QStringLiteral("parenthesis"));
     m_tokentype_name.insert(tt_primary,         QStringLiteral("primary"));
     m_tokentype_name.insert(tt_unary,           QStringLiteral("unary"));
     m_tokentype_name.insert(tt_mulop,           QStringLiteral("mulop"));
@@ -928,6 +810,7 @@ P2Token::P2Token()
     m_tokentype_name.insert(tt_conditional,     QStringLiteral("conditional"));
     m_tokentype_name.insert(tt_modcz_param,     QStringLiteral("modcz param"));
     m_tokentype_name.insert(tt_inst,            QStringLiteral("inst"));
+    m_tokentype_name.insert(tt_inst,            QStringLiteral("wc/wz suffix"));
     m_tokentype_name.insert(tt_section,         QStringLiteral("section"));
     m_tokentype_name.insert(tt_origin,          QStringLiteral("origin"));
     m_tokentype_name.insert(tt_data,            QStringLiteral("data"));
@@ -973,11 +856,13 @@ p2_token_e P2Token::token(const QString& str, bool chop, int* plen) const
             break;
 
         if (0 == ustr.indexOf(rx_loc_symbol)) {
+            ustr.truncate(rx_loc_symbol.cap(0).length());
             tok = t_locsym;
             break;
         }
 
-        if (0 == ustr.indexOf(rx_symbol)) {
+        if (0 == rx_symbol.indexIn(ustr)) {
+            ustr.truncate(rx_symbol.cap(0).length());
             tok = t_symbol;
             break;
         }
@@ -1112,20 +997,7 @@ p2_token_e P2Token::at_token(const QString& str, QList<p2_token_e> tokens, p2_to
 bool P2Token::is_operation(p2_token_e tok) const
 {
     // Bit mask for operations
-    const quint64 ops =
-            tm_primary |
-            tm_unary |
-            tm_mulop |
-            tm_addop |
-            tm_shiftop |
-            tm_relation |
-            tm_equality |
-            tm_binop_and |
-            tm_binop_xor |
-            tm_binop_or |
-            tm_binop_rev |
-            tm_logop_and |
-            tm_logop_or;
+    const quint64 ops = tm_operations;
     const quint64 mask = m_token_type.value(tok, 0);
     return (mask & ops) ? true : false;
 }
@@ -1148,6 +1020,34 @@ bool P2Token::is_conditional(p2_token_e tok) const
 bool P2Token::is_modcz_param(p2_token_e tok) const
 {
     return is_type(tok, tt_modcz_param);
+}
+
+/**
+ * @brief Check if a string starting at pos contains a token of a token type set in the mask
+ *
+ * Side effect: if a matching token is found, %pos is incremented by its length.
+ *
+ * @param pos position where to start scanning
+ * @param str string to inspect
+ * @param typemask types to expect
+ * @param dflt default token value to return if not found
+ * @return token value if found, or dflt otherwise
+ */
+p2_token_e P2Token::at_type(int& pos, const QString& str, quint64 typemask, p2_token_e dflt) const
+{
+    int len = 0;
+    p2_token_e tok = token(str.mid(pos), true, &len);
+
+    if (t_unknown == tok)
+        return dflt;
+
+    if (tt_chk(tok, typemask)) {
+        pos += len;
+    } else {
+        tok = dflt;
+    }
+
+    return tok;
 }
 
 /**
@@ -1203,7 +1103,8 @@ p2_token_e P2Token::at_type(const QString& str, p2_tokentype_e type, p2_token_e 
  * @param dflt default token value to return if not found
  * @return token value if found, or dflt otherwise
  */
-p2_token_e P2Token::at_types(int& pos, const QString& str, const QList<p2_tokentype_e>& types, p2_token_e dflt) const
+
+p2_token_e P2Token::at_types(int& pos, const QString& str, quint64 typemask, p2_token_e dflt) const
 {
     int len = 0;
     p2_token_e tok = token(str.mid(pos), true, &len);
@@ -1212,17 +1113,34 @@ p2_token_e P2Token::at_types(int& pos, const QString& str, const QList<p2_tokent
         return dflt;
 
     // Build bit mask for types
-    quint64 mask = tm_none;
-    foreach(const p2_tokentype_e type, types)
-        mask |= TTMASK(type);
 
-    if (m_token_type.value(tok, tm_none) & mask) {
+    if (tt_chk(tok, typemask)) {
         pos += len;
     } else {
         tok = dflt;
     }
 
     return tok;
+}
+
+/**
+ * @brief Check if a string starting at pos contains a token of a type found in a list of token types
+ *
+ * Side effect: if a matching token is found, pos is incremented by its length.
+ *
+ * @param pos position where to start scanning
+ * @param str string to inspect
+ * @param types token types to expect
+ * @param dflt default token value to return if not found
+ * @return token value if found, or dflt otherwise
+ */
+p2_token_e P2Token::at_types(int& pos, const QString& str, const QList<p2_tokentype_e>& types, p2_token_e dflt) const
+{
+    // Build bit mask for types
+    quint64 typemask = tm_none;
+    foreach(const p2_tokentype_e type, types)
+        typemask |= TTMASK(type);
+    return at_types(pos, str, typemask, dflt);
 }
 
 /**
@@ -1341,22 +1259,58 @@ p2_cond_e P2Token::modcz_param(const QString& str, p2_cond_e dflt) const
     return m_lookup_modcz.value(cond, dflt);
 }
 
+/**
+ * @brief Add a token to the m_token_nam hash and its type to the m_token_type bitmask
+ * @param tok token value
+ * @param type token type value
+ * @param str string
+ */
+void P2Token::tn_add(p2_token_e tok, p2_tokentype_e type, const QString& str)
+{
+    m_token_name.insert(tok, str);
+    tt_set(tok, type);
+}
+
+/**
+ * @brief Add a token to the m_token_nam hash and its types to the typemask
+ * @param tok token value
+ * @param typemask token type bitmask
+ * @param str string
+ */
+void P2Token::tn_add(p2_token_e tok, quint64 typemask, const QString& str)
+{
+    m_token_name.insert(tok, str);
+    tt_set(tok, typemask);
+}
+
+void P2Token::tt_set(p2_token_e tok, quint64 typemask)
+{
+    quint64 mask = m_token_type.value(tok, 0) | typemask;
+    m_token_type.insert(tok, mask);
+}
+
+void P2Token::tt_clr(p2_token_e tok, quint64 typemask)
+{
+    quint64 mask = m_token_type.value(tok, 0) & ~typemask;
+    m_token_type.insert(tok, mask);
+}
+
+bool P2Token::tt_chk(p2_token_e tok, quint64 typemask) const
+{
+    return m_token_type.value(tok, 0) & typemask ? true : false;
+}
+
 void P2Token::tt_set(p2_token_e tok, p2_tokentype_e type)
 {
-    quint64 mask = m_token_type.value(tok, 0);
-    mask |= TTMASK(type);
-    m_token_type.insert(tok, mask);
+    tt_set(tok, TTMASK(type));
 }
 
 void P2Token::tt_clr(p2_token_e tok, p2_tokentype_e type)
 {
-    quint64 mask = m_token_type.value(tok, 0);
-    mask &= ~TTMASK(type);
-    m_token_type.insert(tok, mask);
+    tt_clr(tok, TTMASK(type));
 }
 
 bool P2Token::tt_chk(p2_token_e tok, p2_tokentype_e type) const
 {
-    quint64 mask = m_token_type.value(tok, 0);
-    return mask & TTMASK(type) ? true : false;
+    return tt_chk(tok, TTMASK(type));
 }

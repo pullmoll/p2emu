@@ -35,19 +35,19 @@
 #include "p2defs.h"
 
 //! digits of binary numbers
-const char bin_digits[] = "01_";
+const QString bin_digits = QStringLiteral("01_");
 
 //! digits of byte indices
-const char byt_digits[] = "0123_";
+const QString byt_digits = QStringLiteral("0123_");
 
 //! digits of octal numbers
-const char oct_digits[] = "01234567_";
+const QString oct_digits = QStringLiteral("01234567_");
 
 //! digits of decimal numbers
-const char dec_digits[] = "0123456789_";
+const QString dec_digits = QStringLiteral("0123456789_");
 
 //! digits of hexadecimal numbers
-const char hex_digits[] = "0123456789ABCDEF_";
+const QString hex_digits = QStringLiteral("0123456789ABCDEF_");
 
 //! Size of the COG memory in longs
 constexpr p2_LONG COG_SIZE = 0x200;

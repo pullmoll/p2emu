@@ -32,6 +32,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 #pragma once
+#include <QFlag>
 #include <QString>
 #include <QMultiHash>
 #include "p2defs.h"
@@ -41,6 +42,7 @@
  */
 typedef enum {
     tt_none,            //!< no specific type
+    tt_parens,          //!< precedence  0: parenthesis "(" and ")"
     tt_primary,         //!< precedence  1: primary operators (++, --)
     tt_unary,           //!< precedence  2: unary operators (+, -, !, ~, more?)
     tt_mulop,           //!< precedence  3: multiplication operators (*, /, \)
@@ -59,6 +61,7 @@ typedef enum {
     tt_conditional,     //!< conditional execution
     tt_modcz_param,     //!< MODCZ parameters
     tt_inst,            //!< instruction
+    tt_wcz_suffix,      //!< suffixes WC, WZ, WCZ, ANDC, ANDZ, ORC, ORZ, XORC, XORZ
     tt_section,         //!< section control
     tt_origin,          //!< origin control
     tt_data,            //!< data generating
@@ -68,9 +71,10 @@ typedef enum {
 /**
  * @brief bit masks for token types
  */
-
 #define TTMASK(tt) (Q_UINT64_C(1) << (tt))
+
 static constexpr quint64 tm_none        = 0;
+static constexpr quint64 tm_parens      = TTMASK(tt_parens);
 static constexpr quint64 tm_primary     = TTMASK(tt_primary);
 static constexpr quint64 tm_unary       = TTMASK(tt_unary);
 static constexpr quint64 tm_mulop       = TTMASK(tt_mulop);
@@ -94,6 +98,26 @@ static constexpr quint64 tm_origin      = TTMASK(tt_origin);
 static constexpr quint64 tm_data        = TTMASK(tt_data);
 static constexpr quint64 tm_lexer       = TTMASK(tt_lexer);
 
+static constexpr quint64 tm_primary_unary = tm_primary | tm_unary;
+
+static constexpr quint64 tm_binops      = tm_binop_and |
+                                          tm_binop_xor |
+                                          tm_binop_or |
+                                          tm_binop_rev;
+
+static constexpr quint64 tm_operations  = tm_primary |
+                                          tm_unary |
+                                          tm_mulop |
+                                          tm_addop |
+                                          tm_shiftop |
+                                          tm_relation |
+                                          tm_equality |
+                                          tm_binop_and |
+                                          tm_binop_xor |
+                                          tm_binop_or |
+                                          tm_binop_rev |
+                                          tm_logop_and |
+                                          tm_logop_or;
 /**
  * @brief enumeration of tokens used in mnemonics for the P2 assembler and disassembler
  */
@@ -652,9 +676,11 @@ public:
     bool is_conditional(p2_token_e tok) const;
     bool is_modcz_param(p2_token_e tok) const;
 
+    p2_token_e at_type(int& pos, const QString& str, quint64 typemask, p2_token_e dflt = t_invalid) const;
     p2_token_e at_type(int& pos, const QString& str, p2_tokentype_e type, p2_token_e dflt = t_invalid) const;
     p2_token_e at_type(const QString& str, p2_tokentype_e type, p2_token_e dflt = t_invalid) const;
 
+    p2_token_e at_types(int& pos, const QString& str, quint64 typemask, p2_token_e dflt = t_invalid) const;
     p2_token_e at_types(int& pos, const QString& str, const QList<p2_tokentype_e>& types, p2_token_e dflt = t_invalid) const;
     p2_token_e at_types(const QString& str, const QList<p2_tokentype_e>& types, p2_token_e dflt = t_invalid) const;
 
@@ -692,6 +718,13 @@ private:
     QRegExp rx_addops;
     QRegExp rx_binops;
     QRegExp rx_expression;
+
+    void tn_add(p2_token_e tok, p2_tokentype_e type, const QString& str);
+    void tn_add(p2_token_e tok, quint64 typemask, const QString& str);
+
+    void tt_set(p2_token_e tok, quint64 typemask);
+    void tt_clr(p2_token_e tok, quint64 types);
+    bool tt_chk(p2_token_e tok, quint64 typemask) const;
 
     void tt_set(p2_token_e tok, p2_tokentype_e type);
     void tt_clr(p2_token_e tok, p2_tokentype_e type);
