@@ -218,16 +218,8 @@ static const QString html_td(const QString& text)
             .arg(text);
 }
 
-QString P2AsmModel::tokenToolTip(const p2_token_v& tokenv, const QStringList& words, const QString& bgd) const
+QString P2AsmModel::tokenToolTip(const P2AsmWords& words, const QString& bgd) const
 {
-    QStringList types;
-    QStringList tokens;
-
-    foreach(const p2_token_e tok, tokenv) {
-        types += Token.typeNames(tok);
-        tokens += Token.string(tok);
-    }
-
     QStringList html = html_table_init(bgd);
 
     // heading
@@ -237,11 +229,12 @@ QString P2AsmModel::tokenToolTip(const p2_token_v& tokenv, const QStringList& wo
     html += html_th(tr("Type"));
     html += html_tr_exit();
 
-    for (int i = 0; i < types.count(); i++) {
+    for (int i = 0; i < words.count(); i++) {
+        const P2AsmWord& word = words[i];
         html += html_tr_init();
-        html += html_td(words.value(i));
-        html += html_td(tokens.value(i));
-        html += html_td(types.value(i));
+        html += html_td(word.str());
+        html += html_td(Token.string(word.tok()));
+        html += html_td(Token.typeNames(word.tok()).join(QChar::Space));
         html += html_tr_exit();
     }
     html += html_table_exit();
@@ -304,7 +297,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
         switch (column) {
         case c_Origin: // Address as COG[xxx], LUT[xxx], or xxxxxx in RAM
             if (m_asm->PC_hash().contains(lineno)) {
-                const p2_LONG PC = m_asm->PC_hash().value(lineno);
+                const p2_LONG PC = m_asm->PC_value(lineno);
                 if (PC < 0x200) {
                     result = QString("COG[%1]").arg(PC, 3, 16, QChar('0'));
                 } else if (PC < PC_LONGS) {
@@ -317,15 +310,15 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
 
         case c_Tokens:
             {
-                p2_token_v tokens = m_asm->token_hash().value(lineno);
-                if (!tokens.isEmpty())
-                    result = QString::number(tokens.count());
+                P2AsmWords words = m_asm->words(lineno);
+                if (!words.isEmpty())
+                    result = QString::number(words.count());
             }
             break;
 
         case c_Errors:  // Error messages
             {
-                if (m_asm->error_hash().contains(lineno))
+                if (!m_asm->errors(lineno).isEmpty())
                     result = template_str_errors;
             }
             break;
@@ -339,17 +332,17 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
             break;
 
         case c_Opcode: // Opcode string
-            if (m_asm->PC_hash().contains(lineno)) {
-                const p2_opcode_u IR = m_asm->IR_hash().value(lineno);
+            if (m_asm->PC_available(lineno)) {
+                const p2_opcode_u IR = m_asm->IR_value(lineno);
                 result = format_opcode(IR, m_format);
-            } else if (m_asm->IR_hash().contains(lineno)) {
-                const p2_opcode_u IR = m_asm->IR_hash().value(lineno);
+            } else if (m_asm->IR_available(lineno)) {
+                const p2_opcode_u IR = m_asm->IR_value(lineno);
                 result = format_data(IR, m_format);
             }
             break;
 
         case c_Source:  // Source code
-            result = m_asm->source().value(row);
+            result = m_asm->source(row);
             break;
         }
         break;
@@ -357,7 +350,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     case Qt::DecorationRole:
         switch (column) {
         case c_Errors:
-            if (m_asm->error_hash().contains(lineno))
+            if (!m_asm->errors(lineno).isEmpty())
                 result = m_error;
             break;
         default:
@@ -372,11 +365,10 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
         switch (column) {
         case c_Tokens:
             {
-                const p2_token_v& tokens = m_asm->token_hash().value(lineno);
-                const QStringList& words = m_asm->words_hash().value(lineno);
+                P2AsmWords words = m_asm->words(lineno);
                 if (words.isEmpty())
                     break;
-                result = tokenToolTip(tokens, words, style_background_tokens);
+                result = tokenToolTip(words, style_background_tokens);
             }
             break;
 
@@ -392,10 +384,10 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
 
         case c_Errors:
             {
-                QStringList list = m_asm->error_hash().values(lineno);
-                if (list.isEmpty())
+                QStringList errors = m_asm->errors(lineno);
+                if (errors.isEmpty())
                     break;
-                result = errorsToolTip(list, style_background_error);
+                result = errorsToolTip(errors, style_background_error);
             }
             break;
 
@@ -423,6 +415,14 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
         break;
 
     case Qt::ForegroundRole:
+        if (c_Source == column) {
+            if (m_asm->pass() > 0) {
+                if (m_asm->words(lineno).isEmpty())
+                    result = QColor(0x60,0x60,0x60);
+                else
+                    result = QColor(0x00,0x40,0x80);
+            }
+        }
         break;
 
     case Qt::CheckStateRole:

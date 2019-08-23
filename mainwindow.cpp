@@ -512,8 +512,8 @@ void MainWindow::setupAssembler()
 {
     ui->tvAsm->setModel(m_amodel);
     updateAsmColumnSizes();
-    // QString sourcecode = QStringLiteral(":/ROM_Booter_v33_01j.spin2");
-    QString sourcecode = QStringLiteral(":/P2-qz80-rr032.spin2");
+    QString sourcecode = QStringLiteral(":/ROM_Booter_v33_01j.spin2");
+    // QString sourcecode = QStringLiteral(":/P2-qz80-rr032.spin2");
     openSource(sourcecode);
 }
 

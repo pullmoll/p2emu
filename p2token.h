@@ -93,6 +93,7 @@ static constexpr quint64 tm_assignment  = TTMASK(tt_assignment);
 static constexpr quint64 tm_conditional = TTMASK(tt_conditional);
 static constexpr quint64 tm_modcz_param = TTMASK(tt_modcz_param);
 static constexpr quint64 tm_inst        = TTMASK(tt_inst);
+static constexpr quint64 tm_wcz_suffix  = TTMASK(tt_wcz_suffix);
 static constexpr quint64 tm_section     = TTMASK(tt_section);
 static constexpr quint64 tm_origin      = TTMASK(tt_origin);
 static constexpr quint64 tm_data        = TTMASK(tt_data);
