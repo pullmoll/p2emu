@@ -44,7 +44,7 @@ static const QString p2_section_pub = QStringLiteral("PUB");
 static const QString p2_section_pri = QStringLiteral("PRI");
 static const QString p2_section_var = QStringLiteral("VAR");
 
-#if 1
+#if 0
 //! debug expression parsing
 #define DEBUG_EXPR(x,...) qDebug(x,__VA_ARGS__)
 #else
@@ -73,6 +73,7 @@ P2Asm::P2Asm(QObject *parent)
     , m_curr_PC(0)
     , m_last_PC(0)
     , m_advance(4)
+    , m_emit_IR(false)
     , m_IR()
     , m_words()
     , m_instr()
@@ -125,7 +126,8 @@ void P2Asm::pass_clear()
     m_next_PC = 0;
     m_curr_PC = 0;
     m_last_PC = 0;
-    m_advance = 4;
+    m_advance = 0;
+    m_emit_IR = false;
     m_IR.opcode = 0;
     m_data.clear();
     m_words.clear();
@@ -222,6 +224,11 @@ const p2_error_hash_t& P2Asm::error_hash() const
 QStringList P2Asm::errors(int lineno) const
 {
     return m_hash_error.values(lineno);
+}
+
+const QStringList& P2Asm::listing() const
+{
+    return m_listing;
 }
 
 const P2AsmSymTbl& P2Asm::symbols() const
@@ -394,8 +401,13 @@ bool P2Asm::assemble_pass()
     foreach(m_line, m_source) {
         // Parse the next line
         m_lineno += 1;
+
+        // Reset some state
         m_error.clear();
         m_words.clear();
+        m_data.clear();
+        m_advance = 0;
+        m_emit_IR = false;
 
         // Skip over empty lines
         if (m_line.isEmpty()) {
@@ -408,10 +420,6 @@ bool P2Asm::assemble_pass()
 
         // Set current program counter from next
         m_curr_PC = m_next_PC;
-        // Assume the instruction advances by 4 bytes
-        m_advance = 4;
-        // Clear data
-        m_data.clear();
 
         // Whenever the line starts with a token t_nothing, i.e. not an reserved name,
         // the first word is defined as a symbol for the current program counter value
@@ -429,40 +437,20 @@ bool P2Asm::assemble_pass()
                 m_symbol = find_symbol(m_section, m_function.value(m_section));
                 break;
 
-            case t__DAT:
-                m_section = sec_dat;
-                break;
-
-            case t__CON:
-                m_section = sec_con;
-                break;
-
-            case t__PUB:
-                m_section = sec_pub;
-                break;
-
-            case t__PRI:
-                m_section = sec_pri;
-                break;
-
-            case t__VAR:
-                m_section = sec_var;
-                break;
-
             default:
                 m_symbol.clear();
             }
 
-            // defining a symbol?
+            // defining a symbol at the current PC
             if (!m_symbol.isEmpty()) {
-                m_widx++;   // skip over first word
+                const p2_LONG PC = m_curr_PC / (m_curr_PC < HUB_ADDR ? 4 : 1);
                 P2AsmSymbol sym = m_symbols.value(m_symbol);
                 if (sym.isEmpty()) {
                     // Not defined yet
-                    m_symbols.insert(m_symbol, P2Atom(m_curr_PC));
+                    m_symbols.insert(m_symbol, P2Atom(PC));
                     m_symbols.addReference(m_symbol, m_lineno);
                 } else if (m_pass > 1) {
-                    m_symbols.setValue(m_symbol, m_curr_PC);
+                    m_symbols.setValue(m_symbol, PC);
                 } else {
                     // Already defined
                     m_error = tr("Symbol '%1' already defined in line %2: $%3")
@@ -471,6 +459,7 @@ bool P2Asm::assemble_pass()
                             .arg(sym.value<p2_LONG>(), 6, 16, QChar('0'));
                     emit Error(m_lineno, m_error);
                 }
+                m_widx++;   // skip over first word
             }
         }
 
@@ -480,9 +469,12 @@ bool P2Asm::assemble_pass()
             continue;
         }
 
+        // Assume the instruction advances by 4 bytes
+        m_advance = 4;
+        // Assume the instruction emits IR
+        m_emit_IR = true;
         // Reset all instruction bits
         m_IR.opcode = 0;
-
         // Conditional execution prefix
         m_IR.op.cond = conditional(m_words[m_widx].tok());
 
@@ -1923,6 +1915,10 @@ bool P2Asm::assemble_pass()
             success = asm_long();
             break;
 
+        case t__FILE:
+            success = asm_file();
+            break;
+
         case t__RES:
             success = asm_res();
             break;
@@ -1952,6 +1948,36 @@ bool P2Asm::assemble_pass()
         case t_PTRB:
             m_error = tr("Not an instruction: %1").arg(m_line);
             emit Error(m_lineno, m_error);
+            break;
+
+        case t__DAT:
+            m_advance = 0;
+            m_emit_IR = false;
+            m_section = sec_dat;
+            break;
+
+        case t__CON:
+            m_advance = 0;
+            m_emit_IR = false;
+            m_section = sec_con;
+            break;
+
+        case t__PUB:
+            m_advance = 0;
+            m_emit_IR = false;
+            m_section = sec_pub;
+            break;
+
+        case t__PRI:
+            m_advance = 0;
+            m_emit_IR = false;
+            m_section = sec_pri;
+            break;
+
+        case t__VAR:
+            m_advance = 0;
+            m_emit_IR = false;
+            m_section = sec_var;
             break;
 
         case t__RET_:
@@ -2011,22 +2037,17 @@ bool P2Asm::assemble_pass()
 
         default:
             // Handle non-instruction tokens
+            m_error = tr("Missing handling of token '%1' line: %2")
+                      .arg(Token.string(m_instr))
+                      .arg(m_line);
+            emit Error(m_lineno, m_error);
             break;
         }
 
-        if (success) {
-            results(true);
-            // Calculate next PC for regular instructions
-            if (m_curr_PC < PC_LONGS) {
-                m_next_PC = m_curr_PC + (m_advance + 3) / 4;
-            } else {
-                m_next_PC = m_curr_PC + m_advance;
-            }
-            if (m_next_PC > m_last_PC)
-                m_last_PC = m_next_PC;
-        } else {
-            results();
-        }
+        // store the results, emit listing, etc.
+        results();
+
+        Q_UNUSED(success)
     }
 
     return true;
@@ -2075,12 +2096,13 @@ int P2Asm::left()
  * @brief Store the results and append a line to the listing
  * @param opcode true, if the IR field contains an opcode
  */
-void P2Asm::results(bool opcode)
+void P2Asm::results()
 {
+    const bool binary = false;
     const p2_LONG PC = m_curr_PC;
 
     QString output;
-    if (opcode) {
+    if (m_emit_IR) {
         if (m_advance == 4) {
             m_hash_PC.insert(m_lineno, m_curr_PC);
             m_hash_IR.insert(m_lineno, m_IR);
@@ -2090,15 +2112,10 @@ void P2Asm::results(bool opcode)
                       .arg(PC, 6, 16, QChar('0'))
                       .arg(m_IR.opcode, 8, 16, QChar('0'))
                       .arg(m_line);
-        } if (m_advance > 0) {
-            m_hash_PC.insert(m_lineno, m_curr_PC);
-            m_hash_IR.insert(m_lineno, m_IR);
-            // opcode was constructed
-            output = QString("%1 %2 [%3] %4")
-                      .arg(m_lineno, -6)
-                      .arg(PC, 6, 16, QChar('0'))
-                      .arg(m_IR.opcode, 8, 16, QChar('0'))
-                      .arg(m_line);
+
+            if (binary && m_curr_PC < MEM_SIZE) {
+                MEM.LONGS[m_curr_PC / 4] = m_IR.opcode;
+            }
         } else {
             // assignment to symbol
             m_hash_IR.insert(m_lineno, m_IR);
@@ -2108,15 +2125,68 @@ void P2Asm::results(bool opcode)
                       .arg(m_IR.opcode, 8, 16, QChar('0'))
                       .arg(m_line);
         }
-    } else {
+    } else if (m_data.isEmpty()) {
         // comment or non code generating instruction
         output = QString("%1 %2 -%3- %4")
                   .arg(m_lineno, -6)
                   .arg(PC, 6, 16, QChar('0'))
                   .arg(QStringLiteral("--------"))
                   .arg(m_line);
+    } else {
+        p2_BYTES bytes = m_data.to_bytes();
+        p2_LONG offset = PC;
+        p2_LONG datalong = 0;
+        while (!bytes.isEmpty()) {
+            datalong |= static_cast<p2_LONG>(bytes.takeFirst()) << (8 * (offset & 3));
+            ++offset;
+
+            if (m_data.isEmpty() || 0 == (offset & 3)) {
+                // end of data or datalong contains 32 bits
+                QString hex;
+
+                if (m_curr_PC & 3) {
+                    // unaligned
+                    const int digits = 8 - (2 * (m_curr_PC & 3));
+                    hex = QString("%1").arg(datalong, digits, 16, QChar('0'));
+
+                    while (0 != (m_curr_PC & 3)) {
+                        // align m_curr_PC to long
+                        hex.insert(0, QStringLiteral("--"));
+                        m_curr_PC++;
+                    }
+                } else {
+                    // aligned
+                    const int digits = 8 - (2 * (offset & 3));
+                    hex = QString("%1").arg(datalong, digits, 16, QChar('0'));
+                }
+
+                // pad until offset is aligned
+                while (offset & 3) {
+                    hex.append(QStringLiteral("--"));
+                    offset++;
+                }
+
+                // another p2_LONG to output
+                output = QString("%1 %2 {%3} %4")
+                          .arg(m_lineno, -6)
+                          .arg(PC, 6, 16, QChar('0'))
+                          .arg(hex)
+                          .arg(m_line);
+
+                if (!m_data.isEmpty()) {
+                    // more data follows
+                    m_listing.append(output);
+                }
+                datalong = 0;
+            }
+        }
     }
     m_listing.append(output);
+
+    // Calculate next PC for regular instructions
+    m_next_PC = m_curr_PC + m_advance;
+    if (m_next_PC > m_last_PC)
+        m_last_PC = m_next_PC;
 
     if (!m_words.isEmpty())
         m_hash_words.insert(m_lineno, m_words);
@@ -2140,7 +2210,7 @@ QString P2Asm::expand_tabs(const QString& src)
             } else if (ch == in_string) {
                 // end of string
                 in_string = QChar::Null;
-            } else if (ch == QChar('\\')) {
+            } else if (ch == str_escape) {
                 escaped = true;
             }
             result += ch;
@@ -2162,11 +2232,10 @@ QString P2Asm::expand_tabs(const QString& src)
     return result;
 }
 
-static inline int digit(const QString& digits, QChar ch)
-{
-    return digits.indexOf(ch);
-}
-
+/**
+ * @brief Make an initial P2Atom based on the instruction token
+ * @return P2Atom with type set up
+ */
 P2Atom P2Asm::make_atom()
 {
     P2Atom atom;
@@ -2174,7 +2243,8 @@ P2Atom P2Asm::make_atom()
     case t__BYTE: atom.setType(P2Atom::Byte); break;
     case t__WORD: atom.setType(P2Atom::Word); break;
     case t__LONG: atom.setType(P2Atom::Long); break;
-    default:      atom.setType(P2Atom::Quad);
+    case t__FILE: atom.setType(P2Atom::String); break;
+    default:      atom.setType(P2Atom::Long);
     }
     return atom;
 }
@@ -2197,7 +2267,7 @@ P2Atom P2Asm::from_bin(int& pos, const QString& str)
 
     for (/**/; pos < str.length(); pos++) {
         QChar ch = str[pos].toUpper();
-        const int idx = digit(digits, ch);
+        const int idx = digits.indexOf(ch);
         if (idx < 0)
             break;
         if (skip_digit == digits.at(idx))
@@ -2232,7 +2302,7 @@ P2Atom P2Asm::from_byt(int& pos, const QString& str)
 
     for (/**/; pos < str.length(); pos++) {
         QChar ch = str[pos].toUpper();
-        const int idx = digit(digits, ch);
+        const int idx = digits.indexOf(ch);
         if (idx < 0)
             break;
         if (skip_digit == digits.at(idx))
@@ -2264,7 +2334,7 @@ P2Atom P2Asm::from_oct(int& pos, const QString& str)
 
     for (/**/; pos < str.length(); pos++) {
         QChar ch = str[pos].toUpper();
-        const int idx = digit(digits, ch);
+        const int idx = digits.indexOf(ch);
         if (idx < 0)
             break;
         if (skip_digit == digits.at(idx))
@@ -2296,13 +2366,13 @@ P2Atom P2Asm::from_dec(int& pos, const QString& str)
 
     for (/**/; pos < str.length(); pos++) {
         QChar ch = str[pos].toUpper();
-        const int idx = digit(digits, ch);
+        const int idx = digits.indexOf(ch);
         if (idx < 0)
             break;
         if (skip_digit == digits.at(idx))
             continue;
         bits = (bits * 10) + static_cast<uint>(idx);
-        // no way to handle overflow ?
+        // FIXME: no way to handle 64 bit overflow ?
     }
     // append all significant bits
     atom.append(bits);
@@ -2326,7 +2396,7 @@ P2Atom P2Asm::from_hex(int& pos, const QString& str)
 
     for (/**/; pos < str.length(); pos++) {
         QChar ch = str[pos].toUpper();
-        const int idx = digit(digits, ch);
+        const int idx = digits.indexOf(ch);
         if (idx < 0)
             break;
         if (skip_digit == digits.at(idx))
@@ -2352,22 +2422,23 @@ P2Atom P2Asm::from_hex(int& pos, const QString& str)
 P2Atom P2Asm::from_str(int& pos, const QString& str)
 {
     P2Atom atom = make_atom();
-    QChar instring = str.at(pos++);
+    QChar ch = str.at(pos++);
+    QChar in_string = ch;
     bool escaped = false;
 
-    while (pos < str.length()) {
-        QChar ch = str.at(pos);
+    for (/**/; pos < str.length(); pos++) {
+        ch = str.at(pos);
         if (escaped) {
-            atom.append(static_cast<p2_QUAD>(ch.toLatin1()));
+            atom.append(P2Atom::Byte, static_cast<p2_BYTE>(ch.toLatin1()));
             escaped = false;
-        } else if (ch == instring) {
+        } else if (ch == in_string) {
+            pos++;
             return atom;
-        } else if (ch == QChar('\\')) {
+        } else if (ch == str_escape) {
             escaped = true;
         } else {
-            atom.append(static_cast<p2_QUAD>(ch.toLatin1()));
+            atom.append(P2Atom::Byte, static_cast<p2_BYTE>(ch.toLatin1()));
         }
-        pos++;
     }
 
     return atom;
@@ -2652,7 +2723,7 @@ P2Atom P2Asm::parse_mulops(int& pos, const QString& str)
             break;
         }
 
-        p2_QUAD r = rvalue.toQuad();
+        p2_QUAD r = rvalue.to_quad();
         switch (op) {
         case t__MUL:
             DEBUG_EXPR(" mul: %s", qPrintable(str.mid(spos)));
@@ -2700,7 +2771,7 @@ P2Atom P2Asm::parse_addops(int& pos, const QString& str)
             break;
         }
 
-        p2_QUAD r = rvalue.toQuad();
+        p2_QUAD r = rvalue.to_quad();
         switch (op) {
         case t__ADD:
             DEBUG_EXPR(" add: %s", qPrintable(str.mid(spos)));
@@ -2744,7 +2815,7 @@ P2Atom P2Asm::parse_shiftops(int& pos, const QString& str)
             break;
         }
 
-        p2_QUAD r = rvalue.toQuad();
+        p2_QUAD r = rvalue.to_quad();
         switch (op) {
         case t__SHL:
             DEBUG_EXPR(" shl: %s", qPrintable(str.mid(spos)));
@@ -2789,7 +2860,7 @@ P2Atom P2Asm::parse_binops(int& pos, const QString& str)
             break;
         }
 
-        p2_QUAD r = rvalue.toQuad();
+        p2_QUAD r = rvalue.to_quad();
         switch (op) {
         case t__AND:
             DEBUG_EXPR(" binary and: %s", qPrintable(str.mid(spos)));
@@ -2826,35 +2897,30 @@ P2Atom P2Asm::parse_subexpression(int& pos, const QString& str)
     int level = 1;
     int epos = pos;
     bool escaped = false;
-    bool instring = false;
+    QChar instring = QChar::Null;
     while (epos < str.length() && level > 0) {
         QChar ch = str.at(epos++);
-        char c = ch.toLatin1();
-        if (instring) {
+        if (instring != QChar::Null) {
             // inside a string
             if (escaped) {
                 // character was escaped: ignore
                 escaped = false;
-            } else if (c == '"') {
+            } else if (ch == QChar('"')) {
                 // character is doubleqoute: end of string
                 instring = false;
-            } else if (c == '\\') {
+            } else if (ch == str_escape) {
                 // character is backslash: escape next character
                 escaped = true;
             }
         } else {
             // not inside string
-            switch (c) {
-            case '"':
-                instring = true;
-                break;
-            case '(':
+            if (ch == QChar('"')) {
+                instring = ch;
+            } else if (ch == QChar('(')) {
                 level++;
-                break;
-            case ')':
+            } else if (ch == QChar(')')) {
                 if (0 == --level)
                     epos--;
-                break;
             }
         }
     }
@@ -2939,10 +3005,10 @@ P2Atom P2Asm::parse_expression(imm_to_e imm_to)
 
 /**
  * @brief Expect end of line, i.e. no more parameters
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
-bool P2Asm::end_of_line(bool binary)
+bool P2Asm::end_of_line()
 {
     if (m_widx < m_wcnt) {
         // ignore extra parameters?
@@ -2950,20 +3016,12 @@ bool P2Asm::end_of_line(bool binary)
                        .arg(m_source[m_lineno].mid(m_words[m_widx].pos()));
         return false;
     }
-
-    if (binary) {
-        if (m_curr_PC < PC_LONGS) {
-            MEM.LONGS[m_curr_PC] = m_IR.opcode;
-        } else if (m_curr_PC < MEM_SIZE) {
-            MEM.LONGS[m_curr_PC / 4] = m_IR.opcode;
-        }
-    }
     return true;
 }
 
 /**
  * @brief A comma is expected
- * @brief params reference to the assembler parameters
+ *
  * @return true if comma found, false otherwise
  */
 bool P2Asm::parse_comma()
@@ -2986,7 +3044,7 @@ bool P2Asm::parse_comma()
 
 /**
  * @brief An optioncal comma is skipped
- * @brief params reference to the assembler parameters
+ *
  */
 void P2Asm::optional_comma()
 {
@@ -2999,7 +3057,7 @@ void P2Asm::optional_comma()
 
 /**
  * @brief Optional WC, WZ, or WCZ
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::optional_wcz()
@@ -3036,7 +3094,7 @@ bool P2Asm::optional_wcz()
 
 /**
  * @brief Optional WC
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::optional_wc()
@@ -3060,7 +3118,7 @@ bool P2Asm::optional_wc()
 
 /**
  * @brief Optional WZ
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::optional_wz()
@@ -3084,59 +3142,62 @@ bool P2Asm::optional_wz()
 
 /**
  * @brief Assignment operation
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::asm_assign()
 {
     m_widx++;           // skip over token
-    m_advance = 0;     // No PC increment
+    m_advance = 0;      // No PC advancing
+    m_emit_IR = false;
     P2Atom atom = parse_expression();
     const p2_LONG value = atom.to_long();
     m_IR.opcode = value;
     m_symbols.setValue(m_symbol, value);
-    return end_of_line(false);
+    return end_of_line();
 }
 
 /**
  * @brief Origin operation
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::asm_org()
 {
     m_widx++;           // skip over token
-    m_advance = 0;     // No PC increment
+    m_advance = 0;      // No PC advancing
+    m_emit_IR = false;
     P2Atom atom = parse_expression();
     p2_LONG value = atom.to_long();
     if (atom.isEmpty())
         value = m_last_PC;
-    m_IR.opcode = m_curr_PC = m_next_PC = value;
+    m_curr_PC = m_next_PC = value;
     m_symbols.setValue(m_symbol, value);
-    return end_of_line(false);
+    return end_of_line();
 }
 
 /**
  * @brief Origin high operation
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::asm_orgh()
 {
     m_widx++;           // skip over token
-    m_advance = 0;     // No PC increment
+    m_advance = 0;      // No PC advancing
+    m_emit_IR = false;
     P2Atom atom = parse_expression();
     p2_LONG value = atom.to_long();
     if (atom.isEmpty())
         value = HUB_ADDR;
-    m_IR.opcode = m_next_PC =  m_last_PC = value;
+    m_next_PC =  m_last_PC = value;
     m_symbols.setValue(m_symbol, value);
-    return end_of_line(false);
+    return end_of_line();
 }
 
 /**
  * @brief Expect instruction with optional WC, WZ, or WCZ
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::parse_with_wcz()
@@ -3147,7 +3208,7 @@ bool P2Asm::parse_with_wcz()
 
 /**
  * @brief Expect instruction with optional WC
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::parse_with_wc()
@@ -3159,7 +3220,7 @@ bool P2Asm::parse_with_wc()
 
 /**
  * @brief Expect instruction with optional WZ
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::parse_with_wz()
@@ -3170,7 +3231,7 @@ bool P2Asm::parse_with_wz()
 
 /**
  * @brief Expect no more parameters after instruction
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::parse_inst()
@@ -3180,7 +3241,7 @@ bool P2Asm::parse_inst()
 
 /**
  * @brief Expect parameters for D and {#}S
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::parse_d_imm_s()
@@ -3196,7 +3257,7 @@ bool P2Asm::parse_d_imm_s()
 
 /**
  * @brief Expect parameters for D and optional WC, WZ, or WCZ
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::parse_d_cz()
@@ -3209,7 +3270,7 @@ bool P2Asm::parse_d_cz()
 
 /**
  * @brief Expect optional WC, WZ, or WCZ
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::parse_cz()
@@ -3220,7 +3281,7 @@ bool P2Asm::parse_cz()
 
 /**
  * @brief Expect conditional for C, conditional for Z, and optional WC, WZ
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::parse_cccc_zzzz_wcz()
@@ -3236,7 +3297,7 @@ bool P2Asm::parse_cccc_zzzz_wcz()
 
 /**
  * @brief Expect parameters for D
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::parse_d()
@@ -3248,7 +3309,7 @@ bool P2Asm::parse_d()
 
 /**
  * @brief Expect parameters for {#}D setting WZ for immediate
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::parse_wz_d()
@@ -3260,7 +3321,7 @@ bool P2Asm::parse_wz_d()
 
 /**
  * @brief Expect parameters for {#}D
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::parse_imm_d()
@@ -3272,7 +3333,7 @@ bool P2Asm::parse_imm_d()
 
 /**
  * @brief Expect parameters for {#}D, and optional WC, WZ, or WCZ
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::parse_imm_d_wcz()
@@ -3285,7 +3346,7 @@ bool P2Asm::parse_imm_d_wcz()
 
 /**
  * @brief Expect parameters for {#}D, and optional WC
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::parse_imm_d_wc()
@@ -3298,7 +3359,7 @@ bool P2Asm::parse_imm_d_wc()
 
 /**
  * @brief Expect parameters for D, and {#}S, and optional WC, WZ, or WCZ
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::parse_d_imm_s_wcz()
@@ -3315,7 +3376,7 @@ bool P2Asm::parse_d_imm_s_wcz()
 
 /**
  * @brief Expect parameters for D, and {#}S, and optional WC
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::parse_d_imm_s_wc()
@@ -3332,7 +3393,7 @@ bool P2Asm::parse_d_imm_s_wc()
 
 /**
  * @brief Expect parameters for D, and {#}S, and optional WZ
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::parse_d_imm_s_wz()
@@ -3349,7 +3410,7 @@ bool P2Asm::parse_d_imm_s_wz()
 
 /**
  * @brief Expect parameters for {#}D, and {#}S
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::parse_wz_d_imm_s()
@@ -3365,7 +3426,7 @@ bool P2Asm::parse_wz_d_imm_s()
 
 /**
  * @brief Expect parameters for D, and {#}S, and #N (0 … 7)
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::parse_d_imm_s_nnn(uint max)
@@ -3403,7 +3464,7 @@ bool P2Asm::parse_d_imm_s_nnn(uint max)
 
 /**
  * @brief Expect parameters for {#}S
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::parse_imm_s()
@@ -3415,7 +3476,7 @@ bool P2Asm::parse_imm_s()
 
 /**
  * @brief Expect parameters for {#}S, and optional WC
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::parse_imm_s_wcz()
@@ -3428,7 +3489,7 @@ bool P2Asm::parse_imm_s_wcz()
 
 /**
  * @brief Expect parameters for #AAAAAAAAAAAA (19 bit address for CALL/CALLA/CALLB/LOC)
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::parse_ptr_pc_abs()
@@ -3465,7 +3526,7 @@ bool P2Asm::parse_ptr_pc_abs()
 
 /**
  * @brief Expect parameters for #AAAAAAAAAAAA (19 bit address for CALL/CALLA/CALLB)
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::parse_pc_abs()
@@ -3479,7 +3540,7 @@ bool P2Asm::parse_pc_abs()
 
 /**
  * @brief Expect parameters for #AAAAAAAAAAAA (23 bit address for AUGD/AUGS)
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::parse_imm23(QVector<p2_inst7_e> aug)
@@ -3493,33 +3554,37 @@ bool P2Asm::parse_imm23(QVector<p2_inst7_e> aug)
 
 /**
  * @brief Expect one or more bytes of data
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::asm_byte()
 {
     m_widx++;
+    m_advance = 0;      // No PC advancing, as it's done based on m_data
+    m_emit_IR = false;
     while (m_widx < m_wcnt) {
         P2Atom atom = parse_expression();
-        m_data.append(atom);
+        p2_BYTE b = atom.to_byte();
+        m_data.append(P2Atom::Byte, b);
         optional_comma();
     }
-    // TODO: put data into output
     return end_of_line();
 }
 
 /**
  * @brief Expect one or more bytes of data
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::asm_word()
 {
-    p2_WORDS words;
     m_widx++;
+    m_advance = 0;      // No PC advancing, as it's done based on m_data
+    m_emit_IR = false;
     while (m_widx < m_wcnt) {
         P2Atom atom = parse_expression();
-        words += atom.to_words();
+        p2_WORD w = atom.to_word();
+        m_data.append(P2Atom::Word, w);
         optional_comma();
     }
     // TODO: put data into output
@@ -3528,16 +3593,18 @@ bool P2Asm::asm_word()
 
 /**
  * @brief Expect one or more bytes of data
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::asm_long()
 {
-    p2_LONGS longs;
     m_widx++;
+    m_advance = 0;      // No PC advancing, as it's done based on m_data
+    m_emit_IR = false;
     while (m_widx < m_wcnt) {
         P2Atom atom = parse_expression();
-        longs += atom.to_longs();
+        p2_LONG l = atom.to_long();
+        m_data.append(P2Atom::Long, l);
         optional_comma();
     }
     // TODO: put data into output
@@ -3546,20 +3613,47 @@ bool P2Asm::asm_long()
 
 /**
  * @brief Expect one or more bytes of data
- * @brief params reference to the assembler parameters
+ *
  * @return true on success, or false on error
  */
 bool P2Asm::asm_res()
 {
     m_widx++;
-    m_IR.opcode = 0;
-    m_advance = 0;
+    m_advance = 0;      // No PC advancing if no value is specified
+    m_emit_IR = false;
     while (m_widx < m_wcnt) {
         P2Atom atom = parse_expression();
         m_advance += atom.to_long();
         optional_comma();
     }
     return end_of_line();
+}
+
+/**
+ * @brief Expect one or more filenames in double quotes
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::asm_file()
+{
+    m_widx++;
+    m_advance = 0;      // No PC advancing, as it's done based on m_data
+    m_emit_IR = false;
+    while (m_widx < m_wcnt) {
+        P2Atom atom = parse_expression();
+        QString filename = atom.to_string();
+        QFile data(filename);
+        if (data.open(QIODevice::ReadOnly)) {
+            m_data.append(data.readAll());
+            data.close();
+        } else {
+            m_error = tr("Could not open file %1 for reading.").arg(filename);
+            return false;
+        }
+        optional_comma();
+    }
+    return end_of_line();
+
 }
 
 /**

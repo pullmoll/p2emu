@@ -6,6 +6,12 @@ P2Atom::P2Atom()
 {
 }
 
+P2Atom::P2Atom(const P2Atom& other)
+    : m_type(other.m_type)
+    , m_data(other.m_data)
+{
+}
+
 P2Atom::P2Atom(bool value)
     : m_type(Byte)
     , m_data()
@@ -86,6 +92,25 @@ P2Atom::Type P2Atom::type() const
     return m_type;
 }
 
+const QString P2Atom::type_name() const
+{
+    switch (m_type) {
+    case P2Atom::Invalid:
+        return QStringLiteral("Invalid");
+    case P2Atom::Byte:
+        return QStringLiteral("Byte");
+    case P2Atom::Word:
+        return QStringLiteral("Word");
+    case P2Atom::Long:
+        return QStringLiteral("Long");
+    case P2Atom::Quad:
+        return QStringLiteral("Quad");
+    case P2Atom::String:
+        return QStringLiteral("String");
+    }
+    return QStringLiteral("<invalid>");
+}
+
 /**
  * @brief Set the type of the atom
  * @brie type one of the %Type enumeration values
@@ -112,6 +137,30 @@ void P2Atom::setType(Type type)
     case String:
         break;
     }
+}
+
+p2_QUAD P2Atom::value(bool* ok) const
+{
+    p2_QUAD result = 0;
+    if (ok)
+        *ok = isValid();
+    if (m_data.size() > 7)
+        return *reinterpret_cast<const p2_QUAD*>(m_data.constData());
+    if (m_data.size() > 3)
+        return *reinterpret_cast<const p2_LONG*>(m_data.constData());
+    if (m_data.size() > 1)
+        return *reinterpret_cast<const p2_WORD*>(m_data.constData());
+    if (m_data.size() > 0)
+        return *reinterpret_cast<const p2_BYTE*>(m_data.constData());
+
+    const uchar* data = reinterpret_cast<const uchar *>(m_data.constData());
+    const int bits = 8 * m_data.size();
+    const int need = 8 * sizeof(p2_QUAD);
+    if (ok)
+        *ok = need <= bits;
+    for (int i = 0; i < bits && i < need; i += 8)
+        result |= static_cast<p2_QUAD>(data[i/8]) << i;
+    return result;
 }
 
 /**
@@ -165,13 +214,24 @@ bool P2Atom::append(p2_QUAD value)
 }
 
 /**
- * @brief Append another atom to this atom
+ * @brief Append another P2Atom to this atom
  * @param atom atom to append
  * @return true on success, or false on error
  */
 bool P2Atom::append(const P2Atom& atom)
 {
     m_data.append(atom.m_data);
+    return true;
+}
+
+/**
+ * @brief Append contents of a QByteArray to this atom
+ * @param data QByteArray to append
+ * @return true on success, or false on error
+ */
+bool P2Atom::append(const QByteArray& data)
+{
+    m_data.append(data);
     return true;
 }
 
@@ -231,7 +291,7 @@ void P2Atom::complement1(bool flag)
         set(Long, ~to_long());
         break;
     case Quad:
-        set(Quad, ~toQuad());
+        set(Quad, ~to_quad());
         break;
     case String:
         Q_ASSERT(m_type);
@@ -259,7 +319,7 @@ void P2Atom::complement2(bool flag)
         set(Long, ~to_long() + 1);
         break;
     case Quad:
-        set(Quad, ~toQuad() + 1);
+        set(Quad, ~to_quad() + 1);
         break;
     case String:
         Q_ASSERT(m_type);
@@ -287,7 +347,7 @@ void P2Atom::logical_not(bool flag)
         set(Long, to_long() ? 1 : 0);
         break;
     case Quad:
-        set(Quad, toQuad() ? 0 : 1);
+        set(Quad, to_quad() ? 0 : 1);
         break;
     case String:
         Q_ASSERT(m_type);
@@ -315,7 +375,7 @@ void P2Atom::make_bool(bool flag)
         set(Long, to_long() ? 1 : 0);
         break;
     case Quad:
-        set(Quad, toQuad() ? 1 : 0);
+        set(Quad, to_quad() ? 1 : 0);
         break;
     case String:
         Q_ASSERT(m_type);
@@ -343,7 +403,7 @@ void P2Atom::unary_dec(bool flag)
         set(Long, to_long() - 1);
         break;
     case Quad:
-        set(Quad, toQuad() - 1);
+        set(Quad, to_quad() - 1);
         break;
     case String:
         Q_ASSERT(m_type);
@@ -371,7 +431,7 @@ void P2Atom::unary_inc(bool flag)
         set(Long, to_long() + 1);
         break;
     case Quad:
-        set(Quad, toQuad() + 1);
+        set(Quad, to_quad() + 1);
         break;
     case String:
         Q_ASSERT(m_type);
@@ -397,7 +457,7 @@ void P2Atom::arith_mul(p2_QUAD val)
         set(Long, to_long() * val);
         break;
     case Quad:
-        set(Quad, toQuad() * val);
+        set(Quad, to_quad() * val);
         break;
     case String:
         Q_ASSERT(m_type);
@@ -429,7 +489,7 @@ void P2Atom::arith_div(p2_QUAD val)
         set(Long, to_long() / val);
         break;
     case Quad:
-        set(Quad, toQuad() / val);
+        set(Quad, to_quad() / val);
         break;
     case String:
         Q_ASSERT(m_type);
@@ -461,7 +521,7 @@ void P2Atom::arith_mod(p2_QUAD val)
         set(Long, to_long() % val);
         break;
     case Quad:
-        set(Quad, toQuad() % val);
+        set(Quad, to_quad() % val);
         break;
     case String:
         Q_ASSERT(m_type);
@@ -490,7 +550,7 @@ void P2Atom::arith_add(p2_QUAD val)
         set(Long, to_long() + val);
         break;
     case Quad:
-        set(Quad, toQuad() + val);
+        set(Quad, to_quad() + val);
         break;
     case String:
         Q_ASSERT(m_type);
@@ -518,7 +578,7 @@ void P2Atom::arith_sub(p2_QUAD val)
         set(Long, to_long() - val);
         break;
     case Quad:
-        set(Quad, toQuad() - val);
+        set(Quad, to_quad() - val);
         break;
     case String:
         Q_ASSERT(m_type);
@@ -546,7 +606,7 @@ void P2Atom::binary_shl(p2_QUAD bits)
         set(to_long() << bits);
         break;
     case Quad:
-        set(toQuad() << bits);
+        set(to_quad() << bits);
         break;
     case String:
         Q_ASSERT(m_type);
@@ -574,7 +634,7 @@ void P2Atom::binary_shr(p2_QUAD bits)
         set(to_long() >> bits);
         break;
     case Quad:
-        set(toQuad() >> bits);
+        set(to_quad() >> bits);
         break;
     case String:
         Q_ASSERT(m_type);
@@ -600,7 +660,7 @@ void P2Atom::binary_and(p2_QUAD mask)
         set(to_long() & mask);
         break;
     case Quad:
-        set(toQuad() & mask);
+        set(to_quad() & mask);
         break;
     case String:
         Q_ASSERT(m_type);
@@ -626,7 +686,7 @@ void P2Atom::binary_xor(p2_QUAD mask)
         set(to_long() ^ mask);
         break;
     case Quad:
-        set(toQuad() ^ mask);
+        set(to_quad() ^ mask);
         break;
     case String:
         Q_ASSERT(m_type);
@@ -652,7 +712,7 @@ void P2Atom::binary_or(p2_QUAD mask)
         set(to_long() | mask);
         break;
     case Quad:
-        set(toQuad() | mask);
+        set(to_quad() | mask);
         break;
     case String:
         Q_ASSERT(m_type);
@@ -666,7 +726,7 @@ void P2Atom::binary_or(p2_QUAD mask)
  */
 p2_BYTE P2Atom::to_byte(bool* ok) const
 {
-    return value<p2_BYTE>(ok);
+    return static_cast<p2_BYTE>(value(ok));
 }
 
 /**
@@ -676,7 +736,7 @@ p2_BYTE P2Atom::to_byte(bool* ok) const
  */
 p2_WORD P2Atom::to_word(bool* ok) const
 {
-    return value<p2_WORD>(ok);
+    return static_cast<p2_WORD>(value(ok));
 }
 
 /**
@@ -686,7 +746,7 @@ p2_WORD P2Atom::to_word(bool* ok) const
  */
 p2_LONG P2Atom::to_long(bool* ok) const
 {
-    return value<p2_LONG>(ok);
+    return static_cast<p2_LONG>(value(ok));
 }
 
 /**
@@ -694,9 +754,22 @@ p2_LONG P2Atom::to_long(bool* ok) const
  * @param ok optional pointer to a bool set to true if data is available
  * @return One p2_LONG
  */
-p2_QUAD P2Atom::toQuad(bool* ok) const
+p2_QUAD P2Atom::to_quad(bool* ok) const
 {
-    return value<p2_QUAD>(ok);
+    return static_cast<p2_QUAD>(value(ok));
+}
+
+/**
+ * @brief Return data as a QString
+ * @param ok optional pointer to a bool set to true if data is available
+ * @return QString with the data
+ */
+QString P2Atom::to_string(bool* ok) const
+{
+    QString data = QString::fromUtf8(m_data);
+    if (ok)
+        *ok = !data.isEmpty();
+    return data;
 }
 
 /**
@@ -770,51 +843,51 @@ P2Atom& P2Atom::operator--() {
 }
 
 P2Atom& P2Atom::operator+=(const P2Atom& other) {
-    arith_add(other.toQuad());
+    arith_add(other.to_quad());
     return *this;
 }
 
 P2Atom& P2Atom::operator-=(const P2Atom& other) {
-    arith_sub(other.toQuad());
+    arith_sub(other.to_quad());
     return *this;
 }
 
 P2Atom& P2Atom::operator*=(const P2Atom& other) {
-    arith_mul(other.toQuad());
+    arith_mul(other.to_quad());
     return *this;
 }
 
 P2Atom& P2Atom::operator/=(const P2Atom& other) {
-    arith_div(other.toQuad());
+    arith_div(other.to_quad());
     return *this;
 }
 
 P2Atom& P2Atom::operator%=(const P2Atom& other) {
-    arith_div(other.toQuad());
+    arith_div(other.to_quad());
     return *this;
 }
 
 P2Atom& P2Atom::operator<<=(const P2Atom& other) {
-    binary_shl(other.toQuad());
+    binary_shl(other.to_quad());
     return *this;
 }
 
 P2Atom& P2Atom::operator>>=(const P2Atom& other) {
-    binary_shr(other.toQuad());
+    binary_shr(other.to_quad());
     return *this;
 }
 
 P2Atom& P2Atom::operator&=(const P2Atom& other) {
-    binary_and(other.toQuad());
+    binary_and(other.to_quad());
     return *this;
 }
 
 P2Atom& P2Atom::operator^=(const P2Atom& other) {
-    binary_xor(other.toQuad());
+    binary_xor(other.to_quad());
     return *this;
 }
 
 P2Atom& P2Atom::operator|=(const P2Atom& other) {
-    binary_or(other.toQuad());
+    binary_or(other.to_quad());
     return *this;
 }

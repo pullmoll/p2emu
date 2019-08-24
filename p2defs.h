@@ -100,6 +100,7 @@ extern const p2_QUAD HMAX;
 extern const p2_QUAD LMAX;
 
 static const QChar skip_digit('_');
+static const QChar str_escape('\\');
 extern const QString bin_digits;
 extern const QString byt_digits;
 extern const QString oct_digits;

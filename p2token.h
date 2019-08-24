@@ -536,6 +536,7 @@ typedef enum {
     t__WORD,
     t__LONG,
     t__RES,
+    t__FILE,
 
     // conditials
     t__RET_,            //!< cond_never

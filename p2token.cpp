@@ -576,6 +576,7 @@ P2Token::P2Token()
     tn_add(t__WORD,            tm_inst | tm_data, QStringLiteral("WORD"));
     tn_add(t__LONG,            tm_inst | tm_data, QStringLiteral("LONG"));
     tn_add(t__RES,             tm_inst | tm_data, QStringLiteral("RES"));
+    tn_add(t__FILE,            tm_inst | tm_data, QStringLiteral("FILE"));
 
     // Section control
     tn_add(t__DAT,             tm_section, QStringLiteral("DAT"));

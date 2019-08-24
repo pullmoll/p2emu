@@ -48,9 +48,10 @@ public:
     bool isEmpty() const;
     const QString& name() const;
     template <typename T>
-    T value() const { return m_value.value<T>(); }
+    T value() const { return static_cast<T>(m_value.value()); }
     bool setValue(const P2Atom& value);
     P2Atom::Type type() const;
+    const QString type_name() const;
     int defined_in() const;
     int reference(int idx = 0) const;
     void addReference(int lineno);

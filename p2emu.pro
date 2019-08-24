@@ -30,6 +30,7 @@ SOURCES += \
 		main.cpp \
 		mainwindow.cpp \
 		p2asm.cpp \
+		p2asmlisting.cpp \
 		p2asmmodel.cpp \
 		p2asmsourcedelegate.cpp \
 		p2asmsym.cpp \
@@ -49,6 +50,7 @@ HEADERS += \
 		gotoaddress.h \
 		mainwindow.h \
 		p2asm.h \
+		p2asmlisting.h \
 		p2asmmodel.h \
 		p2asmsourcedelegate.h \
 		p2asmsym.h \
@@ -67,6 +69,7 @@ FORMS += \
 		about.ui \
 		gotoaddress.ui \
 		mainwindow.ui \
+		p2asmlisting.ui \
 		p2cogview.ui \
 		p2hubview.ui
 

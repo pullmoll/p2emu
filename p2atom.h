@@ -21,48 +21,23 @@ public:
     P2Atom(p2_WORD value);
     P2Atom(p2_LONG value);
     P2Atom(p2_QUAD value);
+    P2Atom(const P2Atom& other);
 
     void clear();
     bool isNull() const;
     bool isEmpty() const;
     bool isValid() const;
     Type type() const;
+    const QString type_name() const;
     void setType(Type type);
 
-    template<typename T>
-    T value(bool *ok = nullptr) const
-    {
-        p2_QUAD result = 0;
-        if (Invalid == m_type) {
-            if (ok)
-                *ok = false;
-            return static_cast<T>(result);
-        }
-
-        if (typeid(T) == typeid(p2_BYTE)) {
-            result = *reinterpret_cast<const p2_BYTE*>(m_data.constData());
-        } else if (typeid(T) == typeid(p2_WORD) && m_data.size() > 1) {
-            result = *reinterpret_cast<const p2_WORD*>(m_data.constData());
-        } else if (typeid(T) == typeid(p2_LONG) && m_data.size() > 3) {
-            result = *reinterpret_cast<const p2_LONG*>(m_data.constData());
-        } else if (typeid(T) == typeid(p2_QUAD) && m_data.size() > 7) {
-            result = *reinterpret_cast<const p2_QUAD*>(m_data.constData());
-        } else {
-            const uchar* data = reinterpret_cast<const uchar *>(m_data.constData());
-            const int bits = 8 * m_data.size();
-            const int need = 8 * sizeof(T);
-            if (ok)
-                *ok = need <= bits;
-            for (int i = 0; i < bits && i < need; i += 8)
-                result |= static_cast<p2_QUAD>(data[i/8]) << i;
-        }
-        return static_cast<T>(result);
-    }
+    p2_QUAD value(bool *ok = nullptr) const;
 
     bool append(Type type, p2_QUAD value);
     bool append(int nbits, p2_QUAD value);
     bool append(p2_QUAD value);
     bool append(const P2Atom& atom);
+    bool append(const QByteArray& data);
 
     bool set(Type type, p2_QUAD value);
     bool set(int nbits, p2_QUAD value);
@@ -88,7 +63,8 @@ public:
     p2_BYTE to_byte(bool *ok = nullptr) const;
     p2_WORD to_word(bool *ok = nullptr) const;
     p2_LONG to_long(bool *ok = nullptr) const;
-    p2_QUAD toQuad(bool *ok = nullptr) const;
+    p2_QUAD to_quad(bool *ok = nullptr) const;
+    QString to_string(bool *ok = nullptr) const;
 
     p2_BYTES to_bytes() const;
     p2_WORDS to_words() const;
@@ -112,8 +88,16 @@ public:
         } else if (set(sizeof(T), newval)) {
             return newval;
         }
-        return value<T>();
+        return static_cast<T>(value());
     }
+
+    P2Atom& operator= (const P2Atom& other)
+    {
+        m_type = other.m_type;
+        m_data = other.m_data;
+        return *this;
+    }
+
 
     bool operator== (const P2Atom& other);
     P2Atom& operator~();
@@ -166,11 +150,14 @@ private:
             m_data.append(static_cast<char>(value>>56));
             break;
         case String:
+            // always append one character
             m_data.append(static_cast<char>(value));
             while (value) {
+                // append non-NUL characters
                 value >>= 8;
                 m_data.append(static_cast<char>(value));
             }
+            // always set type to String now
             m_type = String;
             break;
         default:

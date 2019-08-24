@@ -89,8 +89,6 @@ P2AsmModel::P2AsmModel(P2Asm* p2asm, QObject *parent)
     m_text_alignment.insert(c_Errors,       Qt::AlignCenter);
     m_text_alignment.insert(c_Symbols,      Qt::AlignCenter);
     m_text_alignment.insert(c_Source,       Qt::AlignLeft | Qt::AlignVCenter);
-
-    updateSizes();
 }
 
 QVariant P2AsmModel::headerData(int section, Qt::Orientation orientation, int role) const
@@ -247,8 +245,9 @@ QString P2AsmModel::symbolsToolTip(const P2AsmSymTbl& symbols, const QStringList
     // heading
     html += html_tr_init();
     html += html_th(tr("Section::name"));
-    html += html_th(tr("Value (hex)"));
+    html += html_th(tr("Type"));
     html += html_th(tr("Value (dec)"));
+    html += html_th(tr("Value (hex)"));
     html += html_th(tr("Value (bin)"));
     html += html_tr_exit();
 
@@ -257,8 +256,9 @@ QString P2AsmModel::symbolsToolTip(const P2AsmSymTbl& symbols, const QStringList
         p2_LONG val = sym.value<p2_LONG>();
         html += html_tr_init();
         html += html_td(sym.name());
-        html += html_td(QString("$%1").arg(val, 8, 16, QChar('0')));
+        html += html_td(sym.type_name());
         html += html_td(QString("%1").arg(val, 11, 10));
+        html += html_td(QString("$%1").arg(val, 8, 16, QChar('0')));
         html += html_td(QString("%%1").arg(val, 32, 2, QChar('0')));
         html += html_tr_exit();
     }
@@ -439,14 +439,6 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
         break;
 
     case Qt::ForegroundRole:
-        if (c_Source == column) {
-            if (m_asm->pass() > 0) {
-                if (m_asm->words(lineno).isEmpty())
-                    result = QColor(0x60,0x60,0x60);
-                else
-                    result = QColor(0x00,0x40,0x80);
-            }
-        }
         break;
 
     case Qt::CheckStateRole:
@@ -525,7 +517,6 @@ Qt::ItemFlags P2AsmModel::flags(const QModelIndex &index) const
 void P2AsmModel::invalidate()
 {
     beginResetModel();
-    updateSizes();
     endResetModel();
 }
 
@@ -549,8 +540,4 @@ void P2AsmModel::setOpcodeFormat(p2_opcode_format_e format)
         break;
     }
     invalidate();
-}
-
-void P2AsmModel::updateSizes()
-{
 }

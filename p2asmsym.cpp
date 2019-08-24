@@ -115,6 +115,15 @@ P2Atom::Type P2AsmSymbol::type() const
 }
 
 /**
+ * @brief Return the name for the type of the value in this symbol
+ * @return QString with name
+ */
+const QString P2AsmSymbol::type_name() const
+{
+    return m_value.type_name();
+}
+
+/**
  * @brief Add another line number to the list of references
  * @param lineno line number
  */

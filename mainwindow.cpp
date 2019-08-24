@@ -44,6 +44,7 @@
 #include "ui_mainwindow.h"
 #include "about.h"
 #include "gotoaddress.h"
+#include "p2asmlisting.h"
 #include "p2hub.h"
 #include "p2cog.h"
 #include "p2asm.h"
@@ -496,6 +497,12 @@ void MainWindow::assemble()
         const int row = ui->tvAsm->currentIndex().row();
         m_amodel->invalidate();
         ui->tvAsm->selectRow(row);
+#if 0
+        P2AsmListing dlg;
+        dlg.setListing(m_asm->listing());
+        dlg.setSymbols(m_asm->symbols());
+        dlg.exec();
+#endif
     }
 }
 
@@ -516,8 +523,8 @@ void MainWindow::setupAssembler()
     delete d;
     ui->tvAsm->setModel(m_amodel);
     updateAsmColumnSizes();
-    QString sourcecode = QStringLiteral(":/ROM_Booter_v33_01j.spin2");
-    // QString sourcecode = QStringLiteral(":/P2-qz80-rr032.spin2");
+    // QString sourcecode = QStringLiteral(":/ROM_Booter_v33_01j.spin2");
+    QString sourcecode = QStringLiteral(":/P2-qz80-rr032.spin2");
     openSource(sourcecode);
 }
 

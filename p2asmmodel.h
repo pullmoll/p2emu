@@ -72,7 +72,6 @@ public:
 public slots:
     void invalidate();
     void setOpcodeFormat(p2_opcode_format_e format);
-    void updateSizes();
 
 private:
     P2Asm* m_asm;

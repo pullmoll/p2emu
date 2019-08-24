@@ -153,3 +153,13 @@ const QList<int> P2AsmSymTbl::references(const QString& name) const
 {
     return m_references.keys(name);
 }
+
+const QHash<QString, P2AsmSymbol>& P2AsmSymTbl::symbols() const
+{
+    return m_symbols;
+}
+
+const QMultiHash<int, QString>& P2AsmSymTbl::references() const
+{
+    return m_references;
+}

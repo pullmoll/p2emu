@@ -56,6 +56,9 @@ public:
     bool addReference(const QString& name, int lineno);
     const QList<int> references(const QString& name) const;
 
+    const QHash<QString,P2AsmSymbol>& symbols() const;
+    const QMultiHash<int,QString>& references() const;
+
     /**
      * @brief Return a symbol value cast to the type T
      * The symbol values are stored as QVariant and this
