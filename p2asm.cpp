@@ -386,7 +386,6 @@ bool P2Asm::split_and_tokenize(const QString& line)
 
 /**
  * @brief Assemble a QStringList of lines of SPIN2 source code
- * @param p reference to the P2Params assembler state
  * @param source code
  * @return true on success
  */
@@ -2067,8 +2066,7 @@ bool P2Asm::assemble(const QString& filename)
 
 /**
  * @brief Return number of tokens/words left
- * @param p reference to P2Params
- * @return
+ * @return number of tokens/words left
  */
 int P2Asm::left()
 {
@@ -2077,7 +2075,6 @@ int P2Asm::left()
 
 /**
  * @brief Store the results and append a line to the listing
- * @param p reference to P2Params
  * @param opcode true, if the IR field contains an opcode
  */
 void P2Asm::results(bool opcode)
@@ -2225,7 +2222,6 @@ P2Atom P2Asm::from_bin(int& pos, const QString& str)
  * @param str byte inidex digits
  * @return P2Atom value of byte indices in str
  */
-
 P2Atom P2Asm::from_byt(int& pos, const QString& str)
 {
     static const QString& digits = byt_digits;
@@ -2442,7 +2438,6 @@ QString P2Asm::find_symbol(const QString& sect, const QString& func, const QStri
 
 /**
  * @brief Parse an atomic part of an expression
- * @param p reference to P2Params
  * @param pos position in word where to start
  * @param str string to parse
  * @return value of the atom
@@ -2623,7 +2618,6 @@ P2Atom P2Asm::parse_atom(int& pos, const QString& str)
 
 /**
  * @brief Parse an an expression of mulops (precedence 3)
- * @param p reference to P2Params
  * @param pos position in %str where to start
  * @param str string to parse
  * @return P2Atom containing the result
@@ -2671,7 +2665,6 @@ P2Atom P2Asm::parse_mulops(int& pos, const QString& str)
 
 /**
  * @brief Parse an an expression of addops (precedence 4)
- * @param p reference to P2Params
  * @param pos position in %str where to start
  * @param str string to parse
  * @return P2Atom containing the result
@@ -2716,7 +2709,6 @@ P2Atom P2Asm::parse_addops(int& pos, const QString& str)
 
 /**
  * @brief Parse an an expression of shift operations (precedence 5)
- * @param p reference to P2Params
  * @param pos position in %str where to start
  * @param str string to parse
  * @return P2Atom containing the result
@@ -2761,7 +2753,6 @@ P2Atom P2Asm::parse_shiftops(int& pos, const QString& str)
 
 /**
  * @brief Parse an an expression of binary operations (precedence 8, 9, 10)
- * @param p reference to P2Params
  * @param pos position in %str where to start
  * @param str string to parse
  * @return P2Atom containing the result
@@ -3562,17 +3553,17 @@ bool P2Asm::asm_res()
 }
 
 /**
- * @brief Expect an address which is checked for being >= curr_pc
- * @brief params reference to the assembler parameters
+ * @brief Expect an address which is checked for being < curr_pc
  * @return true on success, or false on error
  */
 bool P2Asm::asm_fit()
 {
     m_widx++;
     P2Atom atom = parse_expression();
-    if (atom.toLong() <= m_curr_PC) {
+    const p2_LONG fit = atom.toLong();
+    if (fit < m_curr_PC) {
         m_error = tr("Code does not fit below $%1 (origin == $%2)")
-                  .arg(atom.toLong(), 0, 16)
+                  .arg(fit, 0, 16)
                   .arg(m_curr_PC, 0, 16);
     }
     return end_of_line();
@@ -3584,9 +3575,6 @@ bool P2Asm::asm_fit()
  * 0000 0000000 000 000000000 000000000
  *
  * NOP
- *
- *
- *
  */
 bool P2Asm::asm_nop()
 {
@@ -3605,9 +3593,6 @@ bool P2Asm::asm_nop()
  * D = [31:0]  of ({D[31:0], D[31:0]}     >> S[4:0]).
  * C = last bit shifted out if S[4:0] > 0, else D[0].
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_ror()
 {
@@ -3626,9 +3611,6 @@ bool P2Asm::asm_ror()
  * D = [63:32] of ({D[31:0], D[31:0]}     << S[4:0]).
  * C = last bit shifted out if S[4:0] > 0, else D[31].
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_rol()
 {
@@ -3647,9 +3629,6 @@ bool P2Asm::asm_rol()
  * D = [31:0]  of ({32'b0, D[31:0]}       >> S[4:0]).
  * C = last bit shifted out if S[4:0] > 0, else D[0].
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_shr()
 {
@@ -3668,9 +3647,6 @@ bool P2Asm::asm_shr()
  * D = [63:32] of ({D[31:0], 32'b0}       << S[4:0]).
  * C = last bit shifted out if S[4:0] > 0, else D[31].
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_shl()
 {
@@ -3689,9 +3665,6 @@ bool P2Asm::asm_shl()
  * D = [31:0]  of ({{32{C}}, D[31:0]}     >> S[4:0]).
  * C = last bit shifted out if S[4:0] > 0, else D[0].
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_rcr()
 {
@@ -3710,9 +3683,6 @@ bool P2Asm::asm_rcr()
  * D = [63:32] of ({D[31:0], {32{C}}}     << S[4:0]).
  * C = last bit shifted out if S[4:0] > 0, else D[31].
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_rcl()
 {
@@ -3731,9 +3701,6 @@ bool P2Asm::asm_rcl()
  * D = [31:0]  of ({{32{D[31]}}, D[31:0]} >> S[4:0]).
  * C = last bit shifted out if S[4:0] > 0, else D[0].
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_sar()
 {
@@ -3752,9 +3719,6 @@ bool P2Asm::asm_sar()
  * D = [63:32] of ({D[31:0], {32{D[0]}}}  << S[4:0]).
  * C = last bit shifted out if S[4:0] > 0, else D[31].
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_sal()
 {
@@ -3773,9 +3737,6 @@ bool P2Asm::asm_sal()
  * D = D + S.
  * C = carry of (D + S).
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_add()
 {
@@ -3794,9 +3755,6 @@ bool P2Asm::asm_add()
  * D = D + S + C.
  * C = carry of (D + S + C).
  * Z = Z AND (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_addx()
 {
@@ -3815,9 +3773,6 @@ bool P2Asm::asm_addx()
  * D = D + S.
  * C = correct sign of (D + S).
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_adds()
 {
@@ -3836,9 +3791,6 @@ bool P2Asm::asm_adds()
  * D = D + S + C.
  * C = correct sign of (D + S + C).
  * Z = Z AND (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_addsx()
 {
@@ -3857,9 +3809,6 @@ bool P2Asm::asm_addsx()
  * D = D - S.
  * C = borrow of (D - S).
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_sub()
 {
@@ -3878,9 +3827,6 @@ bool P2Asm::asm_sub()
  * D = D - (S + C).
  * C = borrow of (D - (S + C)).
  * Z = Z AND (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_subx()
 {
@@ -3899,9 +3845,6 @@ bool P2Asm::asm_subx()
  * D = D - S.
  * C = correct sign of (D - S).
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_subs()
 {
@@ -3920,9 +3863,6 @@ bool P2Asm::asm_subs()
  * D = D - (S + C).
  * C = correct sign of (D - (S + C)).
  * Z = Z AND (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_subsx()
 {
@@ -3940,9 +3880,6 @@ bool P2Asm::asm_subsx()
  *
  * C = borrow of (D - S).
  * Z = (D == S).
- *
- *
- *
  */
 bool P2Asm::asm_cmp()
 {
@@ -3960,9 +3897,6 @@ bool P2Asm::asm_cmp()
  *
  * C = borrow of (D - (S + C)).
  * Z = Z AND (D == S + C).
- *
- *
- *
  */
 bool P2Asm::asm_cmpx()
 {
@@ -3980,9 +3914,6 @@ bool P2Asm::asm_cmpx()
  *
  * C = correct sign of (D - S).
  * Z = (D == S).
- *
- *
- *
  */
 bool P2Asm::asm_cmps()
 {
@@ -4000,9 +3931,6 @@ bool P2Asm::asm_cmps()
  *
  * C = correct sign of (D - (S + C)).
  * Z = Z AND (D == S + C).
- *
- *
- *
  */
 bool P2Asm::asm_cmpsx()
 {
@@ -4020,9 +3948,6 @@ bool P2Asm::asm_cmpsx()
  *
  * C = borrow of (S - D).
  * Z = (D == S).
- *
- *
- *
  */
 bool P2Asm::asm_cmpr()
 {
@@ -4040,9 +3965,6 @@ bool P2Asm::asm_cmpr()
  *
  * C = MSB of (D - S).
  * Z = (D == S).
- *
- *
- *
  */
 bool P2Asm::asm_cmpm()
 {
@@ -4061,9 +3983,6 @@ bool P2Asm::asm_cmpm()
  * D = S - D.
  * C = borrow of (S - D).
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_subr()
 {
@@ -4081,9 +4000,6 @@ bool P2Asm::asm_subr()
  *
  * If D => S then D = D - S and C = 1, else D same and C = 0.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_cmpsub()
 {
@@ -4101,9 +4017,6 @@ bool P2Asm::asm_cmpsub()
  *
  * If D < S then D = S and C = 1, else D same and C = 0.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_fge()
 {
@@ -4121,9 +4034,6 @@ bool P2Asm::asm_fge()
  *
  * If D > S then D = S and C = 1, else D same and C = 0.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_fle()
 {
@@ -4141,9 +4051,6 @@ bool P2Asm::asm_fle()
  *
  * If D < S then D = S and C = 1, else D same and C = 0.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_fges()
 {
@@ -4161,9 +4068,6 @@ bool P2Asm::asm_fges()
  *
  * If D > S then D = S and C = 1, else D same and C = 0.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_fles()
 {
@@ -4182,9 +4086,6 @@ bool P2Asm::asm_fles()
  * If C = 1 then D = D - S, else D = D + S.
  * C = correct sign of (D +/- S).
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_sumc()
 {
@@ -4203,9 +4104,6 @@ bool P2Asm::asm_sumc()
  * If C = 0 then D = D - S, else D = D + S.
  * C = correct sign of (D +/- S).
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_sumnc()
 {
@@ -4224,9 +4122,6 @@ bool P2Asm::asm_sumnc()
  * If Z = 1 then D = D - S, else D = D + S.
  * C = correct sign of (D +/- S).
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_sumz()
 {
@@ -4245,9 +4140,6 @@ bool P2Asm::asm_sumz()
  * If Z = 0 then D = D - S, else D = D + S.
  * C = correct sign of (D +/- S).
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_sumnz()
 {
@@ -4264,9 +4156,6 @@ bool P2Asm::asm_sumnz()
  * TESTB   D,{#}S         WC/WZ
  *
  * C/Z =          D[S[4:0]].
- *
- *
- *
  */
 bool P2Asm::asm_testb_w()
 {
@@ -4283,9 +4172,6 @@ bool P2Asm::asm_testb_w()
  * TESTBN  D,{#}S         WC/WZ
  *
  * C/Z =         !D[S[4:0]].
- *
- *
- *
  */
 bool P2Asm::asm_testbn_w()
 {
@@ -4302,9 +4188,6 @@ bool P2Asm::asm_testbn_w()
  * TESTB   D,{#}S     ANDC/ANDZ
  *
  * C/Z = C/Z AND  D[S[4:0]].
- *
- *
- *
  */
 bool P2Asm::asm_testb_and()
 {
@@ -4321,9 +4204,6 @@ bool P2Asm::asm_testb_and()
  * TESTBN  D,{#}S     ANDC/ANDZ
  *
  * C/Z = C/Z AND !D[S[4:0]].
- *
- *
- *
  */
 bool P2Asm::asm_testbn_and()
 {
@@ -4340,9 +4220,6 @@ bool P2Asm::asm_testbn_and()
  * TESTB   D,{#}S       ORC/ORZ
  *
  * C/Z = C/Z OR   D[S[4:0]].
- *
- *
- *
  */
 bool P2Asm::asm_testb_or()
 {
@@ -4359,9 +4236,6 @@ bool P2Asm::asm_testb_or()
  * TESTBN  D,{#}S       ORC/ORZ
  *
  * C/Z = C/Z OR  !D[S[4:0]].
- *
- *
- *
  */
 bool P2Asm::asm_testbn_or()
 {
@@ -4378,9 +4252,6 @@ bool P2Asm::asm_testbn_or()
  * TESTB   D,{#}S     XORC/XORZ
  *
  * C/Z = C/Z XOR  D[S[4:0]].
- *
- *
- *
  */
 bool P2Asm::asm_testb_xor()
 {
@@ -4397,9 +4268,6 @@ bool P2Asm::asm_testb_xor()
  * TESTBN  D,{#}S     XORC/XORZ
  *
  * C/Z = C/Z XOR !D[S[4:0]].
- *
- *
- *
  */
 bool P2Asm::asm_testbn_xor()
 {
@@ -4414,10 +4282,6 @@ bool P2Asm::asm_testbn_xor()
  * EEEE 0100000 CZI DDDDDDDDD SSSSSSSSS
  *
  * BITL    D,{#}S         {WCZ}
- *
- *
- *
- *
  */
 bool P2Asm::asm_bitl()
 {
@@ -4432,10 +4296,6 @@ bool P2Asm::asm_bitl()
  * EEEE 0100001 CZI DDDDDDDDD SSSSSSSSS
  *
  * BITH    D,{#}S         {WCZ}
- *
- *
- *
- *
  */
 bool P2Asm::asm_bith()
 {
@@ -4450,10 +4310,6 @@ bool P2Asm::asm_bith()
  * EEEE 0100010 CZI DDDDDDDDD SSSSSSSSS
  *
  * BITC    D,{#}S         {WCZ}
- *
- *
- *
- *
  */
 bool P2Asm::asm_bitc()
 {
@@ -4468,10 +4324,6 @@ bool P2Asm::asm_bitc()
  * EEEE 0100011 CZI DDDDDDDDD SSSSSSSSS
  *
  * BITNC   D,{#}S         {WCZ}
- *
- *
- *
- *
  */
 bool P2Asm::asm_bitnc()
 {
@@ -4486,10 +4338,6 @@ bool P2Asm::asm_bitnc()
  * EEEE 0100100 CZI DDDDDDDDD SSSSSSSSS
  *
  * BITZ    D,{#}S         {WCZ}
- *
- *
- *
- *
  */
 bool P2Asm::asm_bitz()
 {
@@ -4504,10 +4352,6 @@ bool P2Asm::asm_bitz()
  * EEEE 0100101 CZI DDDDDDDDD SSSSSSSSS
  *
  * BITNZ   D,{#}S         {WCZ}
- *
- *
- *
- *
  */
 bool P2Asm::asm_bitnz()
 {
@@ -4522,10 +4366,6 @@ bool P2Asm::asm_bitnz()
  * EEEE 0100110 CZI DDDDDDDDD SSSSSSSSS
  *
  * BITRND  D,{#}S         {WCZ}
- *
- *
- *
- *
  */
 bool P2Asm::asm_bitrnd()
 {
@@ -4540,10 +4380,6 @@ bool P2Asm::asm_bitrnd()
  * EEEE 0100111 CZI DDDDDDDDD SSSSSSSSS
  *
  * BITNOT  D,{#}S         {WCZ}
- *
- *
- *
- *
  */
 bool P2Asm::asm_bitnot()
 {
@@ -4562,9 +4398,6 @@ bool P2Asm::asm_bitnot()
  * D = D & S.
  * C = parity of result.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_and()
 {
@@ -4583,9 +4416,6 @@ bool P2Asm::asm_and()
  * D = D & !S.
  * C = parity of result.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_andn()
 {
@@ -4604,9 +4434,6 @@ bool P2Asm::asm_andn()
  * D = D | S.
  * C = parity of result.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_or()
 {
@@ -4625,9 +4452,6 @@ bool P2Asm::asm_or()
  * D = D ^ S.
  * C = parity of result.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_xor()
 {
@@ -4646,9 +4470,6 @@ bool P2Asm::asm_xor()
  * D = (!S & D ) | (S & {32{ C}}).
  * C = parity of result.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_muxc()
 {
@@ -4667,9 +4488,6 @@ bool P2Asm::asm_muxc()
  * D = (!S & D ) | (S & {32{!C}}).
  * C = parity of result.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_muxnc()
 {
@@ -4688,9 +4506,6 @@ bool P2Asm::asm_muxnc()
  * D = (!S & D ) | (S & {32{ Z}}).
  * C = parity of result.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_muxz()
 {
@@ -4709,9 +4524,6 @@ bool P2Asm::asm_muxz()
  * D = (!S & D ) | (S & {32{!Z}}).
  * C = parity of result.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_muxnz()
 {
@@ -4730,9 +4542,6 @@ bool P2Asm::asm_muxnz()
  * D = S.
  * C = S[31].
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_mov()
 {
@@ -4751,9 +4560,6 @@ bool P2Asm::asm_mov()
  * D = !S.
  * C = !S[31].
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_not()
 {
@@ -4772,9 +4578,6 @@ bool P2Asm::asm_not()
  * D = ABS(S).
  * C = S[31].
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_abs()
 {
@@ -4793,9 +4596,6 @@ bool P2Asm::asm_abs()
  * D = -S.
  * C = MSB of result.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_neg()
 {
@@ -4814,9 +4614,6 @@ bool P2Asm::asm_neg()
  * If C = 1 then D = -S, else D = S.
  * C = MSB of result.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_negc()
 {
@@ -4835,9 +4632,6 @@ bool P2Asm::asm_negc()
  * If C = 0 then D = -S, else D = S.
  * C = MSB of result.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_negnc()
 {
@@ -4856,9 +4650,6 @@ bool P2Asm::asm_negnc()
  * If Z = 1 then D = -S, else D = S.
  * C = MSB of result.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_negz()
 {
@@ -4877,9 +4668,6 @@ bool P2Asm::asm_negz()
  * If Z = 0 then D = -S, else D = S.
  * C = MSB of result.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_negnz()
 {
@@ -4897,9 +4685,6 @@ bool P2Asm::asm_negnz()
  *
  * If D = S then D = 0 and C = 1, else D = D + 1 and C = 0.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_incmod()
 {
@@ -4917,9 +4702,6 @@ bool P2Asm::asm_incmod()
  *
  * If D = 0 then D = S and C = 1, else D = D - 1 and C = 0.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_decmod()
 {
@@ -4937,9 +4719,6 @@ bool P2Asm::asm_decmod()
  *
  * C = MSB of result.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_zerox()
 {
@@ -4957,9 +4736,6 @@ bool P2Asm::asm_zerox()
  *
  * C = MSB of result.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_signx()
 {
@@ -4978,9 +4754,6 @@ bool P2Asm::asm_signx()
  * D = position of top '1' in S (0..31).
  * C = (S != 0).
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_encod()
 {
@@ -4999,9 +4772,6 @@ bool P2Asm::asm_encod()
  * D = number of '1's in S (0..32).
  * C = LSB of result.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_ones()
 {
@@ -5019,9 +4789,6 @@ bool P2Asm::asm_ones()
  *
  * C = parity of (D & S).
  * Z = ((D & S) == 0).
- *
- *
- *
  */
 bool P2Asm::asm_test()
 {
@@ -5039,9 +4806,6 @@ bool P2Asm::asm_test()
  *
  * C = parity of (D & !S).
  * Z = ((D & !S) == 0).
- *
- *
- *
  */
 bool P2Asm::asm_testn()
 {
@@ -5056,10 +4820,6 @@ bool P2Asm::asm_testn()
  * EEEE 100000N NNI DDDDDDDDD SSSSSSSSS
  *
  * SETNIB  D,{#}S,#N
- *
- *
- *
- *
  */
 bool P2Asm::asm_setnib()
 {
@@ -5076,10 +4836,6 @@ bool P2Asm::asm_setnib()
  * EEEE 1000000 00I 000000000 SSSSSSSSS
  *
  * SETNIB  {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_setnib_altsn()
 {
@@ -5096,9 +4852,6 @@ bool P2Asm::asm_setnib_altsn()
  * GETNIB  D,{#}S,#N
  *
  * D = {28'b0, S.NIBBLE[N]).
- *
- *
- *
  */
 bool P2Asm::asm_getnib()
 {
@@ -5115,10 +4868,6 @@ bool P2Asm::asm_getnib()
  * EEEE 1000010 000 DDDDDDDDD 000000000
  *
  * GETNIB  D
- *
- *
- *
- *
  */
 bool P2Asm::asm_getnib_altgn()
 {
@@ -5134,9 +4883,6 @@ bool P2Asm::asm_getnib_altgn()
  * ROLNIB  D,{#}S,#N
  *
  * D = {D[27:0], S.NIBBLE[N]).
- *
- *
- *
  */
 bool P2Asm::asm_rolnib()
 {
@@ -5153,10 +4899,6 @@ bool P2Asm::asm_rolnib()
  * EEEE 1000100 000 DDDDDDDDD 000000000
  *
  * ROLNIB  D
- *
- *
- *
- *
  */
 bool P2Asm::asm_rolnib_altgn()
 {
@@ -5171,10 +4913,6 @@ bool P2Asm::asm_rolnib_altgn()
  * EEEE 1000110 NNI DDDDDDDDD SSSSSSSSS
  *
  * SETBYTE D,{#}S,#N
- *
- *
- *
- *
  */
 bool P2Asm::asm_setbyte()
 {
@@ -5191,10 +4929,6 @@ bool P2Asm::asm_setbyte()
  * EEEE 1000110 00I 000000000 SSSSSSSSS
  *
  * SETBYTE {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_setbyte_altsb()
 {
@@ -5211,9 +4945,6 @@ bool P2Asm::asm_setbyte_altsb()
  * GETBYTE D,{#}S,#N
  *
  * D = {24'b0, S.BYTE[N]).
- *
- *
- *
  */
 bool P2Asm::asm_getbyte()
 {
@@ -5230,10 +4961,6 @@ bool P2Asm::asm_getbyte()
  * EEEE 1000111 000 DDDDDDDDD 000000000
  *
  * GETBYTE D
- *
- *
- *
- *
  */
 bool P2Asm::asm_getbyte_altgb()
 {
@@ -5250,9 +4977,6 @@ bool P2Asm::asm_getbyte_altgb()
  * ROLBYTE D,{#}S,#N
  *
  * D = {D[23:0], S.BYTE[N]).
- *
- *
- *
  */
 bool P2Asm::asm_rolbyte()
 {
@@ -5269,10 +4993,6 @@ bool P2Asm::asm_rolbyte()
  * EEEE 1001000 000 DDDDDDDDD 000000000
  *
  * ROLBYTE D
- *
- *
- *
- *
  */
 bool P2Asm::asm_rolbyte_altgb()
 {
@@ -5287,10 +5007,6 @@ bool P2Asm::asm_rolbyte_altgb()
  * EEEE 1001001 0NI DDDDDDDDD SSSSSSSSS
  *
  * SETWORD D,{#}S,#N
- *
- *
- *
- *
  */
 bool P2Asm::asm_setword()
 {
@@ -5307,10 +5023,6 @@ bool P2Asm::asm_setword()
  * EEEE 1001001 00I 000000000 SSSSSSSSS
  *
  * SETWORD {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_setword_altsw()
 {
@@ -5327,9 +5039,6 @@ bool P2Asm::asm_setword_altsw()
  * GETWORD D,{#}S,#N
  *
  * D = {16'b0, S.WORD[N]).
- *
- *
- *
  */
 bool P2Asm::asm_getword()
 {
@@ -5346,10 +5055,6 @@ bool P2Asm::asm_getword()
  * EEEE 1001001 100 DDDDDDDDD 000000000
  *
  * GETWORD D
- *
- *
- *
- *
  */
 bool P2Asm::asm_getword_altgw()
 {
@@ -5366,9 +5071,6 @@ bool P2Asm::asm_getword_altgw()
  * ROLWORD D,{#}S,#N
  *
  * D = {D[15:0], S.WORD[N]).
- *
- *
- *
  */
 bool P2Asm::asm_rolword()
 {
@@ -5385,10 +5087,6 @@ bool P2Asm::asm_rolword()
  * EEEE 1001010 000 DDDDDDDDD 000000000
  *
  * ROLWORD D
- *
- *
- *
- *
  */
 bool P2Asm::asm_rolword_altgw()
 {
@@ -5406,9 +5104,6 @@ bool P2Asm::asm_rolword_altgw()
  *
  * Next D field = (D[11:3] + S) & $1FF, N field = D[2:0].
  * D += sign-extended S[17:9].
- *
- *
- *
  */
 bool P2Asm::asm_altsn()
 {
@@ -5427,9 +5122,6 @@ bool P2Asm::asm_altsn()
  * ALTSN   D
  *
  * Next D field = D[11:3], N field = D[2:0].
- *
- *
- *
  */
 bool P2Asm::asm_altsn_d()
 {
@@ -5447,9 +5139,6 @@ bool P2Asm::asm_altsn_d()
  *
  * Next S field = (D[11:3] + S) & $1FF, N field = D[2:0].
  * D += sign-extended S[17:9].
- *
- *
- *
  */
 bool P2Asm::asm_altgn()
 {
@@ -5468,9 +5157,6 @@ bool P2Asm::asm_altgn()
  * ALTGN   D
  *
  * Next S field = D[11:3], N field = D[2:0].
- *
- *
- *
  */
 bool P2Asm::asm_altgn_d()
 {
@@ -5488,9 +5174,6 @@ bool P2Asm::asm_altgn_d()
  *
  * Next D field = (D[10:2] + S) & $1FF, N field = D[1:0].
  * D += sign-extended S[17:9].
- *
- *
- *
  */
 bool P2Asm::asm_altsb()
 {
@@ -5509,9 +5192,6 @@ bool P2Asm::asm_altsb()
  * ALTSB   D
  *
  * Next D field = D[10:2], N field = D[1:0].
- *
- *
- *
  */
 bool P2Asm::asm_altsb_d()
 {
@@ -5529,9 +5209,6 @@ bool P2Asm::asm_altsb_d()
  *
  * Next S field = (D[10:2] + S) & $1FF, N field = D[1:0].
  * D += sign-extended S[17:9].
- *
- *
- *
  */
 bool P2Asm::asm_altgb()
 {
@@ -5550,9 +5227,6 @@ bool P2Asm::asm_altgb()
  * ALTGB   D
  *
  * Next S field = D[10:2], N field = D[1:0].
- *
- *
- *
  */
 bool P2Asm::asm_altgb_d()
 {
@@ -5570,9 +5244,6 @@ bool P2Asm::asm_altgb_d()
  *
  * Next D field = (D[9:1] + S) & $1FF, N field = D[0].
  * D += sign-extended S[17:9].
- *
- *
- *
  */
 bool P2Asm::asm_altsw()
 {
@@ -5591,9 +5262,6 @@ bool P2Asm::asm_altsw()
  * ALTSW   D
  *
  * Next D field = D[9:1], N field = D[0].
- *
- *
- *
  */
 bool P2Asm::asm_altsw_d()
 {
@@ -5611,9 +5279,6 @@ bool P2Asm::asm_altsw_d()
  *
  * Next S field = ((D[9:1] + S) & $1FF), N field = D[0].
  * D += sign-extended S[17:9].
- *
- *
- *
  */
 bool P2Asm::asm_altgw()
 {
@@ -5632,9 +5297,6 @@ bool P2Asm::asm_altgw()
  * ALTGW   D
  *
  * Next S field = D[9:1], N field = D[0].
- *
- *
- *
  */
 bool P2Asm::asm_altgw_d()
 {
@@ -5651,9 +5313,6 @@ bool P2Asm::asm_altgw_d()
  * ALTR    D,{#}S
  *
  * D += sign-extended S[17:9].
- *
- *
- *
  */
 bool P2Asm::asm_altr()
 {
@@ -5670,10 +5329,6 @@ bool P2Asm::asm_altr()
  * EEEE 1001100 001 DDDDDDDDD 000000000
  *
  * ALTR    D
- *
- *
- *
- *
  */
 bool P2Asm::asm_altr_d()
 {
@@ -5690,9 +5345,6 @@ bool P2Asm::asm_altr_d()
  * ALTD    D,{#}S
  *
  * D += sign-extended S[17:9].
- *
- *
- *
  */
 bool P2Asm::asm_altd()
 {
@@ -5709,10 +5361,6 @@ bool P2Asm::asm_altd()
  * EEEE 1001100 011 DDDDDDDDD 000000000
  *
  * ALTD    D
- *
- *
- *
- *
  */
 bool P2Asm::asm_altd_d()
 {
@@ -5729,9 +5377,6 @@ bool P2Asm::asm_altd_d()
  * ALTS    D,{#}S
  *
  * D += sign-extended S[17:9].
- *
- *
- *
  */
 bool P2Asm::asm_alts()
 {
@@ -5748,10 +5393,6 @@ bool P2Asm::asm_alts()
  * EEEE 1001100 101 DDDDDDDDD 000000000
  *
  * ALTS    D
- *
- *
- *
- *
  */
 bool P2Asm::asm_alts_d()
 {
@@ -5768,9 +5409,6 @@ bool P2Asm::asm_alts_d()
  * ALTB    D,{#}S
  *
  * D += sign-extended S[17:9].
- *
- *
- *
  */
 bool P2Asm::asm_altb()
 {
@@ -5787,10 +5425,6 @@ bool P2Asm::asm_altb()
  * EEEE 1001100 111 DDDDDDDDD 000000000
  *
  * ALTB    D
- *
- *
- *
- *
  */
 bool P2Asm::asm_altb_d()
 {
@@ -5807,9 +5441,6 @@ bool P2Asm::asm_altb_d()
  * ALTI    D,{#}S
  *
  * Modify D per S.
- *
- *
- *
  */
 bool P2Asm::asm_alti()
 {
@@ -5828,9 +5459,6 @@ bool P2Asm::asm_alti()
  * ALTI    D
  *
  * D stays same.
- *
- *
- *
  */
 bool P2Asm::asm_alti_d()
 {
@@ -5847,9 +5475,6 @@ bool P2Asm::asm_alti_d()
  * SETR    D,{#}S
  *
  * D = {D[31:28], S[8:0], D[18:0]}.
- *
- *
- *
  */
 bool P2Asm::asm_setr()
 {
@@ -5866,9 +5491,6 @@ bool P2Asm::asm_setr()
  * SETD    D,{#}S
  *
  * D = {D[31:18], S[8:0], D[8:0]}.
- *
- *
- *
  */
 bool P2Asm::asm_setd()
 {
@@ -5885,9 +5507,6 @@ bool P2Asm::asm_setd()
  * SETS    D,{#}S
  *
  * D = {D[31:9], S[8:0]}.
- *
- *
- *
  */
 bool P2Asm::asm_sets()
 {
@@ -5904,9 +5523,6 @@ bool P2Asm::asm_sets()
  * DECOD   D,{#}S
  *
  * D = 1 << S[4:0].
- *
- *
- *
  */
 bool P2Asm::asm_decod()
 {
@@ -5923,9 +5539,6 @@ bool P2Asm::asm_decod()
  * DECOD   D
  *
  * D = 1 << D[4:0].
- *
- *
- *
  */
 bool P2Asm::asm_decod_d()
 {
@@ -5942,9 +5555,6 @@ bool P2Asm::asm_decod_d()
  * BMASK   D,{#}S
  *
  * D = ($0000_0002 << S[4:0]) - 1.
- *
- *
- *
  */
 bool P2Asm::asm_bmask()
 {
@@ -5961,9 +5571,6 @@ bool P2Asm::asm_bmask()
  * BMASK   D
  *
  * D = ($0000_0002 << D[4:0]) - 1.
- *
- *
- *
  */
 bool P2Asm::asm_bmask_d()
 {
@@ -5980,9 +5587,6 @@ bool P2Asm::asm_bmask_d()
  * CRCBIT  D,{#}S
  *
  * If (C XOR D[0]) then D = (D >> 1) XOR S, else D = (D >> 1).
- *
- *
- *
  */
 bool P2Asm::asm_crcbit()
 {
@@ -6001,9 +5605,6 @@ bool P2Asm::asm_crcbit()
  * Like CRCBIT, but 4x.
  * Q = Q << 4.
  * Use SETQ+CRCNIB+CRCNIB+CRCNIB.
- *
- *
- *
  */
 bool P2Asm::asm_crcnib()
 {
@@ -6018,10 +5619,6 @@ bool P2Asm::asm_crcnib()
  * EEEE 1001111 00I DDDDDDDDD SSSSSSSSS
  *
  * MUXNITS D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_muxnits()
 {
@@ -6036,10 +5633,6 @@ bool P2Asm::asm_muxnits()
  * EEEE 1001111 01I DDDDDDDDD SSSSSSSSS
  *
  * MUXNIBS D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_muxnibs()
 {
@@ -6057,9 +5650,6 @@ bool P2Asm::asm_muxnibs()
  *
  * For each '1' bit in Q, copy the corresponding bit in S into D.
  * D = (D & !Q) | (S & Q).
- *
- *
- *
  */
 bool P2Asm::asm_muxq()
 {
@@ -6076,9 +5666,6 @@ bool P2Asm::asm_muxq()
  * MOVBYTS D,{#}S
  *
  * D = {D.BYTE[S[7:6]], D.BYTE[S[5:4]], D.BYTE[S[3:2]], D.BYTE[S[1:0]]}.
- *
- *
- *
  */
 bool P2Asm::asm_movbyts()
 {
@@ -6095,9 +5682,6 @@ bool P2Asm::asm_movbyts()
  * MUL     D,{#}S          {WZ}
  *
  * Z = (S == 0) | (D == 0).
- *
- *
- *
  */
 bool P2Asm::asm_mul()
 {
@@ -6114,9 +5698,6 @@ bool P2Asm::asm_mul()
  * MULS    D,{#}S          {WZ}
  *
  * Z = (S == 0) | (D == 0).
- *
- *
- *
  */
 bool P2Asm::asm_muls()
 {
@@ -6133,9 +5714,6 @@ bool P2Asm::asm_muls()
  * SCA     D,{#}S          {WZ}
  *
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_sca()
 {
@@ -6153,9 +5731,6 @@ bool P2Asm::asm_sca()
  *
  * In this scheme, $4000 = 1.0 and $C000 = -1.0.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_scas()
 {
@@ -6170,10 +5745,6 @@ bool P2Asm::asm_scas()
  * EEEE 1010010 00I DDDDDDDDD SSSSSSSSS
  *
  * ADDPIX  D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_addpix()
 {
@@ -6190,9 +5761,6 @@ bool P2Asm::asm_addpix()
  * MULPIX  D,{#}S
  *
  * 0.
- *
- *
- *
  */
 bool P2Asm::asm_mulpix()
 {
@@ -6207,10 +5775,6 @@ bool P2Asm::asm_mulpix()
  * EEEE 1010010 10I DDDDDDDDD SSSSSSSSS
  *
  * BLNPIX  D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_blnpix()
 {
@@ -6225,10 +5789,6 @@ bool P2Asm::asm_blnpix()
  * EEEE 1010010 11I DDDDDDDDD SSSSSSSSS
  *
  * MIXPIX  D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_mixpix()
 {
@@ -6245,9 +5805,6 @@ bool P2Asm::asm_mixpix()
  * ADDCT1  D,{#}S
  *
  * Adds S into D.
- *
- *
- *
  */
 bool P2Asm::asm_addct1()
 {
@@ -6264,9 +5821,6 @@ bool P2Asm::asm_addct1()
  * ADDCT2  D,{#}S
  *
  * Adds S into D.
- *
- *
- *
  */
 bool P2Asm::asm_addct2()
 {
@@ -6283,9 +5837,6 @@ bool P2Asm::asm_addct2()
  * ADDCT3  D,{#}S
  *
  * Adds S into D.
- *
- *
- *
  */
 bool P2Asm::asm_addct3()
 {
@@ -6302,9 +5853,6 @@ bool P2Asm::asm_addct3()
  * WMLONG  D,{#}S/P
  *
  * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
- *
- *
- *
  */
 bool P2Asm::asm_wmlong()
 {
@@ -6321,9 +5869,6 @@ bool P2Asm::asm_wmlong()
  * RQPIN   D,{#}S          {WC}
  *
  * C = modal result.
- *
- *
- *
  */
 bool P2Asm::asm_rqpin()
 {
@@ -6340,9 +5885,6 @@ bool P2Asm::asm_rqpin()
  * RDPIN   D,{#}S          {WC}
  *
  * C = modal result.
- *
- *
- *
  */
 bool P2Asm::asm_rdpin()
 {
@@ -6360,9 +5902,6 @@ bool P2Asm::asm_rdpin()
  *
  * C = MSB of data.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_rdlut()
 {
@@ -6380,9 +5919,6 @@ bool P2Asm::asm_rdlut()
  *
  * C = MSB of byte.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_rdbyte()
 {
@@ -6400,9 +5936,6 @@ bool P2Asm::asm_rdbyte()
  *
  * C = MSB of word.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_rdword()
 {
@@ -6413,16 +5946,13 @@ bool P2Asm::asm_rdword()
 
 /**
  * @brief Read long from hub address {#}S/PTRx into D.
+ * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  *
  * EEEE 1011000 CZI DDDDDDDDD SSSSSSSSS
  *
  * RDLONG  D,{#}S/P {WC/WZ/WCZ}
  *
  * C = MSB of long.
- * *   Prior SETQ/SETQ2 invokes cog/LUT block transfer.
- *
- *
- *
  */
 bool P2Asm::asm_rdlong()
 {
@@ -6440,9 +5970,6 @@ bool P2Asm::asm_rdlong()
  *
  * C = MSB of long.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_popa()
 {
@@ -6462,9 +5989,6 @@ bool P2Asm::asm_popa()
  *
  * C = MSB of long.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_popb()
 {
@@ -6483,9 +6007,6 @@ bool P2Asm::asm_popb()
  * CALLD   D,{#}S   {WC/WZ/WCZ}
  *
  * C = S[31], Z = S[30].
- *
- *
- *
  */
 bool P2Asm::asm_calld()
 {
@@ -6502,9 +6023,6 @@ bool P2Asm::asm_calld()
  * RESI3
  *
  * (CALLD $1F0,$1F1 WC,WZ).
- *
- *
- *
  */
 bool P2Asm::asm_resi3()
 {
@@ -6525,9 +6043,6 @@ bool P2Asm::asm_resi3()
  * RESI2
  *
  * (CALLD $1F2,$1F3 WC,WZ).
- *
- *
- *
  */
 bool P2Asm::asm_resi2()
 {
@@ -6548,9 +6063,6 @@ bool P2Asm::asm_resi2()
  * RESI1
  *
  * (CALLD $1F4,$1F5 WC,WZ).
- *
- *
- *
  */
 bool P2Asm::asm_resi1()
 {
@@ -6571,9 +6083,6 @@ bool P2Asm::asm_resi1()
  * RESI0
  *
  * (CALLD $1FE,$1FF WC,WZ).
- *
- *
- *
  */
 bool P2Asm::asm_resi0()
 {
@@ -6594,9 +6103,6 @@ bool P2Asm::asm_resi0()
  * RETI3
  *
  * (CALLD $1FF,$1F1 WC,WZ).
- *
- *
- *
  */
 bool P2Asm::asm_reti3()
 {
@@ -6617,9 +6123,6 @@ bool P2Asm::asm_reti3()
  * RETI2
  *
  * (CALLD $1FF,$1F3 WC,WZ).
- *
- *
- *
  */
 bool P2Asm::asm_reti2()
 {
@@ -6640,9 +6143,6 @@ bool P2Asm::asm_reti2()
  * RETI1
  *
  * (CALLD $1FF,$1F5 WC,WZ).
- *
- *
- *
  */
 bool P2Asm::asm_reti1()
 {
@@ -6663,9 +6163,6 @@ bool P2Asm::asm_reti1()
  * RETI0
  *
  * (CALLD $1FF,$1FF WC,WZ).
- *
- *
- *
  */
 bool P2Asm::asm_reti0()
 {
@@ -6684,10 +6181,6 @@ bool P2Asm::asm_reti0()
  * EEEE 1011010 0LI DDDDDDDDD SSSSSSSSS
  *
  * CALLPA  {#}D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_callpa()
 {
@@ -6702,10 +6195,6 @@ bool P2Asm::asm_callpa()
  * EEEE 1011010 1LI DDDDDDDDD SSSSSSSSS
  *
  * CALLPB  {#}D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_callpb()
 {
@@ -6720,10 +6209,6 @@ bool P2Asm::asm_callpb()
  * EEEE 1011011 00I DDDDDDDDD SSSSSSSSS
  *
  * DJZ     D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_djz()
 {
@@ -6738,10 +6223,6 @@ bool P2Asm::asm_djz()
  * EEEE 1011011 01I DDDDDDDDD SSSSSSSSS
  *
  * DJNZ    D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_djnz()
 {
@@ -6756,10 +6237,6 @@ bool P2Asm::asm_djnz()
  * EEEE 1011011 10I DDDDDDDDD SSSSSSSSS
  *
  * DJF     D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_djf()
 {
@@ -6774,10 +6251,6 @@ bool P2Asm::asm_djf()
  * EEEE 1011011 11I DDDDDDDDD SSSSSSSSS
  *
  * DJNF    D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_djnf()
 {
@@ -6792,10 +6265,6 @@ bool P2Asm::asm_djnf()
  * EEEE 1011100 00I DDDDDDDDD SSSSSSSSS
  *
  * IJZ     D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_ijz()
 {
@@ -6810,10 +6279,6 @@ bool P2Asm::asm_ijz()
  * EEEE 1011100 01I DDDDDDDDD SSSSSSSSS
  *
  * IJNZ    D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_ijnz()
 {
@@ -6828,10 +6293,6 @@ bool P2Asm::asm_ijnz()
  * EEEE 1011100 10I DDDDDDDDD SSSSSSSSS
  *
  * TJZ     D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_tjz()
 {
@@ -6846,10 +6307,6 @@ bool P2Asm::asm_tjz()
  * EEEE 1011100 11I DDDDDDDDD SSSSSSSSS
  *
  * TJNZ    D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_tjnz()
 {
@@ -6864,10 +6321,6 @@ bool P2Asm::asm_tjnz()
  * EEEE 1011101 00I DDDDDDDDD SSSSSSSSS
  *
  * TJF     D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_tjf()
 {
@@ -6882,10 +6335,6 @@ bool P2Asm::asm_tjf()
  * EEEE 1011101 01I DDDDDDDDD SSSSSSSSS
  *
  * TJNF    D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_tjnf()
 {
@@ -6900,10 +6349,6 @@ bool P2Asm::asm_tjnf()
  * EEEE 1011101 10I DDDDDDDDD SSSSSSSSS
  *
  * TJS     D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_tjs()
 {
@@ -6918,10 +6363,6 @@ bool P2Asm::asm_tjs()
  * EEEE 1011101 11I DDDDDDDDD SSSSSSSSS
  *
  * TJNS    D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_tjns()
 {
@@ -6936,10 +6377,6 @@ bool P2Asm::asm_tjns()
  * EEEE 1011110 00I DDDDDDDDD SSSSSSSSS
  *
  * TJV     D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_tjv()
 {
@@ -6954,10 +6391,6 @@ bool P2Asm::asm_tjv()
  * EEEE 1011110 01I 000000000 SSSSSSSSS
  *
  * JINT    {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jint()
 {
@@ -6973,10 +6406,6 @@ bool P2Asm::asm_jint()
  * EEEE 1011110 01I 000000001 SSSSSSSSS
  *
  * JCT1    {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jct1()
 {
@@ -6992,10 +6421,6 @@ bool P2Asm::asm_jct1()
  * EEEE 1011110 01I 000000010 SSSSSSSSS
  *
  * JCT2    {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jct2()
 {
@@ -7011,10 +6436,6 @@ bool P2Asm::asm_jct2()
  * EEEE 1011110 01I 000000011 SSSSSSSSS
  *
  * JCT3    {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jct3()
 {
@@ -7030,10 +6451,6 @@ bool P2Asm::asm_jct3()
  * EEEE 1011110 01I 000000100 SSSSSSSSS
  *
  * JSE1    {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jse1()
 {
@@ -7049,10 +6466,6 @@ bool P2Asm::asm_jse1()
  * EEEE 1011110 01I 000000101 SSSSSSSSS
  *
  * JSE2    {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jse2()
 {
@@ -7068,10 +6481,6 @@ bool P2Asm::asm_jse2()
  * EEEE 1011110 01I 000000110 SSSSSSSSS
  *
  * JSE3    {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jse3()
 {
@@ -7087,10 +6496,6 @@ bool P2Asm::asm_jse3()
  * EEEE 1011110 01I 000000111 SSSSSSSSS
  *
  * JSE4    {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jse4()
 {
@@ -7106,10 +6511,6 @@ bool P2Asm::asm_jse4()
  * EEEE 1011110 01I 000001000 SSSSSSSSS
  *
  * JPAT    {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jpat()
 {
@@ -7125,10 +6526,6 @@ bool P2Asm::asm_jpat()
  * EEEE 1011110 01I 000001001 SSSSSSSSS
  *
  * JFBW    {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jfbw()
 {
@@ -7144,10 +6541,6 @@ bool P2Asm::asm_jfbw()
  * EEEE 1011110 01I 000001010 SSSSSSSSS
  *
  * JXMT    {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jxmt()
 {
@@ -7163,10 +6556,6 @@ bool P2Asm::asm_jxmt()
  * EEEE 1011110 01I 000001011 SSSSSSSSS
  *
  * JXFI    {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jxfi()
 {
@@ -7182,10 +6571,6 @@ bool P2Asm::asm_jxfi()
  * EEEE 1011110 01I 000001100 SSSSSSSSS
  *
  * JXRO    {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jxro()
 {
@@ -7201,10 +6586,6 @@ bool P2Asm::asm_jxro()
  * EEEE 1011110 01I 000001101 SSSSSSSSS
  *
  * JXRL    {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jxrl()
 {
@@ -7220,10 +6601,6 @@ bool P2Asm::asm_jxrl()
  * EEEE 1011110 01I 000001110 SSSSSSSSS
  *
  * JATN    {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jatn()
 {
@@ -7239,10 +6616,6 @@ bool P2Asm::asm_jatn()
  * EEEE 1011110 01I 000001111 SSSSSSSSS
  *
  * JQMT    {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jqmt()
 {
@@ -7258,10 +6631,6 @@ bool P2Asm::asm_jqmt()
  * EEEE 1011110 01I 000010000 SSSSSSSSS
  *
  * JNINT   {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jnint()
 {
@@ -7277,10 +6646,6 @@ bool P2Asm::asm_jnint()
  * EEEE 1011110 01I 000010001 SSSSSSSSS
  *
  * JNCT1   {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jnct1()
 {
@@ -7296,10 +6661,6 @@ bool P2Asm::asm_jnct1()
  * EEEE 1011110 01I 000010010 SSSSSSSSS
  *
  * JNCT2   {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jnct2()
 {
@@ -7315,10 +6676,6 @@ bool P2Asm::asm_jnct2()
  * EEEE 1011110 01I 000010011 SSSSSSSSS
  *
  * JNCT3   {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jnct3()
 {
@@ -7334,10 +6691,6 @@ bool P2Asm::asm_jnct3()
  * EEEE 1011110 01I 000010100 SSSSSSSSS
  *
  * JNSE1   {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jnse1()
 {
@@ -7353,10 +6706,6 @@ bool P2Asm::asm_jnse1()
  * EEEE 1011110 01I 000010101 SSSSSSSSS
  *
  * JNSE2   {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jnse2()
 {
@@ -7372,10 +6721,6 @@ bool P2Asm::asm_jnse2()
  * EEEE 1011110 01I 000010110 SSSSSSSSS
  *
  * JNSE3   {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jnse3()
 {
@@ -7391,10 +6736,6 @@ bool P2Asm::asm_jnse3()
  * EEEE 1011110 01I 000010111 SSSSSSSSS
  *
  * JNSE4   {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jnse4()
 {
@@ -7410,10 +6751,6 @@ bool P2Asm::asm_jnse4()
  * EEEE 1011110 01I 000011000 SSSSSSSSS
  *
  * JNPAT   {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jnpat()
 {
@@ -7429,10 +6766,6 @@ bool P2Asm::asm_jnpat()
  * EEEE 1011110 01I 000011001 SSSSSSSSS
  *
  * JNFBW   {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jnfbw()
 {
@@ -7448,10 +6781,6 @@ bool P2Asm::asm_jnfbw()
  * EEEE 1011110 01I 000011010 SSSSSSSSS
  *
  * JNXMT   {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jnxmt()
 {
@@ -7467,10 +6796,6 @@ bool P2Asm::asm_jnxmt()
  * EEEE 1011110 01I 000011011 SSSSSSSSS
  *
  * JNXFI   {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jnxfi()
 {
@@ -7486,10 +6811,6 @@ bool P2Asm::asm_jnxfi()
  * EEEE 1011110 01I 000011100 SSSSSSSSS
  *
  * JNXRO   {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jnxro()
 {
@@ -7505,10 +6826,6 @@ bool P2Asm::asm_jnxro()
  * EEEE 1011110 01I 000011101 SSSSSSSSS
  *
  * JNXRL   {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jnxrl()
 {
@@ -7524,10 +6841,6 @@ bool P2Asm::asm_jnxrl()
  * EEEE 1011110 01I 000011110 SSSSSSSSS
  *
  * JNATN   {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jnatn()
 {
@@ -7543,10 +6856,6 @@ bool P2Asm::asm_jnatn()
  * EEEE 1011110 01I 000011111 SSSSSSSSS
  *
  * JNQMT   {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_jnqmt()
 {
@@ -7562,10 +6871,6 @@ bool P2Asm::asm_jnqmt()
  * EEEE 1011110 1LI DDDDDDDDD SSSSSSSSS
  *
  * <empty> {#}D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_1011110_1()
 {
@@ -7580,10 +6885,6 @@ bool P2Asm::asm_1011110_1()
  * EEEE 1011111 0LI DDDDDDDDD SSSSSSSSS
  *
  * <empty> {#}D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_1011111_0()
 {
@@ -7600,9 +6901,6 @@ bool P2Asm::asm_1011111_0()
  * SETPAT  {#}D,{#}S
  *
  * C selects INA/INB, Z selects =/!=, D provides mask value, S provides match value.
- *
- *
- *
  */
 bool P2Asm::asm_setpat()
 {
@@ -7617,10 +6915,6 @@ bool P2Asm::asm_setpat()
  * EEEE 1100000 0LI DDDDDDDDD SSSSSSSSS
  *
  * WRPIN   {#}D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_wrpin()
 {
@@ -7635,10 +6929,6 @@ bool P2Asm::asm_wrpin()
  * EEEE 1100000 01I 000000001 SSSSSSSSS
  *
  * AKPIN   {#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_akpin()
 {
@@ -7655,10 +6945,6 @@ bool P2Asm::asm_akpin()
  * EEEE 1100000 1LI DDDDDDDDD SSSSSSSSS
  *
  * WXPIN   {#}D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_wxpin()
 {
@@ -7673,10 +6959,6 @@ bool P2Asm::asm_wxpin()
  * EEEE 1100001 0LI DDDDDDDDD SSSSSSSSS
  *
  * WYPIN   {#}D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_wypin()
 {
@@ -7691,10 +6973,6 @@ bool P2Asm::asm_wypin()
  * EEEE 1100001 1LI DDDDDDDDD SSSSSSSSS
  *
  * WRLUT   {#}D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_wrlut()
 {
@@ -7709,10 +6987,6 @@ bool P2Asm::asm_wrlut()
  * EEEE 1100010 0LI DDDDDDDDD SSSSSSSSS
  *
  * WRBYTE  {#}D,{#}S/P
- *
- *
- *
- *
  */
 bool P2Asm::asm_wrbyte()
 {
@@ -7727,10 +7001,6 @@ bool P2Asm::asm_wrbyte()
  * EEEE 1100010 1LI DDDDDDDDD SSSSSSSSS
  *
  * WRWORD  {#}D,{#}S/P
- *
- *
- *
- *
  */
 bool P2Asm::asm_wrword()
 {
@@ -7741,15 +7011,11 @@ bool P2Asm::asm_wrword()
 
 /**
  * @brief Write long in D[31:0] to hub address {#}S/PTRx.
+ * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  *
  * EEEE 1100011 0LI DDDDDDDDD SSSSSSSSS
  *
  * WRLONG  {#}D,{#}S/P
- *
- * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
- *
- *
- *
  */
 bool P2Asm::asm_wrlong()
 {
@@ -7764,10 +7030,6 @@ bool P2Asm::asm_wrlong()
  * EEEE 1100011 0L1 DDDDDDDDD 101100001
  *
  * PUSHA   {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_pusha()
 {
@@ -7784,10 +7046,6 @@ bool P2Asm::asm_pusha()
  * EEEE 1100011 0L1 DDDDDDDDD 111100001
  *
  * PUSHB   {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_pushb()
 {
@@ -7806,9 +7064,6 @@ bool P2Asm::asm_pushb()
  * RDFAST  {#}D,{#}S
  *
  * D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
- *
- *
- *
  */
 bool P2Asm::asm_rdfast()
 {
@@ -7825,9 +7080,6 @@ bool P2Asm::asm_rdfast()
  * WRFAST  {#}D,{#}S
  *
  * D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
- *
- *
- *
  */
 bool P2Asm::asm_wrfast()
 {
@@ -7844,9 +7096,6 @@ bool P2Asm::asm_wrfast()
  * FBLOCK  {#}D,{#}S
  *
  * D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
- *
- *
- *
  */
 bool P2Asm::asm_fblock()
 {
@@ -7861,10 +7110,6 @@ bool P2Asm::asm_fblock()
  * EEEE 1100101 0LI DDDDDDDDD SSSSSSSSS
  *
  * XINIT   {#}D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_xinit()
 {
@@ -7879,10 +7124,6 @@ bool P2Asm::asm_xinit()
  * EEEE 1100101 011 000000000 000000000
  *
  * XSTOP
- *
- *
- *
- *
  */
 bool P2Asm::asm_xstop()
 {
@@ -7901,10 +7142,6 @@ bool P2Asm::asm_xstop()
  * EEEE 1100101 1LI DDDDDDDDD SSSSSSSSS
  *
  * XZERO   {#}D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_xzero()
 {
@@ -7919,10 +7156,6 @@ bool P2Asm::asm_xzero()
  * EEEE 1100110 0LI DDDDDDDDD SSSSSSSSS
  *
  * XCONT   {#}D,{#}S
- *
- *
- *
- *
  */
 bool P2Asm::asm_xcont()
 {
@@ -7940,9 +7173,6 @@ bool P2Asm::asm_xcont()
  *
  * If S = 0, repeat infinitely.
  * If D[8:0] = 0, nothing repeats.
- *
- *
- *
  */
 bool P2Asm::asm_rep()
 {
@@ -7960,9 +7190,6 @@ bool P2Asm::asm_rep()
  *
  * S[19:0] sets hub startup address and PTRB of cog.
  * Prior SETQ sets PTRA of cog.
- *
- *
- *
  */
 bool P2Asm::asm_coginit()
 {
@@ -7979,9 +7206,6 @@ bool P2Asm::asm_coginit()
  * QMUL    {#}D,{#}S
  *
  * GETQX/GETQY retrieves lower/upper product.
- *
- *
- *
  */
 bool P2Asm::asm_qmul()
 {
@@ -7998,9 +7222,6 @@ bool P2Asm::asm_qmul()
  * QDIV    {#}D,{#}S
  *
  * GETQX/GETQY retrieves quotient/remainder.
- *
- *
- *
  */
 bool P2Asm::asm_qdiv()
 {
@@ -8017,9 +7238,6 @@ bool P2Asm::asm_qdiv()
  * QFRAC   {#}D,{#}S
  *
  * GETQX/GETQY retrieves quotient/remainder.
- *
- *
- *
  */
 bool P2Asm::asm_qfrac()
 {
@@ -8036,9 +7254,6 @@ bool P2Asm::asm_qfrac()
  * QSQRT   {#}D,{#}S
  *
  * GETQX retrieves root.
- *
- *
- *
  */
 bool P2Asm::asm_qsqrt()
 {
@@ -8055,9 +7270,6 @@ bool P2Asm::asm_qsqrt()
  * QROTATE {#}D,{#}S
  *
  * GETQX/GETQY retrieves X/Y.
- *
- *
- *
  */
 bool P2Asm::asm_qrotate()
 {
@@ -8074,9 +7286,6 @@ bool P2Asm::asm_qrotate()
  * QVECTOR {#}D,{#}S
  *
  * GETQX/GETQY retrieves length/angle.
- *
- *
- *
  */
 bool P2Asm::asm_qvector()
 {
@@ -8091,10 +7300,6 @@ bool P2Asm::asm_qvector()
  * EEEE 1101011 00L DDDDDDDDD 000000000
  *
  * HUBSET  {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_hubset()
 {
@@ -8112,9 +7317,6 @@ bool P2Asm::asm_hubset()
  * COGID   {#}D            {WC}
  *
  * If WC, check status of cog D[3:0], C = 1 if on.
- *
- *
- *
  */
 bool P2Asm::asm_cogid()
 {
@@ -8130,10 +7332,6 @@ bool P2Asm::asm_cogid()
  * EEEE 1101011 00L DDDDDDDDD 000000011
  *
  * COGSTOP {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_cogstop()
 {
@@ -8152,9 +7350,6 @@ bool P2Asm::asm_cogstop()
  *
  * D will be written with the LOCK number (0 to 15).
  * C = 1 if no LOCK available.
- *
- *
- *
  */
 bool P2Asm::asm_locknew()
 {
@@ -8170,10 +7365,6 @@ bool P2Asm::asm_locknew()
  * EEEE 1101011 00L DDDDDDDDD 000000101
  *
  * LOCKRET {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_lockret()
 {
@@ -8193,9 +7384,6 @@ bool P2Asm::asm_lockret()
  * C = 1 if got LOCK.
  * LOCKREL releases LOCK.
  * LOCK is also released if owner cog stops or restarts.
- *
- *
- *
  */
 bool P2Asm::asm_locktry()
 {
@@ -8213,9 +7401,6 @@ bool P2Asm::asm_locktry()
  * LOCKREL {#}D            {WC}
  *
  * If D is a register and WC, get current/last cog id of LOCK owner into D and LOCK status into C.
- *
- *
- *
  */
 bool P2Asm::asm_lockrel()
 {
@@ -8233,9 +7418,6 @@ bool P2Asm::asm_lockrel()
  * QLOG    {#}D
  *
  * GETQX retrieves log {5'whole_exponent, 27'fractional_exponent}.
- *
- *
- *
  */
 bool P2Asm::asm_qlog()
 {
@@ -8253,9 +7435,6 @@ bool P2Asm::asm_qlog()
  * QEXP    {#}D
  *
  * GETQX retrieves number.
- *
- *
- *
  */
 bool P2Asm::asm_qexp()
 {
@@ -8274,9 +7453,6 @@ bool P2Asm::asm_qexp()
  *
  * C = MSB of byte.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_rfbyte()
 {
@@ -8295,9 +7471,6 @@ bool P2Asm::asm_rfbyte()
  *
  * C = MSB of word.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_rfword()
 {
@@ -8316,9 +7489,6 @@ bool P2Asm::asm_rfword()
  *
  * C = MSB of long.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_rflong()
 {
@@ -8337,9 +7507,6 @@ bool P2Asm::asm_rflong()
  *
  * C = 0.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_rfvar()
 {
@@ -8358,9 +7525,6 @@ bool P2Asm::asm_rfvar()
  *
  * C = MSB of value.
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_rfvars()
 {
@@ -8376,10 +7540,6 @@ bool P2Asm::asm_rfvars()
  * EEEE 1101011 00L DDDDDDDDD 000010101
  *
  * WFBYTE  {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_wfbyte()
 {
@@ -8395,10 +7555,6 @@ bool P2Asm::asm_wfbyte()
  * EEEE 1101011 00L DDDDDDDDD 000010110
  *
  * WFWORD  {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_wfword()
 {
@@ -8414,10 +7570,6 @@ bool P2Asm::asm_wfword()
  * EEEE 1101011 00L DDDDDDDDD 000010111
  *
  * WFLONG  {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_wflong()
 {
@@ -8437,9 +7589,6 @@ bool P2Asm::asm_wflong()
  * Waits, in case result not ready.
  * C = X[31].
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_getqx()
 {
@@ -8459,9 +7608,6 @@ bool P2Asm::asm_getqx()
  * Waits, in case result no ready.
  * C = Y[31].
  * Z = (result == 0).
- *
- *
- *
  */
 bool P2Asm::asm_getqy()
 {
@@ -8479,9 +7625,6 @@ bool P2Asm::asm_getqy()
  * GETCT   D
  *
  * CT is the free-running 32-bit system counter that increments on every clock.
- *
- *
- *
  */
 bool P2Asm::asm_getct()
 {
@@ -8500,9 +7643,6 @@ bool P2Asm::asm_getct()
  *
  * RND is the PRNG that updates on every clock.
  * D = RND[31:0], C = RND[31], Z = RND[30], unique per cog.
- *
- *
- *
  */
 bool P2Asm::asm_getrnd()
 {
@@ -8520,9 +7660,6 @@ bool P2Asm::asm_getrnd()
  * GETRND            WC/WZ/WCZ
  *
  * C = RND[31], Z = RND[30], unique per cog.
- *
- *
- *
  */
 bool P2Asm::asm_getrnd_cz()
 {
@@ -8538,10 +7675,6 @@ bool P2Asm::asm_getrnd_cz()
  * EEEE 1101011 00L DDDDDDDDD 000011100
  *
  * SETDACS {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_setdacs()
 {
@@ -8557,10 +7690,6 @@ bool P2Asm::asm_setdacs()
  * EEEE 1101011 00L DDDDDDDDD 000011101
  *
  * SETXFRQ {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_setxfrq()
 {
@@ -8576,10 +7705,6 @@ bool P2Asm::asm_setxfrq()
  * EEEE 1101011 000 DDDDDDDDD 000011110
  *
  * GETXACC D
- *
- *
- *
- *
  */
 bool P2Asm::asm_getxacc()
 {
@@ -8598,9 +7723,6 @@ bool P2Asm::asm_getxacc()
  *
  * If WC/WZ/WCZ, wait 2 + (D & RND) clocks.
  * C/Z = 0.
- *
- *
- *
  */
 bool P2Asm::asm_waitx()
 {
@@ -8616,10 +7738,6 @@ bool P2Asm::asm_waitx()
  * EEEE 1101011 00L DDDDDDDDD 000100000
  *
  * SETSE1  {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_setse1()
 {
@@ -8635,10 +7753,6 @@ bool P2Asm::asm_setse1()
  * EEEE 1101011 00L DDDDDDDDD 000100001
  *
  * SETSE2  {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_setse2()
 {
@@ -8654,10 +7768,6 @@ bool P2Asm::asm_setse2()
  * EEEE 1101011 00L DDDDDDDDD 000100010
  *
  * SETSE3  {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_setse3()
 {
@@ -8673,10 +7783,6 @@ bool P2Asm::asm_setse3()
  * EEEE 1101011 00L DDDDDDDDD 000100011
  *
  * SETSE4  {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_setse4()
 {
@@ -8692,10 +7798,6 @@ bool P2Asm::asm_setse4()
  * EEEE 1101011 CZ0 000000000 000100100
  *
  * POLLINT          {WC/WZ/WCZ}
- *
- *
- *
- *
  */
 bool P2Asm::asm_pollint()
 {
@@ -8712,10 +7814,6 @@ bool P2Asm::asm_pollint()
  * EEEE 1101011 CZ0 000000001 000100100
  *
  * POLLCT1          {WC/WZ/WCZ}
- *
- *
- *
- *
  */
 bool P2Asm::asm_pollct1()
 {
@@ -8732,10 +7830,6 @@ bool P2Asm::asm_pollct1()
  * EEEE 1101011 CZ0 000000010 000100100
  *
  * POLLCT2          {WC/WZ/WCZ}
- *
- *
- *
- *
  */
 bool P2Asm::asm_pollct2()
 {
@@ -8752,10 +7846,6 @@ bool P2Asm::asm_pollct2()
  * EEEE 1101011 CZ0 000000011 000100100
  *
  * POLLCT3          {WC/WZ/WCZ}
- *
- *
- *
- *
  */
 bool P2Asm::asm_pollct3()
 {
@@ -8772,10 +7862,6 @@ bool P2Asm::asm_pollct3()
  * EEEE 1101011 CZ0 000000100 000100100
  *
  * POLLSE1          {WC/WZ/WCZ}
- *
- *
- *
- *
  */
 bool P2Asm::asm_pollse1()
 {
@@ -8792,10 +7878,6 @@ bool P2Asm::asm_pollse1()
  * EEEE 1101011 CZ0 000000101 000100100
  *
  * POLLSE2          {WC/WZ/WCZ}
- *
- *
- *
- *
  */
 bool P2Asm::asm_pollse2()
 {
@@ -8812,10 +7894,6 @@ bool P2Asm::asm_pollse2()
  * EEEE 1101011 CZ0 000000110 000100100
  *
  * POLLSE3          {WC/WZ/WCZ}
- *
- *
- *
- *
  */
 bool P2Asm::asm_pollse3()
 {
@@ -8832,10 +7910,6 @@ bool P2Asm::asm_pollse3()
  * EEEE 1101011 CZ0 000000111 000100100
  *
  * POLLSE4          {WC/WZ/WCZ}
- *
- *
- *
- *
  */
 bool P2Asm::asm_pollse4()
 {
@@ -8852,10 +7926,6 @@ bool P2Asm::asm_pollse4()
  * EEEE 1101011 CZ0 000001000 000100100
  *
  * POLLPAT          {WC/WZ/WCZ}
- *
- *
- *
- *
  */
 bool P2Asm::asm_pollpat()
 {
@@ -8872,10 +7942,6 @@ bool P2Asm::asm_pollpat()
  * EEEE 1101011 CZ0 000001001 000100100
  *
  * POLLFBW          {WC/WZ/WCZ}
- *
- *
- *
- *
  */
 bool P2Asm::asm_pollfbw()
 {
@@ -8892,10 +7958,6 @@ bool P2Asm::asm_pollfbw()
  * EEEE 1101011 CZ0 000001010 000100100
  *
  * POLLXMT          {WC/WZ/WCZ}
- *
- *
- *
- *
  */
 bool P2Asm::asm_pollxmt()
 {
@@ -8912,10 +7974,6 @@ bool P2Asm::asm_pollxmt()
  * EEEE 1101011 CZ0 000001011 000100100
  *
  * POLLXFI          {WC/WZ/WCZ}
- *
- *
- *
- *
  */
 bool P2Asm::asm_pollxfi()
 {
@@ -8932,10 +7990,6 @@ bool P2Asm::asm_pollxfi()
  * EEEE 1101011 CZ0 000001100 000100100
  *
  * POLLXRO          {WC/WZ/WCZ}
- *
- *
- *
- *
  */
 bool P2Asm::asm_pollxro()
 {
@@ -8952,10 +8006,6 @@ bool P2Asm::asm_pollxro()
  * EEEE 1101011 CZ0 000001101 000100100
  *
  * POLLXRL          {WC/WZ/WCZ}
- *
- *
- *
- *
  */
 bool P2Asm::asm_pollxrl()
 {
@@ -8972,10 +8022,6 @@ bool P2Asm::asm_pollxrl()
  * EEEE 1101011 CZ0 000001110 000100100
  *
  * POLLATN          {WC/WZ/WCZ}
- *
- *
- *
- *
  */
 bool P2Asm::asm_pollatn()
 {
@@ -8992,10 +8038,6 @@ bool P2Asm::asm_pollatn()
  * EEEE 1101011 CZ0 000001111 000100100
  *
  * POLLQMT          {WC/WZ/WCZ}
- *
- *
- *
- *
  */
 bool P2Asm::asm_pollqmt()
 {
@@ -9015,9 +8057,6 @@ bool P2Asm::asm_pollqmt()
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
- *
- *
- *
  */
 bool P2Asm::asm_waitint()
 {
@@ -9037,9 +8076,6 @@ bool P2Asm::asm_waitint()
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
- *
- *
- *
  */
 bool P2Asm::asm_waitct1()
 {
@@ -9059,9 +8095,6 @@ bool P2Asm::asm_waitct1()
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
- *
- *
- *
  */
 bool P2Asm::asm_waitct2()
 {
@@ -9081,9 +8114,6 @@ bool P2Asm::asm_waitct2()
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
- *
- *
- *
  */
 bool P2Asm::asm_waitct3()
 {
@@ -9103,9 +8133,6 @@ bool P2Asm::asm_waitct3()
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
- *
- *
- *
  */
 bool P2Asm::asm_waitse1()
 {
@@ -9125,9 +8152,6 @@ bool P2Asm::asm_waitse1()
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
- *
- *
- *
  */
 bool P2Asm::asm_waitse2()
 {
@@ -9147,9 +8171,6 @@ bool P2Asm::asm_waitse2()
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
- *
- *
- *
  */
 bool P2Asm::asm_waitse3()
 {
@@ -9169,9 +8190,6 @@ bool P2Asm::asm_waitse3()
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
- *
- *
- *
  */
 bool P2Asm::asm_waitse4()
 {
@@ -9191,9 +8209,6 @@ bool P2Asm::asm_waitse4()
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
- *
- *
- *
  */
 bool P2Asm::asm_waitpat()
 {
@@ -9213,9 +8228,6 @@ bool P2Asm::asm_waitpat()
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
- *
- *
- *
  */
 bool P2Asm::asm_waitfbw()
 {
@@ -9235,9 +8247,6 @@ bool P2Asm::asm_waitfbw()
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
- *
- *
- *
  */
 bool P2Asm::asm_waitxmt()
 {
@@ -9257,9 +8266,6 @@ bool P2Asm::asm_waitxmt()
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
- *
- *
- *
  */
 bool P2Asm::asm_waitxfi()
 {
@@ -9279,9 +8285,6 @@ bool P2Asm::asm_waitxfi()
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
- *
- *
- *
  */
 bool P2Asm::asm_waitxro()
 {
@@ -9301,9 +8304,6 @@ bool P2Asm::asm_waitxro()
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
- *
- *
- *
  */
 bool P2Asm::asm_waitxrl()
 {
@@ -9323,9 +8323,6 @@ bool P2Asm::asm_waitxrl()
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
- *
- *
- *
  */
 bool P2Asm::asm_waitatn()
 {
@@ -9342,10 +8339,6 @@ bool P2Asm::asm_waitatn()
  * EEEE 1101011 000 000100000 000100100
  *
  * ALLOWI
- *
- *
- *
- *
  */
 bool P2Asm::asm_allowi()
 {
@@ -9362,10 +8355,6 @@ bool P2Asm::asm_allowi()
  * EEEE 1101011 000 000100001 000100100
  *
  * STALLI
- *
- *
- *
- *
  */
 bool P2Asm::asm_stalli()
 {
@@ -9382,10 +8371,6 @@ bool P2Asm::asm_stalli()
  * EEEE 1101011 000 000100010 000100100
  *
  * TRGINT1
- *
- *
- *
- *
  */
 bool P2Asm::asm_trgint1()
 {
@@ -9402,10 +8387,6 @@ bool P2Asm::asm_trgint1()
  * EEEE 1101011 000 000100011 000100100
  *
  * TRGINT2
- *
- *
- *
- *
  */
 bool P2Asm::asm_trgint2()
 {
@@ -9422,10 +8403,6 @@ bool P2Asm::asm_trgint2()
  * EEEE 1101011 000 000100100 000100100
  *
  * TRGINT3
- *
- *
- *
- *
  */
 bool P2Asm::asm_trgint3()
 {
@@ -9442,10 +8419,6 @@ bool P2Asm::asm_trgint3()
  * EEEE 1101011 000 000100101 000100100
  *
  * NIXINT1
- *
- *
- *
- *
  */
 bool P2Asm::asm_nixint1()
 {
@@ -9462,10 +8435,6 @@ bool P2Asm::asm_nixint1()
  * EEEE 1101011 000 000100110 000100100
  *
  * NIXINT2
- *
- *
- *
- *
  */
 bool P2Asm::asm_nixint2()
 {
@@ -9482,10 +8451,6 @@ bool P2Asm::asm_nixint2()
  * EEEE 1101011 000 000100111 000100100
  *
  * NIXINT3
- *
- *
- *
- *
  */
 bool P2Asm::asm_nixint3()
 {
@@ -9502,10 +8467,6 @@ bool P2Asm::asm_nixint3()
  * EEEE 1101011 00L DDDDDDDDD 000100101
  *
  * SETINT1 {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_setint1()
 {
@@ -9521,10 +8482,6 @@ bool P2Asm::asm_setint1()
  * EEEE 1101011 00L DDDDDDDDD 000100110
  *
  * SETINT2 {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_setint2()
 {
@@ -9540,10 +8497,6 @@ bool P2Asm::asm_setint2()
  * EEEE 1101011 00L DDDDDDDDD 000100111
  *
  * SETINT3 {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_setint3()
 {
@@ -9562,9 +8515,6 @@ bool P2Asm::asm_setint3()
  *
  * Use before RDLONG/WRLONG/WMLONG to set block transfer.
  * Also used before MUXQ/COGINIT/QDIV/QFRAC/QROTATE/WAITxxx.
- *
- *
- *
  */
 bool P2Asm::asm_setq()
 {
@@ -9582,9 +8532,6 @@ bool P2Asm::asm_setq()
  * SETQ2   {#}D
  *
  * Use before RDLONG/WRLONG/WMLONG to set LUT block transfer.
- *
- *
- *
  */
 bool P2Asm::asm_setq2()
 {
@@ -9600,10 +8547,6 @@ bool P2Asm::asm_setq2()
  * EEEE 1101011 00L DDDDDDDDD 000101010
  *
  * PUSH    {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_push()
 {
@@ -9621,9 +8564,6 @@ bool P2Asm::asm_push()
  * POP     D        {WC/WZ/WCZ}
  *
  * C = K[31], Z = K[30], D = K.
- *
- *
- *
  */
 bool P2Asm::asm_pop()
 {
@@ -9641,9 +8581,6 @@ bool P2Asm::asm_pop()
  * JMP     D        {WC/WZ/WCZ}
  *
  * C = D[31], Z = D[30], PC = D[19:0].
- *
- *
- *
  */
 bool P2Asm::asm_jmp()
 {
@@ -9661,9 +8598,6 @@ bool P2Asm::asm_jmp()
  * CALL    D        {WC/WZ/WCZ}
  *
  * C = D[31], Z = D[30], PC = D[19:0].
- *
- *
- *
  */
 bool P2Asm::asm_call()
 {
@@ -9681,9 +8615,6 @@ bool P2Asm::asm_call()
  * RET              {WC/WZ/WCZ}
  *
  * C = K[31], Z = K[30], PC = K[19:0].
- *
- *
- *
  */
 bool P2Asm::asm_ret()
 {
@@ -9703,9 +8634,6 @@ bool P2Asm::asm_ret()
  * CALLA   D        {WC/WZ/WCZ}
  *
  * C = D[31], Z = D[30], PC = D[19:0].
- *
- *
- *
  */
 bool P2Asm::asm_calla()
 {
@@ -9723,9 +8651,6 @@ bool P2Asm::asm_calla()
  * RETA             {WC/WZ/WCZ}
  *
  * C = L[31], Z = L[30], PC = L[19:0].
- *
- *
- *
  */
 bool P2Asm::asm_reta()
 {
@@ -9745,9 +8670,6 @@ bool P2Asm::asm_reta()
  * CALLB   D        {WC/WZ/WCZ}
  *
  * C = D[31], Z = D[30], PC = D[19:0].
- *
- *
- *
  */
 bool P2Asm::asm_callb()
 {
@@ -9765,9 +8687,6 @@ bool P2Asm::asm_callb()
  * RETB             {WC/WZ/WCZ}
  *
  * C = L[31], Z = L[30], PC = L[19:0].
- *
- *
- *
  */
 bool P2Asm::asm_retb()
 {
@@ -9788,9 +8707,6 @@ bool P2Asm::asm_retb()
  *
  * For cogex, PC += D[19:0].
  * For hubex, PC += D[17:0] << 2.
- *
- *
- *
  */
 bool P2Asm::asm_jmprel()
 {
@@ -9810,9 +8726,6 @@ bool P2Asm::asm_jmprel()
  * Subsequent instructions 0.
  * 31 get cancelled for each '1' bit in D[0].
  * D[31].
- *
- *
- *
  */
 bool P2Asm::asm_skip()
 {
@@ -9830,9 +8743,6 @@ bool P2Asm::asm_skip()
  * SKIPF   {#}D
  *
  * Like SKIP, but instead of cancelling instructions, the PC leaps over them.
- *
- *
- *
  */
 bool P2Asm::asm_skipf()
 {
@@ -9850,9 +8760,6 @@ bool P2Asm::asm_skipf()
  * EXECF   {#}D
  *
  * PC = {10'b0, D[9:0]}.
- *
- *
- *
  */
 bool P2Asm::asm_execf()
 {
@@ -9868,10 +8775,6 @@ bool P2Asm::asm_execf()
  * EEEE 1101011 000 DDDDDDDDD 000110100
  *
  * GETPTR  D
- *
- *
- *
- *
  */
 bool P2Asm::asm_getptr()
 {
@@ -9890,9 +8793,6 @@ bool P2Asm::asm_getptr()
  *
  * C = 0.
  * Z = 0.
- *
- *
- *
  */
 bool P2Asm::asm_getbrk()
 {
@@ -9911,9 +8811,6 @@ bool P2Asm::asm_getbrk()
  * COGBRK  {#}D
  *
  * Cog D[3:0] must have asynchronous breakpoint enabled.
- *
- *
- *
  */
 bool P2Asm::asm_cogbrk()
 {
@@ -9931,9 +8828,6 @@ bool P2Asm::asm_cogbrk()
  * BRK     {#}D
  *
  * Else, trigger break if enabled, conditionally write break code to D[7:0].
- *
- *
- *
  */
 bool P2Asm::asm_brk()
 {
@@ -9949,10 +8843,6 @@ bool P2Asm::asm_brk()
  * EEEE 1101011 00L DDDDDDDDD 000110111
  *
  * SETLUTS {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_setluts()
 {
@@ -9968,10 +8858,6 @@ bool P2Asm::asm_setluts()
  * EEEE 1101011 00L DDDDDDDDD 000111000
  *
  * SETCY   {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_setcy()
 {
@@ -9987,10 +8873,6 @@ bool P2Asm::asm_setcy()
  * EEEE 1101011 00L DDDDDDDDD 000111001
  *
  * SETCI   {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_setci()
 {
@@ -10006,10 +8888,6 @@ bool P2Asm::asm_setci()
  * EEEE 1101011 00L DDDDDDDDD 000111010
  *
  * SETCQ   {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_setcq()
 {
@@ -10025,10 +8903,6 @@ bool P2Asm::asm_setcq()
  * EEEE 1101011 00L DDDDDDDDD 000111011
  *
  * SETCFRQ {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_setcfrq()
 {
@@ -10044,10 +8918,6 @@ bool P2Asm::asm_setcfrq()
  * EEEE 1101011 00L DDDDDDDDD 000111100
  *
  * SETCMOD {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_setcmod()
 {
@@ -10063,10 +8933,6 @@ bool P2Asm::asm_setcmod()
  * EEEE 1101011 00L DDDDDDDDD 000111101
  *
  * SETPIV  {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_setpiv()
 {
@@ -10082,10 +8948,6 @@ bool P2Asm::asm_setpiv()
  * EEEE 1101011 00L DDDDDDDDD 000111110
  *
  * SETPIX  {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_setpix()
 {
@@ -10101,10 +8963,6 @@ bool P2Asm::asm_setpix()
  * EEEE 1101011 00L DDDDDDDDD 000111111
  *
  * COGATN  {#}D
- *
- *
- *
- *
  */
 bool P2Asm::asm_cogatn()
 {
@@ -10122,9 +8980,6 @@ bool P2Asm::asm_cogatn()
  * TESTP   {#}D           WC/WZ
  *
  * C/Z =          IN[D[5:0]].
- *
- *
- *
  */
 bool P2Asm::asm_testp_w()
 {
@@ -10142,9 +8997,6 @@ bool P2Asm::asm_testp_w()
  * TESTPN  {#}D           WC/WZ
  *
  * C/Z =         !IN[D[5:0]].
- *
- *
- *
  */
 bool P2Asm::asm_testpn_w()
 {
@@ -10162,9 +9014,6 @@ bool P2Asm::asm_testpn_w()
  * TESTP   {#}D       ANDC/ANDZ
  *
  * C/Z = C/Z AND  IN[D[5:0]].
- *
- *
- *
  */
 bool P2Asm::asm_testp_and()
 {
@@ -10182,9 +9031,6 @@ bool P2Asm::asm_testp_and()
  * TESTPN  {#}D       ANDC/ANDZ
  *
  * C/Z = C/Z AND !IN[D[5:0]].
- *
- *
- *
  */
 bool P2Asm::asm_testpn_and()
 {
@@ -10202,9 +9048,6 @@ bool P2Asm::asm_testpn_and()
  * TESTP   {#}D         ORC/ORZ
  *
  * C/Z = C/Z OR   IN[D[5:0]].
- *
- *
- *
  */
 bool P2Asm::asm_testp_or()
 {
@@ -10222,9 +9065,6 @@ bool P2Asm::asm_testp_or()
  * TESTPN  {#}D         ORC/ORZ
  *
  * C/Z = C/Z OR  !IN[D[5:0]].
- *
- *
- *
  */
 bool P2Asm::asm_testpn_or()
 {
@@ -10242,9 +9082,6 @@ bool P2Asm::asm_testpn_or()
  * TESTP   {#}D       XORC/XORZ
  *
  * C/Z = C/Z XOR  IN[D[5:0]].
- *
- *
- *
  */
 bool P2Asm::asm_testp_xor()
 {
@@ -10262,9 +9099,6 @@ bool P2Asm::asm_testp_xor()
  * TESTPN  {#}D       XORC/XORZ
  *
  * C/Z = C/Z XOR !IN[D[5:0]].
- *
- *
- *
  */
 bool P2Asm::asm_testpn_xor()
 {
@@ -10282,9 +9116,6 @@ bool P2Asm::asm_testpn_xor()
  * DIRL    {#}D           {WCZ}
  *
  * C,Z = DIR bit.
- *
- *
- *
  */
 bool P2Asm::asm_dirl()
 {
@@ -10302,9 +9133,6 @@ bool P2Asm::asm_dirl()
  * DIRH    {#}D           {WCZ}
  *
  * C,Z = DIR bit.
- *
- *
- *
  */
 bool P2Asm::asm_dirh()
 {
@@ -10322,9 +9150,6 @@ bool P2Asm::asm_dirh()
  * DIRC    {#}D           {WCZ}
  *
  * C,Z = DIR bit.
- *
- *
- *
  */
 bool P2Asm::asm_dirc()
 {
@@ -10342,9 +9167,6 @@ bool P2Asm::asm_dirc()
  * DIRNC   {#}D           {WCZ}
  *
  * C,Z = DIR bit.
- *
- *
- *
  */
 bool P2Asm::asm_dirnc()
 {
@@ -10362,9 +9184,6 @@ bool P2Asm::asm_dirnc()
  * DIRZ    {#}D           {WCZ}
  *
  * C,Z = DIR bit.
- *
- *
- *
  */
 bool P2Asm::asm_dirz()
 {
@@ -10382,9 +9201,6 @@ bool P2Asm::asm_dirz()
  * DIRNZ   {#}D           {WCZ}
  *
  * C,Z = DIR bit.
- *
- *
- *
  */
 bool P2Asm::asm_dirnz()
 {
@@ -10402,9 +9218,6 @@ bool P2Asm::asm_dirnz()
  * DIRRND  {#}D           {WCZ}
  *
  * C,Z = DIR bit.
- *
- *
- *
  */
 bool P2Asm::asm_dirrnd()
 {
@@ -10422,9 +9235,6 @@ bool P2Asm::asm_dirrnd()
  * DIRNOT  {#}D           {WCZ}
  *
  * C,Z = DIR bit.
- *
- *
- *
  */
 bool P2Asm::asm_dirnot()
 {
@@ -10442,9 +9252,6 @@ bool P2Asm::asm_dirnot()
  * OUTL    {#}D           {WCZ}
  *
  * C,Z = OUT bit.
- *
- *
- *
  */
 bool P2Asm::asm_outl()
 {
@@ -10462,9 +9269,6 @@ bool P2Asm::asm_outl()
  * OUTH    {#}D           {WCZ}
  *
  * C,Z = OUT bit.
- *
- *
- *
  */
 bool P2Asm::asm_outh()
 {
@@ -10482,9 +9286,6 @@ bool P2Asm::asm_outh()
  * OUTC    {#}D           {WCZ}
  *
  * C,Z = OUT bit.
- *
- *
- *
  */
 bool P2Asm::asm_outc()
 {
@@ -10502,9 +9303,6 @@ bool P2Asm::asm_outc()
  * OUTNC   {#}D           {WCZ}
  *
  * C,Z = OUT bit.
- *
- *
- *
  */
 bool P2Asm::asm_outnc()
 {
@@ -10522,9 +9320,6 @@ bool P2Asm::asm_outnc()
  * OUTZ    {#}D           {WCZ}
  *
  * C,Z = OUT bit.
- *
- *
- *
  */
 bool P2Asm::asm_outz()
 {
@@ -10542,9 +9337,6 @@ bool P2Asm::asm_outz()
  * OUTNZ   {#}D           {WCZ}
  *
  * C,Z = OUT bit.
- *
- *
- *
  */
 bool P2Asm::asm_outnz()
 {
@@ -10562,9 +9354,6 @@ bool P2Asm::asm_outnz()
  * OUTRND  {#}D           {WCZ}
  *
  * C,Z = OUT bit.
- *
- *
- *
  */
 bool P2Asm::asm_outrnd()
 {
@@ -10582,9 +9371,6 @@ bool P2Asm::asm_outrnd()
  * OUTNOT  {#}D           {WCZ}
  *
  * C,Z = OUT bit.
- *
- *
- *
  */
 bool P2Asm::asm_outnot()
 {
@@ -10603,9 +9389,6 @@ bool P2Asm::asm_outnot()
  *
  * DIR bit = 0.
  * C,Z = OUT bit.
- *
- *
- *
  */
 bool P2Asm::asm_fltl()
 {
@@ -10624,9 +9407,6 @@ bool P2Asm::asm_fltl()
  *
  * DIR bit = 0.
  * C,Z = OUT bit.
- *
- *
- *
  */
 bool P2Asm::asm_flth()
 {
@@ -10645,9 +9425,6 @@ bool P2Asm::asm_flth()
  *
  * DIR bit = 0.
  * C,Z = OUT bit.
- *
- *
- *
  */
 bool P2Asm::asm_fltc()
 {
@@ -10666,9 +9443,6 @@ bool P2Asm::asm_fltc()
  *
  * DIR bit = 0.
  * C,Z = OUT bit.
- *
- *
- *
  */
 bool P2Asm::asm_fltnc()
 {
@@ -10687,9 +9461,6 @@ bool P2Asm::asm_fltnc()
  *
  * DIR bit = 0.
  * C,Z = OUT bit.
- *
- *
- *
  */
 bool P2Asm::asm_fltz()
 {
@@ -10708,9 +9479,6 @@ bool P2Asm::asm_fltz()
  *
  * DIR bit = 0.
  * C,Z = OUT bit.
- *
- *
- *
  */
 bool P2Asm::asm_fltnz()
 {
@@ -10729,9 +9497,6 @@ bool P2Asm::asm_fltnz()
  *
  * DIR bit = 0.
  * C,Z = OUT bit.
- *
- *
- *
  */
 bool P2Asm::asm_fltrnd()
 {
@@ -10750,9 +9515,6 @@ bool P2Asm::asm_fltrnd()
  *
  * DIR bit = 0.
  * C,Z = OUT bit.
- *
- *
- *
  */
 bool P2Asm::asm_fltnot()
 {
@@ -10771,9 +9533,6 @@ bool P2Asm::asm_fltnot()
  *
  * DIR bit = 1.
  * C,Z = OUT bit.
- *
- *
- *
  */
 bool P2Asm::asm_drvl()
 {
@@ -10792,9 +9551,6 @@ bool P2Asm::asm_drvl()
  *
  * DIR bit = 1.
  * C,Z = OUT bit.
- *
- *
- *
  */
 bool P2Asm::asm_drvh()
 {
@@ -10813,9 +9569,6 @@ bool P2Asm::asm_drvh()
  *
  * DIR bit = 1.
  * C,Z = OUT bit.
- *
- *
- *
  */
 bool P2Asm::asm_drvc()
 {
@@ -10834,9 +9587,6 @@ bool P2Asm::asm_drvc()
  *
  * DIR bit = 1.
  * C,Z = OUT bit.
- *
- *
- *
  */
 bool P2Asm::asm_drvnc()
 {
@@ -10855,9 +9605,6 @@ bool P2Asm::asm_drvnc()
  *
  * DIR bit = 1.
  * C,Z = OUT bit.
- *
- *
- *
  */
 bool P2Asm::asm_drvz()
 {
@@ -10876,9 +9623,6 @@ bool P2Asm::asm_drvz()
  *
  * DIR bit = 1.
  * C,Z = OUT bit.
- *
- *
- *
  */
 bool P2Asm::asm_drvnz()
 {
@@ -10897,9 +9641,6 @@ bool P2Asm::asm_drvnz()
  *
  * DIR bit = 1.
  * C,Z = OUT bit.
- *
- *
- *
  */
 bool P2Asm::asm_drvrnd()
 {
@@ -10918,9 +9659,6 @@ bool P2Asm::asm_drvrnd()
  *
  * DIR bit = 1.
  * C,Z = OUT bit.
- *
- *
- *
  */
 bool P2Asm::asm_drvnot()
 {
@@ -10938,9 +9676,6 @@ bool P2Asm::asm_drvnot()
  * SPLITB  D
  *
  * D = {S[31], S[27], S[23], S[19], ... S[12], S[8], S[4], S[0]}.
- *
- *
- *
  */
 bool P2Asm::asm_splitb()
 {
@@ -10958,9 +9693,6 @@ bool P2Asm::asm_splitb()
  * MERGEB  D
  *
  * D = {S[31], S[23], S[15], S[7], ... S[24], S[16], S[8], S[0]}.
- *
- *
- *
  */
 bool P2Asm::asm_mergeb()
 {
@@ -10978,9 +9710,6 @@ bool P2Asm::asm_mergeb()
  * SPLITW  D
  *
  * D = {S[31], S[29], S[27], S[25], ... S[6], S[4], S[2], S[0]}.
- *
- *
- *
  */
 bool P2Asm::asm_splitw()
 {
@@ -10998,9 +9727,6 @@ bool P2Asm::asm_splitw()
  * MERGEW  D
  *
  * D = {S[31], S[15], S[30], S[14], ... S[17], S[1], S[16], S[0]}.
- *
- *
- *
  */
 bool P2Asm::asm_mergew()
 {
@@ -11019,9 +9745,6 @@ bool P2Asm::asm_mergew()
  *
  * Returns to original value on 32nd iteration.
  * Forward pattern.
- *
- *
- *
  */
 bool P2Asm::asm_seussf()
 {
@@ -11040,9 +9763,6 @@ bool P2Asm::asm_seussf()
  *
  * Returns to original value on 32nd iteration.
  * Reverse pattern.
- *
- *
- *
  */
 bool P2Asm::asm_seussr()
 {
@@ -11060,9 +9780,6 @@ bool P2Asm::asm_seussr()
  * RGBSQZ  D
  *
  * D = {15'b0, S[31:27], S[23:18], S[15:11]}.
- *
- *
- *
  */
 bool P2Asm::asm_rgbsqz()
 {
@@ -11080,9 +9797,6 @@ bool P2Asm::asm_rgbsqz()
  * RGBEXP  D
  *
  * D = {S[15:11,15:13], S[10:5,10:9], S[4:0,4:2], 8'b0}.
- *
- *
- *
  */
 bool P2Asm::asm_rgbexp()
 {
@@ -11098,10 +9812,6 @@ bool P2Asm::asm_rgbexp()
  * EEEE 1101011 000 DDDDDDDDD 001101000
  *
  * XORO32  D
- *
- *
- *
- *
  */
 bool P2Asm::asm_xoro32()
 {
@@ -11119,9 +9829,6 @@ bool P2Asm::asm_xoro32()
  * REV     D
  *
  * D = D[0:31].
- *
- *
- *
  */
 bool P2Asm::asm_rev()
 {
@@ -11140,9 +9847,6 @@ bool P2Asm::asm_rev()
  *
  * D = {C, Z, D[31:2]}.
  * C = D[1],  Z = D[0].
- *
- *
- *
  */
 bool P2Asm::asm_rczr()
 {
@@ -11161,9 +9865,6 @@ bool P2Asm::asm_rczr()
  *
  * D = {D[29:0], C, Z}.
  * C = D[31], Z = D[30].
- *
- *
- *
  */
 bool P2Asm::asm_rczl()
 {
@@ -11181,9 +9882,6 @@ bool P2Asm::asm_rczl()
  * WRC     D
  *
  * D = {31'b0,  C).
- *
- *
- *
  */
 bool P2Asm::asm_wrc()
 {
@@ -11201,9 +9899,6 @@ bool P2Asm::asm_wrc()
  * WRNC    D
  *
  * D = {31'b0, !C).
- *
- *
- *
  */
 bool P2Asm::asm_wrnc()
 {
@@ -11221,9 +9916,6 @@ bool P2Asm::asm_wrnc()
  * WRZ     D
  *
  * D = {31'b0,  Z).
- *
- *
- *
  */
 bool P2Asm::asm_wrz()
 {
@@ -11241,9 +9933,6 @@ bool P2Asm::asm_wrz()
  * WRNZ    D
  *
  * D = {31'b0, !Z).
- *
- *
- *
  */
 bool P2Asm::asm_wrnz()
 {
@@ -11261,9 +9950,6 @@ bool P2Asm::asm_wrnz()
  * MODCZ   c,z      {WC/WZ/WCZ}
  *
  * C = cccc[{C,Z}], Z = zzzz[{C,Z}].
- *
- *
- *
  */
 bool P2Asm::asm_modcz()
 {
@@ -11283,10 +9969,6 @@ bool P2Asm::asm_modcz()
  * SETSCP  {#}D
  *
  * Pins D[5:2], enable D[6].
- *
- *
- *
- *
  */
 bool P2Asm::asm_setscp()
 {
@@ -11307,9 +9989,6 @@ bool P2Asm::asm_setscp()
  * GETSCP  D
  *
  * C = cccc[{C,Z}], Z = zzzz[{C,Z}].
- *
- *
- *
  */
 bool P2Asm::asm_getscp()
 {
@@ -11327,9 +10006,6 @@ bool P2Asm::asm_getscp()
  * JMP     #A
  *
  * If R = 1, PC += A, else PC = A.
- *
- *
- *
  */
 bool P2Asm::asm_jmp_abs()
 {
@@ -11347,9 +10023,6 @@ bool P2Asm::asm_jmp_abs()
  * CALL    #A
  *
  * If R = 1, PC += A, else PC = A.
- *
- *
- *
  */
 bool P2Asm::asm_call_abs()
 {
@@ -11367,9 +10040,6 @@ bool P2Asm::asm_call_abs()
  * CALLA   #A
  *
  * If R = 1, PC += A, else PC = A.
- *
- *
- *
  */
 bool P2Asm::asm_calla_abs()
 {
@@ -11387,9 +10057,6 @@ bool P2Asm::asm_calla_abs()
  * CALLB   #A
  *
  * If R = 1, PC += A, else PC = A.
- *
- *
- *
  */
 bool P2Asm::asm_callb_abs()
 {
@@ -11407,9 +10074,6 @@ bool P2Asm::asm_callb_abs()
  * CALLD   PA,#A
  *
  * If R = 1, PC += A, else PC = A.
- *
- *
- *
  */
 bool P2Asm::asm_calld_pa_abs()
 {
@@ -11426,9 +10090,6 @@ bool P2Asm::asm_calld_pa_abs()
  * CALLD   PB,#A
  *
  * If R = 1, PC += A, else PC = A.
- *
- *
- *
  */
 bool P2Asm::asm_calld_pb_abs()
 {
@@ -11445,9 +10106,6 @@ bool P2Asm::asm_calld_pb_abs()
  * CALLD   PTRA,#A
  *
  * If R = 1, PC += A, else PC = A.
- *
- *
- *
  */
 bool P2Asm::asm_calld_ptra_abs()
 {
@@ -11464,9 +10122,6 @@ bool P2Asm::asm_calld_ptra_abs()
  * CALLD   PTRB,#A
  *
  * If R = 1, PC += A, else PC = A.
- *
- *
- *
  */
 bool P2Asm::asm_calld_ptrb_abs()
 {
@@ -11483,9 +10138,6 @@ bool P2Asm::asm_calld_ptrb_abs()
  * LOC     PA/PB/PTRA/PTRB,#A
  *
  * If R = 1, address = PC + A, else address = A.
- *
- *
- *
  */
 bool P2Asm::asm_loc()
 {
@@ -11529,9 +10181,6 @@ bool P2Asm::asm_loc()
  * LOC     PA/PB/PTRA/PTRB,#A
  *
  * If R = 1, address = PC + A, else address = A.
- *
- *
- *
  */
 bool P2Asm::asm_loc_pa()
 {
@@ -11547,9 +10196,6 @@ bool P2Asm::asm_loc_pa()
  * LOC     PA/PB/PTRA/PTRB,#A
  *
  * If R = 1, address = PC + A, else address = A.
- *
- *
- *
  */
 bool P2Asm::asm_loc_pb()
 {
@@ -11565,9 +10211,6 @@ bool P2Asm::asm_loc_pb()
  * LOC     PA/PB/PTRA/PTRB,#A
  *
  * If R = 1, address = PC + A, else address = A.
- *
- *
- *
  */
 bool P2Asm::asm_loc_ptra()
 {
@@ -11583,9 +10226,6 @@ bool P2Asm::asm_loc_ptra()
  * LOC     PA/PB/PTRA/PTRB,#A
  *
  * If R = 1, address = PC + A, else address = A.
- *
- *
- *
  */
 bool P2Asm::asm_loc_ptrb()
 {
@@ -11599,10 +10239,6 @@ bool P2Asm::asm_loc_ptrb()
  * EEEE 11110NN NNN NNNNNNNNN NNNNNNNNN
  *
  * AUGS    #N
- *
- *
- *
- *
  */
 bool P2Asm::asm_augs()
 {
@@ -11622,10 +10258,6 @@ bool P2Asm::asm_augs()
  * EEEE 11111NN NNN NNNNNNNNN NNNNNNNNN
  *
  * AUGD    #N
- *
- *
- *
- *
  */
 bool P2Asm::asm_augd()
 {
