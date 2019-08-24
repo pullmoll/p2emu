@@ -1,40 +1,68 @@
 #include "p2util.h"
 
+P2Util Util;
+
 P2Util::P2Util()
 {
+    Q_ASSERT(28 == msbpos(p2_LONG(0x10000000u)));
+    Q_ASSERT(31 == msbpos(p2_LONG(0x80000000u)));
+    Q_ASSERT(Q_UINT64_C(10000) == sqrt(Q_UINT64_C(10000)*Q_UINT64_C(10000)));
+    Q_ASSERT(Q_UINT64_C(1000) == sqrt(Q_UINT64_C(1000)*Q_UINT64_C(1000)));
+    Q_ASSERT(Q_UINT64_C(100) == sqrt(Q_UINT64_C(100)*Q_UINT64_C(100)));
+    Q_ASSERT(Q_UINT64_C(10) == sqrt(Q_UINT64_C(10)*Q_UINT64_C(10)));
+    Q_ASSERT(Q_UINT64_C(33121) == sqrt(Q_UINT64_C(33121)*Q_UINT64_C(33121)));
 }
 
 /**
- * @brief Find the most significant 1 bit in value %val
+ * @brief Leave just the most significant 1 bit in value %val
  * @param val value
  * @return position of top most 1 bit
  */
-p2_BYTE P2Util::msb(p2_LONG val)
+p2_QUAD P2Util::msb(p2_QUAD val)
 {
-    val |= (val >> 1);
-    val |= (val >> 2);
-    val |= (val >> 4);
-    val |= (val >> 8);
+    val |= (val >>  1);
+    val |= (val >>  2);
+    val |= (val >>  4);
+    val |= (val >>  8);
     val |= (val >> 16);
-    return static_cast<p2_BYTE>(val & ~(val >> 1));
+    val |= (val >> 32);
+    val &= ~(val >> 1);
+    return val;
 }
 
 /**
- * @brief Find the most significant 1 bit in value %val
+ * @brief Leave just the most significant 1 bit in value %val
  * @param val value
  * @return position of top most 1 bit
  */
-p2_BYTE P2Util::msb(p2_WORD val)
+p2_LONG P2Util::msb(p2_LONG val)
+{
+    val |= (val >>  1);
+    val |= (val >>  2);
+    val |= (val >>  4);
+    val |= (val >>  8);
+    val |= (val >> 16);
+    val &= ~(val >> 1);
+    return val;
+}
+
+/**
+ * @brief Leave just the most significant 1 bit in value %val
+ * @param val value
+ * @return position of top most 1 bit
+ */
+p2_WORD P2Util::msb(p2_WORD val)
 {
     val |= (val >> 1);
     val |= (val >> 2);
     val |= (val >> 4);
     val |= (val >> 8);
-    return static_cast<p2_BYTE>(val & ~(val >> 1));
+    val &= ~(val >> 1);
+    return val;
 }
 
 /**
- * @brief Find the most significant 1 bit in value %val
+ * @brief Leave just the most significant 1 bit in value %val
  * @param val value
  * @return position of top most 1 bit
  */
@@ -43,22 +71,116 @@ p2_BYTE P2Util::msb(p2_BYTE val)
     val |= (val >> 1);
     val |= (val >> 2);
     val |= (val >> 4);
-    return static_cast<p2_BYTE>(val & ~(val >> 1));
+    val &= ~(val >> 1);
+    return val;
 }
 
 /**
- * @brief Count the number of leading zero bits
- * @param val value to inspect
- * @return the number of leading zero bits
+ * @brief Find the most significant 1 bit position in value %val
+ * @param val value
+ * @return position of top most 1 bit
  */
-p2_BYTE P2Util::lcz(p2_LONG val)
+int P2Util::msbpos(p2_LONG val)
 {
     val |= (val >> 1);
     val |= (val >> 2);
     val |= (val >> 4);
     val |= (val >> 8);
     val |= (val >> 16);
-    return 32 - ones(val);
+    return static_cast<int>(ones(val)) - 1;
+}
+
+/**
+ * @brief Find the most significant 1 bit position in value %val
+ * @param val value
+ * @return position of top most 1 bit
+ */
+int P2Util::msbpos(p2_WORD val)
+{
+    val |= (val >> 1);
+    val |= (val >> 2);
+    val |= (val >> 4);
+    val |= (val >> 8);
+    return static_cast<int>(ones(val)) - 1;
+}
+
+/**
+ * @brief Find the most significant 1 bit position in value %val
+ * @param val value
+ * @return position of top most 1 bit
+ */
+int P2Util::msbpos(p2_BYTE val)
+{
+    val |= (val >> 1);
+    val |= (val >> 2);
+    val |= (val >> 4);
+    return static_cast<int>(ones(val)) - 1;
+}
+
+/**
+ * @brief Count the number of leading zero bits in a 64 bit value
+ * @param val value to inspect
+ * @return the number of leading zero bits
+ */
+uint P2Util::lzc(p2_QUAD val)
+{
+    val |= (val >> 1);
+    val |= (val >> 2);
+    val |= (val >> 4);
+    val |= (val >> 8);
+    val |= (val >> 16);
+    val |= (val >> 32);
+    return 64u - ones(val);
+}
+
+/**
+ * @brief Count the number of leading zero bits in a 32 bit value
+ * @param val value to inspect
+ * @return the number of leading zero bits
+ */
+uint P2Util::lzc(p2_LONG val)
+{
+    val |= (val >> 1);
+    val |= (val >> 2);
+    val |= (val >> 4);
+    val |= (val >> 8);
+    val |= (val >> 16);
+    return 32u - ones(val);
+}
+
+/**
+ * @brief Count the number of leading zero bits in a 16 bit value
+ * @param val value to inspect
+ * @return the number of leading zero bits
+ */
+uint P2Util::lzc(p2_WORD val)
+{
+    val |= (val >> 1);
+    val |= (val >> 2);
+    val |= (val >> 4);
+    val |= (val >> 8);
+    return 16u - ones(val);
+}
+
+/**
+ * @brief Count the number of leading zero bits in a 8 bit value
+ * @param val value to inspect
+ * @return the number of leading zero bits
+ */
+uint P2Util::lzc(p2_BYTE val)
+{
+    val |= (val >> 1);
+    val |= (val >> 2);
+    val |= (val >> 4);
+    return 8u - ones(val);
+}
+
+uint P2Util::ones(p2_QUAD val)
+{
+    val = val - ((val >> 1) & Q_UINT64_C(0x5555555555555555));
+    val = (val & Q_UINT64_C(0x3333333333333333)) + ((val >> 2) & Q_UINT64_C(0x3333333333333333));
+    val = (((val + (val >> 4)) & Q_UINT64_C(0x0f0f0f0f0f0f0f0f)) * Q_UINT64_C(0x0101010101010101)) >> 56;
+    return static_cast<uint>(val);
 }
 
 /**
@@ -66,12 +188,12 @@ p2_BYTE P2Util::lcz(p2_LONG val)
  * @param val 32 bit value
  * @return number of 1 bits
  */
-p2_BYTE P2Util::ones(p2_LONG val)
+uint P2Util::ones(p2_LONG val)
 {
     val = val - ((val >> 1) & 0x55555555);
     val = (val & 0x33333333) + ((val >> 2) & 0x33333333);
-    val = (((val + (val >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
-    return static_cast<p2_BYTE>(val);
+    val = (((val + (val >> 4)) & 0x0f0f0f0f) * 0x01010101) >> 24;
+    return val;
 }
 
 /**
@@ -79,12 +201,12 @@ p2_BYTE P2Util::ones(p2_LONG val)
  * @param val 16 bit value
  * @return number of 1 bits
  */
-p2_BYTE P2Util::ones(p2_WORD val)
+uint P2Util::ones(p2_WORD val)
 {
     val = val - ((val >> 1) & 0x5555);
     val = (val & 0x3333) + ((val >> 2) & 0x3333);
-    val = (((val + (val >> 4)) & 0x0F0F) * 0x0101) >> 12;
-    return static_cast<p2_BYTE>(val);
+    val = (((val + (val >> 4)) & 0x0f0f) * 0x0101) >> 12;
+    return val;
 }
 
 /**
@@ -92,12 +214,12 @@ p2_BYTE P2Util::ones(p2_WORD val)
  * @param val 8 bit value
  * @return number of 1 bits
  */
-p2_BYTE P2Util::ones(p2_BYTE val)
+uint P2Util::ones(p2_BYTE val)
 {
     val = val - ((val >> 1) & 0x55);
     val = (val & 0x33) + ((val >> 2) & 0x33);
-    val = (val + (val >> 4)) & 0x0F;
-    return static_cast<p2_BYTE>(val);
+    val = (val + (val >> 4)) & 0x0f;
+    return val;
 }
 
 /**
@@ -105,13 +227,13 @@ p2_BYTE P2Util::ones(p2_BYTE val)
  * @param val 32 bit value
  * @return 1 for odd parity, 0 for even parity
  */
-p2_BYTE P2Util::parity(p2_LONG val)
+uint P2Util::parity(p2_LONG val)
 {
     val ^= val >> 16;
     val ^= val >> 8;
     val ^= val >> 4;
     val &= 15;
-    return (0x6996 >> val) & 1;
+    return (0x6996 >> val) & 1u;
 }
 
 /**
@@ -119,7 +241,7 @@ p2_BYTE P2Util::parity(p2_LONG val)
  * @param val 16 bit value
  * @return 1 for odd parity, 0 for even parity
  */
-p2_BYTE P2Util::parity(p2_WORD val)
+uint P2Util::parity(p2_WORD val)
 {
     val ^= val >> 8;
     val ^= val >> 4;
@@ -132,7 +254,7 @@ p2_BYTE P2Util::parity(p2_WORD val)
  * @param val 8 bit value
  * @return 1 for odd parity, 0 for even parity
  */
-p2_BYTE P2Util::parity(p2_BYTE val)
+uint P2Util::parity(p2_BYTE val)
 {
     val ^= val >> 4;
     val &= 15;
@@ -181,4 +303,91 @@ p2_LONG P2Util::reverse(p2_LONG val)
     val = (((val & 0xf0f0f0f0) >> 4) | ((val & 0x0f0f0f0f) << 4));
     val = (((val & 0xff00ff00) >> 8) | ((val & 0x00ff00ff) << 8));
     return (val >> 16) | (val << 16);
+}
+
+#define	SQRT_SHIFT_BITS     8       // 2, 4, 8, 16
+#define	SQRT_SHIFT_HBITS    (SQRT_SHIFT_BITS>>1)
+#define	SQRT_SHIFT_MASK     ((Q_UINT64_C(1)<<SQRT_SHIFT_BITS)-1)
+/**
+ * @brief Find the square root of a 64 bit value
+ *
+ * Optionally calcuate up to 64 bits of fraction in case
+ * the value is not a perfect square.
+ *
+ * @param val value to find the square root for
+ * @param fract_bits number of fraction bits to calcuate
+ * @param fraction pointer to a 64 bit value to receive the fraction
+ * @return integer part of the square root
+ */
+p2_QUAD P2Util::sqrt(p2_QUAD val, int fract_bits, p2_QUAD* fraction)
+{
+    p2_QUAD retval = 0;
+    p2_QUAD accu = 0;
+    p2_QUAD result = 0;
+    p2_QUAD step = 1;
+    int shift = 64 - SQRT_SHIFT_BITS;
+    p2_LONG d;
+    p2_LONG dig2;
+
+    if (fraction)
+        *fraction = 0;
+
+    // find the shift that gives a non zero digit pair
+    while (0 == (val >> shift))
+        shift -= SQRT_SHIFT_BITS;
+    dig2 = (val >> shift) & SQRT_SHIFT_MASK;
+
+    for (;;) {
+        // shift accu left the number of bits
+        accu <<= SQRT_SHIFT_BITS;
+        // add 2 digits in the least significant bits
+        accu += dig2;
+
+        // subtract consecutive odd numbers 'step' until overflow,
+        // counting up the resulting digit in d
+        for (d = 0; accu >= step; d++) {
+            accu -= step;
+            step += 2;
+        }
+
+        // shift result left for one digit
+        // and add the digit to the result
+        result = (result << SQRT_SHIFT_HBITS) + d;
+
+        // next step = 2 * result * 2^hbits + 1
+        step = (result << (SQRT_SHIFT_HBITS + 1)) + 1;
+        // if shift is 0
+        if (0 == shift)
+            break;  // break out if no more bits
+        // decrease shift to use next digit pair
+        shift -= SQRT_SHIFT_BITS;
+        dig2 = (val >> shift) & SQRT_SHIFT_MASK;
+    }
+
+    retval = result;
+
+    if (accu > 0 && fract_bits > 0) {
+
+        for (int calc = 0; calc < fract_bits; calc += SQRT_SHIFT_HBITS) {
+            // shift accu left the number of bits
+            accu <<= SQRT_SHIFT_HBITS;
+
+            // subtract consecutive odd numbers 'step' until overflow,
+            // counting up the resulting digit in d
+            for (d = 0; accu >= step; d++) {
+                accu -= step;
+                step += 2;
+            }
+
+            // left shift result for one digit
+            result <<= SQRT_SHIFT_HBITS;
+            // add digit to result
+            result += d;
+
+            // next step = result * << 2^hbits + 1
+            step = (result << (SQRT_SHIFT_HBITS + 1)) + 1;
+        }
+        *fraction = result;
+    }
+    return retval;
 }
