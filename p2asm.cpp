@@ -38,14 +38,13 @@
 #include <QRegExp>
 #include "p2asm.h"
 
-static const QString stop_expr = QStringLiteral("*/\\+-&|^<=>()\"'");
 static const QString p2_section_dat = QStringLiteral("DAT");
 static const QString p2_section_con = QStringLiteral("CON");
 static const QString p2_section_pub = QStringLiteral("PUB");
 static const QString p2_section_pri = QStringLiteral("PRI");
 static const QString p2_section_var = QStringLiteral("VAR");
 
-#if 0
+#if 1
 //! debug expression parsing
 #define DEBUG_EXPR(x,...) qDebug(x,__VA_ARGS__)
 #else
@@ -2582,12 +2581,20 @@ P2Atom P2Asm::parse_atom(int& pos, const QString& str)
         break;
 
     case t_PTRA:
+    case t_PTRA_postinc:
+    case t_PTRA_postdec:
+    case t_PTRA_preinc:
+    case t_PTRA_predec:
         DEBUG_EXPR(" PTRA value: %s", qPrintable(str.mid(pos)));
         atom.set(P2Atom::Long, offs_PTRA);
         pos = epos;
         break;
 
     case t_PTRB:
+    case t_PTRB_postinc:
+    case t_PTRB_postdec:
+    case t_PTRB_preinc:
+    case t_PTRB_predec:
         DEBUG_EXPR(" PTRB: value %s", qPrintable(str.mid(pos)));
         atom.set(P2Atom::Long, offs_PTRB);
         pos = epos;
@@ -2600,6 +2607,7 @@ P2Atom P2Asm::parse_atom(int& pos, const QString& str)
         break;
 
     default:
+        DEBUG_EXPR(" reserved word (%s): %s", qPrintable(Token.string(tok)), qPrintable(str.mid(pos)));
         m_error = tr("Reserved word (%1) used as parameter: %2")
                   .arg(Token.string(tok))
                   .arg(str);
@@ -3084,7 +3092,7 @@ bool P2Asm::asm_assign()
     m_widx++;           // skip over token
     m_advance = 0;     // No PC increment
     P2Atom atom = parse_expression();
-    const p2_LONG value = atom.toLong();
+    const p2_LONG value = atom.to_long();
     m_IR.opcode = value;
     m_symbols.setValue(m_symbol, value);
     return end_of_line(false);
@@ -3100,7 +3108,7 @@ bool P2Asm::asm_org()
     m_widx++;           // skip over token
     m_advance = 0;     // No PC increment
     P2Atom atom = parse_expression();
-    p2_LONG value = atom.toLong();
+    p2_LONG value = atom.to_long();
     if (atom.isEmpty())
         value = m_last_PC;
     m_IR.opcode = m_curr_PC = m_next_PC = value;
@@ -3118,7 +3126,7 @@ bool P2Asm::asm_orgh()
     m_widx++;           // skip over token
     m_advance = 0;     // No PC increment
     P2Atom atom = parse_expression();
-    p2_LONG value = atom.toLong();
+    p2_LONG value = atom.to_long();
     if (atom.isEmpty())
         value = HUB_ADDR;
     m_IR.opcode = m_next_PC =  m_last_PC = value;
@@ -3181,8 +3189,8 @@ bool P2Asm::parse_d_imm_s()
     if (!parse_comma())
         return false;
     P2Atom src = parse_expression(immediate_im);
-    m_IR.op.dst = dst.toLong();
-    m_IR.op.src = src.toLong();
+    m_IR.op.dst = dst.to_long();
+    m_IR.op.src = src.to_long();
     return end_of_line();
 }
 
@@ -3194,7 +3202,7 @@ bool P2Asm::parse_d_imm_s()
 bool P2Asm::parse_d_cz()
 {
     P2Atom dst = parse_expression();
-    m_IR.op.dst = dst.toLong();
+    m_IR.op.dst = dst.to_long();
     optional_wcz();
     return end_of_line();
 }
@@ -3234,7 +3242,7 @@ bool P2Asm::parse_cccc_zzzz_wcz()
 bool P2Asm::parse_d()
 {
     P2Atom dst = parse_expression();
-    m_IR.op.dst = dst.toLong();
+    m_IR.op.dst = dst.to_long();
     return end_of_line();
 }
 
@@ -3246,7 +3254,7 @@ bool P2Asm::parse_d()
 bool P2Asm::parse_wz_d()
 {
     P2Atom dst = parse_expression(immediate_wz);
-    m_IR.op.dst = dst.toLong();
+    m_IR.op.dst = dst.to_long();
     return end_of_line();
 }
 
@@ -3258,7 +3266,7 @@ bool P2Asm::parse_wz_d()
 bool P2Asm::parse_imm_d()
 {
     P2Atom dst = parse_expression(immediate_im);
-    m_IR.op.dst = dst.toLong();
+    m_IR.op.dst = dst.to_long();
     return end_of_line();
 }
 
@@ -3270,7 +3278,7 @@ bool P2Asm::parse_imm_d()
 bool P2Asm::parse_imm_d_wcz()
 {
     P2Atom dst = parse_expression(immediate_im);
-    m_IR.op.dst = dst.toLong();
+    m_IR.op.dst = dst.to_long();
     optional_wcz();
     return end_of_line();
 }
@@ -3283,7 +3291,7 @@ bool P2Asm::parse_imm_d_wcz()
 bool P2Asm::parse_imm_d_wc()
 {
     P2Atom dst = parse_expression(immediate_im);
-    m_IR.op.dst = dst.toLong();
+    m_IR.op.dst = dst.to_long();
     optional_wc();
     return end_of_line();
 }
@@ -3299,8 +3307,8 @@ bool P2Asm::parse_d_imm_s_wcz()
     if (!parse_comma())
         return false;
     P2Atom src = parse_expression(immediate_im);
-    m_IR.op.dst = dst.toLong();
-    m_IR.op.src = src.toLong();
+    m_IR.op.dst = dst.to_long();
+    m_IR.op.src = src.to_long();
     optional_wcz();
     return end_of_line();
 }
@@ -3316,8 +3324,8 @@ bool P2Asm::parse_d_imm_s_wc()
     if (!parse_comma())
         return false;
     P2Atom src = parse_expression(immediate_im);
-    m_IR.op.dst = dst.toLong();
-    m_IR.op.src = src.toLong();
+    m_IR.op.dst = dst.to_long();
+    m_IR.op.src = src.to_long();
     optional_wc();
     return end_of_line();
 }
@@ -3333,8 +3341,8 @@ bool P2Asm::parse_d_imm_s_wz()
     if (!parse_comma())
         return false;
     P2Atom src = parse_expression(immediate_im);
-    m_IR.op.dst = dst.toLong();
-    m_IR.op.src = src.toLong();
+    m_IR.op.dst = dst.to_long();
+    m_IR.op.src = src.to_long();
     optional_wz();
     return end_of_line();
 }
@@ -3350,8 +3358,8 @@ bool P2Asm::parse_wz_d_imm_s()
     if (!parse_comma())
         return false;
     P2Atom src = parse_expression(immediate_im);
-    m_IR.op.dst = dst.toLong();
-    m_IR.op.src = src.toLong();
+    m_IR.op.dst = dst.to_long();
+    m_IR.op.src = src.to_long();
     return end_of_line();
 }
 
@@ -3366,8 +3374,8 @@ bool P2Asm::parse_d_imm_s_nnn(uint max)
     if (!parse_comma())
         return false;
     P2Atom src = parse_expression(immediate_im);
-    m_IR.op.dst = dst.toLong();
-    m_IR.op.src = src.toLong();
+    m_IR.op.dst = dst.to_long();
+    m_IR.op.src = src.to_long();
     if (parse_comma()) {
         if (m_widx < m_wcnt) {
             P2Atom n = parse_expression();
@@ -3375,13 +3383,13 @@ bool P2Asm::parse_d_imm_s_nnn(uint max)
                 m_error = tr("Expected immediate #n");
                 return false;
             }
-            if (n.toLong() > max) {
+            if (n.to_long() > max) {
                 m_error = tr("Immediate #n not in 0-%1 (%2)")
                           .arg(max)
-                          .arg(n.toLong());
+                          .arg(n.to_long());
                 return false;
             }
-            p2_LONG opcode = static_cast<p2_LONG>(n.toLong() & max) << 18;
+            p2_LONG opcode = static_cast<p2_LONG>(n.to_long() & max) << 18;
             m_IR.opcode |= opcode;
         } else {
             m_error = tr("Missing immediate #n");
@@ -3401,7 +3409,7 @@ bool P2Asm::parse_d_imm_s_nnn(uint max)
 bool P2Asm::parse_imm_s()
 {
     P2Atom src = parse_expression(immediate_im);
-    m_IR.op.src = src.toLong();
+    m_IR.op.src = src.to_long();
     return end_of_line();
 }
 
@@ -3413,7 +3421,7 @@ bool P2Asm::parse_imm_s()
 bool P2Asm::parse_imm_s_wcz()
 {
     P2Atom src = parse_expression(immediate_im);
-    m_IR.op.src = src.toLong();
+    m_IR.op.src = src.to_long();
     return end_of_line();
 }
 
@@ -3449,7 +3457,7 @@ bool P2Asm::parse_ptr_pc_abs()
         return false;
 
     P2Atom atom = parse_expression();
-    p2_LONG addr = atom.toLong();
+    p2_LONG addr = atom.to_long();
     m_IR.opcode |= addr & A20MASK;
 
     return end_of_line();
@@ -3463,7 +3471,7 @@ bool P2Asm::parse_ptr_pc_abs()
 bool P2Asm::parse_pc_abs()
 {
     P2Atom atom = parse_expression();
-    p2_LONG addr = atom.toLong();
+    p2_LONG addr = atom.to_long();
     m_IR.opcode |= addr & A20MASK;
 
     return end_of_line();
@@ -3477,7 +3485,7 @@ bool P2Asm::parse_pc_abs()
 bool P2Asm::parse_imm23(QVector<p2_inst7_e> aug)
 {
     P2Atom atom = parse_expression();
-    p2_LONG addr = atom.toLong();
+    p2_LONG addr = atom.to_long();
     m_IR.op.inst = static_cast<p2_inst7_e>(m_IR.op.inst | aug[(addr >> 21) & 3]);
 
     return end_of_line();
@@ -3511,7 +3519,7 @@ bool P2Asm::asm_word()
     m_widx++;
     while (m_widx < m_wcnt) {
         P2Atom atom = parse_expression();
-        words += atom.toWORDS();
+        words += atom.to_words();
         optional_comma();
     }
     // TODO: put data into output
@@ -3529,7 +3537,7 @@ bool P2Asm::asm_long()
     m_widx++;
     while (m_widx < m_wcnt) {
         P2Atom atom = parse_expression();
-        longs += atom.toLONGS();
+        longs += atom.to_longs();
         optional_comma();
     }
     // TODO: put data into output
@@ -3548,7 +3556,7 @@ bool P2Asm::asm_res()
     m_advance = 0;
     while (m_widx < m_wcnt) {
         P2Atom atom = parse_expression();
-        m_advance += atom.toLong();
+        m_advance += atom.to_long();
         optional_comma();
     }
     return end_of_line();
@@ -3562,7 +3570,7 @@ bool P2Asm::asm_fit()
 {
     m_widx++;
     P2Atom atom = parse_expression();
-    const p2_LONG fit = atom.toLong();
+    const p2_LONG fit = atom.to_long();
     if (fit < m_curr_PC) {
         m_error = tr("Code does not fit below $%1 (origin == $%2)")
                   .arg(fit, 0, 16)

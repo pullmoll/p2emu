@@ -154,11 +154,21 @@ bool P2Atom::append(int nbits, p2_QUAD value)
     return false;
 }
 
+/**
+ * @brief Append a value using the current m_type
+ * @param value value to append
+ * @return true on success, or false on error
+ */
 bool P2Atom::append(p2_QUAD value)
 {
     return append(m_type, value);
 }
 
+/**
+ * @brief Append another atom to this atom
+ * @param atom atom to append
+ * @return true on success, or false on error
+ */
 bool P2Atom::append(const P2Atom& atom)
 {
     m_data.append(atom.m_data);
@@ -166,16 +176,16 @@ bool P2Atom::append(const P2Atom& atom)
 }
 
 /**
- * @brief Set the data to a new value
+ * @brief Set the m_data to a new value
  * @param type Type of the data to set
- * @param value with lower %nbits valid
+ * @param value with lower bits depending on type
  * @return true on success, or false on error
  */
 bool P2Atom::set(Type type, p2_QUAD value)
 {
     m_data.clear();
     m_type = type;
-    return append(type, value);
+    return append(m_type, value);
 }
 
 /**
@@ -212,13 +222,13 @@ void P2Atom::complement1(bool flag)
     switch (m_type) {
     case Invalid: return;
     case Byte:
-        set(Byte, ~toByte());
+        set(Byte, ~to_byte());
         break;
     case Word:
-        set(Word, ~toWord());
+        set(Word, ~to_word());
         break;
     case Long:
-        set(Long, ~toLong());
+        set(Long, ~to_long());
         break;
     case Quad:
         set(Quad, ~toQuad());
@@ -240,13 +250,13 @@ void P2Atom::complement2(bool flag)
     case Invalid:
         return;
     case Byte:
-        set(Byte, ~toByte() + 1);
+        set(Byte, ~to_byte() + 1);
         break;
     case Word:
-        set(Word, ~toWord() + 1);
+        set(Word, ~to_word() + 1);
         break;
     case Long:
-        set(Long, ~toLong() + 1);
+        set(Long, ~to_long() + 1);
         break;
     case Quad:
         set(Quad, ~toQuad() + 1);
@@ -268,13 +278,13 @@ void P2Atom::logical_not(bool flag)
     case Invalid:
         return;
     case Byte:
-        set(Byte, toByte() ? 0 : 1);
+        set(Byte, to_byte() ? 0 : 1);
         break;
     case Word:
-        set(Word, toWord() ? 0 : 1);
+        set(Word, to_word() ? 0 : 1);
         break;
     case Long:
-        set(Long, toLong() ? 1 : 0);
+        set(Long, to_long() ? 1 : 0);
         break;
     case Quad:
         set(Quad, toQuad() ? 0 : 1);
@@ -284,6 +294,10 @@ void P2Atom::logical_not(bool flag)
     }
 }
 
+/**
+ * @brief Set atom to its bool value
+ * @param flag do the conversion if true, leave unchanged otherwise
+ */
 void P2Atom::make_bool(bool flag)
 {
     if (!flag)
@@ -292,13 +306,13 @@ void P2Atom::make_bool(bool flag)
     case Invalid:
         return;
     case Byte:
-        set(Byte, toByte() ? 1 : 0);
+        set(Byte, to_byte() ? 1 : 0);
         break;
     case Word:
-        set(Word, toWord() ? 1 : 0);
+        set(Word, to_word() ? 1 : 0);
         break;
     case Long:
-        set(Long, toLong() ? 1 : 0);
+        set(Long, to_long() ? 1 : 0);
         break;
     case Quad:
         set(Quad, toQuad() ? 1 : 0);
@@ -308,6 +322,10 @@ void P2Atom::make_bool(bool flag)
     }
 }
 
+/**
+ * @brief Set atom to its pre/post decrement value
+ * @param flag do the decrement if true, leave unchanged otherwise
+ */
 void P2Atom::unary_dec(bool flag)
 {
     if (!flag)
@@ -316,13 +334,13 @@ void P2Atom::unary_dec(bool flag)
     case Invalid:
         return;
     case Byte:
-        set(Byte, toByte() - 1);
+        set(Byte, to_byte() - 1);
         break;
     case Word:
-        set(Word, toWord() - 1);
+        set(Word, to_word() - 1);
         break;
     case Long:
-        set(Long, toLong() - 1);
+        set(Long, to_long() - 1);
         break;
     case Quad:
         set(Quad, toQuad() - 1);
@@ -332,6 +350,10 @@ void P2Atom::unary_dec(bool flag)
     }
 }
 
+/**
+ * @brief Set atom to its pre/post increment value
+ * @param flag do the increment if true, leave unchanged otherwise
+ */
 void P2Atom::unary_inc(bool flag)
 {
     if (!flag)
@@ -340,13 +362,13 @@ void P2Atom::unary_inc(bool flag)
     case Invalid:
         return;
     case Byte:
-        set(Byte, toByte() + 1);
+        set(Byte, to_byte() + 1);
         break;
     case Word:
-        set(Word, toWord() + 1);
+        set(Word, to_word() + 1);
         break;
     case Long:
-        set(Long, toLong() + 1);
+        set(Long, to_long() + 1);
         break;
     case Quad:
         set(Quad, toQuad() + 1);
@@ -356,19 +378,23 @@ void P2Atom::unary_inc(bool flag)
     }
 }
 
+/**
+ * @brief Set atom to its multiplication result value
+ * @param val value to multiply by
+ */
 void P2Atom::arith_mul(p2_QUAD val)
 {
     switch (m_type) {
     case Invalid:
         return;
     case Byte:
-        set(Byte, toByte() * val);
+        set(Byte, to_byte() * val);
         break;
     case Word:
-        set(Word, toWord() * val);
+        set(Word, to_word() * val);
         break;
     case Long:
-        set(Long, toLong() * val);
+        set(Long, to_long() * val);
         break;
     case Quad:
         set(Quad, toQuad() * val);
@@ -379,6 +405,10 @@ void P2Atom::arith_mul(p2_QUAD val)
 
 }
 
+/**
+ * @brief Set atom to its division result value
+ * @param val value to multiply by
+ */
 void P2Atom::arith_div(p2_QUAD val)
 {
     if (!val) {
@@ -390,13 +420,13 @@ void P2Atom::arith_div(p2_QUAD val)
     case Invalid:
         return;
     case Byte:
-        set(Byte, toByte() / val);
+        set(Byte, to_byte() / val);
         break;
     case Word:
-        set(Word, toWord() / val);
+        set(Word, to_word() / val);
         break;
     case Long:
-        set(Long, toLong() / val);
+        set(Long, to_long() / val);
         break;
     case Quad:
         set(Quad, toQuad() / val);
@@ -407,6 +437,10 @@ void P2Atom::arith_div(p2_QUAD val)
 
 }
 
+/**
+ * @brief Set atom to its modulo result value
+ * @param val value to do modulo by
+ */
 void P2Atom::arith_mod(p2_QUAD val)
 {
     if (!val) {
@@ -418,13 +452,13 @@ void P2Atom::arith_mod(p2_QUAD val)
     case Invalid:
         return;
     case Byte:
-        set(Byte, toByte() % val);
+        set(Byte, to_byte() % val);
         break;
     case Word:
-        set(Word, toWord() % val);
+        set(Word, to_word() % val);
         break;
     case Long:
-        set(Long, toLong() % val);
+        set(Long, to_long() % val);
         break;
     case Quad:
         set(Quad, toQuad() % val);
@@ -435,6 +469,10 @@ void P2Atom::arith_mod(p2_QUAD val)
 
 }
 
+/**
+ * @brief Set atom to its addition result value
+ * @param val value to add
+ */
 void P2Atom::arith_add(p2_QUAD val)
 {
     if (!val)
@@ -443,13 +481,13 @@ void P2Atom::arith_add(p2_QUAD val)
     case Invalid:
         return;
     case Byte:
-        set(Byte, toByte() + val);
+        set(Byte, to_byte() + val);
         break;
     case Word:
-        set(Word, toWord() + val);
+        set(Word, to_word() + val);
         break;
     case Long:
-        set(Long, toLong() + val);
+        set(Long, to_long() + val);
         break;
     case Quad:
         set(Quad, toQuad() + val);
@@ -459,6 +497,10 @@ void P2Atom::arith_add(p2_QUAD val)
     }
 }
 
+/**
+ * @brief Set atom to its subtraction result value
+ * @param val value to subtract
+ */
 void P2Atom::arith_sub(p2_QUAD val)
 {
     if (!val)
@@ -467,13 +509,13 @@ void P2Atom::arith_sub(p2_QUAD val)
     case Invalid:
         return;
     case Byte:
-        set(Byte, toByte() - val);
+        set(Byte, to_byte() - val);
         break;
     case Word:
-        set(Word, toWord() - val);
+        set(Word, to_word() - val);
         break;
     case Long:
-        set(Long, toLong() - val);
+        set(Long, to_long() - val);
         break;
     case Quad:
         set(Quad, toQuad() - val);
@@ -483,6 +525,10 @@ void P2Atom::arith_sub(p2_QUAD val)
     }
 }
 
+/**
+ * @brief Set atom to its left shifted value
+ * @param bits number of bits to shift left
+ */
 void P2Atom::binary_shl(p2_QUAD bits)
 {
     if (!bits)
@@ -491,13 +537,13 @@ void P2Atom::binary_shl(p2_QUAD bits)
     case Invalid:
         return;
     case Byte:
-        set(toLong() << bits);
+        set(to_long() << bits);
         break;
     case Word:
-        set(toLong() << bits);
+        set(to_long() << bits);
         break;
     case Long:
-        set(toLong() << bits);
+        set(to_long() << bits);
         break;
     case Quad:
         set(toQuad() << bits);
@@ -507,6 +553,10 @@ void P2Atom::binary_shl(p2_QUAD bits)
     }
 }
 
+/**
+ * @brief Set atom to its right shifted value
+ * @param bits number of bits to shift right
+ */
 void P2Atom::binary_shr(p2_QUAD bits)
 {
     if (!bits)
@@ -515,13 +565,13 @@ void P2Atom::binary_shr(p2_QUAD bits)
     case Invalid:
         return;
     case Byte:
-        set(toByte() >> bits);
+        set(to_byte() >> bits);
         break;
     case Word:
-        set(toWord() >> bits);
+        set(to_word() >> bits);
         break;
     case Long:
-        set(toLong() >> bits);
+        set(to_long() >> bits);
         break;
     case Quad:
         set(toQuad() >> bits);
@@ -531,19 +581,23 @@ void P2Atom::binary_shr(p2_QUAD bits)
     }
 }
 
+/**
+ * @brief Set atom to its binary AND value
+ * @param mask value to AND with
+ */
 void P2Atom::binary_and(p2_QUAD mask)
 {
     switch (m_type) {
     case Invalid:
         return;
     case Byte:
-        set(toByte() & mask);
+        set(to_byte() & mask);
         break;
     case Word:
-        set(toWord() & mask);
+        set(to_word() & mask);
         break;
     case Long:
-        set(toLong() & mask);
+        set(to_long() & mask);
         break;
     case Quad:
         set(toQuad() & mask);
@@ -553,19 +607,23 @@ void P2Atom::binary_and(p2_QUAD mask)
     }
 }
 
+/**
+ * @brief Set atom to its binary XOR value
+ * @param mask value to XOR with
+ */
 void P2Atom::binary_xor(p2_QUAD mask)
 {
     switch (m_type) {
     case Invalid:
         return;
     case Byte:
-        set(toByte() ^ mask);
+        set(to_byte() ^ mask);
         break;
     case Word:
-        set(toWord() ^ mask);
+        set(to_word() ^ mask);
         break;
     case Long:
-        set(toLong() ^ mask);
+        set(to_long() ^ mask);
         break;
     case Quad:
         set(toQuad() ^ mask);
@@ -575,19 +633,23 @@ void P2Atom::binary_xor(p2_QUAD mask)
     }
 }
 
+/**
+ * @brief Set atom to its binary OR value
+ * @param mask value to OR with
+ */
 void P2Atom::binary_or(p2_QUAD mask)
 {
     switch (m_type) {
     case Invalid:
         return;
     case Byte:
-        set(toByte() | mask);
+        set(to_byte() | mask);
         break;
     case Word:
-        set(toWord() | mask);
+        set(to_word() | mask);
         break;
     case Long:
-        set(toLong() | mask);
+        set(to_long() | mask);
         break;
     case Quad:
         set(toQuad() | mask);
@@ -602,7 +664,7 @@ void P2Atom::binary_or(p2_QUAD mask)
  * @param ok optional pointer to a bool set to true if data is available
  * @return One p2_BYTE
  */
-p2_BYTE P2Atom::toByte(bool* ok) const
+p2_BYTE P2Atom::to_byte(bool* ok) const
 {
     return value<p2_BYTE>(ok);
 }
@@ -612,7 +674,7 @@ p2_BYTE P2Atom::toByte(bool* ok) const
  * @param ok optional pointer to a bool set to true if data is available
  * @return One p2_WORD
  */
-p2_WORD P2Atom::toWord(bool* ok) const
+p2_WORD P2Atom::to_word(bool* ok) const
 {
     return value<p2_WORD>(ok);
 }
@@ -622,7 +684,7 @@ p2_WORD P2Atom::toWord(bool* ok) const
  * @param ok optional pointer to a bool set to true if data is available
  * @return One p2_LONG
  */
-p2_LONG P2Atom::toLong(bool* ok) const
+p2_LONG P2Atom::to_long(bool* ok) const
 {
     return value<p2_LONG>(ok);
 }
@@ -641,7 +703,7 @@ p2_QUAD P2Atom::toQuad(bool* ok) const
  * @brief Return data as a vector of bytes
  * @return p2_BYTEs of all data
  */
-p2_BYTES P2Atom::toBYTES() const
+p2_BYTES P2Atom::to_bytes() const
 {
     const int bytes = m_data.size();
     p2_BYTES result(bytes, 0);
@@ -654,7 +716,7 @@ p2_BYTES P2Atom::toBYTES() const
  * @brief Return data as a vector of words
  * @return p2_WORDs of all data
  */
-p2_WORDS P2Atom::toWORDS() const
+p2_WORDS P2Atom::to_words() const
 {
     const int bytes = m_data.size();
     p2_WORDS result((bytes + 1)  / 2, 0);
@@ -667,7 +729,7 @@ p2_WORDS P2Atom::toWORDS() const
  * @brief Return data as a vector of longs
  * @return p2_LONGs of all data
  */
-p2_LONGS P2Atom::toLONGS() const
+p2_LONGS P2Atom::to_longs() const
 {
     const int bytes = m_data.size();
     p2_LONGS result((bytes + 3) / 4);
@@ -679,4 +741,80 @@ p2_LONGS P2Atom::toLONGS() const
 bool P2Atom::operator==(const P2Atom& other)
 {
     return m_data == other.m_data;
+}
+
+P2Atom& P2Atom::operator~()
+{
+    complement1(true);
+    return *this;
+}
+
+P2Atom& P2Atom::operator-() {
+    complement2(true);
+    return *this;
+}
+
+P2Atom& P2Atom::operator!() {
+    logical_not(true);
+    return *this;
+}
+
+P2Atom& P2Atom::operator++() {
+    unary_inc(true);
+    return *this;
+}
+
+P2Atom& P2Atom::operator--() {
+    unary_dec(true);
+    return *this;
+}
+
+P2Atom& P2Atom::operator+=(const P2Atom& other) {
+    arith_add(other.toQuad());
+    return *this;
+}
+
+P2Atom& P2Atom::operator-=(const P2Atom& other) {
+    arith_sub(other.toQuad());
+    return *this;
+}
+
+P2Atom& P2Atom::operator*=(const P2Atom& other) {
+    arith_mul(other.toQuad());
+    return *this;
+}
+
+P2Atom& P2Atom::operator/=(const P2Atom& other) {
+    arith_div(other.toQuad());
+    return *this;
+}
+
+P2Atom& P2Atom::operator%=(const P2Atom& other) {
+    arith_div(other.toQuad());
+    return *this;
+}
+
+P2Atom& P2Atom::operator<<=(const P2Atom& other) {
+    binary_shl(other.toQuad());
+    return *this;
+}
+
+P2Atom& P2Atom::operator>>=(const P2Atom& other) {
+    binary_shr(other.toQuad());
+    return *this;
+}
+
+P2Atom& P2Atom::operator&=(const P2Atom& other) {
+    binary_and(other.toQuad());
+    return *this;
+}
+
+P2Atom& P2Atom::operator^=(const P2Atom& other) {
+    binary_xor(other.toQuad());
+    return *this;
+}
+
+P2Atom& P2Atom::operator|=(const P2Atom& other) {
+    binary_or(other.toQuad());
+    return *this;
 }

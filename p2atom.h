@@ -85,14 +85,14 @@ public:
     void binary_xor(p2_QUAD mask);
     void binary_or(p2_QUAD mask);
 
-    p2_BYTE toByte(bool *ok = nullptr) const;
-    p2_WORD toWord(bool *ok = nullptr) const;
-    p2_LONG toLong(bool *ok = nullptr) const;
+    p2_BYTE to_byte(bool *ok = nullptr) const;
+    p2_WORD to_word(bool *ok = nullptr) const;
+    p2_LONG to_long(bool *ok = nullptr) const;
     p2_QUAD toQuad(bool *ok = nullptr) const;
 
-    p2_BYTES toBYTES() const;
-    p2_WORDS toWORDS() const;
-    p2_LONGS toLONGS() const;
+    p2_BYTES to_bytes() const;
+    p2_WORDS to_words() const;
+    p2_LONGS to_longs() const;
 
     template <typename T>
     T operator= (T newval)
@@ -116,21 +116,21 @@ public:
     }
 
     bool operator== (const P2Atom& other);
-    P2Atom& operator~ () { complement1(true); return *this; }
-    P2Atom& operator- () { complement2(true); return *this; }
-    P2Atom& operator! () { logical_not(true); return *this; }
-    P2Atom& operator++ () { unary_inc(true); return *this; }
-    P2Atom& operator-- () { unary_dec(true); return *this; }
-    P2Atom& operator+= (const P2Atom& other) { arith_add(other.toQuad()); return *this; }
-    P2Atom& operator-= (const P2Atom& other) { arith_sub(other.toQuad()); return *this; }
-    P2Atom& operator*= (const P2Atom& other) { arith_mul(other.toQuad()); return *this; }
-    P2Atom& operator/= (const P2Atom& other) { arith_div(other.toQuad()); return *this; }
-    P2Atom& operator%= (const P2Atom& other) { arith_div(other.toQuad()); return *this; }
-    P2Atom& operator<<= (const P2Atom& other) { binary_shl(other.toQuad()); return *this; }
-    P2Atom& operator>>= (const P2Atom& other) { binary_shr(other.toQuad()); return *this; }
-    P2Atom& operator&= (const P2Atom& other) { binary_and(other.toQuad()); return *this; }
-    P2Atom& operator^= (const P2Atom& other) { binary_xor(other.toQuad()); return *this; }
-    P2Atom& operator|= (const P2Atom& other) { binary_or(other.toQuad()); return *this; }
+    P2Atom& operator~();
+    P2Atom& operator-();
+    P2Atom& operator!();
+    P2Atom& operator++();
+    P2Atom& operator--();
+    P2Atom& operator+=(const P2Atom& other);
+    P2Atom& operator-=(const P2Atom& other);
+    P2Atom& operator*=(const P2Atom& other);
+    P2Atom& operator/=(const P2Atom& other);
+    P2Atom& operator%=(const P2Atom& other);
+    P2Atom& operator<<=(const P2Atom& other);
+    P2Atom& operator>>=(const P2Atom& other);
+    P2Atom& operator&=(const P2Atom& other);
+    P2Atom& operator^=(const P2Atom& other);
+    P2Atom& operator|=(const P2Atom& other);
 
 private:
 

@@ -90,7 +90,7 @@ static const QString re_byt = QStringLiteral("%%[0-3_]+");
  * leading "0"
  * then one or more of "0"…"7", or "_"
  */
-static const QString re_oct = QStringLiteral("[0_]+[0-7_]+");
+static const QString re_oct = QStringLiteral("[0_]+[0-7_]*");
 
 /**
  * @brief Regular expression for a decimal number
@@ -1020,9 +1020,8 @@ p2_token_e P2Token::at_token(const QString& str, QList<p2_token_e> tokens, p2_to
 bool P2Token::is_operation(p2_token_e tok) const
 {
     // Bit mask for operations
-    const quint64 ops = tm_operations;
     const quint64 mask = m_token_type.value(tok, 0);
-    return (mask & ops) ? true : false;
+    return (mask & tm_operations) ? true : false;
 }
 
 /**
@@ -1203,7 +1202,7 @@ p2_token_e P2Token::at_conditional(int& pos, const QString& str, p2_token_e dflt
 p2_token_e P2Token::at_conditional(const QString& str, p2_token_e dflt) const
 {
     int pos = 0;
-    return at_type(pos, str, tt_conditional, dflt);
+    return at_conditional(pos, str, dflt);
 }
 
 /**
@@ -1230,7 +1229,7 @@ p2_token_e P2Token::at_modcz_param(int& pos, const QString& str, p2_token_e dflt
 p2_token_e P2Token::at_modcz_param(const QString& str, p2_token_e dflt) const
 {
     int pos = 0;
-    return at_type(pos, str, tt_modcz_param, dflt);
+    return at_modcz_param(pos, str, dflt);
 
 }
 
@@ -1306,33 +1305,65 @@ void P2Token::tn_add(p2_token_e tok, quint64 typemask, const QString& str)
     tt_set(tok, typemask);
 }
 
+/**
+ * @brief Set bits of typemask in the token %tok hash entry
+ * @param tok token value
+ * @param typemask bit mask with type(s) to set
+ */
 void P2Token::tt_set(p2_token_e tok, quint64 typemask)
 {
     quint64 mask = m_token_type.value(tok, 0) | typemask;
     m_token_type.insert(tok, mask);
 }
 
+/**
+ * @brief Clear bits of typemask in the token %tok hash entry
+ * @param tok token value
+ * @param typemask bit mask with type(s) to clear
+ */
 void P2Token::tt_clr(p2_token_e tok, quint64 typemask)
 {
     quint64 mask = m_token_type.value(tok, 0) & ~typemask;
     m_token_type.insert(tok, mask);
 }
 
+/**
+ * @brief Check bits of typemask in the token %tok hash entry
+ * @param tok token value
+ * @param typemask bit mask with type(s) to check for
+ * @return true if any bit of typemask is set, or false otherwise
+ */
 bool P2Token::tt_chk(p2_token_e tok, quint64 typemask) const
 {
     return m_token_type.value(tok, 0) & typemask ? true : false;
 }
 
+/**
+ * @brief Set bit for token type %type in the token %tok hash entry
+ * @param tok token value
+ * @param type token type value
+ */
 void P2Token::tt_set(p2_token_e tok, p2_tokentype_e type)
 {
     tt_set(tok, TTMASK(type));
 }
 
+/**
+ * @brief Clear bit for token type %type in the token %tok hash entry
+ * @param tok token value
+ * @param type token type value
+ */
 void P2Token::tt_clr(p2_token_e tok, p2_tokentype_e type)
 {
     tt_clr(tok, TTMASK(type));
 }
 
+/**
+ * @brief Check bit for token type %type in the token %tok hash entry
+ * @param tok token value
+ * @param type token type value
+ * @return true if any bit for type is set, or false otherwise
+ */
 bool P2Token::tt_chk(p2_token_e tok, p2_tokentype_e type) const
 {
     return tt_chk(tok, TTMASK(type));
