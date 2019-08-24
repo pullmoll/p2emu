@@ -348,7 +348,7 @@ void MainWindow::setDasmOpcodesBin()
 
 void MainWindow::setDasmOpcodesByt()
 {
-    setDasmOpcodes(fmt_oct);
+    setDasmOpcodes(fmt_byt);
 }
 
 void MainWindow::setDasmOpcodesOct()

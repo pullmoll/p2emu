@@ -177,11 +177,6 @@ private:
 
     bool conditional(p2_cond_e cond);
     bool conditional(unsigned cond);
-    p2_BYTE msbit(p2_LONG val);
-    p2_BYTE ones(p2_LONG val);
-    p2_BYTE parity(p2_LONG val);
-    p2_LONG seuss(p2_LONG val, bool forward = true);
-    p2_LONG reverse(p2_LONG val);
     p2_LONG fifo_level();
     void check_interrupt_flags();
     void check_wait_int_state();

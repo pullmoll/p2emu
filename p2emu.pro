@@ -29,7 +29,6 @@ SOURCES += \
 		mainwindow.cpp \
 		p2asm.cpp \
 		p2asmmodel.cpp \
-		p2asmsourcedelegate.cpp \
 		p2asmsym.cpp \
 		p2asmsymtbl.cpp \
 		p2atom.cpp \
@@ -41,15 +40,16 @@ SOURCES += \
 		p2hub.cpp \
 		p2hubview.cpp \
 		p2token.cpp \
+		delegates/p2asmsourcedelegate.cpp \
 		dialogs/about.cpp \
 		dialogs/gotoaddress.cpp \
-		dialogs/p2asmlisting.cpp
+		dialogs/p2asmlisting.cpp \
+		util/p2util.cpp
 
 HEADERS += \
 		mainwindow.h \
 		p2asm.h \
 		p2asmmodel.h \
-		p2asmsourcedelegate.h \
 		p2asmsym.h \
 		p2asmsymtbl.h \
 		p2atom.h \
@@ -61,19 +61,23 @@ HEADERS += \
 		p2hub.h \
 		p2hubview.h \
 		p2token.h \
+		delegates/p2asmsourcedelegate.h \
 		dialogs/about.h \
 		dialogs/gotoaddress.h \
-		dialogs/p2asmlisting.h
+		dialogs/p2asmlisting.h \
+		util/p2util.h
 
 FORMS += \
 		mainwindow.ui \
-		dialogs/about.ui \
 		p2cogview.ui \
 		p2hubview.ui \
+		dialogs/about.ui \
 		dialogs/gotoaddress.ui \
 		dialogs/p2asmlisting.ui
 
+INCLUDEPATH += $$PWD/delegates
 INCLUDEPATH += $$PWD/dialogs
+INCLUDEPATH += $$PWD/util
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

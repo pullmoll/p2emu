@@ -34,6 +34,7 @@
 #pragma once
 #include <QtEndian>
 #include <QChar>
+#include <QColor>
 
 //!< Type of the Propeller2 BYTE
 typedef quint8 p2_BYTE;
@@ -99,8 +100,11 @@ extern const p2_LONG AUGMASK;
 extern const p2_QUAD HMAX;
 extern const p2_QUAD LMAX;
 
-static const QChar skip_digit('_');
-static const QChar str_escape('\\');
+static constexpr QChar ch_comma(',');
+static constexpr QChar ch_comment('\'');
+static constexpr QChar skip_digit('_');
+static constexpr QChar str_escape('\\');
+
 extern const QString bin_digits;
 extern const QString byt_digits;
 extern const QString oct_digits;
@@ -1050,6 +1054,17 @@ extern const QString template_str_symbols;
 extern const QString template_str_errors;
 extern const QString template_str_instruction;
 extern const QString template_str_description;
+
+static const QColor dflt_color_source(0x00,0x00,0x00);
+static const QColor dflt_color_comma(0x00,0xe0,0xff);
+static const QColor dflt_color_string(0x00,0xe0,0xff);
+static const QColor dflt_color_const(0x00,0x00,0xff);
+static const QColor dflt_color_locsym(0xff,0x80,0xe0);
+static const QColor dflt_color_symbol(0xff,0xc0,0x20);
+static const QColor dflt_color_expression(0xff,0xc0,0x20);
+static const QColor dflt_color_conditional(0x40,0xa0,0xaf);
+static const QColor dflt_color_instruction(0x00,0x80,0x8f);
+static const QColor dflt_color_wcz_suffix(0xa0,0x40,0xaf);
 
 extern QString format_opcode_bin(const p2_opcode_u& IR);
 extern QString format_opcode_byt(const p2_opcode_u& IR);

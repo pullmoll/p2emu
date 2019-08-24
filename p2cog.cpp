@@ -34,6 +34,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 #include "p2cog.h"
+#include "p2util.h"
 
 P2Cog::P2Cog(int cog_id, P2Hub* hub, QObject* parent)
     : QObject(parent)
@@ -481,94 +482,6 @@ bool P2Cog::conditional(p2_cond_e cond)
 bool P2Cog::conditional(unsigned cond)
 {
     return conditional(static_cast<p2_cond_e>(cond));
-}
-
-/**
- * @brief Find the most significant 1 bit in value %val
- * @param val value
- * @return position of top most 1 bit
- */
-p2_BYTE P2Cog::msbit(p2_LONG val)
-{
-    if (val == 0)
-        return 0;
-    p2_BYTE pos;
-    for (pos = 31; pos > 0; pos--, val <<= 1) {
-        if (val & MSB)
-            return pos;
-    }
-    return pos;
-}
-
-/**
- * @brief Return the number of ones (1) in a 32 bit value
- * @param val 32 bit value
- * @return number of 1 bits
- */
-p2_BYTE P2Cog::ones(p2_LONG val)
-{
-    val = val - ((val >> 1) & 0x55555555);
-    val = (val & 0x33333333) + ((val >> 2) & 0x33333333);
-    val = (((val + (val >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
-    return static_cast<uchar>(val);
-}
-
-/**
- * @brief Return the parity of a 32 bit value
- * @param val 32 bit value
- * @return 1 for odd parity, 0 for even parity
- */
-p2_BYTE P2Cog::parity(p2_LONG val)
-{
-    val ^= val >> 16;
-    val ^= val >> 8;
-    val ^= val >> 4;
-    val &= 15;
-    return (0x6996 >> val) & 1;
-}
-
-/**
- * @brief Calculate the seuss function for val, forward or reverse
- * @param val value to calulcate seuss for
- * @param forward apply forward if true, otherwise reverse
- * @return seuss value
- */
-p2_LONG P2Cog::seuss(p2_LONG val, bool forward)
-{
-    const uchar bits[32] = {
-        11,  5, 18, 24, 27, 19, 20, 30, 28, 26, 21, 25,  3,  8,  7, 23,
-        13, 12, 16,  2, 15,  1,  9, 31,  0, 29, 17, 10, 14,  4,  6, 22
-    };
-    p2_LONG result;
-
-    if (forward) {
-        result = 0x354dae51;
-        for (int i = 0; i < 32; i++) {
-            if (val & (1u << i))
-                result ^= (1u << bits[i]);
-        }
-    } else {
-        result = 0xeb55032d;
-        for (int i = 0; i < 32; i++) {
-            if (val & (1u << bits[i]))
-                result ^= (1u << i);
-        }
-    }
-    return result;
-}
-
-/**
- * @brief Reverse 32 bits in val
- * @param val value to reverse
- * @return bit reversed value
- */
-p2_LONG P2Cog::reverse(p2_LONG val)
-{
-    val = (((val & 0xaaaaaaaau) >> 1) | ((val & 0x55555555u) << 1));
-    val = (((val & 0xccccccccu) >> 2) | ((val & 0x33333333u) << 2));
-    val = (((val & 0xf0f0f0f0u) >> 4) | ((val & 0x0f0f0f0fu) << 4));
-    val = (((val & 0xff00ff00u) >> 8) | ((val & 0x00ff00ffu) << 8));
-    return (val >> 16) | (val << 16);
 }
 
 /**
@@ -3663,7 +3576,7 @@ int P2Cog::op_and()
 {
     augmentS(IR.op.im);
     const p2_LONG result = D & S;
-    updateC(parity(result));
+    updateC(P2Util::parity(result));
     updateZ(result == 0);
     return 2;
 }
@@ -3684,7 +3597,7 @@ int P2Cog::op_andn()
 {
     augmentS(IR.op.im);
     const p2_LONG result = D & ~S;
-    updateC(parity(result));
+    updateC(P2Util::parity(result));
     updateZ(result == 0);
     return 2;
 }
@@ -3705,7 +3618,7 @@ int P2Cog::op_or()
 {
     augmentS(IR.op.im);
     const p2_LONG result = D | S;
-    updateC(parity(result));
+    updateC(P2Util::parity(result));
     updateZ(result == 0);
     return 2;
 }
@@ -3726,7 +3639,7 @@ int P2Cog::op_xor()
 {
     augmentS(IR.op.im);
     const p2_LONG result = D ^ S;
-    updateC(parity(result));
+    updateC(P2Util::parity(result));
     updateZ(result == 0);
     return 2;
 }
@@ -3747,7 +3660,7 @@ int P2Cog::op_muxc()
 {
     augmentS(IR.op.im);
     const p2_LONG result = (D & ~S) | (C ? S : 0);
-    updateC(parity(result));
+    updateC(P2Util::parity(result));
     updateZ(result == 0);
     return 2;
 }
@@ -3768,7 +3681,7 @@ int P2Cog::op_muxnc()
 {
     augmentS(IR.op.im);
     const p2_LONG result = (D & ~S) | (!C ? S : 0);
-    updateC(parity(result));
+    updateC(P2Util::parity(result));
     updateZ(result == 0);
     return 2;
 }
@@ -3789,7 +3702,7 @@ int P2Cog::op_muxz()
 {
     augmentS(IR.op.im);
     const p2_LONG result = (D & ~S) | (Z ? S : 0);
-    updateC(parity(result));
+    updateC(P2Util::parity(result));
     updateZ(result == 0);
     return 2;
 }
@@ -3810,7 +3723,7 @@ int P2Cog::op_muxnz()
 {
     augmentS(IR.op.im);
     const p2_LONG result = (D & ~S) | (!Z ? S : 0);
-    updateC(parity(result));
+    updateC(P2Util::parity(result));
     updateZ(result == 0);
     return 2;
 }
@@ -4096,7 +4009,7 @@ int P2Cog::op_signx()
 int P2Cog::op_encod()
 {
     augmentS(IR.op.im);
-    const p2_LONG result = msbit(S);
+    const p2_LONG result = P2Util::msb(S);
     updateC(S != 0);
     updateZ(result == 0);
     updateD(result);
@@ -4118,7 +4031,7 @@ int P2Cog::op_encod()
 int P2Cog::op_ones()
 {
     augmentS(IR.op.im);
-    const p2_LONG result = ones(S);
+    const p2_LONG result = P2Util::ones(S);
     updateC(result & 1);
     updateZ(result == 0);
     return 2;
@@ -4139,7 +4052,7 @@ int P2Cog::op_test()
 {
     augmentS(IR.op.im);
     const p2_LONG result = D & S;
-    updateC(parity(result));
+    updateC(P2Util::parity(result));
     updateZ(result == 0);
     return 2;
 }
@@ -4159,7 +4072,7 @@ int P2Cog::op_testn()
 {
     augmentS(IR.op.im);
     const p2_LONG result = D & ~S;
-    updateC(parity(result));
+    updateC(P2Util::parity(result));
     updateZ(result == 0);
     return 2;
 }
@@ -9411,7 +9324,7 @@ int P2Cog::op_mergew()
  */
 int P2Cog::op_seussf()
 {
-    const p2_LONG result = seuss(S, true);
+    const p2_LONG result = P2Util::seuss(S, true);
     updateD(result);
     return 2;
 }
@@ -9429,7 +9342,7 @@ int P2Cog::op_seussf()
  */
 int P2Cog::op_seussr()
 {
-    const p2_LONG result = seuss(S, false);
+    const p2_LONG result = P2Util::seuss(S, false);
     updateD(result);
     return 2;
 }
@@ -9503,7 +9416,7 @@ int P2Cog::op_xoro32()
  */
 int P2Cog::op_rev()
 {
-    p2_LONG result = reverse(D);
+    p2_LONG result = P2Util::reverse(D);
     updateD(result);
     return 2;
 }

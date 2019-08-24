@@ -34,7 +34,7 @@ void P2AsmSourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
     // painter->setClipRect(rect);
     painter->setBackgroundMode(Qt::TransparentMode);
     painter->setFont(opt.font);
-    painter->setPen(QColor(0x00,0x00,0x00));
+    painter->setPen(dflt_color_source);
 
     // paint all text character wise to collect the bounding rects
     pos = 0;
@@ -52,16 +52,16 @@ void P2AsmSourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
 
         QPalette pal;
 
-        painter->setPen(QColor(0x00,0x00,0x00));
+        painter->setPen(dflt_color_source);
 
         p2_token_e tok = word.tok();
         switch (tok) {
         case t_comma:
-            painter->setPen(QColor(0x00,0xe0,0xff));
+            painter->setPen(dflt_color_comma);
             break;
 
         case t_string:
-            painter->setPen(QColor(0x00,0xe0,0xff));
+            painter->setPen(dflt_color_string);
             break;
 
         case t_bin_const:
@@ -69,28 +69,28 @@ void P2AsmSourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
         case t_oct_const:
         case t_dec_const:
         case t_hex_const:
-            painter->setPen(QColor(0x00,0x00,0xff));
+            painter->setPen(dflt_color_const);
             break;
 
         case t_locsym:
-            painter->setPen(QColor(0xff,0x80,0xe0));
+            painter->setPen(dflt_color_locsym);
             break;
 
         case t_symbol:
-            painter->setPen(QColor(0xff,0xc0,0x20));
+            painter->setPen(dflt_color_symbol);
             break;
 
         case t_expression:
-            painter->setPen(QColor(0xff,0xc0,0x20));
+            painter->setPen(dflt_color_expression);
             break;
 
         default:
             if (Token.is_type(tok, tt_conditional))
-                painter->setPen(QColor(0x40,0xa0,0xaf));
+                painter->setPen(dflt_color_conditional);
             if (Token.is_type(tok, tt_inst))
-                painter->setPen(QColor(0x00,0x80,0x8f));
+                painter->setPen(dflt_color_instruction);
             if (Token.is_type(tok, tt_wcz_suffix))
-                painter->setPen(QColor(0xa0,0x40,0xaf));
+                painter->setPen(dflt_color_wcz_suffix);
             break;
         }
 

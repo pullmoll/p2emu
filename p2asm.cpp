@@ -320,13 +320,13 @@ bool P2Asm::split_and_tokenize(const QString& line)
             continue;
         }
 
-        if (ch == QChar('\'')) {
+        if (ch == ch_comment) {
             // start of comment until end of line
             comment = true;
             break;
         }
 
-        if (ch == QChar(',')) {
+        if (ch == ch_comma) {
             // found a comma
             if (!word.isEmpty()) {
                 // previous word ends here
@@ -335,7 +335,7 @@ bool P2Asm::split_and_tokenize(const QString& line)
             }
             // make the comma (,) a separate token
             word = ch;
-            words += P2AsmWord(t_comma, word, end - 1, end);
+            words += P2AsmWord(t_comma, word, end, end);
             pos = end;
             word.clear();
             continue;
@@ -454,9 +454,9 @@ bool P2Asm::assemble_pass()
                 } else {
                     // Already defined
                     m_error = tr("Symbol '%1' already defined in line %2: $%3")
-                            .arg(m_symbol)
-                            .arg(sym.reference(0))
-                            .arg(sym.value<p2_LONG>(), 6, 16, QChar('0'));
+                              .arg(m_symbol)
+                              .arg(sym.reference(0))
+                              .arg(sym.value<p2_LONG>(), 6, 16, QChar('0'));
                     emit Error(m_lineno, m_error);
                 }
                 m_widx++;   // skip over first word
@@ -1951,33 +1951,23 @@ bool P2Asm::assemble_pass()
             break;
 
         case t__DAT:
-            m_advance = 0;
-            m_emit_IR = false;
-            m_section = sec_dat;
+            success = asm_dat();
             break;
 
         case t__CON:
-            m_advance = 0;
-            m_emit_IR = false;
-            m_section = sec_con;
+            success = asm_con();
             break;
 
         case t__PUB:
-            m_advance = 0;
-            m_emit_IR = false;
-            m_section = sec_pub;
+            success = asm_pub();
             break;
 
         case t__PRI:
-            m_advance = 0;
-            m_emit_IR = false;
-            m_section = sec_pri;
+            success = asm_pri();
             break;
 
         case t__VAR:
-            m_advance = 0;
-            m_emit_IR = false;
-            m_section = sec_var;
+            success = asm_var();
             break;
 
         case t__RET_:
@@ -2108,30 +2098,33 @@ void P2Asm::results()
             m_hash_IR.insert(m_lineno, m_IR);
             // opcode was constructed
             output = QString("%1 %2 [%3] %4")
-                      .arg(m_lineno, -6)
-                      .arg(PC, 6, 16, QChar('0'))
-                      .arg(m_IR.opcode, 8, 16, QChar('0'))
-                      .arg(m_line);
+                     .arg(m_lineno, -6)
+                     .arg(PC, 6, 16, QChar('0'))
+                     .arg(m_IR.opcode, 8, 16, QChar('0'))
+                     .arg(m_line);
 
             if (binary && m_curr_PC < MEM_SIZE) {
                 MEM.LONGS[m_curr_PC / 4] = m_IR.opcode;
             }
+        }
+    } else if (m_data.isEmpty()) {
+        if (m_words.isEmpty()) {
+            // comment or non code generating instruction
+            output = QString("%1 %2 -%3- %4")
+                     .arg(m_lineno, -6)
+                     .arg(PC, 6, 16, QChar('0'))
+                     .arg(QStringLiteral("--------"))
+                     .arg(m_line);
         } else {
             // assignment to symbol
             m_hash_IR.insert(m_lineno, m_IR);
             output = QString("%1 %2 <%3> %4")
-                      .arg(m_lineno, -6)
-                      .arg(PC, 6, 16, QChar('0'))
-                      .arg(m_IR.opcode, 8, 16, QChar('0'))
-                      .arg(m_line);
+                     .arg(m_lineno, -6)
+                     .arg(PC, 6, 16, QChar('0'))
+                     .arg(m_IR.opcode, 8, 16, QChar('0'))
+                     .arg(m_line);
         }
-    } else if (m_data.isEmpty()) {
-        // comment or non code generating instruction
-        output = QString("%1 %2 -%3- %4")
-                  .arg(m_lineno, -6)
-                  .arg(PC, 6, 16, QChar('0'))
-                  .arg(QStringLiteral("--------"))
-                  .arg(m_line);
+
     } else {
         p2_BYTES bytes = m_data.to_bytes();
         p2_LONG offset = PC;
@@ -2168,10 +2161,10 @@ void P2Asm::results()
 
                 // another p2_LONG to output
                 output = QString("%1 %2 {%3} %4")
-                          .arg(m_lineno, -6)
-                          .arg(PC, 6, 16, QChar('0'))
-                          .arg(hex)
-                          .arg(m_line);
+                         .arg(m_lineno, -6)
+                         .arg(PC, 6, 16, QChar('0'))
+                         .arg(hex)
+                         .arg(m_line);
 
                 if (!m_data.isEmpty()) {
                     // more data follows
@@ -2535,7 +2528,7 @@ P2Atom P2Asm::parse_atom(int& pos, const QString& str)
             DEBUG_EXPR(" unary dec: %s", qPrintable(str.mid(pos)));
             do_dec = true;
             break;
-        // Handle unary operators (precedence 2)
+            // Handle unary operators (precedence 2)
         case t__NEG:    // !
             DEBUG_EXPR(" unary neg: %s", qPrintable(str.mid(pos)));
             do_not = !do_not;
@@ -2707,7 +2700,7 @@ P2Atom P2Asm::parse_mulops(int& pos, const QString& str)
 {
     P2Atom lvalue = parse_atom(pos, str);
     const int spos = pos; Q_UNUSED(spos)
-    for (;;) {
+            for (;;) {
 
         if (!skip_spc(pos, str))
             break;
@@ -2754,7 +2747,7 @@ P2Atom P2Asm::parse_addops(int& pos, const QString& str)
 {
     P2Atom lvalue = parse_mulops(pos, str);
     const int spos = pos; Q_UNUSED(spos)
-    for (;;) {
+            for (;;) {
 
         if (!skip_spc(pos, str))
             break;
@@ -2798,7 +2791,7 @@ P2Atom P2Asm::parse_shiftops(int& pos, const QString& str)
 {
     P2Atom lvalue = parse_addops(pos, str);
     const int spos = pos; Q_UNUSED(spos)
-    for (;;) {
+            for (;;) {
 
         if (!skip_spc(pos, str))
             break;
@@ -2843,7 +2836,7 @@ P2Atom P2Asm::parse_binops(int& pos, const QString& str)
     P2Atom lvalue = parse_shiftops(pos, str);
     const int spos = pos; Q_UNUSED(spos)
 
-    for (;;) {
+            for (;;) {
 
         if (!skip_spc(pos, str))
             break;
@@ -3013,7 +3006,7 @@ bool P2Asm::end_of_line()
     if (m_widx < m_wcnt) {
         // ignore extra parameters?
         m_error = tr("Found extra parameters: %1")
-                       .arg(m_source[m_lineno].mid(m_words[m_widx].pos()));
+                  .arg(m_source[m_lineno].mid(m_words[m_widx].pos()));
         return false;
     }
     return true;
@@ -3028,14 +3021,14 @@ bool P2Asm::parse_comma()
 {
     if (m_widx >= m_wcnt) {
         m_error = tr("Expected %1 but found %2.")
-                       .arg(Token.string(t_comma))
-                       .arg(tr("end of line"));
+                  .arg(Token.string(t_comma))
+                  .arg(tr("end of line"));
         return false;
     }
     if (t_comma != m_words[m_widx].tok()) {
         m_error = tr("Expected %1 but found %2.")
-                       .arg(Token.string(t_comma))
-                       .arg(Token.string(m_words[m_widx].tok()));
+                  .arg(Token.string(t_comma))
+                  .arg(Token.string(m_words[m_widx].tok()));
         return false;
     }
     m_widx++;
@@ -3084,8 +3077,8 @@ bool P2Asm::optional_wcz()
             break;
         default:
             m_error = tr("Unexpected flag update '%1' not %2")
-                           .arg(m_words.value(m_widx).str())
-                           .arg(tr("WC, WZ, or WCZ"));
+                      .arg(m_words.value(m_widx).str())
+                      .arg(tr("WC, WZ, or WCZ"));
             return false;
         }
     }
@@ -3108,8 +3101,8 @@ bool P2Asm::optional_wc()
             break;
         default:
             m_error = tr("Unexpected flag update '%1' not %2")
-                           .arg(m_words.value(m_widx).str()
-                                .arg(tr("WC")));
+                      .arg(m_words.value(m_widx).str()
+                           .arg(tr("WC")));
             return false;
         }
     }
@@ -3132,8 +3125,8 @@ bool P2Asm::optional_wz()
             break;
         default:
             m_error = tr("Unexpected flag update '%1' not %2")
-                           .arg(m_words.value(m_widx).str())
-                           .arg(tr("WZ"));
+                      .arg(m_words.value(m_widx).str())
+                      .arg(tr("WZ"));
             return false;
         }
     }
@@ -3196,37 +3189,63 @@ bool P2Asm::asm_orgh()
 }
 
 /**
- * @brief Expect instruction with optional WC, WZ, or WCZ
- *
- * @return true on success, or false on error
+ * @brief Switch to data section
+ * @return true on success
  */
-bool P2Asm::parse_with_wcz()
+bool P2Asm::asm_dat()
 {
-    optional_wcz();
-    return end_of_line();
+    m_advance = 0;
+    m_emit_IR = false;
+    m_section = sec_dat;
+    return true;
 }
 
 /**
- * @brief Expect instruction with optional WC
- *
- * @return true on success, or false on error
+ * @brief Switch to constant section
+ * @return true on success
  */
-bool P2Asm::parse_with_wc()
+bool P2Asm::asm_con()
 {
-    optional_wc();
-    return end_of_line();
+    m_advance = 0;
+    m_emit_IR = false;
+    m_section = sec_con;
+    return true;
 }
 
+/**
+ * @brief Switch to publics section
+ * @return true on success
+ */
+bool P2Asm::asm_pub()
+{
+    m_advance = 0;
+    m_emit_IR = false;
+    m_section = sec_pub;
+    return true;
+}
 
 /**
- * @brief Expect instruction with optional WZ
- *
- * @return true on success, or false on error
+ * @brief Switch to private section
+ * @return true on success
  */
-bool P2Asm::parse_with_wz()
+bool P2Asm::asm_pri()
 {
-    optional_wz();
-    return end_of_line();
+    m_advance = 0;
+    m_emit_IR = false;
+    m_section = sec_pri;
+    return true;
+}
+
+/**
+ * @brief Switch to variable section
+ * @return true on success
+ */
+bool P2Asm::asm_var()
+{
+    m_advance = 0;
+    m_emit_IR = false;
+    m_section = sec_var;
+    return true;
 }
 
 /**
@@ -3510,7 +3529,7 @@ bool P2Asm::parse_ptr_pc_abs()
         break;
     default:
         m_error = tr("Invalid pointer parameter: %1")
-                       .arg(m_source[m_lineno].mid(m_words[m_widx].pos()));
+                  .arg(m_source[m_lineno].mid(m_words[m_widx].pos()));
         return false;
     }
     m_widx++;
@@ -10271,8 +10290,8 @@ bool P2Asm::asm_loc()
         break;
     default:
         m_error = tr("Invalid pointer type '%1'; expected one of %2.")
-                       .arg(m_words.value(m_widx).str())
-                       .arg(tr("PA, PB, PTRA, or PTRB"));
+                  .arg(m_words.value(m_widx).str())
+                  .arg(tr("PA, PB, PTRA, or PTRB"));
     }
     return success;
 }
@@ -10347,10 +10366,10 @@ bool P2Asm::asm_loc_ptrb()
 bool P2Asm::asm_augs()
 {
     static const QVector<p2_inst7_e> augs = QVector<p2_inst7_e>()
-                                           << p2_AUGS_00
-                                           << p2_AUGS_01
-                                           << p2_AUGS_10
-                                           << p2_AUGS_11;
+                                            << p2_AUGS_00
+                                            << p2_AUGS_01
+                                            << p2_AUGS_10
+                                            << p2_AUGS_11;
     m_widx++;
     m_IR.op.inst = p2_AUGS_00;
     return parse_imm23(augs);
@@ -10366,10 +10385,10 @@ bool P2Asm::asm_augs()
 bool P2Asm::asm_augd()
 {
     static const QVector<p2_inst7_e> augd = QVector<p2_inst7_e>()
-                                           << p2_AUGD_00
-                                           << p2_AUGD_01
-                                           << p2_AUGD_10
-                                           << p2_AUGD_11;
+                                            << p2_AUGD_00
+                                            << p2_AUGD_01
+                                            << p2_AUGD_10
+                                            << p2_AUGD_11;
     m_widx++;
     m_IR.op.inst = p2_AUGD_00;
     return parse_imm23(augd);

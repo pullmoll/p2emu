@@ -209,9 +209,12 @@ private:
     bool asm_org();
     bool asm_orgh();
 
-    bool parse_with_wcz();
-    bool parse_with_wc();
-    bool parse_with_wz();
+    bool asm_dat();
+    bool asm_con();
+    bool asm_pub();
+    bool asm_pri();
+    bool asm_var();
+
     bool parse_inst();
     bool parse_d_imm_s_wcz();
     bool parse_d_imm_s_wc();
