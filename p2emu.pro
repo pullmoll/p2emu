@@ -25,12 +25,9 @@ QMAKE_CXXFLAGS += -Wno-signed-enum-bitfield -DVER_MAJ=$$VER_MAJ -DVER_MIN=$$VER_
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-		about.cpp \
-		gotoaddress.cpp \
 		main.cpp \
 		mainwindow.cpp \
 		p2asm.cpp \
-		p2asmlisting.cpp \
 		p2asmmodel.cpp \
 		p2asmsourcedelegate.cpp \
 		p2asmsym.cpp \
@@ -43,14 +40,14 @@ SOURCES += \
 		p2defs.cpp \
 		p2hub.cpp \
 		p2hubview.cpp \
-		p2token.cpp
+		p2token.cpp \
+		dialogs/about.cpp \
+		dialogs/gotoaddress.cpp \
+		dialogs/p2asmlisting.cpp
 
 HEADERS += \
-		about.h \
-		gotoaddress.h \
 		mainwindow.h \
 		p2asm.h \
-		p2asmlisting.h \
 		p2asmmodel.h \
 		p2asmsourcedelegate.h \
 		p2asmsym.h \
@@ -63,15 +60,20 @@ HEADERS += \
 		p2defs.h \
 		p2hub.h \
 		p2hubview.h \
-		p2token.h
+		p2token.h \
+		dialogs/about.h \
+		dialogs/gotoaddress.h \
+		dialogs/p2asmlisting.h
 
 FORMS += \
-		about.ui \
-		gotoaddress.ui \
 		mainwindow.ui \
-		p2asmlisting.ui \
+		dialogs/about.ui \
 		p2cogview.ui \
-		p2hubview.ui
+		p2hubview.ui \
+		dialogs/gotoaddress.ui \
+		dialogs/p2asmlisting.ui
+
+INCLUDEPATH += $$PWD/dialogs
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
