@@ -791,30 +791,30 @@ P2Token::P2Token()
             m_type_token.insert(mask, tok);
 
     m_tokentype_name.insert(tt_none,            QStringLiteral("-"));
-    m_tokentype_name.insert(tt_parens,          QStringLiteral("parenthesis"));
-    m_tokentype_name.insert(tt_primary,         QStringLiteral("primary"));
-    m_tokentype_name.insert(tt_unary,           QStringLiteral("unary"));
-    m_tokentype_name.insert(tt_mulop,           QStringLiteral("mulop"));
-    m_tokentype_name.insert(tt_addop,           QStringLiteral("addop"));
-    m_tokentype_name.insert(tt_shiftop,         QStringLiteral("shiftop"));
-    m_tokentype_name.insert(tt_relation,        QStringLiteral("relation"));
-    m_tokentype_name.insert(tt_equality,        QStringLiteral("equality"));
-    m_tokentype_name.insert(tt_binop_and,       QStringLiteral("binary and"));
-    m_tokentype_name.insert(tt_binop_xor,       QStringLiteral("binary xor"));
-    m_tokentype_name.insert(tt_binop_or,        QStringLiteral("binary or"));
-    m_tokentype_name.insert(tt_binop_rev,       QStringLiteral("binary rev"));
-    m_tokentype_name.insert(tt_logop_and,       QStringLiteral("logic and"));
-    m_tokentype_name.insert(tt_logop_or,        QStringLiteral("logic or"));
-    m_tokentype_name.insert(tt_ternary,         QStringLiteral("ternary"));
-    m_tokentype_name.insert(tt_assignment,      QStringLiteral("assignment"));
-    m_tokentype_name.insert(tt_conditional,     QStringLiteral("conditional"));
-    m_tokentype_name.insert(tt_modcz_param,     QStringLiteral("modcz param"));
-    m_tokentype_name.insert(tt_inst,            QStringLiteral("inst"));
-    m_tokentype_name.insert(tt_inst,            QStringLiteral("wc/wz suffix"));
-    m_tokentype_name.insert(tt_section,         QStringLiteral("section"));
-    m_tokentype_name.insert(tt_origin,          QStringLiteral("origin"));
-    m_tokentype_name.insert(tt_data,            QStringLiteral("data"));
-    m_tokentype_name.insert(tt_lexer,           QStringLiteral("lexer"));
+    m_tokentype_name.insert(tt_parens,          QStringLiteral("Parenthesis"));
+    m_tokentype_name.insert(tt_primary,         QStringLiteral("Primary"));
+    m_tokentype_name.insert(tt_unary,           QStringLiteral("Unary"));
+    m_tokentype_name.insert(tt_mulop,           QStringLiteral("MulOp"));
+    m_tokentype_name.insert(tt_addop,           QStringLiteral("AddOp"));
+    m_tokentype_name.insert(tt_shiftop,         QStringLiteral("ShiftOp"));
+    m_tokentype_name.insert(tt_relation,        QStringLiteral("Relation"));
+    m_tokentype_name.insert(tt_equality,        QStringLiteral("Equality"));
+    m_tokentype_name.insert(tt_binop_and,       QStringLiteral("Binary AND"));
+    m_tokentype_name.insert(tt_binop_xor,       QStringLiteral("Binary XOR"));
+    m_tokentype_name.insert(tt_binop_or,        QStringLiteral("Binary OR"));
+    m_tokentype_name.insert(tt_binop_rev,       QStringLiteral("Binary REV"));
+    m_tokentype_name.insert(tt_logop_and,       QStringLiteral("Logic AND"));
+    m_tokentype_name.insert(tt_logop_or,        QStringLiteral("Logic OR"));
+    m_tokentype_name.insert(tt_ternary,         QStringLiteral("Ternary"));
+    m_tokentype_name.insert(tt_assignment,      QStringLiteral("Assignment"));
+    m_tokentype_name.insert(tt_conditional,     QStringLiteral("Conditional"));
+    m_tokentype_name.insert(tt_modcz_param,     QStringLiteral("MODCZ param"));
+    m_tokentype_name.insert(tt_inst,            QStringLiteral("Inst"));
+    m_tokentype_name.insert(tt_wcz_suffix,      QStringLiteral("WC/WZ suffix"));
+    m_tokentype_name.insert(tt_section,         QStringLiteral("Section"));
+    m_tokentype_name.insert(tt_origin,          QStringLiteral("Origin"));
+    m_tokentype_name.insert(tt_data,            QStringLiteral("Data"));
+    m_tokentype_name.insert(tt_lexer,           QStringLiteral("Lexer"));
 }
 
 /**

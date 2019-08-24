@@ -45,17 +45,17 @@
 class P2AsmWord
 {
 public:
-    explicit P2AsmWord(p2_token_e tok, const QString& str, int pos, int end)
-        : m_str(str), m_tok(tok), m_pos(pos), m_end(end)
-    {}
     explicit P2AsmWord(const QString& str = QString(), int pos = 0, int end = 0)
         : m_str(str), m_tok(t_invalid), m_pos(pos), m_end(end)
+    {}
+    explicit P2AsmWord(p2_token_e tok, const QString& str, int pos, int end)
+        : m_str(str), m_tok(tok), m_pos(pos), m_end(end)
     {}
 
     p2_token_e tok() const { return m_tok; }
     const QString& str() const { return m_str; }
     int pos() const { return m_pos; }
-    int len() const { return m_end - m_pos; }
+    int len() const { return m_end + 1 - m_pos; }
     int end() const { return m_end; }
     void setToken(p2_token_e tok) { m_tok = tok; }
     void append(const QString& str, int end) { m_str.append(str); m_end = end; }
@@ -66,8 +66,9 @@ private:
     int m_pos;
     int m_end;
 };
-
 typedef QVector<P2AsmWord> P2AsmWords;
+Q_DECLARE_METATYPE(P2AsmWord);
+Q_DECLARE_METATYPE(P2AsmWords);
 
 typedef QHash<int, p2_LONG> p2_PC_hash_t;
 typedef QHash<int, p2_opcode_u> p2_IR_hash_t;
@@ -105,6 +106,7 @@ public:
 
     const p2_words_hash_t& words_hash() const;
     P2AsmWords words(int lineno) const;
+    bool words_available(int lineno) const;
 
     const p2_error_hash_t& error_hash() const;
     QStringList errors(int lineno) const;
@@ -145,8 +147,8 @@ private:
     QString m_symbol;                       //!< currently defined symbol (first name on the line before an instruction token)
     QString m_function;                     //!< currently defined function symbol, i.e. w/o initial dot (.)
     QString m_section;                      //!< currently selected section
-    int m_cnt;                              //!< count of (relevant) words
-    int m_idx;                              //!< token (and word) index
+    int m_wcnt;                              //!< count of (relevant) words
+    int m_widx;                              //!< token (and word) index
 
     union {
         p2_BYTE BYTES[MEM_SIZE];            //!< as bytes
@@ -164,6 +166,7 @@ private:
 
     int left();
     void results(bool opcode = false);
+    QString expand_tabs(const QString& src);
     bool split_and_tokenize(const QString& m_line);
     p2_cond_e conditional(p2_token_e cond);
     p2_cond_e parse_modcz(p2_token_e cond);

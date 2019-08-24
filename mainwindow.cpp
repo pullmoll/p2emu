@@ -49,6 +49,7 @@
 #include "p2asm.h"
 #include "p2dasm.h"
 #include "p2asmmodel.h"
+#include "p2asmsourcedelegate.h"
 #include "p2dasmmodel.h"
 
 static const int ncogs = 8;
@@ -510,6 +511,9 @@ void MainWindow::setDasmLowercase(bool check)
 
 void MainWindow::setupAssembler()
 {
+    QAbstractItemDelegate* d = ui->tvAsm->itemDelegateForColumn(P2AsmModel::c_Source);
+    ui->tvAsm->setItemDelegateForColumn(P2AsmModel::c_Source, new P2AsmSourceDelegate);
+    delete d;
     ui->tvAsm->setModel(m_amodel);
     updateAsmColumnSizes();
     QString sourcecode = QStringLiteral(":/ROM_Booter_v33_01j.spin2");

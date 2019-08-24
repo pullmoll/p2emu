@@ -106,7 +106,8 @@ static constexpr quint64 tm_binops      = tm_binop_and |
                                           tm_binop_or |
                                           tm_binop_rev;
 
-static constexpr quint64 tm_operations  = tm_primary |
+static constexpr quint64 tm_operations  = tm_parens |
+                                          tm_primary |
                                           tm_unary |
                                           tm_mulop |
                                           tm_addop |

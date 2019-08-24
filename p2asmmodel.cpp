@@ -246,9 +246,9 @@ QString P2AsmModel::symbolsToolTip(const P2AsmSymTbl& symbols, const QStringList
     QStringList html = html_table_init(bgd);
     // heading
     html += html_tr_init();
-    html += html_th(tr("Symbol name"));
-    html += html_th(tr("Value (dec)"));
+    html += html_th(tr("Section::name"));
     html += html_th(tr("Value (hex)"));
+    html += html_th(tr("Value (dec)"));
     html += html_th(tr("Value (bin)"));
     html += html_tr_exit();
 
@@ -257,8 +257,8 @@ QString P2AsmModel::symbolsToolTip(const P2AsmSymTbl& symbols, const QStringList
         p2_LONG val = sym.value<p2_LONG>();
         html += html_tr_init();
         html += html_td(sym.name());
-        html += html_td(QString("%1").arg(val));
         html += html_td(QString("$%1").arg(val, 8, 16, QChar('0')));
+        html += html_td(QString("%1").arg(val, 11, 10));
         html += html_td(QString("%%1").arg(val, 32, 2, QChar('0')));
         html += html_tr_exit();
     }
@@ -292,52 +292,57 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     const int row = index.row();
     const int lineno = row + 1;
 
+    const P2AsmSymTbl& symbols = m_asm->symbols();
+    const QStringList& symrefs = symbols.defined_in(lineno);
+    const QStringList& errors = m_asm->errors(lineno);
+
+    const P2AsmWords& words = m_asm->words(lineno);
+    const QStringList& defined_in = symbols.defined_in(lineno);
+
+    const bool PC_avail = m_asm->PC_available(lineno);
+    const p2_LONG PC = PC_avail ? m_asm->PC_value(lineno) : 0;
+
+    const bool IR_avail = m_asm->IR_available(lineno);
+    const p2_opcode_u IR = m_asm->IR_value(lineno);
+
     switch (role) {
     case Qt::DisplayRole:
         switch (column) {
         case c_Origin: // Address as COG[xxx], LUT[xxx], or xxxxxx in RAM
-            if (m_asm->PC_hash().contains(lineno)) {
-                const p2_LONG PC = m_asm->PC_value(lineno);
-                if (PC < 0x200) {
-                    result = QString("COG[%1]").arg(PC, 3, 16, QChar('0'));
-                } else if (PC < PC_LONGS) {
-                    result = QString("LUT[%1]").arg(PC - 0x200, 3, 16, QChar('0'));
-                } else {
-                    result = QString("%1").arg(PC, 6, 16, QChar('0'));
-                }
+            if (!PC_avail)
+                break;
+            if (PC < 0x200) {
+                result = QString("COG[%1]").arg(PC, 3, 16, QChar('0'));
+            } else if (PC < PC_LONGS) {
+                result = QString("LUT[%1]").arg(PC - 0x200, 3, 16, QChar('0'));
+            } else {
+                result = QString("%1").arg(PC, 6, 16, QChar('0'));
             }
             break;
 
         case c_Tokens:
-            {
-                P2AsmWords words = m_asm->words(lineno);
-                if (!words.isEmpty())
-                    result = QString::number(words.count());
-            }
+            if (!words.isEmpty())
+                result = QString::number(words.count());
             break;
 
         case c_Errors:  // Error messages
-            {
-                if (!m_asm->errors(lineno).isEmpty())
-                    result = template_str_errors;
-            }
+            if (!errors.isEmpty())
+                result = template_str_errors;
             break;
 
         case c_Symbols:
-            {
-                QStringList symrefs = m_asm->symbols().defined_in(lineno);
-                if (!symrefs.isEmpty())
-                    result = QString::number(symrefs.count());
-            }
+            if (!symrefs.isEmpty())
+                result = QString::number(symrefs.count());
             break;
 
         case c_Opcode: // Opcode string
-            if (m_asm->PC_available(lineno)) {
-                const p2_opcode_u IR = m_asm->IR_value(lineno);
+            if (PC_avail) {
                 result = format_opcode(IR, m_format);
-            } else if (m_asm->IR_available(lineno)) {
-                const p2_opcode_u IR = m_asm->IR_value(lineno);
+                break;
+            }
+            if (IR_avail) {
                 result = format_data(IR, m_format);
+                break;
             }
             break;
 
@@ -359,36 +364,55 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
         break;
 
     case Qt::EditRole:
+        switch (column) {
+        case c_Origin:
+            if (m_asm->PC_available(lineno))
+                return m_asm->PC_value(lineno);
+            break;
+
+        case c_Opcode:
+            if (IR_avail)
+                return IR.opcode;
+            break;
+
+        case c_Tokens:
+            if (!words.isEmpty())
+                return qVariantFromValue(words);
+            break;
+
+        case c_Symbols:
+            if (!symrefs.isEmpty())
+                return symrefs;
+            break;
+
+        case c_Errors:
+            if (!errors.isEmpty())
+                return errors;
+            break;
+
+        case c_Source:
+            return m_asm->source(row);
+        }
         break;
 
     case Qt::ToolTipRole:
         switch (column) {
         case c_Tokens:
-            {
-                P2AsmWords words = m_asm->words(lineno);
-                if (words.isEmpty())
-                    break;
-                result = tokenToolTip(words, style_background_tokens);
-            }
+            if (words.isEmpty())
+                break;
+            result = tokenToolTip(words, style_background_tokens);
             break;
 
         case c_Symbols:
-            {
-                const P2AsmSymTbl& symbols = m_asm->symbols();
-                QStringList defined = symbols.defined_in(lineno);
-                if (defined.isEmpty())
-                    break;
-                result = symbolsToolTip(symbols, defined, style_background_symbols);
-            }
+            if (defined_in.isEmpty())
+                break;
+            result = symbolsToolTip(symbols, defined_in, style_background_symbols);
             break;
 
         case c_Errors:
-            {
-                QStringList errors = m_asm->errors(lineno);
-                if (errors.isEmpty())
-                    break;
-                result = errorsToolTip(errors, style_background_error);
-            }
+            if (errors.isEmpty())
+                break;
+            result = errorsToolTip(errors, style_background_error);
             break;
 
         default:
@@ -439,6 +463,11 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
         break;
 
     case Qt::InitialSortOrderRole:
+        break;
+
+    case Qt::UserRole:
+        if (c_Source == column && !words.isEmpty())
+            result = qVariantFromValue(words);
         break;
     }
     return result;

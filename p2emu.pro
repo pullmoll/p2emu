@@ -28,6 +28,7 @@ SOURCES += \
 		mainwindow.cpp \
 		p2asm.cpp \
 		p2asmmodel.cpp \
+		p2asmsourcedelegate.cpp \
 		p2asmsym.cpp \
 		p2asmsymtbl.cpp \
 		p2atom.cpp \
@@ -46,6 +47,7 @@ HEADERS += \
 		mainwindow.h \
 		p2asm.h \
 		p2asmmodel.h \
+		p2asmsourcedelegate.h \
 		p2asmsym.h \
 		p2asmsymtbl.h \
 		p2atom.h \
