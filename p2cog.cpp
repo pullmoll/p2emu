@@ -5302,13 +5302,14 @@ int P2Cog::op_rdlut()
 
 /**
  * @brief Read zero-extended byte from hub address {#}S/PTRx into D.
- *
+ *<pre>
  * EEEE 1010110 CZI DDDDDDDDD SSSSSSSSS
  *
  * RDBYTE  D,{#}S/P {WC/WZ/WCZ}
  *
  * C = MSB of byte.
  * Z = (result == 0).
+ *</pre>
  */
 int P2Cog::op_rdbyte()
 {
@@ -5329,13 +5330,14 @@ int P2Cog::op_rdbyte()
 
 /**
  * @brief Read zero-extended word from hub address {#}S/PTRx into D.
- *
+ *<pre>
  * EEEE 1010111 CZI DDDDDDDDD SSSSSSSSS
  *
  * RDWORD  D,{#}S/P {WC/WZ/WCZ}
  *
  * C = MSB of word.
  * Z = (result == 0).
+ *</pre>
  */
 int P2Cog::op_rdword()
 {
@@ -5356,13 +5358,14 @@ int P2Cog::op_rdword()
 
 /**
  * @brief Read long from hub address {#}S/PTRx into D.
- *
+ *<pre>
  * EEEE 1011000 CZI DDDDDDDDD SSSSSSSSS
  *
  * RDLONG  D,{#}S/P {WC/WZ/WCZ}
  *
  * C = MSB of long.
  * rior SETQ/SETQ2 invokes cog/LUT block transfer.
+ *</pre>
  */
 int P2Cog::op_rdlong()
 {
@@ -5383,13 +5386,14 @@ int P2Cog::op_rdlong()
 
 /**
  * @brief Read long from hub address --PTRA into D.
- *
+ *<pre>
  * EEEE 1011000 CZ1 DDDDDDDDD 101011111
  *
  * POPA    D        {WC/WZ/WCZ}
  *
  * C = MSB of long.
  * Z = (result == 0).
+ *</pre>
  */
 int P2Cog::op_popa()
 {
@@ -5398,13 +5402,14 @@ int P2Cog::op_popa()
 
 /**
  * @brief Read long from hub address --PTRB into D.
- *
+ *<pre>
  * EEEE 1011000 CZ1 DDDDDDDDD 111011111
  *
  * POPB    D        {WC/WZ/WCZ}
  *
  * C = MSB of long.
  * Z = (result == 0).
+ *</pre>
  */
 int P2Cog::op_popb()
 {
@@ -5413,12 +5418,13 @@ int P2Cog::op_popb()
 
 /**
  * @brief Call to S** by writing {C, Z, 10'b0, PC[19:0]} to D.
- *
+ *<pre>
  * EEEE 1011001 CZI DDDDDDDDD SSSSSSSSS
  *
  * CALLD   D,{#}S   {WC/WZ/WCZ}
  *
  * C = S[31], Z = S[30].
+ *</pre>
  */
 int P2Cog::op_calld()
 {
@@ -5451,12 +5457,13 @@ int P2Cog::op_calld()
 
 /**
  * @brief Resume from INT3.
- *
+ *<pre>
  * EEEE 1011001 110 111110000 111110001
  *
  * RESI3
  *
  * (CALLD $1F0,$1F1 WC,WZ).
+ *</pre>
  */
 int P2Cog::op_resi3()
 {
@@ -5465,12 +5472,13 @@ int P2Cog::op_resi3()
 
 /**
  * @brief Resume from INT2.
- *
+ *<pre>
  * EEEE 1011001 110 111110010 111110011
  *
  * RESI2
  *
  * (CALLD $1F2,$1F3 WC,WZ).
+ *</pre>
  */
 int P2Cog::op_resi2()
 {
@@ -5479,12 +5487,13 @@ int P2Cog::op_resi2()
 
 /**
  * @brief Resume from INT1.
- *
+ *<pre>
  * EEEE 1011001 110 111110100 111110101
  *
  * RESI1
  *
  * (CALLD $1F4,$1F5 WC,WZ).
+ *</pre>
  */
 int P2Cog::op_resi1()
 {
@@ -5493,12 +5502,13 @@ int P2Cog::op_resi1()
 
 /**
  * @brief Resume from INT0.
- *
+ *<pre>
  * EEEE 1011001 110 111111110 111111111
  *
  * RESI0
  *
  * (CALLD $1FE,$1FF WC,WZ).
+ *</pre>
  */
 int P2Cog::op_resi0()
 {
@@ -5507,12 +5517,13 @@ int P2Cog::op_resi0()
 
 /**
  * @brief Return from INT3.
- *
+ *<pre>
  * EEEE 1011001 110 111111111 111110001
  *
  * RETI3
  *
  * (CALLD $1FF,$1F1 WC,WZ).
+ *</pre>
  */
 int P2Cog::op_reti3()
 {
@@ -5521,12 +5532,13 @@ int P2Cog::op_reti3()
 
 /**
  * @brief Return from INT2.
- *
+ *<pre>
  * EEEE 1011001 110 111111111 111110011
  *
  * RETI2
  *
  * (CALLD $1FF,$1F3 WC,WZ).
+ *</pre>
  */
 int P2Cog::op_reti2()
 {
@@ -5535,12 +5547,13 @@ int P2Cog::op_reti2()
 
 /**
  * @brief Return from INT1.
- *
+ *<pre>
  * EEEE 1011001 110 111111111 111110101
  *
  * RETI1
  *
  * (CALLD $1FF,$1F5 WC,WZ).
+ *</pre>
  */
 int P2Cog::op_reti1()
 {
@@ -5549,12 +5562,13 @@ int P2Cog::op_reti1()
 
 /**
  * @brief Return from INT0.
- *
+ *<pre>
  * EEEE 1011001 110 111111111 111111111
  *
  * RETI0
  *
  * (CALLD $1FF,$1FF WC,WZ).
+ *</pre>
  */
 int P2Cog::op_reti0()
 {
@@ -5563,11 +5577,12 @@ int P2Cog::op_reti0()
 
 /**
  * @brief Call to S** by pushing {C, Z, 10'b0, PC[19:0]} onto stack, copy D to PA.
- *
+ *<pre>
  * EEEE 1011010 0LI DDDDDDDDD SSSSSSSSS
  *
  * CALLPA  {#}D,{#}S
  *
+ *</pre>
  */
 int P2Cog::op_callpa()
 {
@@ -5584,11 +5599,12 @@ int P2Cog::op_callpa()
 
 /**
  * @brief Call to S** by pushing {C, Z, 10'b0, PC[19:0]} onto stack, copy D to PB.
- *
+ *<pre>
  * EEEE 1011010 1LI DDDDDDDDD SSSSSSSSS
  *
  * CALLPB  {#}D,{#}S
  *
+ *</pre>
  */
 int P2Cog::op_callpb()
 {
@@ -5605,11 +5621,12 @@ int P2Cog::op_callpb()
 
 /**
  * @brief Decrement D and jump to S** if result is zero.
- *
+ *<pre>
  * EEEE 1011011 00I DDDDDDDDD SSSSSSSSS
  *
  * DJZ     D,{#}S
  *
+ *</pre>
  */
 int P2Cog::op_djz()
 {
@@ -5623,11 +5640,12 @@ int P2Cog::op_djz()
 
 /**
  * @brief Decrement D and jump to S** if result is not zero.
- *
+ *<pre>
  * EEEE 1011011 01I DDDDDDDDD SSSSSSSSS
  *
  * DJNZ    D,{#}S
  *
+ *</pre>
  */
 int P2Cog::op_djnz()
 {
@@ -5641,11 +5659,12 @@ int P2Cog::op_djnz()
 
 /**
  * @brief Decrement D and jump to S** if result is $FFFF_FFFF.
- *
+ *<pre>
  * EEEE 1011011 10I DDDDDDDDD SSSSSSSSS
  *
  * DJF     D,{#}S
  *
+ *</pre>
  */
 int P2Cog::op_djf()
 {
@@ -5659,11 +5678,12 @@ int P2Cog::op_djf()
 
 /**
  * @brief Decrement D and jump to S** if result is not $FFFF_FFFF.
- *
+ *<pre>
  * EEEE 1011011 11I DDDDDDDDD SSSSSSSSS
  *
  * DJNF    D,{#}S
  *
+ *</pre>
  */
 int P2Cog::op_djnf()
 {
@@ -5677,11 +5697,12 @@ int P2Cog::op_djnf()
 
 /**
  * @brief Increment D and jump to S** if result is zero.
- *
+ *<pre>
  * EEEE 1011100 00I DDDDDDDDD SSSSSSSSS
  *
  * IJZ     D,{#}S
  *
+ *</pre>
  */
 int P2Cog::op_ijz()
 {
@@ -5695,11 +5716,12 @@ int P2Cog::op_ijz()
 
 /**
  * @brief Increment D and jump to S** if result is not zero.
- *
+ *<pre>
  * EEEE 1011100 01I DDDDDDDDD SSSSSSSSS
  *
  * IJNZ    D,{#}S
  *
+ *</pre>
  */
 int P2Cog::op_ijnz()
 {
@@ -5713,11 +5735,12 @@ int P2Cog::op_ijnz()
 
 /**
  * @brief Test D and jump to S** if D is zero.
- *
+ *<pre>
  * EEEE 1011100 10I DDDDDDDDD SSSSSSSSS
  *
  * TJZ     D,{#}S
  *
+ *</pre>
  */
 int P2Cog::op_tjz()
 {
@@ -5731,11 +5754,12 @@ int P2Cog::op_tjz()
 
 /**
  * @brief Test D and jump to S** if D is not zero.
- *
+ *<pre>
  * EEEE 1011100 11I DDDDDDDDD SSSSSSSSS
  *
  * TJNZ    D,{#}S
  *
+ *</pre>
  */
 int P2Cog::op_tjnz()
 {
@@ -5749,11 +5773,12 @@ int P2Cog::op_tjnz()
 
 /**
  * @brief Test D and jump to S** if D is full (D = $FFFF_FFFF).
- *
+ *<pre>
  * EEEE 1011101 00I DDDDDDDDD SSSSSSSSS
  *
  * TJF     D,{#}S
  *
+ *</pre>
  */
 int P2Cog::op_tjf()
 {
@@ -5767,11 +5792,12 @@ int P2Cog::op_tjf()
 
 /**
  * @brief Test D and jump to S** if D is not full (D != $FFFF_FFFF).
- *
+ *<pre>
  * EEEE 1011101 01I DDDDDDDDD SSSSSSSSS
  *
  * TJNF    D,{#}S
  *
+ *</pre>
  */
 int P2Cog::op_tjnf()
 {
@@ -5785,11 +5811,12 @@ int P2Cog::op_tjnf()
 
 /**
  * @brief Test D and jump to S** if D is signed (D[31] = 1).
- *
+ *<pre>
  * EEEE 1011101 10I DDDDDDDDD SSSSSSSSS
  *
  * TJS     D,{#}S
  *
+ *</pre>
  */
 int P2Cog::op_tjs()
 {
@@ -5803,11 +5830,12 @@ int P2Cog::op_tjs()
 
 /**
  * @brief Test D and jump to S** if D is not signed (D[31] = 0).
- *
+ *<pre>
  * EEEE 1011101 11I DDDDDDDDD SSSSSSSSS
  *
  * TJNS    D,{#}S
  *
+ *</pre>
  */
 int P2Cog::op_tjns()
 {
@@ -5821,11 +5849,12 @@ int P2Cog::op_tjns()
 
 /**
  * @brief Test D and jump to S** if D overflowed (D[31] != C, C = 'correct sign' from last addition/subtraction).
- *
+ *<pre>
  * EEEE 1011110 00I DDDDDDDDD SSSSSSSSS
  *
  * TJV     D,{#}S
  *
+ *</pre>
  */
 int P2Cog::op_tjv()
 {
@@ -5839,11 +5868,12 @@ int P2Cog::op_tjv()
 
 /**
  * @brief Jump to S** if INT event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000000000 SSSSSSSSS
  *
  * JINT    {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jint()
 {
@@ -5856,11 +5886,12 @@ int P2Cog::op_jint()
 
 /**
  * @brief Jump to S** if CT1 event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000000001 SSSSSSSSS
  *
  * JCT1    {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jct1()
 {
@@ -5873,11 +5904,12 @@ int P2Cog::op_jct1()
 
 /**
  * @brief Jump to S** if CT2 event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000000010 SSSSSSSSS
  *
  * JCT2    {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jct2()
 {
@@ -5890,11 +5922,12 @@ int P2Cog::op_jct2()
 
 /**
  * @brief Jump to S** if CT3 event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000000011 SSSSSSSSS
  *
  * JCT3    {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jct3()
 {
@@ -5907,11 +5940,12 @@ int P2Cog::op_jct3()
 
 /**
  * @brief Jump to S** if SE1 event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000000100 SSSSSSSSS
  *
  * JSE1    {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jse1()
 {
@@ -5924,11 +5958,12 @@ int P2Cog::op_jse1()
 
 /**
  * @brief Jump to S** if SE2 event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000000101 SSSSSSSSS
  *
  * JSE2    {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jse2()
 {
@@ -5941,11 +5976,12 @@ int P2Cog::op_jse2()
 
 /**
  * @brief Jump to S** if SE3 event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000000110 SSSSSSSSS
  *
  * JSE3    {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jse3()
 {
@@ -5958,11 +5994,12 @@ int P2Cog::op_jse3()
 
 /**
  * @brief Jump to S** if SE4 event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000000111 SSSSSSSSS
  *
  * JSE4    {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jse4()
 {
@@ -5975,11 +6012,12 @@ int P2Cog::op_jse4()
 
 /**
  * @brief Jump to S** if PAT event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000001000 SSSSSSSSS
  *
  * JPAT    {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jpat()
 {
@@ -5992,11 +6030,12 @@ int P2Cog::op_jpat()
 
 /**
  * @brief Jump to S** if FBW event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000001001 SSSSSSSSS
  *
  * JFBW    {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jfbw()
 {
@@ -6009,11 +6048,12 @@ int P2Cog::op_jfbw()
 
 /**
  * @brief Jump to S** if XMT event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000001010 SSSSSSSSS
  *
  * JXMT    {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jxmt()
 {
@@ -6026,11 +6066,12 @@ int P2Cog::op_jxmt()
 
 /**
  * @brief Jump to S** if XFI event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000001011 SSSSSSSSS
  *
  * JXFI    {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jxfi()
 {
@@ -6043,11 +6084,12 @@ int P2Cog::op_jxfi()
 
 /**
  * @brief Jump to S** if XRO event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000001100 SSSSSSSSS
  *
  * JXRO    {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jxro()
 {
@@ -6060,11 +6102,12 @@ int P2Cog::op_jxro()
 
 /**
  * @brief Jump to S** if XRL event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000001101 SSSSSSSSS
  *
  * JXRL    {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jxrl()
 {
@@ -6077,11 +6120,12 @@ int P2Cog::op_jxrl()
 
 /**
  * @brief Jump to S** if ATN event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000001110 SSSSSSSSS
  *
  * JATN    {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jatn()
 {
@@ -6094,11 +6138,12 @@ int P2Cog::op_jatn()
 
 /**
  * @brief Jump to S** if QMT event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000001111 SSSSSSSSS
  *
  * JQMT    {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jqmt()
 {
@@ -6111,11 +6156,12 @@ int P2Cog::op_jqmt()
 
 /**
  * @brief Jump to S** if INT event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000010000 SSSSSSSSS
  *
  * JNINT   {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jnint()
 {
@@ -6128,11 +6174,12 @@ int P2Cog::op_jnint()
 
 /**
  * @brief Jump to S** if CT1 event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000010001 SSSSSSSSS
  *
  * JNCT1   {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jnct1()
 {
@@ -6145,11 +6192,12 @@ int P2Cog::op_jnct1()
 
 /**
  * @brief Jump to S** if CT2 event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000010010 SSSSSSSSS
  *
  * JNCT2   {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jnct2()
 {
@@ -6162,11 +6210,12 @@ int P2Cog::op_jnct2()
 
 /**
  * @brief Jump to S** if CT3 event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000010011 SSSSSSSSS
  *
  * JNCT3   {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jnct3()
 {
@@ -6179,11 +6228,12 @@ int P2Cog::op_jnct3()
 
 /**
  * @brief Jump to S** if SE1 event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000010100 SSSSSSSSS
  *
  * JNSE1   {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jnse1()
 {
@@ -6196,11 +6246,12 @@ int P2Cog::op_jnse1()
 
 /**
  * @brief Jump to S** if SE2 event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000010101 SSSSSSSSS
  *
  * JNSE2   {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jnse2()
 {
@@ -6213,11 +6264,12 @@ int P2Cog::op_jnse2()
 
 /**
  * @brief Jump to S** if SE3 event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000010110 SSSSSSSSS
  *
  * JNSE3   {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jnse3()
 {
@@ -6230,11 +6282,12 @@ int P2Cog::op_jnse3()
 
 /**
  * @brief Jump to S** if SE4 event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000010111 SSSSSSSSS
  *
  * JNSE4   {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jnse4()
 {
@@ -6247,11 +6300,12 @@ int P2Cog::op_jnse4()
 
 /**
  * @brief Jump to S** if PAT event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000011000 SSSSSSSSS
  *
  * JNPAT   {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jnpat()
 {
@@ -6264,11 +6318,12 @@ int P2Cog::op_jnpat()
 
 /**
  * @brief Jump to S** if FBW event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000011001 SSSSSSSSS
  *
  * JNFBW   {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jnfbw()
 {
@@ -6281,11 +6336,12 @@ int P2Cog::op_jnfbw()
 
 /**
  * @brief Jump to S** if XMT event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000011010 SSSSSSSSS
  *
  * JNXMT   {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jnxmt()
 {
@@ -6298,11 +6354,12 @@ int P2Cog::op_jnxmt()
 
 /**
  * @brief Jump to S** if XFI event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000011011 SSSSSSSSS
  *
  * JNXFI   {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jnxfi()
 {
@@ -6315,11 +6372,12 @@ int P2Cog::op_jnxfi()
 
 /**
  * @brief Jump to S** if XRO event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000011100 SSSSSSSSS
  *
  * JNXRO   {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jnxro()
 {
@@ -6332,11 +6390,12 @@ int P2Cog::op_jnxro()
 
 /**
  * @brief Jump to S** if XRL event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000011101 SSSSSSSSS
  *
  * JNXRL   {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jnxrl()
 {
@@ -6349,11 +6408,12 @@ int P2Cog::op_jnxrl()
 
 /**
  * @brief Jump to S** if ATN event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000011110 SSSSSSSSS
  *
  * JNATN   {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jnatn()
 {
@@ -6366,11 +6426,12 @@ int P2Cog::op_jnatn()
 
 /**
  * @brief Jump to S** if QMT event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000011111 SSSSSSSSS
  *
  * JNQMT   {#}S
  *
+ *</pre>
  */
 int P2Cog::op_jnqmt()
 {
@@ -6383,11 +6444,12 @@ int P2Cog::op_jnqmt()
 
 /**
  * @brief <empty>.
- *
+ *<pre>
  * EEEE 1011110 1LI DDDDDDDDD SSSSSSSSS
  *
  * <empty> {#}D,{#}S
  *
+ *</pre>
  */
 int P2Cog::op_1011110_1()
 {
@@ -6398,11 +6460,12 @@ int P2Cog::op_1011110_1()
 
 /**
  * @brief <empty>.
- *
+ *<pre>
  * EEEE 1011111 0LI DDDDDDDDD SSSSSSSSS
  *
  * <empty> {#}D,{#}S
  *
+ *</pre>
  */
 int P2Cog::op_1011111_0()
 {
@@ -6413,12 +6476,13 @@ int P2Cog::op_1011111_0()
 
 /**
  * @brief Set pin pattern for PAT event.
- *
+ *<pre>
  * EEEE 1011111 BEI DDDDDDDDD SSSSSSSSS
  *
  * SETPAT  {#}D,{#}S
  *
  * C selects INA/INB, Z selects =/!=, D provides mask value, S provides match value.
+ *</pre>
  */
 int P2Cog::op_setpat()
 {
@@ -6433,11 +6497,12 @@ int P2Cog::op_setpat()
 
 /**
  * @brief Write D to mode register of smart pin S[5:0], acknowledge smart pin.
- *
+ *<pre>
  * EEEE 1100000 0LI DDDDDDDDD SSSSSSSSS
  *
  * WRPIN   {#}D,{#}S
  *
+ *</pre>
  */
 int P2Cog::op_wrpin()
 {
@@ -6448,11 +6513,12 @@ int P2Cog::op_wrpin()
 
 /**
  * @brief Acknowledge smart pin S[5:0].
- *
+ *<pre>
  * EEEE 1100000 01I 000000001 SSSSSSSSS
  *
  * AKPIN   {#}S
  *
+ *</pre>
  */
 int P2Cog::op_akpin()
 {
@@ -6462,11 +6528,12 @@ int P2Cog::op_akpin()
 
 /**
  * @brief Write D to parameter "X" of smart pin S[5:0], acknowledge smart pin.
- *
+ *<pre>
  * EEEE 1100000 1LI DDDDDDDDD SSSSSSSSS
  *
  * WXPIN   {#}D,{#}S
  *
+ *</pre>
  */
 int P2Cog::op_wxpin()
 {
@@ -6477,11 +6544,12 @@ int P2Cog::op_wxpin()
 
 /**
  * @brief Write D to parameter "Y" of smart pin S[5:0], acknowledge smart pin.
- *
+ *<pre>
  * EEEE 1100001 0LI DDDDDDDDD SSSSSSSSS
  *
  * WYPIN   {#}D,{#}S
  *
+ *</pre>
  */
 int P2Cog::op_wypin()
 {
@@ -6492,11 +6560,12 @@ int P2Cog::op_wypin()
 
 /**
  * @brief Write D to LUT address S[8:0].
- *
+ *<pre>
  * EEEE 1100001 1LI DDDDDDDDD SSSSSSSSS
  *
  * WRLUT   {#}D,{#}S
  *
+ *</pre>
  */
 int P2Cog::op_wrlut()
 {
@@ -6510,11 +6579,12 @@ int P2Cog::op_wrlut()
 
 /**
  * @brief Write byte in D[7:0] to hub address {#}S/PTRx.
- *
+ *<pre>
  * EEEE 1100010 0LI DDDDDDDDD SSSSSSSSS
  *
  * WRBYTE  {#}D,{#}S/P
  *
+ *</pre>
  */
 int P2Cog::op_wrbyte()
 {
@@ -6528,11 +6598,12 @@ int P2Cog::op_wrbyte()
 
 /**
  * @brief Write word in D[15:0] to hub address {#}S/PTRx.
- *
+ *<pre>
  * EEEE 1100010 1LI DDDDDDDDD SSSSSSSSS
  *
  * WRWORD  {#}D,{#}S/P
  *
+ *</pre>
  */
 int P2Cog::op_wrword()
 {
@@ -6546,12 +6617,13 @@ int P2Cog::op_wrword()
 
 /**
  * @brief Write long in D[31:0] to hub address {#}S/PTRx.
- *
+ *<pre>
  * EEEE 1100011 0LI DDDDDDDDD SSSSSSSSS
  *
  * WRLONG  {#}D,{#}S/P
  *
  * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
+ *</pre>
  */
 int P2Cog::op_wrlong()
 {
@@ -6565,11 +6637,12 @@ int P2Cog::op_wrlong()
 
 /**
  * @brief Write long in D[31:0] to hub address PTRA++.
- *
+ *<pre>
  * EEEE 1100011 0L1 DDDDDDDDD 101100001
  *
  * PUSHA   {#}D
  *
+ *</pre>
  */
 int P2Cog::op_pusha()
 {
@@ -6581,11 +6654,12 @@ int P2Cog::op_pusha()
 
 /**
  * @brief Write long in D[31:0] to hub address PTRB++.
- *
+ *<pre>
  * EEEE 1100011 0L1 DDDDDDDDD 111100001
  *
  * PUSHB   {#}D
  *
+ *</pre>
  */
 int P2Cog::op_pushb()
 {
@@ -6597,12 +6671,13 @@ int P2Cog::op_pushb()
 
 /**
  * @brief Begin new fast hub read via FIFO.
- *
+ *<pre>
  * EEEE 1100011 1LI DDDDDDDDD SSSSSSSSS
  *
  * RDFAST  {#}D,{#}S
  *
  * D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
+ *</pre>
  */
 int P2Cog::op_rdfast()
 {
@@ -6613,12 +6688,13 @@ int P2Cog::op_rdfast()
 
 /**
  * @brief Begin new fast hub write via FIFO.
- *
+ *<pre>
  * EEEE 1100100 0LI DDDDDDDDD SSSSSSSSS
  *
  * WRFAST  {#}D,{#}S
  *
  * D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
+ *</pre>
  */
 int P2Cog::op_wrfast()
 {
@@ -6629,12 +6705,13 @@ int P2Cog::op_wrfast()
 
 /**
  * @brief Set next block for when block wraps.
- *
+ *<pre>
  * EEEE 1100100 1LI DDDDDDDDD SSSSSSSSS
  *
  * FBLOCK  {#}D,{#}S
  *
  * D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
+ *</pre>
  */
 int P2Cog::op_fblock()
 {
@@ -6645,11 +6722,12 @@ int P2Cog::op_fblock()
 
 /**
  * @brief Issue streamer command immediately, zeroing phase.
- *
+ *<pre>
  * EEEE 1100101 0LI DDDDDDDDD SSSSSSSSS
  *
  * XINIT   {#}D,{#}S
  *
+ *</pre>
  */
 int P2Cog::op_xinit()
 {
@@ -6660,11 +6738,12 @@ int P2Cog::op_xinit()
 
 /**
  * @brief Stop streamer immediately.
- *
+ *<pre>
  * EEEE 1100101 011 000000000 000000000
  *
  * XSTOP
  *
+ *</pre>
  */
 int P2Cog::op_xstop()
 {
@@ -6673,11 +6752,12 @@ int P2Cog::op_xstop()
 
 /**
  * @brief Buffer new streamer command to be issued on final NCO rollover of current command, zeroing phase.
- *
+ *<pre>
  * EEEE 1100101 1LI DDDDDDDDD SSSSSSSSS
  *
  * XZERO   {#}D,{#}S
  *
+ *</pre>
  */
 int P2Cog::op_xzero()
 {
@@ -6688,11 +6768,12 @@ int P2Cog::op_xzero()
 
 /**
  * @brief Buffer new streamer command to be issued on final NCO rollover of current command, continuing phase.
- *
+ *<pre>
  * EEEE 1100110 0LI DDDDDDDDD SSSSSSSSS
  *
  * XCONT   {#}D,{#}S
  *
+ *</pre>
  */
 int P2Cog::op_xcont()
 {
@@ -6703,13 +6784,14 @@ int P2Cog::op_xcont()
 
 /**
  * @brief Execute next D[8:0] instructions S times.
- *
+ *<pre>
  * EEEE 1100110 1LI DDDDDDDDD SSSSSSSSS
  *
  * REP     {#}D,{#}S
  *
  * If S = 0, repeat infinitely.
  * If D[8:0] = 0, nothing repeats.
+ *</pre>
  */
 int P2Cog::op_rep()
 {
@@ -6721,13 +6803,14 @@ int P2Cog::op_rep()
 
 /**
  * @brief Start cog selected by D.
- *
+ *<pre>
  * EEEE 1100111 CLI DDDDDDDDD SSSSSSSSS
  *
  * COGINIT {#}D,{#}S       {WC}
  *
  * S[19:0] sets hub startup address and PTRB of cog.
  * Prior SETQ sets PTRA of cog.
+ *</pre>
  */
 int P2Cog::op_coginit()
 {
@@ -6740,12 +6823,13 @@ int P2Cog::op_coginit()
 
 /**
  * @brief Begin CORDIC unsigned multiplication of D * S.
- *
+ *<pre>
  * EEEE 1101000 0LI DDDDDDDDD SSSSSSSSS
  *
  * QMUL    {#}D,{#}S
  *
  * GETQX/GETQY retrieves lower/upper product.
+ *</pre>
  */
 int P2Cog::op_qmul()
 {
@@ -6756,12 +6840,13 @@ int P2Cog::op_qmul()
 
 /**
  * @brief Begin CORDIC unsigned division of {SETQ value or 32'b0, D} / S.
- *
+ *<pre>
  * EEEE 1101000 1LI DDDDDDDDD SSSSSSSSS
  *
  * QDIV    {#}D,{#}S
  *
  * GETQX/GETQY retrieves quotient/remainder.
+ *</pre>
  */
 int P2Cog::op_qdiv()
 {
@@ -6772,12 +6857,13 @@ int P2Cog::op_qdiv()
 
 /**
  * @brief Begin CORDIC unsigned division of {D, SETQ value or 32'b0} / S.
- *
+ *<pre>
  * EEEE 1101001 0LI DDDDDDDDD SSSSSSSSS
  *
  * QFRAC   {#}D,{#}S
  *
  * GETQX/GETQY retrieves quotient/remainder.
+ *</pre>
  */
 int P2Cog::op_qfrac()
 {
@@ -6788,12 +6874,13 @@ int P2Cog::op_qfrac()
 
 /**
  * @brief Begin CORDIC square root of {S, D}.
- *
+ *<pre>
  * EEEE 1101001 1LI DDDDDDDDD SSSSSSSSS
  *
  * QSQRT   {#}D,{#}S
  *
  * GETQX retrieves root.
+ *</pre>
  */
 int P2Cog::op_qsqrt()
 {
@@ -6804,12 +6891,13 @@ int P2Cog::op_qsqrt()
 
 /**
  * @brief Begin CORDIC rotation of point (D, SETQ value or 32'b0) by angle S.
- *
+ *<pre>
  * EEEE 1101010 0LI DDDDDDDDD SSSSSSSSS
  *
  * QROTATE {#}D,{#}S
  *
  * GETQX/GETQY retrieves X/Y.
+ *</pre>
  */
 int P2Cog::op_qrotate()
 {
@@ -6820,12 +6908,13 @@ int P2Cog::op_qrotate()
 
 /**
  * @brief Begin CORDIC vectoring of point (D, S).
- *
+ *<pre>
  * EEEE 1101010 1LI DDDDDDDDD SSSSSSSSS
  *
  * QVECTOR {#}D,{#}S
  *
  * GETQX/GETQY retrieves length/angle.
+ *</pre>
  */
 int P2Cog::op_qvector()
 {
@@ -6836,11 +6925,12 @@ int P2Cog::op_qvector()
 
 /**
  * @brief Set hub configuration to D.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000000000
  *
  * HUBSET  {#}D
  *
+ *</pre>
  */
 int P2Cog::op_hubset()
 {
@@ -6850,12 +6940,13 @@ int P2Cog::op_hubset()
 
 /**
  * @brief If D is register and no WC, get cog ID (0 to 15) into D.
- *
+ *<pre>
  * EEEE 1101011 C0L DDDDDDDDD 000000001
  *
  * COGID   {#}D            {WC}
  *
  * If WC, check status of cog D[3:0], C = 1 if on.
+ *</pre>
  */
 int P2Cog::op_cogid()
 {
@@ -6865,11 +6956,12 @@ int P2Cog::op_cogid()
 
 /**
  * @brief Stop cog D[3:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000000011
  *
  * COGSTOP {#}D
  *
+ *</pre>
  */
 int P2Cog::op_cogstop()
 {
@@ -6879,13 +6971,14 @@ int P2Cog::op_cogstop()
 
 /**
  * @brief Request a LOCK.
- *
+ *<pre>
  * EEEE 1101011 C00 DDDDDDDDD 000000100
  *
  * LOCKNEW D               {WC}
  *
  * D will be written with the LOCK number (0 to 15).
  * C = 1 if no LOCK available.
+ *</pre>
  */
 int P2Cog::op_locknew()
 {
@@ -6894,11 +6987,12 @@ int P2Cog::op_locknew()
 
 /**
  * @brief Return LOCK D[3:0] for reallocation.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000000101
  *
  * LOCKRET {#}D
  *
+ *</pre>
  */
 int P2Cog::op_lockret()
 {
@@ -6908,7 +7002,7 @@ int P2Cog::op_lockret()
 
 /**
  * @brief Try to get LOCK D[3:0].
- *
+ *<pre>
  * EEEE 1101011 C0L DDDDDDDDD 000000110
  *
  * LOCKTRY {#}D            {WC}
@@ -6916,6 +7010,7 @@ int P2Cog::op_lockret()
  * C = 1 if got LOCK.
  * LOCKREL releases LOCK.
  * LOCK is also released if owner cog stops or restarts.
+ *</pre>
  */
 int P2Cog::op_locktry()
 {
@@ -6925,12 +7020,13 @@ int P2Cog::op_locktry()
 
 /**
  * @brief Release LOCK D[3:0].
- *
+ *<pre>
  * EEEE 1101011 C0L DDDDDDDDD 000000111
  *
  * LOCKREL {#}D            {WC}
  *
  * If D is a register and WC, get current/last cog id of LOCK owner into D and LOCK status into C.
+ *</pre>
  */
 int P2Cog::op_lockrel()
 {
@@ -6940,12 +7036,13 @@ int P2Cog::op_lockrel()
 
 /**
  * @brief Begin CORDIC number-to-logarithm conversion of D.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000001110
  *
  * QLOG    {#}D
  *
  * GETQX retrieves log {5'whole_exponent, 27'fractional_exponent}.
+ *</pre>
  */
 int P2Cog::op_qlog()
 {
@@ -6955,12 +7052,13 @@ int P2Cog::op_qlog()
 
 /**
  * @brief Begin CORDIC logarithm-to-number conversion of D.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000001111
  *
  * QEXP    {#}D
  *
  * GETQX retrieves number.
+ *</pre>
  */
 int P2Cog::op_qexp()
 {
@@ -6970,13 +7068,14 @@ int P2Cog::op_qexp()
 
 /**
  * @brief Read zero-extended byte from FIFO into D. Used after RDFAST.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000010000
  *
  * RFBYTE  D        {WC/WZ/WCZ}
  *
  * C = MSB of byte.
  * Z = (result == 0).
+ *</pre>
  */
 int P2Cog::op_rfbyte()
 {
@@ -6985,13 +7084,14 @@ int P2Cog::op_rfbyte()
 
 /**
  * @brief Read zero-extended word from FIFO into D. Used after RDFAST.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000010001
  *
  * RFWORD  D        {WC/WZ/WCZ}
  *
  * C = MSB of word.
  * Z = (result == 0).
+ *</pre>
  */
 int P2Cog::op_rfword()
 {
@@ -7000,13 +7100,14 @@ int P2Cog::op_rfword()
 
 /**
  * @brief Read long from FIFO into D. Used after RDFAST.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000010010
  *
  * RFLONG  D        {WC/WZ/WCZ}
  *
  * C = MSB of long.
  * Z = (result == 0).
+ *</pre>
  */
 int P2Cog::op_rflong()
 {
@@ -7015,13 +7116,14 @@ int P2Cog::op_rflong()
 
 /**
  * @brief Read zero-extended 1 … 4-byte value from FIFO into D. Used after RDFAST.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000010011
  *
  * RFVAR   D        {WC/WZ/WCZ}
  *
  * C = 0.
  * Z = (result == 0).
+ *</pre>
  */
 int P2Cog::op_rfvar()
 {
@@ -7030,13 +7132,14 @@ int P2Cog::op_rfvar()
 
 /**
  * @brief Read sign-extended 1 … 4-byte value from FIFO into D. Used after RDFAST.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000010100
  *
  * RFVARS  D        {WC/WZ/WCZ}
  *
  * C = MSB of value.
  * Z = (result == 0).
+ *</pre>
  */
 int P2Cog::op_rfvars()
 {
@@ -7045,11 +7148,12 @@ int P2Cog::op_rfvars()
 
 /**
  * @brief Write byte in D[7:0] into FIFO. Used after WRFAST.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000010101
  *
  * WFBYTE  {#}D
  *
+ *</pre>
  */
 int P2Cog::op_wfbyte()
 {
@@ -7058,11 +7162,12 @@ int P2Cog::op_wfbyte()
 
 /**
  * @brief Write word in D[15:0] into FIFO. Used after WRFAST.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000010110
  *
  * WFWORD  {#}D
  *
+ *</pre>
  */
 int P2Cog::op_wfword()
 {
@@ -7071,11 +7176,12 @@ int P2Cog::op_wfword()
 
 /**
  * @brief Write long in D[31:0] into FIFO. Used after WRFAST.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000010111
  *
  * WFLONG  {#}D
  *
+ *</pre>
  */
 int P2Cog::op_wflong()
 {
@@ -7084,7 +7190,7 @@ int P2Cog::op_wflong()
 
 /**
  * @brief Retrieve CORDIC result X into D.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000011000
  *
  * GETQX   D        {WC/WZ/WCZ}
@@ -7094,6 +7200,7 @@ int P2Cog::op_wflong()
         return;
  * C = X[31].
  * Z = (result == 0).
+ *</pre>
  */
 int P2Cog::op_getqx()
 {
@@ -7102,7 +7209,7 @@ int P2Cog::op_getqx()
 
 /**
  * @brief Retrieve CORDIC result Y into D.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000011001
  *
  * GETQY   D        {WC/WZ/WCZ}
@@ -7112,6 +7219,7 @@ int P2Cog::op_getqx()
         return;
  * C = Y[31].
  * Z = (result == 0).
+ *</pre>
  */
 int P2Cog::op_getqy()
 {
@@ -7120,12 +7228,13 @@ int P2Cog::op_getqy()
 
 /**
  * @brief Get CT into D.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 000011010
  *
  * GETCT   D
  *
  * CT is the free-running 32-bit system counter that increments on every clock.
+ *</pre>
  */
 int P2Cog::op_getct()
 {
@@ -7134,13 +7243,14 @@ int P2Cog::op_getct()
 
 /**
  * @brief Get RND into D/C/Z.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000011011
  *
  * GETRND  D        {WC/WZ/WCZ}
  *
  * RND is the PRNG that updates on every clock.
  * D = RND[31:0], C = RND[31], Z = RND[30], unique per cog.
+ *</pre>
  */
 int P2Cog::op_getrnd()
 {
@@ -7153,12 +7263,13 @@ int P2Cog::op_getrnd()
 
 /**
  * @brief Get RND into C/Z.
- *
+ *<pre>
  * EEEE 1101011 CZ1 000000000 000011011
  *
  * GETRND            WC/WZ/WCZ
  *
  * C = RND[31], Z = RND[30], unique per cog.
+ *</pre>
  */
 int P2Cog::op_getrnd_cz()
 {
@@ -7170,11 +7281,12 @@ int P2Cog::op_getrnd_cz()
 
 /**
  * @brief DAC3 = D[31:24], DAC2 = D[23:16], DAC1 = D[15:8], DAC0 = D[7:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000011100
  *
  * SETDACS {#}D
  *
+ *</pre>
  */
 int P2Cog::op_setdacs()
 {
@@ -7184,11 +7296,12 @@ int P2Cog::op_setdacs()
 
 /**
  * @brief Set streamer NCO frequency to D.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000011101
  *
  * SETXFRQ {#}D
  *
+ *</pre>
  */
 int P2Cog::op_setxfrq()
 {
@@ -7198,11 +7311,12 @@ int P2Cog::op_setxfrq()
 
 /**
  * @brief Get the streamer's Goertzel X accumulator into D and the Y accumulator into the next instruction's S, clear accumulators.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 000011110
  *
  * GETXACC D
  *
+ *</pre>
  */
 int P2Cog::op_getxacc()
 {
@@ -7211,13 +7325,14 @@ int P2Cog::op_getxacc()
 
 /**
  * @brief Wait 2 + D clocks if no WC/WZ/WCZ.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000011111
  *
  * WAITX   {#}D     {WC/WZ/WCZ}
  *
  * If WC/WZ/WCZ, wait 2 + (D & RND) clocks.
  * C/Z = 0.
+ *</pre>
  */
 int P2Cog::op_waitx()
 {
@@ -7227,11 +7342,12 @@ int P2Cog::op_waitx()
 
 /**
  * @brief Set SE1 event configuration to D[8:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000100000
  *
  * SETSE1  {#}D
  *
+ *</pre>
  */
 int P2Cog::op_setse1()
 {
@@ -7241,11 +7357,12 @@ int P2Cog::op_setse1()
 
 /**
  * @brief Set SE2 event configuration to D[8:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000100001
  *
  * SETSE2  {#}D
  *
+ *</pre>
  */
 int P2Cog::op_setse2()
 {
@@ -7255,11 +7372,12 @@ int P2Cog::op_setse2()
 
 /**
  * @brief Set SE3 event configuration to D[8:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000100010
  *
  * SETSE3  {#}D
  *
+ *</pre>
  */
 int P2Cog::op_setse3()
 {
@@ -7269,11 +7387,12 @@ int P2Cog::op_setse3()
 
 /**
  * @brief Set SE4 event configuration to D[8:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000100011
  *
  * SETSE4  {#}D
  *
+ *</pre>
  */
 int P2Cog::op_setse4()
 {
@@ -7283,11 +7402,12 @@ int P2Cog::op_setse4()
 
 /**
  * @brief Get INT event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000000000 000100100
  *
  * POLLINT          {WC/WZ/WCZ}
  *
+ *</pre>
  */
 int P2Cog::op_pollint()
 {
@@ -7296,11 +7416,12 @@ int P2Cog::op_pollint()
 
 /**
  * @brief Get CT1 event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000000001 000100100
  *
  * POLLCT1          {WC/WZ/WCZ}
  *
+ *</pre>
  */
 int P2Cog::op_pollct1()
 {
@@ -7309,11 +7430,12 @@ int P2Cog::op_pollct1()
 
 /**
  * @brief Get CT2 event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000000010 000100100
  *
  * POLLCT2          {WC/WZ/WCZ}
  *
+ *</pre>
  */
 int P2Cog::op_pollct2()
 {
@@ -7322,11 +7444,12 @@ int P2Cog::op_pollct2()
 
 /**
  * @brief Get CT3 event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000000011 000100100
  *
  * POLLCT3          {WC/WZ/WCZ}
  *
+ *</pre>
  */
 int P2Cog::op_pollct3()
 {
@@ -7335,11 +7458,12 @@ int P2Cog::op_pollct3()
 
 /**
  * @brief Get SE1 event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000000100 000100100
  *
  * POLLSE1          {WC/WZ/WCZ}
  *
+ *</pre>
  */
 int P2Cog::op_pollse1()
 {
@@ -7348,11 +7472,12 @@ int P2Cog::op_pollse1()
 
 /**
  * @brief Get SE2 event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000000101 000100100
  *
  * POLLSE2          {WC/WZ/WCZ}
  *
+ *</pre>
  */
 int P2Cog::op_pollse2()
 {
@@ -7361,11 +7486,12 @@ int P2Cog::op_pollse2()
 
 /**
  * @brief Get SE3 event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000000110 000100100
  *
  * POLLSE3          {WC/WZ/WCZ}
  *
+ *</pre>
  */
 int P2Cog::op_pollse3()
 {
@@ -7374,11 +7500,12 @@ int P2Cog::op_pollse3()
 
 /**
  * @brief Get SE4 event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000000111 000100100
  *
  * POLLSE4          {WC/WZ/WCZ}
  *
+ *</pre>
  */
 int P2Cog::op_pollse4()
 {
@@ -7387,11 +7514,12 @@ int P2Cog::op_pollse4()
 
 /**
  * @brief Get PAT event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000001000 000100100
  *
  * POLLPAT          {WC/WZ/WCZ}
  *
+ *</pre>
  */
 int P2Cog::op_pollpat()
 {
@@ -7400,11 +7528,12 @@ int P2Cog::op_pollpat()
 
 /**
  * @brief Get FBW event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000001001 000100100
  *
  * POLLFBW          {WC/WZ/WCZ}
  *
+ *</pre>
  */
 int P2Cog::op_pollfbw()
 {
@@ -7413,11 +7542,12 @@ int P2Cog::op_pollfbw()
 
 /**
  * @brief Get XMT event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000001010 000100100
  *
  * POLLXMT          {WC/WZ/WCZ}
  *
+ *</pre>
  */
 int P2Cog::op_pollxmt()
 {
@@ -7426,11 +7556,12 @@ int P2Cog::op_pollxmt()
 
 /**
  * @brief Get XFI event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000001011 000100100
  *
  * POLLXFI          {WC/WZ/WCZ}
  *
+ *</pre>
  */
 int P2Cog::op_pollxfi()
 {
@@ -7439,11 +7570,12 @@ int P2Cog::op_pollxfi()
 
 /**
  * @brief Get XRO event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000001100 000100100
  *
  * POLLXRO          {WC/WZ/WCZ}
  *
+ *</pre>
  */
 int P2Cog::op_pollxro()
 {
@@ -7452,11 +7584,12 @@ int P2Cog::op_pollxro()
 
 /**
  * @brief Get XRL event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000001101 000100100
  *
  * POLLXRL          {WC/WZ/WCZ}
  *
+ *</pre>
  */
 int P2Cog::op_pollxrl()
 {
@@ -7465,11 +7598,12 @@ int P2Cog::op_pollxrl()
 
 /**
  * @brief Get ATN event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000001110 000100100
  *
  * POLLATN          {WC/WZ/WCZ}
  *
+ *</pre>
  */
 int P2Cog::op_pollatn()
 {
@@ -7478,11 +7612,12 @@ int P2Cog::op_pollatn()
 
 /**
  * @brief Get QMT event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000001111 000100100
  *
  * POLLQMT          {WC/WZ/WCZ}
  *
+ *</pre>
  */
 int P2Cog::op_pollqmt()
 {
@@ -7491,13 +7626,14 @@ int P2Cog::op_pollqmt()
 
 /**
  * @brief Wait for INT event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000010000 000100100
  *
  * WAITINT          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 int P2Cog::op_waitint()
 {
@@ -7506,13 +7642,14 @@ int P2Cog::op_waitint()
 
 /**
  * @brief Wait for CT1 event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000010001 000100100
  *
  * WAITCT1          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 int P2Cog::op_waitct1()
 {
@@ -7521,13 +7658,14 @@ int P2Cog::op_waitct1()
 
 /**
  * @brief Wait for CT2 event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000010010 000100100
  *
  * WAITCT2          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 int P2Cog::op_waitct2()
 {
@@ -7536,13 +7674,14 @@ int P2Cog::op_waitct2()
 
 /**
  * @brief Wait for CT3 event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000010011 000100100
  *
  * WAITCT3          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 int P2Cog::op_waitct3()
 {
@@ -7551,13 +7690,14 @@ int P2Cog::op_waitct3()
 
 /**
  * @brief Wait for SE1 event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000010100 000100100
  *
  * WAITSE1          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 int P2Cog::op_waitse1()
 {
@@ -7566,13 +7706,14 @@ int P2Cog::op_waitse1()
 
 /**
  * @brief Wait for SE2 event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000010101 000100100
  *
  * WAITSE2          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 int P2Cog::op_waitse2()
 {
@@ -7581,13 +7722,14 @@ int P2Cog::op_waitse2()
 
 /**
  * @brief Wait for SE3 event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000010110 000100100
  *
  * WAITSE3          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 int P2Cog::op_waitse3()
 {
@@ -7596,13 +7738,14 @@ int P2Cog::op_waitse3()
 
 /**
  * @brief Wait for SE4 event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000010111 000100100
  *
  * WAITSE4          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 int P2Cog::op_waitse4()
 {
@@ -7611,13 +7754,14 @@ int P2Cog::op_waitse4()
 
 /**
  * @brief Wait for PAT event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000011000 000100100
  *
  * WAITPAT          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 int P2Cog::op_waitpat()
 {
@@ -7626,13 +7770,14 @@ int P2Cog::op_waitpat()
 
 /**
  * @brief Wait for FBW event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000011001 000100100
  *
  * WAITFBW          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 int P2Cog::op_waitfbw()
 {
@@ -7641,13 +7786,14 @@ int P2Cog::op_waitfbw()
 
 /**
  * @brief Wait for XMT event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000011010 000100100
  *
  * WAITXMT          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 int P2Cog::op_waitxmt()
 {
@@ -7656,13 +7802,14 @@ int P2Cog::op_waitxmt()
 
 /**
  * @brief Wait for XFI event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000011011 000100100
  *
  * WAITXFI          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 int P2Cog::op_waitxfi()
 {
@@ -7671,13 +7818,14 @@ int P2Cog::op_waitxfi()
 
 /**
  * @brief Wait for XRO event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000011100 000100100
  *
  * WAITXRO          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 int P2Cog::op_waitxro()
 {
@@ -7686,13 +7834,14 @@ int P2Cog::op_waitxro()
 
 /**
  * @brief Wait for XRL event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000011101 000100100
  *
  * WAITXRL          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 int P2Cog::op_waitxrl()
 {
@@ -7701,13 +7850,14 @@ int P2Cog::op_waitxrl()
 
 /**
  * @brief Wait for ATN event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000011110 000100100
  *
  * WAITATN          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 int P2Cog::op_waitatn()
 {
@@ -7716,11 +7866,12 @@ int P2Cog::op_waitatn()
 
 /**
  * @brief Allow interrupts (default).
- *
+ *<pre>
  * EEEE 1101011 000 000100000 000100100
  *
  * ALLOWI
  *
+ *</pre>
  */
 int P2Cog::op_allowi()
 {
@@ -7729,11 +7880,12 @@ int P2Cog::op_allowi()
 
 /**
  * @brief Stall Interrupts.
- *
+ *<pre>
  * EEEE 1101011 000 000100001 000100100
  *
  * STALLI
  *
+ *</pre>
  */
 int P2Cog::op_stalli()
 {
@@ -7742,11 +7894,12 @@ int P2Cog::op_stalli()
 
 /**
  * @brief Trigger INT1, regardless of STALLI mode.
- *
+ *<pre>
  * EEEE 1101011 000 000100010 000100100
  *
  * TRGINT1
  *
+ *</pre>
  */
 int P2Cog::op_trgint1()
 {
@@ -7755,11 +7908,12 @@ int P2Cog::op_trgint1()
 
 /**
  * @brief Trigger INT2, regardless of STALLI mode.
- *
+ *<pre>
  * EEEE 1101011 000 000100011 000100100
  *
  * TRGINT2
  *
+ *</pre>
  */
 int P2Cog::op_trgint2()
 {
@@ -7768,11 +7922,12 @@ int P2Cog::op_trgint2()
 
 /**
  * @brief Trigger INT3, regardless of STALLI mode.
- *
+ *<pre>
  * EEEE 1101011 000 000100100 000100100
  *
  * TRGINT3
  *
+ *</pre>
  */
 int P2Cog::op_trgint3()
 {
@@ -7781,11 +7936,12 @@ int P2Cog::op_trgint3()
 
 /**
  * @brief Cancel INT1.
- *
+ *<pre>
  * EEEE 1101011 000 000100101 000100100
  *
  * NIXINT1
  *
+ *</pre>
  */
 int P2Cog::op_nixint1()
 {
@@ -7794,11 +7950,12 @@ int P2Cog::op_nixint1()
 
 /**
  * @brief Cancel INT2.
- *
+ *<pre>
  * EEEE 1101011 000 000100110 000100100
  *
  * NIXINT2
  *
+ *</pre>
  */
 int P2Cog::op_nixint2()
 {
@@ -7807,11 +7964,12 @@ int P2Cog::op_nixint2()
 
 /**
  * @brief Cancel INT3.
- *
+ *<pre>
  * EEEE 1101011 000 000100111 000100100
  *
  * NIXINT3
  *
+ *</pre>
  */
 int P2Cog::op_nixint3()
 {
@@ -7820,11 +7978,12 @@ int P2Cog::op_nixint3()
 
 /**
  * @brief Set INT1 source to D[3:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000100101
  *
  * SETINT1 {#}D
  *
+ *</pre>
  */
 int P2Cog::op_setint1()
 {
@@ -7834,11 +7993,12 @@ int P2Cog::op_setint1()
 
 /**
  * @brief Set INT2 source to D[3:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000100110
  *
  * SETINT2 {#}D
  *
+ *</pre>
  */
 int P2Cog::op_setint2()
 {
@@ -7848,11 +8008,12 @@ int P2Cog::op_setint2()
 
 /**
  * @brief Set INT3 source to D[3:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000100111
  *
  * SETINT3 {#}D
  *
+ *</pre>
  */
 int P2Cog::op_setint3()
 {
@@ -7862,13 +8023,14 @@ int P2Cog::op_setint3()
 
 /**
  * @brief Set Q to D.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000101000
  *
  * SETQ    {#}D
  *
  * Use before RDLONG/WRLONG/WMLONG to set block transfer.
  * Also used before MUXQ/COGINIT/QDIV/QFRAC/QROTATE/WAITxxx.
+ *</pre>
  */
 int P2Cog::op_setq()
 {
@@ -7878,12 +8040,13 @@ int P2Cog::op_setq()
 
 /**
  * @brief Set Q to D.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000101001
  *
  * SETQ2   {#}D
  *
  * Use before RDLONG/WRLONG/WMLONG to set LUT block transfer.
+ *</pre>
  */
 int P2Cog::op_setq2()
 {
@@ -7893,11 +8056,12 @@ int P2Cog::op_setq2()
 
 /**
  * @brief Push D onto stack.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000101010
  *
  * PUSH    {#}D
  *
+ *</pre>
  */
 int P2Cog::op_push()
 {
@@ -7907,12 +8071,13 @@ int P2Cog::op_push()
 
 /**
  * @brief Pop stack (K).
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000101011
  *
  * POP     D        {WC/WZ/WCZ}
  *
  * C = K[31], Z = K[30], D = K.
+ *</pre>
  */
 int P2Cog::op_pop()
 {
@@ -7921,12 +8086,13 @@ int P2Cog::op_pop()
 
 /**
  * @brief Jump to D.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000101100
  *
  * JMP     D        {WC/WZ/WCZ}
  *
  * C = D[31], Z = D[30], PC = D[19:0].
+ *</pre>
  */
 int P2Cog::op_jmp()
 {
@@ -7938,12 +8104,13 @@ int P2Cog::op_jmp()
 
 /**
  * @brief Call to D by pushing {C, Z, 10'b0, PC[19:0]} onto stack.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000101101
  *
  * CALL    D        {WC/WZ/WCZ}
  *
  * C = D[31], Z = D[30], PC = D[19:0].
+ *</pre>
  */
 int P2Cog::op_call()
 {
@@ -7958,12 +8125,13 @@ int P2Cog::op_call()
 
 /**
  * @brief Return by popping stack (K).
- *
+ *<pre>
  * EEEE 1101011 CZ1 000000000 000101101
  *
  * RET              {WC/WZ/WCZ}
  *
  * C = K[31], Z = K[30], PC = K[19:0].
+ *</pre>
  */
 int P2Cog::op_ret()
 {
@@ -7976,12 +8144,13 @@ int P2Cog::op_ret()
 
 /**
  * @brief Call to D by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRA++.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000101110
  *
  * CALLA   D        {WC/WZ/WCZ}
  *
  * C = D[31], Z = D[30], PC = D[19:0].
+ *</pre>
  */
 int P2Cog::op_calla()
 {
@@ -7996,12 +8165,13 @@ int P2Cog::op_calla()
 
 /**
  * @brief Return by reading hub long (L) at --PTRA.
- *
+ *<pre>
  * EEEE 1101011 CZ1 000000000 000101110
  *
  * RETA             {WC/WZ/WCZ}
  *
  * C = L[31], Z = L[30], PC = L[19:0].
+ *</pre>
  */
 int P2Cog::op_reta()
 {
@@ -8014,12 +8184,13 @@ int P2Cog::op_reta()
 
 /**
  * @brief Call to D by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRB++.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000101111
  *
  * CALLB   D        {WC/WZ/WCZ}
  *
  * C = D[31], Z = D[30], PC = D[19:0].
+ *</pre>
  */
 int P2Cog::op_callb()
 {
@@ -8034,12 +8205,13 @@ int P2Cog::op_callb()
 
 /**
  * @brief Return by reading hub long (L) at --PTRB.
- *
+ *<pre>
  * EEEE 1101011 CZ1 000000000 000101111
  *
  * RETB             {WC/WZ/WCZ}
  *
  * C = L[31], Z = L[30], PC = L[19:0].
+ *</pre>
  */
 int P2Cog::op_retb()
 {
@@ -8052,13 +8224,14 @@ int P2Cog::op_retb()
 
 /**
  * @brief Jump ahead/back by D instructions.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000110000
  *
  * JMPREL  {#}D
  *
  * For cogex, PC += D[19:0].
  * For hubex, PC += D[17:0] << 2.
+ *</pre>
  */
 int P2Cog::op_jmprel()
 {
@@ -8070,12 +8243,13 @@ int P2Cog::op_jmprel()
 
 /**
  * @brief Skip instructions per D.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000110001
  *
  * SKIP    {#}D
  *
  * Subsequent instructions 0 … 31 get cancelled for each '1' bit in D[0] … D[31].
+ *</pre>
  */
 int P2Cog::op_skip()
 {
@@ -8087,12 +8261,13 @@ int P2Cog::op_skip()
 
 /**
  * @brief Skip cog/LUT instructions fast per D.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000110010
  *
  * SKIPF   {#}D
  *
  * Like SKIP, but instead of cancelling instructions, the PC leaps over them.
+ *</pre>
  */
 int P2Cog::op_skipf()
 {
@@ -8102,12 +8277,13 @@ int P2Cog::op_skipf()
 
 /**
  * @brief Jump to D[9:0] in cog/LUT and set SKIPF pattern to D[31:10].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000110011
  *
  * EXECF   {#}D
  *
  * PC = {10'b0, D[9:0]}.
+ *</pre>
  */
 int P2Cog::op_execf()
 {
@@ -8117,11 +8293,12 @@ int P2Cog::op_execf()
 
 /**
  * @brief Get current FIFO hub pointer into D.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 000110100
  *
  * GETPTR  D
  *
+ *</pre>
  */
 int P2Cog::op_getptr()
 {
@@ -8132,13 +8309,14 @@ int P2Cog::op_getptr()
 
 /**
  * @brief Get breakpoint status into D according to WC/WZ/WCZ.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000110101
  *
  * GETBRK  D          WC/WZ/WCZ
  *
  * C = 0.
  * Z = 0.
+ *</pre>
  */
 int P2Cog::op_getbrk()
 {
@@ -8147,12 +8325,13 @@ int P2Cog::op_getbrk()
 
 /**
  * @brief If in debug ISR, trigger asynchronous breakpoint in cog D[3:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000110101
  *
  * COGBRK  {#}D
  *
  * Cog D[3:0] must have asynchronous breakpoint enabled.
+ *</pre>
  */
 int P2Cog::op_cogbrk()
 {
@@ -8162,12 +8341,13 @@ int P2Cog::op_cogbrk()
 
 /**
  * @brief If in debug ISR, set next break condition to D.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000110110
  *
  * BRK     {#}D
  *
  * Else, trigger break if enabled, conditionally write break code to D[7:0].
+ *</pre>
  */
 int P2Cog::op_brk()
 {
@@ -8177,11 +8357,12 @@ int P2Cog::op_brk()
 
 /**
  * @brief If D[0] = 1 then enable LUT sharing, where LUT writes within the adjacent odd/even companion cog are copied to this LUT.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000110111
  *
  * SETLUTS {#}D
  *
+ *</pre>
  */
 int P2Cog::op_setluts()
 {
@@ -8191,11 +8372,12 @@ int P2Cog::op_setluts()
 
 /**
  * @brief Set the colorspace converter "CY" parameter to D[31:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000111000
  *
  * SETCY   {#}D
  *
+ *</pre>
  */
 int P2Cog::op_setcy()
 {
@@ -8205,11 +8387,12 @@ int P2Cog::op_setcy()
 
 /**
  * @brief Set the colorspace converter "CI" parameter to D[31:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000111001
  *
  * SETCI   {#}D
  *
+ *</pre>
  */
 int P2Cog::op_setci()
 {
@@ -8219,11 +8402,12 @@ int P2Cog::op_setci()
 
 /**
  * @brief Set the colorspace converter "CQ" parameter to D[31:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000111010
  *
  * SETCQ   {#}D
  *
+ *</pre>
  */
 int P2Cog::op_setcq()
 {
@@ -8233,11 +8417,12 @@ int P2Cog::op_setcq()
 
 /**
  * @brief Set the colorspace converter "CFRQ" parameter to D[31:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000111011
  *
  * SETCFRQ {#}D
  *
+ *</pre>
  */
 int P2Cog::op_setcfrq()
 {
@@ -8247,11 +8432,12 @@ int P2Cog::op_setcfrq()
 
 /**
  * @brief Set the colorspace converter "CMOD" parameter to D[6:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000111100
  *
  * SETCMOD {#}D
  *
+ *</pre>
  */
 int P2Cog::op_setcmod()
 {
@@ -8261,11 +8447,12 @@ int P2Cog::op_setcmod()
 
 /**
  * @brief Set BLNPIX/MIXPIX blend factor to D[7:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000111101
  *
  * SETPIV  {#}D
  *
+ *</pre>
  */
 int P2Cog::op_setpiv()
 {
@@ -8275,11 +8462,12 @@ int P2Cog::op_setpiv()
 
 /**
  * @brief Set MIXPIX mode to D[5:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000111110
  *
  * SETPIX  {#}D
  *
+ *</pre>
  */
 int P2Cog::op_setpix()
 {
@@ -8289,11 +8477,12 @@ int P2Cog::op_setpix()
 
 /**
  * @brief Strobe "attention" of all cogs whose corresponging bits are high in D[15:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000111111
  *
  * COGATN  {#}D
  *
+ *</pre>
  */
 int P2Cog::op_cogatn()
 {
@@ -8303,12 +8492,13 @@ int P2Cog::op_cogatn()
 
 /**
  * @brief Test  IN bit of pin D[5:0], write to C/Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000000
  *
  * TESTP   {#}D           WC/WZ
  *
  * C/Z =          IN[D[5:0]].
+ *</pre>
  */
 int P2Cog::op_testp_w()
 {
@@ -8318,12 +8508,13 @@ int P2Cog::op_testp_w()
 
 /**
  * @brief Test !IN bit of pin D[5:0], write to C/Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000001
  *
  * TESTPN  {#}D           WC/WZ
  *
  * C/Z =         !IN[D[5:0]].
+ *</pre>
  */
 int P2Cog::op_testpn_w()
 {
@@ -8333,12 +8524,13 @@ int P2Cog::op_testpn_w()
 
 /**
  * @brief Test  IN bit of pin D[5:0], AND into C/Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000010
  *
  * TESTP   {#}D       ANDC/ANDZ
  *
  * C/Z = C/Z AND  IN[D[5:0]].
+ *</pre>
  */
 int P2Cog::op_testp_and()
 {
@@ -8348,12 +8540,13 @@ int P2Cog::op_testp_and()
 
 /**
  * @brief Test !IN bit of pin D[5:0], AND into C/Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000011
  *
  * TESTPN  {#}D       ANDC/ANDZ
  *
  * C/Z = C/Z AND !IN[D[5:0]].
+ *</pre>
  */
 int P2Cog::op_testpn_and()
 {
@@ -8363,12 +8556,13 @@ int P2Cog::op_testpn_and()
 
 /**
  * @brief Test  IN bit of pin D[5:0], OR  into C/Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000100
  *
  * TESTP   {#}D         ORC/ORZ
  *
  * C/Z = C/Z OR   IN[D[5:0]].
+ *</pre>
  */
 int P2Cog::op_testp_or()
 {
@@ -8378,12 +8572,13 @@ int P2Cog::op_testp_or()
 
 /**
  * @brief Test !IN bit of pin D[5:0], OR  into C/Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000101
  *
  * TESTPN  {#}D         ORC/ORZ
  *
  * C/Z = C/Z OR  !IN[D[5:0]].
+ *</pre>
  */
 int P2Cog::op_testpn_or()
 {
@@ -8393,12 +8588,13 @@ int P2Cog::op_testpn_or()
 
 /**
  * @brief Test  IN bit of pin D[5:0], XOR into C/Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000110
  *
  * TESTP   {#}D       XORC/XORZ
  *
  * C/Z = C/Z XOR  IN[D[5:0]].
+ *</pre>
  */
 int P2Cog::op_testp_xor()
 {
@@ -8408,12 +8604,13 @@ int P2Cog::op_testp_xor()
 
 /**
  * @brief Test !IN bit of pin D[5:0], XOR into C/Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000111
  *
  * TESTPN  {#}D       XORC/XORZ
  *
  * C/Z = C/Z XOR !IN[D[5:0]].
+ *</pre>
  */
 int P2Cog::op_testpn_xor()
 {
@@ -8423,12 +8620,13 @@ int P2Cog::op_testpn_xor()
 
 /**
  * @brief DIR bit of pin D[5:0] = 0.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000000
  *
  * DIRL    {#}D           {WCZ}
  *
  * C,Z = DIR bit.
+ *</pre>
  */
 int P2Cog::op_dirl()
 {
@@ -8442,12 +8640,13 @@ int P2Cog::op_dirl()
 
 /**
  * @brief DIR bit of pin D[5:0] = 1.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000001
  *
  * DIRH    {#}D           {WCZ}
  *
  * C,Z = DIR bit.
+ *</pre>
  */
 int P2Cog::op_dirh()
 {
@@ -8461,12 +8660,13 @@ int P2Cog::op_dirh()
 
 /**
  * @brief DIR bit of pin D[5:0] = C.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000010
  *
  * DIRC    {#}D           {WCZ}
  *
  * C,Z = DIR bit.
+ *</pre>
  */
 int P2Cog::op_dirc()
 {
@@ -8480,12 +8680,13 @@ int P2Cog::op_dirc()
 
 /**
  * @brief DIR bit of pin D[5:0] = !C.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000011
  *
  * DIRNC   {#}D           {WCZ}
  *
  * C,Z = DIR bit.
+ *</pre>
  */
 int P2Cog::op_dirnc()
 {
@@ -8499,12 +8700,13 @@ int P2Cog::op_dirnc()
 
 /**
  * @brief DIR bit of pin D[5:0] = Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000100
  *
  * DIRZ    {#}D           {WCZ}
  *
  * C,Z = DIR bit.
+ *</pre>
  */
 int P2Cog::op_dirz()
 {
@@ -8518,12 +8720,13 @@ int P2Cog::op_dirz()
 
 /**
  * @brief DIR bit of pin D[5:0] = !Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000101
  *
  * DIRNZ   {#}D           {WCZ}
  *
  * C,Z = DIR bit.
+ *</pre>
  */
 int P2Cog::op_dirnz()
 {
@@ -8537,12 +8740,13 @@ int P2Cog::op_dirnz()
 
 /**
  * @brief DIR bit of pin D[5:0] = RND.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000110
  *
  * DIRRND  {#}D           {WCZ}
  *
  * C,Z = DIR bit.
+ *</pre>
  */
 int P2Cog::op_dirrnd()
 {
@@ -8556,12 +8760,13 @@ int P2Cog::op_dirrnd()
 
 /**
  * @brief DIR bit of pin D[5:0] = !bit.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000111
  *
  * DIRNOT  {#}D           {WCZ}
  *
  * C,Z = DIR bit.
+ *</pre>
  */
 int P2Cog::op_dirnot()
 {
@@ -8575,12 +8780,13 @@ int P2Cog::op_dirnot()
 
 /**
  * @brief OUT bit of pin D[5:0] = 0.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001001000
  *
  * OUTL    {#}D           {WCZ}
  *
  * C,Z = OUT bit.
+ *</pre>
  */
 int P2Cog::op_outl()
 {
@@ -8594,12 +8800,13 @@ int P2Cog::op_outl()
 
 /**
  * @brief OUT bit of pin D[5:0] = 1.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001001001
  *
  * OUTH    {#}D           {WCZ}
  *
  * C,Z = OUT bit.
+ *</pre>
  */
 int P2Cog::op_outh()
 {
@@ -8613,12 +8820,13 @@ int P2Cog::op_outh()
 
 /**
  * @brief OUT bit of pin D[5:0] = C.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001001010
  *
  * OUTC    {#}D           {WCZ}
  *
  * C,Z = OUT bit.
+ *</pre>
  */
 int P2Cog::op_outc()
 {
@@ -8632,12 +8840,13 @@ int P2Cog::op_outc()
 
 /**
  * @brief OUT bit of pin D[5:0] = !C.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001001011
  *
  * OUTNC   {#}D           {WCZ}
  *
  * C,Z = OUT bit.
+ *</pre>
  */
 int P2Cog::op_outnc()
 {
@@ -8651,12 +8860,13 @@ int P2Cog::op_outnc()
 
 /**
  * @brief OUT bit of pin D[5:0] = Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001001100
  *
  * OUTZ    {#}D           {WCZ}
  *
  * C,Z = OUT bit.
+ *</pre>
  */
 int P2Cog::op_outz()
 {
@@ -8670,12 +8880,13 @@ int P2Cog::op_outz()
 
 /**
  * @brief OUT bit of pin D[5:0] = !Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001001101
  *
  * OUTNZ   {#}D           {WCZ}
  *
  * C,Z = OUT bit.
+ *</pre>
  */
 int P2Cog::op_outnz()
 {
@@ -8689,12 +8900,13 @@ int P2Cog::op_outnz()
 
 /**
  * @brief OUT bit of pin D[5:0] = RND.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001001110
  *
  * OUTRND  {#}D           {WCZ}
  *
  * C,Z = OUT bit.
+ *</pre>
  */
 int P2Cog::op_outrnd()
 {
@@ -8708,12 +8920,13 @@ int P2Cog::op_outrnd()
 
 /**
  * @brief OUT bit of pin D[5:0] = !bit.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001001111
  *
  * OUTNOT  {#}D           {WCZ}
  *
  * C,Z = OUT bit.
+ *</pre>
  */
 int P2Cog::op_outnot()
 {
@@ -8727,13 +8940,14 @@ int P2Cog::op_outnot()
 
 /**
  * @brief OUT bit of pin D[5:0] = 0.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001010000
  *
  * FLTL    {#}D           {WCZ}
  *
  * DIR bit = 0.
  * C,Z = OUT bit.
+ *</pre>
  */
 int P2Cog::op_fltl()
 {
@@ -8748,13 +8962,14 @@ int P2Cog::op_fltl()
 
 /**
  * @brief OUT bit of pin D[5:0] = 1.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001010001
  *
  * FLTH    {#}D           {WCZ}
  *
  * DIR bit = 0.
  * C,Z = OUT bit.
+ *</pre>
  */
 int P2Cog::op_flth()
 {
@@ -8769,13 +8984,14 @@ int P2Cog::op_flth()
 
 /**
  * @brief OUT bit of pin D[5:0] = C.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001010010
  *
  * FLTC    {#}D           {WCZ}
  *
  * DIR bit = 0.
  * C,Z = OUT bit.
+ *</pre>
  */
 int P2Cog::op_fltc()
 {
@@ -8790,13 +9006,14 @@ int P2Cog::op_fltc()
 
 /**
  * @brief OUT bit of pin D[5:0] = !C.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001010011
  *
  * FLTNC   {#}D           {WCZ}
  *
  * DIR bit = 0.
  * C,Z = OUT bit.
+ *</pre>
  */
 int P2Cog::op_fltnc()
 {
@@ -8811,13 +9028,14 @@ int P2Cog::op_fltnc()
 
 /**
  * @brief OUT bit of pin D[5:0] = Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001010100
  *
  * FLTZ    {#}D           {WCZ}
  *
  * DIR bit = 0.
  * C,Z = OUT bit.
+ *</pre>
  */
 int P2Cog::op_fltz()
 {
@@ -8832,13 +9050,14 @@ int P2Cog::op_fltz()
 
 /**
  * @brief OUT bit of pin D[5:0] = !Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001010101
  *
  * FLTNZ   {#}D           {WCZ}
  *
  * DIR bit = 0.
  * C,Z = OUT bit.
+ *</pre>
  */
 int P2Cog::op_fltnz()
 {
@@ -8853,13 +9072,14 @@ int P2Cog::op_fltnz()
 
 /**
  * @brief OUT bit of pin D[5:0] = RND.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001010110
  *
  * FLTRND  {#}D           {WCZ}
  *
  * DIR bit = 0.
  * C,Z = OUT bit.
+ *</pre>
  */
 int P2Cog::op_fltrnd()
 {
@@ -8874,13 +9094,14 @@ int P2Cog::op_fltrnd()
 
 /**
  * @brief OUT bit of pin D[5:0] = !bit.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001010111
  *
  * FLTNOT  {#}D           {WCZ}
  *
  * DIR bit = 0.
  * C,Z = OUT bit.
+ *</pre>
  */
 int P2Cog::op_fltnot()
 {
@@ -8895,13 +9116,14 @@ int P2Cog::op_fltnot()
 
 /**
  * @brief OUT bit of pin D[5:0] = 0.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001011000
  *
  * DRVL    {#}D           {WCZ}
  *
  * DIR bit = 1.
  * C,Z = OUT bit.
+ *</pre>
  */
 int P2Cog::op_drvl()
 {
@@ -8916,13 +9138,14 @@ int P2Cog::op_drvl()
 
 /**
  * @brief OUT bit of pin D[5:0] = 1.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001011001
  *
  * DRVH    {#}D           {WCZ}
  *
  * DIR bit = 1.
  * C,Z = OUT bit.
+ *</pre>
  */
 int P2Cog::op_drvh()
 {
@@ -8937,13 +9160,14 @@ int P2Cog::op_drvh()
 
 /**
  * @brief OUT bit of pin D[5:0] = C.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001011010
  *
  * DRVC    {#}D           {WCZ}
  *
  * DIR bit = 1.
  * C,Z = OUT bit.
+ *</pre>
  */
 int P2Cog::op_drvc()
 {
@@ -8958,13 +9182,14 @@ int P2Cog::op_drvc()
 
 /**
  * @brief OUT bit of pin D[5:0] = !C.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001011011
  *
  * DRVNC   {#}D           {WCZ}
  *
  * DIR bit = 1.
  * C,Z = OUT bit.
+ *</pre>
  */
 int P2Cog::op_drvnc()
 {
@@ -8979,13 +9204,14 @@ int P2Cog::op_drvnc()
 
 /**
  * @brief OUT bit of pin D[5:0] = Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001011100
  *
  * DRVZ    {#}D           {WCZ}
  *
  * DIR bit = 1.
  * C,Z = OUT bit.
+ *</pre>
  */
 int P2Cog::op_drvz()
 {
@@ -9000,13 +9226,14 @@ int P2Cog::op_drvz()
 
 /**
  * @brief OUT bit of pin D[5:0] = !Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001011101
  *
  * DRVNZ   {#}D           {WCZ}
  *
  * DIR bit = 1.
  * C,Z = OUT bit.
+ *</pre>
  */
 int P2Cog::op_drvnz()
 {
@@ -9021,13 +9248,14 @@ int P2Cog::op_drvnz()
 
 /**
  * @brief OUT bit of pin D[5:0] = RND.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001011110
  *
  * DRVRND  {#}D           {WCZ}
  *
  * DIR bit = 1.
  * C,Z = OUT bit.
+ *</pre>
  */
 int P2Cog::op_drvrnd()
 {
@@ -9042,13 +9270,14 @@ int P2Cog::op_drvrnd()
 
 /**
  * @brief OUT bit of pin D[5:0] = !bit.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001011111
  *
  * DRVNOT  {#}D           {WCZ}
  *
  * DIR bit = 1.
  * C,Z = OUT bit.
+ *</pre>
  */
 int P2Cog::op_drvnot()
 {
@@ -9063,12 +9292,13 @@ int P2Cog::op_drvnot()
 
 /**
  * @brief Split every 4th bit of S into bytes of D.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001100000
  *
  * SPLITB  D
  *
  * D = {S[31], S[27], S[23], S[19], … S[12], S[8], S[4], S[0]}.
+ *</pre>
  */
 int P2Cog::op_splitb()
 {
@@ -9087,12 +9317,13 @@ int P2Cog::op_splitb()
 
 /**
  * @brief Merge bits of bytes in S into D.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001100001
  *
  * MERGEB  D
  *
  * D = {S[31], S[23], S[15], S[7], … S[24], S[16], S[8], S[0]}.
+ *</pre>
  */
 int P2Cog::op_mergeb()
 {
@@ -9111,12 +9342,13 @@ int P2Cog::op_mergeb()
 
 /**
  * @brief Split bits of S into words of D.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001100010
  *
  * SPLITW  D
  *
  * D = {S[31], S[29], S[27], S[25], … S[6], S[4], S[2], S[0]}.
+ *</pre>
  */
 int P2Cog::op_splitw()
 {
@@ -9135,12 +9367,13 @@ int P2Cog::op_splitw()
 
 /**
  * @brief Merge bits of words in S into D.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001100011
  *
  * MERGEW  D
  *
  * D = {S[31], S[15], S[30], S[14], … S[17], S[1], S[16], S[0]}.
+ *</pre>
  */
 int P2Cog::op_mergew()
 {
@@ -9167,13 +9400,14 @@ int P2Cog::op_mergew()
 
 /**
  * @brief Relocate and periodically invert bits from S into D.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001100100
  *
  * SEUSSF  D
  *
  * Returns to original value on 32nd iteration.
  * Forward pattern.
+ *</pre>
  */
 int P2Cog::op_seussf()
 {
@@ -9184,13 +9418,14 @@ int P2Cog::op_seussf()
 
 /**
  * @brief Relocate and periodically invert bits from S into D.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001100101
  *
  * SEUSSR  D
  *
  * Returns to original value on 32nd iteration.
  * Reverse pattern.
+ *</pre>
  */
 int P2Cog::op_seussr()
 {
@@ -9201,12 +9436,13 @@ int P2Cog::op_seussr()
 
 /**
  * @brief Squeeze 8:8:8 RGB value in S[31:8] into 5:6:5 value in D[15:0].
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001100110
  *
  * RGBSQZ  D
  *
  * D = {15'b0, S[31:27], S[23:18], S[15:11]}.
+ *</pre>
  */
 int P2Cog::op_rgbsqz()
 {
@@ -9220,12 +9456,13 @@ int P2Cog::op_rgbsqz()
 
 /**
  * @brief Expand 5:6:5 RGB value in S[15:0] into 8:8:8 value in D[31:8].
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001100111
  *
  * RGBEXP  D
  *
  * D = {S[15:11,15:13], S[10:5,10:9], S[4:0,4:2], 8'b0}.
+ *</pre>
  */
 int P2Cog::op_rgbexp()
 {
@@ -9242,11 +9479,12 @@ int P2Cog::op_rgbexp()
 
 /**
  * @brief Iterate D with xoroshiro32+ PRNG algorithm and put PRNG result into next instruction's S.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001101000
  *
  * XORO32  D
  *
+ *</pre>
  */
 int P2Cog::op_xoro32()
 {
@@ -9255,12 +9493,13 @@ int P2Cog::op_xoro32()
 
 /**
  * @brief Reverse D bits.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001101001
  *
  * REV     D
  *
  * D = D[0:31].
+ *</pre>
  */
 int P2Cog::op_rev()
 {
@@ -9271,13 +9510,14 @@ int P2Cog::op_rev()
 
 /**
  * @brief Rotate C,Z right through D.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 001101010
  *
  * RCZR    D        {WC/WZ/WCZ}
  *
  * D = {C, Z, D[31:2]}.
  * C = D[1],  Z = D[0].
+ *</pre>
  */
 int P2Cog::op_rczr()
 {
@@ -9290,13 +9530,14 @@ int P2Cog::op_rczr()
 
 /**
  * @brief Rotate C,Z left through D.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 001101011
  *
  * RCZL    D        {WC/WZ/WCZ}
  *
  * D = {D[29:0], C, Z}.
  * C = D[31], Z = D[30].
+ *</pre>
  */
 int P2Cog::op_rczl()
 {
@@ -9309,12 +9550,13 @@ int P2Cog::op_rczl()
 
 /**
  * @brief Write 0 or 1 to D, according to  C.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001101100
  *
  * WRC     D
  *
  * D = {31'b0,  C).
+ *</pre>
  */
 int P2Cog::op_wrc()
 {
@@ -9325,12 +9567,13 @@ int P2Cog::op_wrc()
 
 /**
  * @brief Write 0 or 1 to D, according to !C.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001101101
  *
  * WRNC    D
  *
  * D = {31'b0, !C).
+ *</pre>
  */
 int P2Cog::op_wrnc()
 {
@@ -9341,12 +9584,13 @@ int P2Cog::op_wrnc()
 
 /**
  * @brief Write 0 or 1 to D, according to  Z.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001101110
  *
  * WRZ     D
  *
  * D = {31'b0,  Z).
+ *</pre>
  */
 int P2Cog::op_wrz()
 {
@@ -9357,12 +9601,13 @@ int P2Cog::op_wrz()
 
 /**
  * @brief Write 0 or 1 to D, according to !Z.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001101111
  *
  * WRNZ    D
  *
  * D = {31'b0, !Z).
+ *</pre>
  */
 int P2Cog::op_wrnz()
 {
@@ -9373,12 +9618,13 @@ int P2Cog::op_wrnz()
 
 /**
  * @brief Modify C and Z according to cccc and zzzz.
- *
+ *<pre>
  * EEEE 1101011 CZ1 0cccczzzz 001101111
  *
  * MODCZ   c,z      {WC/WZ/WCZ}
  *
  * C = cccc[{C,Z}], Z = zzzz[{C,Z}].
+ *</pre>
  */
 int P2Cog::op_modcz()
 {
@@ -9391,7 +9637,7 @@ int P2Cog::op_modcz()
 
 /**
  * @brief Set scope mode.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 001110000
  *
  * SETSCP  {#}D
@@ -9402,6 +9648,7 @@ int P2Cog::op_modcz()
  *
  * Set pins D[5:2] (0, 4, 8, 12, …, 60)
  * Enable if D[6]=1.
+ *</pre>
  */
 int P2Cog::op_setscp()
 {
@@ -9412,7 +9659,7 @@ int P2Cog::op_setscp()
 
 /**
  * @brief Get scope values.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001110001
  *
  * Any time GETSCP is executed, the lower bytes of those four pins' RDPIN values are returned in D.
@@ -9420,6 +9667,7 @@ int P2Cog::op_setscp()
  * GETSCP  D
  *
  * Pins D[5:2].
+ *</pre>
  */
 int P2Cog::op_getscp()
 {
@@ -9430,12 +9678,13 @@ int P2Cog::op_getscp()
 
 /**
  * @brief Jump to A.
- *
+ *<pre>
  * EEEE 1101100 RAA AAAAAAAAA AAAAAAAAA
  *
  * JMP     #A
  *
  * If R = 1, PC += A, else PC = A.
+ *</pre>
  */
 int P2Cog::op_jmp_abs()
 {
@@ -9446,12 +9695,13 @@ int P2Cog::op_jmp_abs()
 
 /**
  * @brief Call to A by pushing {C, Z, 10'b0, PC[19:0]} onto stack.
- *
+ *<pre>
  * EEEE 1101101 RAA AAAAAAAAA AAAAAAAAA
  *
  * CALL    #A
  *
  * If R = 1, PC += A, else PC = A.
+ *</pre>
  */
 int P2Cog::op_call_abs()
 {
@@ -9464,12 +9714,13 @@ int P2Cog::op_call_abs()
 
 /**
  * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRA++.
- *
+ *<pre>
  * EEEE 1101110 RAA AAAAAAAAA AAAAAAAAA
  *
  * CALLA   #A
  *
  * If R = 1, PC += A, else PC = A.
+ *</pre>
  */
 int P2Cog::op_calla_abs()
 {
@@ -9482,12 +9733,13 @@ int P2Cog::op_calla_abs()
 
 /**
  * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRB++.
- *
+ *<pre>
  * EEEE 1101111 RAA AAAAAAAAA AAAAAAAAA
  *
  * CALLB   #A
  *
  * If R = 1, PC += A, else PC = A.
+ *</pre>
  */
 int P2Cog::op_callb_abs()
 {
@@ -9500,12 +9752,13 @@ int P2Cog::op_callb_abs()
 
 /**
  * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to PA (per W).
- *
+ *<pre>
  * EEEE 1110000 RAA AAAAAAAAA AAAAAAAAA
  *
  * CALLD   PA,#A
  *
  * If R = 1, PC += A, else PC = A.
+ *</pre>
  */
 int P2Cog::op_calld_pa_abs()
 {
@@ -9518,12 +9771,13 @@ int P2Cog::op_calld_pa_abs()
 
 /**
  * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to PB (per W).
- *
+ *<pre>
  * EEEE 1110001 RAA AAAAAAAAA AAAAAAAAA
  *
  * CALLD   PB,#A
  *
  * If R = 1, PC += A, else PC = A.
+ *</pre>
  */
 int P2Cog::op_calld_pb_abs()
 {
@@ -9536,12 +9790,13 @@ int P2Cog::op_calld_pb_abs()
 
 /**
  * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to PTRA (per W).
- *
+ *<pre>
  * EEEE 1110010 RAA AAAAAAAAA AAAAAAAAA
  *
  * CALLD   PTRA,#A
  *
  * If R = 1, PC += A, else PC = A.
+ *</pre>
  */
 int P2Cog::op_calld_ptra_abs()
 {
@@ -9554,12 +9809,13 @@ int P2Cog::op_calld_ptra_abs()
 
 /**
  * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to PTRB (per W).
- *
+ *<pre>
  * EEEE 1110011 RAA AAAAAAAAA AAAAAAAAA
  *
  * CALLD   PTRB,#A
  *
  * If R = 1, PC += A, else PC = A.
+ *</pre>
  */
 int P2Cog::op_calld_ptrb_abs()
 {
@@ -9572,12 +9828,13 @@ int P2Cog::op_calld_ptrb_abs()
 
 /**
  * @brief Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).
- *
+ *<pre>
  * EEEE 11101WW RAA AAAAAAAAA AAAAAAAAA
  *
  * LOC     PA/PB/PTRA/PTRB,#A
  *
  * If R = 1, address = PC + A, else address = A.
+ *</pre>
  */
 int P2Cog::op_loc_pa()
 {
@@ -9588,12 +9845,13 @@ int P2Cog::op_loc_pa()
 
 /**
  * @brief Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).
- *
+ *<pre>
  * EEEE 11101WW RAA AAAAAAAAA AAAAAAAAA
  *
  * LOC     PA/PB/PTRA/PTRB,#A
  *
  * If R = 1, address = PC + A, else address = A.
+ *</pre>
  */
 int P2Cog::op_loc_pb()
 {
@@ -9604,12 +9862,13 @@ int P2Cog::op_loc_pb()
 
 /**
  * @brief Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).
- *
+ *<pre>
  * EEEE 11101WW RAA AAAAAAAAA AAAAAAAAA
  *
  * LOC     PA/PB/PTRA/PTRB,#A
  *
  * If R = 1, address = PC + A, else address = A.
+ *</pre>
  */
 int P2Cog::op_loc_ptra()
 {
@@ -9620,12 +9879,13 @@ int P2Cog::op_loc_ptra()
 
 /**
  * @brief Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).
- *
+ *<pre>
  * EEEE 11101WW RAA AAAAAAAAA AAAAAAAAA
  *
  * LOC     PA/PB/PTRA/PTRB,#A
  *
  * If R = 1, address = PC + A, else address = A.
+ *</pre>
  */
 int P2Cog::op_loc_ptrb()
 {
@@ -9636,11 +9896,12 @@ int P2Cog::op_loc_ptrb()
 
 /**
  * @brief Queue #N[31:9] to be used as upper 23 bits for next #S occurrence, so that the next 9-bit #S will be augmented to 32 bits.
- *
+ *<pre>
  * EEEE 11110NN NNN NNNNNNNNN NNNNNNNNN
  *
  * AUGS    #N
  *
+ *</pre>
  */
 int P2Cog::op_augs()
 {
@@ -9650,11 +9911,12 @@ int P2Cog::op_augs()
 
 /**
  * @brief Queue #N[31:9] to be used as upper 23 bits for next #D occurrence, so that the next 9-bit #D will be augmented to 32 bits.
- *
+ *<pre>
  * EEEE 11111NN NNN NNNNNNNNN NNNNNNNNN
  *
  * AUGD    #N
  *
+ *</pre>
  */
 int P2Cog::op_augd()
 {

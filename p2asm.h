@@ -83,6 +83,14 @@ class P2Asm : public QObject
     Q_OBJECT
 
 public:
+    enum Section {
+        sec_dat,
+        sec_con,
+        sec_pub,
+        sec_pri,
+        sec_var
+    };
+
     explicit P2Asm(QObject *parent = nullptr);
     ~P2Asm();
 
@@ -145,10 +153,10 @@ private:
     P2AsmWords m_words;                     //!< current P2AsmWords on the line
     p2_token_e m_instr;                     //!< current instruction token
     QString m_symbol;                       //!< currently defined symbol (first name on the line before an instruction token)
-    QString m_function;                     //!< currently defined function symbol, i.e. w/o initial dot (.)
-    QString m_section;                      //!< currently selected section
-    int m_wcnt;                              //!< count of (relevant) words
-    int m_widx;                              //!< token (and word) index
+    QHash<Section,QString> m_function;      //!< currently defined function symbol, i.e. a name w/o initial dot (.)
+    Section m_section;                      //!< currently selected section
+    int m_wcnt;                             //!< count of (relevant) words
+    int m_widx;                             //!< token (and word) index
 
     union {
         p2_BYTE BYTES[MEM_SIZE];            //!< as bytes
@@ -159,10 +167,11 @@ private:
 private:
     enum imm_to_e {
         immediate_none,
-        immediate_imm,
+        immediate_im,
         immediate_wz,
         immediate_wc
     };
+    QHash<Section,QString> m_sections;      //!< currently defined function symbol, i.e. a name w/o initial dot (.)
 
     int left();
     void results(bool opcode = false);
@@ -178,7 +187,7 @@ private:
     P2Atom from_dec(int& pos, const QString& str);
     P2Atom from_hex(int& pos, const QString& str);
     P2Atom from_str(int& pos, const QString& str);
-    QString find_symbol(const QString& sect = QString(), const QString& func = QString(), const QString& local = QString());
+    QString find_symbol(Section sect = sec_con, const QString& func = QString(), const QString& local = QString());
     P2Atom parse_atom(int& pos, const QString& word);
     P2Atom parse_mulops(int& pos, const QString& str);
     P2Atom parse_addops(int& pos, const QString& str);

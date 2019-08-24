@@ -20,80 +20,6 @@
 	  <property name="currentIndex">
 	   <number>0</number>
 	  </property>
-	  <widget class="QWidget" name="tabHub">
-	   <property name="accessibleName">
-		<string>tabHub</string>
-	   </property>
-	   <attribute name="title">
-		<string>HUB</string>
-	   </attribute>
-	   <layout class="QVBoxLayout" name="vlayCOgs">
-		<item>
-		 <widget class="QScrollArea" name="saCOGs">
-		  <property name="verticalScrollBarPolicy">
-		   <enum>Qt::ScrollBarAlwaysOn</enum>
-		  </property>
-		  <property name="widgetResizable">
-		   <bool>true</bool>
-		  </property>
-		  <widget class="QWidget" name="sawcCOGs">
-		   <property name="geometry">
-			<rect>
-			 <x>0</x>
-			 <y>0</y>
-			 <width>662</width>
-			 <height>374</height>
-			</rect>
-		   </property>
-		   <layout class="QGridLayout" name="gridLayout">
-			<property name="leftMargin">
-			 <number>2</number>
-			</property>
-			<property name="topMargin">
-			 <number>2</number>
-			</property>
-			<property name="rightMargin">
-			 <number>2</number>
-			</property>
-			<property name="bottomMargin">
-			 <number>2</number>
-			</property>
-			<property name="spacing">
-			 <number>2</number>
-			</property>
-			<item row="0" column="1">
-			 <widget class="P2CogView" name="cog0" native="true"/>
-			</item>
-			<item row="0" column="2">
-			 <widget class="P2CogView" name="cog1" native="true"/>
-			</item>
-			<item row="0" column="3">
-			 <widget class="P2CogView" name="cog2" native="true"/>
-			</item>
-			<item row="1" column="1">
-			 <widget class="P2CogView" name="cog7" native="true"/>
-			</item>
-			<item row="1" column="2">
-			 <widget class="P2HubView" name="hub" native="true"/>
-			</item>
-			<item row="1" column="3">
-			 <widget class="P2CogView" name="cog3" native="true"/>
-			</item>
-			<item row="2" column="1">
-			 <widget class="P2CogView" name="cog6" native="true"/>
-			</item>
-			<item row="2" column="2">
-			 <widget class="P2CogView" name="cog5" native="true"/>
-			</item>
-			<item row="2" column="3">
-			 <widget class="P2CogView" name="cog4" native="true"/>
-			</item>
-		   </layout>
-		  </widget>
-		 </widget>
-		</item>
-	   </layout>
-	  </widget>
 	  <widget class="QWidget" name="tabAsm">
 	   <property name="enabled">
 		<bool>true</bool>
@@ -215,6 +141,80 @@
 		  <attribute name="verticalHeaderDefaultSectionSize">
 		   <number>20</number>
 		  </attribute>
+		 </widget>
+		</item>
+	   </layout>
+	  </widget>
+	  <widget class="QWidget" name="tabHub">
+	   <property name="accessibleName">
+		<string>tabHub</string>
+	   </property>
+	   <attribute name="title">
+		<string>HUB</string>
+	   </attribute>
+	   <layout class="QVBoxLayout" name="vlayCOgs">
+		<item>
+		 <widget class="QScrollArea" name="saCOGs">
+		  <property name="verticalScrollBarPolicy">
+		   <enum>Qt::ScrollBarAlwaysOn</enum>
+		  </property>
+		  <property name="widgetResizable">
+		   <bool>true</bool>
+		  </property>
+		  <widget class="QWidget" name="sawcCOGs">
+		   <property name="geometry">
+			<rect>
+			 <x>0</x>
+			 <y>0</y>
+			 <width>662</width>
+			 <height>374</height>
+			</rect>
+		   </property>
+		   <layout class="QGridLayout" name="gridLayout">
+			<property name="leftMargin">
+			 <number>2</number>
+			</property>
+			<property name="topMargin">
+			 <number>2</number>
+			</property>
+			<property name="rightMargin">
+			 <number>2</number>
+			</property>
+			<property name="bottomMargin">
+			 <number>2</number>
+			</property>
+			<property name="spacing">
+			 <number>2</number>
+			</property>
+			<item row="0" column="1">
+			 <widget class="P2CogView" name="cog0" native="true"/>
+			</item>
+			<item row="0" column="2">
+			 <widget class="P2CogView" name="cog1" native="true"/>
+			</item>
+			<item row="0" column="3">
+			 <widget class="P2CogView" name="cog2" native="true"/>
+			</item>
+			<item row="1" column="1">
+			 <widget class="P2CogView" name="cog7" native="true"/>
+			</item>
+			<item row="1" column="2">
+			 <widget class="P2HubView" name="hub" native="true"/>
+			</item>
+			<item row="1" column="3">
+			 <widget class="P2CogView" name="cog3" native="true"/>
+			</item>
+			<item row="2" column="1">
+			 <widget class="P2CogView" name="cog6" native="true"/>
+			</item>
+			<item row="2" column="2">
+			 <widget class="P2CogView" name="cog5" native="true"/>
+			</item>
+			<item row="2" column="3">
+			 <widget class="P2CogView" name="cog4" native="true"/>
+			</item>
+		   </layout>
+		  </widget>
 		 </widget>
 		</item>
 	   </layout>

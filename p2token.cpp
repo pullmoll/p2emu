@@ -50,7 +50,7 @@ static const char *Delimiters[] = {
  * leading "."
  * then any number of "A"…"Z", "0"…"9", or "_"
  */
-static const QString re_loc_symbol = QStringLiteral("\\.[A-Z_][A-Z0-9_]*");
+static const QString re_locsym = QStringLiteral("\\.[A-Z_][A-Z0-9_]*");
 
 /**
  * @brief Regular expression for alphanumeric
@@ -66,7 +66,7 @@ static const QString re_symbol = QStringLiteral("[A-Z_][A-Z0-9_]*");
  * then any number of escaped doublequotes (\") or other characters (.)
  * trailing '"'
  */
-static const QString re_string = QStringLiteral("\"(?:[^\\\"]|\\.)*\"");
+static const QString re_string = QStringLiteral("\"([^\\\"]|\\\\.)*\"");
 
 /**
  * @brief Regular expression for binary number
@@ -74,7 +74,7 @@ static const QString re_string = QStringLiteral("\"(?:[^\\\"]|\\.)*\"");
  * leading "%"
  * then one or more of "0", "1", or "_"
  */
-static const QString re_bin = QStringLiteral("%+[01_]+");
+static const QString re_bin = QStringLiteral("%[01_]+");
 
 /**
  * @brief Regular expression for byte number
@@ -82,7 +82,7 @@ static const QString re_bin = QStringLiteral("%+[01_]+");
  * leading "%%"
  * then one or more of "0"…"3", or "_"
  */
-static const QString re_byt = QStringLiteral("%%+[0-3_]+");
+static const QString re_byt = QStringLiteral("%%[0-3_]+");
 
 /**
  * @brief Regular expression for octal number
@@ -90,7 +90,7 @@ static const QString re_byt = QStringLiteral("%%+[0-3_]+");
  * leading "0"
  * then one or more of "0"…"7", or "_"
  */
-static const QString re_oct = QStringLiteral("0[0-7_]+");
+static const QString re_oct = QStringLiteral("[0_]+[0-7_]+");
 
 /**
  * @brief Regular expression for a decimal number
@@ -98,7 +98,7 @@ static const QString re_oct = QStringLiteral("0[0-7_]+");
  * leading "0"…"9"
  * then any number of "0"…"9", or "_"
  */
-static const QString re_dec = QStringLiteral("[0-9][0-9_]*");
+static const QString re_dec = QStringLiteral("[1-9_]+[0-9_]*");
 
 /**
  * @brief Regular expression an octal number
@@ -106,33 +106,7 @@ static const QString re_dec = QStringLiteral("[0-9][0-9_]*");
  * leading "$"
  * then any number of "0"…"9", "A"…"F", or "_"
  */
-static const QString re_hex = QStringLiteral("\\$[0-9A-F_]+");
-
-/**
- * @brief Regular expression unary operators
- *
- * any of "-", "!", "~", "--", or "++"
- */
-static const QString re_unary = QStringLiteral("([-]{1,2}|[+]{1,2}|[!]|[~])?");
-
-/**
- * @brief Regular expression for multiplication operators
- * any of "*", "/", "\"
- */
-static const QString re_mulops = QStringLiteral("([*]|[/]|[\\\\])");
-
-/**
- * @brief Regular expression for addition operators
- *
- * any of "-", "+"
- */
-static const QString re_addops = QStringLiteral("([-]|[+])");
-
-/**
- * @brief Regular expression for binary operators
- * any of "&", "|", "^", "<<", ">>", "><"
- */
-static const QString re_binops = QStringLiteral("([&]|[|]|[^]|[<][<]|[>][>]|[>][<])");
+static const QString re_hex = QStringLiteral("[\\$_]+[0-9A-F_]+");
 
 //! Global static instance of the P2Token class
 P2Token Token;
@@ -144,33 +118,78 @@ P2Token::P2Token()
     , m_type_token()
     , m_lookup_cond()
     , m_lookup_modcz()
-    , m_tokentype_name()
-    , rx_loc_symbol(QString("^%1").arg(re_loc_symbol))
-    , rx_symbol(QString("^%1").arg(re_symbol))
-    , rx_bin(QString("^%1$").arg(re_bin))
-    , rx_byt(QString("^%1$").arg(re_byt))
-    , rx_oct(QString("^%1$").arg(re_oct))
-    , rx_dec(QString("^%1$").arg(re_dec))
-    , rx_hex(QString("^%1$").arg(re_hex))
-    , rx_string(QString("^%1$").arg(re_string))
-    , rx_unary(QString("^%1$").arg(re_unary))
-    , rx_mulops(QString("^%1$").arg(re_mulops))
-    , rx_addops(QString("^%1$").arg(re_addops))
-    , rx_binops(QString("^%1$").arg(re_binops))
+    , m_ttype_name()
+    , rx_locsym(QString("^%1").arg(re_locsym), Qt::CaseInsensitive)
+    , rx_symbol(QString("^%1").arg(re_symbol), Qt::CaseInsensitive)
+    , rx_bin(QString("^%1$").arg(re_bin), Qt::CaseInsensitive)
+    , rx_byt(QString("^%1$").arg(re_byt), Qt::CaseInsensitive)
+    , rx_oct(QString("^%1$").arg(re_oct), Qt::CaseInsensitive)
+    , rx_dec(QString("^%1$").arg(re_dec), Qt::CaseInsensitive)
+    , rx_hex(QString("^%1$").arg(re_hex), Qt::CaseInsensitive)
+    , rx_string(QString("^%1$").arg(re_string), Qt::CaseInsensitive)
     , rx_expression()
 {
-    Q_ASSERT(rx_loc_symbol.isValid());
+    Q_ASSERT(rx_locsym.isValid());
+    Q_ASSERT(0 == rx_locsym.indexIn(QStringLiteral(".dot")));
+    Q_ASSERT(0 != rx_locsym.indexIn(QStringLiteral("Dot")));
+
     Q_ASSERT(rx_symbol.isValid());
+    Q_ASSERT(0 != rx_symbol.indexIn(QStringLiteral(".dot")));
+    Q_ASSERT(0 == rx_symbol.indexIn(QStringLiteral("Dot")));
+
     Q_ASSERT(rx_bin.isValid());
+    Q_ASSERT(0 != rx_bin.indexIn(QStringLiteral("1000")));
+    Q_ASSERT(0 != rx_bin.indexIn(QStringLiteral("01001")));
+    Q_ASSERT(0 == rx_bin.indexIn(QStringLiteral("%1111")));
+    Q_ASSERT(0 == rx_bin.indexIn(QStringLiteral("%0")));
+    Q_ASSERT(0 == rx_bin.indexIn(QStringLiteral("%111_001_111")));
+    Q_ASSERT(0 == rx_bin.indexIn(QStringLiteral("%011111110111111101111111011111110111111101111111")));
+
     Q_ASSERT(rx_byt.isValid());
+    Q_ASSERT(0 != rx_byt.indexIn(QStringLiteral("4102")));
+    Q_ASSERT(0 != rx_byt.indexIn(QStringLiteral("%1010")));
+    Q_ASSERT(0 != rx_byt.indexIn(QStringLiteral("%%4102")));
+    Q_ASSERT(0 == rx_byt.indexIn(QStringLiteral("%%0212")));
+    Q_ASSERT(0 == rx_byt.indexIn(QStringLiteral("%%3210")));
+
     Q_ASSERT(rx_oct.isValid());
+    Q_ASSERT(0 != rx_oct.indexIn(QStringLiteral("177")));
+    Q_ASSERT(0 != rx_oct.indexIn(QStringLiteral("0178")));
+    Q_ASSERT(0 == rx_oct.indexIn(QStringLiteral("017777")));
+    Q_ASSERT(0 == rx_oct.indexIn(QStringLiteral("0177_77")));
+    Q_ASSERT(0 == rx_oct.indexIn(QStringLiteral("0_01327")));
+
     Q_ASSERT(rx_dec.isValid());
+    Q_ASSERT(0 != rx_dec.indexIn(QStringLiteral("%99")));
+    Q_ASSERT(0 != rx_dec.indexIn(QStringLiteral("$1234")));
+    Q_ASSERT(0 != rx_dec.indexIn(QStringLiteral("01234")));
+    Q_ASSERT(0 == rx_dec.indexIn(QStringLiteral("1234")));
+    Q_ASSERT(0 == rx_dec.indexIn(QStringLiteral("123_456_789")));
+    Q_ASSERT(0 == rx_dec.indexIn(QStringLiteral("_1327")));
+
     Q_ASSERT(rx_hex.isValid());
+    Q_ASSERT(0 != rx_hex.indexIn(QStringLiteral("%99")));
+    Q_ASSERT(0 != rx_hex.indexIn(QStringLiteral("1a")));
+    Q_ASSERT(0 != rx_hex.indexIn(QStringLiteral("0721")));
+    Q_ASSERT(0 == rx_hex.indexIn(QStringLiteral("$__ff")));
+    Q_ASSERT(0 == rx_hex.indexIn(QStringLiteral("$dead___beef")));
+
     Q_ASSERT(rx_string.isValid());
-    Q_ASSERT(rx_unary.isValid());
-    Q_ASSERT(rx_mulops.isValid());
-    Q_ASSERT(rx_addops.isValid());
-    Q_ASSERT(rx_binops.isValid());
+    Q_ASSERT(0 == rx_string.indexIn(QStringLiteral("\"\"")));
+    Q_ASSERT(0 == rx_string.indexIn(QStringLiteral("\"abc\"")));
+    Q_ASSERT(0 == rx_string.indexIn(QStringLiteral("\"a\\\"bc\"")));
+
+    tn_add(t_invalid,          tm_lexer, QStringLiteral("<invalid>"));
+    tn_add(t_unknown,          tm_lexer, QStringLiteral("«expr»"));
+    tn_add(t_comma,            tm_lexer, QStringLiteral(","));
+    tn_add(t_string,           tm_lexer, QStringLiteral("«string»"));
+    tn_add(t_bin_const,        tm_lexer, QStringLiteral("«bin»"));
+    tn_add(t_oct_const,        tm_lexer, QStringLiteral("«oct»"));
+    tn_add(t_dec_const,        tm_lexer, QStringLiteral("«dec»"));
+    tn_add(t_hex_const,        tm_lexer, QStringLiteral("«hex»"));
+    tn_add(t_locsym,           tm_lexer, QStringLiteral("«locsym»"));
+    tn_add(t_symbol,           tm_lexer, QStringLiteral("«symbol»"));
+    tn_add(t_expression,       tm_lexer, QStringLiteral("«expression»"));
 
     tn_add(t_ABS,              tm_inst, QStringLiteral("ABS"));
     tn_add(t_ADD,              tm_inst, QStringLiteral("ADD"));
@@ -542,19 +561,35 @@ P2Token::P2Token()
     tn_add(t_ZEROX,            tm_inst, QStringLiteral("ZEROX"));
     tn_add(t_empty,            tm_inst, QStringLiteral("<empty>"));
 
-    tn_add(t_invalid,          tm_lexer, QStringLiteral("<invalid>"));
-    tn_add(t_unknown,          tm_lexer, QStringLiteral("«expr»"));
-    tn_add(t_comma,            tm_lexer, QStringLiteral(","));
-    tn_add(t_string,           tm_lexer, QStringLiteral("«string»"));
-    tn_add(t_bin_const,        tm_lexer, QStringLiteral("«bin»"));
-    tn_add(t_oct_const,        tm_lexer, QStringLiteral("«oct»"));
-    tn_add(t_dec_const,        tm_lexer, QStringLiteral("«dec»"));
-    tn_add(t_hex_const,        tm_lexer, QStringLiteral("«hex»"));
-    tn_add(t_locsym,           tm_lexer, QStringLiteral("«locsym»"));
-    tn_add(t_symbol,           tm_lexer, QStringLiteral("«symbol»"));
-    tn_add(t_expression,       tm_lexer, QStringLiteral("«expression»"));
+    tn_add(t_WC,               tm_wcz_suffix, QStringLiteral("WC"));
+    tn_add(t_WZ,               tm_wcz_suffix, QStringLiteral("WZ"));
+    tn_add(t_WCZ,              tm_wcz_suffix, QStringLiteral("WCZ"));
+    tn_add(t_ANDC,             tm_wcz_suffix, QStringLiteral("ANDC"));
+    tn_add(t_ANDZ,             tm_wcz_suffix, QStringLiteral("ANDZ"));
+    tn_add(t_ORC,              tm_wcz_suffix, QStringLiteral("ORC"));
+    tn_add(t_ORZ,              tm_wcz_suffix, QStringLiteral("ORZ"));
+    tn_add(t_XORC,             tm_wcz_suffix, QStringLiteral("XORC"));
+    tn_add(t_XORZ,             tm_wcz_suffix, QStringLiteral("XORZ"));
 
+    // Data
+    tn_add(t__BYTE,            tm_inst | tm_data, QStringLiteral("BYTE"));
+    tn_add(t__WORD,            tm_inst | tm_data, QStringLiteral("WORD"));
+    tn_add(t__LONG,            tm_inst | tm_data, QStringLiteral("LONG"));
+    tn_add(t__RES,             tm_inst | tm_data, QStringLiteral("RES"));
 
+    // Section control
+    tn_add(t__DAT,             tm_section, QStringLiteral("DAT"));
+    tn_add(t__CON,             tm_section, QStringLiteral("CON"));
+    tn_add(t__PUB,             tm_section, QStringLiteral("PUB"));
+    tn_add(t__PRI,             tm_section, QStringLiteral("PRI"));
+    tn_add(t__VAR,             tm_section, QStringLiteral("VAR"));
+
+    // Origin control
+    tn_add(t__ORG,             tm_origin, QStringLiteral("ORG"));
+    tn_add(t__ORGH,            tm_origin, QStringLiteral("ORGH"));
+    tn_add(t__FIT,             tm_origin, QStringLiteral("FIT"));
+
+    // Conditionals
     tn_add(t__RET_,            tm_conditional, QStringLiteral("_RET_"));
     tn_add(t_IF_NZ_AND_NC,     tm_conditional, QStringLiteral("IF_NZ_AND_NC"));
     tn_add(t_IF_NC_AND_NZ,     tm_conditional, QStringLiteral("IF_NC_AND_NZ"));
@@ -592,6 +627,7 @@ P2Token::P2Token()
     tn_add(t_IF_LE,            tm_conditional, QStringLiteral("IF_LE"));
     tn_add(t_IF_ALWAYS,        tm_conditional, QStringLiteral("IF_ALWAYS"));
 
+    // MODCZ parameters
     tn_add(t_MODCZ__CLR,       tm_modcz_param, QStringLiteral("_CLR"));
     tn_add(t_MODCZ__NC_AND_NZ, tm_modcz_param, QStringLiteral("_NC_AND_NZ"));
     tn_add(t_MODCZ__NZ_AND_NC, tm_modcz_param, QStringLiteral("_NZ_AND_NC"));
@@ -624,34 +660,6 @@ P2Token::P2Token()
     tn_add(t_MODCZ__Z_OR_C,    tm_modcz_param, QStringLiteral("_Z_OR_C"));
     tn_add(t_MODCZ__LE,        tm_modcz_param, QStringLiteral("_LE"));
     tn_add(t_MODCZ__SET,       tm_modcz_param, QStringLiteral("_SET"));
-
-    tn_add(t_WC,               tm_wcz_suffix, QStringLiteral("WC"));
-    tn_add(t_WZ,               tm_wcz_suffix, QStringLiteral("WZ"));
-    tn_add(t_WCZ,              tm_wcz_suffix, QStringLiteral("WCZ"));
-    tn_add(t_ANDC,             tm_wcz_suffix, QStringLiteral("ANDC"));
-    tn_add(t_ANDZ,             tm_wcz_suffix, QStringLiteral("ANDZ"));
-    tn_add(t_ORC,              tm_wcz_suffix, QStringLiteral("ORC"));
-    tn_add(t_ORZ,              tm_wcz_suffix, QStringLiteral("ORZ"));
-    tn_add(t_XORC,             tm_wcz_suffix, QStringLiteral("XORC"));
-    tn_add(t_XORZ,             tm_wcz_suffix, QStringLiteral("XORZ"));
-
-    // Data
-    tn_add(t__BYTE,            tm_inst | tm_data, QStringLiteral("BYTE"));
-    tn_add(t__WORD,            tm_inst | tm_data, QStringLiteral("WORD"));
-    tn_add(t__LONG,            tm_inst | tm_data, QStringLiteral("LONG"));
-    tn_add(t__RES,             tm_inst | tm_data, QStringLiteral("RES"));
-
-    // Section control
-    tn_add(t__DAT,             tm_section, QStringLiteral("DAT"));
-    tn_add(t__CON,             tm_section, QStringLiteral("CON"));
-    tn_add(t__PUB,             tm_section, QStringLiteral("PUB"));
-    tn_add(t__PRI,             tm_section, QStringLiteral("PRI"));
-    tn_add(t__VAR,             tm_section, QStringLiteral("VAR"));
-
-    // Origin control
-    tn_add(t__ORG,             tm_origin, QStringLiteral("ORG"));
-    tn_add(t__ORGH,            tm_origin, QStringLiteral("ORGH"));
-    tn_add(t__FIT,             tm_origin, QStringLiteral("FIT"));
 
     // Assignment
     tn_add(t__ASSIGN,          tm_assignment, QStringLiteral("="));
@@ -790,31 +798,31 @@ P2Token::P2Token()
         foreach(quint64 mask, m_token_type.values(tok))
             m_type_token.insert(mask, tok);
 
-    m_tokentype_name.insert(tt_none,            QStringLiteral("-"));
-    m_tokentype_name.insert(tt_parens,          QStringLiteral("Parenthesis"));
-    m_tokentype_name.insert(tt_primary,         QStringLiteral("Primary"));
-    m_tokentype_name.insert(tt_unary,           QStringLiteral("Unary"));
-    m_tokentype_name.insert(tt_mulop,           QStringLiteral("MulOp"));
-    m_tokentype_name.insert(tt_addop,           QStringLiteral("AddOp"));
-    m_tokentype_name.insert(tt_shiftop,         QStringLiteral("ShiftOp"));
-    m_tokentype_name.insert(tt_relation,        QStringLiteral("Relation"));
-    m_tokentype_name.insert(tt_equality,        QStringLiteral("Equality"));
-    m_tokentype_name.insert(tt_binop_and,       QStringLiteral("Binary AND"));
-    m_tokentype_name.insert(tt_binop_xor,       QStringLiteral("Binary XOR"));
-    m_tokentype_name.insert(tt_binop_or,        QStringLiteral("Binary OR"));
-    m_tokentype_name.insert(tt_binop_rev,       QStringLiteral("Binary REV"));
-    m_tokentype_name.insert(tt_logop_and,       QStringLiteral("Logic AND"));
-    m_tokentype_name.insert(tt_logop_or,        QStringLiteral("Logic OR"));
-    m_tokentype_name.insert(tt_ternary,         QStringLiteral("Ternary"));
-    m_tokentype_name.insert(tt_assignment,      QStringLiteral("Assignment"));
-    m_tokentype_name.insert(tt_conditional,     QStringLiteral("Conditional"));
-    m_tokentype_name.insert(tt_modcz_param,     QStringLiteral("MODCZ param"));
-    m_tokentype_name.insert(tt_inst,            QStringLiteral("Inst"));
-    m_tokentype_name.insert(tt_wcz_suffix,      QStringLiteral("WC/WZ suffix"));
-    m_tokentype_name.insert(tt_section,         QStringLiteral("Section"));
-    m_tokentype_name.insert(tt_origin,          QStringLiteral("Origin"));
-    m_tokentype_name.insert(tt_data,            QStringLiteral("Data"));
-    m_tokentype_name.insert(tt_lexer,           QStringLiteral("Lexer"));
+    m_ttype_name.insert(tt_none,            QStringLiteral("-"));
+    m_ttype_name.insert(tt_parens,          QStringLiteral("Parenthesis"));
+    m_ttype_name.insert(tt_primary,         QStringLiteral("Primary"));
+    m_ttype_name.insert(tt_unary,           QStringLiteral("Unary"));
+    m_ttype_name.insert(tt_mulop,           QStringLiteral("MulOp"));
+    m_ttype_name.insert(tt_addop,           QStringLiteral("AddOp"));
+    m_ttype_name.insert(tt_shiftop,         QStringLiteral("ShiftOp"));
+    m_ttype_name.insert(tt_relation,        QStringLiteral("Relation"));
+    m_ttype_name.insert(tt_equality,        QStringLiteral("Equality"));
+    m_ttype_name.insert(tt_binop_and,       QStringLiteral("Binary AND"));
+    m_ttype_name.insert(tt_binop_xor,       QStringLiteral("Binary XOR"));
+    m_ttype_name.insert(tt_binop_or,        QStringLiteral("Binary OR"));
+    m_ttype_name.insert(tt_binop_rev,       QStringLiteral("Binary REV"));
+    m_ttype_name.insert(tt_logop_and,       QStringLiteral("Logic AND"));
+    m_ttype_name.insert(tt_logop_or,        QStringLiteral("Logic OR"));
+    m_ttype_name.insert(tt_ternary,         QStringLiteral("Ternary"));
+    m_ttype_name.insert(tt_assignment,      QStringLiteral("Assignment"));
+    m_ttype_name.insert(tt_conditional,     QStringLiteral("Conditional"));
+    m_ttype_name.insert(tt_modcz_param,     QStringLiteral("MODCZ param"));
+    m_ttype_name.insert(tt_inst,            QStringLiteral("Inst"));
+    m_ttype_name.insert(tt_wcz_suffix,      QStringLiteral("WC/WZ suffix"));
+    m_ttype_name.insert(tt_section,         QStringLiteral("Section"));
+    m_ttype_name.insert(tt_origin,          QStringLiteral("Origin"));
+    m_ttype_name.insert(tt_data,            QStringLiteral("Data"));
+    m_ttype_name.insert(tt_lexer,           QStringLiteral("Lexer"));
 }
 
 /**
@@ -837,15 +845,20 @@ QString P2Token::string(p2_token_e tok, bool lowercase) const
  */
 p2_token_e P2Token::token(const QString& str, bool chop, int* plen) const
 {
-    QString ustr = str.toUpper().simplified().remove(QChar::Space);
+    QString ustr = str.toUpper();
+    int pfxlen = 0;
 
     // Ignore leading '#' characters (for immediate modes)
-    while (ustr.startsWith(QChar('#')))
+    while (ustr.startsWith(QChar('#'))) {
         ustr.remove(0, 1);
+        pfxlen++;
+    }
 
     // Ignore leading '@' characters (for relative modes)
-    while (ustr.startsWith(QChar('@')))
+    while (ustr.startsWith(QChar('@'))) {
         ustr.remove(0, 1);
+        pfxlen++;
+    }
 
     p2_token_e tok = m_name_token.value(ustr, t_unknown);
     for (;;) {
@@ -855,8 +868,8 @@ p2_token_e P2Token::token(const QString& str, bool chop, int* plen) const
         if (ustr.isEmpty())
             break;
 
-        if (0 == ustr.indexOf(rx_loc_symbol)) {
-            ustr.truncate(rx_loc_symbol.cap(0).length());
+        if (0 == rx_locsym.indexIn(ustr)) {
+            ustr.truncate(rx_locsym.cap(0).length());
             tok = t_locsym;
             break;
         }
@@ -903,9 +916,10 @@ p2_token_e P2Token::token(const QString& str, bool chop, int* plen) const
         ustr.chop(1);
         tok = m_name_token.value(ustr, t_unknown);
     }
-    if (plen) {
-        *plen = ustr.length();
-    }
+
+    if (plen)
+        *plen = pfxlen + ustr.length();
+
     return tok;
 }
 
@@ -934,23 +948,32 @@ bool P2Token::is_type(const QString& str, p2_tokentype_e type) const
     return is_type(tok, type);
 }
 
+
+/**
+ * @brief Return the list of type names which are set in the type mask
+ * @param typemask bit mask of token types
+ * @return QStringList with the type names
+ */
+QStringList P2Token::type_names(quint64 typemask) const
+{
+    QStringList list;
+    for (int i = 0; i <= 64 && typemask != 0; i++, typemask >>= 1)
+        if (typemask & 1)
+                list += m_ttype_name.value(static_cast<p2_tokentype_e>(i));
+    if (list.isEmpty())
+        list += m_ttype_name.value(static_cast<p2_tokentype_e>(tt_none));
+    return list;
+}
+
 /**
  * @brief Return the list of type names which are set for a token
  * @param tok token value
  * @return QStringList with the type names
  */
-QStringList P2Token::typeNames(p2_token_e tok) const
+QStringList P2Token::type_names(p2_token_e tok) const
 {
-    const quint64 mask = m_token_type.value(tok, 0);
-    QStringList list;
-    if (0 == mask) {
-        list += m_tokentype_name.value(static_cast<p2_tokentype_e>(tt_none));
-    } else {
-        for (int i = 0; i <= 64; i++)
-            if (mask & TTMASK(i))
-                    list += m_tokentype_name.value(static_cast<p2_tokentype_e>(i));
-    }
-    return list;
+    const quint64 typemask = m_token_type.value(tok, 0);
+    return type_names(typemask);
 }
 
 /**

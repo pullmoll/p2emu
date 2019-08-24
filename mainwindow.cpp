@@ -536,9 +536,9 @@ void MainWindow::setupTabWidget()
 {
     QTabBar* bar = ui->tabWidget->tabBar();
     // FIXME: how to identify tabs if the order changes?
-    bar->setTabData(0, id_hub);
-    bar->setTabData(1, id_asm);
-    bar->setTabData(2, id_dasm);
+    bar->setTabData(0, id_asm);
+    bar->setTabData(1, id_dasm);
+    bar->setTabData(2, id_hub);
     connect(ui->tabWidget, SIGNAL(currentChanged(int)), SLOT(tabChanged(int)));
 }
 

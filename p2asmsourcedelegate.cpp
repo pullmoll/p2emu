@@ -23,11 +23,10 @@ void P2AsmSourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
 
     QRect rect = opt.rect;
     QVector<QRect> br(ll);
-    const int w = opt.fontMetrics.size(Qt::TextSingleLine, line).width();
-    const int x = rect.x();
     const int flags = Qt::AlignLeft | Qt::AlignVCenter |
-                      Qt::TextSingleLine | Qt::TextDontClip | Qt::TextExpandTabs |
-                      Qt::TextIncludeTrailingSpaces | Qt::TextForceLeftToRight;
+                      Qt::TextSingleLine | Qt::TextDontClip | Qt::TextExpandTabs | Qt::TextForceLeftToRight;
+    const int w = opt.fontMetrics.size(flags, line).width();
+    const int x = rect.x();
     int pos, len;
 
     painter->save();
@@ -51,6 +50,8 @@ void P2AsmSourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
         len = word.len();
         const QString text = line.mid(pos, len);
 
+        QPalette pal;
+
         painter->setPen(QColor(0x00,0x00,0x00));
 
         p2_token_e tok = word.tok();
@@ -72,7 +73,7 @@ void P2AsmSourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
             break;
 
         case t_locsym:
-            painter->setPen(QColor(0xff,0xc0,0x80));
+            painter->setPen(QColor(0xff,0x80,0xe0));
             break;
 
         case t_symbol:

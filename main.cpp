@@ -7,7 +7,7 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
 
     a.setApplicationName(QStringLiteral("Propeller2-Emulator"));
-    a.setApplicationVersion(QStringLiteral("0.0.1"));
+    a.setApplicationVersion(QString("%1.%2.%3").arg(VER_MAJ).arg(VER_MIN).arg(VER_PAT));
     a.setOrganizationName(QStringLiteral("PullMoll"));
     a.setOrganizationDomain(QStringLiteral("https://propeller2.voidlinux.de/"));
 

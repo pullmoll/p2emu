@@ -139,78 +139,6 @@ typedef enum {
     t_expression,       //!< token is an expression (contains operators)
     t_empty,            //!< token is empty
 
-    // conditials
-    t__RET_,            //!< cond_never
-    t_IF_NC_AND_NZ,     //!< cond_nc_and_nz
-    t_IF_NZ_AND_NC,     //!< alias for cond_nc_and_nz
-    t_IF_A,             //!< alias for cond_nc_and_nz
-    t_IF_GT,            //!< alias for cond_nc_and_nz
-    t_IF_NC_AND_Z,      //!< cond_nc_and_z
-    t_IF_Z_AND_NC,      //!< alias for cond_nc_and_z
-    t_IF_NC,            //!< cond_nc
-    t_IF_AE,            //!< alias for cond_nc
-    t_IF_GE,            //!< alias for cond_nc
-    t_IF_C_AND_NZ,      //!< cond_c_and_nz
-    t_IF_NZ_AND_C,      //!< alias for cond_c_and_nz
-    t_IF_NZ,            //!< cond_nz
-    t_IF_NE,            //!< alias for cond_nz
-    t_IF_C_NE_Z,        //!< cond_c_ne_z
-    t_IF_Z_NE_C,        //!< alias for cond_c_ne_z
-    t_IF_NC_OR_NZ,      //!< cond_nc_or_nz
-    t_IF_NZ_OR_NC,      //!< alias for cond_nc_or_nz
-    t_IF_C_AND_Z,       //!< cond_c_and_z
-    t_IF_Z_AND_C,       //!< alias for cond_c_and_z
-    t_IF_C_EQ_Z,        //!< cond_c_eq_z
-    t_IF_Z_EQ_C,        //!< alias for cond_c_eq_z
-    t_IF_Z,             //!< cond_z
-    t_IF_E,             //!< alias for cond_z
-    t_IF_NC_OR_Z,       //!< cond_nc_or_z
-    t_IF_Z_OR_NC,       //!< alias for cond_nc_or_z
-    t_IF_BE,            //!< alias for cond_nc_or_z
-    t_IF_C,             //!< cond_c
-    t_IF_B,             //!< alias for cond_c
-    t_IF_LT,            //!< alias for cond_c
-    t_IF_C_OR_NZ,       //!< cond_c_or_nz
-    t_IF_NZ_OR_C,       //!< alias for cond_c_or_nz
-    t_IF_C_OR_Z,        //!< cond_c_or_z
-    t_IF_Z_OR_C,        //!< alias for cond_c_or_z
-    t_IF_LE,            //!< alias for cond_c_or_z
-    t_IF_ALWAYS,        //!< cond_always
-
-    // MODCZ parameters
-    t_MODCZ__CLR,       //!< cond_never
-    t_MODCZ__NC_AND_NZ, //!< cond_nc_and_nz
-    t_MODCZ__NZ_AND_NC, //!< alias for cond_nc_and_nz
-    t_MODCZ__GT,        //!< alias for cond_nc_and_nz
-    t_MODCZ__NC_AND_Z,  //!< cond_nc_and_z
-    t_MODCZ__Z_AND_NC,  //!< alias for cond_nc_and_z
-    t_MODCZ__NC,        //!< cond_nc
-    t_MODCZ__GE,        //!< alias for cond_nc
-    t_MODCZ__C_AND_NZ,  //!< cond_c_and_nz
-    t_MODCZ__NZ_AND_C,  //!< alias for cond_c_and_nz
-    t_MODCZ__NZ,        //!< cond_nz
-    t_MODCZ__NE,        //!< alias for cond_nz
-    t_MODCZ__C_NE_Z,    //!< cond_c_ne_z
-    t_MODCZ__Z_NE_C,    //!< alias for cond_c_ne_z
-    t_MODCZ__NC_OR_NZ,  //!< cond_nc_or_nz
-    t_MODCZ__NZ_OR_NC,  //!< alias for cond_nc_or_nz
-    t_MODCZ__C_AND_Z,   //!< cond_c_and_z
-    t_MODCZ__Z_AND_C,   //!< alias for cond_c_and_z
-    t_MODCZ__C_EQ_Z,    //!< cond_c_eq_z
-    t_MODCZ__Z_EQ_C,    //!< alias for cond_c_eq_z
-    t_MODCZ__Z,         //!< cond_z
-    t_MODCZ__E,         //!< alias for cond_z
-    t_MODCZ__NC_OR_Z,   //!< cond_nc_or_z
-    t_MODCZ__Z_OR_NC,   //!< alias for cond_nc_or_z
-    t_MODCZ__C,         //!< cond_c
-    t_MODCZ__LT,        //!< alias for cond_c
-    t_MODCZ__C_OR_NZ,   //!< cond_c_or_nz
-    t_MODCZ__NZ_OR_C,   //!< alias for cond_c_or_nz
-    t_MODCZ__C_OR_Z,    //!< cond_c_or_z
-    t_MODCZ__Z_OR_C,    //!< alias for cond_c_or_z
-    t_MODCZ__LE,        //!< alias for cond_c_or_z
-    t_MODCZ__SET,       //!< cond_always
-
     // instructions
     t_ABS,
     t_ADD,
@@ -580,6 +508,7 @@ typedef enum {
     t_XSTOP,
     t_XZERO,
     t_ZEROX,
+
     t_WC,
     t_WZ,
     t_WCZ,
@@ -607,6 +536,78 @@ typedef enum {
     t__WORD,
     t__LONG,
     t__RES,
+
+    // conditials
+    t__RET_,            //!< cond_never
+    t_IF_NC_AND_NZ,     //!< cond_nc_and_nz
+    t_IF_NZ_AND_NC,     //!< alias for cond_nc_and_nz
+    t_IF_A,             //!< alias for cond_nc_and_nz
+    t_IF_GT,            //!< alias for cond_nc_and_nz
+    t_IF_NC_AND_Z,      //!< cond_nc_and_z
+    t_IF_Z_AND_NC,      //!< alias for cond_nc_and_z
+    t_IF_NC,            //!< cond_nc
+    t_IF_AE,            //!< alias for cond_nc
+    t_IF_GE,            //!< alias for cond_nc
+    t_IF_C_AND_NZ,      //!< cond_c_and_nz
+    t_IF_NZ_AND_C,      //!< alias for cond_c_and_nz
+    t_IF_NZ,            //!< cond_nz
+    t_IF_NE,            //!< alias for cond_nz
+    t_IF_C_NE_Z,        //!< cond_c_ne_z
+    t_IF_Z_NE_C,        //!< alias for cond_c_ne_z
+    t_IF_NC_OR_NZ,      //!< cond_nc_or_nz
+    t_IF_NZ_OR_NC,      //!< alias for cond_nc_or_nz
+    t_IF_C_AND_Z,       //!< cond_c_and_z
+    t_IF_Z_AND_C,       //!< alias for cond_c_and_z
+    t_IF_C_EQ_Z,        //!< cond_c_eq_z
+    t_IF_Z_EQ_C,        //!< alias for cond_c_eq_z
+    t_IF_Z,             //!< cond_z
+    t_IF_E,             //!< alias for cond_z
+    t_IF_NC_OR_Z,       //!< cond_nc_or_z
+    t_IF_Z_OR_NC,       //!< alias for cond_nc_or_z
+    t_IF_BE,            //!< alias for cond_nc_or_z
+    t_IF_C,             //!< cond_c
+    t_IF_B,             //!< alias for cond_c
+    t_IF_LT,            //!< alias for cond_c
+    t_IF_C_OR_NZ,       //!< cond_c_or_nz
+    t_IF_NZ_OR_C,       //!< alias for cond_c_or_nz
+    t_IF_C_OR_Z,        //!< cond_c_or_z
+    t_IF_Z_OR_C,        //!< alias for cond_c_or_z
+    t_IF_LE,            //!< alias for cond_c_or_z
+    t_IF_ALWAYS,        //!< cond_always
+
+    // MODCZ parameters
+    t_MODCZ__CLR,       //!< cond_never
+    t_MODCZ__NC_AND_NZ, //!< cond_nc_and_nz
+    t_MODCZ__NZ_AND_NC, //!< alias for cond_nc_and_nz
+    t_MODCZ__GT,        //!< alias for cond_nc_and_nz
+    t_MODCZ__NC_AND_Z,  //!< cond_nc_and_z
+    t_MODCZ__Z_AND_NC,  //!< alias for cond_nc_and_z
+    t_MODCZ__NC,        //!< cond_nc
+    t_MODCZ__GE,        //!< alias for cond_nc
+    t_MODCZ__C_AND_NZ,  //!< cond_c_and_nz
+    t_MODCZ__NZ_AND_C,  //!< alias for cond_c_and_nz
+    t_MODCZ__NZ,        //!< cond_nz
+    t_MODCZ__NE,        //!< alias for cond_nz
+    t_MODCZ__C_NE_Z,    //!< cond_c_ne_z
+    t_MODCZ__Z_NE_C,    //!< alias for cond_c_ne_z
+    t_MODCZ__NC_OR_NZ,  //!< cond_nc_or_nz
+    t_MODCZ__NZ_OR_NC,  //!< alias for cond_nc_or_nz
+    t_MODCZ__C_AND_Z,   //!< cond_c_and_z
+    t_MODCZ__Z_AND_C,   //!< alias for cond_c_and_z
+    t_MODCZ__C_EQ_Z,    //!< cond_c_eq_z
+    t_MODCZ__Z_EQ_C,    //!< alias for cond_c_eq_z
+    t_MODCZ__Z,         //!< cond_z
+    t_MODCZ__E,         //!< alias for cond_z
+    t_MODCZ__NC_OR_Z,   //!< cond_nc_or_z
+    t_MODCZ__Z_OR_NC,   //!< alias for cond_nc_or_z
+    t_MODCZ__C,         //!< cond_c
+    t_MODCZ__LT,        //!< alias for cond_c
+    t_MODCZ__C_OR_NZ,   //!< cond_c_or_nz
+    t_MODCZ__NZ_OR_C,   //!< alias for cond_c_or_nz
+    t_MODCZ__C_OR_Z,    //!< cond_c_or_z
+    t_MODCZ__Z_OR_C,    //!< alias for cond_c_or_z
+    t_MODCZ__LE,        //!< alias for cond_c_or_z
+    t_MODCZ__SET,       //!< cond_always
 
     // assignment
     t__ASSIGN,          //!< "="
@@ -668,7 +669,8 @@ public:
 
     bool is_type(p2_token_e tok, p2_tokentype_e type) const;
     bool is_type(const QString& str, p2_tokentype_e type) const;
-    QStringList typeNames(p2_token_e tok) const;
+    QStringList type_names(quint64 typemask) const;
+    QStringList type_names(p2_token_e tok) const;
 
     bool is_operation(p2_token_e tok) const;
 
@@ -699,15 +701,15 @@ public:
     p2_cond_e modcz_param(const QString& str, p2_cond_e dflt = cc_clr) const;
 
 private:
-    QMultiHash<p2_token_e, QString> m_token_name;
-    QMultiHash<QString, p2_token_e> m_name_token;
-    QHash<p2_token_e, quint64> m_token_type;
-    QMultiHash<quint64, p2_token_e> m_type_token;
-    QHash<p2_token_e, p2_cond_e> m_lookup_cond;
-    QHash<p2_token_e, p2_cond_e> m_lookup_modcz;
-    QHash<p2_tokentype_e, QString> m_tokentype_name;
+    QMultiHash<p2_token_e, QString> m_token_name;       //!< QMultiHash for token value to name lookup
+    QMultiHash<QString, p2_token_e> m_name_token;       //!< QMultiHash for token name to value lookup
+    QHash<p2_token_e, quint64> m_token_type;            //!< QHash for token value to type mask lookup
+    QMultiHash<quint64, p2_token_e> m_type_token;       //!< QMultiHash for token type mask to token(s) lookup
+    QHash<p2_token_e, p2_cond_e> m_lookup_cond;         //!< QHash for conditionals to condition bits lookup
+    QHash<p2_token_e, p2_cond_e> m_lookup_modcz;        //!< QHash for MODCZ parameters to condition bits lookup
+    QHash<p2_tokentype_e, QString> m_ttype_name;        //!< QHash for token type mask to type name(s) lookup
 
-    QRegExp rx_loc_symbol;
+    QRegExp rx_locsym;
     QRegExp rx_symbol;
     QRegExp rx_bin;
     QRegExp rx_byt;
@@ -715,10 +717,6 @@ private:
     QRegExp rx_dec;
     QRegExp rx_hex;
     QRegExp rx_string;
-    QRegExp rx_unary;
-    QRegExp rx_mulops;
-    QRegExp rx_addops;
-    QRegExp rx_binops;
     QRegExp rx_expression;
 
     void tn_add(p2_token_e tok, p2_tokentype_e type, const QString& str);

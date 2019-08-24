@@ -234,7 +234,7 @@ QString P2AsmModel::tokenToolTip(const P2AsmWords& words, const QString& bgd) co
         html += html_tr_init();
         html += html_td(word.str());
         html += html_td(Token.string(word.tok()));
-        html += html_td(Token.typeNames(word.tok()).join(QChar::Space));
+        html += html_td(Token.type_names(word.tok()).join(QChar::Space));
         html += html_tr_exit();
     }
     html += html_table_exit();
