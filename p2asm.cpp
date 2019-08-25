@@ -294,18 +294,23 @@ bool P2Asm::split_and_tokenize(const QString& line)
 
         if (m_in_curly) {
             // inside curly brace comment
-            if (ch == QChar('{')) {
+            if (ch == chr_lcurly) {
                 // next level of curly brace comment
                 ++m_in_curly;
             }
-            if (ch == QChar('}')) {
+            if (ch == chr_rcurly) {
                 // previous level of curly brace comment
                 --m_in_curly;
             }
             continue;
-        } else if (ch == QChar('{')) {
+        } else if (ch == chr_lcurly) {
             // start of curly brace comment
             ++m_in_curly;
+            if (!word.isEmpty()) {
+                words += P2AsmWord(word, pos, end);
+                pos = end;
+                word.clear();
+            }
             continue;
         }
 
@@ -320,13 +325,18 @@ bool P2Asm::split_and_tokenize(const QString& line)
             continue;
         }
 
-        if (ch == ch_comment) {
+        if (ch == chr_comment) {
             // start of comment until end of line
             comment = true;
+            if (!word.isEmpty()) {
+                words += P2AsmWord(word, pos, end);
+                pos = end;
+                word.clear();
+            }
             break;
         }
 
-        if (ch == ch_comma) {
+        if (ch == chr_comma) {
             // found a comma
             if (!word.isEmpty()) {
                 // previous word ends here
@@ -341,7 +351,7 @@ bool P2Asm::split_and_tokenize(const QString& line)
             continue;
         }
 
-        if (ch == QChar('"')) {
+        if (ch == chr_dquote) {
             // found start of a string
             word += ch;
             in_string = ch;
@@ -2073,6 +2083,16 @@ bool P2Asm::assemble(const QString& filename)
     return assemble(list);
 }
 
+bool P2Asm::setSource(int idx, const QString& source)
+{
+    if (idx >= m_source.count())
+        return false;
+    m_source.replace(idx, source);
+    m_pass = 0;
+    clear();
+    return true;
+}
+
 /**
  * @brief Return number of tokens/words left
  * @return number of tokens/words left
@@ -2093,19 +2113,18 @@ void P2Asm::results()
 
     QString output;
     if (m_emit_IR) {
-        if (m_advance == 4) {
-            m_hash_PC.insert(m_lineno, m_curr_PC);
-            m_hash_IR.insert(m_lineno, m_IR);
-            // opcode was constructed
-            output = QString("%1 %2 [%3] %4")
-                     .arg(m_lineno, -6)
-                     .arg(PC, 6, 16, QChar('0'))
-                     .arg(m_IR.opcode, 8, 16, QChar('0'))
-                     .arg(m_line);
+        Q_ASSERT(m_advance == 4);
+        m_hash_PC.insert(m_lineno, m_curr_PC);
+        m_hash_IR.insert(m_lineno, m_IR);
+        // opcode was constructed
+        output = QString("%1 %2 [%3] %4")
+                 .arg(m_lineno, -6)
+                 .arg(PC, 6, 16, QChar('0'))
+                 .arg(m_IR.opcode, 8, 16, QChar('0'))
+                 .arg(m_line);
 
-            if (binary && m_curr_PC < MEM_SIZE) {
-                MEM.LONGS[m_curr_PC / 4] = m_IR.opcode;
-            }
+        if (binary && m_curr_PC < MEM_SIZE) {
+            MEM.LONGS[m_curr_PC / 4] = m_IR.opcode;
         }
     } else if (m_data.isEmpty()) {
         if (m_words.isEmpty()) {
@@ -2263,7 +2282,7 @@ P2Atom P2Asm::from_bin(int& pos, const QString& str)
         const int idx = digits.indexOf(ch);
         if (idx < 0)
             break;
-        if (skip_digit == digits.at(idx))
+        if (chr_skip_digit == digits.at(idx))
             continue;
         bits = (bits << 1) + static_cast<uint>(idx);
         nbits += 1;
@@ -2298,7 +2317,7 @@ P2Atom P2Asm::from_byt(int& pos, const QString& str)
         const int idx = digits.indexOf(ch);
         if (idx < 0)
             break;
-        if (skip_digit == digits.at(idx))
+        if (chr_skip_digit == digits.at(idx))
             continue;
         bits = (bits << 2) + static_cast<uint>(idx);
         nbits += 2;
@@ -2330,7 +2349,7 @@ P2Atom P2Asm::from_oct(int& pos, const QString& str)
         const int idx = digits.indexOf(ch);
         if (idx < 0)
             break;
-        if (skip_digit == digits.at(idx))
+        if (chr_skip_digit == digits.at(idx))
             continue;
         bits = (bits << 3) + static_cast<uint>(idx);
         nbits += 3;
@@ -2362,7 +2381,7 @@ P2Atom P2Asm::from_dec(int& pos, const QString& str)
         const int idx = digits.indexOf(ch);
         if (idx < 0)
             break;
-        if (skip_digit == digits.at(idx))
+        if (chr_skip_digit == digits.at(idx))
             continue;
         bits = (bits * 10) + static_cast<uint>(idx);
         // FIXME: no way to handle 64 bit overflow ?
@@ -2392,7 +2411,7 @@ P2Atom P2Asm::from_hex(int& pos, const QString& str)
         const int idx = digits.indexOf(ch);
         if (idx < 0)
             break;
-        if (skip_digit == digits.at(idx))
+        if (chr_skip_digit == digits.at(idx))
             continue;
         bits = (bits << 4) + static_cast<uint>(idx);
         nbits += 4;
@@ -2898,7 +2917,7 @@ P2Atom P2Asm::parse_subexpression(int& pos, const QString& str)
             if (escaped) {
                 // character was escaped: ignore
                 escaped = false;
-            } else if (ch == QChar('"')) {
+            } else if (ch == chr_dquote) {
                 // character is doubleqoute: end of string
                 instring = false;
             } else if (ch == str_escape) {
@@ -2907,11 +2926,11 @@ P2Atom P2Asm::parse_subexpression(int& pos, const QString& str)
             }
         } else {
             // not inside string
-            if (ch == QChar('"')) {
+            if (ch == chr_dquote) {
                 instring = ch;
-            } else if (ch == QChar('(')) {
+            } else if (ch == chr_lparen) {
                 level++;
-            } else if (ch == QChar(')')) {
+            } else if (ch == chr_rparen) {
                 if (0 == --level)
                     epos--;
             }
@@ -2932,7 +2951,7 @@ P2Atom P2Asm::parse_subexpression(int& pos, const QString& str)
 
     // Expect right parenthesis
     if (pos < str.length()) {
-        Q_ASSERT(str.at(pos) == QChar(')'));
+        Q_ASSERT(str.at(pos) == chr_rparen);
         // Skip right parenthesis
         pos++;
     } else {
@@ -2960,14 +2979,14 @@ P2Atom P2Asm::parse_expression(imm_to_e imm_to)
         return atom;
 
     if (skip_spc(pos, str)) {
-        while (pos < str.length() && QChar('#') == str.at(pos)) {
+        while (pos < str.length() && chr_number_sign == str.at(pos)) {
             ++imm;
             ++pos;
             skip_spc(pos, str);
         }
 
         skip_spc(pos, str);
-        while (pos < str.length() && QChar('@') == str.at(pos)) {
+        while (pos < str.length() && chr_ampersand == str.at(pos)) {
             ++amp;
             ++pos;
             skip_spc(pos, str);

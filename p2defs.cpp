@@ -210,3 +210,40 @@ QString format_data(const p2_opcode_u& IR, const p2_opcode_format_e fmt)
     }
     return QStringLiteral("<invalid format>");
 }
+
+static const QColor dflt_color_source       (0x00,0x00,0x00);   // black
+static const QColor dflt_color_comma        (0x00,0x00,0x00);   // black
+static const QColor dflt_color_string       (0x00,0xe0,0xff);   // bright cyan
+static const QColor dflt_color_const        (0x00,0x00,0xff);   // blue
+static const QColor dflt_color_locsym       (0xff,0x80,0xe0);   // pink
+static const QColor dflt_color_symbol       (0xff,0xc0,0x20);   // orange
+static const QColor dflt_color_expression   (0xff,0xc0,0x20);   // orange
+static const QColor dflt_color_section      (0xff,0x8f,0x10);   // bright brown
+static const QColor dflt_color_conditional  (0x40,0xa0,0xaf);   // dim cyan
+static const QColor dflt_color_instruction  (0x00,0x80,0x8f);   // dark cyan
+static const QColor dflt_color_modzc_param  (0xa0,0x40,0xaf);   // violet
+static const QColor dflt_color_wcz_suffix   (0xaf,0x80,0xaf);   // brighter violet
+static QHash<p2_palette_e,QColor> palette;
+
+QColor p2_palette(p2_palette_e pal)
+{
+    if (palette.isEmpty()) {
+        palette.insert(color_source, dflt_color_source);
+        palette.insert(color_comma, dflt_color_comma);
+        palette.insert(color_string, dflt_color_string);
+        palette.insert(color_bin_const, dflt_color_const);
+        palette.insert(color_byt_const, dflt_color_const);
+        palette.insert(color_oct_const, dflt_color_const);
+        palette.insert(color_dec_const, dflt_color_const);
+        palette.insert(color_hex_const, dflt_color_const);
+        palette.insert(color_locsym, dflt_color_locsym);
+        palette.insert(color_symbol, dflt_color_symbol);
+        palette.insert(color_expression, dflt_color_expression);
+        palette.insert(color_section, dflt_color_section);
+        palette.insert(color_conditional, dflt_color_conditional);
+        palette.insert(color_modzc_param, dflt_color_modzc_param);
+        palette.insert(color_instruction, dflt_color_instruction);
+        palette.insert(color_wcz_suffix, dflt_color_wcz_suffix);
+    }
+    return palette.value(pal, dflt_color_source);
+}

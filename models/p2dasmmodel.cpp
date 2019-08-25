@@ -52,14 +52,10 @@ P2DasmModel::P2DasmModel(P2Dasm* dasm, QObject *parent)
     , m_dasm(dasm)
     , m_format(fmt_bin)
     , m_font()
-    , m_bold()
     , m_header()
     , m_background()
     , m_alignment()
 {
-    m_font.setPointSize(8);
-    m_bold.setPointSize(8);
-    m_bold.setBold(true);
 
     // Header section names
     m_header.insert(c_Address,       tr("Address"));
@@ -83,8 +79,10 @@ P2DasmModel::P2DasmModel(P2Dasm* dasm, QObject *parent)
 QVariant P2DasmModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     QVariant result;
-    QFontMetrics metrics(m_bold);
     const column_e column = static_cast<column_e>(section);
+    QFont font(m_font);
+    font.setBold(true);
+    QFontMetrics metrics(font);
 
     switch (orientation) {
     case Qt::Horizontal:
@@ -94,11 +92,11 @@ QVariant P2DasmModel::headerData(int section, Qt::Orientation orientation, int r
             break;
 
         case Qt::FontRole:
-            result = m_bold;
+            result = font;
             break;
 
         case Qt::SizeHintRole:
-            result = sizeHint(column);
+            result = sizeHint(column, true);
             break;
 
         case Qt::TextAlignmentRole:
@@ -227,9 +225,11 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
     return result;
 }
 
-QSize P2DasmModel::sizeHint(P2DasmModel::column_e column) const
+QSize P2DasmModel::sizeHint(P2DasmModel::column_e column, bool header) const
 {
-    QFontMetrics metrics(m_font);
+    QFont font(m_font);
+    font.setBold(header);
+    QFontMetrics metrics(font);
 
     switch (column) {
     case c_Address:
@@ -268,19 +268,11 @@ void P2DasmModel::setOpcodeFormat(p2_opcode_format_e format)
     if (format == m_format)
         return;
     m_format = format;
-    switch (format) {
-    case fmt_bin:
-        m_header.insert(c_Opcode, tr("Opcode bit fields"));
-        break;
-    case fmt_byt:
-        m_header.insert(c_Opcode, tr("Opcode BYTES hex"));
-        break;
-    case fmt_oct:
-        m_header.insert(c_Opcode, tr("Opcode LONG oct"));
-        break;
-    case fmt_hex:
-        m_header.insert(c_Opcode, tr("Opcode LONG hex"));
-        break;
-    }
+    invalidate();
+}
+
+void P2DasmModel::setFont(const QFont& font)
+{
+    m_font = font;
     invalidate();
 }

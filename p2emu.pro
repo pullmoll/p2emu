@@ -28,14 +28,12 @@ SOURCES += \
 		main.cpp \
 		mainwindow.cpp \
 		p2asm.cpp \
-		p2asmmodel.cpp \
 		p2asmsym.cpp \
 		p2asmsymtbl.cpp \
 		p2atom.cpp \
 		p2cog.cpp \
 		p2cogview.cpp \
 		p2dasm.cpp \
-		p2dasmmodel.cpp \
 		p2defs.cpp \
 		p2hub.cpp \
 		p2hubview.cpp \
@@ -44,19 +42,19 @@ SOURCES += \
 		dialogs/about.cpp \
 		dialogs/gotoaddress.cpp \
 		dialogs/p2asmlisting.cpp \
+		models/p2asmmodel.cpp \
+		models/p2dasmmodel.cpp \
 		util/p2util.cpp
 
 HEADERS += \
 		mainwindow.h \
 		p2asm.h \
-		p2asmmodel.h \
 		p2asmsym.h \
 		p2asmsymtbl.h \
 		p2atom.h \
 		p2cog.h \
 		p2cogview.h \
 		p2dasm.h \
-		p2dasmmodel.h \
 		p2defs.h \
 		p2hub.h \
 		p2hubview.h \
@@ -65,6 +63,8 @@ HEADERS += \
 		dialogs/about.h \
 		dialogs/gotoaddress.h \
 		dialogs/p2asmlisting.h \
+		models/p2asmmodel.h \
+		models/p2dasmmodel.h \
 		util/p2util.h
 
 FORMS += \
@@ -77,6 +77,7 @@ FORMS += \
 
 INCLUDEPATH += $$PWD/delegates
 INCLUDEPATH += $$PWD/dialogs
+INCLUDEPATH += $$PWD/models
 INCLUDEPATH += $$PWD/util
 
 # Default rules for deployment.
@@ -93,4 +94,6 @@ DISTFILES += \
 		ROM_Booter_v33_01j.spin2 \
 		csv.cpp \
 		csv.h \
-		icons/error.png
+		icons/decrease.png \
+		icons/error.png \
+		icons/increase.png

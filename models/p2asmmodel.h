@@ -40,7 +40,7 @@
 
 #include "p2asm.h"
 
-#define OVERRIDE_FLAGS  0
+#define OVERRIDE_FLAGS  1
 
 class P2AsmModel : public QAbstractTableModel
 {
@@ -62,22 +62,23 @@ public:
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+    bool setData(const QModelIndex& index, const QVariant& value, int role) override;
 #if OVERRIDE_FLAGS
     Qt::ItemFlags flags(const QModelIndex& index) const override;
 #endif
 
     p2_opcode_format_e opcode_format() const { return m_format; }
-    QSize sizeHint(column_e column) const;
+    QSize sizeHint(column_e column, bool header = false) const;
 
 public slots:
     void invalidate();
     void setOpcodeFormat(p2_opcode_format_e format);
+    void setFont(const QFont& font);
 
 private:
     P2Asm* m_asm;
     p2_opcode_format_e m_format;
     QFont m_font;
-    QFont m_bold;
     QIcon m_error;
     QHash<column_e,QString> m_header;
     QHash<column_e,QRgb> m_background;

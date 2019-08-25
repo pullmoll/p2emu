@@ -70,15 +70,12 @@ static const QLatin1String key_column_symbols("hide_symbols");
 static const QLatin1String key_column_instruction("hide_instruction");
 static const QLatin1String key_column_source("hide_source");
 static const QLatin1String key_column_description("hide_description");
+static const QLatin1String key_font_size("font_size");
 
 static const QLatin1String key_source("source");
 static const QLatin1String key_directory("directory");
 static const QLatin1String key_filename("filename");
 static const QLatin1String key_history("directory");
-
-static const QLatin1String tab_hub("P2Hub");
-static const QLatin1String tab_asm("P2Asm");
-static const QLatin1String tab_dasm("P2Dasm");
 
 static const QLatin1String key_status("status");
 
@@ -132,6 +129,7 @@ void MainWindow::saveSettings()
     s.setValue(key_column_symbols, ui->tvAsm->isColumnHidden(P2AsmModel::c_Symbols));
     s.setValue(key_column_errors, ui->tvAsm->isColumnHidden(P2AsmModel::c_Errors));
     s.setValue(key_column_source, ui->tvAsm->isColumnHidden(P2AsmModel::c_Source));
+    s.setValue(key_font_size, ui->tvAsm->font().pointSizeF());
     s.endGroup();
 
     s.beginGroup(grp_disassembler);
@@ -142,6 +140,7 @@ void MainWindow::saveSettings()
     s.setValue(key_column_instruction, ui->tvDasm->isColumnHidden(P2DasmModel::c_Instruction));
     s.setValue(key_column_description, ui->tvDasm->isColumnHidden(P2DasmModel::c_Description));
     s.setValue(key_current_row, ui->tvDasm->currentIndex().row());
+    s.setValue(key_font_size, ui->tvDasm->font().pointSizeF());
     s.endGroup();
 
 }
@@ -154,13 +153,14 @@ void MainWindow::restoreSettings()
 
     s.beginGroup(grp_assembler);
     setAsmOpcodes(s.value(key_opcodes, fmt_bin).toInt());
-    ui->tvDasm->selectRow(s.value(key_current_row).toInt());
-    ui->tvDasm->setColumnHidden(P2AsmModel::c_Origin, s.value(key_column_origin, false).toBool());
-    ui->tvDasm->setColumnHidden(P2AsmModel::c_Opcode, s.value(key_column_opcode, false).toBool());
-    ui->tvDasm->setColumnHidden(P2AsmModel::c_Tokens, s.value(key_column_tokens, false).toBool());
-    ui->tvDasm->setColumnHidden(P2AsmModel::c_Symbols, s.value(key_column_symbols, false).toBool());
-    ui->tvDasm->setColumnHidden(P2AsmModel::c_Errors, s.value(key_column_errors, false).toBool());
-    ui->tvDasm->setColumnHidden(P2AsmModel::c_Source, s.value(key_column_source, false).toBool());
+    ui->tvAsm->selectRow(s.value(key_current_row).toInt());
+    ui->tvAsm->setColumnHidden(P2AsmModel::c_Origin, s.value(key_column_origin, false).toBool());
+    ui->tvAsm->setColumnHidden(P2AsmModel::c_Opcode, s.value(key_column_opcode, false).toBool());
+    ui->tvAsm->setColumnHidden(P2AsmModel::c_Tokens, s.value(key_column_tokens, false).toBool());
+    ui->tvAsm->setColumnHidden(P2AsmModel::c_Symbols, s.value(key_column_symbols, false).toBool());
+    ui->tvAsm->setColumnHidden(P2AsmModel::c_Errors, s.value(key_column_errors, false).toBool());
+    ui->tvAsm->setColumnHidden(P2AsmModel::c_Source, s.value(key_column_source, false).toBool());
+    setAsmFontSize(s.value(key_font_size, 8.0).toReal());
     s.endGroup();
 
     s.beginGroup(grp_disassembler);
@@ -171,6 +171,7 @@ void MainWindow::restoreSettings()
     ui->tvDasm->setColumnHidden(P2DasmModel::c_Opcode, s.value(key_column_opcode, false).toBool());
     ui->tvDasm->setColumnHidden(P2DasmModel::c_Instruction, s.value(key_column_instruction, false).toBool());
     ui->tvDasm->setColumnHidden(P2DasmModel::c_Description, s.value(key_column_description, false).toBool());
+    setDasmFontSize(s.value(key_font_size, 8.0).toReal());
     s.endGroup();
 }
 
@@ -186,42 +187,6 @@ void MainWindow::about()
 void MainWindow::aboutQt5()
 {
     qApp->aboutQt();
-}
-
-void MainWindow::setActionsEnabled(ui_tab_e which, bool enable)
-{
-    switch (which) {
-    case id_hub: // Hub
-        ui->action_Go_to_address->setEnabled(enable);
-        ui->action_Go_to_COG->setEnabled(enable);
-        ui->action_Go_to_LUT->setEnabled(enable);
-        ui->action_Go_to_ROM->setEnabled(enable);
-        ui->action_SingleStep->setEnabled(enable);
-        break;
-    case id_asm: // Asm
-        ui->action_Assemble->setEnabled(enable);
-        ui->action_Asm_Opcodes_bin->setEnabled(enable);
-        ui->action_Asm_Opcodes_byt->setEnabled(enable);
-        ui->action_Asm_Opcodes_oct->setEnabled(enable);
-        ui->action_Asm_Opcodes_hex->setEnabled(enable);
-        break;
-    case id_dasm: // Dasm
-        ui->action_Dasm_Opcodes_bin->setEnabled(enable);
-        ui->action_Dasm_Opcodes_byt->setEnabled(enable);
-        ui->action_Dasm_Opcodes_oct->setEnabled(enable);
-        ui->action_Dasm_Opcodes_hex->setEnabled(enable);
-        ui->action_Dasm_Lowercase->setEnabled(enable);
-        break;
-    }
-}
-
-void MainWindow::tabChanged(int idx)
-{
-    QTabBar* bar = ui->tabWidget->tabBar();
-    ui_tab_e tab = static_cast<ui_tab_e>(bar->tabData(idx).toInt());
-    setActionsEnabled(id_hub, tab == id_hub);
-    setActionsEnabled(id_asm, tab == id_asm);
-    setActionsEnabled(id_dasm, tab == id_dasm);
 }
 
 void MainWindow::gotoHex(const QString& address)
@@ -303,6 +268,36 @@ void MainWindow::setAsmOpcodesHex()
     setAsmOpcodes(fmt_hex);
 }
 
+void MainWindow::incAsmFontSize()
+{
+    QFont font = ui->tvAsm->font();
+    qreal size = font.pointSizeF();
+    if (size < 24.0) {
+        size *= 1.05;
+        setAsmFontSize(size);
+    }
+}
+
+void MainWindow::decAsmFontSize()
+{
+    QFont font = ui->tvAsm->font();
+    qreal size = font.pointSizeF();
+    if (size > 5.0) {
+        size *= 0.95;
+        setAsmFontSize(size);
+    }
+}
+
+void MainWindow::setAsmFontSize(qreal size)
+{
+    QFont font = ui->tvAsm->font();
+    font.setPointSizeF(size);
+    QFontMetrics met(font);
+    ui->tvAsm->setFont(font);
+    m_amodel->setFont(font);
+    updateAsmColumnSizes();
+}
+
 void MainWindow::setAsmOpcodesOct()
 {
     setAsmOpcodes(fmt_oct);
@@ -359,6 +354,36 @@ void MainWindow::setDasmOpcodesOct()
 void MainWindow::setDasmOpcodesHex()
 {
     setDasmOpcodes(fmt_hex);
+}
+
+void MainWindow::incDasmFontSize()
+{
+    QFont font = ui->tvDasm->font();
+    qreal size = font.pointSizeF();
+    if (size < 24.0) {
+        size *= 1.05;
+        setDasmFontSize(size);
+    }
+}
+
+void MainWindow::decDasmFontSize()
+{
+    QFont font = ui->tvDasm->font();
+    qreal size = font.pointSizeF();
+    if (size > 5.0) {
+        size *= 0.95;
+        setDasmFontSize(size);
+    }
+}
+
+void MainWindow::setDasmFontSize(qreal size)
+{
+    QFont font = ui->tvDasm->font();
+    font.setPointSizeF(size);
+    QFontMetrics met(font);
+    ui->tvDasm->setFont(font);
+    m_dmodel->setFont(font);
+    updateDasmColumnSizes();
 }
 
 void MainWindow::asmHeaderColums(const QPoint& pos)
@@ -546,13 +571,19 @@ void MainWindow::setupTabWidget()
     bar->setTabData(0, id_asm);
     bar->setTabData(1, id_dasm);
     bar->setTabData(2, id_hub);
-    connect(ui->tabWidget, SIGNAL(currentChanged(int)), SLOT(tabChanged(int)));
 }
 
 void MainWindow::setupToolbars()
 {
+    // HUB toolbar
     connect(ui->action_SingleStep, SIGNAL(triggered()), SLOT(hubSingleStep()));
     ui->toolbarHub->addAction(ui->action_SingleStep);
+
+    // Assembler toolbar
+    connect(ui->action_Assemble, SIGNAL(triggered()), SLOT(assemble()));
+    ui->toolbarAsm->addAction(ui->action_Assemble);
+
+    ui->toolbarAsm->addSeparator();
 
     connect(ui->action_Asm_Opcodes_bin, SIGNAL(triggered(bool)), SLOT(setAsmOpcodesBin()));
     ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_bin);
@@ -568,8 +599,26 @@ void MainWindow::setupToolbars()
 
     ui->toolbarAsm->addSeparator();
 
-    connect(ui->action_Assemble, SIGNAL(triggered()), SLOT(assemble()));
-    ui->toolbarAsm->addAction(ui->action_Assemble);
+    connect(ui->action_Asm_DecFontSize, SIGNAL(triggered(bool)), SLOT(decAsmFontSize()));
+    ui->toolbarAsm->addAction(ui->action_Asm_DecFontSize);
+
+    connect(ui->action_Asm_IncFontSize, SIGNAL(triggered(bool)), SLOT(incAsmFontSize()));
+    ui->toolbarAsm->addAction(ui->action_Asm_IncFontSize);
+
+    // Disassembler toolbar
+    connect(ui->action_Dasm_Opcodes_bin, SIGNAL(triggered(bool)), SLOT(setDasmOpcodesBin()));
+    ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_bin);
+
+    connect(ui->action_Dasm_Opcodes_byt, SIGNAL(triggered(bool)), SLOT(setDasmOpcodesByt()));
+    ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_byt);
+
+    connect(ui->action_Dasm_Opcodes_oct, SIGNAL(triggered(bool)), SLOT(setDasmOpcodesOct()));
+    ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_oct);
+
+    connect(ui->action_Dasm_Opcodes_hex, SIGNAL(triggered(bool)), SLOT(setDasmOpcodesHex()));
+    ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_hex);
+
+    ui->toolbarDasm->addSeparator();
 
     connect(ui->action_Go_to_COG, SIGNAL(triggered()), SLOT(gotoCog()));
     ui->toolbarDasm->addAction(ui->action_Go_to_COG);
@@ -585,24 +634,16 @@ void MainWindow::setupToolbars()
 
     ui->toolbarDasm->addSeparator();
 
-    connect(ui->action_Dasm_Opcodes_bin, SIGNAL(triggered(bool)), SLOT(setDasmOpcodesBin()));
-    ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_bin);
-
-    connect(ui->action_Dasm_Opcodes_byt, SIGNAL(triggered(bool)), SLOT(setDasmOpcodesByt()));
-    ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_byt);
-
-    connect(ui->action_Dasm_Opcodes_oct, SIGNAL(triggered(bool)), SLOT(setDasmOpcodesOct()));
-    ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_oct);
-
-    connect(ui->action_Dasm_Opcodes_hex, SIGNAL(triggered(bool)), SLOT(setDasmOpcodesHex()));
-    ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_hex);
-
-    ui->toolbarDasm->addSeparator();
-
     connect(ui->action_Dasm_Lowercase, SIGNAL(triggered(bool)), SLOT(setDasmLowercase(bool)));
     ui->toolbarDasm->addAction(ui->action_Dasm_Lowercase);
 
-    tabChanged(0);
+    ui->toolbarDasm->addSeparator();
+
+    connect(ui->action_Dasm_DecFontSize, SIGNAL(triggered(bool)), SLOT(decDasmFontSize()));
+    ui->toolbarDasm->addAction(ui->action_Dasm_DecFontSize);
+
+    connect(ui->action_Dasm_IncFontSize, SIGNAL(triggered(bool)), SLOT(incDasmFontSize()));
+    ui->toolbarDasm->addAction(ui->action_Dasm_IncFontSize);
 }
 
 void MainWindow::setupStatusbar()

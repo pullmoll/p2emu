@@ -44,16 +44,11 @@ P2AsmModel::P2AsmModel(P2Asm* p2asm, QObject *parent)
     : QAbstractTableModel(parent)
     , m_asm(p2asm)
     , m_format(fmt_bin)
-    , m_font(QStringLiteral("Monospace"))
-    , m_bold(QStringLiteral("Monospace"))
+    , m_font()
     , m_error()
     , m_header_alignment()
     , m_text_alignment()
 {
-    m_font.setPointSize(8);
-    m_bold.setPointSize(8);
-    m_bold.setBold(true);
-
     QImage image(":/icons/error.png");
     QPixmap pixmap = QPixmap::fromImage(image.scaled(16,16,Qt::KeepAspectRatio,Qt::SmoothTransformation));
     m_error = QIcon(pixmap);
@@ -94,8 +89,10 @@ P2AsmModel::P2AsmModel(P2Asm* p2asm, QObject *parent)
 QVariant P2AsmModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     QVariant result;
-    QFontMetrics metrics(m_bold);
+    QFont font;
     const column_e column = static_cast<column_e>(section);
+    font.setBold(true);
+    QFontMetrics metrics(font);
     const int row = section;
 
     switch (orientation) {
@@ -106,11 +103,11 @@ QVariant P2AsmModel::headerData(int section, Qt::Orientation orientation, int ro
             break;
 
         case Qt::FontRole:
-            result = m_bold;
+            result = font;
             break;
 
         case Qt::SizeHintRole:
-            result = sizeHint(column);
+            result = sizeHint(column, true);
             break;
 
         case Qt::TextAlignmentRole:
@@ -284,6 +281,7 @@ QString P2AsmModel::errorsToolTip(const QStringList& list, const QString& bgd) c
 QVariant P2AsmModel::data(const QModelIndex &index, int role) const
 {
     QVariant result;
+    QFont font;
 
     if (!index.isValid())
         return result;
@@ -427,7 +425,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
         break;
 
     case Qt::FontRole:
-        result = m_font;
+        result = font;
         break;
 
     case Qt::TextAlignmentRole:
@@ -465,9 +463,34 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     return result;
 }
 
-QSize P2AsmModel::sizeHint(P2AsmModel::column_e column) const
+bool P2AsmModel::setData(const QModelIndex& index, const QVariant& value, int role)
 {
-    QFontMetrics metrics(m_font);
+    bool result = false;
+
+    if (!index.isValid())
+        return result;
+    const column_e column = static_cast<column_e>(index.column());
+    const int row = index.row();
+    switch (role) {
+    case Qt::EditRole:
+        switch (column) {
+        case c_Source:
+            result = m_asm->setSource(row, value.toString());
+            break;
+        default:
+            result = false;
+        }
+        break;
+    }
+
+    return result;
+}
+
+QSize P2AsmModel::sizeHint(P2AsmModel::column_e column, bool header) const
+{
+    QFont font(m_font);
+    font.setBold(header);
+    QFontMetrics metrics(font);
 
     switch (column) {
     case c_Origin:
@@ -525,19 +548,11 @@ void P2AsmModel::setOpcodeFormat(p2_opcode_format_e format)
     if (format == m_format)
         return;
     m_format = format;
-    switch (format) {
-    case fmt_bin:
-        m_header.insert(c_Opcode, tr("Opcode bit fields"));
-        break;
-    case fmt_byt:
-        m_header.insert(c_Opcode, tr("Opcode BYTES hex"));
-        break;
-    case fmt_oct:
-        m_header.insert(c_Opcode, tr("Opcode LONG oct"));
-        break;
-    case fmt_hex:
-        m_header.insert(c_Opcode, tr("Opcode LONG hex"));
-        break;
-    }
+    invalidate();
+}
+
+void P2AsmModel::setFont(const QFont& font)
+{
+    m_font = font;
     invalidate();
 }

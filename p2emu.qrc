@@ -17,5 +17,7 @@
         <file>icons/single_step.png</file>
         <file>icons/assemble.png</file>
         <file>icons/error.svg</file>
+        <file>icons/decrease.png</file>
+        <file>icons/increase.png</file>
     </qresource>
 </RCC>

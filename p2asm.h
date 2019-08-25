@@ -130,6 +130,7 @@ signals:
     void Error(int m_lineno, QString message);
 
 public slots:
+    bool setSource(int idx, const QString& source);
     void setSource(const QStringList& source);
 
 private:

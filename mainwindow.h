@@ -69,8 +69,6 @@ private slots:
     void restoreSettings();
     void about();
     void aboutQt5();
-    void setActionsEnabled(ui_tab_e which, bool enable);
-    void tabChanged(int idx);
 
     void gotoHex(const QString& address = QString());
     void gotoCog();
@@ -83,12 +81,18 @@ private slots:
     void setAsmOpcodesByt();
     void setAsmOpcodesOct();
     void setAsmOpcodesHex();
+    void incAsmFontSize();
+    void decAsmFontSize();
+    void setAsmFontSize(qreal size);
 
     void setDasmOpcodes(int mode);
     void setDasmOpcodesBin();
     void setDasmOpcodesByt();
     void setDasmOpcodesOct();
     void setDasmOpcodesHex();
+    void incDasmFontSize();
+    void decDasmFontSize();
+    void setDasmFontSize(qreal size);
 
     void setDasmLowercase(bool check);
     void asmHeaderColums(const QPoint& pos);

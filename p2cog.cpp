@@ -4009,7 +4009,7 @@ int P2Cog::op_signx()
 int P2Cog::op_encod()
 {
     augmentS(IR.op.im);
-    const p2_LONG result = P2Util::msbpos(S);
+    const p2_LONG result = static_cast<p2_LONG>(P2Util::encode(S));
     updateC(S != 0);
     updateZ(result == 0);
     updateD(result);

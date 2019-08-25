@@ -4,13 +4,20 @@ P2Util Util;
 
 P2Util::P2Util()
 {
-    Q_ASSERT(28 == msbpos(p2_LONG(0x10000000u)));
-    Q_ASSERT(31 == msbpos(p2_LONG(0x80000000u)));
-    Q_ASSERT(Q_UINT64_C(10000) == sqrt(Q_UINT64_C(10000)*Q_UINT64_C(10000)));
-    Q_ASSERT(Q_UINT64_C(1000) == sqrt(Q_UINT64_C(1000)*Q_UINT64_C(1000)));
-    Q_ASSERT(Q_UINT64_C(100) == sqrt(Q_UINT64_C(100)*Q_UINT64_C(100)));
-    Q_ASSERT(Q_UINT64_C(10) == sqrt(Q_UINT64_C(10)*Q_UINT64_C(10)));
-    Q_ASSERT(Q_UINT64_C(33121) == sqrt(Q_UINT64_C(33121)*Q_UINT64_C(33121)));
+    Q_ASSERT(0x10000000u == msb(p2_LONG(0x11290023u)));
+    Q_ASSERT(0x00020000u == msb(p2_LONG(0x0003f212u)));
+
+    Q_ASSERT(28 == encode(p2_LONG(0x10000000u)));
+    Q_ASSERT(31 == encode(p2_LONG(0x80000000u)));
+
+    Q_ASSERT(16 == ones(p2_LONG(0xaaaa5555u)));
+    Q_ASSERT(1 == ones(p2_LONG(0x00001000u)));
+
+    Q_ASSERT(10000 == sqrt(10000*10000));
+    Q_ASSERT(1000 == sqrt(1000*1000));
+    Q_ASSERT(100 == sqrt(100*100));
+    Q_ASSERT(10 == sqrt(10*10));
+    Q_ASSERT(33121 == sqrt(33121*33121));
 }
 
 /**
@@ -80,7 +87,7 @@ p2_BYTE P2Util::msb(p2_BYTE val)
  * @param val value
  * @return position of top most 1 bit
  */
-int P2Util::msbpos(p2_LONG val)
+int P2Util::encode(p2_LONG val)
 {
     val |= (val >> 1);
     val |= (val >> 2);
@@ -95,7 +102,7 @@ int P2Util::msbpos(p2_LONG val)
  * @param val value
  * @return position of top most 1 bit
  */
-int P2Util::msbpos(p2_WORD val)
+int P2Util::encode(p2_WORD val)
 {
     val |= (val >> 1);
     val |= (val >> 2);
@@ -109,7 +116,7 @@ int P2Util::msbpos(p2_WORD val)
  * @param val value
  * @return position of top most 1 bit
  */
-int P2Util::msbpos(p2_BYTE val)
+int P2Util::encode(p2_BYTE val)
 {
     val |= (val >> 1);
     val |= (val >> 2);

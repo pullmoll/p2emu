@@ -10,9 +10,9 @@ public:
     static p2_LONG msb(p2_LONG val);
     static p2_WORD msb(p2_WORD val);
     static p2_BYTE msb(p2_BYTE val);
-    static int msbpos(p2_LONG val);
-    static int msbpos(p2_WORD val);
-    static int msbpos(p2_BYTE val);
+    static int encode(p2_LONG val);
+    static int encode(p2_WORD val);
+    static int encode(p2_BYTE val);
     static uint lzc(p2_QUAD val);
     static uint lzc(p2_LONG val);
     static uint lzc(p2_WORD val);

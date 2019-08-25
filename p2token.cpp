@@ -850,13 +850,13 @@ p2_token_e P2Token::token(const QString& str, bool chop, int* plen) const
     int pfxlen = 0;
 
     // Ignore leading '#' characters (for immediate modes)
-    while (ustr.startsWith(QChar('#'))) {
+    while (ustr.startsWith(chr_number_sign)) {
         ustr.remove(0, 1);
         pfxlen++;
     }
 
     // Ignore leading '@' characters (for relative modes)
-    while (ustr.startsWith(QChar('@'))) {
+    while (ustr.startsWith(chr_ampersand)) {
         ustr.remove(0, 1);
         pfxlen++;
     }
