@@ -213,22 +213,28 @@ static const QString html_td(const QString& text)
             .arg(text);
 }
 
-QString P2AsmModel::tokenToolTip(const P2AsmWords& words, const QString& bgd) const
+QString P2AsmModel::tokenToolTip(const P2Words& words, const QString& bgd) const
 {
     QStringList html = html_table_init(bgd);
 
     // heading
     html += html_tr_init();
-    html += html_th(tr("Source code word"));
+    html += html_th(tr("Source code"));
+    html += html_th(tr("Position/Length"));
     html += html_th(tr("Token"));
     html += html_th(tr("Type"));
     html += html_tr_exit();
 
     for (int i = 0; i < words.count(); i++) {
-        const P2AsmWord& word = words[i];
+        const P2Word& word = words[i];
         html += html_tr_init();
         html += html_td(word.str());
-        html += html_td(Token.string(word.tok()));
+        html += html_td(QString("%1/%2")
+                        .arg(word.pos())
+                        .arg(word.len()));
+        html += html_td(QString("%1: %2")
+                        .arg(word.tok(), 3, 16, QChar('0'))
+                        .arg(Token.string(word.tok())));
         html += html_td(Token.type_names(word.tok()).join(QChar::Space));
         html += html_tr_exit();
     }
@@ -248,15 +254,19 @@ QString P2AsmModel::symbolsToolTip(const P2AsmSymTbl& symbols, const QStringList
     html += html_th(tr("Value (bin)"));
     html += html_tr_exit();
 
-    foreach (const QString& symbol, defined) {
+    for (int i = 0; i < defined.count(); i++) {
+        const QString& symbol = defined[i];
         P2AsmSymbol sym = symbols.value(symbol);
         p2_LONG val = sym.value<p2_LONG>();
         html += html_tr_init();
         html += html_td(sym.name());
         html += html_td(sym.type_name());
-        html += html_td(QString("%1").arg(val, 11, 10));
-        html += html_td(QString("$%1").arg(val, 8, 16, QChar('0')));
-        html += html_td(QString("%%1").arg(val, 32, 2, QChar('0')));
+        html += html_td(QString("%1")
+                        .arg(val, 11, 10));
+        html += html_td(QString("$%1")
+                        .arg(val, 8, 16, QChar('0')));
+        html += html_td(QString("%%1")
+                        .arg(val, 32, 2, QChar('0')));
         html += html_tr_exit();
     }
     html += html_table_exit();
@@ -291,11 +301,11 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     const int lineno = row + 1;
 
     const P2AsmSymTbl& symbols = m_asm->symbols();
-    const QStringList& symrefs = symbols.defined_in(lineno);
+    const QStringList& symrefs = symbols.references_in(lineno);
     const QStringList& errors = m_asm->errors(lineno);
 
-    const P2AsmWords& words = m_asm->words(lineno);
-    const QStringList& defined_in = symbols.defined_in(lineno);
+    const P2Words& words = m_asm->words(lineno);
+    const QStringList& references_in = symbols.references_in(lineno);
 
     const bool PC_avail = m_asm->PC_available(lineno);
     const p2_LONG PC = PC_avail ? m_asm->PC_value(lineno) : 0;
@@ -309,10 +319,10 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
         case c_Origin: // Address as COG[xxx], LUT[xxx], or xxxxxx in RAM
             if (!PC_avail)
                 break;
-            if (PC < 0x200) {
-                result = QString("COG[%1]").arg(PC, 3, 16, QChar('0'));
-            } else if (PC < PC_LONGS) {
-                result = QString("LUT[%1]").arg(PC - 0x200, 3, 16, QChar('0'));
+            if (PC < LUT_ADDR0) {
+                result = QString("COG[%1]").arg(PC / 4, 3, 16, QChar('0'));
+            } else if (PC < HUB_ADDR0) {
+                result = QString("LUT[%1]").arg((PC - LUT_ADDR0) / 4, 3, 16, QChar('0'));
             } else {
                 result = QString("%1").arg(PC, 6, 16, QChar('0'));
             }
@@ -402,9 +412,9 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
             break;
 
         case c_Symbols:
-            if (defined_in.isEmpty())
+            if (references_in.isEmpty())
                 break;
-            result = symbolsToolTip(symbols, defined_in, style_background_symbols);
+            result = symbolsToolTip(symbols, references_in, style_background_symbols);
             break;
 
         case c_Errors:

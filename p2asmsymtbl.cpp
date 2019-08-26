@@ -120,14 +120,14 @@ P2Atom::Type P2AsmSymTbl::type(const QString& name) const
  */
 
 
-int P2AsmSymTbl::defined_in(const QString& name) const
+int P2AsmSymTbl::defined_where(const QString& name) const
 {
     if (!m_symbols.contains(name))
         return -1;
-    return m_symbols[name].defined_in();
+    return m_symbols[name].defined_where();
 }
 
-QStringList P2AsmSymTbl::defined_in(int lineno) const
+QStringList P2AsmSymTbl::references_in(int lineno) const
 {
     return m_references.values(lineno);
 }

@@ -84,7 +84,7 @@ private:
     QHash<column_e,QRgb> m_background;
     QHash<column_e,int> m_header_alignment;
     QHash<column_e,int> m_text_alignment;
-    QString tokenToolTip(const P2AsmWords& words, const QString& bgd) const;
+    QString tokenToolTip(const P2Words& words, const QString& bgd) const;
     QString symbolsToolTip(const P2AsmSymTbl& symbols, const QStringList& defined, const QString& bgd) const;
     QString errorsToolTip(const QStringList& list, const QString& bgd) const;
 };

@@ -11,7 +11,7 @@ void P2AsmSourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
 {
     const P2AsmModel* model = qobject_cast<const P2AsmModel*>(index.model());
     QVariant v_words = model->data(index, Qt::UserRole);
-    const P2AsmWords words = qvariant_cast<P2AsmWords>(v_words);
+    const P2Words words = qvariant_cast<P2Words>(v_words);
 
     QStyleOptionViewItem opt(option);
     initStyleOption(&opt, index);
@@ -45,7 +45,7 @@ void P2AsmSourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
     }
 
     // re-draw tokenized words
-    foreach(const P2AsmWord& word, words) {
+    foreach(const P2Word& word, words) {
         pos = word.pos();
         len = word.len();
         const QString text = line.mid(pos, len);
@@ -56,6 +56,10 @@ void P2AsmSourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
 
         p2_token_e tok = word.tok();
         switch (tok) {
+        case t_comment:
+            painter->setPen(p2_palette(color_comment));
+            break;
+
         case t_comma:
             painter->setPen(p2_palette(color_comma));
             break;
@@ -92,10 +96,6 @@ void P2AsmSourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
             painter->setPen(p2_palette(color_symbol));
             break;
 
-        case t_expression:
-            painter->setPen(p2_palette(color_expression));
-            break;
-
         default:
             if (Token.is_type(tok, tt_section))
                 painter->setPen(p2_palette(color_section));
@@ -105,6 +105,8 @@ void P2AsmSourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
                 painter->setPen(p2_palette(color_instruction));
             if (Token.is_type(tok, tt_wcz_suffix))
                 painter->setPen(p2_palette(color_wcz_suffix));
+            if (Token.is_type(tok, tm_expression))
+                painter->setPen(p2_palette(color_expression));
             break;
         }
 

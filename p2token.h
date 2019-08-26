@@ -42,7 +42,8 @@
  */
 typedef enum {
     tt_none,            //!< no specific type
-    tt_parens,          //!< precedence  0: parenthesis "(" and ")"
+    tt_comment,         //!< comment
+    tt_parens,          //!< precedence  0: parenthesis "(", ")", "[", "]"
     tt_primary,         //!< precedence  1: primary operators (++, --)
     tt_unary,           //!< precedence  2: unary operators (+, -, !, ~, more?)
     tt_mulop,           //!< precedence  3: multiplication operators (*, /, \)
@@ -58,6 +59,10 @@ typedef enum {
     tt_logop_or,        //!< precedence 13: logical or (||)
     tt_ternary,         //!< precedence 14: ternary operator (?:)
     tt_assignment,      //!< precedence 15: assignment (=)
+    tt_delimiter,       //!< delimiter (,)
+    tt_constant,        //!< constant value ($, PA, PB, PTRA, PTRB)
+    tt_immediate,       //!< immediate value (#, ##)
+    tt_relative,        //!< relative value (@)
     tt_conditional,     //!< conditional execution
     tt_modcz_param,     //!< MODCZ parameters
     tt_inst,            //!< instruction
@@ -66,60 +71,75 @@ typedef enum {
     tt_origin,          //!< origin control
     tt_data,            //!< data generating
     tt_lexer,           //!< pseudo token from lexing a string
-}   p2_tokentype_e;
+}   p2_t_type_e;
+
+typedef quint64 p2_t_mask_t;
 
 /**
  * @brief bit masks for token types
  */
 #define TTMASK(tt) (Q_UINT64_C(1) << (tt))
 
-static constexpr quint64 tm_none        = 0;
-static constexpr quint64 tm_parens      = TTMASK(tt_parens);
-static constexpr quint64 tm_primary     = TTMASK(tt_primary);
-static constexpr quint64 tm_unary       = TTMASK(tt_unary);
-static constexpr quint64 tm_mulop       = TTMASK(tt_mulop);
-static constexpr quint64 tm_addop       = TTMASK(tt_addop);
-static constexpr quint64 tm_shiftop     = TTMASK(tt_shiftop);
-static constexpr quint64 tm_relation    = TTMASK(tt_relation);
-static constexpr quint64 tm_equality    = TTMASK(tt_equality);
-static constexpr quint64 tm_binop_and   = TTMASK(tt_binop_and);
-static constexpr quint64 tm_binop_xor   = TTMASK(tt_binop_xor);
-static constexpr quint64 tm_binop_or    = TTMASK(tt_binop_or);
-static constexpr quint64 tm_binop_rev   = TTMASK(tt_binop_rev);
-static constexpr quint64 tm_logop_and   = TTMASK(tt_logop_and);
-static constexpr quint64 tm_logop_or    = TTMASK(tt_logop_or);
-static constexpr quint64 tm_ternary     = TTMASK(tt_ternary);
-static constexpr quint64 tm_assignment  = TTMASK(tt_assignment);
-static constexpr quint64 tm_conditional = TTMASK(tt_conditional);
-static constexpr quint64 tm_modcz_param = TTMASK(tt_modcz_param);
-static constexpr quint64 tm_inst        = TTMASK(tt_inst);
-static constexpr quint64 tm_wcz_suffix  = TTMASK(tt_wcz_suffix);
-static constexpr quint64 tm_section     = TTMASK(tt_section);
-static constexpr quint64 tm_origin      = TTMASK(tt_origin);
-static constexpr quint64 tm_data        = TTMASK(tt_data);
-static constexpr quint64 tm_lexer       = TTMASK(tt_lexer);
+static constexpr p2_t_mask_t tm_none        = 0;
+static constexpr p2_t_mask_t tm_comment     = TTMASK(tt_comment);
+static constexpr p2_t_mask_t tm_parens      = TTMASK(tt_parens);
+static constexpr p2_t_mask_t tm_primary     = TTMASK(tt_primary);
+static constexpr p2_t_mask_t tm_unary       = TTMASK(tt_unary);
+static constexpr p2_t_mask_t tm_mulop       = TTMASK(tt_mulop);
+static constexpr p2_t_mask_t tm_addop       = TTMASK(tt_addop);
+static constexpr p2_t_mask_t tm_shiftop     = TTMASK(tt_shiftop);
+static constexpr p2_t_mask_t tm_relation    = TTMASK(tt_relation);
+static constexpr p2_t_mask_t tm_equality    = TTMASK(tt_equality);
+static constexpr p2_t_mask_t tm_binop_and   = TTMASK(tt_binop_and);
+static constexpr p2_t_mask_t tm_binop_xor   = TTMASK(tt_binop_xor);
+static constexpr p2_t_mask_t tm_binop_or    = TTMASK(tt_binop_or);
+static constexpr p2_t_mask_t tm_binop_rev   = TTMASK(tt_binop_rev);
+static constexpr p2_t_mask_t tm_logop_and   = TTMASK(tt_logop_and);
+static constexpr p2_t_mask_t tm_logop_or    = TTMASK(tt_logop_or);
+static constexpr p2_t_mask_t tm_ternary     = TTMASK(tt_ternary);
+static constexpr p2_t_mask_t tm_assignment  = TTMASK(tt_assignment);
+static constexpr p2_t_mask_t tm_delimiter   = TTMASK(tt_delimiter);
+static constexpr p2_t_mask_t tm_constant    = TTMASK(tt_constant);
+static constexpr p2_t_mask_t tm_immediate   = TTMASK(tt_immediate);
+static constexpr p2_t_mask_t tm_relative    = TTMASK(tt_relative);
+static constexpr p2_t_mask_t tm_conditional = TTMASK(tt_conditional);
+static constexpr p2_t_mask_t tm_modcz_param = TTMASK(tt_modcz_param);
+static constexpr p2_t_mask_t tm_inst        = TTMASK(tt_inst);
+static constexpr p2_t_mask_t tm_wcz_suffix  = TTMASK(tt_wcz_suffix);
+static constexpr p2_t_mask_t tm_section     = TTMASK(tt_section);
+static constexpr p2_t_mask_t tm_origin      = TTMASK(tt_origin);
+static constexpr p2_t_mask_t tm_data        = TTMASK(tt_data);
+static constexpr p2_t_mask_t tm_lexer       = TTMASK(tt_lexer);
 
-static constexpr quint64 tm_primary_unary = tm_primary | tm_unary;
+static constexpr p2_t_mask_t tm_primary_unary =
+        tm_primary | tm_unary;
 
-static constexpr quint64 tm_binops      = tm_binop_and |
-                                          tm_binop_xor |
-                                          tm_binop_or |
-                                          tm_binop_rev;
+static constexpr p2_t_mask_t tm_binops      =
+        tm_binop_and |
+        tm_binop_xor |
+        tm_binop_or |
+        tm_binop_rev;
 
-static constexpr quint64 tm_operations  = tm_parens |
-                                          tm_primary |
-                                          tm_unary |
-                                          tm_mulop |
-                                          tm_addop |
-                                          tm_shiftop |
-                                          tm_relation |
-                                          tm_equality |
-                                          tm_binop_and |
-                                          tm_binop_xor |
-                                          tm_binop_or |
-                                          tm_binop_rev |
-                                          tm_logop_and |
-                                          tm_logop_or;
+static constexpr p2_t_mask_t tm_operations  =
+        tm_parens |
+        tm_primary |
+        tm_unary |
+        tm_mulop |
+        tm_addop |
+        tm_shiftop |
+        tm_relation |
+        tm_equality |
+        tm_binop_and |
+        tm_binop_xor |
+        tm_binop_or |
+        tm_binop_rev |
+        tm_logop_and |
+        tm_logop_or;
+
+static constexpr p2_t_mask_t tm_expression =
+        tm_operations |
+        tm_constant;
+
 /**
  * @brief enumeration of tokens used in mnemonics for the P2 assembler and disassembler
  */
@@ -127,6 +147,10 @@ typedef enum {
     t_invalid = -1,     //!< undefined value
     t_unknown,          //!< nothing found
 
+    t_comment,          //!< token is a comment
+    t_comment_apo,      //!< token is a comment (')
+    t_comment_lcurly,   //!< token is a comment ({)
+    t_comment_rcurly,   //!< token is a comment (})
     t_comma,            //!< token is a comma (,)
     t_string,           //!< token is a string starting with doublequote (")
     t_bin_const,        //!< token is a binary value (%)
@@ -136,7 +160,6 @@ typedef enum {
     t_hex_const,        //!< token is a hexadecimal value ($)
     t_locsym,           //!< token is a local symbol (starts with .)
     t_symbol,           //!< token is a symbol (alphanumeric)
-    t_expression,       //!< token is an expression (contains operators)
     t_empty,            //!< token is empty
 
     // instructions
@@ -616,6 +639,12 @@ typedef enum {
     // origin (PC)
     t__DOLLAR,          //!< "$"
 
+    // hash
+    t__IMMEDIATE,       //!< "#"
+    t__IMMEDIATE2,      //!< "##"
+    t__RELATIVE,        //!< "@"
+    t__RELATIVE_HUB,    //!< "@@@"
+
     // relations
     t__LE,              //!< "<="
     t__LT,              //!< "<"
@@ -627,6 +656,8 @@ typedef enum {
     // parenthesis
     t__LPAREN,          //!< "("
     t__RPAREN,          //!< ")"
+    t__LBRACKET,        //!< "["
+    t__RBRACKET,        //!< "]"
 
     // primary ops
     t__INC,             //!< "++"
@@ -642,8 +673,8 @@ typedef enum {
     t__MOD,             //!< "\"
 
     // addition ops
-    t__ADD,             //!< "+"
-    t__SUB,             //!< "-"
+    t__PLUS,             //!< "+"
+    t__MINUS,             //!< "-"
 
     // shift ops
     t__SHL,             //!< "<<"
@@ -655,22 +686,51 @@ typedef enum {
     t__XOR,             //!< "^"
     t__REV,             //!< "><"
 
-    t__ANDAND,          //!< "&&"
-    t__OROR,            //!< "||"
+    t__LOGAND,          //!< "&&"
+    t__LOGOR,            //!< "||"
 }   p2_token_e;
 
 typedef QVector<p2_token_e> p2_token_v;
+
+class P2Word
+{
+public:
+    explicit P2Word(const QString& str = QString(), int pos = 0, int end = 0)
+        : m_str(str), m_tok(t_invalid), m_pos(pos), m_len(end)
+    {}
+    explicit P2Word(p2_token_e tok, const QString& str, int pos, int end)
+        : m_str(str), m_tok(tok), m_pos(pos), m_len(end + 1 - pos)
+    {}
+
+    p2_token_e tok() const { return m_tok; }
+    const QString& str() const { return m_str; }
+    int pos() const { return m_pos; }
+    int len() const { return m_len; }
+    int end() const { return m_pos + m_len - 1; }
+    void set_token(p2_token_e tok) { m_tok = tok; }
+
+private:
+    QString m_str;
+    p2_token_e m_tok;
+    int m_pos;
+    int m_len;
+};
+typedef QVector<P2Word> P2Words;
+Q_DECLARE_METATYPE(P2Word);
+Q_DECLARE_METATYPE(P2Words);
 
 class P2Token
 {
 public:
     P2Token();
     QString string(p2_token_e tok, bool lowercase = false) const;
+    P2Words tokenize(const QString& str, int& in_curly) const;
     p2_token_e token(const QString& str, bool chop = false, int* plen = nullptr) const;
 
-    bool is_type(p2_token_e tok, p2_tokentype_e type) const;
-    bool is_type(const QString& str, p2_tokentype_e type) const;
-    QStringList type_names(quint64 typemask) const;
+    bool is_type(p2_token_e tok, p2_t_mask_t typemask) const;
+    bool is_type(p2_token_e tok, p2_t_type_e type) const;
+    bool is_type(const QString& str, p2_t_type_e type) const;
+    QStringList type_names(p2_t_mask_t typemask) const;
     QStringList type_names(p2_token_e tok) const;
 
     bool is_operation(p2_token_e tok) const;
@@ -681,13 +741,13 @@ public:
     bool is_conditional(p2_token_e tok) const;
     bool is_modcz_param(p2_token_e tok) const;
 
-    p2_token_e at_type(int& pos, const QString& str, quint64 typemask, p2_token_e dflt = t_invalid) const;
-    p2_token_e at_type(int& pos, const QString& str, p2_tokentype_e type, p2_token_e dflt = t_invalid) const;
-    p2_token_e at_type(const QString& str, p2_tokentype_e type, p2_token_e dflt = t_invalid) const;
+    p2_token_e at_type(int& pos, const QString& str, p2_t_mask_t typemask, p2_token_e dflt = t_invalid) const;
+    p2_token_e at_type(int& pos, const QString& str, p2_t_type_e type, p2_token_e dflt = t_invalid) const;
+    p2_token_e at_type(const QString& str, p2_t_type_e type, p2_token_e dflt = t_invalid) const;
 
-    p2_token_e at_types(int& pos, const QString& str, quint64 typemask, p2_token_e dflt = t_invalid) const;
-    p2_token_e at_types(int& pos, const QString& str, const QList<p2_tokentype_e>& types, p2_token_e dflt = t_invalid) const;
-    p2_token_e at_types(const QString& str, const QList<p2_tokentype_e>& types, p2_token_e dflt = t_invalid) const;
+    p2_token_e at_types(int& pos, const QString& str, p2_t_mask_t typemask, p2_token_e dflt = t_invalid) const;
+    p2_token_e at_types(int& pos, const QString& str, const QList<p2_t_type_e>& types, p2_token_e dflt = t_invalid) const;
+    p2_token_e at_types(const QString& str, const QList<p2_t_type_e>& types, p2_token_e dflt = t_invalid) const;
 
     p2_token_e at_conditional(int& pos, const QString& str, p2_token_e dflt = t_invalid) const;
     p2_token_e at_conditional(const QString& str, p2_token_e dflt = t_invalid) const;
@@ -702,34 +762,18 @@ public:
     p2_cond_e modcz_param(const QString& str, p2_cond_e dflt = cc_clr) const;
 
 private:
-    QMultiHash<p2_token_e, QString> m_token_name;       //!< QMultiHash for token value to name lookup
+    QHash<p2_token_e, QString> m_token_name;            //!< QHash for token value to name lookup
     QMultiHash<QString, p2_token_e> m_name_token;       //!< QMultiHash for token name to value lookup
-    QHash<p2_token_e, quint64> m_token_type;            //!< QHash for token value to type mask lookup
-    QMultiHash<quint64, p2_token_e> m_type_token;       //!< QMultiHash for token type mask to token(s) lookup
+    QHash<p2_token_e, p2_t_mask_t> m_token_type;            //!< QHash for token value to type mask lookup
+    QMultiHash<p2_t_mask_t, p2_token_e> m_type_token;       //!< QMultiHash for token type mask to token(s) lookup
     QHash<p2_token_e, p2_cond_e> m_lookup_cond;         //!< QHash for conditionals to condition bits lookup
     QHash<p2_token_e, p2_cond_e> m_lookup_modcz;        //!< QHash for MODCZ parameters to condition bits lookup
-    QHash<p2_tokentype_e, QString> m_ttype_name;        //!< QHash for token type mask to type name(s) lookup
+    QHash<p2_t_type_e, QString> m_ttype_name;        //!< QHash for token type mask to type name(s) lookup
 
-    QRegExp rx_locsym;
-    QRegExp rx_symbol;
-    QRegExp rx_bin;
-    QRegExp rx_byt;
-    QRegExp rx_oct;
-    QRegExp rx_dec;
-    QRegExp rx_hex;
-    QRegExp rx_string;
-    QRegExp rx_expression;
-
-    void tn_add(p2_token_e tok, p2_tokentype_e type, const QString& str);
-    void tn_add(p2_token_e tok, quint64 typemask, const QString& str);
-
-    void tt_set(p2_token_e tok, quint64 typemask);
-    void tt_clr(p2_token_e tok, quint64 types);
-    bool tt_chk(p2_token_e tok, quint64 typemask) const;
-
-    void tt_set(p2_token_e tok, p2_tokentype_e type);
-    void tt_clr(p2_token_e tok, p2_tokentype_e type);
-    bool tt_chk(p2_token_e tok, p2_tokentype_e type) const;
+    void tt_set(p2_token_e tok, p2_t_mask_t typemask);
+    void tt_clr(p2_token_e tok, p2_t_mask_t typemask);
+    bool tt_chk(p2_token_e tok, p2_t_mask_t typemask) const;
+    void tn_add(p2_token_e tok, p2_t_mask_t typemask, const QString& str);
 };
 
 extern P2Token Token;

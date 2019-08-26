@@ -87,9 +87,9 @@ int P2AsmSymbol::reference(int idx) const
  * @brief Return the line number where the symbol was defined
  * @return line number, or -1 if not defined
  */
-int P2AsmSymbol::defined_in() const
+int P2AsmSymbol::defined_where() const
 {
-    return reference();
+    return reference(0);
 }
 
 /**

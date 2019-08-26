@@ -34,15 +34,27 @@
 #include <QString>
 #include <QRegExp>
 #include "p2token.h"
+#include "p2util.h"
 
-#if 0
-static const char *Delimiters[] = {
-    "@@@", "##", "#", ",", "[", "]", "++", "+", "--", "-", "<<",
-    "<", ">>", "><", ">|", ">", "*", "/", "\\", "&", "|<", "|", "(", ")",
-     "@", "==", "=",
-    nullptr
-};
+#define DBG_REGEX   0
+#define DBG_TOKEN   0
+
+#if DBG_REGEX
+#define DEBUG_REGEX(x,...) qDebug(x,__VA_ARGS__)
+#else
+#define DEBUG_REGEX(x,...)
 #endif
+
+#if DBG_TOKEN
+#define DEBUG_TOKEN(x,...) qDebug(x,__VA_ARGS__)
+#else
+#define DEBUG_TOKEN(x,...)
+#endif
+
+/**
+ * @brief Regular expression for comments
+ */
+static const QString re_comment = QStringLiteral("((\\{[^\\}]*\\})|('.*)){1}");
 
 /**
  * @brief Regular expression for local symbol
@@ -50,7 +62,7 @@ static const char *Delimiters[] = {
  * leading "."
  * then any number of "A"…"Z", "0"…"9", or "_"
  */
-static const QString re_locsym = QStringLiteral("\\.[A-Z_][A-Z0-9_]*");
+static const QString re_locsym = QStringLiteral("[.][A-Z_]+[A-Z0-9_]*");
 
 /**
  * @brief Regular expression for alphanumeric
@@ -58,15 +70,7 @@ static const QString re_locsym = QStringLiteral("\\.[A-Z_][A-Z0-9_]*");
  * leading "A"…"Z", or "_"
  * then any number of "A"…"Z", "0"…"9", or "_"
  */
-static const QString re_symbol = QStringLiteral("[A-Z_][A-Z0-9_]*");
-
-/**
- * @brief Regular expression for a string enclosed in doublequotes, possibly containing escaped doublequotes
- * initial '"'
- * then any number of escaped doublequotes (\") or other characters (.)
- * trailing '"'
- */
-static const QString re_string = QStringLiteral("\"([^\\\"]|\\\\.)*\"");
+static const QString re_symbol = QStringLiteral("[A-Z_]+[A-Z0-9_]*");
 
 /**
  * @brief Regular expression for binary number
@@ -74,7 +78,7 @@ static const QString re_string = QStringLiteral("\"([^\\\"]|\\\\.)*\"");
  * leading "%"
  * then one or more of "0", "1", or "_"
  */
-static const QString re_bin = QStringLiteral("%[01_]+");
+static const QString re_bin_const = QStringLiteral("%[_]*[01_]+");
 
 /**
  * @brief Regular expression for byte number
@@ -82,7 +86,7 @@ static const QString re_bin = QStringLiteral("%[01_]+");
  * leading "%%"
  * then one or more of "0"…"3", or "_"
  */
-static const QString re_byt = QStringLiteral("%%[0-3_]+");
+static const QString re_byt_const = QStringLiteral("%%[_]*[0-3_]+");
 
 /**
  * @brief Regular expression for octal number
@@ -90,7 +94,7 @@ static const QString re_byt = QStringLiteral("%%[0-3_]+");
  * leading "0"
  * then one or more of "0"…"7", or "_"
  */
-static const QString re_oct = QStringLiteral("[0_]+[0-7_]*");
+static const QString re_oct_const = QStringLiteral("[0][_]*[0-7_]*");
 
 /**
  * @brief Regular expression for a decimal number
@@ -98,7 +102,7 @@ static const QString re_oct = QStringLiteral("[0_]+[0-7_]*");
  * leading "0"…"9"
  * then any number of "0"…"9", or "_"
  */
-static const QString re_dec = QStringLiteral("[1-9_]+[0-9_]*");
+static const QString re_dec_const = QStringLiteral("[1-9][_]*[0-9_]*");
 
 /**
  * @brief Regular expression an octal number
@@ -106,10 +110,109 @@ static const QString re_dec = QStringLiteral("[1-9_]+[0-9_]*");
  * leading "$"
  * then any number of "0"…"9", "A"…"F", or "_"
  */
-static const QString re_hex = QStringLiteral("[\\$_]+[0-9A-F_]+");
+static const QString re_hex_const = QStringLiteral("\\$[_]*[0-9A-F_]+");
+
+/**
+ * @brief Regular expression for a string enclosed in doublequotes, possibly containing escaped doublequotes
+ * initial '"'
+ * then any number of escaped doublequotes (\") or other characters (.)
+ * trailing '"'
+ */
+static const QString re_str_const = QStringLiteral("\"([^\\\"]|\\\\.)*\"");
 
 //! Global static instance of the P2Token class
 P2Token Token;
+
+
+/**
+ * @file Chip Gracey's comment from https://forums.parallax.com/discussion/170176/spin2-syntax
+ *
+ *                 Instruction/
+ * Operator	Term Assign	Priority	Term		Priority	Type		Description
+ * -------------------------------------------------------------------------------------------------------------------------------------------------
+ * ++ (pre)	++var		1		++var		1		var prefix	Pre-increment
+ * -- (pre)	--var		1		--var		1		var prefix	Pre-decrement
+ * ?? (pre)	??var		1		??var		1		var prefix	XORO32, iterate x and return pseudo-random
+ *
+ * ++ (post)	var++		1		var++		1		var postfix	Post-increment
+ * -- (post)	var--		1		var--		1		var postfix	Post-decrement
+ * !! (post)	var!!		1		var!!		1		var postfix	Post-logical NOT
+ * !  (post)	var!		1		var!		1		var postfix	Post-bitwise NOT
+ * \  (post)	var\x		1		var\x		1		var postfix	Post-set to y
+ *
+ * !		!= var		1		!x		2		unary		Bitwise NOT, 1's complement
+ * -		-= var		1		-x		2		unary		Negation, 2's complement
+ * ABS		ABS= var	1		ABS x		2		unary		Absolute value
+ * ENCOD        ENCOD= var	1		ENCOD x		2		unary		Encode MSB, 31..0
+ * DECOD        DECOD= var	1		DECOD x		2		unary		Decode, 1 << (x & $1F)
+ * ONES		ONES= var	1		ONES x		2		unary		Count ones
+ * SQRT		SQRT= var	1		SQRT x		2		unary		Square root of unsigned x
+ * QLOG		QLOG= var	1		QLOG x		2		unary		Unsigned to logarithm
+ * QEXP		QEXP= var	1		QEXP x		2		unary		Logarithm to unsigned
+ *
+ * >>		var >>= x	16		x >> y		3		binary		Shift right, insert 0's
+ * <<		var <<= x	16		x << y		3		binary		Shift left, insert 0's
+ * SAR		var SAR= x	16		x SAR y		3		binary		Shift right, insert MSB's
+ * ROR		var ROR= x	16		x ROR y		3		binary		Rotate right
+ * ROL		var ROL= x	16		x ROL y		3		binary		Rotate left
+ * REV		var REV= x	16		x REV y		3		binary		Reverse y LSBs of x and zero-extend
+ * ZEROX        var ZEROX= x	16		x ZEROX y	3		binary		Zero-extend above bit y
+ * SIGNX        var SIGNX= x	16		x SIGNX y	3		binary		Sign-extend from bit y
+ *
+ * &		var &= x	16		x & y		4		binary		Bitwise AND
+ * ^		var ^= x	16		x ^ y		5		binary		Bitwise XOR
+ * |		var |= x	16		x | y		6		binary		Bitwise OR
+ *
+ * *		var *= x	16		x * y		7		binary		Signed multiply
+ * /		var /= x	16		x / y		7		binary		Signed divide, return quotient
+ * +/		var +/= x	16		x +/ y		7		binary		Unsigned divide, return quotient
+ * //		var //= x	16		x // y		7		binary		Signed divide, return remainder
+ * +//		var +//= x	16		x +// y		7		binary		Unsigned divide, return remainder
+ * SCA		var SCA= x	16		x SCA y		7		binary		Unsigned scale (x * y) >> 32
+ * SCAS		var SCAS= x	16		x SCAS y	7		binary		Signed scale (x * y) >> 30
+ * FRAC		var FRAC= x	16		x FRAC y	7		binary		Unsigned fraction {x, 32'b0} / y
+ *
+ * +		var += x	16		x + y		8		binary		Add
+ * -		var -= x	16		x - y		8		binary		Subtract
+ *
+ * #>		var #>= x	16		x #> y		9		binary		Ensure x => y, signed
+ * <#		var <#= x	16		x <# y		9		binary		Ensure x <= y, signed
+ *
+ * <				-		x < y		10		binary		Signed less than		(returns 0 or -1)
+ * +<				-		x +< y		10		binary		Unsigned less than		(returns 0 or -1)
+ * <=				-		x <= y		10		binary		Signed less than or equal	(returns 0 or -1)
+ * +<=				-		x +<= y		10		binary		Unsigned less than or equal	(returns 0 or -1)
+ * ==				-		x == y		10		binary		Equal				(returns 0 or -1)
+ * <>				-		x <> y		10		binary		Not equal			(returns 0 or -1)
+ * >=				-		x >= y		10		binary		Signed greater than or equal	(returns 0 or -1)
+ * +>=				-		x +>= y		10		binary		Unsigned greater than or equal	(returns 0 or -1)
+ * >				-		x > y		10		binary		Signed greater than		(returns 0 or -1)
+ * +>				-		x +> y		10		binary		Unsigned greater than		(returns 0 or -1)
+ * <=>				-		x <=> y		10		binary		Signed comparison	   (<,=,> returns -1,0,1)
+ *
+ * !!, NOT      !!= var		1		!!x		11		unary		Logical NOT  (x == 0,            returns 0 or -1)
+ * &&, AND      var &&= x	16		x && y		12		binary		Logical AND  (x <> 0 AND y <> 0, returns 0 or -1)
+ * ^^, XOR      var ^^= x	16		x ^^ y		13		binary		Logical XOR  (x <> 0 XOR y <> 0, returns 0 or -1)
+ * ||, OR       var ||= x	16		x || y		14		binary		Logical OR   (x <> 0 OR  y <> 0, returns 0 or -1)
+ *
+ * ? :						x ? y : z	15		ternary		Choose between y and z
+ *
+ * :=		var := x	16						assign		Set var to x
+ *
+ * (,,,) :=	(x,y) := (a,b)							assign		set (x,y) to (a,b), 2..16 variables
+ *
+ *
+ * Math functions
+ * ---------------------------------------------------------------------------------------------
+ * (x,y) := ROTXY(x,y,t)		Rotate cartesian (x,y) by t and assign resultant (x,y)
+ * (r,t) := XYPOL(x,y)		Convert cartesian (x,y) to polar and assign resultant (r,t)
+ * (x,y) := POLXY(r,t)		Convert polar (r,t) to cartesian and assign resultant (x,y)
+ *
+ * Miscellaneous
+ * ---------------------------------------------------------------------------------------------
+ * SWAP(x,y)			Swap variables x and y (uses '\' bytecode for efficiency)
+ *
+ */
 
 P2Token::P2Token()
     : m_token_name()
@@ -119,77 +222,22 @@ P2Token::P2Token()
     , m_lookup_cond()
     , m_lookup_modcz()
     , m_ttype_name()
-    , rx_locsym(QString("^%1").arg(re_locsym), Qt::CaseInsensitive)
-    , rx_symbol(QString("^%1").arg(re_symbol), Qt::CaseInsensitive)
-    , rx_bin(QString("^%1$").arg(re_bin), Qt::CaseInsensitive)
-    , rx_byt(QString("^%1$").arg(re_byt), Qt::CaseInsensitive)
-    , rx_oct(QString("^%1$").arg(re_oct), Qt::CaseInsensitive)
-    , rx_dec(QString("^%1$").arg(re_dec), Qt::CaseInsensitive)
-    , rx_hex(QString("^%1$").arg(re_hex), Qt::CaseInsensitive)
-    , rx_string(QString("^%1$").arg(re_string), Qt::CaseInsensitive)
-    , rx_expression()
 {
-    Q_ASSERT(rx_locsym.isValid());
-    Q_ASSERT(0 == rx_locsym.indexIn(QStringLiteral(".dot")));
-    Q_ASSERT(0 != rx_locsym.indexIn(QStringLiteral("Dot")));
-
-    Q_ASSERT(rx_symbol.isValid());
-    Q_ASSERT(0 != rx_symbol.indexIn(QStringLiteral(".dot")));
-    Q_ASSERT(0 == rx_symbol.indexIn(QStringLiteral("Dot")));
-
-    Q_ASSERT(rx_bin.isValid());
-    Q_ASSERT(0 != rx_bin.indexIn(QStringLiteral("1000")));
-    Q_ASSERT(0 != rx_bin.indexIn(QStringLiteral("01001")));
-    Q_ASSERT(0 == rx_bin.indexIn(QStringLiteral("%1111")));
-    Q_ASSERT(0 == rx_bin.indexIn(QStringLiteral("%0")));
-    Q_ASSERT(0 == rx_bin.indexIn(QStringLiteral("%111_001_111")));
-    Q_ASSERT(0 == rx_bin.indexIn(QStringLiteral("%011111110111111101111111011111110111111101111111")));
-
-    Q_ASSERT(rx_byt.isValid());
-    Q_ASSERT(0 != rx_byt.indexIn(QStringLiteral("4102")));
-    Q_ASSERT(0 != rx_byt.indexIn(QStringLiteral("%1010")));
-    Q_ASSERT(0 != rx_byt.indexIn(QStringLiteral("%%4102")));
-    Q_ASSERT(0 == rx_byt.indexIn(QStringLiteral("%%0212")));
-    Q_ASSERT(0 == rx_byt.indexIn(QStringLiteral("%%3210")));
-
-    Q_ASSERT(rx_oct.isValid());
-    Q_ASSERT(0 != rx_oct.indexIn(QStringLiteral("177")));
-    Q_ASSERT(0 != rx_oct.indexIn(QStringLiteral("0178")));
-    Q_ASSERT(0 == rx_oct.indexIn(QStringLiteral("017777")));
-    Q_ASSERT(0 == rx_oct.indexIn(QStringLiteral("0177_77")));
-    Q_ASSERT(0 == rx_oct.indexIn(QStringLiteral("0_01327")));
-
-    Q_ASSERT(rx_dec.isValid());
-    Q_ASSERT(0 != rx_dec.indexIn(QStringLiteral("%99")));
-    Q_ASSERT(0 != rx_dec.indexIn(QStringLiteral("$1234")));
-    Q_ASSERT(0 != rx_dec.indexIn(QStringLiteral("01234")));
-    Q_ASSERT(0 == rx_dec.indexIn(QStringLiteral("1234")));
-    Q_ASSERT(0 == rx_dec.indexIn(QStringLiteral("123_456_789")));
-    Q_ASSERT(0 == rx_dec.indexIn(QStringLiteral("_1327")));
-
-    Q_ASSERT(rx_hex.isValid());
-    Q_ASSERT(0 != rx_hex.indexIn(QStringLiteral("%99")));
-    Q_ASSERT(0 != rx_hex.indexIn(QStringLiteral("1a")));
-    Q_ASSERT(0 != rx_hex.indexIn(QStringLiteral("0721")));
-    Q_ASSERT(0 == rx_hex.indexIn(QStringLiteral("$__ff")));
-    Q_ASSERT(0 == rx_hex.indexIn(QStringLiteral("$dead___beef")));
-
-    Q_ASSERT(rx_string.isValid());
-    Q_ASSERT(0 == rx_string.indexIn(QStringLiteral("\"\"")));
-    Q_ASSERT(0 == rx_string.indexIn(QStringLiteral("\"abc\"")));
-    Q_ASSERT(0 == rx_string.indexIn(QStringLiteral("\"a\\\"bc\"")));
-
-    tn_add(t_invalid,          tm_lexer, QStringLiteral("<invalid>"));
-    tn_add(t_unknown,          tm_lexer, QStringLiteral("«expr»"));
-    tn_add(t_comma,            tm_lexer, QStringLiteral(","));
-    tn_add(t_string,           tm_lexer, QStringLiteral("«string»"));
-    tn_add(t_bin_const,        tm_lexer, QStringLiteral("«bin»"));
-    tn_add(t_oct_const,        tm_lexer, QStringLiteral("«oct»"));
-    tn_add(t_dec_const,        tm_lexer, QStringLiteral("«dec»"));
-    tn_add(t_hex_const,        tm_lexer, QStringLiteral("«hex»"));
+    tn_add(t_invalid,          tm_lexer, QStringLiteral("«INVALID»"));
+    tn_add(t_unknown,          tm_lexer, QStringLiteral("«unknown»"));
+    tn_add(t_comment,          tm_lexer | tm_comment, QStringLiteral("«comment»"));
+    tn_add(t_comment_apo,      tm_lexer | tm_comment, QStringLiteral("'"));
+    tn_add(t_comment_lcurly,   tm_lexer | tm_comment, QStringLiteral("{"));
+    tn_add(t_comment_rcurly,   tm_lexer | tm_comment, QStringLiteral("}"));
+    tn_add(t_comma,            tm_delimiter, QStringLiteral(","));
+    tn_add(t_string,           tm_lexer, QStringLiteral("«str_const»"));
+    tn_add(t_bin_const,        tm_lexer, QStringLiteral("«bin_const»"));
+    tn_add(t_byt_const,        tm_lexer, QStringLiteral("«byt_const»"));
+    tn_add(t_oct_const,        tm_lexer, QStringLiteral("«oct_const»"));
+    tn_add(t_dec_const,        tm_lexer, QStringLiteral("«dec_const»"));
+    tn_add(t_hex_const,        tm_lexer, QStringLiteral("«hex_const»"));
     tn_add(t_locsym,           tm_lexer, QStringLiteral("«locsym»"));
     tn_add(t_symbol,           tm_lexer, QStringLiteral("«symbol»"));
-    tn_add(t_expression,       tm_lexer, QStringLiteral("«expression»"));
 
     tn_add(t_ABS,              tm_inst, QStringLiteral("ABS"));
     tn_add(t_ADD,              tm_inst, QStringLiteral("ADD"));
@@ -586,9 +634,9 @@ P2Token::P2Token()
     tn_add(t__VAR,             tm_section, QStringLiteral("VAR"));
 
     // Origin control
-    tn_add(t__ORG,             tm_origin, QStringLiteral("ORG"));
-    tn_add(t__ORGH,            tm_origin, QStringLiteral("ORGH"));
-    tn_add(t__FIT,             tm_origin, QStringLiteral("FIT"));
+    tn_add(t__ORG,             tm_inst | tm_origin, QStringLiteral("ORG"));
+    tn_add(t__ORGH,            tm_inst | tm_origin, QStringLiteral("ORGH"));
+    tn_add(t__FIT,             tm_inst | tm_origin, QStringLiteral("FIT"));
 
     // Conditionals
     tn_add(t__RET_,            tm_conditional, QStringLiteral("_RET_"));
@@ -663,14 +711,22 @@ P2Token::P2Token()
     tn_add(t_MODCZ__SET,       tm_modcz_param, QStringLiteral("_SET"));
 
     // Assignment
-    tn_add(t__ASSIGN,          tm_assignment, QStringLiteral("="));
+    tn_add(t__ASSIGN,          tm_assignment,  QStringLiteral("="));
 
     // Current PC reference
-    m_token_name.insert(t__DOLLAR,          QStringLiteral("$"));
+    tn_add(t__DOLLAR,          tm_constant, QStringLiteral("$"));
+
+    // Immedia value
+    tn_add(t__IMMEDIATE2,      tm_immediate, QStringLiteral("##"));
+    tn_add(t__IMMEDIATE,       tm_immediate, QStringLiteral("#"));
+    tn_add(t__RELATIVE_HUB,    tm_relative, QStringLiteral("@@@"));
+    tn_add(t__RELATIVE,        tm_relative, QStringLiteral("@"));
 
     // Sub expression in parens
     tn_add(t__LPAREN,          tm_parens, QStringLiteral("("));
     tn_add(t__RPAREN,          tm_parens, QStringLiteral(")"));
+    tn_add(t__LBRACKET,        tm_parens, QStringLiteral("["));
+    tn_add(t__RBRACKET,        tm_parens, QStringLiteral("]"));
 
     // Set the primary operators
     tn_add(t__INC,             tm_primary, QStringLiteral("++"));
@@ -679,8 +735,6 @@ P2Token::P2Token()
     // Set the unary operators
     tn_add(t__NEG,             tm_unary, QStringLiteral("!"));
     tn_add(t__NOT,             tm_unary, QStringLiteral("~"));
-    tt_set(t__ADD, tm_unary);
-    tt_set(t__SUB, tm_unary);
 
     // Set the multiplication operators
     tn_add(t__MUL,             tm_mulop, QStringLiteral("*"));
@@ -688,8 +742,8 @@ P2Token::P2Token()
     tn_add(t__MOD,             tm_mulop, QStringLiteral("\\"));
 
     // Set the addition operators
-    tn_add(t__ADD,             tm_addop, QStringLiteral("+"));
-    tn_add(t__SUB,             tm_addop, QStringLiteral("-"));
+    tn_add(t__PLUS,            tm_addop | tm_unary, QStringLiteral("+"));
+    tn_add(t__MINUS,           tm_addop | tm_unary, QStringLiteral("-"));
 
     // Set the shift operators
     tn_add(t__SHL,             tm_shiftop, QStringLiteral("<<"));
@@ -705,17 +759,15 @@ P2Token::P2Token()
     tn_add(t__EQ,              tm_equality, QStringLiteral("=="));
     tn_add(t__NE,              tm_equality, QStringLiteral("!="));
 
-    // Set the binary and operator
+    // Set the binary operators
     tn_add(t__AND,             tm_binop_and, QStringLiteral("&"));
-
-    // Set the binary xor operator
     tn_add(t__XOR,             tm_binop_xor, QStringLiteral("^"));
-
-    // Set the binary or operator
     tn_add(t__OR,              tm_binop_or,  QStringLiteral("|"));
-
-    // Set the unary reverse operator
     tn_add(t__REV,             tm_binop_rev, QStringLiteral("><"));
+
+    // Set the logical operators
+    tn_add(t__LOGAND,          tm_logop_and, QStringLiteral("&&"));
+    tn_add(t__LOGOR,           tm_logop_or, QStringLiteral("||"));
 
     // Set the conditionals lookup table
     m_lookup_cond.insert(t__RET_,               cc__ret_);
@@ -792,12 +844,12 @@ P2Token::P2Token()
     // Build the reverse QMultiHash for string lookup
     foreach(p2_token_e tok, m_token_name.keys())
         foreach(const QString& str, m_token_name.values(tok))
-            m_name_token.insert(str, tok);
+            m_name_token.insertMulti(str, tok);
 
     // Build the reverse QHash for types lookup
     foreach(p2_token_e tok, m_token_type.keys())
-        foreach(quint64 mask, m_token_type.values(tok))
-            m_type_token.insert(mask, tok);
+        foreach(p2_t_mask_t mask, m_token_type.values(tok))
+            m_type_token.insertMulti(mask, tok);
 
     m_ttype_name.insert(tt_none,            QStringLiteral("-"));
     m_ttype_name.insert(tt_parens,          QStringLiteral("Parenthesis"));
@@ -816,9 +868,13 @@ P2Token::P2Token()
     m_ttype_name.insert(tt_logop_or,        QStringLiteral("Logic OR"));
     m_ttype_name.insert(tt_ternary,         QStringLiteral("Ternary"));
     m_ttype_name.insert(tt_assignment,      QStringLiteral("Assignment"));
+    m_ttype_name.insert(tt_delimiter,       QStringLiteral("Delimiter"));
+    m_ttype_name.insert(tt_constant,        QStringLiteral("Constant"));
+    m_ttype_name.insert(tt_immediate,       QStringLiteral("Immediate"));
+    m_ttype_name.insert(tt_relative,        QStringLiteral("Relative"));
     m_ttype_name.insert(tt_conditional,     QStringLiteral("Conditional"));
     m_ttype_name.insert(tt_modcz_param,     QStringLiteral("MODCZ param"));
-    m_ttype_name.insert(tt_inst,            QStringLiteral("Inst"));
+    m_ttype_name.insert(tt_inst,            QStringLiteral("Instruction"));
     m_ttype_name.insert(tt_wcz_suffix,      QStringLiteral("WC/WZ suffix"));
     m_ttype_name.insert(tt_section,         QStringLiteral("Section"));
     m_ttype_name.insert(tt_origin,          QStringLiteral("Origin"));
@@ -838,6 +894,123 @@ QString P2Token::string(p2_token_e tok, bool lowercase) const
 }
 
 /**
+ * @brief Tokenize a string and append to P2AsmWords
+ * @param pos starting position in string
+ * @param str string to tokenize
+ * @param words vector of P2AsmWord to append to
+ * @return true on success, or false on error
+ */
+P2Words P2Token::tokenize(const QString& str, int& in_curly) const
+{
+    static QRegExp rx;
+    static QString re;
+    P2Words words;
+    p2_token_e tok;
+    int curly = 0;
+    int pos = 0, lastpos = -1;
+
+    DEBUG_REGEX("%s: ***** tokenize *****", __func__);
+
+
+    if (rx.isEmpty()) {
+        // first time initialization of the QRegExp
+        QStringList list;
+
+        list += QStringLiteral("'.*");                  // Comments '... something
+        list += QStringLiteral("\\s+");                 // Spaces
+        list += re_str_const;                           // Strings with possibly escaped double quotes
+        list += re_comment;                             // Comments in curly braces
+        list += QStringLiteral("[^,'\"\\s]+");          // Any word without , ' " Space
+        static const char *Delimiters[] = {
+            "@@@", "##", "#", ",", "[", "]", "++", "+", "--", "-", "<<",
+            "<", ">>", "><", ">|", ">", "*", "/", "\\", "&", "|<", "|", "(", ")",
+             "@", "==", "=", ";", "{", "}",
+            nullptr
+        };
+        for (int i = 0; Delimiters[i]; i++)
+            list += QRegExp::escape(QString::fromLatin1(Delimiters[i])) + QStringLiteral("+");
+        re = QString("(%1)").arg(list.join(QChar('|')));
+
+        // rx.setPatternSyntax(QRegExp::RegExp2);  // greedy syntax
+        rx.setPattern(re);
+        Q_ASSERT(rx.isValid());
+    }
+
+    if (in_curly > 0) {
+
+        curly += str.count(chr_lcurly);
+        curly -= str.count(chr_rcurly);
+
+        if (in_curly + curly > 0) {
+            int tlen = str.length() - pos;
+            tok = t_comment;
+            words.append(P2Word(tok, str, pos, pos + tlen - 1));
+            pos += tlen;
+            DEBUG_REGEX("%s: match {%d} @%-3d #%-3d %s", __func__, curly, pos, tlen, qPrintable(str));
+        }
+
+        in_curly += curly;
+        return words;
+    }
+
+    while ((pos = rx.indexIn(str, pos)) != -1) {
+        QString word = rx.cap(1);
+        int len = rx.matchedLength();
+
+        word = word.trimmed();
+        if (word.isEmpty()) {
+            if (len > 0) {
+                pos += len;
+                continue;
+            }
+            DEBUG_REGEX("%s: match {%d} @%-3d #%-3d %s", __func__, curly, pos, len, qPrintable(word));
+            break;
+        }
+
+        if (!word.startsWith(chr_dquote)) {
+            curly += word.count(chr_lcurly);
+            curly -= word.count(chr_rcurly);
+        }
+
+        if (in_curly > 0 || curly > 0) {
+            len = str.length() - pos;
+            tok = t_comment;
+            words.append(P2Word(tok, word, pos, pos + len - 1));
+            pos += len;
+            DEBUG_REGEX("%s: match {%d} @%-3d #%-3d %s", __func__, curly, pos, len, qPrintable(word));
+            in_curly += curly;
+            return words;
+        }
+
+        DEBUG_REGEX("%s: match {%d} @%-3d #%-3d '%s'", __func__, curly, pos, len, qPrintable(rx.cap(1)));
+        int tlen = 0;
+        tok = token(word, true, &tlen);
+        words.append(P2Word(tok, word, pos, pos + tlen - 1));
+        pos += tlen;
+        if (pos == lastpos) {
+            DEBUG_REGEX("%s: break {%d} @%-3d #%-3d %s", __func__, curly, pos, len, qPrintable(word));
+            break;
+        } else {
+            lastpos = pos;
+        }
+    }
+
+    for (int i = 0; i < words.count(); i++) {
+        const P2Word& word = words[i];
+        tok = word.tok();
+        if (t_unknown == tok)
+            words[i].set_token(token(word.str()));
+        DEBUG_TOKEN("%s: word[%-3d] {%-20s} @%-3d #%-3d %s", __func__,
+                        i, qPrintable(string(tok)),
+                        word.pos(), word.len(), qPrintable(word.str()));
+        pos = word.end() + 1;
+    }
+
+    in_curly += curly;
+    return words;
+}
+
+/**
  * @brief Return a p2_token_e enumeration value for the QString %str
  * @param str QString to scan for
  * @param chop if true, chop off characters until a a token other than t_nothing is matched
@@ -847,66 +1020,70 @@ QString P2Token::string(p2_token_e tok, bool lowercase) const
 p2_token_e P2Token::token(const QString& str, bool chop, int* plen) const
 {
     QString ustr = str.toUpper();
-    int pfxlen = 0;
+    p2_token_e tok = t_unknown;
 
-    // Ignore leading '#' characters (for immediate modes)
-    while (ustr.startsWith(chr_number_sign)) {
-        ustr.remove(0, 1);
-        pfxlen++;
-    }
-
-    // Ignore leading '@' characters (for relative modes)
-    while (ustr.startsWith(chr_ampersand)) {
-        ustr.remove(0, 1);
-        pfxlen++;
-    }
-
-    p2_token_e tok = m_name_token.value(ustr, t_unknown);
     for (;;) {
-        if (t_unknown != tok)
-            break;
-
         if (ustr.isEmpty())
             break;
 
-        if (0 == rx_locsym.indexIn(ustr)) {
-            ustr.truncate(rx_locsym.cap(0).length());
+        const QList<p2_token_e>& tokens = m_name_token.values(ustr);
+        tok = tokens.value(0, t_unknown);
+        if (t_unknown != tok) {
+            QStringList names = m_token_name.values(tok);
+            ustr.truncate(names[0].length());
+            break;
+        }
+
+        QRegExp rx_locsym(re_locsym, Qt::CaseInsensitive);
+        if (rx_locsym.exactMatch(ustr)) {
             tok = t_locsym;
             break;
         }
 
-        if (0 == rx_symbol.indexIn(ustr)) {
-            ustr.truncate(rx_symbol.cap(0).length());
+        QRegExp rx_comment(re_comment, Qt::CaseInsensitive);
+        if (rx_comment.exactMatch(ustr)) {
+            tok = t_comment;
+            break;
+        }
+
+        QRegExp rx_symbol(re_symbol, Qt::CaseInsensitive);
+        if (rx_symbol.exactMatch(ustr)) {
             tok = t_symbol;
             break;
         }
 
-        if (0 == ustr.indexOf(rx_bin)) {
+        QRegExp rx_bin_const(re_bin_const, Qt::CaseInsensitive);
+        if (rx_bin_const.exactMatch(ustr)) {
             tok = t_bin_const;
             break;
         }
 
-        if (0 == ustr.indexOf(rx_byt)) {
+        QRegExp rx_byt_const(re_byt_const, Qt::CaseInsensitive);
+        if (rx_byt_const.exactMatch(ustr)) {
             tok = t_byt_const;
             break;
         }
 
-        if (0 == ustr.indexOf(rx_oct)) {
+        QRegExp rx_oct_const(re_oct_const, Qt::CaseInsensitive);
+        if (rx_oct_const.exactMatch(ustr)) {
             tok = t_oct_const;
             break;
         }
 
-        if (0 == ustr.indexOf(rx_hex)) {
+        QRegExp rx_hex_const(re_hex_const, Qt::CaseInsensitive);
+        if (rx_hex_const.exactMatch(ustr)) {
             tok = t_hex_const;
             break;
         }
 
-        if (0 == ustr.indexOf(rx_dec)) {
+        QRegExp rx_dec_const(re_dec_const, Qt::CaseInsensitive);
+        if (rx_dec_const.exactMatch(ustr)) {
             tok = t_dec_const;
             break;
         }
 
-        if (0 == ustr.indexOf(rx_string)) {
+        QRegExp rx_str_const(re_str_const, Qt::CaseInsensitive);
+        if (rx_str_const.exactMatch(ustr)) {
             tok = t_string;
             break;
         }
@@ -914,14 +1091,26 @@ p2_token_e P2Token::token(const QString& str, bool chop, int* plen) const
         if (!chop)
             break;
 
+        // chop off one character
         ustr.chop(1);
-        tok = m_name_token.value(ustr, t_unknown);
     }
 
     if (plen)
-        *plen = pfxlen + ustr.length();
+        *plen = ustr.length();
 
     return tok;
+}
+
+/**
+ * @brief Check if a token is one of a type mask
+ * @param tok token value
+ * @param typemask token type bit mask
+ * @return true if token type is set, or false otherwise
+ */
+bool P2Token::is_type(p2_token_e tok, p2_t_mask_t typemask) const
+{
+    const p2_t_mask_t bits = m_token_type.value(tok, 0);
+    return (bits & typemask) ? true : false;
 }
 
 /**
@@ -930,10 +1119,10 @@ p2_token_e P2Token::token(const QString& str, bool chop, int* plen) const
  * @param type token type
  * @return true if token type is set, or false otherwise
  */
-bool P2Token::is_type(p2_token_e tok, p2_tokentype_e type) const
+bool P2Token::is_type(p2_token_e tok, p2_t_type_e type) const
 {
-    const quint64 bits = m_token_type.value(tok, 0);
-    const quint64 mask = TTMASK(type);
+    const p2_t_mask_t bits = m_token_type.value(tok, 0);
+    const p2_t_mask_t mask = TTMASK(type);
     return (bits & mask) ? true : false;
 }
 
@@ -943,7 +1132,7 @@ bool P2Token::is_type(p2_token_e tok, p2_tokentype_e type) const
  * @param type token type
  * @return true if token type is set, or false otherwise
  */
-bool P2Token::is_type(const QString& str, p2_tokentype_e type) const
+bool P2Token::is_type(const QString& str, p2_t_type_e type) const
 {
     const p2_token_e tok = m_name_token.value(str);
     return is_type(tok, type);
@@ -955,14 +1144,14 @@ bool P2Token::is_type(const QString& str, p2_tokentype_e type) const
  * @param typemask bit mask of token types
  * @return QStringList with the type names
  */
-QStringList P2Token::type_names(quint64 typemask) const
+QStringList P2Token::type_names(p2_t_mask_t typemask) const
 {
     QStringList list;
     for (int i = 0; i <= 64 && typemask != 0; i++, typemask >>= 1)
         if (typemask & 1)
-                list += m_ttype_name.value(static_cast<p2_tokentype_e>(i));
+                list += m_ttype_name.value(static_cast<p2_t_type_e>(i));
     if (list.isEmpty())
-        list += m_ttype_name.value(static_cast<p2_tokentype_e>(tt_none));
+        list += m_ttype_name.value(static_cast<p2_t_type_e>(tt_none));
     return list;
 }
 
@@ -973,7 +1162,7 @@ QStringList P2Token::type_names(quint64 typemask) const
  */
 QStringList P2Token::type_names(p2_token_e tok) const
 {
-    const quint64 typemask = m_token_type.value(tok, 0);
+    const p2_t_mask_t typemask = m_token_type.value(tok, 0);
     return type_names(typemask);
 }
 
@@ -1021,7 +1210,7 @@ p2_token_e P2Token::at_token(const QString& str, QList<p2_token_e> tokens, p2_to
 bool P2Token::is_operation(p2_token_e tok) const
 {
     // Bit mask for operations
-    const quint64 mask = m_token_type.value(tok, 0);
+    const p2_t_mask_t mask = m_token_type.value(tok, 0);
     return (mask & tm_operations) ? true : false;
 }
 
@@ -1056,7 +1245,7 @@ bool P2Token::is_modcz_param(p2_token_e tok) const
  * @param dflt default token value to return if not found
  * @return token value if found, or dflt otherwise
  */
-p2_token_e P2Token::at_type(int& pos, const QString& str, quint64 typemask, p2_token_e dflt) const
+p2_token_e P2Token::at_type(int& pos, const QString& str, p2_t_mask_t typemask, p2_token_e dflt) const
 {
     int len = 0;
     p2_token_e tok = token(str.mid(pos), true, &len);
@@ -1084,7 +1273,7 @@ p2_token_e P2Token::at_type(int& pos, const QString& str, quint64 typemask, p2_t
  * @param dflt default token value to return if not found
  * @return token value if found, or dflt otherwise
  */
-p2_token_e P2Token::at_type(int& pos, const QString& str, p2_tokentype_e type, p2_token_e dflt) const
+p2_token_e P2Token::at_type(int& pos, const QString& str, p2_t_type_e type, p2_token_e dflt) const
 {
     int len = 0;
     p2_token_e tok = token(str.mid(pos), true, &len);
@@ -1109,7 +1298,7 @@ p2_token_e P2Token::at_type(int& pos, const QString& str, p2_tokentype_e type, p
  * @param dflt default token value to return if not found
  * @return token value if found, or dflt otherwise
  */
-p2_token_e P2Token::at_type(const QString& str, p2_tokentype_e type, p2_token_e dflt) const
+p2_token_e P2Token::at_type(const QString& str, p2_t_type_e type, p2_token_e dflt) const
 {
     int pos = 0;
     return at_type(pos, str, type, dflt);
@@ -1127,7 +1316,7 @@ p2_token_e P2Token::at_type(const QString& str, p2_tokentype_e type, p2_token_e 
  * @return token value if found, or dflt otherwise
  */
 
-p2_token_e P2Token::at_types(int& pos, const QString& str, quint64 typemask, p2_token_e dflt) const
+p2_token_e P2Token::at_types(int& pos, const QString& str, p2_t_mask_t typemask, p2_token_e dflt) const
 {
     int len = 0;
     p2_token_e tok = token(str.mid(pos), true, &len);
@@ -1157,11 +1346,11 @@ p2_token_e P2Token::at_types(int& pos, const QString& str, quint64 typemask, p2_
  * @param dflt default token value to return if not found
  * @return token value if found, or dflt otherwise
  */
-p2_token_e P2Token::at_types(int& pos, const QString& str, const QList<p2_tokentype_e>& types, p2_token_e dflt) const
+p2_token_e P2Token::at_types(int& pos, const QString& str, const QList<p2_t_type_e>& types, p2_token_e dflt) const
 {
     // Build bit mask for types
-    quint64 typemask = tm_none;
-    foreach(const p2_tokentype_e type, types)
+    p2_t_mask_t typemask = tm_none;
+    foreach(const p2_t_type_e type, types)
         typemask |= TTMASK(type);
     return at_types(pos, str, typemask, dflt);
 }
@@ -1173,7 +1362,7 @@ p2_token_e P2Token::at_types(int& pos, const QString& str, const QList<p2_tokent
  * @param dflt default token value to return if not found
  * @return token value if found, or dflt otherwise
  */
-p2_token_e P2Token::at_types(const QString& str, const QList<p2_tokentype_e>& types, p2_token_e dflt) const
+p2_token_e P2Token::at_types(const QString& str, const QList<p2_t_type_e>& types, p2_token_e dflt) const
 {
     int pos = 0;
     return at_types(pos, str, types, dflt);
@@ -1283,37 +1472,13 @@ p2_cond_e P2Token::modcz_param(const QString& str, p2_cond_e dflt) const
 }
 
 /**
- * @brief Add a token to the m_token_nam hash and its type to the m_token_type bitmask
- * @param tok token value
- * @param type token type value
- * @param str string
- */
-void P2Token::tn_add(p2_token_e tok, p2_tokentype_e type, const QString& str)
-{
-    m_token_name.insert(tok, str);
-    tt_set(tok, type);
-}
-
-/**
- * @brief Add a token to the m_token_nam hash and its types to the typemask
- * @param tok token value
- * @param typemask token type bitmask
- * @param str string
- */
-void P2Token::tn_add(p2_token_e tok, quint64 typemask, const QString& str)
-{
-    m_token_name.insert(tok, str);
-    tt_set(tok, typemask);
-}
-
-/**
  * @brief Set bits of typemask in the token %tok hash entry
  * @param tok token value
  * @param typemask bit mask with type(s) to set
  */
-void P2Token::tt_set(p2_token_e tok, quint64 typemask)
+void P2Token::tt_set(p2_token_e tok, p2_t_mask_t typemask)
 {
-    quint64 mask = m_token_type.value(tok, 0) | typemask;
+    p2_t_mask_t mask = m_token_type.value(tok, 0) | typemask;
     m_token_type.insert(tok, mask);
 }
 
@@ -1322,9 +1487,9 @@ void P2Token::tt_set(p2_token_e tok, quint64 typemask)
  * @param tok token value
  * @param typemask bit mask with type(s) to clear
  */
-void P2Token::tt_clr(p2_token_e tok, quint64 typemask)
+void P2Token::tt_clr(p2_token_e tok, p2_t_mask_t typemask)
 {
-    quint64 mask = m_token_type.value(tok, 0) & ~typemask;
+    p2_t_mask_t mask = m_token_type.value(tok, 0) & ~typemask;
     m_token_type.insert(tok, mask);
 }
 
@@ -1334,38 +1499,19 @@ void P2Token::tt_clr(p2_token_e tok, quint64 typemask)
  * @param typemask bit mask with type(s) to check for
  * @return true if any bit of typemask is set, or false otherwise
  */
-bool P2Token::tt_chk(p2_token_e tok, quint64 typemask) const
+bool P2Token::tt_chk(p2_token_e tok, p2_t_mask_t typemask) const
 {
     return m_token_type.value(tok, 0) & typemask ? true : false;
 }
 
 /**
- * @brief Set bit for token type %type in the token %tok hash entry
+ * @brief Add a token to the m_token_nam hash and its types to the typemask
  * @param tok token value
- * @param type token type value
+ * @param typemask token type bitmask
+ * @param str string
  */
-void P2Token::tt_set(p2_token_e tok, p2_tokentype_e type)
+void P2Token::tn_add(p2_token_e tok, p2_t_mask_t typemask, const QString& str)
 {
-    tt_set(tok, TTMASK(type));
-}
-
-/**
- * @brief Clear bit for token type %type in the token %tok hash entry
- * @param tok token value
- * @param type token type value
- */
-void P2Token::tt_clr(p2_token_e tok, p2_tokentype_e type)
-{
-    tt_clr(tok, TTMASK(type));
-}
-
-/**
- * @brief Check bit for token type %type in the token %tok hash entry
- * @param tok token value
- * @param type token type value
- * @return true if any bit for type is set, or false otherwise
- */
-bool P2Token::tt_chk(p2_token_e tok, p2_tokentype_e type) const
-{
-    return tt_chk(tok, TTMASK(type));
+    m_token_name.insert(tok, str);
+    tt_set(tok, typemask);
 }

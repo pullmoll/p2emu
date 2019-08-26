@@ -50,8 +50,8 @@ public:
     bool setValue(const QString& name, const P2Atom& value);
     P2AsmSymbol value(const QString& name) const;
     P2Atom::Type type(const QString& name) const;
-    int defined_in(const QString& name) const;
-    QStringList defined_in(int lineno) const;
+    int defined_where(const QString& name) const;
+    QStringList references_in(int lineno) const;
     int reference(const QString& name, int idx = 0) const;
     bool addReference(const QString& name, int lineno);
     const QList<int> references(const QString& name) const;

@@ -536,7 +536,7 @@ void MainWindow::setDasmLowercase(bool check)
     ui->action_Dasm_Lowercase->setChecked(check);
     m_dasm->setLowercase(check);
     p2_LONG PC = m_hub->cog(0)->rd_PC();
-    int row = static_cast<int>((PC < PC_LONGS) ? PC : PC / 4);
+    int row = static_cast<int>((PC < HUB_ADDR0) ? PC : PC / 4);
     m_dmodel->invalidate();
     ui->tvDasm->selectRow(row);
 }
@@ -548,8 +548,8 @@ void MainWindow::setupAssembler()
     delete d;
     ui->tvAsm->setModel(m_amodel);
     updateAsmColumnSizes();
-    // QString sourcecode = QStringLiteral(":/ROM_Booter_v33_01j.spin2");
-    QString sourcecode = QStringLiteral(":/P2-qz80-rr032.spin2");
+    QString sourcecode = QStringLiteral(":/ROM_Booter_v33_01j.spin2");
+    // QString sourcecode = QStringLiteral(":/P2-qz80-rr032.spin2");
     openSource(sourcecode);
 }
 

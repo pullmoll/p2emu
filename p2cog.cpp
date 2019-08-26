@@ -147,7 +147,7 @@ void P2Cog::wr_mem(p2_LONG addr, p2_LONG val)
 void P2Cog::wr_PC(p2_LONG addr)
 {
     PC = addr & A20MASK;
-    if (PC >= HUB_ADDR)
+    if (PC >= HUB_ADDR0)
         PC &= ~3u;
 }
 

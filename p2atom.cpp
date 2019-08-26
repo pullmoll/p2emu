@@ -1,4 +1,5 @@
 #include "p2atom.h"
+#include "p2util.h"
 
 P2Atom::P2Atom()
     : m_type(Invalid)
@@ -713,6 +714,28 @@ void P2Atom::binary_or(p2_QUAD mask)
         break;
     case Quad:
         set(to_quad() | mask);
+        break;
+    case String:
+        Q_ASSERT(m_type);
+    }
+}
+
+void P2Atom::binary_rev()
+{
+    switch (m_type) {
+    case Invalid:
+        return;
+    case Byte:
+        set(P2Util::reverse(to_byte()));
+        break;
+    case Word:
+        set(P2Util::reverse(to_word()));
+        break;
+    case Long:
+        set(P2Util::reverse(to_long()));
+        break;
+    case Quad:
+        set(P2Util::reverse(to_quad()));
         break;
     case String:
         Q_ASSERT(m_type);

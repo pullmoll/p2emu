@@ -6,6 +6,8 @@ class P2Util
 public:
     P2Util();
 
+    static bool skip_space(int& pos, const QString& str);
+
     static p2_QUAD msb(p2_QUAD val);
     static p2_LONG msb(p2_LONG val);
     static p2_WORD msb(p2_WORD val);
@@ -25,7 +27,10 @@ public:
     static uint parity(p2_WORD val);
     static uint parity(p2_BYTE val);
     static p2_LONG seuss(p2_LONG val, bool forward = true);
+    static p2_QUAD reverse(p2_QUAD val);
     static p2_LONG reverse(p2_LONG val);
+    static p2_WORD reverse(p2_WORD val);
+    static p2_BYTE reverse(p2_BYTE val);
     static p2_QUAD sqrt(p2_QUAD val, int fract_bits = 64, p2_QUAD* fraction = nullptr);
 };
 

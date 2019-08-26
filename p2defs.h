@@ -80,13 +80,15 @@ typedef union {
 //! Size of the HUB memory in bytes (1MiB)
 constexpr p2_LONG MEM_SIZE = 0x100000;
 
+extern const p2_LONG COG_ADDR0;
 extern const p2_LONG COG_SIZE;
 extern const p2_LONG COG_MASK;
+extern const p2_LONG LUT_ADDR0;
 extern const p2_LONG LUT_SIZE;
 extern const p2_LONG LUT_MASK;
+extern const p2_LONG HUB_ADDR0;
 
 extern const p2_LONG PC_LONGS;
-extern const p2_LONG HUB_ADDR;
 extern const p2_LONG MSB;
 extern const p2_LONG LSB;
 extern const p2_LONG LNIBBLE;
@@ -103,6 +105,7 @@ extern const p2_QUAD LMAX;
 
 static constexpr QChar chr_comma(',');
 static constexpr QChar chr_comment('\'');
+static constexpr QChar chr_semicolon(';');
 static constexpr QChar chr_dquote('"');
 static constexpr QChar chr_skip_digit('_');
 static constexpr QChar str_escape('\\');
@@ -1065,6 +1068,7 @@ extern const QString template_str_description;
 
 typedef enum {
     color_source,
+    color_comment,
     color_comma,
     color_string,
     color_bin_const,

@@ -49,24 +49,26 @@ const QString dec_digits = QStringLiteral("0123456789_");
 //! digits of hexadecimal numbers
 const QString hex_digits = QStringLiteral("0123456789ABCDEF_");
 
+//! Lowest COG memory address
+const p2_LONG COG_ADDR0 = 0;
+
 //! Size of the COG memory in longs
 constexpr p2_LONG COG_SIZE = 0x200;
 
 //! Mask for the COG memory longs
 constexpr p2_LONG COG_MASK = (COG_SIZE-1);
 
+//! Lowest LUT memory address
+const p2_LONG LUT_ADDR0 = (COG_ADDR0+COG_SIZE*4);
+
 //! Size of the LUT memory in longs
-const p2_LONG LUT_SIZE = 0x200;
+constexpr p2_LONG LUT_SIZE = 0x200;
 
 //! Mask for the LUT memory longs
-const p2_LONG LUT_MASK = (LUT_SIZE-1);
-
-
-//! Number of longs where the PC switches from *1 scale to *4 scale
-const p2_LONG PC_LONGS = (COG_SIZE+LUT_SIZE);
+constexpr p2_LONG LUT_MASK = (LUT_SIZE-1);
 
 //! Lowest HUB memory address
-const p2_LONG HUB_ADDR = (PC_LONGS*4);
+const p2_LONG HUB_ADDR0 = (LUT_ADDR0+LUT_SIZE*4);
 
 //! Size of the HUB memory in bytes (1MiB)
 extern const p2_LONG MEM_SIZE;
@@ -212,6 +214,7 @@ QString format_data(const p2_opcode_u& IR, const p2_opcode_format_e fmt)
 }
 
 static const QColor dflt_color_source       (0x00,0x00,0x00);   // black
+static const QColor dflt_color_comment      (0xaf,0xaf,0xaf);   // gray
 static const QColor dflt_color_comma        (0x00,0x00,0x00);   // black
 static const QColor dflt_color_string       (0x00,0xe0,0xff);   // bright cyan
 static const QColor dflt_color_const        (0x00,0x00,0xff);   // blue
@@ -229,6 +232,7 @@ QColor p2_palette(p2_palette_e pal)
 {
     if (palette.isEmpty()) {
         palette.insert(color_source, dflt_color_source);
+        palette.insert(color_comment, dflt_color_comment);
         palette.insert(color_comma, dflt_color_comma);
         palette.insert(color_string, dflt_color_string);
         palette.insert(color_bin_const, dflt_color_const);

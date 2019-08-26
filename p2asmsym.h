@@ -52,7 +52,7 @@ public:
     bool setValue(const P2Atom& value);
     P2Atom::Type type() const;
     const QString type_name() const;
-    int defined_in() const;
+    int defined_where() const;
     int reference(int idx = 0) const;
     void addReference(int lineno);
     const QList<int> references() const;

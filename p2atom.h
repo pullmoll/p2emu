@@ -59,6 +59,7 @@ public:
     void binary_and(p2_QUAD mask);
     void binary_xor(p2_QUAD mask);
     void binary_or(p2_QUAD mask);
+    void binary_rev();
 
     p2_BYTE to_byte(bool *ok = nullptr) const;
     p2_WORD to_word(bool *ok = nullptr) const;
