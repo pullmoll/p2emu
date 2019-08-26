@@ -35,7 +35,6 @@
 #include <QDir>
 #include <QFile>
 #include <QFileDialog>
-#include <QUrl>
 #include <QStandardPaths>
 #include <QTextStream>
 #include <QTimer>
@@ -46,6 +45,7 @@
 #include "ui_mainwindow.h"
 #include "about.h"
 #include "gotoaddress.h"
+#include "gotoline.h"
 #include "p2asmlisting.h"
 #include "p2hub.h"
 #include "p2cog.h"
@@ -63,6 +63,7 @@ static const QLatin1String grp_disassembler("disassembler");
 static const QLatin1String key_opcodes("opcodes");
 static const QLatin1String key_lowercase("lowercase");
 static const QLatin1String key_current_row("current_row");
+static const QLatin1String key_current_column("current_column");
 static const QLatin1String key_column_address("hide_address");
 static const QLatin1String key_column_origin("hide_origin");
 static const QLatin1String key_column_tokens("hide_tokens");
@@ -80,6 +81,9 @@ static const QLatin1String key_filename("filename");
 static const QLatin1String key_history("directory");
 
 static const QLatin1String key_status("status");
+
+static const QLatin1String key_tv_asm("tvAsm");
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -117,12 +121,8 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::saveSettings()
+void MainWindow::saveSettingsAsm(QSettings& s)
 {
-    QSettings s;
-    s.setValue(key_windowGeometry, saveGeometry());
-    s.setValue(key_windowState, saveState());
-
     s.beginGroup(grp_assembler);
     s.setValue(key_opcodes, m_amodel->opcode_format());
     s.setValue(key_column_origin, ui->tvAsm->isColumnHidden(P2AsmModel::c_Origin));
@@ -131,9 +131,15 @@ void MainWindow::saveSettings()
     s.setValue(key_column_symbols, ui->tvAsm->isColumnHidden(P2AsmModel::c_Symbols));
     s.setValue(key_column_errors, ui->tvAsm->isColumnHidden(P2AsmModel::c_Errors));
     s.setValue(key_column_source, ui->tvAsm->isColumnHidden(P2AsmModel::c_Source));
+    QModelIndex index = ui->tvAsm->currentIndex();
+    s.setValue(key_current_row, index.row());
+    s.setValue(key_current_column, index.column());
     s.setValue(key_font_size, ui->tvAsm->font().pointSizeF());
     s.endGroup();
+}
 
+void MainWindow::saveSettingsDasm(QSettings& s)
+{
     s.beginGroup(grp_disassembler);
     s.setValue(key_opcodes, m_dmodel->opcode_format());
     s.setValue(key_lowercase, ui->action_Dasm_Lowercase->isChecked());
@@ -141,21 +147,30 @@ void MainWindow::saveSettings()
     s.setValue(key_column_opcode, ui->tvDasm->isColumnHidden(P2DasmModel::c_Opcode));
     s.setValue(key_column_instruction, ui->tvDasm->isColumnHidden(P2DasmModel::c_Instruction));
     s.setValue(key_column_description, ui->tvDasm->isColumnHidden(P2DasmModel::c_Description));
-    s.setValue(key_current_row, ui->tvDasm->currentIndex().row());
+    QModelIndex index = ui->tvDasm->currentIndex();
+    s.setValue(key_current_row, index.row());
+    s.setValue(key_current_column, index.column());
     s.setValue(key_font_size, ui->tvDasm->font().pointSizeF());
     s.endGroup();
-
 }
 
-void MainWindow::restoreSettings()
+void MainWindow::saveSettings()
+
 {
     QSettings s;
-    restoreGeometry(s.value(key_windowGeometry).toByteArray());
-    restoreState(s.value(key_windowState).toByteArray());
+    s.setValue(key_windowGeometry, saveGeometry());
+    s.setValue(key_windowState, saveState());
+    saveSettingsAsm(s);
+    saveSettingsDasm(s);
 
+}
+void MainWindow::restoreSettingsAsm(QSettings& s)
+{
     s.beginGroup(grp_assembler);
     setAsmOpcodes(s.value(key_opcodes, fmt_bin).toInt());
-    ui->tvAsm->selectRow(s.value(key_current_row).toInt());
+    int row = s.value(key_current_row).toInt();
+    int column = s.value(key_current_row).toInt();
+    ui->tvAsm->setCurrentIndex(m_amodel->index(row, column));
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Origin, s.value(key_column_origin, false).toBool());
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Opcode, s.value(key_column_opcode, false).toBool());
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Tokens, s.value(key_column_tokens, false).toBool());
@@ -165,6 +180,10 @@ void MainWindow::restoreSettings()
     setAsmFontSize(s.value(key_font_size, 8.0).toReal());
     s.endGroup();
 
+}
+
+void MainWindow::restoreSettingsDasm(QSettings& s)
+{
     s.beginGroup(grp_disassembler);
     setDasmOpcodes(s.value(key_opcodes, fmt_bin).toInt());
     setDasmLowercase(s.value(key_lowercase).toBool());
@@ -175,6 +194,15 @@ void MainWindow::restoreSettings()
     ui->tvDasm->setColumnHidden(P2DasmModel::c_Description, s.value(key_column_description, false).toBool());
     setDasmFontSize(s.value(key_font_size, 8.0).toReal());
     s.endGroup();
+}
+
+void MainWindow::restoreSettings()
+{
+    QSettings s;
+    restoreGeometry(s.value(key_windowGeometry).toByteArray());
+    restoreState(s.value(key_windowState).toByteArray());
+    restoreSettingsAsm(s);
+    restoreSettingsDasm(s);
 }
 
 void MainWindow::about()
@@ -514,8 +542,8 @@ void MainWindow::openSource(const QString& sourcefile)
 void MainWindow::assemble()
 {
     QStringList source = m_asm->source();
+    ui->tbErrors->setVisible(false);
     ui->tbErrors->clear();
-    ui->tbErrors->hide();
 
     qint64 t0 = QDateTime::currentMSecsSinceEpoch();
     if (m_asm->assemble(source)) {
@@ -538,12 +566,38 @@ void MainWindow::assemble()
 
 void MainWindow::print_error(int pass, int line, const QString& message)
 {
-    QString str_pass = pass ? QString("Pass: #%1 ").arg(pass) : QString();
-    QString str_line = line ? QString("Line: #%1 ").arg(line) : QString();
+    QString str_pass = pass ? QString("Pass #%1; ")
+                              .arg(pass)
+                            : QString();
+    QString str_line = line ? QString("<a href=\"%1#%2\">Line #%2</a>; ")
+                              .arg(key_tv_asm)
+                              .arg(line)
+                            : QString();
     QString error = str_pass + str_line + message;
     ui->tbErrors->append(error);
-    ui->tbErrors->adjustSize();
-    ui->tbErrors->show();
+    ui->tbErrors->setVisible(true);
+}
+
+void MainWindow::goto_line(const QUrl& url)
+{
+    QString path = url.path();
+    QString frag = url.fragment();
+    qDebug("%s: %s %s", __func__, qPrintable(path), qPrintable(frag));
+    bool ok;
+    int line = frag.toInt(&ok);
+    if (path == key_tv_asm) {
+        ui->tvAsm->setCurrentIndex(m_amodel->index(line - 1, P2AsmModel::c_Source));
+    }
+}
+
+void MainWindow::goto_line_number()
+{
+    GotoLine dlg(this);
+    if (QDialog::Accepted != dlg.exec())
+        return;
+    QUrl url(key_tv_asm);
+    url.setFragment(QString::number(dlg.number()));
+    goto_line(url);
 }
 
 void MainWindow::setDasmLowercase(bool check)
@@ -560,11 +614,22 @@ void MainWindow::setupAssembler()
 {
     connect(m_asm, SIGNAL(Error(int,int,QString)), SLOT(print_error(int,int,QString)));
     ui->tbErrors->hide();
+
+    // prevent opening of (external) links
+    ui->tbErrors->setOpenLinks(false);
+    ui->tbErrors->setOpenExternalLinks(false);
+    // but connect to the anchorClicked(QUrl) signal
+    connect(ui->tbErrors, SIGNAL(anchorClicked(QUrl)), SLOT(goto_line(QUrl)), Qt::UniqueConnection);
+
+    ui->tvAsm->setFocusPolicy(Qt::StrongFocus);
+    ui->tvAsm->setEditTriggers(QAbstractItemView::AnyKeyPressed);
     QAbstractItemDelegate* d = ui->tvAsm->itemDelegateForColumn(P2AsmModel::c_Source);
     ui->tvAsm->setItemDelegateForColumn(P2AsmModel::c_Source, new P2AsmSourceDelegate);
     delete d;
+
     ui->tvAsm->setModel(m_amodel);
     updateAsmColumnSizes();
+
     QString sourcecode = QStringLiteral(":/ROM_Booter_v33_01j.spin2");
     // QString sourcecode = QStringLiteral(":/P2-qz80-rr032.spin2");
     openSource(sourcecode);
@@ -579,6 +644,7 @@ void MainWindow::setupDisassembler()
 void MainWindow::setupMenu()
 {
     connect(ui->action_Open, SIGNAL(triggered()), SLOT(openSource()));
+    connect(ui->action_Go_to_line, SIGNAL(triggered()), SLOT(goto_line_number()));
 }
 
 void MainWindow::setupTabWidget()

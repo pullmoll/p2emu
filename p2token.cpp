@@ -36,7 +36,7 @@
 #include "p2token.h"
 #include "p2util.h"
 
-#define DBG_REGEX   0
+#define DBG_REGEX   1
 #define DBG_TOKEN   1
 
 #if DBG_REGEX
@@ -62,7 +62,7 @@ static const QString re_comment = QStringLiteral("((\\{[^\\}]*\\})|('.*)){1}");
  * leading "."
  * then any number of "A"…"Z", "0"…"9", or "_"
  */
-static const QString re_locsym = QStringLiteral("[.][A-Z_]+[A-Z0-9_]*");
+static const QString re_locsym = QStringLiteral("([.][A-Z_]+[A-Z0-9_]*){1}");
 
 /**
  * @brief Regular expression for alphanumeric
@@ -70,7 +70,7 @@ static const QString re_locsym = QStringLiteral("[.][A-Z_]+[A-Z0-9_]*");
  * leading "A"…"Z", or "_"
  * then any number of "A"…"Z", "0"…"9", or "_"
  */
-static const QString re_symbol = QStringLiteral("[A-Z_]+[A-Z0-9_]*");
+static const QString re_symbol = QStringLiteral("([A-Z_]+[A-Z0-9_]*){1}");
 
 /**
  * @brief Regular expression for binary number
@@ -78,7 +78,7 @@ static const QString re_symbol = QStringLiteral("[A-Z_]+[A-Z0-9_]*");
  * leading "%"
  * then one or more of "0", "1", or "_"
  */
-static const QString re_bin_const = QStringLiteral("%[_]*[01_]+");
+static const QString re_bin_const = QStringLiteral("(%[_]*[01_]+){1}");
 
 /**
  * @brief Regular expression for byte number
@@ -86,7 +86,7 @@ static const QString re_bin_const = QStringLiteral("%[_]*[01_]+");
  * leading "%%"
  * then one or more of "0"…"3", or "_"
  */
-static const QString re_byt_const = QStringLiteral("%%[_]*[0-3_]+");
+static const QString re_byt_const = QStringLiteral("(%%[_]*[0-3_]+){1}");
 
 /**
  * @brief Regular expression for octal number
@@ -94,7 +94,7 @@ static const QString re_byt_const = QStringLiteral("%%[_]*[0-3_]+");
  * leading "0"
  * then one or more of "0"…"7", or "_"
  */
-static const QString re_oct_const = QStringLiteral("[0][_]*[0-7_]*");
+static const QString re_oct_const = QStringLiteral("([0][_]*[0-7_]*){1}");
 
 /**
  * @brief Regular expression for a decimal number
@@ -110,7 +110,7 @@ static const QString re_dec_const = QStringLiteral("[1-9][_]*[0-9_]*");
  * leading "$"
  * then any number of "0"…"9", "A"…"F", or "_"
  */
-static const QString re_hex_const = QStringLiteral("\\$[_]*[0-9A-F_]+");
+static const QString re_hex_const = QStringLiteral("(\\$[_]*[0-9A-F_]+){1}");
 
 /**
  * @brief Regular expression for a string enclosed in doublequotes, possibly containing escaped doublequotes
@@ -118,7 +118,7 @@ static const QString re_hex_const = QStringLiteral("\\$[_]*[0-9A-F_]+");
  * then any number of escaped doublequotes (\") or other characters (.)
  * trailing '"'
  */
-static const QString re_str_const = QStringLiteral("\"([^\\\"]|\\\\.)*\"");
+static const QString re_str_const = QStringLiteral("(\"([^\\\"]|\\\\.)*\"){1}");
 
 //! Global static instance of the P2Token class
 P2Token Token;
@@ -223,21 +223,21 @@ P2Token::P2Token()
     , m_lookup_modcz()
     , m_ttype_name()
 {
-    tn_add(t_invalid,          tm_lexer, QStringLiteral("«INVALID»"));
-    tn_add(t_unknown,          tm_lexer, QStringLiteral("«unknown»"));
-    tn_add(t_comment,          tm_lexer | tm_comment, QStringLiteral("«comment»"));
+    tn_add(t_invalid,          tm_lexer, QStringLiteral("·INVALID·"));
+    tn_add(t_unknown,          tm_lexer, QStringLiteral("·unknown·"));
+    tn_add(t_comment,          tm_lexer | tm_comment, QStringLiteral("·comment·"));
     tn_add(t_comment_apo,      tm_lexer | tm_comment, QStringLiteral("'"));
     tn_add(t_comment_lcurly,   tm_lexer | tm_comment, QStringLiteral("{"));
     tn_add(t_comment_rcurly,   tm_lexer | tm_comment, QStringLiteral("}"));
     tn_add(t_comma,            tm_delimiter, QStringLiteral(","));
-    tn_add(t_string,           tm_lexer, QStringLiteral("«str_const»"));
-    tn_add(t_bin_const,        tm_lexer, QStringLiteral("«bin_const»"));
-    tn_add(t_byt_const,        tm_lexer, QStringLiteral("«byt_const»"));
-    tn_add(t_oct_const,        tm_lexer, QStringLiteral("«oct_const»"));
-    tn_add(t_dec_const,        tm_lexer, QStringLiteral("«dec_const»"));
-    tn_add(t_hex_const,        tm_lexer, QStringLiteral("«hex_const»"));
-    tn_add(t_locsym,           tm_lexer, QStringLiteral("«locsym»"));
-    tn_add(t_symbol,           tm_lexer, QStringLiteral("«symbol»"));
+    tn_add(t_string,           tm_lexer, QStringLiteral("·str_const·"));
+    tn_add(t_bin_const,        tm_lexer, QStringLiteral("·bin_const·"));
+    tn_add(t_byt_const,        tm_lexer, QStringLiteral("·byt_const·"));
+    tn_add(t_oct_const,        tm_lexer, QStringLiteral("·oct_const·"));
+    tn_add(t_dec_const,        tm_lexer, QStringLiteral("·dec_const·"));
+    tn_add(t_hex_const,        tm_lexer, QStringLiteral("·hex_const·"));
+    tn_add(t_locsym,           tm_lexer, QStringLiteral("·locsym·"));
+    tn_add(t_symbol,           tm_lexer, QStringLiteral("·symbol·"));
 
     tn_add(t_ABS,              tm_inst, QStringLiteral("ABS"));
     tn_add(t_ADD,              tm_inst, QStringLiteral("ADD"));
@@ -907,16 +907,16 @@ QString P2Token::string(p2_token_e tok, bool lowercase) const
  * @param words vector of P2AsmWord to append to
  * @return true on success, or false on error
  */
-P2Words P2Token::tokenize(const QString& str, int& in_curly) const
+P2Words P2Token::tokenize(const QString& str, const int lineno, int& in_curly) const
 {
     static QRegExp rx;
     static QString re;
     P2Words words;
     p2_token_e tok;
-    int curly = 0;
     int pos = 0, lastpos = -1;
 
-    DEBUG_REGEX("%s: ***** tokenize *****", __func__);
+    DEBUG_REGEX("%s: ····························· tokenize line ·································", __func__);
+    DEBUG_REGEX("%-4d: %s%s%s", lineno, qPrintable(chr_ldangle), qPrintable(str), qPrintable(chr_rdangle));
 
 
     if (rx.isEmpty()) {
@@ -929,9 +929,35 @@ P2Words P2Token::tokenize(const QString& str, int& in_curly) const
         list += re_comment;                             // Comments in curly braces
         list += QStringLiteral("[^,'\"\\s]+");          // Any word without , ' " Space
         static const char *Delimiters[] = {
-            "@@@", "##", "#", ",", "[", "]", "++", "+", "--", "-", "<<",
-            "<", ">>", "><", ">|", ">", "*", "/", "\\", "&", "|<", "|", "(", ")",
-             "@", "==", "=", ";", "{", "}",
+            "@@@",      // relative HUB
+            "##",       // immediate 2
+            "#",        // immediate
+            ",",        // comma
+            "[",        // left bracket (index expression start)
+            "]",        // right bracket (index expression end)
+            "++",       // increment
+            "+",        // add / unary plus
+            "--",       // decrement
+            "-",        // subtract / unary minus
+            "<<",       // shift left
+            "<",        // less than
+            ">>",       // shift right
+            "><",       // reverse
+            ">|",       // unsigned greater than
+            ">",        // greater than
+            "*",        // multiply
+            "/",        // divide
+            "\\",       // modulo
+            "&",        // binary AND
+            "|<",       // unsigned less than
+            "|",        // binary OR
+            "(",        // left parenthesis (sub expression start)
+            ")",        // right parenthesis (sub expression end)
+            "@",        // relative
+            "==",       // equals
+            "=",        // assignment
+            "{",        // left curly brace (comment start)
+            "}",        // right curly brace (comment end)
             nullptr
         };
         for (int i = 0; Delimiters[i]; i++)
@@ -943,77 +969,107 @@ P2Words P2Token::tokenize(const QString& str, int& in_curly) const
         Q_ASSERT(rx.isValid());
     }
 
-    if (in_curly > 0) {
-
-        curly += str.count(chr_lcurly);
-        curly -= str.count(chr_rcurly);
-
-        if (in_curly > 0 || curly > 0) {
-            int tlen = str.length() - pos;
-            tok = t_comment;
-            words.append(P2Word(tok, str, pos, pos + tlen - 1));
-            pos += tlen;
-            DEBUG_REGEX("%s: match {%d} @%-3d #%-3d %s", __func__, curly, pos, tlen, qPrintable(str));
-        }
-
-        in_curly += curly;
-        return words;
-    }
-
     while ((pos = rx.indexIn(str, pos)) != -1) {
-        QString word = rx.cap(1);
+        QString word = rx.cap(1).trimmed();
         int len = rx.matchedLength();
 
-        word = word.trimmed();
         if (word.isEmpty()) {
             if (len > 0) {
                 pos += len;
                 continue;
             }
-            DEBUG_REGEX("%s: match {%d} @%-3d #%-3d %s", __func__, curly, pos, len, qPrintable(word));
+            DEBUG_REGEX("  match %d @%-3d #%-3d", in_curly, pos, len);
             break;
         }
 
-        if (!word.startsWith(chr_dquote)) {
+        if (!word.startsWith(chr_dquote) && !word.startsWith(chr_comment) &&
+                (word.contains(chr_lcurly) || word.contains(chr_rcurly))) {
+            int curly = 0;
             curly += word.count(chr_lcurly);
             curly -= word.count(chr_rcurly);
-        }
-
-        if (in_curly > 0 || curly > 0) {
-            len = str.length() - pos;
-            tok = t_comment;
-            words.append(P2Word(tok, word, pos, pos + len - 1));
-            pos += len;
-            DEBUG_REGEX("%s: match {%d} @%-3d #%-3d %s", __func__, curly, pos, len, qPrintable(word));
             in_curly += curly;
-            return words;
+
+            if (in_curly > 0) {
+                const int len = str.length() - pos;
+                tok = curly >= 0 ? t_comment_lcurly : t_comment_rcurly;
+                words.append(P2Word(tok, str, lineno, pos, pos + len - 1));
+                pos += len;
+                DEBUG_REGEX("  match %d @%-3d #%-3d %s%s%s",
+                            in_curly, pos, len,
+                            qPrintable(chr_ldangle), qPrintable(word), qPrintable(chr_rdangle));
+                goto leave;
+            }
         }
 
-        DEBUG_REGEX("%s: match {%d} @%-3d #%-3d '%s'", __func__, curly, pos, len, qPrintable(rx.cap(1)));
+        if (word.startsWith(chr_comment)) {
+            const int len = str.length();
+            tok = t_comment_apo;
+            words.append(P2Word(tok, word, lineno, pos, pos + len - 1));
+            DEBUG_REGEX("  comnt %d @%-3d #%-3d %s%s%s",
+                        in_curly, pos, len,
+                        qPrintable(chr_ldangle), qPrintable(word), qPrintable(chr_rdangle));
+            goto leave;
+        }
+
+        if (in_curly > 0) {
+            len = str.length() - pos;
+            word = str.mid(pos, len);
+            tok = t_comment_apo;
+            int curly = 0;
+            curly += word.count(chr_lcurly);
+            curly -= word.count(chr_rcurly);
+            in_curly += curly;
+
+            if (in_curly > 0 || curly != 0) {
+                words.append(P2Word(tok, word, lineno, pos, pos + len - 1));
+                DEBUG_REGEX("%s: curly %d @%-3d #%-3d %s%s%s", __func__,
+                            in_curly, pos, len,
+                            qPrintable(chr_ldangle), qPrintable(word), qPrintable(chr_rdangle));
+                return words;
+            }
+        }
+
+        DEBUG_REGEX("%s: match %d @%-3d #%-3d %s%s%s", __func__,
+                    in_curly, pos, len,
+                    qPrintable(chr_ldangle), qPrintable(word), qPrintable(chr_rdangle));
+
+
         int tlen = 0;
         tok = token(word, true, &tlen);
-        words.append(P2Word(tok, word, pos, pos + tlen - 1));
+        words.append(P2Word(tok, word, lineno, pos, pos + tlen - 1));
         pos += tlen;
+
         if (pos == lastpos) {
-            DEBUG_REGEX("%s: break {%d} @%-3d #%-3d %s", __func__, curly, pos, len, qPrintable(word));
+            DEBUG_REGEX("\t%s", "******break******");
             break;
         } else {
             lastpos = pos;
         }
     }
 
-    for (int i = 0; i < words.count(); i++) {
+    if (words.isEmpty()) {
+        const int pos = 0;
+        const int len = str.length();
+        DEBUG_REGEX("%s: empty %d @%-3d #%-3d %s%s%s", __func__,
+                    in_curly, pos, len,
+                    qPrintable(chr_ldangle), qPrintable(str), qPrintable(chr_rdangle));
+    } else for (int i = 0; i < words.count(); i++) {
         const P2Word& word = words[i];
         tok = word.tok();
         if (t_unknown == tok)
             words[i].set_token(token(word.str()));
-        DEBUG_TOKEN("%s: word[%-3d] {%-20s} @%-3d #%-3d %s", __func__,
-                        i, qPrintable(string(tok)),
-                        word.pos(), word.len(), qPrintable(word.str()));
+        DEBUG_TOKEN("  word[%-3d] %s%s%s%*s @%-3d #%-3d",
+                    i,
+                    qPrintable(chr_ldangle),
+                    qPrintable(string(tok)),
+                    qPrintable(chr_rdangle),
+                    20 - string(tok).length(), "",
+                    word.pos(), word.len());
         pos = word.end() + 1;
     }
 
-    in_curly += curly;
+leave:
+    DEBUG_REGEX("%s: ·············································································", __func__);
     return words;
 }
 
@@ -1049,7 +1105,7 @@ p2_token_e P2Token::token(const QString& str, bool chop, int* plen) const
 
         QRegExp rx_comment(re_comment, Qt::CaseInsensitive);
         if (rx_comment.exactMatch(ustr)) {
-            tok = t_comment;
+            tok = t_comment_lcurly;
             break;
         }
 

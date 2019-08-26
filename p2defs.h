@@ -115,6 +115,10 @@ static constexpr QChar chr_lcurly('{');
 static constexpr QChar chr_rcurly('}');
 static constexpr QChar chr_number_sign('#');
 static constexpr QChar chr_ampersand('@');
+static constexpr QChar chr_pilcrow(L'¶');
+static constexpr QChar chr_centerdot(L'·');
+static constexpr QChar chr_ldangle(L'«');
+static constexpr QChar chr_rdangle(L'»');
 
 extern const QString bin_digits;
 extern const QString byt_digits;
@@ -1086,7 +1090,7 @@ typedef enum {
     color_wcz_suffix,
 }   p2_palette_e;
 
-extern QColor p2_palette(p2_palette_e pal);
+extern QColor p2_palette(p2_palette_e pal, bool highlight = false);
 
 extern QString format_opcode_bin(const p2_opcode_u& IR);
 extern QString format_opcode_byt(const p2_opcode_u& IR);

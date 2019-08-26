@@ -702,15 +702,16 @@ typedef QVector<p2_token_e> p2_token_v;
 class P2Word
 {
 public:
-    explicit P2Word(const QString& str = QString(), int pos = 0, int end = 0)
-        : m_str(str), m_tok(t_invalid), m_pos(pos), m_len(end)
+    explicit P2Word(const QString& str = QString(), int line = 0, int pos = 0, int len = 0)
+        : m_str(str), m_tok(t_invalid), m_line(line), m_pos(pos), m_len(len)
     {}
-    explicit P2Word(p2_token_e tok, const QString& str, int pos, int end)
-        : m_str(str), m_tok(tok), m_pos(pos), m_len(end + 1 - pos)
+    explicit P2Word(p2_token_e tok, const QString& str, int line, int pos, int len)
+        : m_str(str), m_tok(tok), m_line(line), m_pos(pos), m_len(len + 1 - pos)
     {}
 
-    p2_token_e tok() const { return m_tok; }
+    constexpr p2_token_e tok() const { return m_tok; }
     const QString& str() const { return m_str; }
+    int line() const { return m_line; }
     int pos() const { return m_pos; }
     int len() const { return m_len; }
     int end() const { return m_pos + m_len - 1; }
@@ -719,6 +720,7 @@ public:
 private:
     QString m_str;
     p2_token_e m_tok;
+    int m_line;
     int m_pos;
     int m_len;
 };
@@ -731,7 +733,7 @@ class P2Token
 public:
     P2Token();
     QString string(p2_token_e tok, bool lowercase = false) const;
-    P2Words tokenize(const QString& str, int& in_curly) const;
+    P2Words tokenize(const QString& str, const int lineno, int& in_curly) const;
     p2_token_e token(const QString& str, bool chop = false, int* plen = nullptr) const;
 
     bool is_type(p2_token_e tok, p2_t_mask_t typemask) const;

@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT += core gui widgets
+QT += core gui widgets svg
 TARGET = p2
 TEMPLATE = app
 VER_MAJ = 0
@@ -25,6 +25,7 @@ QMAKE_CXXFLAGS += -Wno-signed-enum-bitfield -DVER_MAJ=$$VER_MAJ -DVER_MIN=$$VER_
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+		dialogs/gotoline.cpp \
 		main.cpp \
 		mainwindow.cpp \
 		p2asm.cpp \
@@ -47,6 +48,7 @@ SOURCES += \
 		util/p2util.cpp
 
 HEADERS += \
+		dialogs/gotoline.h \
 		mainwindow.h \
 		p2asm.h \
 		p2asmsym.h \
@@ -68,6 +70,7 @@ HEADERS += \
 		util/p2util.h
 
 FORMS += \
+		dialogs/gotoline.ui \
 		mainwindow.ui \
 		p2cogview.ui \
 		p2hubview.ui \

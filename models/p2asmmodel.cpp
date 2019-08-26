@@ -45,13 +45,12 @@ P2AsmModel::P2AsmModel(P2Asm* p2asm, QObject *parent)
     , m_asm(p2asm)
     , m_format(fmt_bin)
     , m_font()
+    , m_error_pixmap()
     , m_error()
     , m_header_alignment()
     , m_text_alignment()
 {
-    QImage image(":/icons/error.png");
-    QPixmap pixmap = QPixmap::fromImage(image.scaled(16,16,Qt::KeepAspectRatio,Qt::SmoothTransformation));
-    m_error = QIcon(pixmap);
+    m_error_pixmap = QPixmap(":/icons/error.svg");
 
     // Header section names
     m_header.insert(c_Origin,       tr("Origin"));
@@ -220,7 +219,7 @@ QString P2AsmModel::tokenToolTip(const P2Words& words, const QString& bgd) const
     // heading
     html += html_tr_init();
     html += html_th(tr("Source code"));
-    html += html_th(tr("Position/Length"));
+    html += html_th(tr("Position, Length"));
     html += html_th(tr("Token"));
     html += html_th(tr("Type"));
     html += html_tr_exit();
@@ -229,7 +228,7 @@ QString P2AsmModel::tokenToolTip(const P2Words& words, const QString& bgd) const
         const P2Word& word = words[i];
         html += html_tr_init();
         html += html_td(word.str());
-        html += html_td(QString("%1/%2")
+        html += html_td(QString("@%1 +%2")
                         .arg(word.pos())
                         .arg(word.len()));
         html += html_td(QString("%1: %2")
@@ -303,6 +302,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     const P2AsmSymTbl& symbols = m_asm->symbols();
     const QStringList& symrefs = symbols.references_in(lineno);
     const QStringList& errors = m_asm->errors(lineno);
+    const bool has_errors = !errors.isEmpty();
 
     const P2Words& words = m_asm->words(lineno);
     const QStringList& references_in = symbols.references_in(lineno);
@@ -334,8 +334,8 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
             break;
 
         case c_Errors:  // Error messages
-            if (!errors.isEmpty())
-                result = template_str_errors;
+            if (has_errors)
+                result = errors.join(QChar::LineFeed);
             break;
 
         case c_Symbols:
@@ -363,7 +363,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     case Qt::DecorationRole:
         switch (column) {
         case c_Errors:
-            if (!m_asm->errors(lineno).isEmpty())
+            if (has_errors)
                 result = m_error;
             break;
         default:
@@ -394,7 +394,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
             break;
 
         case c_Errors:
-            if (!errors.isEmpty())
+            if (has_errors)
                 return errors;
             break;
 
@@ -426,7 +426,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
             break;
 
         case c_Errors:
-            if (errors.isEmpty())
+            if (!has_errors)
                 break;
             result = errorsToolTip(errors, style_background_error);
             break;
@@ -545,12 +545,14 @@ QSize P2AsmModel::sizeHint(P2AsmModel::column_e column, bool header) const
 #if OVERRIDE_FLAGS
 Qt::ItemFlags P2AsmModel::flags(const QModelIndex &index) const
 {
+    Qt::ItemFlags flags = Qt::NoItemFlags;
     if (!index.isValid())
-        return Qt::NoItemFlags;
+        return flags;
+
     column_e column = static_cast<column_e>(index.column());
-    Qt::ItemFlags flags = Qt::ItemIsEnabled;
     if (c_Source == column)
-        flags |= Qt::ItemIsEditable;
+        flags |= Qt::ItemIsEnabled | Qt::ItemIsEditable;
+
     return flags;
 }
 #endif
@@ -573,4 +575,7 @@ void P2AsmModel::setFont(const QFont& font)
 {
     m_font = font;
     invalidate();
+    QFontMetrics metrics(m_font);
+    QSize size = metrics.boundingRect(QChar('X')).size();
+    m_error = QIcon(m_error_pixmap.scaled(size, Qt::KeepAspectRatio, Qt::SmoothTransformation));
 }

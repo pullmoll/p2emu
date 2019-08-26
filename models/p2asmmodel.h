@@ -79,6 +79,7 @@ private:
     P2Asm* m_asm;
     p2_opcode_format_e m_format;
     QFont m_font;
+    QPixmap m_error_pixmap;
     QIcon m_error;
     QHash<column_e,QString> m_header;
     QHash<column_e,QRgb> m_background;

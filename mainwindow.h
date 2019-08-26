@@ -33,10 +33,8 @@
  ****************************************************************************/
 #pragma once
 #include <QMainWindow>
-#include <QLabel>
-#include <QLineEdit>
-#include <QPushButton>
-#include <QCheckBox>
+#include <QSettings>
+#include <QUrl>
 #include "p2token.h"
 
 namespace Ui {
@@ -66,6 +64,12 @@ public:
 
 private slots:
     void saveSettings();
+
+    void saveSettingsAsm(QSettings& s);
+    void saveSettingsDasm(QSettings& s);
+
+    void restoreSettingsAsm(QSettings& s);
+    void restoreSettingsDasm(QSettings& s);
     void restoreSettings();
     void about();
     void aboutQt5();
@@ -104,6 +108,8 @@ private slots:
     void assemble();
 
     void print_error(int pass, int lineno, const QString& message);
+    void goto_line(const QUrl& url);
+    void goto_line_number();
 private:
     Ui::MainWindow *ui;
     QVector<P2CogView*> m_vcog;

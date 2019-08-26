@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>706</width>
-    <height>482</height>
+    <height>506</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -65,7 +65,7 @@
             <enum>Qt::ScrollBarAlwaysOn</enum>
            </property>
            <property name="editTriggers">
-            <set>QAbstractItemView::NoEditTriggers</set>
+            <set>QAbstractItemView::AnyKeyPressed</set>
            </property>
            <property name="tabKeyNavigation">
             <bool>false</bool>
@@ -77,10 +77,10 @@
             <bool>false</bool>
            </property>
            <property name="selectionMode">
-            <enum>QAbstractItemView::SingleSelection</enum>
+            <enum>QAbstractItemView::ExtendedSelection</enum>
            </property>
            <property name="selectionBehavior">
-            <enum>QAbstractItemView::SelectRows</enum>
+            <enum>QAbstractItemView::SelectItems</enum>
            </property>
            <property name="textElideMode">
             <enum>Qt::ElideNone</enum>
@@ -95,7 +95,11 @@
             <bool>true</bool>
            </attribute>
           </widget>
-          <widget class="QTextBrowser" name="tbErrors"/>
+          <widget class="QTextBrowser" name="tbErrors">
+           <property name="openLinks">
+            <bool>false</bool>
+           </property>
+          </widget>
          </widget>
         </item>
        </layout>
@@ -180,7 +184,7 @@
              <x>0</x>
              <y>0</y>
              <width>662</width>
-             <height>359</height>
+             <height>383</height>
             </rect>
            </property>
            <layout class="QGridLayout" name="gridLayout">
@@ -272,6 +276,7 @@
     <addaction name="action_Go_to_COG"/>
     <addaction name="action_Go_to_LUT"/>
     <addaction name="action_Go_to_ROM"/>
+    <addaction name="action_Go_to_line"/>
    </widget>
    <widget class="QMenu" name="menu_View">
     <property name="title">
@@ -373,7 +378,7 @@
     <string>Go to &amp;COG</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+C</string>
+    <string>Shift+C</string>
    </property>
   </action>
   <action name="action_Go_to_LUT">
@@ -385,7 +390,7 @@
     <string>Go to &amp;LUT</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+L</string>
+    <string>Shift+L</string>
    </property>
   </action>
   <action name="action_Go_to_ROM">
@@ -397,7 +402,7 @@
     <string>Go to &amp;ROM</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+F</string>
+    <string>Shift+R</string>
    </property>
   </action>
   <action name="action_SingleStep">
@@ -572,6 +577,14 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+-</string>
+   </property>
+  </action>
+  <action name="action_Go_to_line">
+   <property name="text">
+    <string>Go to line…</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+L</string>
    </property>
   </action>
  </widget>

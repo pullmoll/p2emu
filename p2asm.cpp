@@ -260,7 +260,7 @@ p2_cond_e P2Asm::parse_modcz(p2_token_e cond)
  */
 bool P2Asm::tokenize(const QString& line)
 {
-    const P2Words words = Token.tokenize(line, m_in_curly);
+    const P2Words words = Token.tokenize(line, m_lineno, m_in_curly);
     m_words = words;
     m_cnt = m_words.count();
     m_idx = 0;
@@ -287,12 +287,6 @@ bool P2Asm::assemble_pass()
         m_data.clear();
         m_advance = 0;
         m_emit_IR = false;
-
-        // Skip over empty lines
-        if (m_line.isEmpty()) {
-            results();
-            continue;
-        }
 
         // Split line into words and tokenize it
         tokenize(m_line);
@@ -375,10 +369,13 @@ bool P2Asm::assemble_pass()
                     m_symbols.setValue(m_symbol, PC);
                 } else if (!sym.isNull()) {
                     // Already defined
-                    m_error = tr("Symbol '%1' already defined in line #%2; value = $%3")
+                    const p2_LONG value = sym.value<p2_LONG>();
+                    m_error = tr("Symbol '%1' already defined in line #%2.\n\tValue: %3 ($%4, %%5).")
                               .arg(m_symbol)
                               .arg(sym.defined_where())
-                              .arg(sym.value<p2_LONG>(), 6, 16, QChar('0'));
+                              .arg(value)
+                              .arg(value, 6, 16, QChar('0'))
+                              .arg(value, 32, 2, QChar('0'));
                     emit Error(m_pass, m_lineno, m_error);
                 }
             }
@@ -1877,28 +1874,28 @@ bool P2Asm::assemble_pass()
             default:
                 if (Token.is_type(m_instr, tm_inst)) {
                     // Missing handling of an instruction token
-                    m_error = tr("Missing handling of instruction token '%1' in: %2")
+                    m_error = tr("Missing handling of instruction token '%1' in:\n\t%2")
                           .arg(Token.string(m_instr))
                           .arg(m_line);
                     emit Error(m_pass, m_lineno, m_error);
                 }
                 if (Token.is_type(m_instr, tm_constant)) {
                     // Unexpected constant token
-                    m_error = tr("Constant '%1' used as an instruction in: %2")
+                    m_error = tr("Constant '%1' used as an instruction in:\n\t%2")
                               .arg(Token.string(m_instr))
                               .arg(m_line);
                     emit Error(m_pass, m_lineno, m_error);
                 }
                 if (Token.is_type(m_instr, tm_conditional)) {
                     // Unexpected conditional token
-                    m_error = tr("Multiple conditionals '%1' in: %2")
+                    m_error = tr("Multiple conditionals '%1' in:\n\t%2")
                               .arg(Token.string(m_instr))
                               .arg(m_line);
                     emit Error(m_pass, m_lineno, m_error);
                 }
                 if (Token.is_type(m_instr, tm_modcz_param)) {
                     // Unexpected MODCZ parameter token
-                    m_error = tr("MODCZ parameter '%1' in: %2")
+                    m_error = tr("MODCZ parameter '%1' in:\n\t%2")
                               .arg(Token.string(m_instr))
                               .arg(m_line);
                     emit Error(m_pass, m_lineno, m_error);

@@ -228,7 +228,7 @@ static const QColor dflt_color_modzc_param  (0xa0,0x40,0xaf);   // violet
 static const QColor dflt_color_wcz_suffix   (0xaf,0x80,0xaf);   // brighter violet
 static QHash<p2_palette_e,QColor> palette;
 
-QColor p2_palette(p2_palette_e pal)
+QColor p2_palette(p2_palette_e pal, bool highlight)
 {
     if (palette.isEmpty()) {
         palette.insert(color_source, dflt_color_source);
@@ -249,5 +249,12 @@ QColor p2_palette(p2_palette_e pal)
         palette.insert(color_instruction, dflt_color_instruction);
         palette.insert(color_wcz_suffix, dflt_color_wcz_suffix);
     }
-    return palette.value(pal, dflt_color_source);
+    QColor color = palette.value(pal, dflt_color_source);
+    // void QColor::setHsvF(qreal h, qreal s, qreal v, qreal a = 1.0)
+    if (highlight) {
+        qreal h, s, v, a;
+        color.getHsvF(&h, &s, &v, &a);
+        color.setHsvF(h, s, v * 0.5, a);
+    }
+    return color;
 }
