@@ -222,6 +222,8 @@ typedef enum {
     t_CRCNIB,
     t_DECMOD,
     t_DECOD,
+    t_DIRA,
+    t_DIRB,
     t_DIRC,
     t_DIRH,
     t_DIRL,
@@ -271,6 +273,8 @@ typedef enum {
     t_HUBSET,
     t_IJNZ,
     t_IJZ,
+    t_INA,
+    t_INB,
     t_INCMOD,
     t_JATN,
     t_JCT1,
@@ -339,6 +343,8 @@ typedef enum {
     t_NOT,
     t_ONES,
     t_OR,
+    t_OUTA,
+    t_OUTB,
     t_OUTC,
     t_OUTH,
     t_OUTL,
@@ -463,7 +469,6 @@ typedef enum {
     t_SIGNX,
     t_SKIP,
     t_SKIPF,
-    t_SPACE,
     t_SPLITB,
     t_SPLITW,
     t_STALLI,
@@ -552,6 +557,8 @@ typedef enum {
     // Origin control
     t__ORG,
     t__ORGH,
+    t__ALIGNW,
+    t__ALIGNL,
     t__FIT,
 
     // Data types and space reserving

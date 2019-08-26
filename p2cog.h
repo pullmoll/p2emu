@@ -130,7 +130,7 @@ private:
     //! return a signed 32 bit value for val[15:0]
     template <typename T>
     qint32 S16(T val) {
-        return static_cast<qint32>(static_cast<qint16>(val));
+        return static_cast<qint32>((val^0x8000)-0x8000);
     }
 
     //! return the usigned 32 bit value for val[15:0]
@@ -142,7 +142,7 @@ private:
     //! return the signed 32 bit value for val[31:0]
     template <typename T>
     qint32 S32(T val) {
-        return static_cast<qint32>(val);
+        return static_cast<qint32>((val^0x80000000)-0x80000000);
     }
 
     //! return the usigned 32 bit value for val[31:0]
@@ -154,7 +154,7 @@ private:
     //! return the 64 bit sign extended value
     template <typename T>
     qint64 SX64(T val) {
-        return static_cast<qint64>(static_cast<qint32>(val));
+        return static_cast<qint64>((val^0x80000000)-0x80000000);
     }
 
     //! return the usigned 64 bit value

@@ -40,6 +40,8 @@
 #include <QTextStream>
 #include <QTimer>
 #include <QSettings>
+#include <QLabel>
+
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "about.h"
@@ -512,6 +514,9 @@ void MainWindow::openSource(const QString& sourcefile)
 void MainWindow::assemble()
 {
     QStringList source = m_asm->source();
+    ui->tbErrors->clear();
+    ui->tbErrors->hide();
+
     qint64 t0 = QDateTime::currentMSecsSinceEpoch();
     if (m_asm->assemble(source)) {
         qint64 t1 = QDateTime::currentMSecsSinceEpoch();
@@ -531,6 +536,16 @@ void MainWindow::assemble()
     }
 }
 
+void MainWindow::print_error(int pass, int line, const QString& message)
+{
+    QString str_pass = pass ? QString("Pass: #%1 ").arg(pass) : QString();
+    QString str_line = line ? QString("Line: #%1 ").arg(line) : QString();
+    QString error = str_pass + str_line + message;
+    ui->tbErrors->append(error);
+    ui->tbErrors->adjustSize();
+    ui->tbErrors->show();
+}
+
 void MainWindow::setDasmLowercase(bool check)
 {
     ui->action_Dasm_Lowercase->setChecked(check);
@@ -543,6 +558,8 @@ void MainWindow::setDasmLowercase(bool check)
 
 void MainWindow::setupAssembler()
 {
+    connect(m_asm, SIGNAL(Error(int,int,QString)), SLOT(print_error(int,int,QString)));
+    ui->tbErrors->hide();
     QAbstractItemDelegate* d = ui->tvAsm->itemDelegateForColumn(P2AsmModel::c_Source);
     ui->tvAsm->setItemDelegateForColumn(P2AsmModel::c_Source, new P2AsmSourceDelegate);
     delete d;

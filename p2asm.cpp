@@ -104,9 +104,9 @@ P2Asm::~P2Asm()
  */
 void P2Asm::clear()
 {
+    m_pass = -1;
+    m_symbols.clear();
     pass_clear();
-    if (0 == m_pass)
-        m_symbols.clear();
 }
 
 /**
@@ -321,20 +321,21 @@ bool P2Asm::assemble_pass()
             case t_locsym:
                 {
                     // append local name to section::function / section
-                    QString locsym = m_words[m_idx].str();
-                    m_symbol = find_symbol(m_section, m_function.value(m_section), locsym);
-                    m_idx++;   // skip over first word
+                    QString symbol = m_words[m_idx].str();
+                    m_symbol = find_symbol(m_section, m_function.value(m_section), symbol);
                 }
+                m_idx++;
                 break;
 
             case t_symbol:
                 {
                     // append global name to section::symbol
-                    QString symbol = m_words[m_idx].str();
-                    m_function.insert(m_section, symbol);
-                    m_symbol = find_symbol(m_section, m_function.value(m_section));
-                    m_idx++;   // skip over first word
+                    QString function = m_words[m_idx].str();
+                    QString symbol;
+                    m_function.insert(m_section, function);
+                    m_symbol = find_symbol(m_section, function, symbol);
                 }
+                m_idx++;
                 break;
 
 
@@ -364,7 +365,7 @@ bool P2Asm::assemble_pass()
 
             // defining a symbol at the current PC
             if (!m_symbol.isEmpty()) {
-                const p2_LONG PC = m_curr_PC / (m_curr_PC < HUB_ADDR0 ? 4 : 1);
+                const p2_LONG PC = m_curr_PC < HUB_ADDR0 ? m_curr_PC / 4 : m_curr_PC;
                 P2AsmSymbol sym = m_symbols.value(m_symbol);
                 if (sym.isEmpty()) {
                     // Not defined yet
@@ -372,13 +373,13 @@ bool P2Asm::assemble_pass()
                     m_symbols.addReference(m_symbol, m_lineno);
                 } else if (m_pass > 1) {
                     m_symbols.setValue(m_symbol, PC);
-                } else {
+                } else if (!sym.isNull()) {
                     // Already defined
-                    m_error = tr("Symbol '%1' already defined in line %2: $%3")
+                    m_error = tr("Symbol '%1' already defined in line #%2; value = $%3")
                               .arg(m_symbol)
-                              .arg(sym.reference(0))
+                              .arg(sym.defined_where())
                               .arg(sym.value<p2_LONG>(), 6, 16, QChar('0'));
-                    emit Error(m_lineno, m_error);
+                    emit Error(m_pass, m_lineno, m_error);
                 }
             }
             break;
@@ -1849,8 +1850,12 @@ bool P2Asm::assemble_pass()
                 success = asm_res();
                 break;
 
-            case t__FIT:
-                success = asm_fit();
+            case t__ALIGNW:
+                success = asm_alignw();
+                break;
+
+            case t__ALIGNL:
+                success = asm_alignl();
                 break;
 
             case t__ORG:
@@ -1861,85 +1866,44 @@ bool P2Asm::assemble_pass()
                 success = asm_orgh();
                 break;
 
+            case t__FIT:
+                success = asm_fit();
+                break;
+
             case t__ASSIGN:
                 success = asm_assign();
                 break;
 
-            case t__DOLLAR:
-                m_idx++;
-                break;
-
-            case t_PA:
-            case t_PB:
-            case t_PTRA:
-            case t_PTRB:
-                m_error = tr("Not an instruction: %1").arg(m_line);
-                emit Error(m_lineno, m_error);
-                break;
-
-            case t__RET_:
-            case t_IF_C:
-            case t_IF_C_AND_NZ:
-            case t_IF_C_AND_Z:
-            case t_IF_C_EQ_Z:
-            case t_IF_C_NE_Z:
-            case t_IF_C_OR_NZ:
-            case t_IF_C_OR_Z:
-            case t_IF_NC:
-            case t_IF_NC_AND_NZ:
-            case t_IF_NC_AND_Z:
-            case t_IF_NC_OR_NZ:
-            case t_IF_NC_OR_Z:
-            case t_IF_NZ:
-            case t_IF_Z:
-                m_error = tr("Multiple conditionals in line: %1").arg(m_line);
-                emit Error(m_lineno, m_error);
-                break;
-
-            case t_MODCZ__CLR:       // cond_never
-            case t_MODCZ__NC_AND_NZ: // cond_nc_and_nz
-            case t_MODCZ__NZ_AND_NC: // alias for cond_nc_and_nz
-            case t_MODCZ__GT:        // alias for cond_nc_and_nz
-            case t_MODCZ__NC_AND_Z:  // cond_nc_and_z
-            case t_MODCZ__Z_AND_NC:  // alias for cond_nc_and_z
-            case t_MODCZ__NC:        // cond_nc
-            case t_MODCZ__GE:        // alias for cond_nc
-            case t_MODCZ__C_AND_NZ:  // cond_c_and_nz
-            case t_MODCZ__NZ_AND_C:  // alias for cond_c_and_nz
-            case t_MODCZ__NZ:        // cond_nz
-            case t_MODCZ__NE:        // alias for cond_nz
-            case t_MODCZ__C_NE_Z:    // cond_c_ne_z
-            case t_MODCZ__Z_NE_C:    // alias for cond_c_ne_z
-            case t_MODCZ__NC_OR_NZ:  // cond_nc_or_nz
-            case t_MODCZ__NZ_OR_NC:  // alias for cond_nc_or_nz
-            case t_MODCZ__C_AND_Z:   // cond_c_and_z
-            case t_MODCZ__Z_AND_C:   // alias for cond_c_and_z
-            case t_MODCZ__C_EQ_Z:    // cond_c_eq_z
-            case t_MODCZ__Z_EQ_C:    // alias for cond_c_eq_z
-            case t_MODCZ__Z:         // cond_z
-            case t_MODCZ__E:         // alias for cond_z
-            case t_MODCZ__NC_OR_Z:   // cond_nc_or_z
-            case t_MODCZ__Z_OR_NC:   // alias for cond_nc_or_z
-            case t_MODCZ__C:         // cond_c
-            case t_MODCZ__LT:        // alias for cond_c
-            case t_MODCZ__C_OR_NZ:   // cond_c_or_nz
-            case t_MODCZ__NZ_OR_C:   // alias for cond_c_or_nz
-            case t_MODCZ__C_OR_Z:    // cond_c_or_z
-            case t_MODCZ__Z_OR_C:    // alias for cond_c_or_z
-            case t_MODCZ__LE:        // alias for cond_c_or_z
-            case t_MODCZ__SET:       // cond_always
-                m_error = tr("MODCZ parameter in line: %1").arg(m_line);
-                emit Error(m_lineno, m_error);
-                break;
-
             default:
-                // Handle non-instruction tokens
-                m_error = tr("Missing handling of token '%1' line: %2")
+                if (Token.is_type(m_instr, tm_inst)) {
+                    // Missing handling of an instruction token
+                    m_error = tr("Missing handling of instruction token '%1' in: %2")
                           .arg(Token.string(m_instr))
                           .arg(m_line);
-                emit Error(m_lineno, m_error);
+                    emit Error(m_pass, m_lineno, m_error);
+                }
+                if (Token.is_type(m_instr, tm_constant)) {
+                    // Unexpected constant token
+                    m_error = tr("Constant '%1' used as an instruction in: %2")
+                              .arg(Token.string(m_instr))
+                              .arg(m_line);
+                    emit Error(m_pass, m_lineno, m_error);
+                }
+                if (Token.is_type(m_instr, tm_conditional)) {
+                    // Unexpected conditional token
+                    m_error = tr("Multiple conditionals '%1' in: %2")
+                              .arg(Token.string(m_instr))
+                              .arg(m_line);
+                    emit Error(m_pass, m_lineno, m_error);
+                }
+                if (Token.is_type(m_instr, tm_modcz_param)) {
+                    // Unexpected MODCZ parameter token
+                    m_error = tr("MODCZ parameter '%1' in: %2")
+                              .arg(Token.string(m_instr))
+                              .arg(m_line);
+                    emit Error(m_pass, m_lineno, m_error);
+                }
                 m_idx = m_cnt;
-                break;
             }
         }
 
@@ -1954,10 +1918,12 @@ bool P2Asm::assemble_pass()
 
 bool P2Asm::assemble(const QStringList& list)
 {
-    bool success = true;
+    clear();
     m_source = list;
-    success = assemble_pass() &&
-              assemble_pass();
+    bool success = true;
+
+    for (int pass = 0; pass < 2; pass++)
+        success &= assemble_pass();
     return success;
 }
 
@@ -1970,7 +1936,7 @@ bool P2Asm::assemble(const QString& filename)
 {
     QFile file(filename);
     if (!file.open(QIODevice::ReadOnly)) {
-        emit Error(0, tr("Can not open '%1' for reading.").arg(filename));
+        emit Error(0, 0, tr("Can not open '%1' for reading.").arg(filename));
         return false;
     }
 
@@ -1987,7 +1953,7 @@ bool P2Asm::setSource(int idx, const QString& source)
     if (idx >= m_source.count())
         return false;
     m_source.replace(idx, source);
-    m_pass = 0;
+    m_pass = -1;
     clear();
     return true;
 }
@@ -2182,7 +2148,7 @@ P2Atom P2Asm::make_atom()
  * @param str binary digits
  * @return P2Atom value of binary digits in str
  */
-P2Atom P2Asm::from_bin(const QString& str)
+P2Atom P2Asm::bin_const(const QString& str)
 {
     static const QString& digits = bin_digits;
     P2Atom atom = make_atom();
@@ -2217,7 +2183,7 @@ P2Atom P2Asm::from_bin(const QString& str)
  * @param str byte inidex digits
  * @return P2Atom value of byte indices in str
  */
-P2Atom P2Asm::from_byt(const QString& str)
+P2Atom P2Asm::byt_const(const QString& str)
 {
     static const QString& digits = byt_digits;
     P2Atom atom = make_atom();
@@ -2252,7 +2218,7 @@ P2Atom P2Asm::from_byt(const QString& str)
  * @param str octal digits
  * @return P2Atom value of octal digits in str
  */
-P2Atom P2Asm::from_oct(const QString& str)
+P2Atom P2Asm::oct_const(const QString& str)
 {
     static const QString& digits = oct_digits;
     P2Atom atom = make_atom();
@@ -2288,7 +2254,7 @@ P2Atom P2Asm::from_oct(const QString& str)
  * @param str decimal digits
  * @return P2Atom value of decimal digits in str
  */
-P2Atom P2Asm::from_dec(const QString& str)
+P2Atom P2Asm::dec_const(const QString& str)
 {
     static const QString& digits = dec_digits;
     P2Atom atom = make_atom();
@@ -2315,7 +2281,7 @@ P2Atom P2Asm::from_dec(const QString& str)
  * @param str hexadecimal digits
  * @return P2Atom value of hexadecimal digits in str
  */
-P2Atom P2Asm::from_hex(const QString& str)
+P2Atom P2Asm::hex_const(const QString& str)
 {
     static const QString& digits = hex_digits;
     P2Atom atom = make_atom();
@@ -2351,7 +2317,7 @@ P2Atom P2Asm::from_hex(const QString& str)
  * @param stop characters to stop at
  * @return P2Atom value of in string
  */
-P2Atom P2Asm::from_str(const QString& str)
+P2Atom P2Asm::str_const(const QString& str)
 {
     P2Atom atom = make_atom();
     int pos = 0;
@@ -2384,30 +2350,33 @@ P2Atom P2Asm::from_str(const QString& str)
  * @param local name of a local symbol
  * @return QString with the name of the symbol
  */
-QString P2Asm::find_symbol(Section sect, const QString& func, const QString& local)
+QString P2Asm::find_symbol(Section sect, const QString& func, const QString& local, bool all_sections)
 {
     QString symbol;
     QString section = m_sections.value(sect);
-    QStringList sections = m_sections.values();
-    if (!section.isEmpty()) {
-        sections.removeAll(section);
-        sections.insert(0, section);
+
+    if (all_sections) {
+        QStringList sections = m_sections.values();
+        if (!section.isEmpty()) {
+            sections.removeAll(section);
+            sections.insert(0, section);
+        }
+        foreach (const QString& section, sections) {
+            if (local.isEmpty()) {
+                symbol = QString("%1::%2")
+                         .arg(section.toUpper())
+                         .arg(func.toUpper());
+            } else {
+                symbol = QString("%1::%2%3")
+                         .arg(section.toUpper())
+                         .arg(func.toUpper())
+                         .arg(local.toUpper());
+            }
+            if (m_symbols.contains(symbol))
+                return symbol;
+        }
     }
 
-    foreach (const QString& section, sections) {
-        if (local.isEmpty()) {
-            symbol = QString("%1::%2")
-                     .arg(section.toUpper())
-                     .arg(func.toUpper());
-        } else {
-            symbol = QString("%1::%2%3")
-                     .arg(section.toUpper())
-                     .arg(func.toUpper())
-                     .arg(local.toUpper());
-        }
-        if (m_symbols.contains(symbol))
-            return symbol;
-    }
     // use original section
     if (local.isEmpty()) {
         symbol = QString("%1::%2")
@@ -2424,7 +2393,6 @@ QString P2Asm::find_symbol(Section sect, const QString& func, const QString& loc
 
 /**
  * @brief Parse an atomic part of an expression
- * @param str string to parse
  * @return value of the atom
  */
 P2Atom P2Asm::parse_atom()
@@ -2465,12 +2433,14 @@ P2Atom P2Asm::parse_atom()
 
     case t_locsym:
         {
-            QString symbol = find_symbol(m_section, m_function.value(m_section), str);
-            if (m_symbols.contains(symbol)) {
+            QString function = m_function.value(m_section);
+            QString symbol = str;
+            m_symbol = find_symbol(m_section, function, symbol, true);
+            if (m_symbols.contains(m_symbol)) {
                 DEBUG_EXPR(" found locsym: %s", qPrintable(symbol));
-                P2AsmSymbol sym = m_symbols.value(symbol);
+                P2AsmSymbol sym = m_symbols.value(m_symbol);
                 atom = sym.value<P2Atom>();
-                m_symbols.addReference(symbol, m_lineno);
+                m_symbols.addReference(m_symbol, m_lineno);
             } else {
                 DEBUG_EXPR(" undefined locsym: %s", qPrintable(symbol));
                 atom = make_atom();
@@ -2481,14 +2451,16 @@ P2Atom P2Asm::parse_atom()
 
     case t_symbol:
         {
-            QString symbol = find_symbol(m_section, str);
-            if (m_symbols.contains(symbol)) {
-                DEBUG_EXPR(" found symbol: %s", qPrintable(symbol));
-                P2AsmSymbol sym = m_symbols.value(symbol);
+            QString function = str;
+            QString symbol;
+            m_symbol = find_symbol(m_section, function, symbol, true);
+            if (m_symbols.contains(m_symbol)) {
+                DEBUG_EXPR(" found symbol: %s", qPrintable(function));
+                P2AsmSymbol sym = m_symbols.value(m_symbol);
                 atom = sym.value<P2Atom>();
-                m_symbols.addReference(symbol, m_lineno);
+                m_symbols.addReference(m_symbol, m_lineno);
             } else {
-                DEBUG_EXPR(" undefined symbol: %s", qPrintable(symbol));
+                DEBUG_EXPR(" undefined symbol: %s", qPrintable(function));
                 atom = make_atom();
                 atom.set(P2Atom::Long, m_curr_PC);
             }
@@ -2497,32 +2469,62 @@ P2Atom P2Asm::parse_atom()
 
     case t_bin_const:
         DEBUG_EXPR(" bin value: %s", qPrintable(str));
-        atom = from_bin(str);
+        atom = bin_const(str);
         break;
 
     case t_byt_const:
         DEBUG_EXPR(" byt value: %s", qPrintable(str));
-        atom = from_byt(str);
+        atom = byt_const(str);
         break;
 
     case t_oct_const:
         DEBUG_EXPR(" oct value: %s", qPrintable(str));
-        atom = from_oct(str);
+        atom = oct_const(str);
         break;
 
     case t_dec_const:
         DEBUG_EXPR(" dec value: %s", qPrintable(str));
-        atom = from_dec(str);
+        atom = dec_const(str);
         break;
 
     case t_hex_const:
         DEBUG_EXPR(" hex value: %s", qPrintable(str));
-        atom = from_hex(str);
+        atom = hex_const(str);
         break;
 
     case t_string:
         DEBUG_EXPR(" str value: %s", qPrintable(str));
-        atom = from_str(str);
+        atom = str_const(str);
+        break;
+
+    case t_DIRA:
+        DEBUG_EXPR(" DIRA: %s", qPrintable(str));
+        atom.set(P2Atom::Long, offs_DIRA);
+        break;
+
+    case t_DIRB:
+        DEBUG_EXPR(" DIRB: %s", qPrintable(str));
+        atom.set(P2Atom::Long, offs_DIRB);
+        break;
+
+    case t_INA:
+        DEBUG_EXPR(" INA: %s", qPrintable(str));
+        atom.set(P2Atom::Long, offs_INA);
+        break;
+
+    case t_INB:
+        DEBUG_EXPR(" INB: %s", qPrintable(str));
+        atom.set(P2Atom::Long, offs_INB);
+        break;
+
+    case t_OUTA:
+        DEBUG_EXPR(" INA: %s", qPrintable(str));
+        atom.set(P2Atom::Long, offs_OUTA);
+        break;
+
+    case t_OUTB:
+        DEBUG_EXPR(" INB: %s", qPrintable(str));
+        atom.set(P2Atom::Long, offs_OUTB);
         break;
 
     case t_PA:
@@ -3129,6 +3131,32 @@ bool P2Asm::asm_assign()
     const p2_LONG value = atom.to_long();
     m_IR.opcode = value;
     m_symbols.setValue(m_symbol, value);
+    return end_of_line();
+}
+
+/**
+ * @brief Align to next WORD operation
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::asm_alignw()
+{
+    m_idx++;
+    m_emit_IR = false;
+    m_advance = (m_curr_PC & ~1u) + 2 - m_curr_PC;
+    return end_of_line();
+}
+
+/**
+ * @brief Align to next LONG operation
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::asm_alignl()
+{
+    m_idx++;
+    m_emit_IR = false;
+    m_advance = (m_curr_PC & ~3u) + 4 - m_curr_PC;
     return end_of_line();
 }
 

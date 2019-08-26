@@ -898,7 +898,7 @@ typedef union {
 }   p2_lut_t;
 
 /**
- * @brief flag bits per COG
+ * @brief 16 flag bits per COG
  */
 typedef struct {
     bool    f_INT:1;            //!< INT interrupt flag
@@ -920,7 +920,7 @@ typedef struct {
 }   p2_flags_t;
 
 /**
- * @brief pattern matching mode enum
+ * @brief PAT pattern matching mode enum
  */
 typedef enum {
     p2_PAT_NONE,                //!< no pattern matching
@@ -940,7 +940,7 @@ typedef struct {
 }   p2_pat_t;
 
 /**
- * @brief pin edge mode enum
+ * @brief PIN edge mode enum
  */
 typedef enum {
     p2_PIN_NONE,                //!< no pin edge
@@ -1005,7 +1005,7 @@ typedef struct {
 }   p2_lock_t;
 
 /**
- * @brief wait reason enum
+ * @brief WAIT wait reason enum
  */
 typedef enum {
     p2_WAIT_NONE,               //!< not waiting on anything
@@ -1018,7 +1018,7 @@ typedef enum {
 }   p2_wait_mode_e;
 
 /**
- * @brief wait status
+ * @brief WAIT wait status
  */
 typedef struct {
     p2_LONG flag;               //!< non-zero if waiting

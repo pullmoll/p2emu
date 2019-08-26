@@ -102,6 +102,8 @@ private slots:
 
     void openSource(const QString& filename = QString());
     void assemble();
+
+    void print_error(int pass, int lineno, const QString& message);
 private:
     Ui::MainWindow *ui;
     QVector<P2CogView*> m_vcog;

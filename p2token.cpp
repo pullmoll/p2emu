@@ -37,7 +37,7 @@
 #include "p2util.h"
 
 #define DBG_REGEX   0
-#define DBG_TOKEN   0
+#define DBG_TOKEN   1
 
 #if DBG_REGEX
 #define DEBUG_REGEX(x,...) qDebug(x,__VA_ARGS__)
@@ -298,6 +298,8 @@ P2Token::P2Token()
     tn_add(t_CRCNIB,           tm_inst, QStringLiteral("CRCNIB"));
     tn_add(t_DECMOD,           tm_inst, QStringLiteral("DECMOD"));
     tn_add(t_DECOD,            tm_inst, QStringLiteral("DECOD"));
+    tn_add(t_DIRA,             tm_constant, QStringLiteral("DIRA"));
+    tn_add(t_DIRB,             tm_constant, QStringLiteral("DIRB"));
     tn_add(t_DIRC,             tm_inst, QStringLiteral("DIRC"));
     tn_add(t_DIRH,             tm_inst, QStringLiteral("DIRH"));
     tn_add(t_DIRL,             tm_inst, QStringLiteral("DIRL"));
@@ -347,6 +349,8 @@ P2Token::P2Token()
     tn_add(t_HUBSET,           tm_inst, QStringLiteral("HUBSET"));
     tn_add(t_IJNZ,             tm_inst, QStringLiteral("IJNZ"));
     tn_add(t_IJZ,              tm_inst, QStringLiteral("IJZ"));
+    tn_add(t_INA,              tm_constant, QStringLiteral("INA"));
+    tn_add(t_INB,              tm_constant, QStringLiteral("INB"));
     tn_add(t_INCMOD,           tm_inst, QStringLiteral("INCMOD"));
     tn_add(t_JATN,             tm_inst, QStringLiteral("JATN"));
     tn_add(t_JCT1,             tm_inst, QStringLiteral("JCT1"));
@@ -415,6 +419,8 @@ P2Token::P2Token()
     tn_add(t_NOT,              tm_inst, QStringLiteral("NOT"));
     tn_add(t_ONES,             tm_inst, QStringLiteral("ONES"));
     tn_add(t_OR,               tm_inst, QStringLiteral("OR"));
+    tn_add(t_OUTA,             tm_constant, QStringLiteral("OUTA"));
+    tn_add(t_OUTB,             tm_constant, QStringLiteral("OUTB"));
     tn_add(t_OUTC,             tm_inst, QStringLiteral("OUTC"));
     tn_add(t_OUTH,             tm_inst, QStringLiteral("OUTH"));
     tn_add(t_OUTL,             tm_inst, QStringLiteral("OUTL"));
@@ -444,16 +450,16 @@ P2Token::P2Token()
     tn_add(t_POP,              tm_inst, QStringLiteral("POP"));
     tn_add(t_POPA,             tm_inst, QStringLiteral("POPA"));
     tn_add(t_POPB,             tm_inst, QStringLiteral("POPB"));
-    tn_add(t_PTRA,             tm_inst, QStringLiteral("PTRA"));
-    tn_add(t_PTRA_postinc,     tm_inst, QStringLiteral("PTRA++"));
-    tn_add(t_PTRA_postdec,     tm_inst, QStringLiteral("PTRA--"));
-    tn_add(t_PTRA_preinc,      tm_inst, QStringLiteral("++PTRA"));
-    tn_add(t_PTRA_predec,      tm_inst, QStringLiteral("--PTRA"));
-    tn_add(t_PTRB,             tm_inst, QStringLiteral("PTRB"));
-    tn_add(t_PTRB_postinc,     tm_inst, QStringLiteral("PTRB++"));
-    tn_add(t_PTRB_postdec,     tm_inst, QStringLiteral("PTRB--"));
-    tn_add(t_PTRB_preinc,      tm_inst, QStringLiteral("++PTRB"));
-    tn_add(t_PTRB_predec,      tm_inst, QStringLiteral("--PTRB"));
+    tn_add(t_PTRA,             tm_constant, QStringLiteral("PTRA"));
+    tn_add(t_PTRA_postinc,     tm_constant, QStringLiteral("PTRA++"));
+    tn_add(t_PTRA_postdec,     tm_constant, QStringLiteral("PTRA--"));
+    tn_add(t_PTRA_preinc,      tm_constant, QStringLiteral("++PTRA"));
+    tn_add(t_PTRA_predec,      tm_constant, QStringLiteral("--PTRA"));
+    tn_add(t_PTRB,             tm_constant, QStringLiteral("PTRB"));
+    tn_add(t_PTRB_postinc,     tm_constant, QStringLiteral("PTRB++"));
+    tn_add(t_PTRB_postdec,     tm_constant, QStringLiteral("PTRB--"));
+    tn_add(t_PTRB_preinc,      tm_constant, QStringLiteral("++PTRB"));
+    tn_add(t_PTRB_predec,      tm_constant, QStringLiteral("--PTRB"));
     tn_add(t_PUSH,             tm_inst, QStringLiteral("PUSH"));
     tn_add(t_PUSHA,            tm_inst, QStringLiteral("PUSHA"));
     tn_add(t_PUSHB,            tm_inst, QStringLiteral("PUSHB"));
@@ -539,7 +545,6 @@ P2Token::P2Token()
     tn_add(t_SIGNX,            tm_inst, QStringLiteral("SIGNX"));
     tn_add(t_SKIP,             tm_inst, QStringLiteral("SKIP"));
     tn_add(t_SKIPF,            tm_inst, QStringLiteral("SKIPF"));
-    tn_add(t_SPACE,            tm_inst, QStringLiteral("SPACE"));
     tn_add(t_SPLITB,           tm_inst, QStringLiteral("SPLITB"));
     tn_add(t_SPLITW,           tm_inst, QStringLiteral("SPLITW"));
     tn_add(t_STALLI,           tm_inst, QStringLiteral("STALLI"));
@@ -634,6 +639,8 @@ P2Token::P2Token()
     tn_add(t__VAR,             tm_section, QStringLiteral("VAR"));
 
     // Origin control
+    tn_add(t__ALIGNW,          tm_inst | tm_origin, QStringLiteral("ALIGNW"));
+    tn_add(t__ALIGNL,          tm_inst | tm_origin, QStringLiteral("ALIGNL"));
     tn_add(t__ORG,             tm_inst | tm_origin, QStringLiteral("ORG"));
     tn_add(t__ORGH,            tm_inst | tm_origin, QStringLiteral("ORGH"));
     tn_add(t__FIT,             tm_inst | tm_origin, QStringLiteral("FIT"));
@@ -711,7 +718,7 @@ P2Token::P2Token()
     tn_add(t_MODCZ__SET,       tm_modcz_param, QStringLiteral("_SET"));
 
     // Assignment
-    tn_add(t__ASSIGN,          tm_assignment,  QStringLiteral("="));
+    tn_add(t__ASSIGN,          tm_inst | tm_assignment,  QStringLiteral("="));
 
     // Current PC reference
     tn_add(t__DOLLAR,          tm_constant, QStringLiteral("$"));
@@ -928,7 +935,7 @@ P2Words P2Token::tokenize(const QString& str, int& in_curly) const
             nullptr
         };
         for (int i = 0; Delimiters[i]; i++)
-            list += QRegExp::escape(QString::fromLatin1(Delimiters[i])) + QStringLiteral("+");
+            list += QRegExp::escape(QString::fromLatin1(Delimiters[i])) + QStringLiteral("{1}");
         re = QString("(%1)").arg(list.join(QChar('|')));
 
         // rx.setPatternSyntax(QRegExp::RegExp2);  // greedy syntax
@@ -941,7 +948,7 @@ P2Words P2Token::tokenize(const QString& str, int& in_curly) const
         curly += str.count(chr_lcurly);
         curly -= str.count(chr_rcurly);
 
-        if (in_curly + curly > 0) {
+        if (in_curly > 0 || curly > 0) {
             int tlen = str.length() - pos;
             tok = t_comment;
             words.append(P2Word(tok, str, pos, pos + tlen - 1));

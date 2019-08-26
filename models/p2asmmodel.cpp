@@ -405,6 +405,14 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
 
     case Qt::ToolTipRole:
         switch (column) {
+        case c_Origin:
+            result = tr("This column the address where code/data is emitted to.");
+            break;
+
+        case c_Opcode:
+            result = tr("This column shows the opcode for, or the data emitted by, the instruction on this line.");
+            break;
+
         case c_Tokens:
             if (words.isEmpty())
                 break;
