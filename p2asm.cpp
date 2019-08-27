@@ -73,7 +73,7 @@ P2Asm::P2Asm(QObject *parent)
     , m_next_PC(0)
     , m_curr_PC(0)
     , m_last_PC(0)
-    , m_orgh(0)
+    , m_ORGH(0)
     , m_advance(4)
     , m_IR()
     , m_words()
@@ -127,11 +127,9 @@ void P2Asm::pass_clear()
     m_next_PC = 0;
     m_curr_PC = 0;
     m_last_PC = 0;
-    m_orgh = 0;
+    m_ORGH = 0;
     m_advance = 0;
-    m_IR.as_IR = false;
-    m_IR.as_EQU = false;
-    m_IR.u.opcode = 0;
+    m_IR.clear();
     m_data.clear();
     m_words.clear();
     m_instr = t_invalid;
@@ -184,7 +182,7 @@ p2_PC_ORGH_t P2Asm::PC_value(int lineno) const
     return m_hash_PC.value(lineno);
 }
 
-bool P2Asm::PC_available(int lineno) const
+bool P2Asm::has_PC(int lineno) const
 {
     return m_hash_PC.contains(lineno);
 }
@@ -199,7 +197,7 @@ P2Opcode P2Asm::IR_value(int lineno) const
     return m_hash_OPC.value(lineno);
 }
 
-bool P2Asm::IR_available(int lineno) const
+bool P2Asm::has_IR(int lineno) const
 {
     return m_hash_OPC.contains(lineno);
 }
@@ -214,7 +212,7 @@ P2Words P2Asm::words(int lineno) const
     return m_hash_words.value(lineno, P2Words());
 }
 
-bool P2Asm::words_available(int lineno) const
+bool P2Asm::has_words(int lineno) const
 {
     return m_hash_words.contains(lineno);
 }
@@ -291,8 +289,8 @@ bool P2Asm::assemble_pass()
         m_data.clear();
         m_advance = 0;
         m_IR.as_IR = false;
-        m_IR.PC_ORGH = p2_PC_ORGH_t(m_curr_PC, m_orgh);
-        m_IR.data.clear();
+        m_IR.PC_ORGH = p2_PC_ORGH_t(m_curr_PC, m_ORGH);
+        m_IR.DATA.clear();
 
         // Split line into words and tokenize it
         tokenize(m_line);
@@ -319,8 +317,8 @@ bool P2Asm::assemble_pass()
             case t_locsym:
                 {
                     // append local name to section::function / section
-                    QString symbol = m_words.value(m_idx).str();
-                    m_symbol = find_symbol(m_section, m_function.value(m_section), symbol);
+                    QString str = m_words.value(m_idx).str();
+                    m_symbol = find_locsym(m_section, str);
                 }
                 m_idx++;
                 break;
@@ -328,10 +326,9 @@ bool P2Asm::assemble_pass()
             case t_symbol:
                 {
                     // append global name to section::symbol
-                    QString function = m_words.value(m_idx).str();
-                    QString symbol;
-                    m_function.insert(m_section, function);
-                    m_symbol = find_symbol(m_section, function, symbol);
+                    QString str = m_words.value(m_idx).str();
+                    m_function.insert(m_section, str);
+                    m_symbol = find_symbol(m_section, str);
                 }
                 m_idx++;
                 break;
@@ -374,12 +371,15 @@ bool P2Asm::assemble_pass()
 
         // Assume the instruction advances by 4 bytes
         m_advance = 4;
+
+        // Clear the opcode
+        m_IR.clear();
+
         // Assume the instruction emits IR
         m_IR.as_IR = true;
-        // Reset all instruction bits
-        m_IR.u.opcode = 0;
+
         // Conditional execution prefix
-        m_IR.u.op.cond = conditional(m_words.value(m_idx).tok());
+        m_IR.set_cond(conditional(m_words.value(m_idx).tok()));
 
         // Expect a token for an instruction
         bool success = false;
@@ -1976,20 +1976,66 @@ int P2Asm::commas_left() const
  * @param wr_mem if true, store opcode into MEM
  * @return formatted string
  */
-QString P2Asm::results_instruction(bool wr_mem)
+QStringList P2Asm::results_instruction(bool wr_mem)
 {
-    QString output;
-    Q_ASSERT(m_advance == 4);
-    m_hash_PC.insert(m_lineno, p2_PC_ORGH_t(m_curr_PC, m_orgh));
-    m_hash_OPC.insert(m_lineno, m_IR);
-    output = QString("%1 %2 [%3] %4")
-             .arg(m_lineno, -6)
-             .arg(m_curr_PC, 6, 16, QChar('0'))
-             .arg(m_IR.u.opcode, 8, 16, QChar('0'))
-             .arg(m_line);
+    p2_LONG PC = m_curr_PC;
+    p2_LONG ORGH = m_ORGH;
+    QStringList output;
 
-    if (wr_mem && m_orgh < MEM_SIZE) {
-        MEM.LONGS[m_orgh/4] = m_IR.u.opcode;
+    QString line = m_line;
+    Q_ASSERT(m_advance == 4);
+
+    m_IR.PC_ORGH = p2_PC_ORGH_t(m_curr_PC, m_ORGH);
+    m_hash_PC.insert(m_lineno, m_IR.PC_ORGH);
+    m_hash_OPC.insert(m_lineno, m_IR);
+
+    // Do we need to generate an AUGD instruction?
+    if (m_IR.AUGD.isValid()) {
+        p2_LONG value = m_IR.AUGD.value<p2_LONG>();
+        P2Opcode IR(p2_AUGD_00, p2_PC_ORGH_t(PC, ORGH));
+        IR.u.opcode |= value;
+
+        output += QString("%1 %2 [%3] %4")
+                 .arg(m_lineno, -6)
+                 .arg(PC, 6, 16, QChar('0'))
+                 .arg(IR.u.opcode, 8, 16, QChar('0'))
+                 .arg(line);
+
+        PC += 4;
+        ORGH += 4;
+        m_IR.PC_ORGH = IR.PC_ORGH;
+        m_advance += 4;
+        m_IR.AUGD.clear();
+        line.clear();
+    }
+
+    // Do we need to generate an AUGS instruction?
+    if (m_IR.AUGS.isValid()) {
+        p2_LONG value = m_IR.AUGS.value<p2_LONG>();
+        P2Opcode IR(p2_AUGS_00, p2_PC_ORGH_t(PC, ORGH));
+        IR.u.opcode |= value;
+
+        output += QString("%1 %2 [%3] %4")
+                 .arg(m_lineno, -6)
+                 .arg(PC, 6, 16, QChar('0'))
+                 .arg(IR.u.opcode, 8, 16, QChar('0'))
+                 .arg(line);
+        PC += 4;
+        ORGH += 4;
+        m_IR.PC_ORGH = IR.PC_ORGH;
+        m_advance += 4;
+        m_IR.AUGS.clear();
+        line.clear();
+    }
+
+    output += QString("%1 %2 [%3] %4")
+             .arg(m_lineno, -6)
+             .arg(PC, 6, 16, QChar('0'))
+             .arg(m_IR.u.opcode, 8, 16, QChar('0'))
+             .arg(line);
+
+    if (wr_mem && m_ORGH < MEM_SIZE) {
+        MEM.LONGS[m_ORGH/4] = m_IR.u.opcode;
     }
     return output;
 }
@@ -2031,7 +2077,7 @@ QString P2Asm::results_comment()
  * @param wr_mem if true, store opcode into MEM
  * @return formatted string for the last data byte/word/long
  */
-QString P2Asm::results_data(bool wr_mem)
+QStringList P2Asm::results_data(bool wr_mem)
 {
     QStringList output;
     QString line;
@@ -2041,8 +2087,8 @@ QString P2Asm::results_data(bool wr_mem)
     p2_LONG data = 0;
     p2_LONG mask = 0;
 
-    m_IR.data = m_data;
-    m_hash_PC.insert(m_lineno, p2_PC_ORGH_t(m_curr_PC, m_orgh));
+    m_IR.DATA = m_data;
+    m_hash_PC.insert(m_lineno, p2_PC_ORGH_t(m_curr_PC, m_ORGH));
     m_hash_OPC.insert(m_lineno, m_IR);
 
     for (int i = 0; i < bytes.count(); i++) {
@@ -2074,7 +2120,7 @@ QString P2Asm::results_data(bool wr_mem)
 
     Q_UNUSED(wr_mem)
 
-    return output.join(QChar::LineFeed);
+    return output;
 }
 
 /**
@@ -2083,27 +2129,25 @@ QString P2Asm::results_data(bool wr_mem)
  */
 void P2Asm::results()
 {
-    const bool binary = false;
+    const bool binary = true;
 
-    QString output;
     if (m_IR.as_IR) {
-        results_instruction(binary);
+        m_listing += results_instruction(binary);
     } else if (m_data.isEmpty()) {
         if (m_words.isEmpty() || Token.is_type(m_words[0].tok(), tm_comment)) {
-            output = results_comment();
+            m_listing += results_comment();
         } else {
-            output = results_assignment();
+            m_listing += results_assignment();
         }
     } else {
-        output = results_data(binary);
+        m_listing += results_data(binary);
     }
-    m_listing.append(output);
 
     // Calculate next PC by adding m_advance
     m_next_PC = m_curr_PC + m_advance;
     if (m_next_PC > m_last_PC)
         m_last_PC = m_next_PC;
-    m_orgh += m_advance;
+    m_ORGH += m_advance;
 
     if (!m_words.isEmpty())
         m_hash_words.insert(m_lineno, m_words);
@@ -2383,10 +2427,10 @@ P2Atom P2Asm::str_const(const QString& str)
  * @param local name of a local symbol
  * @return QString with the name of the symbol
  */
-QString P2Asm::find_symbol(Section sect, const QString& func, const QString& local, bool all_sections)
+QString P2Asm::find_symbol(Section sect, const QString& func, bool all_sections)
 {
-    QString symbol;
     QString section = m_sections.value(sect);
+    QString symbol;
 
     if (all_sections) {
         QStringList sections = m_sections.values();
@@ -2395,32 +2439,39 @@ QString P2Asm::find_symbol(Section sect, const QString& func, const QString& loc
             sections.insert(0, section);
         }
         foreach (const QString& section, sections) {
-            if (local.isEmpty()) {
-                symbol = QString("%1::%2")
-                         .arg(section.toUpper())
-                         .arg(func.toUpper());
-            } else {
-                symbol = QString("%1::%2%3")
-                         .arg(section.toUpper())
-                         .arg(func.toUpper())
-                         .arg(local.toUpper());
-            }
+            symbol = QString("%1::%2")
+                     .arg(section.toUpper())
+                     .arg(func.toUpper());
             if (m_symbols.contains(symbol))
                 return symbol;
         }
     }
 
     // use original section
-    if (local.isEmpty()) {
-        symbol = QString("%1::%2")
-                 .arg(section.toUpper())
-                 .arg(func.toUpper());
-    } else {
-        symbol = QString("%1::%2%3")
-                 .arg(section.toUpper())
-                 .arg(func.toUpper())
-                 .arg(local.toUpper());
-    }
+    symbol = QString("%1::%2")
+             .arg(section.toUpper())
+             .arg(func.toUpper());
+    return symbol;
+}
+
+/**
+ * @brief Find a symbol name using either %func, or %func and %sym appended
+ * @param sect primary section where to search
+ * @param func name of the function
+ * @param local name of a local symbol
+ * @return QString with the name of the symbol
+ */
+QString P2Asm::find_locsym(Section sect, const QString& local)
+{
+    QString section = m_sections.value(sect);
+    QString func = m_function.value(sect);
+    QString symbol = QString("%1::%2%3")
+             .arg(section.toUpper())
+             .arg(func.toUpper())
+             .arg(local.toUpper());
+
+    if (m_symbols.contains(symbol))
+        return symbol;
     return symbol;
 }
 
@@ -2471,14 +2522,12 @@ P2Atom P2Asm::parse_atom()
 
     case t_locsym:
         {
-            QString function = m_function.value(m_section);
-            QString symbol = str;
-            m_symbol = find_symbol(m_section, function, symbol, true);
-            if (m_symbols.contains(m_symbol)) {
+            QString symbol = find_locsym(m_section, str);
+            if (m_symbols.contains(symbol)) {
                 DEBUG_EXPR(" found locsym: %s", qPrintable(symbol));
-                P2AsmSymbol sym = m_symbols.value(m_symbol);
+                P2AsmSymbol sym = m_symbols.value(symbol);
                 atom = sym.value<P2Atom>();
-                m_symbols.addReference(m_symbol, m_lineno);
+                m_symbols.addReference(symbol, m_lineno);
             } else {
                 DEBUG_EXPR(" undefined locsym: %s", qPrintable(symbol));
                 atom = make_atom();
@@ -2489,14 +2538,12 @@ P2Atom P2Asm::parse_atom()
 
     case t_symbol:
         {
-            QString function = str;
-            QString symbol;
-            m_symbol = find_symbol(m_section, function, symbol, true);
-            if (m_symbols.contains(m_symbol)) {
+            QString symbol = find_symbol(m_section, str, true);
+            if (m_symbols.contains(symbol)) {
                 DEBUG_EXPR(" found symbol: %s", qPrintable(function));
-                P2AsmSymbol sym = m_symbols.value(m_symbol);
+                P2AsmSymbol sym = m_symbols.value(symbol);
                 atom = sym.value<P2Atom>();
-                m_symbols.addReference(m_symbol, m_lineno);
+                m_symbols.addReference(symbol, m_lineno);
             } else {
                 DEBUG_EXPR(" undefined symbol: %s", qPrintable(function));
                 atom = make_atom();
@@ -3027,6 +3074,48 @@ P2Atom P2Asm::parse_expression(imm_to_e imm_to)
 }
 
 /**
+ * @brief Check for the type of error of P2Opcode::set_dst() or P2Opcode::set_src()
+ * @return true if no error, or false for error
+ */
+bool P2Asm::check_dst_src()
+{
+    // No error in pass 1
+    if (m_pass < 2)
+        return true;
+
+    switch (m_IR.error) {
+    case P2Opcode::none:
+        return true;
+    case P2Opcode::dst_augd_none:
+        m_errors += tr("DST constant larger than $1ff but no imediate mode");
+        break;
+    case P2Opcode::dst_augd_im:
+        m_errors += tr("DST constant larger than $1ff but im is not set for L");
+        break;
+    case P2Opcode::dst_augd_wz:
+        m_errors += tr("DST constant larger than $1ff but wz is not set for L");
+        break;
+    case P2Opcode::dst_augd_wc:
+        m_errors += tr("DST constant larger than $1ff but wc is not set for L");
+        break;
+    case P2Opcode::src_augs_none:
+        m_errors += tr("SRC constant larger than $1ff but no imediate mode");
+        break;
+    case P2Opcode::src_augs_im:
+        m_errors += tr("SRC constant larger than $1ff but im is not set for I");
+        break;
+    case P2Opcode::src_augs_wz:
+        m_errors += tr("SRC constant larger than $1ff but wz is not set for I");
+        break;
+    case P2Opcode::src_augs_wc:
+        m_errors += tr("SRC constant larger than $1ff but wc is not set for I");
+        break;
+    }
+    emit Error(m_pass, m_lineno, m_errors.last());
+    return false;
+}
+
+/**
  * @brief Expect end of line, i.e. no more parameters
  *
  * @return true on success, or false on error
@@ -3224,7 +3313,7 @@ bool P2Asm::asm_org()
     m_advance = 0;      // Don't advance PC
     m_IR.as_IR = false;
     P2Atom atom = parse_expression();
-    p2_LONG value = atom.isEmpty() ? m_orgh : 4 * atom.to_long();
+    p2_LONG value = atom.isEmpty() ? m_ORGH : 4 * atom.to_long();
     if (value >= HUB_ADDR0) {
         m_errors += tr("COG origin exceeds limit ($%1)")
                     .arg(value, 0, 16, QChar('0'));
@@ -3256,7 +3345,7 @@ bool P2Asm::asm_orgh()
         emit Error(m_pass, m_lineno, m_errors.last());
         value = MEM_SIZE;
     }
-    m_orgh = value;
+    m_ORGH = value;
     m_symbols.setValue(m_symbol, value);
     return end_of_line();
 }
@@ -3365,13 +3454,16 @@ bool P2Asm::parse_inst()
 bool P2Asm::parse_d_imm_s()
 {
     P2Atom dst = parse_expression();
-    if (!parse_comma())
-        return false;
-    P2Atom src = parse_expression(immediate_im);
     if (!m_IR.set_dst(dst))
         check_dst_src();
+
+    if (!parse_comma())
+        return false;
+
+    P2Atom src = parse_expression(immediate_im);
     if (!m_IR.set_src(src, immediate_im))
         check_dst_src();
+
     return end_of_line();
 }
 
@@ -3385,7 +3477,9 @@ bool P2Asm::parse_d_wcz()
     P2Atom dst = parse_expression();
     if (!m_IR.set_dst(dst))
         check_dst_src();
+
     optional_wcz();
+
     return end_of_line();
 }
 
@@ -3413,6 +3507,7 @@ bool P2Asm::parse_cccc_zzzz_wcz()
     p2_cond_e zzzz = parse_modcz(m_words.value(m_idx).tok());
     if (m_IR.set_dst(static_cast<p2_LONG>((cccc << 4) | zzzz)))
         check_dst_src();
+
     optional_wcz();
     return end_of_line();
 }
@@ -3480,6 +3575,7 @@ bool P2Asm::parse_imm_d_wc()
     P2Atom dst = parse_expression(immediate_im);
     if (!m_IR.set_dst(dst, immediate_im))
         check_dst_src();
+
     optional_wc();
     return end_of_line();
 }
@@ -3492,13 +3588,16 @@ bool P2Asm::parse_imm_d_wc()
 bool P2Asm::parse_d_imm_s_wcz()
 {
     P2Atom dst = parse_expression();
-    if (!parse_comma())
-        return false;
-    P2Atom src = parse_expression(immediate_im);
     if (!m_IR.set_dst(dst))
         check_dst_src();
+
+    if (!parse_comma())
+        return false;
+
+    P2Atom src = parse_expression(immediate_im);
     if (!m_IR.set_src(src, immediate_im))
         check_dst_src();
+
     optional_wcz();
     return end_of_line();
 }
@@ -3511,13 +3610,16 @@ bool P2Asm::parse_d_imm_s_wcz()
 bool P2Asm::parse_d_imm_s_wc()
 {
     P2Atom dst = parse_expression();
-    if (!parse_comma())
-        return false;
-    P2Atom src = parse_expression(immediate_im);
     if (!m_IR.set_dst(dst))
         check_dst_src();
+
+    if (!parse_comma())
+        return false;
+
+    P2Atom src = parse_expression(immediate_im);
     if (!m_IR.set_src(src, immediate_im))
         check_dst_src();
+
     optional_wc();
     return end_of_line();
 }
@@ -3530,13 +3632,16 @@ bool P2Asm::parse_d_imm_s_wc()
 bool P2Asm::parse_d_imm_s_wz()
 {
     P2Atom dst = parse_expression();
-    if (!parse_comma())
-        return false;
-    P2Atom src = parse_expression(immediate_im);
     if (!m_IR.set_dst(dst))
         check_dst_src();
+
+    if (!parse_comma())
+        return false;
+
+    P2Atom src = parse_expression(immediate_im);
     if (!m_IR.set_src(src, immediate_im))
         check_dst_src();
+
     optional_wz();
     return end_of_line();
 }
@@ -3549,13 +3654,16 @@ bool P2Asm::parse_d_imm_s_wz()
 bool P2Asm::parse_wz_d_imm_s()
 {
     P2Atom dst = parse_expression(immediate_wz);
-    if (!parse_comma())
-        return false;
-    P2Atom src = parse_expression(immediate_im);
     if (!m_IR.set_dst(dst, immediate_wz))
         check_dst_src();
+
+    if (!parse_comma())
+        return false;
+
+    P2Atom src = parse_expression(immediate_im);
     if (!m_IR.set_src(src, immediate_im))
         check_dst_src();
+
     return end_of_line();
 }
 
@@ -3567,13 +3675,16 @@ bool P2Asm::parse_wz_d_imm_s()
 bool P2Asm::parse_d_imm_s_nnn(uint max)
 {
     P2Atom dst = parse_expression();
-    if (!parse_comma())
-        return false;
-    P2Atom src = parse_expression(immediate_im);
     if (!m_IR.set_dst(dst))
         check_dst_src();
+
+    if (!parse_comma())
+        return false;
+
+    P2Atom src = parse_expression(immediate_im);
     if (!m_IR.set_src(src, immediate_im))
         check_dst_src();
+
     if (parse_comma()) {
         if (m_idx < m_cnt) {
             P2Atom n = parse_expression();
@@ -3612,6 +3723,7 @@ bool P2Asm::parse_imm_s()
     P2Atom src = parse_expression(immediate_im);
     if (!m_IR.set_src(src, immediate_im))
         check_dst_src();
+
     return end_of_line();
 }
 
@@ -3625,6 +3737,7 @@ bool P2Asm::parse_imm_s_wcz()
     P2Atom src = parse_expression(immediate_im);
     if (!m_IR.set_src(src, immediate_im))
         check_dst_src();
+
     optional_wc();
     return end_of_line();
 }
@@ -3706,17 +3819,19 @@ bool P2Asm::asm_byte()
     m_idx++;
     m_advance = 0;      // Don't advance PC, as it's done based on m_data
     m_IR.as_IR = false;
+
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
         p2_BYTE b = atom.to_byte();
         m_data.append(P2Atom::Byte, b);
         optional_comma();
     }
+
     return end_of_line();
 }
 
 /**
- * @brief Expect one or more bytes of data
+ * @brief Expect one or more words of data
  *
  * @return true on success, or false on error
  */
@@ -3725,18 +3840,19 @@ bool P2Asm::asm_word()
     m_idx++;
     m_advance = 0;      // Don't advance PC, as it's done based on m_data
     m_IR.as_IR = false;
+
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
         p2_WORD w = atom.to_word();
         m_data.append(P2Atom::Word, w);
         optional_comma();
     }
-    // TODO: put data into output
+
     return end_of_line();
 }
 
 /**
- * @brief Expect one or more bytes of data
+ * @brief Expect one or more longs of data
  *
  * @return true on success, or false on error
  */
@@ -3745,18 +3861,19 @@ bool P2Asm::asm_long()
     m_idx++;
     m_advance = 0;      // Don't advance PC, as it's done based on m_data
     m_IR.as_IR = false;
+
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
         p2_LONG l = atom.to_long();
         m_data.append(P2Atom::Long, l);
         optional_comma();
     }
-    // TODO: put data into output
+
     return end_of_line();
 }
 
 /**
- * @brief Expect one or more bytes of data
+ * @brief Reserver a number of longs of data
  *
  * @return true on success, or false on error
  */
@@ -3765,11 +3882,14 @@ bool P2Asm::asm_res()
     m_idx++;
     m_advance = 0;      // Don't advance PC if no value is specified
     m_IR.as_IR = false;
+
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
-        m_advance += atom.to_long();
+        p2_LONG count = atom.to_long();
+        m_data.append(QByteArray(4 * static_cast<int>(count), '\0'));
         optional_comma();
     }
+
     return end_of_line();
 }
 
@@ -3783,6 +3903,7 @@ bool P2Asm::asm_file()
     m_idx++;
     m_advance = 0;      // Don't advance PC, as it's done based on m_data
     m_IR.as_IR = false;
+
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
         QString filename = atom.to_string();
@@ -3800,44 +3921,6 @@ bool P2Asm::asm_file()
     }
     return end_of_line();
 
-}
-
-bool P2Asm::check_dst_src()
-{
-    // No error in pass 1
-    if (m_pass < 2)
-        return true;
-
-    switch (m_IR.error) {
-    case P2Opcode::none:
-        return true;
-    case P2Opcode::dst_augd_none:
-        m_errors += tr("DST constant larger than $1ff but no imediate mode");
-        break;
-    case P2Opcode::dst_augd_im:
-        m_errors += tr("DST constant larger than $1ff but im is not set for L");
-        break;
-    case P2Opcode::dst_augd_wz:
-        m_errors += tr("DST constant larger than $1ff but wz is not set for L");
-        break;
-    case P2Opcode::dst_augd_wc:
-        m_errors += tr("DST constant larger than $1ff but wc is not set for L");
-        break;
-    case P2Opcode::src_augs_none:
-        m_errors += tr("SRC constant larger than $1ff but no imediate mode");
-        break;
-    case P2Opcode::src_augs_im:
-        m_errors += tr("SRC constant larger than $1ff but im is not set for I");
-        break;
-    case P2Opcode::src_augs_wz:
-        m_errors += tr("SRC constant larger than $1ff but wz is not set for I");
-        break;
-    case P2Opcode::src_augs_wc:
-        m_errors += tr("SRC constant larger than $1ff but wc is not set for I");
-        break;
-    }
-    emit Error(m_pass, m_lineno, m_errors.last());
-    return false;
 }
 
 /**

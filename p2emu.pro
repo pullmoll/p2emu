@@ -40,6 +40,7 @@ SOURCES += \
 		p2defs.cpp \
 		p2hub.cpp \
 		p2hubview.cpp \
+		p2opcode.cpp \
 		p2token.cpp \
 		dialogs/about.cpp \
 		dialogs/gotoaddress.cpp \

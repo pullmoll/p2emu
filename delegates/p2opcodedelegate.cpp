@@ -19,11 +19,21 @@ void P2OpcodeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     QVariant var = model->data(index);
     const P2Opcode IR = qvariant_cast<P2Opcode>(var);
     p2_opcode_format_e format = model->opcode_format();
-    QString opcode = var.isNull() ? QString() : format_opcode(IR.u, format);
+    QString text;
+
+    if (!var.isNull()) {
+        if (IR.as_IR) {
+            text = format_opcode(IR.u, format);
+        } else if (IR.as_EQU) {
+            text = format_data(IR.u, format);
+        } else if (!IR.DATA.isEmpty()) {
+            text = P2Atom::format_data(IR.DATA, IR.PC_ORGH.first).join(QChar::LineFeed);
+        }
+    }
 
     QRect rect = option.rect;
     const int flags = static_cast<int>(opt.displayAlignment) |
-                      Qt::TextSingleLine | Qt::TextDontClip | Qt::TextExpandTabs | Qt::TextForceLeftToRight;
+                      Qt::TextDontClip | Qt::TextExpandTabs | Qt::TextForceLeftToRight;
 
     painter->save();
     painter->setClipRect(rect);
@@ -37,7 +47,7 @@ void P2OpcodeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     const bool highlight = opt.state & QStyle::State_HasFocus ? true : false;
     painter->setPen(p2_palette(color_source, highlight));
 
-    opt.text = opcode;
+    opt.text = text;
     painter->drawText(rect, flags, opt.text);
 
     if (highlight) {

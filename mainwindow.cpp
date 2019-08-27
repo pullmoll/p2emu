@@ -489,13 +489,13 @@ void MainWindow::assemble()
 
 void MainWindow::print_error(int pass, int line, const QString& message)
 {
-    QString str_pass = pass ? QString("Pass #%1; ")
-                              .arg(pass)
-                            : QString();
-    QString str_line = line ? QString("<a href=\"%1#%2\">Line #%2</a>; ")
-                              .arg(key_tv_asm)
-                              .arg(line)
-                            : QString();
+    QString str_pass = QString("%1 #%2 - ")
+                       .arg(tr("Pass"))
+                       .arg(QString::number(pass));
+    QString str_line = QString("%1 <a href=\"%2#%3\">#%3</a>: ")
+                       .arg(tr("Line"))
+                        .arg(key_tv_asm)
+                       .arg(QString::number(line));
     QString error = str_pass + str_line + message;
     ui->tbErrors->append(error);
     ui->tbErrors->setVisible(true);

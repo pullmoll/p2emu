@@ -190,25 +190,25 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     const P2Words& words = m_asm->words(lineno);
     const QStringList& references_in = symbols.references_in(lineno);
 
-    const bool PC_avail = m_asm->PC_available(lineno);
-    const p2_PC_ORGH_t PC_orgh = PC_avail ? m_asm->PC_value(lineno) : p2_PC_ORGH_t();
+    const bool has_PC = m_asm->has_PC(lineno);
+    const p2_PC_ORGH_t PC_orgh = has_PC ? m_asm->PC_value(lineno) : p2_PC_ORGH_t();
     const p2_LONG PC = PC_orgh.first;
     const p2_LONG orgh = PC_orgh.second;
 
-    const bool IR_avail = m_asm->IR_available(lineno);
+    const bool has_IR = m_asm->has_IR(lineno);
     const P2Opcode IR = m_asm->IR_value(lineno);
 
     switch (role) {
     case Qt::DisplayRole:
         switch (column) {
         case c_Origin: // Address as COG[xxx], LUT[xxx], or xxxxxx in RAM
-            if (!PC_avail)
+            if (!has_PC)
                 break;
             result = QString("%1").arg(orgh, 6, 16, QChar('0'));
             break;
 
         case c_Address:
-            if (!PC_avail)
+            if (!has_PC)
                 break;
             if (PC < LUT_ADDR0) {
                 result = QString("COG:%1").arg(PC / 4, 3, 16, QChar('0'));
@@ -220,10 +220,8 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
             break;
 
         case c_Opcode: // Opcode string
-            if (PC_avail && IR_avail)
+            if (has_IR)
                 result = qVariantFromValue(IR);
-            else if (!symrefs.isEmpty())
-                result = qVariantFromValue(-1);
             break;
 
         case c_Tokens:
@@ -263,17 +261,17 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     case Qt::EditRole:
         switch (column) {
         case c_Origin:
-            if (m_asm->PC_available(lineno))
+            if (has_PC)
                 return qVariantFromValue(PC_orgh.second);
             break;
 
         case c_Address:
-            if (m_asm->PC_available(lineno))
+            if (has_PC)
                 return qVariantFromValue(PC_orgh.first);
             break;
 
         case c_Opcode:
-            if (IR_avail)
+            if (has_IR)
                 return qVariantFromValue(IR);
             break;
 
