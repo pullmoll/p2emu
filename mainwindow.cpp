@@ -127,6 +127,7 @@ void MainWindow::saveSettingsAsm(QSettings& s)
     s.beginGroup(grp_assembler);
     s.setValue(key_opcodes, m_amodel->opcode_format());
     s.setValue(key_column_origin, ui->tvAsm->isColumnHidden(P2AsmModel::c_Origin));
+    s.setValue(key_column_address, ui->tvAsm->isColumnHidden(P2AsmModel::c_Address));
     s.setValue(key_column_opcode, ui->tvAsm->isColumnHidden(P2AsmModel::c_Opcode));
     s.setValue(key_column_tokens, ui->tvAsm->isColumnHidden(P2AsmModel::c_Tokens));
     s.setValue(key_column_symbols, ui->tvAsm->isColumnHidden(P2AsmModel::c_Symbols));
@@ -173,6 +174,7 @@ void MainWindow::restoreSettingsAsm(QSettings& s)
     int column = s.value(key_current_row).toInt();
     ui->tvAsm->setCurrentIndex(m_amodel->index(row, column));
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Origin, s.value(key_column_origin, false).toBool());
+    ui->tvAsm->setColumnHidden(P2AsmModel::c_Address, s.value(key_column_address, false).toBool());
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Opcode, s.value(key_column_opcode, false).toBool());
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Tokens, s.value(key_column_tokens, false).toBool());
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Symbols, s.value(key_column_symbols, false).toBool());
@@ -220,7 +222,7 @@ void MainWindow::aboutQt5()
     qApp->aboutQt();
 }
 
-void MainWindow::gotoHex(const QString& address)
+void MainWindow::goto_hex(const QString& address)
 {
     bool ok;
     p2_LONG addr = address.toUInt(&ok, 16);
@@ -228,26 +230,26 @@ void MainWindow::gotoHex(const QString& address)
         ui->tvDasm->selectRow(static_cast<int>(addr / 4));
 }
 
-void MainWindow::gotoCog()
+void MainWindow::goto_cog()
 {
-    gotoHex("00000");
+    goto_hex("00000");
 }
 
-void MainWindow::gotoLut()
+void MainWindow::goto_lut()
 {
-    gotoHex("00800");
+    goto_hex("00800");
 }
 
-void MainWindow::gotoRom()
+void MainWindow::goto_rom()
 {
-    gotoHex("fc000");
+    goto_hex("fc000");
 }
 
-void MainWindow::gotoAddress()
+void MainWindow::goto_address()
 {
     GotoAddress dlg;
     if (QDialog::Accepted == dlg.exec()) {
-        gotoHex(dlg.address());
+        goto_hex(dlg.address());
     }
 }
 
@@ -417,13 +419,7 @@ void MainWindow::setDasmFontSize(int size)
 
 void MainWindow::asmHeaderColums(const QPoint& pos)
 {
-    QList<P2AsmModel::column_e> columns;
-    columns += P2AsmModel::c_Origin;
-    columns += P2AsmModel::c_Opcode;
-    columns += P2AsmModel::c_Tokens;
-    columns += P2AsmModel::c_Symbols;
-    columns += P2AsmModel::c_Errors;
-    columns += P2AsmModel::c_Source;
+    QList<P2AsmModel::column_e> columns = m_amodel->columns();
 
     QMenu m(tr("Select columns"));
     foreach(P2AsmModel::column_e column, columns) {
@@ -446,11 +442,7 @@ void MainWindow::asmHeaderColums(const QPoint& pos)
 
 void MainWindow::dasmHeaderColums(const QPoint& pos)
 {
-    QList<P2DasmModel::column_e> columns;
-    columns += P2DasmModel::c_Address;
-    columns += P2DasmModel::c_Opcode;
-    columns += P2DasmModel::c_Instruction;
-    columns += P2DasmModel::c_Description;
+    QList<P2DasmModel::column_e> columns = m_dmodel->columns();
 
     QMenu m(tr("Select columns"));
     foreach(P2DasmModel::column_e column, columns) {
@@ -575,6 +567,10 @@ void MainWindow::print_error(int pass, int line, const QString& message)
     QString error = str_pass + str_line + message;
     ui->tbErrors->append(error);
     ui->tbErrors->setVisible(true);
+    QList<int> sizes;
+    sizes += ui->tvAsm->height();
+    sizes += 120;
+    ui->splitter->setSizes(sizes);
 }
 
 void MainWindow::goto_line(const QUrl& url)
@@ -706,16 +702,16 @@ void MainWindow::setupToolbars()
 
     ui->toolbarDasm->addSeparator();
 
-    connect(ui->action_Go_to_COG, SIGNAL(triggered()), SLOT(gotoCog()));
+    connect(ui->action_Go_to_COG, SIGNAL(triggered()), SLOT(goto_cog()));
     ui->toolbarDasm->addAction(ui->action_Go_to_COG);
 
-    connect(ui->action_Go_to_LUT, SIGNAL(triggered()), SLOT(gotoLut()));
+    connect(ui->action_Go_to_LUT, SIGNAL(triggered()), SLOT(goto_lut()));
     ui->toolbarDasm->addAction(ui->action_Go_to_LUT);
 
-    connect(ui->action_Go_to_ROM, SIGNAL(triggered()), SLOT(gotoRom()));
+    connect(ui->action_Go_to_ROM, SIGNAL(triggered()), SLOT(goto_rom()));
     ui->toolbarDasm->addAction(ui->action_Go_to_ROM);
 
-    connect(ui->action_Go_to_address, SIGNAL(triggered()), SLOT(gotoAddress()));
+    connect(ui->action_Go_to_address, SIGNAL(triggered()), SLOT(goto_address()));
     ui->toolbarDasm->addAction(ui->action_Go_to_address);
 
     ui->toolbarDasm->addSeparator();

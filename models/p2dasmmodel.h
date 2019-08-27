@@ -56,6 +56,7 @@ public:
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 
+    static QList<column_e> columns();
     p2_opcode_format_e opcode_format() const { return m_format; }
     QSize sizeHint(column_e column, bool header = false) const;
 

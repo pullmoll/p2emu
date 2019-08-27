@@ -74,11 +74,11 @@ private slots:
     void about();
     void aboutQt5();
 
-    void gotoHex(const QString& address = QString());
-    void gotoCog();
-    void gotoLut();
-    void gotoRom();
-    void gotoAddress();
+    void goto_hex(const QString& address = QString());
+    void goto_cog();
+    void goto_lut();
+    void goto_rom();
+    void goto_address();
 
     void setAsmOpcodes(int mode);
     void setAsmOpcodesBin();

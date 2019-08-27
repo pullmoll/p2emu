@@ -41,7 +41,8 @@
 #include "p2atom.h"
 #include "p2asmsymtbl.h"
 
-typedef QHash<int, p2_LONG> p2_PC_hash_t;
+typedef QPair<p2_LONG,p2_LONG> p2_PC_org_t;
+typedef QHash<int, p2_PC_org_t> p2_PC_hash_t;
 typedef QHash<int, p2_opcode_u> p2_IR_hash_t;
 typedef QHash<int, P2Atom> p2_data_hash_t;
 typedef QHash<int, P2Words> p2_words_hash_t;
@@ -77,12 +78,16 @@ public:
 
     int count() const;
     const p2_PC_hash_t& PC_hash() const;
-    p2_LONG PC_value(int lineno) const;
+    p2_PC_org_t PC_value(int lineno) const;
     bool PC_available(int lineno) const;
 
     const p2_IR_hash_t& IR_hash() const;
     p2_opcode_u IR_value(int lineno) const;
     bool IR_available(int lineno) const;
+
+    const p2_data_hash_t& data_hash() const;
+    P2Atom data_value(int lineno) const;
+    bool data_available(int lineno) const;
 
     const p2_words_hash_t& words_hash() const;
     P2Words words(int lineno) const;
@@ -118,7 +123,7 @@ private:
     int m_lineno;                           //!< current line number
     int m_in_curly;                         //!< parser inside curly braces comment level
     QString m_line;                         //!< current line of source
-    QStringList m_error;                    //!< error message(s) from parameters parser
+    QStringList m_errors;                    //!< error message(s) from parameters parser
     p2_LONG m_next_PC;                      //!< next program counter
     p2_LONG m_curr_PC;                      //!< current program counter (origin of the instruction)
     p2_LONG m_last_PC;                      //!< last program counter (maximum of next_pc)
@@ -152,10 +157,10 @@ private:
     QHash<Section,QString> m_sections;      //!< currently defined function symbol, i.e. a name w/o initial dot (.)
 
     int commas_left() const;
-    QString results_instruction(bool binary);
+    QString results_instruction(bool wr_mem);
     QString results_assignment();
     QString results_comment();
-    QString results_data(bool binary);
+    QString results_data(bool wr_mem);
     void results();
     QString expand_tabs(const QString& src);
     bool skip_comments();

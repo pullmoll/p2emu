@@ -225,6 +225,16 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
     return result;
 }
 
+QList<P2DasmModel::column_e> P2DasmModel::columns()
+{
+    QList<column_e> columns;
+    columns += c_Address;
+    columns += c_Opcode;
+    columns += c_Instruction;
+    columns += c_Description;
+    return columns;
+}
+
 QSize P2DasmModel::sizeHint(P2DasmModel::column_e column, bool header) const
 {
     QFont font(m_font);

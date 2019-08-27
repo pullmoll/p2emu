@@ -54,6 +54,7 @@ P2AsmModel::P2AsmModel(P2Asm* p2asm, QObject *parent)
 
     // Header section names
     m_header.insert(c_Origin,       tr("Origin"));
+    m_header.insert(c_Address,      tr("Address"));
     m_header.insert(c_Errors,       tr("Errors"));
     m_header.insert(c_Tokens,       tr("Tokens"));
     m_header.insert(c_Opcode,       tr("Opcode"));
@@ -62,6 +63,7 @@ P2AsmModel::P2AsmModel(P2Asm* p2asm, QObject *parent)
     // Horizontal section background colors
 
     m_background.insert(c_Origin,   qRgb(0xff,0xfc,0xf8));
+    m_background.insert(c_Address,  qRgb(0xff,0xf0,0xe0));
     m_background.insert(c_Opcode,   qRgb(0xf8,0xfc,0xff));
     m_background.insert(c_Tokens,   qRgb(0x10,0xfc,0xff));
     m_background.insert(c_Symbols,  qRgb(0xff,0xf0,0xff));
@@ -70,6 +72,7 @@ P2AsmModel::P2AsmModel(P2Asm* p2asm, QObject *parent)
 
     // Horizontal section alignments
     m_header_alignment.insert(c_Origin,     Qt::AlignLeft | Qt::AlignVCenter);
+    m_header_alignment.insert(c_Address,    Qt::AlignLeft | Qt::AlignVCenter);
     m_header_alignment.insert(c_Opcode,     Qt::AlignLeft | Qt::AlignVCenter);
     m_header_alignment.insert(c_Tokens,     Qt::AlignLeft | Qt::AlignVCenter);
     m_header_alignment.insert(c_Errors,     Qt::AlignLeft | Qt::AlignVCenter);
@@ -79,6 +82,7 @@ P2AsmModel::P2AsmModel(P2Asm* p2asm, QObject *parent)
     // Item alignments
     m_text_alignment.insert(c_Origin,       Qt::AlignLeft | Qt::AlignVCenter);
     m_text_alignment.insert(c_Opcode,       Qt::AlignLeft | Qt::AlignVCenter);
+    m_text_alignment.insert(c_Address,      Qt::AlignLeft | Qt::AlignVCenter);
     m_text_alignment.insert(c_Tokens,       Qt::AlignCenter);
     m_text_alignment.insert(c_Errors,       Qt::AlignCenter);
     m_text_alignment.insert(c_Symbols,      Qt::AlignCenter);
@@ -117,6 +121,9 @@ QVariant P2AsmModel::headerData(int section, Qt::Orientation orientation, int ro
             switch (column) {
             case c_Origin:
                 result = tr("Origin of the current instruction.");
+                break;
+            case c_Address:
+                result = tr("Program counter address of the current instruction.");
                 break;
             case c_Errors:
                 result = tr("Errors while assembling the current line.");
@@ -163,16 +170,17 @@ int P2AsmModel::columnCount(const QModelIndex &parent) const
     return columns;
 }
 
-static const QStringList html_table_init(const QString& bgd)
+static const QStringList html_head(const QString& bgd = QString())
 {
     QStringList html;
     html += QStringLiteral("<html>");
     html += QStringLiteral("<body>");
-    html += QString("<table %1>").arg(bgd);
+    html += QString("<table %1>")
+            .arg(bgd);
     return html;
 }
 
-static const QStringList html_table_exit()
+static const QStringList html_end()
 {
     QStringList html;
     html += QStringLiteral("</table>");
@@ -181,109 +189,118 @@ static const QStringList html_table_exit()
     return html;
 }
 
-static const QString html_th(const QString& text)
-{
-    return QString("<th %1 %2 %3><tt>%4</tt></th>")
-            .arg(style_nowrap)
-            .arg(style_padding)
-            .arg(style_left)
-            .arg(text);
-
-}
-
-static const QString html_tr_init()
+static const QString html_start_tr()
 {
     return QString("<tr %1>")
             .arg(style_padding);
 
 }
 
-static const QString html_tr_exit()
+static const QString html_end_tr()
 {
     return QStringLiteral("</tr>");
 
 }
 
-static const QString html_td(const QString& text)
+static const QString html_th(const QString& text, const QString& bgd = QString())
 {
-    return QString("<td %1 %2><tt>%3</tt></td>")
+    return QString("<th %1 %2 %3 %4><tt>%5</tt></th>")
             .arg(style_padding)
             .arg(style_nowrap)
+            .arg(style_left)
+            .arg(bgd)
+            .arg(text);
+
+}
+
+static const QString html_td(const QString& text, const QString& bgd = QString())
+{
+    return QString("<td %1 %2 %3><tt>%4</tt></td>")
+            .arg(style_padding)
+            .arg(style_nowrap)
+            .arg(bgd)
             .arg(text);
 }
 
 QString P2AsmModel::tokenToolTip(const P2Words& words, const QString& bgd) const
 {
-    QStringList html = html_table_init(bgd);
+    QStringList html = html_head();
 
     // heading
-    html += html_tr_init();
-    html += html_th(tr("Position, Length"));
-    html += html_th(tr("Token"));
-    html += html_th(tr("Type"));
-    html += html_th(tr("Source code"));
-    html += html_tr_exit();
+    html += html_start_tr();
+    html += html_th(tr("Position, Length"), bgd);
+    html += html_th(tr("Token"), bgd);
+    html += html_th(tr("Type"), bgd);
+    html += html_th(tr("Source code"), bgd);
+    html += html_end_tr();
 
     for (int i = 0; i < words.count(); i++) {
         const P2Word& word = words[i];
-        html += html_tr_init();
+        html += html_start_tr();
         html += html_td(QString("@%1 +%2")
                         .arg(word.pos())
-                        .arg(word.len()));
+                        .arg(word.len()),
+                        bgd);
         html += html_td(QString("%1: %2")
                         .arg(word.tok(), 3, 16, QChar('0'))
-                        .arg(Token.enum_name(word.tok())));
-        html += html_td(Token.type_names(word.tok()).join(QChar::Space));
-        html += html_td(word.str());
-        html += html_tr_exit();
+                        .arg(Token.enum_name(word.tok())),
+                        bgd);
+        html += html_td(Token.type_names(word.tok()).join(QChar::Space),
+                        bgd);
+        html += html_td(word.str(),
+                        bgd);
+        html += html_end_tr();
     }
-    html += html_table_exit();
+    html += html_end();
     return html.join(QChar::LineFeed);
 }
 
 QString P2AsmModel::symbolsToolTip(const P2AsmSymTbl& symbols, const QStringList& defined, const QString& bgd) const
 {
-    QStringList html = html_table_init(bgd);
+    QStringList html = html_head();
     // heading
-    html += html_tr_init();
-    html += html_th(tr("Section::name"));
-    html += html_th(tr("Type"));
-    html += html_th(tr("Value (dec)"));
-    html += html_th(tr("Value (hex)"));
-    html += html_th(tr("Value (bin)"));
-    html += html_tr_exit();
+    html += html_start_tr();
+    html += html_th(tr("Section::name"), bgd);
+    html += html_th(tr("Type"), bgd);
+    html += html_th(tr("Value (dec)"), bgd);
+    html += html_th(tr("Value (hex)"), bgd);
+    html += html_th(tr("Value (bin)"), bgd);
+    html += html_end_tr();
 
     for (int i = 0; i < defined.count(); i++) {
         const QString& symbol = defined[i];
         P2AsmSymbol sym = symbols.value(symbol);
         p2_LONG val = sym.value<p2_LONG>();
-        html += html_tr_init();
-        html += html_td(sym.name());
-        html += html_td(sym.type_name());
+        html += html_start_tr();
+        html += html_td(sym.name(), bgd);
+        html += html_td(sym.type_name(), bgd);
         html += html_td(QString("%1")
-                        .arg(val, 11, 10));
+                        .arg(val, 11, 10),
+                        bgd);
         html += html_td(QString("$%1")
-                        .arg(val, 8, 16, QChar('0')));
+                        .arg(val, 8, 16, QChar('0')),
+                        bgd);
         html += html_td(QString("%%1")
-                        .arg(val, 32, 2, QChar('0')));
-        html += html_tr_exit();
+                        .arg(val, 32, 2, QChar('0')),
+                        bgd);
+        html += html_end_tr();
     }
-    html += html_table_exit();
+    html += html_end();
     return html.join(QChar::LineFeed);
 }
 
 QString P2AsmModel::errorsToolTip(const QStringList& list, const QString& bgd) const
 {
-    QStringList html = html_table_init(bgd);
-    html += html_tr_init();
-    html += html_th(tr("Error message"));
-    html += html_tr_exit();
+    QStringList html = html_head();
+    html += html_start_tr();
+    html += html_th(tr("Error message"), bgd);
+    html += html_end_tr();
     foreach (const QString& error, list) {
-        html += html_tr_init();
-        html += html_td(error);
-        html += html_tr_exit();
+        html += html_start_tr();
+        html += html_td(error, bgd);
+        html += html_end_tr();
     }
-    html += html_table_exit();
+    html += html_end();
     return html.join(QChar::LineFeed);
 }
 
@@ -308,7 +325,9 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     const QStringList& references_in = symbols.references_in(lineno);
 
     const bool PC_avail = m_asm->PC_available(lineno);
-    const p2_LONG PC = PC_avail ? m_asm->PC_value(lineno) : 0;
+    const p2_PC_org_t PC_orgh = PC_avail ? m_asm->PC_value(lineno) : p2_PC_org_t();
+    const p2_LONG PC = PC_orgh.first;
+    const p2_LONG orgh = PC_orgh.second;
 
     const bool IR_avail = m_asm->IR_available(lineno);
     const p2_opcode_u IR = m_asm->IR_value(lineno);
@@ -317,6 +336,12 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     case Qt::DisplayRole:
         switch (column) {
         case c_Origin: // Address as COG[xxx], LUT[xxx], or xxxxxx in RAM
+            if (!PC_avail)
+                break;
+            result = QString("%1").arg(orgh, 6, 16, QChar('0'));
+            break;
+
+        case c_Address:
             if (!PC_avail)
                 break;
             if (PC < LUT_ADDR0) {
@@ -371,7 +396,12 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
         switch (column) {
         case c_Origin:
             if (m_asm->PC_available(lineno))
-                return m_asm->PC_value(lineno);
+                return qVariantFromValue(PC_orgh.second);
+            break;
+
+        case c_Address:
+            if (m_asm->PC_available(lineno))
+                return qVariantFromValue(PC_orgh.first);
             break;
 
         case c_Opcode:
@@ -402,7 +432,11 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     case Qt::ToolTipRole:
         switch (column) {
         case c_Origin:
-            result = tr("This column the address where code/data is emitted to.");
+            result = tr("This column shows the address where code/data is emitted to.");
+            break;
+
+        case c_Address:
+            result = tr("This column shows the address of the program counter (PC).");
             break;
 
         case c_Opcode:
@@ -522,6 +556,9 @@ QSize P2AsmModel::sizeHint(P2AsmModel::column_e column, bool header) const
     case c_Origin:
         return metrics.size(Qt::TextSingleLine, template_str_address);
 
+    case c_Address:
+        return metrics.size(Qt::TextSingleLine, template_str_address);
+
     case c_Opcode:
         switch (m_format) {
         case fmt_bin:
@@ -566,6 +603,19 @@ Qt::ItemFlags P2AsmModel::flags(const QModelIndex &index) const
     return flags;
 }
 #endif
+
+QList<P2AsmModel::column_e> P2AsmModel::columns()
+{
+    QList<column_e> columns;
+    columns += c_Origin;
+    columns += c_Address;
+    columns += c_Opcode;
+    columns += c_Tokens;
+    columns += c_Symbols;
+    columns += c_Errors;
+    columns += c_Source;
+    return columns;
+}
 
 void P2AsmModel::invalidate()
 {

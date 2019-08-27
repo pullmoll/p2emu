@@ -49,6 +49,7 @@ class P2AsmModel : public QAbstractTableModel
 public:
     enum column_e {
         c_Origin,
+        c_Address,
         c_Opcode,
         c_Tokens,
         c_Symbols,
@@ -67,6 +68,7 @@ public:
     Qt::ItemFlags flags(const QModelIndex& index) const override;
 #endif
 
+    static QList<column_e> columns();
     p2_opcode_format_e opcode_format() const { return m_format; }
     QSize sizeHint(column_e column, bool header = false) const;
 
