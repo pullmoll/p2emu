@@ -111,9 +111,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     setupAssembler();
     setupDisassembler();
+    setupCogView();
 
     restoreSettings();
-    setupCogView();
 }
 
 MainWindow::~MainWindow()
@@ -551,9 +551,9 @@ void MainWindow::assemble()
         if (status)
             status->setText(tr("Assembly took %1 ms.").arg(t1 - t0));
         // Inspect result
-        const int row = ui->tvAsm->currentIndex().row();
+        const QModelIndex idx = ui->tvAsm->currentIndex();
         m_amodel->invalidate();
-        ui->tvAsm->selectRow(row);
+        ui->tvAsm->setCurrentIndex(idx);
 #if 0
         P2AsmListing dlg;
         dlg.setListing(m_asm->listing());
@@ -581,7 +581,6 @@ void MainWindow::goto_line(const QUrl& url)
 {
     QString path = url.path();
     QString frag = url.fragment();
-    qDebug("%s: %s %s", __func__, qPrintable(path), qPrintable(frag));
     bool ok;
     int line = frag.toInt(&ok);
     if (path == key_tv_asm) {
@@ -631,12 +630,11 @@ void MainWindow::setupAssembler()
     ui->tvAsm->setItemDelegateForColumn(P2AsmModel::c_Source, new P2SourceDelegate);
     delete sd;
 
-
     ui->tvAsm->setModel(m_amodel);
     updateAsmColumnSizes();
 
-    QString sourcecode = QStringLiteral(":/ROM_Booter_v33_01j.spin2");
-    // QString sourcecode = QStringLiteral(":/P2-qz80-rr032.spin2");
+    // QString sourcecode = QStringLiteral(":/ROM_Booter_v33_01j.spin2");
+    QString sourcecode = QStringLiteral(":/P2-qz80-rr032.spin2");
     openSource(sourcecode);
 }
 

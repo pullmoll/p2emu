@@ -118,7 +118,7 @@ private:
     int m_lineno;                           //!< current line number
     int m_in_curly;                         //!< parser inside curly braces comment level
     QString m_line;                         //!< current line of source
-    QString m_error;                        //!< error message from parameters parser
+    QStringList m_error;                    //!< error message(s) from parameters parser
     p2_LONG m_next_PC;                      //!< next program counter
     p2_LONG m_curr_PC;                      //!< current program counter (origin of the instruction)
     p2_LONG m_last_PC;                      //!< last program counter (maximum of next_pc)

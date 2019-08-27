@@ -351,13 +351,13 @@ bool P2Asm::assemble_pass()
                 } else if (!sym.isNull()) {
                     // Already defined
                     const p2_LONG value = sym.value<p2_LONG>();
-                    m_error = tr("Symbol '%1' already defined in line #%2.\n\tValue: %3 ($%4, %%5).")
+                    m_error += tr("Symbol '%1' already defined in line #%2.\n\tValue: %3 ($%4, %%5).")
                               .arg(m_symbol)
                               .arg(sym.defined_where())
                               .arg(value)
                               .arg(value, 6, 16, QChar('0'))
                               .arg(value, 32, 2, QChar('0'));
-                    emit Error(m_pass, m_lineno, m_error);
+                    emit Error(m_pass, m_lineno, m_error.last());
                 }
             }
             break;
@@ -1875,31 +1875,31 @@ bool P2Asm::assemble_pass()
             default:
                 if (Token.is_type(m_instr, tm_inst)) {
                     // Missing handling of an instruction token
-                    m_error = tr("Missing handling of instruction token '%1' in:\n\t%2")
+                    m_error += tr("Missing handling of instruction token '%1' in:\n\t%2")
                           .arg(Token.string(m_instr))
                           .arg(m_line);
-                    emit Error(m_pass, m_lineno, m_error);
+                    emit Error(m_pass, m_lineno, m_error.last());
                 }
                 if (Token.is_type(m_instr, tm_constant)) {
                     // Unexpected constant token
-                    m_error = tr("Constant '%1' used as an instruction in:\n\t%2")
+                    m_error += tr("Constant '%1' used as an instruction in:\n\t%2")
                               .arg(Token.string(m_instr))
                               .arg(m_line);
-                    emit Error(m_pass, m_lineno, m_error);
+                    emit Error(m_pass, m_lineno, m_error.last());
                 }
                 if (Token.is_type(m_instr, tm_conditional)) {
                     // Unexpected conditional token
-                    m_error = tr("Multiple conditionals '%1' in:\n\t%2")
+                    m_error += tr("Multiple conditionals '%1' in:\n\t%2")
                               .arg(Token.string(m_instr))
                               .arg(m_line);
-                    emit Error(m_pass, m_lineno, m_error);
+                    emit Error(m_pass, m_lineno, m_error.last());
                 }
                 if (Token.is_type(m_instr, tm_modcz_param)) {
                     // Unexpected MODCZ parameter token
-                    m_error = tr("MODCZ parameter '%1' in:\n\t%2")
+                    m_error += tr("MODCZ parameter '%1' in:\n\t%2")
                               .arg(Token.string(m_instr))
                               .arg(m_line);
-                    emit Error(m_pass, m_lineno, m_error);
+                    emit Error(m_pass, m_lineno, m_error.last());
                 }
                 m_idx = m_cnt;
             }
@@ -2116,7 +2116,8 @@ void P2Asm::results()
     if (!m_words.isEmpty())
         m_hash_words.insert(m_lineno, m_words);
     if (!m_error.isEmpty())
-        m_hash_error.insert(m_lineno, m_error);
+        foreach(const QString& error, m_error)
+            m_hash_error.insert(m_lineno, error);
 }
 
 QString P2Asm::expand_tabs(const QString& src)
@@ -2475,6 +2476,11 @@ P2Atom P2Asm::parse_atom()
         DEBUG_EXPR(" rbracket: %s", qPrintable(str));
         break;
 
+    case t__RELATIVE:
+    case t__RELATIVE_HUB:
+        DEBUG_EXPR(" relative: %s", qPrintable(str));
+        break;
+
     case t_locsym:
         {
             QString function = m_function.value(m_section);
@@ -2753,7 +2759,9 @@ P2Atom P2Asm::parse_mulops()
         P2Atom rvalue = parse_unary();
         if (!rvalue.isValid()) {
             DEBUG_EXPR(" invalid rvalue: %s", qPrintable(str));
-            m_error = tr("Invalid character in expression (mulops): %1").arg(str);
+            m_error += tr("Invalid character in expression (mulops): %1")
+                       .arg(str);
+            emit Error(m_pass, m_lineno, m_error.last());
             break;
         }
 
@@ -2801,8 +2809,9 @@ P2Atom P2Asm::parse_addops()
         P2Atom rvalue = parse_mulops();
         if (!rvalue.isValid()) {
             DEBUG_EXPR(" invalid rvalue: %s", qPrintable(str));
-            m_error = tr("Invalid character in expression (addops): %1")
+            m_error += tr("Invalid character in expression (addops): %1")
                       .arg(str);
+            emit Error(m_pass, m_lineno, m_error.last());
             break;
         }
 
@@ -2847,8 +2856,9 @@ P2Atom P2Asm::parse_shiftops()
         P2Atom rvalue = parse_addops();
         if (!rvalue.isValid()) {
             DEBUG_EXPR(" invalid rvalue: %s", qPrintable(str));
-            m_error = tr("Invalid character in expression (shiftops): %1")
+            m_error += tr("Invalid character in expression (shiftops): %1")
                       .arg(str);
+            emit Error(m_pass, m_lineno, m_error.last());
             break;
         }
 
@@ -2898,8 +2908,9 @@ P2Atom P2Asm::parse_binops()
         P2Atom rvalue = parse_shiftops();
         if (!rvalue.isValid()) {
             DEBUG_EXPR(" invalid rvalue: %s", qPrintable(str));
-            m_error = tr("Invalid character in expression (binops): %1")
+            m_error += tr("Invalid character in expression (binops): %1")
                       .arg(str);
+            emit Error(m_pass, m_lineno, m_error.last());
             break;
         }
 
@@ -3036,8 +3047,9 @@ bool P2Asm::end_of_line()
 {
     if (skip_comments()) {
         // ignore extra parameters?
-        m_error = tr("Found extra parameters: %1")
+        m_error += tr("Found extra parameters: %1")
                   .arg(m_source[m_lineno].mid(m_words.value(m_idx).pos()));
+        emit Error(m_pass, m_lineno, m_error.last());
         return false;
     }
     return true;
@@ -3051,15 +3063,17 @@ bool P2Asm::end_of_line()
 bool P2Asm::parse_comma()
 {
     if (!skip_comments()) {
-        m_error = tr("Expected %1 but found %2.")
+        m_error += tr("Expected %1 but found %2.")
                   .arg(Token.string(t__COMMA))
                   .arg(tr("end of line"));
+        emit Error(m_pass, m_lineno, m_error.last());
         return false;
     }
     if (t__COMMA != m_words.value(m_idx).tok()) {
-        m_error = tr("Expected %1 but found %2.")
+        m_error += tr("Expected %1 but found %2.")
                   .arg(Token.string(t__COMMA))
                   .arg(Token.string(m_words.value(m_idx).tok()));
+        emit Error(m_pass, m_lineno, m_error.last());
         return false;
     }
     m_idx++;
@@ -3107,9 +3121,10 @@ bool P2Asm::optional_wcz()
             m_idx++;
             break;
         default:
-            m_error = tr("Unexpected flag update '%1' not %2")
+            m_error += tr("Unexpected flag update '%1' not %2")
                       .arg(m_words.value(m_idx).str())
                       .arg(tr("WC, WZ, or WCZ"));
+            emit Error(m_pass, m_lineno, m_error.last());
             return false;
         }
     }
@@ -3131,9 +3146,10 @@ bool P2Asm::optional_wc()
             m_idx++;
             break;
         default:
-            m_error = tr("Unexpected flag update '%1' not %2")
+            m_error += tr("Unexpected flag update '%1' not %2")
                       .arg(m_words.value(m_idx).str())
                       .arg(tr("WC"));
+            emit Error(m_pass, m_lineno, m_error.last());
             return false;
         }
     }
@@ -3155,9 +3171,10 @@ bool P2Asm::optional_wz()
             m_idx++;
             break;
         default:
-            m_error = tr("Unexpected flag update '%1' not %2")
+            m_error += tr("Unexpected flag update '%1' not %2")
                       .arg(m_words.value(m_idx).str())
                       .arg(tr("WZ"));
+            emit Error(m_pass, m_lineno, m_error.last());
             return false;
         }
     }
@@ -3221,7 +3238,7 @@ bool P2Asm::asm_org()
     p2_LONG value = atom.to_long();
     if (atom.isEmpty())
         value = m_last_PC;
-    m_curr_PC = m_next_PC = value < HUB_ADDR0 ? value*4 : value;
+    m_next_PC = value < HUB_ADDR0 ? value*4 : value;
     m_symbols.setValue(m_symbol, value);
     return end_of_line();
 }
@@ -3240,8 +3257,29 @@ bool P2Asm::asm_orgh()
     p2_LONG value = atom.to_long();
     if (atom.isEmpty())
         value = HUB_ADDR0;
-    m_next_PC = value;
+    m_last_PC = m_orgh = value;
     m_symbols.setValue(m_symbol, value);
+    return end_of_line();
+}
+
+/**
+ * @brief Expect an address which is checked for being < curr_pc
+ * @return true on success, or false on error
+ */
+bool P2Asm::asm_fit()
+{
+    m_idx++;
+    m_advance = 0;
+    m_emit_IR = false;
+    P2Atom atom = parse_expression();
+    const p2_LONG fit = atom.to_long();
+    const p2_LONG PC = m_curr_PC < HUB_ADDR0 ? m_curr_PC / 4 : m_curr_PC;
+    if (fit < PC) {
+        m_error += tr("Code does not fit below $%1 (origin == $%2)")
+                  .arg(fit, 0, 16)
+                  .arg(PC, 0, 16);
+        emit Error(m_pass, m_lineno, m_error.last());
+    }
     return end_of_line();
 }
 
@@ -3522,19 +3560,22 @@ bool P2Asm::parse_d_imm_s_nnn(uint max)
         if (m_idx < m_cnt) {
             P2Atom n = parse_expression();
             if (n.isEmpty()) {
-                m_error = tr("Expected immediate #n");
+                m_error += tr("Expected immediate #n");
+                emit Error(m_pass, m_lineno, m_error.last());
                 return false;
             }
             if (n.to_long() > max) {
-                m_error = tr("Immediate #n not in 0-%1 (%2)")
+                m_error += tr("Immediate #n not in 0-%1 (%2)")
                           .arg(max)
                           .arg(n.to_long());
+                emit Error(m_pass, m_lineno, m_error.last());
                 return false;
             }
             p2_LONG opcode = static_cast<p2_LONG>(n.to_long() & max) << 18;
             m_IR.opcode |= opcode;
         } else {
-            m_error = tr("Missing immediate #n");
+            m_error += tr("Missing immediate #n");
+            emit Error(m_pass, m_lineno, m_error.last());
             return false;
         }
     } else {
@@ -3590,8 +3631,9 @@ bool P2Asm::parse_ptr_pc_abs()
         m_IR.op.wc = true;
         break;
     default:
-        m_error = tr("Invalid pointer parameter: %1")
+        m_error += tr("Invalid pointer parameter: %1")
                   .arg(m_source[m_lineno].mid(m_words.value(m_idx).pos()));
+        emit Error(m_pass, m_lineno, m_error.last());
         return false;
     }
     m_idx++;
@@ -3728,31 +3770,15 @@ bool P2Asm::asm_file()
             m_data.append(data.readAll());
             data.close();
         } else {
-            m_error = tr("Could not open file %1 for reading.").arg(filename);
+            m_error += tr("Could not open file %1 for reading.")
+                       .arg(filename);
+            emit Error(m_pass, m_lineno, m_error.last());
             return false;
         }
         optional_comma();
     }
     return end_of_line();
 
-}
-
-/**
- * @brief Expect an address which is checked for being < curr_pc
- * @return true on success, or false on error
- */
-bool P2Asm::asm_fit()
-{
-    m_idx++;
-    P2Atom atom = parse_expression();
-    const p2_LONG fit = atom.to_long();
-    const p2_LONG PC = m_curr_PC < HUB_ADDR0 ? m_curr_PC / 4 : m_curr_PC;
-    if (fit < PC) {
-        m_error = tr("Code does not fit below $%1 (origin == $%2)")
-                  .arg(fit, 0, 16)
-                  .arg(PC, 0, 16);
-    }
-    return end_of_line();
 }
 
 /**
@@ -10352,9 +10378,10 @@ bool P2Asm::asm_loc()
         success = asm_loc_ptrb();
         break;
     default:
-        m_error = tr("Invalid pointer type '%1'; expected one of %2.")
+        m_error += tr("Invalid pointer type '%1'; expected one of %2.")
                   .arg(m_words.value(m_idx).str())
                   .arg(tr("PA, PB, PTRA, or PTRB"));
+        emit Error(m_pass, m_lineno, m_error.last());
     }
     return success;
 }

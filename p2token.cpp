@@ -1151,7 +1151,7 @@ p2_token_e P2Token::token(const QString& str, bool chop, int* plen) const
             break;
         }
         if (rx_comment_curly.exactMatch(ustr)) {
-            tok = t_comment_lcurly;
+            tok = t_comment;
             break;
         }
         if (rx_symbol.exactMatch(ustr)) {
