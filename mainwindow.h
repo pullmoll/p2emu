@@ -81,19 +81,13 @@ private slots:
     void goto_address();
 
     void setAsmOpcodes(int mode);
-    void setAsmOpcodesBin();
-    void setAsmOpcodesByt();
-    void setAsmOpcodesOct();
-    void setAsmOpcodesHex();
+    void setAsmOpcodes();
     void incAsmFontSize();
     void decAsmFontSize();
     void setAsmFontSize(int size);
 
     void setDasmOpcodes(int mode);
-    void setDasmOpcodesBin();
-    void setDasmOpcodesByt();
-    void setDasmOpcodesOct();
-    void setDasmOpcodesHex();
+    void setDasmOpcodes();
     void incDasmFontSize();
     void decDasmFontSize();
     void setDasmFontSize(int size);

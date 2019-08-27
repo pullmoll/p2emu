@@ -63,6 +63,7 @@ HEADERS += \
 		p2defs.h \
 		p2hub.h \
 		p2hubview.h \
+		p2opcode.h \
 		p2token.h \
 		dialogs/about.h \
 		dialogs/gotoaddress.h \

@@ -72,7 +72,7 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
             break;
 
         case t_string:
-            painter->setPen(p2_palette(color_string, highlight));
+            painter->setPen(p2_palette(color_str_const, highlight));
             break;
 
         case t_bin_const:

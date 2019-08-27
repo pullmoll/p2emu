@@ -256,49 +256,20 @@ void MainWindow::goto_address()
 void MainWindow::setAsmOpcodes(int mode)
 {
     p2_opcode_format_e format = static_cast<p2_opcode_format_e>(mode);
-    switch (format) {
-    case fmt_bin:
-        ui->action_Asm_Opcodes_bin->setChecked(true);
-        ui->action_Asm_Opcodes_byt->setChecked(false);
-        ui->action_Asm_Opcodes_oct->setChecked(false);
-        ui->action_Asm_Opcodes_hex->setChecked(false);
-        break;
-    case fmt_byt:
-        ui->action_Asm_Opcodes_bin->setChecked(false);
-        ui->action_Asm_Opcodes_byt->setChecked(true);
-        ui->action_Asm_Opcodes_oct->setChecked(false);
-        ui->action_Asm_Opcodes_hex->setChecked(false);
-        break;
-    case fmt_oct:
-        ui->action_Asm_Opcodes_bin->setChecked(false);
-        ui->action_Asm_Opcodes_byt->setChecked(false);
-        ui->action_Asm_Opcodes_oct->setChecked(true);
-        ui->action_Asm_Opcodes_hex->setChecked(false);
-        break;
-    case fmt_hex:
-        ui->action_Asm_Opcodes_bin->setChecked(false);
-        ui->action_Asm_Opcodes_byt->setChecked(false);
-        ui->action_Asm_Opcodes_oct->setChecked(false);
-        ui->action_Asm_Opcodes_hex->setChecked(true);
-        break;
-    }
+    ui->action_Asm_Opcodes_bin->setChecked(format == fmt_bin);
+    ui->action_Asm_Opcodes_byt->setChecked(format == fmt_byt);
+    ui->action_Asm_Opcodes_oct->setChecked(format == fmt_oct);
+    ui->action_Asm_Opcodes_dec->setChecked(format == fmt_dec);
+    ui->action_Asm_Opcodes_hex->setChecked(format == fmt_hex);
     m_amodel->setOpcodeFormat(format);
     updateAsmColumnSizes();
 }
 
-void MainWindow::setAsmOpcodesBin()
+void MainWindow::setAsmOpcodes()
 {
-    setAsmOpcodes(fmt_bin);
-}
-
-void MainWindow::setAsmOpcodesByt()
-{
-    setAsmOpcodes(fmt_byt);
-}
-
-void MainWindow::setAsmOpcodesHex()
-{
-    setAsmOpcodes(fmt_hex);
+    QAction* act = qobject_cast<QAction*>(sender());
+    Q_ASSERT(act);
+    setAsmOpcodes(act->data().toInt());
 }
 
 void MainWindow::incAsmFontSize()
@@ -330,62 +301,23 @@ void MainWindow::setAsmFontSize(int size)
     updateAsmColumnSizes();
 }
 
-void MainWindow::setAsmOpcodesOct()
-{
-    setAsmOpcodes(fmt_oct);
-}
-
 void MainWindow::setDasmOpcodes(int mode)
 {
     p2_opcode_format_e format = static_cast<p2_opcode_format_e>(mode);
-    switch (format) {
-    case fmt_bin:
-        ui->action_Dasm_Opcodes_bin->setChecked(true);
-        ui->action_Dasm_Opcodes_byt->setChecked(false);
-        ui->action_Dasm_Opcodes_oct->setChecked(false);
-        ui->action_Dasm_Opcodes_hex->setChecked(false);
-        break;
-    case fmt_byt:
-        ui->action_Dasm_Opcodes_bin->setChecked(false);
-        ui->action_Dasm_Opcodes_byt->setChecked(true);
-        ui->action_Dasm_Opcodes_oct->setChecked(false);
-        ui->action_Dasm_Opcodes_hex->setChecked(false);
-        break;
-    case fmt_oct:
-        ui->action_Dasm_Opcodes_bin->setChecked(false);
-        ui->action_Dasm_Opcodes_byt->setChecked(false);
-        ui->action_Dasm_Opcodes_oct->setChecked(true);
-        ui->action_Dasm_Opcodes_hex->setChecked(false);
-        break;
-    case fmt_hex:
-        ui->action_Dasm_Opcodes_bin->setChecked(false);
-        ui->action_Dasm_Opcodes_byt->setChecked(false);
-        ui->action_Dasm_Opcodes_oct->setChecked(false);
-        ui->action_Dasm_Opcodes_hex->setChecked(true);
-        break;
-    }
+    ui->action_Dasm_Opcodes_bin->setChecked(format == fmt_bin);
+    ui->action_Dasm_Opcodes_byt->setChecked(format == fmt_byt);
+    ui->action_Dasm_Opcodes_oct->setChecked(format == fmt_oct);
+    ui->action_Dasm_Opcodes_dec->setChecked(format == fmt_dec);
+    ui->action_Dasm_Opcodes_hex->setChecked(format == fmt_hex);
     m_dmodel->setOpcodeFormat(format);
     updateDasmColumnSizes();
 }
 
-void MainWindow::setDasmOpcodesBin()
+void MainWindow::setDasmOpcodes()
 {
-    setDasmOpcodes(fmt_bin);
-}
-
-void MainWindow::setDasmOpcodesByt()
-{
-    setDasmOpcodes(fmt_byt);
-}
-
-void MainWindow::setDasmOpcodesOct()
-{
-    setDasmOpcodes(fmt_oct);
-}
-
-void MainWindow::setDasmOpcodesHex()
-{
-    setDasmOpcodes(fmt_hex);
+    QAction* act = qobject_cast<QAction*>(sender());
+    Q_ASSERT(act);
+    setDasmOpcodes(act->data().toInt());
 }
 
 void MainWindow::incDasmFontSize()
@@ -580,7 +512,9 @@ void MainWindow::goto_line(const QUrl& url)
     bool ok;
     int line = frag.toInt(&ok);
     if (path == key_tv_asm) {
-        ui->tvAsm->setCurrentIndex(m_amodel->index(line - 1, P2AsmModel::c_Source));
+        const QModelIndex idx = m_amodel->index(line - 1, P2AsmModel::c_Source);
+        ui->tvAsm->setSelectionBehavior(QAbstractItemView::SelectItems);
+        ui->tvAsm->setCurrentIndex(idx);
     }
 }
 
@@ -667,16 +601,24 @@ void MainWindow::setupToolbars()
 
     ui->toolbarAsm->addSeparator();
 
-    connect(ui->action_Asm_Opcodes_bin, SIGNAL(triggered(bool)), SLOT(setAsmOpcodesBin()));
+    ui->action_Asm_Opcodes_bin->setData(fmt_bin);
+    connect(ui->action_Asm_Opcodes_bin, SIGNAL(triggered(bool)), SLOT(setAsmOpcodes()));
     ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_bin);
 
-    connect(ui->action_Asm_Opcodes_byt, SIGNAL(triggered(bool)), SLOT(setAsmOpcodesByt()));
+    ui->action_Asm_Opcodes_byt->setData(fmt_byt);
+    connect(ui->action_Asm_Opcodes_byt, SIGNAL(triggered(bool)), SLOT(setAsmOpcodes()));
     ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_byt);
 
-    connect(ui->action_Asm_Opcodes_oct, SIGNAL(triggered(bool)), SLOT(setAsmOpcodesOct()));
+    ui->action_Asm_Opcodes_oct->setData(fmt_oct);
+    connect(ui->action_Asm_Opcodes_oct, SIGNAL(triggered(bool)), SLOT(setAsmOpcodes()));
     ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_oct);
 
-    connect(ui->action_Asm_Opcodes_hex, SIGNAL(triggered(bool)), SLOT(setAsmOpcodesHex()));
+    ui->action_Asm_Opcodes_dec->setData(fmt_dec);
+    connect(ui->action_Asm_Opcodes_dec, SIGNAL(triggered(bool)), SLOT(setAsmOpcodes()));
+    ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_dec);
+
+    ui->action_Asm_Opcodes_hex->setData(fmt_hex);
+    connect(ui->action_Asm_Opcodes_hex, SIGNAL(triggered(bool)), SLOT(setAsmOpcodes()));
     ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_hex);
 
     ui->toolbarAsm->addSeparator();
@@ -688,16 +630,24 @@ void MainWindow::setupToolbars()
     ui->toolbarAsm->addAction(ui->action_Asm_IncFontSize);
 
     // Disassembler toolbar
-    connect(ui->action_Dasm_Opcodes_bin, SIGNAL(triggered(bool)), SLOT(setDasmOpcodesBin()));
+    ui->action_Dasm_Opcodes_bin->setData(fmt_bin);
+    connect(ui->action_Dasm_Opcodes_bin, SIGNAL(triggered(bool)), SLOT(setDasmOpcodes()));
     ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_bin);
 
-    connect(ui->action_Dasm_Opcodes_byt, SIGNAL(triggered(bool)), SLOT(setDasmOpcodesByt()));
+    ui->action_Dasm_Opcodes_byt->setData(fmt_byt);
+    connect(ui->action_Dasm_Opcodes_byt, SIGNAL(triggered(bool)), SLOT(setDasmOpcodes()));
     ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_byt);
 
-    connect(ui->action_Dasm_Opcodes_oct, SIGNAL(triggered(bool)), SLOT(setDasmOpcodesOct()));
+    ui->action_Dasm_Opcodes_oct->setData(fmt_oct);
+    connect(ui->action_Dasm_Opcodes_oct, SIGNAL(triggered(bool)), SLOT(setDasmOpcodes()));
     ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_oct);
 
-    connect(ui->action_Dasm_Opcodes_hex, SIGNAL(triggered(bool)), SLOT(setDasmOpcodesHex()));
+    ui->action_Dasm_Opcodes_dec->setData(fmt_dec);
+    connect(ui->action_Dasm_Opcodes_dec, SIGNAL(triggered(bool)), SLOT(setDasmOpcodes()));
+    ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_dec);
+
+    ui->action_Dasm_Opcodes_hex->setData(fmt_hex);
+    connect(ui->action_Dasm_Opcodes_hex, SIGNAL(triggered(bool)), SLOT(setDasmOpcodes()));
     ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_hex);
 
     ui->toolbarDasm->addSeparator();

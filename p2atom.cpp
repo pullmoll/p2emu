@@ -914,3 +914,57 @@ P2Atom& P2Atom::operator|=(const P2Atom& other) {
     binary_or(other.to_quad());
     return *this;
 }
+
+
+/**
+ * @brief Format a LONG %data as hex digits according to %mask
+ * @param data p2_LONG with data
+ * @param mask p2_LONG with mask
+ * @return formatted string
+ */
+QString P2Atom::format_long_mask(const p2_LONG data, const p2_LONG mask)
+{
+    QString result;
+
+    // for each nibble
+    for (int shift = 32-4; shift >=0; shift -= 4) {
+        if (0x0f == ((mask >> shift) & 0x0f)) {
+            // the mask is set: append the nibble
+            result += QString("%1").arg((data >> shift) & 0x0f, 1, 16);
+        } else {
+            // the mask is not set: append a dash
+            result += QChar('-');
+        }
+    }
+    return result;
+}
+
+/**
+ * @brief Format a P2Atom's data as string list of longs in hex
+ * @param atom const reference to the P2Atom with data
+ * @param addr starting address
+ * @return QStringList with one or more formatted long values
+ */
+QStringList P2Atom::format_data(const P2Atom& atom, const p2_LONG addr)
+{
+    QStringList result;
+    QString line;
+    const p2_BYTES bytes = atom.to_bytes();
+    p2_LONG offset = addr;
+    p2_LONG data = 0;
+    p2_LONG mask = 0;
+
+    for (int i = 0; i < bytes.count(); i++) {
+        const int shift = 8 * (offset & 3);
+        data |= static_cast<p2_LONG>(bytes[i]) << shift;
+        mask |= 0xffu << shift;
+        if (0 == (++offset & 3)) {
+            result += format_long_mask(data, mask);
+            mask = 0;
+        }
+    }
+
+    if (mask)
+        result += format_long_mask(data, mask);
+    return result;
+}

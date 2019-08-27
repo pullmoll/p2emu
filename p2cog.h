@@ -79,53 +79,53 @@ public slots:
 
 private:
     P2Hub* HUB;             //!< pointer to the HUB, i.e. the parent of this P2Cog
-    p2_LONG ID;              //!< COG ID (0 … number of COGs - 1)
-    p2_LONG PC;              //!< program counter
+    p2_LONG ID;             //!< COG ID (0 … number of COGs - 1)
+    p2_LONG PC;             //!< program counter
     p2_wait_t WAIT;         //!< waiting conidition
     p2_flags_t FLAGS;       //!< flags register
-    p2_LONG CT1;             //!< counter CT1 value
-    p2_LONG CT2;             //!< counter CT2 value
-    p2_LONG CT3;             //!< counter CT3 value
+    p2_LONG CT1;            //!< counter CT1 value
+    p2_LONG CT2;            //!< counter CT2 value
+    p2_LONG CT3;            //!< counter CT3 value
     p2_pat_t PAT;           //!< PAT mode, mask, and match
     p2_pin_t PIN;           //!< PIN mode, mask, and match
     p2_int_bits_u INT;      //!< INT disable / active / source bits union
     p2_lock_t LOCK;         //!<
     p2_opcode_u IR;         //!< instruction register
-    p2_LONG D;               //!< value of D
-    p2_LONG S;               //!< value of S
-    p2_LONG Q;               //!< value of Q
-    p2_LONG C;               //!< current carry flag
-    p2_LONG Z;               //!< current zero flag
+    p2_LONG D;              //!< value of D
+    p2_LONG S;              //!< value of S
+    p2_LONG Q;              //!< value of Q
+    p2_LONG C;              //!< current carry flag
+    p2_LONG Z;              //!< current zero flag
     p2_fifo_t FIFO;         //!< stream FIFO
-    p2_LONG K;               //!< stack pointer (0 … 7)
-    p2_LONG STACK[8];        //!< stack of 8 levels
+    p2_LONG K;              //!< stack pointer (0 … 7)
+    p2_LONG STACK[8];       //!< stack of 8 levels
     QVariant S_next;        //!< next instruction's S value
     QVariant S_aug;         //!< augment next S with this value, if set
     QVariant D_aug;         //!< augment next D with this value, if set
     QVariant R_aug;         //!< augment next R with this value, if set
     QVariant IR_aug;        //!< augment next IR with this value, if set
     QVariant REP_instr;     //!< if REP is active, number of instructions to repeat
-    p2_LONG REP_offset;      //!< if REP is active, current instruction to repeat
-    p2_LONG REP_times;       //!< if REP is active, number of times to repeat
-    p2_LONG SKIP;            //!< if SKIP is active, then if b0 is set, the current instruction is cancelled
-    p2_LONG SKIPF;           //!< if SKIPF is active, then if b0 is set, the current instruction is skipped
-    p2_LONG PTRA0;           //!< actual pointer A to hub RAM
-    p2_LONG PTRB0;           //!< actual pointer B to hub RAM
-    p2_LONG HUBOP;           //!< non-zero if HUB operation
-    p2_LONG CORDIC_count;    //!< non-zero if CORDIC solver running
+    p2_LONG REP_offset;     //!< if REP is active, current instruction to repeat
+    p2_LONG REP_times;      //!< if REP is active, number of times to repeat
+    p2_LONG SKIP;           //!< if SKIP is active, then if b0 is set, the current instruction is cancelled
+    p2_LONG SKIPF;          //!< if SKIPF is active, then if b0 is set, the current instruction is skipped
+    p2_LONG PTRA0;          //!< actual pointer A to hub RAM
+    p2_LONG PTRB0;          //!< actual pointer B to hub RAM
+    p2_LONG HUBOP;          //!< non-zero if HUB operation
+    p2_LONG CORDIC_count;   //!< non-zero if CORDIC solver running
     bool QX_posted;         //!< true if CORDIC solver X is posted
     bool QY_posted;         //!< true if CORDIC solver Y is posted
     bool RW_repeat;         //!< true if read/write HUB repeated
-    p2_LONG RDL_mask;        //!<
-    p2_LONG RDL_flags0;      //!<
-    p2_LONG RDL_flags1;      //!<
-    p2_LONG WRL_mask;        //!<
-    p2_LONG WRL_flags0;      //!<
-    p2_LONG WRL_flags1;      //!<
+    p2_LONG RDL_mask;       //!<
+    p2_LONG RDL_flags0;     //!<
+    p2_LONG RDL_flags1;     //!<
+    p2_LONG WRL_mask;       //!<
+    p2_LONG WRL_flags0;     //!<
+    p2_LONG WRL_flags1;     //!<
     p2_cog_t COG;           //!< COG memory (512 longs)
     p2_lut_t LUT;           //!< LUT memory (512 longs) and shadow registers
     uchar *MEM;             //!< HUB memory pointer
-    p2_LONG MEMSIZE;         //!< HUB memory size
+    p2_LONG MEMSIZE;        //!< HUB memory size
 
     //! return a signed 32 bit value for val[15:0]
     template <typename T>

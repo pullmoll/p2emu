@@ -11,17 +11,15 @@ P2OpcodeDelegate::P2OpcodeDelegate(QObject* parent)
 void P2OpcodeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
     const P2AsmModel* model = qobject_cast<const P2AsmModel*>(index.model());
-    Q_ASSERT(model);
-    QVariant v_words = model->data(index, Qt::UserRole);
-    const P2Words words = qvariant_cast<P2Words>(v_words);
+    Q_ASSERT(model);    // assert the model is really P2AsmModel
 
     QStyleOptionViewItem opt(option);
     initStyleOption(&opt, index);
 
     QVariant var = model->data(index);
-    const p2_opcode_u IR = qvariant_cast<p2_opcode_u>(var);
+    const P2Opcode IR = qvariant_cast<P2Opcode>(var);
     p2_opcode_format_e format = model->opcode_format();
-    QString opcode = var.isNull() ? QString() : format_opcode(IR, format);
+    QString opcode = var.isNull() ? QString() : format_opcode(IR.u, format);
 
     QRect rect = option.rect;
     const int flags = static_cast<int>(opt.displayAlignment) |

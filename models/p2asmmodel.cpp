@@ -170,140 +170,6 @@ int P2AsmModel::columnCount(const QModelIndex &parent) const
     return columns;
 }
 
-static const QStringList html_head(const QString& bgd = QString())
-{
-    QStringList html;
-    html += QStringLiteral("<html>");
-    html += QStringLiteral("<body>");
-    html += QString("<table %1>")
-            .arg(bgd);
-    return html;
-}
-
-static const QStringList html_end()
-{
-    QStringList html;
-    html += QStringLiteral("</table>");
-    html += QStringLiteral("</body");
-    html += QStringLiteral("</html>");
-    return html;
-}
-
-static const QString html_start_tr()
-{
-    return QString("<tr %1>")
-            .arg(style_padding);
-
-}
-
-static const QString html_end_tr()
-{
-    return QStringLiteral("</tr>");
-
-}
-
-static const QString html_th(const QString& text, const QString& bgd = QString())
-{
-    return QString("<th %1 %2 %3 %4><tt>%5</tt></th>")
-            .arg(style_padding)
-            .arg(style_nowrap)
-            .arg(style_left)
-            .arg(bgd)
-            .arg(text);
-
-}
-
-static const QString html_td(const QString& text, const QString& bgd = QString())
-{
-    return QString("<td %1 %2 %3><tt>%4</tt></td>")
-            .arg(style_padding)
-            .arg(style_nowrap)
-            .arg(bgd)
-            .arg(text);
-}
-
-QString P2AsmModel::tokenToolTip(const P2Words& words, const QString& bgd) const
-{
-    QStringList html = html_head();
-
-    // heading
-    html += html_start_tr();
-    html += html_th(tr("Position, Length"), bgd);
-    html += html_th(tr("Token"), bgd);
-    html += html_th(tr("Type"), bgd);
-    html += html_th(tr("Source code"), bgd);
-    html += html_end_tr();
-
-    for (int i = 0; i < words.count(); i++) {
-        const P2Word& word = words[i];
-        html += html_start_tr();
-        html += html_td(QString("@%1 +%2")
-                        .arg(word.pos())
-                        .arg(word.len()),
-                        bgd);
-        html += html_td(QString("%1: %2")
-                        .arg(word.tok(), 3, 16, QChar('0'))
-                        .arg(Token.enum_name(word.tok())),
-                        bgd);
-        html += html_td(Token.type_names(word.tok()).join(QChar::Space),
-                        bgd);
-        html += html_td(word.str(),
-                        bgd);
-        html += html_end_tr();
-    }
-    html += html_end();
-    return html.join(QChar::LineFeed);
-}
-
-QString P2AsmModel::symbolsToolTip(const P2AsmSymTbl& symbols, const QStringList& defined, const QString& bgd) const
-{
-    QStringList html = html_head();
-    // heading
-    html += html_start_tr();
-    html += html_th(tr("Section::name"), bgd);
-    html += html_th(tr("Type"), bgd);
-    html += html_th(tr("Value (dec)"), bgd);
-    html += html_th(tr("Value (hex)"), bgd);
-    html += html_th(tr("Value (bin)"), bgd);
-    html += html_end_tr();
-
-    for (int i = 0; i < defined.count(); i++) {
-        const QString& symbol = defined[i];
-        P2AsmSymbol sym = symbols.value(symbol);
-        p2_LONG val = sym.value<p2_LONG>();
-        html += html_start_tr();
-        html += html_td(sym.name(), bgd);
-        html += html_td(sym.type_name(), bgd);
-        html += html_td(QString("%1")
-                        .arg(val, 11, 10),
-                        bgd);
-        html += html_td(QString("$%1")
-                        .arg(val, 8, 16, QChar('0')),
-                        bgd);
-        html += html_td(QString("%%1")
-                        .arg(val, 32, 2, QChar('0')),
-                        bgd);
-        html += html_end_tr();
-    }
-    html += html_end();
-    return html.join(QChar::LineFeed);
-}
-
-QString P2AsmModel::errorsToolTip(const QStringList& list, const QString& bgd) const
-{
-    QStringList html = html_head();
-    html += html_start_tr();
-    html += html_th(tr("Error message"), bgd);
-    html += html_end_tr();
-    foreach (const QString& error, list) {
-        html += html_start_tr();
-        html += html_td(error, bgd);
-        html += html_end_tr();
-    }
-    html += html_end();
-    return html.join(QChar::LineFeed);
-}
-
 QVariant P2AsmModel::data(const QModelIndex &index, int role) const
 {
     QVariant result;
@@ -325,12 +191,12 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     const QStringList& references_in = symbols.references_in(lineno);
 
     const bool PC_avail = m_asm->PC_available(lineno);
-    const p2_PC_org_t PC_orgh = PC_avail ? m_asm->PC_value(lineno) : p2_PC_org_t();
+    const p2_PC_ORGH_t PC_orgh = PC_avail ? m_asm->PC_value(lineno) : p2_PC_ORGH_t();
     const p2_LONG PC = PC_orgh.first;
     const p2_LONG orgh = PC_orgh.second;
 
     const bool IR_avail = m_asm->IR_available(lineno);
-    const p2_opcode_u IR = m_asm->IR_value(lineno);
+    const P2Opcode IR = m_asm->IR_value(lineno);
 
     switch (role) {
     case Qt::DisplayRole:
@@ -345,17 +211,19 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
             if (!PC_avail)
                 break;
             if (PC < LUT_ADDR0) {
-                result = QString("COG[%1]").arg(PC / 4, 3, 16, QChar('0'));
+                result = QString("COG:%1").arg(PC / 4, 3, 16, QChar('0'));
             } else if (PC < HUB_ADDR0) {
-                result = QString("LUT[%1]").arg((PC - LUT_ADDR0) / 4, 3, 16, QChar('0'));
+                result = QString("LUT:%1").arg((PC - LUT_ADDR0) / 4, 3, 16, QChar('0'));
             } else {
-                result = QString("%1").arg(PC, 6, 16, QChar('0'));
+                result = QString("%1").arg(PC, 7, 16, QChar('0'));
             }
             break;
 
         case c_Opcode: // Opcode string
             if (PC_avail && IR_avail)
                 result = qVariantFromValue(IR);
+            else if (!symrefs.isEmpty())
+                result = qVariantFromValue(-1);
             break;
 
         case c_Tokens:
@@ -554,7 +422,7 @@ QSize P2AsmModel::sizeHint(P2AsmModel::column_e column, bool header) const
 
     switch (column) {
     case c_Origin:
-        return metrics.size(Qt::TextSingleLine, template_str_address);
+        return metrics.size(Qt::TextSingleLine, template_str_origin);
 
     case c_Address:
         return metrics.size(Qt::TextSingleLine, template_str_address);
@@ -567,6 +435,8 @@ QSize P2AsmModel::sizeHint(P2AsmModel::column_e column, bool header) const
             return metrics.size(Qt::TextSingleLine, template_str_opcode_byt);
         case fmt_oct:
             return metrics.size(Qt::TextSingleLine, template_str_opcode_oct);
+        case fmt_dec:
+            return metrics.size(Qt::TextSingleLine, template_str_opcode_dec);
         case fmt_hex:
             return metrics.size(Qt::TextSingleLine, template_str_opcode_hex);
         }
@@ -638,4 +508,133 @@ void P2AsmModel::setFont(const QFont& font)
     QFontMetrics metrics(m_font);
     QSize size = QSize(metrics.averageCharWidth(), metrics.ascent() + metrics.descent());
     m_error = QIcon(m_error_pixmap.scaled(size, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+}
+
+
+static const QStringList html_head(const QString& bgd = QString())
+{
+    QStringList html;
+    html += QStringLiteral("<html>");
+    html += QStringLiteral("<body>");
+    html += QString("<table %1>")
+            .arg(bgd);
+    return html;
+}
+
+static const QStringList html_end()
+{
+    QStringList html;
+    html += QStringLiteral("</table>");
+    html += QStringLiteral("</body");
+    html += QStringLiteral("</html>");
+    return html;
+}
+
+static const QString html_start_tr()
+{
+    return QString("<tr %1>")
+            .arg(style_padding);
+
+}
+
+static const QString html_end_tr()
+{
+    return QStringLiteral("</tr>");
+
+}
+
+static const QString html_th(const QString& text, const QString& bgd = QString())
+{
+    return QString("<th %1 %2 %3 %4><tt>%5</tt></th>")
+            .arg(style_padding)
+            .arg(style_nowrap)
+            .arg(style_left)
+            .arg(bgd)
+            .arg(text);
+
+}
+
+static const QString html_td(const QString& text, const QString& bgd = QString())
+{
+    return QString("<td %1 %2 %3><tt>%4</tt></td>")
+            .arg(style_padding)
+            .arg(style_nowrap)
+            .arg(bgd)
+            .arg(text);
+}
+
+QString P2AsmModel::tokenToolTip(const P2Words& words, const QString& bgd) const
+{
+    QStringList html = html_head();
+
+    // heading
+    html += html_start_tr();
+    html += html_th(tr("Position, Length"), bgd);
+    html += html_th(tr("Token"), bgd);
+    html += html_th(tr("Type"), bgd);
+    html += html_th(tr("Source code"), bgd);
+    html += html_end_tr();
+
+    for (int i = 0; i < words.count(); i++) {
+        const P2Word& word = words[i];
+        html += html_start_tr();
+        html += html_td(QString("@%1 +%2")
+                        .arg(word.pos())
+                        .arg(word.len()),
+                        bgd);
+        html += html_td(QString("%1: %2")
+                        .arg(word.tok(), 3, 16, QChar('0'))
+                        .arg(Token.enum_name(word.tok())),
+                        bgd);
+        html += html_td(Token.type_names(word.tok()).join(QChar::Space),
+                        bgd);
+        html += html_td(word.str(),
+                        bgd);
+        html += html_end_tr();
+    }
+    html += html_end();
+    return html.join(QChar::LineFeed);
+}
+
+QString P2AsmModel::symbolsToolTip(const P2AsmSymTbl& symbols, const QStringList& defined, const QString& bgd) const
+{
+    QStringList html = html_head();
+    // heading
+    html += html_start_tr();
+    html += html_th(tr("Section::name"), bgd);
+    html += html_th(tr("Type"), bgd);
+    html += html_th(tr("Value (dec)"), bgd);
+    html += html_th(tr("Value (hex)"), bgd);
+    html += html_th(tr("Value (bin)"), bgd);
+    html += html_end_tr();
+
+    for (int i = 0; i < defined.count(); i++) {
+        const QString& symbol = defined[i];
+        P2AsmSymbol sym = symbols.value(symbol);
+        p2_LONG val = sym.value<p2_LONG>();
+        html += html_start_tr();
+        html += html_td(sym.name(), bgd);
+        html += html_td(sym.type_name(), bgd);
+        html += html_td(format_data_dec(val), bgd);
+        html += html_td(format_data_hex(val), bgd);
+        html += html_td(format_data_bin(val), bgd);
+        html += html_end_tr();
+    }
+    html += html_end();
+    return html.join(QChar::LineFeed);
+}
+
+QString P2AsmModel::errorsToolTip(const QStringList& list, const QString& bgd) const
+{
+    QStringList html = html_head();
+    html += html_start_tr();
+    html += html_th(tr("Error message"), bgd);
+    html += html_end_tr();
+    foreach (const QString& error, list) {
+        html += html_start_tr();
+        html += html_td(error, bgd);
+        html += html_end_tr();
+    }
+    html += html_end();
+    return html.join(QChar::LineFeed);
 }

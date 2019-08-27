@@ -829,16 +829,12 @@ typedef struct {
 #endif
 }   p2_opcode9_t;
 
-/**
- * @brief union of a 32 bit word and the opcode bit fields
- */
 typedef union {
     p2_LONG opcode;             //!< opcode as 32 bit word
     p2_opcode7_t op;            //!< ocpode as bit fields (version with 7 bits instruction)
     p2_opcode8_t op8;           //!< ocpode as bit fields (version including WC)
     p2_opcode9_t op9;           //!< ocpode as bit fields (version including WC and WZ)
 }   p2_opcode_u;
-Q_DECLARE_METATYPE(p2_opcode_u);
 
 /**
  * @brief Structure of the LUT and the shadow registers in the last 16 LONGs
@@ -1057,13 +1053,16 @@ typedef enum {
     fmt_bin,
     fmt_byt,
     fmt_oct,
+    fmt_dec,
     fmt_hex,
 }   p2_opcode_format_e;
 
+extern const QString template_str_origin;
 extern const QString template_str_address;
 extern const QString template_str_opcode_bin;
 extern const QString template_str_opcode_byt;
 extern const QString template_str_opcode_oct;
+extern const QString template_str_opcode_dec;
 extern const QString template_str_opcode_hex;
 extern const QString template_str_tokens;
 extern const QString template_str_symbols;
@@ -1075,7 +1074,7 @@ typedef enum {
     color_source,
     color_comment,
     color_comma,
-    color_string,
+    color_str_const,
     color_bin_const,
     color_byt_const,
     color_oct_const,
@@ -1096,12 +1095,20 @@ extern QColor p2_palette(p2_palette_e pal, bool highlight = false);
 extern QString format_opcode_bin(const p2_opcode_u& IR);
 extern QString format_opcode_byt(const p2_opcode_u& IR);
 extern QString format_opcode_oct(const p2_opcode_u& IR);
+extern QString format_opcode_dec(const p2_opcode_u& IR);
 extern QString format_opcode_hex(const p2_opcode_u& IR);
 
 extern QString format_data_bin(const p2_opcode_u& IR);
 extern QString format_data_byt(const p2_opcode_u& IR);
 extern QString format_data_oct(const p2_opcode_u& IR);
+extern QString format_data_dec(const p2_opcode_u& IR);
 extern QString format_data_hex(const p2_opcode_u& IR);
+
+extern QString format_data_bin(const p2_LONG data);
+extern QString format_data_byt(const p2_LONG data);
+extern QString format_data_oct(const p2_LONG data);
+extern QString format_data_dec(const p2_LONG data);
+extern QString format_data_hex(const p2_LONG data);
 
 extern QString format_opcode(const p2_opcode_u& IR, const p2_opcode_format_e fmt = fmt_bin);
 extern QString format_data(const p2_opcode_u& IR, const p2_opcode_format_e fmt = fmt_bin);

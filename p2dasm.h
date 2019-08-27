@@ -33,6 +33,7 @@
  ****************************************************************************/
 #pragma once
 #include <QObject>
+#include "p2opcode.h"
 #include "p2token.h"
 
 class P2Cog;
@@ -56,7 +57,7 @@ private:
     int pad_opcode;
     int pad_inst;
     int pad_wcz;
-    p2_opcode_u IR;
+    P2Opcode IR;
     quint32 PC;
     quint32 S;
     quint32 D;

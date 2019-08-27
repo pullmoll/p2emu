@@ -68,22 +68,22 @@ void P2CogView::updateView()
     const p2_LONG PC = m_cog->rd_PC();
     ui->le_PC->setText(hex(PC, 6));
 
-    p2_opcode_u IR = { m_cog->rd_mem(PC), };
+    P2Opcode IR(m_cog->rd_mem(PC));
     QVariant D_aug = m_cog->rd_D_aug();
     QVariant S_aug = m_cog->rd_S_aug();
-    p2_LONG D = D_aug.isValid() ? D_aug.toUInt() | IR.op.dst : IR.op.dst;
-    p2_LONG S = S_aug.isValid() ? S_aug.toUInt() | IR.op.src : IR.op.src;
+    p2_LONG D = D_aug.isValid() ? D_aug.toUInt() | IR.u.op.dst : IR.u.op.dst;
+    p2_LONG S = S_aug.isValid() ? S_aug.toUInt() | IR.u.op.src : IR.u.op.src;
     ui->le_DST->setText(hex(D, 3));
     ui->le_SRC->setText(hex(S, 3));
 
     ui->le_IR->setText(QString("%1_%2_%3%4%5_%6_%8")
-                       .arg(bin(IR.op.cond, 4))
-                       .arg(bin(IR.op.inst, 7))
-                       .arg(bin(IR.op.wc, 1))
-                       .arg(bin(IR.op.wz, 1))
-                       .arg(bin(IR.op.im, 1))
-                       .arg(bin(IR.op.dst, 9))
-                       .arg(bin(IR.op.src, 9)));
+                       .arg(bin(IR.u.op.cond, 4))
+                       .arg(bin(IR.u.op.inst, 7))
+                       .arg(bin(IR.u.op.wc, 1))
+                       .arg(bin(IR.u.op.wz, 1))
+                       .arg(bin(IR.u.op.im, 1))
+                       .arg(bin(IR.u.op.dst, 9))
+                       .arg(bin(IR.u.op.src, 9)));
     ui->cb_C->setChecked(m_cog->rd_C());
     ui->cb_Z->setChecked(m_cog->rd_Z());
 

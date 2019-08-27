@@ -117,6 +117,9 @@ public:
     P2Atom& operator^=(const P2Atom& other);
     P2Atom& operator|=(const P2Atom& other);
 
+    static QString format_long_mask(const p2_LONG data, const p2_LONG mask);
+    static QStringList format_data(const P2Atom& data, const p2_LONG addr);
+
 private:
 
     /**

@@ -1,23 +1,24 @@
 <RCC>
-    <qresource prefix="/">
-        <file>P2 instruction set.csv</file>
-        <file>instructions_v33g.txt</file>
-        <file>ROM_Booter_v33_01j.bin</file>
-        <file>ROM_Booter_v33_01j.spin2</file>
-        <file>P2-qz80-rr032.spin2</file>
-        <file>icons/go_to.png</file>
-        <file>icons/go_to_cog.png</file>
-        <file>icons/go_to_lut.png</file>
-        <file>icons/lowercase.png</file>
-        <file>icons/go_to_rom.png</file>
-        <file>icons/opcode_bin.png</file>
-        <file>icons/opcode_byt.png</file>
-        <file>icons/opcode_oct.png</file>
-        <file>icons/opcode_hex.png</file>
-        <file>icons/single_step.png</file>
-        <file>icons/assemble.png</file>
-        <file>icons/error.svg</file>
-        <file>icons/decrease.png</file>
-        <file>icons/increase.png</file>
-    </qresource>
+	<qresource prefix="/">
+		<file>P2 instruction set.csv</file>
+		<file>instructions_v33g.txt</file>
+		<file>ROM_Booter_v33_01j.bin</file>
+		<file>ROM_Booter_v33_01j.spin2</file>
+		<file>P2-qz80-rr032.spin2</file>
+		<file>icons/go_to.png</file>
+		<file>icons/go_to_cog.png</file>
+		<file>icons/go_to_lut.png</file>
+		<file>icons/lowercase.png</file>
+		<file>icons/go_to_rom.png</file>
+		<file>icons/opcode_bin.png</file>
+		<file>icons/opcode_byt.png</file>
+		<file>icons/opcode_oct.png</file>
+		<file>icons/opcode_dec.png</file>
+		<file>icons/opcode_hex.png</file>
+		<file>icons/single_step.png</file>
+		<file>icons/assemble.png</file>
+		<file>icons/error.svg</file>
+		<file>icons/decrease.png</file>
+		<file>icons/increase.png</file>
+	</qresource>
 </RCC>
