@@ -218,23 +218,23 @@ QString P2AsmModel::tokenToolTip(const P2Words& words, const QString& bgd) const
 
     // heading
     html += html_tr_init();
-    html += html_th(tr("Source code"));
     html += html_th(tr("Position, Length"));
     html += html_th(tr("Token"));
     html += html_th(tr("Type"));
+    html += html_th(tr("Source code"));
     html += html_tr_exit();
 
     for (int i = 0; i < words.count(); i++) {
         const P2Word& word = words[i];
         html += html_tr_init();
-        html += html_td(word.str());
         html += html_td(QString("@%1 +%2")
                         .arg(word.pos())
                         .arg(word.len()));
         html += html_td(QString("%1: %2")
                         .arg(word.tok(), 3, 16, QChar('0'))
-                        .arg(Token.string(word.tok())));
+                        .arg(Token.enum_name(word.tok())));
         html += html_td(Token.type_names(word.tok()).join(QChar::Space));
+        html += html_td(word.str());
         html += html_tr_exit();
     }
     html += html_table_exit();
@@ -335,7 +335,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
 
         case c_Errors:  // Error messages
             if (has_errors)
-                result = errors.join(QChar::LineFeed);
+                result = template_str_errors;
             break;
 
         case c_Symbols:
@@ -362,7 +362,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
 
     case Qt::DecorationRole:
         switch (column) {
-        case c_Errors:
+        case c_Source:
             if (has_errors)
                 result = m_error;
             break;
@@ -380,7 +380,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
 
         case c_Opcode:
             if (IR_avail)
-                return IR.opcode;
+                return qVariantFromValue(IR);
             break;
 
         case c_Tokens:
@@ -452,6 +452,18 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
 
     case Qt::BackgroundRole:
         result = QColor(m_background.value(column));
+        switch (column) {
+        case c_Errors:
+            if (!has_errors)
+                result = QColor(m_background.value(c_Source));
+            break;
+        case c_Source:
+            if (has_errors)
+                result = QColor(m_background.value(c_Errors));
+            break;
+        default:
+            ;
+        }
         break;
 
     case Qt::ForegroundRole:
@@ -552,6 +564,8 @@ Qt::ItemFlags P2AsmModel::flags(const QModelIndex &index) const
     column_e column = static_cast<column_e>(index.column());
     if (c_Source == column)
         flags |= Qt::ItemIsEnabled | Qt::ItemIsEditable;
+    else
+        flags |= Qt::ItemIsEnabled;
 
     return flags;
 }
@@ -576,6 +590,6 @@ void P2AsmModel::setFont(const QFont& font)
     m_font = font;
     invalidate();
     QFontMetrics metrics(m_font);
-    QSize size = metrics.boundingRect(QChar('X')).size();
+    QSize size = QSize(metrics.averageCharWidth(), metrics.ascent() + metrics.descent());
     m_error = QIcon(m_error_pixmap.scaled(size, Qt::KeepAspectRatio, Qt::SmoothTransformation));
 }

@@ -25,6 +25,8 @@ QMAKE_CXXFLAGS += -Wno-signed-enum-bitfield -DVER_MAJ=$$VER_MAJ -DVER_MIN=$$VER_
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+		delegates/p2opcodedelegate.cpp \
+		delegates/p2sourcedelegate.cpp \
 		dialogs/gotoline.cpp \
 		main.cpp \
 		mainwindow.cpp \
@@ -39,7 +41,6 @@ SOURCES += \
 		p2hub.cpp \
 		p2hubview.cpp \
 		p2token.cpp \
-		delegates/p2asmsourcedelegate.cpp \
 		dialogs/about.cpp \
 		dialogs/gotoaddress.cpp \
 		dialogs/p2asmlisting.cpp \
@@ -48,6 +49,8 @@ SOURCES += \
 		util/p2util.cpp
 
 HEADERS += \
+		delegates/p2opcodedelegate.h \
+		delegates/p2sourcedelegate.h \
 		dialogs/gotoline.h \
 		mainwindow.h \
 		p2asm.h \
@@ -61,7 +64,6 @@ HEADERS += \
 		p2hub.h \
 		p2hubview.h \
 		p2token.h \
-		delegates/p2asmsourcedelegate.h \
 		dialogs/about.h \
 		dialogs/gotoaddress.h \
 		dialogs/p2asmlisting.h \

@@ -94,6 +94,12 @@
            <attribute name="horizontalHeaderStretchLastSection">
             <bool>true</bool>
            </attribute>
+           <attribute name="verticalHeaderVisible">
+            <bool>false</bool>
+           </attribute>
+           <attribute name="verticalHeaderCascadingSectionResizes">
+            <bool>true</bool>
+           </attribute>
           </widget>
           <widget class="QTextBrowser" name="tbErrors">
            <property name="openLinks">
@@ -153,6 +159,12 @@
            <bool>true</bool>
           </property>
           <attribute name="horizontalHeaderStretchLastSection">
+           <bool>true</bool>
+          </attribute>
+          <attribute name="verticalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
+          <attribute name="verticalHeaderCascadingSectionResizes">
            <bool>true</bool>
           </attribute>
          </widget>

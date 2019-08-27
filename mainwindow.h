@@ -87,7 +87,7 @@ private slots:
     void setAsmOpcodesHex();
     void incAsmFontSize();
     void decAsmFontSize();
-    void setAsmFontSize(qreal size);
+    void setAsmFontSize(int size);
 
     void setDasmOpcodes(int mode);
     void setDasmOpcodesBin();
@@ -96,7 +96,7 @@ private slots:
     void setDasmOpcodesHex();
     void incDasmFontSize();
     void decDasmFontSize();
-    void setDasmFontSize(qreal size);
+    void setDasmFontSize(int size);
 
     void setDasmLowercase(bool check);
     void asmHeaderColums(const QPoint& pos);

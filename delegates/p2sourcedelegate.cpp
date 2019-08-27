@@ -1,15 +1,16 @@
-#include "p2asmsourcedelegate.h"
+#include "p2sourcedelegate.h"
 #include "p2asmmodel.h"
 #include <QPainter>
 
-P2AsmSourceDelegate::P2AsmSourceDelegate(QObject* parent)
+P2SourceDelegate::P2SourceDelegate(QObject* parent)
     : QStyledItemDelegate(parent)
 {
 }
 
-void P2AsmSourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
+void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
     const P2AsmModel* model = qobject_cast<const P2AsmModel*>(index.model());
+    Q_ASSERT(model);
     QVariant v_words = model->data(index, Qt::UserRole);
     const P2Words words = qvariant_cast<P2Words>(v_words);
 
@@ -20,35 +21,37 @@ void P2AsmSourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
     const int ll = line.length() ? line.length() : 1;
 
     QRect rect = option.rect;
-    QVector<QRect> br(ll);
+    QVector<QRect> bounding(ll);
     const int flags = static_cast<int>(opt.displayAlignment) |
                       Qt::TextSingleLine | Qt::TextDontClip | Qt::TextExpandTabs | Qt::TextForceLeftToRight;
-    const int w = opt.fontMetrics.size(flags, line).width();
-    const int x = rect.x();
-    int pos, len;
+    const int lw = opt.fontMetrics.size(flags, line).width();
+    const int x0 = rect.x();
 
 
     painter->save();
     painter->setClipRect(rect);
 
-    const bool highlight = opt.state & QStyle::State_HasFocus ? true : false;
+    // fill the background
+    painter->setBackgroundMode(Qt::OpaqueMode);
+    painter->fillRect(opt.rect, opt.backgroundBrush);
 
     painter->setBackgroundMode(Qt::TransparentMode);
     painter->setFont(opt.font);
+    const bool highlight = opt.state & QStyle::State_HasFocus ? true : false;
     painter->setPen(p2_palette(color_source, highlight));
 
     // paint all text character wise to collect the bounding rects
-    pos = 0;
+    int pos = 0;
     foreach(const QChar ch, line) {
-        rect.setX(x + pos * w / ll);
-        painter->drawText(rect, flags, ch, &br[pos]);
+        rect.setX(x0 + pos * lw / ll);
+        painter->drawText(rect, flags, ch, &bounding[pos]);
         pos++;
     }
 
     // re-draw tokenized words
     foreach(const P2Word& word, words) {
-        pos = word.pos();
-        len = word.len();
+        const int len = word.len();
+        int pos = word.pos();
         const QString text = line.mid(pos, len);
 
         QPalette pal;
@@ -58,10 +61,13 @@ void P2AsmSourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
         p2_token_e tok = word.tok();
         switch (tok) {
         case t_comment:
+        case t_comment_eol:
+        case t_comment_lcurly:
+        case t_comment_rcurly:
             painter->setPen(p2_palette(color_comment, highlight));
             break;
 
-        case t_comma:
+        case t__COMMA:
             painter->setPen(p2_palette(color_comma, highlight));
             break;
 
@@ -113,14 +119,15 @@ void P2AsmSourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
 
         // draw the character
         foreach(const QChar ch, text)
-            painter->drawText(br[pos++], flags, ch);
+            painter->drawText(bounding[pos++], flags, ch);
     }
+
     if (highlight) {
         painter->setBackgroundMode(Qt::OpaqueMode);
         QPen pen(QColor(0x00,0x30,0x30));
         painter->setPen(pen);
         qreal size = pen.width();
-        QRectF rect = QRectF(opt.rect).adjusted(size,size,2*size,2*size);
+        QRectF rect = QRectF(opt.rect).adjusted(size,size,3*size,3*size);
 
         painter->setOpacity(0.1);
         painter->fillRect(rect, QColor(0x00,0xcf,0xef));

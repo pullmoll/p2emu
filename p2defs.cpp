@@ -254,7 +254,7 @@ QColor p2_palette(p2_palette_e pal, bool highlight)
     if (highlight) {
         qreal h, s, v, a;
         color.getHsvF(&h, &s, &v, &a);
-        color.setHsvF(h, s, v * 0.5, a);
+        color.setHsvF(h, s, qMin(v * 1.1, 1.0), a);
     }
     return color;
 }

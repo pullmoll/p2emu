@@ -52,7 +52,8 @@
 #include "p2asm.h"
 #include "p2dasm.h"
 #include "p2asmmodel.h"
-#include "p2asmsourcedelegate.h"
+#include "p2opcodedelegate.h"
+#include "p2sourcedelegate.h"
 #include "p2dasmmodel.h"
 
 static const int ncogs = 8;
@@ -134,7 +135,7 @@ void MainWindow::saveSettingsAsm(QSettings& s)
     QModelIndex index = ui->tvAsm->currentIndex();
     s.setValue(key_current_row, index.row());
     s.setValue(key_current_column, index.column());
-    s.setValue(key_font_size, ui->tvAsm->font().pointSizeF());
+    s.setValue(key_font_size, ui->tvAsm->font().pixelSize());
     s.endGroup();
 }
 
@@ -150,7 +151,7 @@ void MainWindow::saveSettingsDasm(QSettings& s)
     QModelIndex index = ui->tvDasm->currentIndex();
     s.setValue(key_current_row, index.row());
     s.setValue(key_current_column, index.column());
-    s.setValue(key_font_size, ui->tvDasm->font().pointSizeF());
+    s.setValue(key_font_size, ui->tvDasm->font().pixelSize());
     s.endGroup();
 }
 
@@ -177,7 +178,7 @@ void MainWindow::restoreSettingsAsm(QSettings& s)
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Symbols, s.value(key_column_symbols, false).toBool());
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Errors, s.value(key_column_errors, false).toBool());
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Source, s.value(key_column_source, false).toBool());
-    setAsmFontSize(s.value(key_font_size, 8.0).toReal());
+    setAsmFontSize(s.value(key_font_size, 8).toInt());
     s.endGroup();
 
 }
@@ -192,7 +193,7 @@ void MainWindow::restoreSettingsDasm(QSettings& s)
     ui->tvDasm->setColumnHidden(P2DasmModel::c_Opcode, s.value(key_column_opcode, false).toBool());
     ui->tvDasm->setColumnHidden(P2DasmModel::c_Instruction, s.value(key_column_instruction, false).toBool());
     ui->tvDasm->setColumnHidden(P2DasmModel::c_Description, s.value(key_column_description, false).toBool());
-    setDasmFontSize(s.value(key_font_size, 8.0).toReal());
+    setDasmFontSize(s.value(key_font_size, 8).toInt());
     s.endGroup();
 }
 
@@ -301,9 +302,9 @@ void MainWindow::setAsmOpcodesHex()
 void MainWindow::incAsmFontSize()
 {
     QFont font = ui->tvAsm->font();
-    qreal size = font.pointSizeF();
-    if (size < 24.0) {
-        size *= 1.05;
+    int size = font.pixelSize();
+    if (size < 24) {
+        size++;
         setAsmFontSize(size);
     }
 }
@@ -311,18 +312,17 @@ void MainWindow::incAsmFontSize()
 void MainWindow::decAsmFontSize()
 {
     QFont font = ui->tvAsm->font();
-    qreal size = font.pointSizeF();
-    if (size > 5.0) {
-        size *= 0.95;
+    int size = font.pixelSize();
+    if (size > 5) {
+        size--;
         setAsmFontSize(size);
     }
 }
 
-void MainWindow::setAsmFontSize(qreal size)
+void MainWindow::setAsmFontSize(int size)
 {
     QFont font = ui->tvAsm->font();
-    font.setPointSizeF(size);
-    QFontMetrics met(font);
+    font.setPixelSize(size);
     ui->tvAsm->setFont(font);
     m_amodel->setFont(font);
     updateAsmColumnSizes();
@@ -389,9 +389,9 @@ void MainWindow::setDasmOpcodesHex()
 void MainWindow::incDasmFontSize()
 {
     QFont font = ui->tvDasm->font();
-    qreal size = font.pointSizeF();
-    if (size < 24.0) {
-        size *= 1.05;
+    int size = font.pixelSize();
+    if (size < 24) {
+        size++;
         setDasmFontSize(size);
     }
 }
@@ -399,18 +399,17 @@ void MainWindow::incDasmFontSize()
 void MainWindow::decDasmFontSize()
 {
     QFont font = ui->tvDasm->font();
-    qreal size = font.pointSizeF();
-    if (size > 5.0) {
-        size *= 0.95;
+    int size = font.pixelSize();
+    if (size > 5) {
+        size--;
         setDasmFontSize(size);
     }
 }
 
-void MainWindow::setDasmFontSize(qreal size)
+void MainWindow::setDasmFontSize(int size)
 {
     QFont font = ui->tvDasm->font();
-    font.setPointSizeF(size);
-    QFontMetrics met(font);
+    font.setPixelSize(size);
     ui->tvDasm->setFont(font);
     m_dmodel->setFont(font);
     updateDasmColumnSizes();
@@ -623,9 +622,15 @@ void MainWindow::setupAssembler()
 
     ui->tvAsm->setFocusPolicy(Qt::StrongFocus);
     ui->tvAsm->setEditTriggers(QAbstractItemView::AnyKeyPressed);
-    QAbstractItemDelegate* d = ui->tvAsm->itemDelegateForColumn(P2AsmModel::c_Source);
-    ui->tvAsm->setItemDelegateForColumn(P2AsmModel::c_Source, new P2AsmSourceDelegate);
-    delete d;
+
+    QAbstractItemDelegate* od = ui->tvAsm->itemDelegateForColumn(P2AsmModel::c_Opcode);
+    ui->tvAsm->setItemDelegateForColumn(P2AsmModel::c_Opcode, new P2OpcodeDelegate);
+    delete od;
+
+    QAbstractItemDelegate* sd = ui->tvAsm->itemDelegateForColumn(P2AsmModel::c_Source);
+    ui->tvAsm->setItemDelegateForColumn(P2AsmModel::c_Source, new P2SourceDelegate);
+    delete sd;
+
 
     ui->tvAsm->setModel(m_amodel);
     updateAsmColumnSizes();

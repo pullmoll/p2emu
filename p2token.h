@@ -78,7 +78,7 @@ typedef quint64 p2_t_mask_t;
 /**
  * @brief bit masks for token types
  */
-#define TTMASK(tt) (Q_UINT64_C(1) << (tt))
+#define TTMASK(tt) static_cast<p2_t_mask_t>(Q_UINT64_C(1) << (tt))
 
 static constexpr p2_t_mask_t tm_none        = 0;
 static constexpr p2_t_mask_t tm_comment     = TTMASK(tt_comment);
@@ -148,10 +148,9 @@ typedef enum {
     t_unknown,          //!< nothing found
 
     t_comment,          //!< token is a comment
-    t_comment_apo,      //!< token is a comment (')
+    t_comment_eol,      //!< token is a comment until end of line (')
     t_comment_lcurly,   //!< token is a comment ({)
     t_comment_rcurly,   //!< token is a comment (})
-    t_comma,            //!< token is a comma (,)
     t_string,           //!< token is a string starting with doublequote (")
     t_bin_const,        //!< token is a binary value (%)
     t_byt_const,        //!< token is a byte index (i.e. base 4) value (%%)
@@ -646,6 +645,8 @@ typedef enum {
     // origin (PC)
     t__DOLLAR,          //!< "$"
 
+    t__COMMA,           //!< ","
+
     // hash
     t__IMMEDIATE,       //!< "#"
     t__IMMEDIATE2,      //!< "##"
@@ -680,8 +681,8 @@ typedef enum {
     t__MOD,             //!< "\"
 
     // addition ops
-    t__PLUS,             //!< "+"
-    t__MINUS,             //!< "-"
+    t__PLUS,            //!< "+"
+    t__MINUS,           //!< "-"
 
     // shift ops
     t__SHL,             //!< "<<"
@@ -702,14 +703,13 @@ typedef QVector<p2_token_e> p2_token_v;
 class P2Word
 {
 public:
-    explicit P2Word(const QString& str = QString(), int line = 0, int pos = 0, int len = 0)
-        : m_str(str), m_tok(t_invalid), m_line(line), m_pos(pos), m_len(len)
-    {}
-    explicit P2Word(p2_token_e tok, const QString& str, int line, int pos, int len)
-        : m_str(str), m_tok(tok), m_line(line), m_pos(pos), m_len(len + 1 - pos)
+    explicit P2Word(p2_token_e tok = t_invalid,
+                    const QString& str = QString(),
+                    int line = 0, int pos = 0, int len = 0)
+        : m_str(str), m_tok(tok), m_line(line), m_pos(pos), m_len(len)
     {}
 
-    constexpr p2_token_e tok() const { return m_tok; }
+    p2_token_e tok() const { return m_tok; }
     const QString& str() const { return m_str; }
     int line() const { return m_line; }
     int pos() const { return m_pos; }
@@ -733,8 +733,10 @@ class P2Token
 public:
     P2Token();
     QString string(p2_token_e tok, bool lowercase = false) const;
-    P2Words tokenize(const QString& str, const int lineno, int& in_curly) const;
+    QString enum_name(p2_token_e tok) const;
     p2_token_e token(const QString& str, bool chop = false, int* plen = nullptr) const;
+
+    P2Words tokenize(const QString& str, const int lineno, int& in_curly) const;
 
     bool is_type(p2_token_e tok, p2_t_mask_t typemask) const;
     bool is_type(p2_token_e tok, p2_t_type_e type) const;
@@ -771,18 +773,19 @@ public:
     p2_cond_e modcz_param(const QString& str, p2_cond_e dflt = cc_clr) const;
 
 private:
-    QHash<p2_token_e, QString> m_token_name;            //!< QHash for token value to name lookup
-    QMultiHash<QString, p2_token_e> m_name_token;       //!< QMultiHash for token name to value lookup
-    QHash<p2_token_e, p2_t_mask_t> m_token_type;            //!< QHash for token value to type mask lookup
-    QMultiHash<p2_t_mask_t, p2_token_e> m_type_token;       //!< QMultiHash for token type mask to token(s) lookup
+    QHash<p2_token_e, QString> m_token_enum_name;       //!< QHash for token value to enum name lookup
+    QHash<p2_token_e, QString> m_token_string;          //!< QHash for token value to string lookup
+    QHash<QString, p2_token_e> m_string_token;          //!< QHash for token string to value lookup
+    QHash<p2_token_e, p2_t_mask_t> m_token_type;        //!< QHash for token value to type mask lookup
+    QMultiHash<p2_t_mask_t, p2_token_e> m_type_token;   //!< QMultiHash for token type mask to token(s) lookup
     QHash<p2_token_e, p2_cond_e> m_lookup_cond;         //!< QHash for conditionals to condition bits lookup
     QHash<p2_token_e, p2_cond_e> m_lookup_modcz;        //!< QHash for MODCZ parameters to condition bits lookup
-    QHash<p2_t_type_e, QString> m_ttype_name;        //!< QHash for token type mask to type name(s) lookup
+    QHash<p2_t_type_e, QString> m_t_type_name;          //!< QHash for token type mask to type name(s) lookup
 
     void tt_set(p2_token_e tok, p2_t_mask_t typemask);
     void tt_clr(p2_token_e tok, p2_t_mask_t typemask);
     bool tt_chk(p2_token_e tok, p2_t_mask_t typemask) const;
-    void tn_add(p2_token_e tok, p2_t_mask_t typemask, const QString& str);
+    void tn_add(p2_token_e tok, const QString& enum_name, p2_t_mask_t typemask, const QString& string);
 };
 
 extern P2Token Token;

@@ -260,6 +260,8 @@ p2_cond_e P2Asm::parse_modcz(p2_token_e cond)
  */
 bool P2Asm::tokenize(const QString& line)
 {
+    // FIXME: curly braces counter below 0!
+    Q_ASSERT(m_in_curly >= 0);
     const P2Words words = Token.tokenize(line, m_lineno, m_in_curly);
     m_words = words;
     m_cnt = m_words.count();
@@ -300,13 +302,11 @@ bool P2Asm::assemble_pass()
         // Set current program counter from next
         m_curr_PC = m_next_PC;
 
-        // Whenever the line starts with a token t_nothing, i.e. not an reserved name,
-        // the first word is defined as a symbol for the current program counter value
         m_symbol.clear();
         while (m_idx < m_cnt) {
             switch (m_words.at(m_idx).tok()) {
             case t_comment:
-            case t_comment_apo:
+            case t_comment_eol:
             case t_comment_lcurly:
             case t_comment_rcurly:
                 m_idx++;
@@ -315,7 +315,7 @@ bool P2Asm::assemble_pass()
             case t_locsym:
                 {
                     // append local name to section::function / section
-                    QString symbol = m_words[m_idx].str();
+                    QString symbol = m_words.value(m_idx).str();
                     m_symbol = find_symbol(m_section, m_function.value(m_section), symbol);
                 }
                 m_idx++;
@@ -324,33 +324,12 @@ bool P2Asm::assemble_pass()
             case t_symbol:
                 {
                     // append global name to section::symbol
-                    QString function = m_words[m_idx].str();
+                    QString function = m_words.value(m_idx).str();
                     QString symbol;
                     m_function.insert(m_section, function);
                     m_symbol = find_symbol(m_section, function, symbol);
                 }
                 m_idx++;
-                break;
-
-
-            case t__DAT:
-                asm_dat();
-                break;
-
-            case t__CON:
-                asm_con();
-                break;
-
-            case t__PUB:
-                asm_pub();
-                break;
-
-            case t__PRI:
-                asm_pri();
-                break;
-
-            case t__VAR:
-                asm_var();
                 break;
 
             default:
@@ -396,15 +375,35 @@ bool P2Asm::assemble_pass()
         // Reset all instruction bits
         m_IR.opcode = 0;
         // Conditional execution prefix
-        m_IR.op.cond = conditional(m_words[m_idx].tok());
+        m_IR.op.cond = conditional(m_words.value(m_idx).tok());
 
         // Expect a token for an instruction
         bool success = false;
         while (skip_comments()) {
-            m_instr = m_words[m_idx].tok();
+            m_instr = m_words.value(m_idx).tok();
             switch (m_instr) {
             case t_comment:
                 m_idx++;
+                break;
+
+            case t__DAT:
+                success = asm_dat();
+                break;
+
+            case t__CON:
+                success = asm_con();
+                break;
+
+            case t__PUB:
+                success = asm_pub();
+                break;
+
+            case t__PRI:
+                success = asm_pri();
+                break;
+
+            case t__VAR:
+                success = asm_var();
                 break;
 
             case t_ABS:
@@ -1963,7 +1962,7 @@ int P2Asm::commas_left() const
 {
     int left = 0;
     for (int i = m_idx; i < m_cnt; i++)
-        if (t_comma == m_words[i].tok())
+        if (t__COMMA == m_words[i].tok())
             left++;
     return left;
 }
@@ -2118,7 +2117,7 @@ bool P2Asm::skip_comments()
 {
     if (m_idx >= m_cnt)
         return false;
-    while (m_idx < m_cnt && t_comment == m_words[m_idx].tok())
+    while (m_idx < m_cnt && Token.is_type(m_words.value(m_idx).tok(), tm_comment))
         m_idx++;
     return m_idx < m_cnt;
 }
@@ -2398,7 +2397,7 @@ P2Atom P2Asm::parse_atom()
     if (!skip_comments())
         return atom;
 
-    P2Word word = m_words[m_idx];
+    P2Word word = m_words.value(m_idx);
     QString str = word.str();
     p2_token_e tok = word.tok();
     bool take = true;
@@ -2582,7 +2581,7 @@ P2Atom P2Asm::parse_primary()
     bool do_inc = false;
     bool do_dec = false;
 
-    P2Word word = m_words[m_idx];
+    P2Word word = m_words.value(m_idx);
     QString str = word.str();
     p2_token_e op = word.tok();
 
@@ -2606,7 +2605,7 @@ P2Atom P2Asm::parse_primary()
             break;
         if (++m_idx >= m_cnt)
             break;
-        word = m_words[m_idx];
+        word = m_words.value(m_idx);
         str = word.str();
         op = word.tok();
     }
@@ -2636,7 +2635,7 @@ P2Atom P2Asm::parse_unary()
     bool do_neg = false;
     bool do_comp = false;
 
-    P2Word word = m_words[m_idx];
+    P2Word word = m_words.value(m_idx);
     QString str = word.str();
     p2_token_e op = word.tok();
 
@@ -2669,7 +2668,7 @@ P2Atom P2Asm::parse_unary()
             break;
         if (++m_idx >= m_cnt)
             break;
-        word = m_words[m_idx];
+        word = m_words.value(m_idx);
         str = word.str();
         op = word.tok();
     }
@@ -2696,7 +2695,7 @@ P2Atom P2Asm::parse_mulops()
         if (!skip_comments())
             return lvalue;
 
-        P2Word word = m_words[m_idx];
+        P2Word word = m_words.value(m_idx);
         QString str = word.str();
         p2_token_e op = word.tok();
         if (!Token.is_type(op, tm_mulop))
@@ -2744,7 +2743,7 @@ P2Atom P2Asm::parse_addops()
         if (!skip_comments())
             return lvalue;
 
-        P2Word word = m_words[m_idx];
+        P2Word word = m_words.value(m_idx);
         QString str = word.str();
         p2_token_e op = word.tok();
         if (!Token.is_type(op, tm_addop))
@@ -2790,7 +2789,7 @@ P2Atom P2Asm::parse_shiftops()
         if (!skip_comments())
             return lvalue;
 
-        P2Word word = m_words[m_idx];
+        P2Word word = m_words.value(m_idx);
         QString str = word.str();
         p2_token_e op = word.tok();
         if (!Token.is_type(op, tm_shiftop))
@@ -2836,7 +2835,7 @@ P2Atom P2Asm::parse_binops()
         if (!skip_comments())
             return lvalue;
 
-        P2Word word = m_words[m_idx];
+        P2Word word = m_words.value(m_idx);
         QString str = word.str();
         p2_token_e op = word.tok();
         if (!Token.is_type(op, tm_binops))
@@ -2890,7 +2889,7 @@ P2Atom P2Asm::parse_expression(imm_to_e imm_to)
     if (!skip_comments())
         return atom;
 
-    P2Word& word = m_words[m_idx];
+    P2Word word = m_words.value(m_idx);
     QString str = word.str();
     p2_token_e tok = word.tok();
     bool imm = false;
@@ -2921,7 +2920,7 @@ P2Atom P2Asm::parse_expression(imm_to_e imm_to)
         default:
             break;
         }
-        word = m_words[m_idx];
+        word = m_words.value(m_idx);
         str = word.str();
         tok = word.tok();
     }
@@ -2954,12 +2953,12 @@ P2Atom P2Asm::parse_expression(imm_to_e imm_to)
         if (!skip_comments())
             break;
 
-        word = m_words[m_idx];
+        word = m_words.value(m_idx);
         str = word.str();
         tok = word.tok();
 
         switch (tok) {
-        case t_comma:
+        case t__COMMA:
             DEBUG_EXPR(" **** terminal: %s", qPrintable(str));
             break;
         case t_comment:
@@ -2974,6 +2973,9 @@ P2Atom P2Asm::parse_expression(imm_to_e imm_to)
             break;
     }
 
+    // TODO: handle relative expressions
+    Q_UNUSED(rel)
+
     return atom;
 }
 
@@ -2987,7 +2989,7 @@ bool P2Asm::end_of_line()
     if (skip_comments()) {
         // ignore extra parameters?
         m_error = tr("Found extra parameters: %1")
-                  .arg(m_source[m_lineno].mid(m_words[m_idx].pos()));
+                  .arg(m_source[m_lineno].mid(m_words.value(m_idx).pos()));
         return false;
     }
     return true;
@@ -3002,14 +3004,14 @@ bool P2Asm::parse_comma()
 {
     if (!skip_comments()) {
         m_error = tr("Expected %1 but found %2.")
-                  .arg(Token.string(t_comma))
+                  .arg(Token.string(t__COMMA))
                   .arg(tr("end of line"));
         return false;
     }
-    if (t_comma != m_words[m_idx].tok()) {
+    if (t__COMMA != m_words.value(m_idx).tok()) {
         m_error = tr("Expected %1 but found %2.")
-                  .arg(Token.string(t_comma))
-                  .arg(Token.string(m_words[m_idx].tok()));
+                  .arg(Token.string(t__COMMA))
+                  .arg(Token.string(m_words.value(m_idx).tok()));
         return false;
     }
     m_idx++;
@@ -3024,7 +3026,7 @@ void P2Asm::optional_comma()
 {
     if (!skip_comments())
         return;
-    if (t_comma != m_words[m_idx].tok())
+    if (t__COMMA != m_words.value(m_idx).tok())
         return;
     m_idx++;
 }
@@ -3037,7 +3039,7 @@ void P2Asm::optional_comma()
 bool P2Asm::optional_wcz()
 {
     while (skip_comments()) {
-        p2_token_e tok = m_words[m_idx].tok();
+        p2_token_e tok = m_words.value(m_idx).tok();
         switch (tok) {
         case t_WC:
             m_IR.op.wc = true;
@@ -3052,7 +3054,7 @@ bool P2Asm::optional_wcz()
             m_IR.op.wz = true;
             m_idx++;
             break;
-        case t_comma:
+        case t__COMMA:
             // expect more flags
             m_idx++;
             break;
@@ -3074,7 +3076,7 @@ bool P2Asm::optional_wcz()
 bool P2Asm::optional_wc()
 {
     if (skip_comments()) {
-        p2_token_e tok = m_words[m_idx].tok();
+        p2_token_e tok = m_words.value(m_idx).tok();
         switch (tok) {
         case t_WC:
             m_IR.op.wc = true;
@@ -3098,7 +3100,7 @@ bool P2Asm::optional_wc()
 bool P2Asm::optional_wz()
 {
     if (skip_comments()) {
-        p2_token_e tok = m_words[m_idx].tok();
+        p2_token_e tok = m_words.value(m_idx).tok();
         switch (tok) {
         case t_WZ:
             m_IR.op.wz = true;
@@ -3317,10 +3319,10 @@ bool P2Asm::parse_cz()
  */
 bool P2Asm::parse_cccc_zzzz_wcz()
 {
-    p2_cond_e cccc = parse_modcz(m_words[m_idx].tok());
+    p2_cond_e cccc = parse_modcz(m_words.value(m_idx).tok());
     if (!parse_comma())
         return false;
-    p2_cond_e zzzz = parse_modcz(m_words[m_idx].tok());
+    p2_cond_e zzzz = parse_modcz(m_words.value(m_idx).tok());
     m_IR.op.dst = static_cast<p2_LONG>((cccc << 4) | zzzz);
     optional_wcz();
     return end_of_line();
@@ -3525,7 +3527,7 @@ bool P2Asm::parse_imm_s_wcz()
  */
 bool P2Asm::parse_ptr_pc_abs()
 {
-    p2_token_e dst = m_words[m_idx].tok();
+    p2_token_e dst = m_words.value(m_idx).tok();
     switch (dst) {
     case t_PA:
         break;
@@ -3541,7 +3543,7 @@ bool P2Asm::parse_ptr_pc_abs()
         break;
     default:
         m_error = tr("Invalid pointer parameter: %1")
-                  .arg(m_source[m_lineno].mid(m_words[m_idx].pos()));
+                  .arg(m_source[m_lineno].mid(m_words.value(m_idx).pos()));
         return false;
     }
     m_idx++;
@@ -10277,7 +10279,7 @@ bool P2Asm::asm_calld_ptrb_abs()
 bool P2Asm::asm_loc()
 {
     m_idx++;
-    p2_token_e tok = m_words[m_idx].tok();
+    p2_token_e tok = m_words.value(m_idx).tok();
     bool success = false;
     switch (tok) {
     case t_PA:

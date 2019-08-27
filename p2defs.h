@@ -104,7 +104,7 @@ extern const p2_QUAD HMAX;
 extern const p2_QUAD LMAX;
 
 static constexpr QChar chr_comma(',');
-static constexpr QChar chr_comment('\'');
+static constexpr QChar chr_apostrophe('\'');
 static constexpr QChar chr_semicolon(';');
 static constexpr QChar chr_dquote('"');
 static constexpr QChar chr_skip_digit('_');
@@ -838,6 +838,7 @@ typedef union {
     p2_opcode8_t op8;           //!< ocpode as bit fields (version including WC)
     p2_opcode9_t op9;           //!< ocpode as bit fields (version including WC and WZ)
 }   p2_opcode_u;
+Q_DECLARE_METATYPE(p2_opcode_u);
 
 /**
  * @brief Structure of the LUT and the shadow registers in the last 16 LONGs

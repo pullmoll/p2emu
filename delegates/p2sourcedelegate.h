@@ -4,10 +4,10 @@
 
 class P2AsmModel;
 
-class P2AsmSourceDelegate : public QStyledItemDelegate
+class P2SourceDelegate : public QStyledItemDelegate
 {
     Q_OBJECT
 public:
-    P2AsmSourceDelegate(QObject* parent = nullptr);
+    P2SourceDelegate(QObject* parent = nullptr);
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 };
