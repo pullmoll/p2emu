@@ -73,6 +73,7 @@ P2Asm::P2Asm(QObject *parent)
     , m_next_PC(0)
     , m_curr_PC(0)
     , m_last_PC(0)
+    , m_orgh(0)
     , m_advance(4)
     , m_emit_IR(false)
     , m_IR()
@@ -127,6 +128,7 @@ void P2Asm::pass_clear()
     m_next_PC = 0;
     m_curr_PC = 0;
     m_last_PC = 0;
+    m_orgh = 0;
     m_advance = 0;
     m_emit_IR = false;
     m_IR.opcode = 0;
@@ -1968,6 +1970,120 @@ int P2Asm::commas_left() const
 }
 
 /**
+ * @brief opcode was constructed
+ * @param binary
+ * @return
+ */
+QString P2Asm::results_instruction(bool binary)
+{
+    QString output;
+    Q_ASSERT(m_advance == 4);
+    m_hash_PC.insert(m_lineno, m_curr_PC);
+    m_hash_IR.insert(m_lineno, m_IR);
+    output = QString("%1 %2 [%3] %4")
+             .arg(m_lineno, -6)
+             .arg(m_curr_PC, 6, 16, QChar('0'))
+             .arg(m_IR.opcode, 8, 16, QChar('0'))
+             .arg(m_line);
+
+    if (binary && m_orgh < MEM_SIZE) {
+        MEM.LONGS[m_orgh/4] = m_IR.opcode;
+    }
+    return output;
+}
+
+/**
+ * @brief Assignment to symbol
+ * @return
+ */
+QString P2Asm::results_assignment()
+{
+    QString output;
+    m_hash_IR.insert(m_lineno, m_IR);
+    output = QString("%1 %2 <%3> %4")
+             .arg(m_lineno, -6)
+             .arg(m_curr_PC, 6, 16, QChar('0'))
+             .arg(m_IR.opcode, 8, 16, QChar('0'))
+             .arg(m_line);
+    return output;
+}
+
+/**
+ * @brief Comment or non code generating instruction
+ * @return
+ */
+QString P2Asm::results_comment()
+{
+    QString output;
+    output = QString("%1 %2 -%3- %4")
+             .arg(m_lineno, -6)
+             .arg(m_curr_PC, 6, 16, QChar('0'))
+             .arg(QStringLiteral("--------"))
+             .arg(m_line);
+    return output;
+}
+
+QString P2Asm::results_data(bool binary)
+{
+    QString output;
+    p2_BYTES bytes = m_data.to_bytes();
+    p2_LONG start = m_curr_PC;
+    p2_LONG offset = m_curr_PC;
+    p2_LONG datalong = 0;
+
+    while (!bytes.isEmpty()) {
+        datalong |= static_cast<p2_LONG>(bytes.takeFirst()) << (8 * (offset & 3));
+        ++offset;
+
+        if (m_data.isEmpty() || 0 == (offset & 3)) {
+            const p2_LONG PC = m_curr_PC;
+            // end of data or datalong contains 32 bits
+            QString hex;
+
+            if (m_curr_PC & 3) {
+                // unaligned
+                const int digits = 8 - (2 * (m_curr_PC & 3));
+                hex = QString("%1").arg(datalong, digits, 16, QChar('0'));
+
+                while (0 != (m_curr_PC & 3)) {
+                    // align m_curr_PC to long
+                    hex.insert(0, QStringLiteral("--"));
+                    m_curr_PC++;
+                }
+            } else {
+                // aligned
+                const int nbytes = 4 - (offset & 3);
+                const int digits = 2 * nbytes;
+                hex = QString("%1").arg(datalong, digits, 16, QChar('0'));
+                m_curr_PC += static_cast<p2_LONG>(nbytes);
+            }
+
+            // pad until offset is aligned
+            while (offset & 3) {
+                hex.append(QStringLiteral("--"));
+                offset++;
+            }
+
+            // another p2_LONG to output
+            output = QString("%1 %2 {%3} %4")
+                     .arg(m_lineno, -6)
+                     .arg(PC, 6, 16, QChar('0'))
+                     .arg(hex)
+                     .arg(m_line);
+
+            if (!bytes.isEmpty()) {
+                // more data follows
+                m_listing.append(output);
+            }
+            datalong = 0;
+        }
+    }
+    m_advance = m_curr_PC - start;
+
+    return output;
+}
+
+/**
  * @brief Store the results and append a line to the listing
  * @param opcode true, if the IR field contains an opcode
  */
@@ -1978,85 +2094,16 @@ void P2Asm::results()
 
     QString output;
     if (m_emit_IR) {
-        Q_ASSERT(m_advance == 4);
-        m_hash_PC.insert(m_lineno, m_curr_PC);
-        m_hash_IR.insert(m_lineno, m_IR);
-        // opcode was constructed
-        output = QString("%1 %2 [%3] %4")
-                 .arg(m_lineno, -6)
-                 .arg(PC, 6, 16, QChar('0'))
-                 .arg(m_IR.opcode, 8, 16, QChar('0'))
-                 .arg(m_line);
-
-        if (binary && m_curr_PC < MEM_SIZE) {
-            MEM.LONGS[m_curr_PC / 4] = m_IR.opcode;
-        }
+        results_instruction(binary);
     } else if (m_data.isEmpty()) {
-        if (m_words.isEmpty() || t_comment == m_words[0].tok()) {
-            // comment or non code generating instruction
-            output = QString("%1 %2 -%3- %4")
-                     .arg(m_lineno, -6)
-                     .arg(PC, 6, 16, QChar('0'))
-                     .arg(QStringLiteral("--------"))
-                     .arg(m_line);
+        if (m_words.isEmpty() || Token.is_type(m_words[0].tok(), tm_comment)) {
+            output = results_comment();
         } else {
-            // assignment to symbol
-            m_hash_IR.insert(m_lineno, m_IR);
-            output = QString("%1 %2 <%3> %4")
-                     .arg(m_lineno, -6)
-                     .arg(PC, 6, 16, QChar('0'))
-                     .arg(m_IR.opcode, 8, 16, QChar('0'))
-                     .arg(m_line);
+            output = results_assignment();
         }
-
     } else {
-        p2_BYTES bytes = m_data.to_bytes();
-        p2_LONG offset = PC;
-        p2_LONG datalong = 0;
-        while (!bytes.isEmpty()) {
-            datalong |= static_cast<p2_LONG>(bytes.takeFirst()) << (8 * (offset & 3));
-            ++offset;
-
-            if (m_data.isEmpty() || 0 == (offset & 3)) {
-                // end of data or datalong contains 32 bits
-                QString hex;
-
-                if (m_curr_PC & 3) {
-                    // unaligned
-                    const int digits = 8 - (2 * (m_curr_PC & 3));
-                    hex = QString("%1").arg(datalong, digits, 16, QChar('0'));
-
-                    while (0 != (m_curr_PC & 3)) {
-                        // align m_curr_PC to long
-                        hex.insert(0, QStringLiteral("--"));
-                        m_curr_PC++;
-                    }
-                } else {
-                    // aligned
-                    const int digits = 8 - (2 * (offset & 3));
-                    hex = QString("%1").arg(datalong, digits, 16, QChar('0'));
-                }
-
-                // pad until offset is aligned
-                while (offset & 3) {
-                    hex.append(QStringLiteral("--"));
-                    offset++;
-                }
-
-                // another p2_LONG to output
-                output = QString("%1 %2 {%3} %4")
-                         .arg(m_lineno, -6)
-                         .arg(PC, 6, 16, QChar('0'))
-                         .arg(hex)
-                         .arg(m_line);
-
-                if (!m_data.isEmpty()) {
-                    // more data follows
-                    m_listing.append(output);
-                }
-                datalong = 0;
-            }
-        }
+        m_hash_data.insert(m_lineno, m_data);
+        output = results_data(binary);
     }
     m_listing.append(output);
 
@@ -2064,6 +2111,7 @@ void P2Asm::results()
     m_next_PC = m_curr_PC + m_advance;
     if (m_next_PC > m_last_PC)
         m_last_PC = m_next_PC;
+    m_orgh += m_advance;
 
     if (!m_words.isEmpty())
         m_hash_words.insert(m_lineno, m_words);
@@ -3173,7 +3221,7 @@ bool P2Asm::asm_org()
     p2_LONG value = atom.to_long();
     if (atom.isEmpty())
         value = m_last_PC;
-    m_curr_PC = m_next_PC = value;
+    m_curr_PC = m_next_PC = value < HUB_ADDR0 ? value*4 : value;
     m_symbols.setValue(m_symbol, value);
     return end_of_line();
 }
@@ -3192,7 +3240,7 @@ bool P2Asm::asm_orgh()
     p2_LONG value = atom.to_long();
     if (atom.isEmpty())
         value = HUB_ADDR0;
-    m_next_PC =  m_last_PC = value;
+    m_next_PC = value;
     m_symbols.setValue(m_symbol, value);
     return end_of_line();
 }
@@ -3698,10 +3746,11 @@ bool P2Asm::asm_fit()
     m_idx++;
     P2Atom atom = parse_expression();
     const p2_LONG fit = atom.to_long();
-    if (fit < m_curr_PC) {
+    const p2_LONG PC = m_curr_PC < HUB_ADDR0 ? m_curr_PC / 4 : m_curr_PC;
+    if (fit < PC) {
         m_error = tr("Code does not fit below $%1 (origin == $%2)")
                   .arg(fit, 0, 16)
-                  .arg(m_curr_PC, 0, 16);
+                  .arg(PC, 0, 16);
     }
     return end_of_line();
 }

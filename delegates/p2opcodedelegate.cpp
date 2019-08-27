@@ -18,9 +18,10 @@ void P2OpcodeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     QStyleOptionViewItem opt(option);
     initStyleOption(&opt, index);
 
+    QVariant var = model->data(index);
+    const p2_opcode_u IR = qvariant_cast<p2_opcode_u>(var);
     p2_opcode_format_e format = model->opcode_format();
-    const p2_opcode_u IR = qvariant_cast<p2_opcode_u>(model->data(index, Qt::EditRole));
-    const QString opcode = model->data(index).toString();
+    QString opcode = var.isNull() ? QString() : format_opcode(IR, format);
 
     QRect rect = option.rect;
     const int flags = static_cast<int>(opt.displayAlignment) |

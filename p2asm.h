@@ -43,6 +43,7 @@
 
 typedef QHash<int, p2_LONG> p2_PC_hash_t;
 typedef QHash<int, p2_opcode_u> p2_IR_hash_t;
+typedef QHash<int, P2Atom> p2_data_hash_t;
 typedef QHash<int, P2Words> p2_words_hash_t;
 typedef QMultiHash<int, QString> p2_error_hash_t;
 
@@ -110,6 +111,7 @@ private:
     QStringList m_listing;                  //!< listing as QStringList
     p2_PC_hash_t m_hash_PC;                 //!< optional program counters per line
     p2_IR_hash_t m_hash_IR;                 //!< optional instruction register (opcode) per line
+    p2_data_hash_t m_hash_data;             //!< optional data per line
     p2_words_hash_t m_hash_words;           //!< optional words per line
     p2_error_hash_t m_hash_error;           //!< optional (multiple) error messages per line
     P2AsmSymTbl m_symbols;                  //!< symbol table
@@ -120,6 +122,7 @@ private:
     p2_LONG m_next_PC;                      //!< next program counter
     p2_LONG m_curr_PC;                      //!< current program counter (origin of the instruction)
     p2_LONG m_last_PC;                      //!< last program counter (maximum of next_pc)
+    p2_LONG m_orgh;                         //!< current origin, i.e. where the data is stored
     p2_LONG m_advance;                      //!< advance by n longs
     bool m_emit_IR;                         //!< emit IR to the output
     p2_opcode_u m_IR;                       //!< current instruction register
@@ -149,6 +152,10 @@ private:
     QHash<Section,QString> m_sections;      //!< currently defined function symbol, i.e. a name w/o initial dot (.)
 
     int commas_left() const;
+    QString results_instruction(bool binary);
+    QString results_assignment();
+    QString results_comment();
+    QString results_data(bool binary);
     void results();
     QString expand_tabs(const QString& src);
     bool skip_comments();

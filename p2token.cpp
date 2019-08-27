@@ -36,7 +36,7 @@
 #include "p2token.h"
 #include "p2util.h"
 
-#define DBG_REGEX   1
+#define DBG_REGEX   0
 #define DBG_TOKEN   0
 
 #if DBG_REGEX
@@ -54,7 +54,13 @@
 /**
  * @brief Regular expression for comments
  */
-static const QString re_comment = QStringLiteral("\\{[^\\}]*\\}");
+static const QString re_comment_curly = QStringLiteral("\\{[^\\}]*\\}");
+
+/**
+ * @brief Regular expression for comments
+ */
+//static const QString re_comment_eol = QStringLiteral("'[^\\{\\}]*");
+static const QString re_comment_eol = QStringLiteral("'.*");
 
 /**
  * @brief Regular expression for local symbol
@@ -62,7 +68,7 @@ static const QString re_comment = QStringLiteral("\\{[^\\}]*\\}");
  * leading "."
  * then any number of "A"…"Z", "0"…"9", or "_"
  */
-static const QString re_locsym = QStringLiteral("([.][A-Z_]+[A-Z0-9_]*){1}");
+static const QString re_locsym = QStringLiteral("[.][A-Z_]+[A-Z0-9_]*");
 
 /**
  * @brief Regular expression for alphanumeric
@@ -70,7 +76,7 @@ static const QString re_locsym = QStringLiteral("([.][A-Z_]+[A-Z0-9_]*){1}");
  * leading "A"…"Z", or "_"
  * then any number of "A"…"Z", "0"…"9", or "_"
  */
-static const QString re_symbol = QStringLiteral("([A-Z_]+[A-Z0-9_]*){1}");
+static const QString re_symbol = QStringLiteral("[A-Z_]+[A-Z0-9_]*");
 
 /**
  * @brief Regular expression for binary number
@@ -78,7 +84,7 @@ static const QString re_symbol = QStringLiteral("([A-Z_]+[A-Z0-9_]*){1}");
  * leading "%"
  * then one or more of "0", "1", or "_"
  */
-static const QString re_bin_const = QStringLiteral("(%[_]*[01_]+){1}");
+static const QString re_bin_const = QStringLiteral("%[_]*[01_]+");
 
 /**
  * @brief Regular expression for byte number
@@ -86,7 +92,7 @@ static const QString re_bin_const = QStringLiteral("(%[_]*[01_]+){1}");
  * leading "%%"
  * then one or more of "0"…"3", or "_"
  */
-static const QString re_byt_const = QStringLiteral("(%%[_]*[0-3_]+){1}");
+static const QString re_byt_const = QStringLiteral("%%[_]*[0-3_]+");
 
 /**
  * @brief Regular expression for octal number
@@ -94,7 +100,7 @@ static const QString re_byt_const = QStringLiteral("(%%[_]*[0-3_]+){1}");
  * leading "0"
  * then one or more of "0"…"7", or "_"
  */
-static const QString re_oct_const = QStringLiteral("([0][_]*[0-7_]*){1}");
+static const QString re_oct_const = QStringLiteral("[0][_]*[0-7_]*");
 
 /**
  * @brief Regular expression for a decimal number
@@ -110,7 +116,7 @@ static const QString re_dec_const = QStringLiteral("[1-9][_]*[0-9_]*");
  * leading "$"
  * then any number of "0"…"9", "A"…"F", or "_"
  */
-static const QString re_hex_const = QStringLiteral("(\\$[_]*[0-9A-F_]+){1}");
+static const QString re_hex_const = QStringLiteral("\\$[_]*[0-9A-F_]+");
 
 /**
  * @brief Regular expression for a string enclosed in doublequotes, possibly containing escaped doublequotes
@@ -118,7 +124,7 @@ static const QString re_hex_const = QStringLiteral("(\\$[_]*[0-9A-F_]+){1}");
  * then any number of escaped doublequotes (\") or other characters (.)
  * trailing '"'
  */
-static const QString re_str_const = QStringLiteral("(\"([^\\\"]|\\\\.)*\"){1}");
+static const QString re_str_const = QStringLiteral("\"([^\\\"]|\\\\.)*\"");
 
 //! Global static instance of the P2Token class
 P2Token Token;
@@ -944,13 +950,21 @@ P2Words P2Token::tokenize(const QString& str, const int lineno, int& in_curly) c
         // first time initialization of the QRegExp
         QStringList list;
 
-        list += QStringLiteral("'.*");                  // Comments '... something
-        list += QStringLiteral("\\s+");                 // Spaces
-        list += re_str_const;                           // Strings with possibly escaped double quotes
-        list += re_comment;                             // Comments in curly braces
-        list += QStringLiteral("[^,'\"\\s]+");          // Any word without , ' " Space
+        list += QStringLiteral("\\s+");                 // spaces
+        list += re_comment_curly;                       // comments in {curly braces}
+        list += re_comment_eol;                         // Comments 'something...
+        list += re_symbol;                              // symbols
+        list += re_locsym;                              // local symbols
+        list += re_bin_const;                           // bin constants
+        list += re_byt_const;                           // byt constants
+        list += re_oct_const;                           // oct constants
+        list += re_dec_const;                           // dec constants
+        list += re_hex_const;                           // hex constants
+        list += re_str_const;                           // str constants
         static const char *Delimiters[] = {
             "@@@",      // relative HUB
+            "@@",       // relative ???
+            "@",        // relative
             "##",       // immediate 2
             "#",        // immediate
             ",",        // comma
@@ -974,7 +988,6 @@ P2Words P2Token::tokenize(const QString& str, const int lineno, int& in_curly) c
             "|",        // binary OR
             "(",        // left parenthesis (sub expression start)
             ")",        // right parenthesis (sub expression end)
-            "@",        // relative
             "==",       // equals
             "=",        // assignment
             "{",        // left curly brace (comment start)
@@ -982,11 +995,12 @@ P2Words P2Token::tokenize(const QString& str, const int lineno, int& in_curly) c
             nullptr
         };
         for (int i = 0; Delimiters[i]; i++)
-            list += QRegExp::escape(QString::fromLatin1(Delimiters[i])) + QStringLiteral("{1}");
+            list += QRegExp::escape(QString::fromLatin1(Delimiters[i]));
         re = QString("(%1)").arg(list.join(QChar('|')));
 
-        // rx.setPatternSyntax(QRegExp::RegExp2);  // greedy syntax
+        rx.setPatternSyntax(QRegExp::RegExp2);  // greedy syntax
         rx.setPattern(re);
+        rx.setCaseSensitivity(Qt::CaseInsensitive);
         Q_ASSERT(rx.isValid());
     }
 
@@ -1036,14 +1050,12 @@ P2Words P2Token::tokenize(const QString& str, const int lineno, int& in_curly) c
             int curly = count_curly(word);
             in_curly = qMax(in_curly + curly, 0);
 
-            if (in_curly > 0) {
-                tok = in_curly > 0 ? t_comment_lcurly : t_comment_rcurly;
-                words.append(P2Word(tok, word, lineno, pos, len));
-                DEBUG_REGEX("  curly %d @%-3d #%-3d %s%s%s",
-                            in_curly, pos, len,
-                            qPrintable(chr_ldangle), qPrintable(word), qPrintable(chr_rdangle));
-                goto leave;
-            }
+            tok = in_curly > 0 ? t_comment_lcurly : t_comment_rcurly;
+            words.append(P2Word(tok, word, lineno, pos, len));
+            DEBUG_REGEX("  curly %d @%-3d #%-3d %s%s%s",
+                        in_curly, pos, len,
+                        qPrintable(chr_ldangle), qPrintable(word), qPrintable(chr_rdangle));
+            goto leave;
         }
 
         DEBUG_REGEX("  match %d @%-3d #%-3d %s%s%s",
@@ -1106,7 +1118,8 @@ leave:
  */
 p2_token_e P2Token::token(const QString& str, bool chop, int* plen) const
 {
-    static QRegExp rx_comment(re_comment);
+    static QRegExp rx_comment_eol(re_comment_eol);
+    static QRegExp rx_comment_curly(re_comment_curly);
     static QRegExp rx_symbol(re_symbol);
     static QRegExp rx_locsym(re_locsym);
     static QRegExp rx_bin_const(re_bin_const);
@@ -1122,6 +1135,10 @@ p2_token_e P2Token::token(const QString& str, bool chop, int* plen) const
         if (ustr.isEmpty())
             break;
 
+        if (ustr.startsWith(m_token_string.value(t__IMMEDIATE2))) {
+
+        }
+
         tok = m_string_token.value(ustr);
         if (t_unknown != tok) {
             QString name = m_token_string.value(tok);
@@ -1129,7 +1146,11 @@ p2_token_e P2Token::token(const QString& str, bool chop, int* plen) const
             break;
         }
 
-        if (rx_comment.exactMatch(ustr)) {
+        if (rx_comment_eol.exactMatch(ustr)) {
+            tok = t_comment_eol;
+            break;
+        }
+        if (rx_comment_curly.exactMatch(ustr)) {
             tok = t_comment_lcurly;
             break;
         }

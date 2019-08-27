@@ -328,8 +328,15 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
             }
             break;
 
+        case c_Opcode: // Opcode string
+            if (PC_avail && IR_avail)
+                result = qVariantFromValue(IR);
+            break;
+
         case c_Tokens:
-            if (!words.isEmpty())
+            if (words.isEmpty())
+                result = QStringLiteral("-");
+            else
                 result = QString::number(words.count());
             break;
 
@@ -341,17 +348,6 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
         case c_Symbols:
             if (!symrefs.isEmpty())
                 result = QString::number(symrefs.count());
-            break;
-
-        case c_Opcode: // Opcode string
-            if (PC_avail) {
-                result = format_opcode(IR, m_format);
-                break;
-            }
-            if (IR_avail) {
-                result = format_data(IR, m_format);
-                break;
-            }
             break;
 
         case c_Source:  // Source code
