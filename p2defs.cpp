@@ -49,69 +49,6 @@ const QString dec_digits = QStringLiteral("0123456789_");
 //! digits of hexadecimal numbers
 const QString hex_digits = QStringLiteral("0123456789ABCDEF_");
 
-//! Lowest COG memory address
-const p2_LONG COG_ADDR0 = 0;
-
-//! Size of the COG memory in longs
-constexpr p2_LONG COG_SIZE = 0x200;
-
-//! Mask for the COG memory longs
-constexpr p2_LONG COG_MASK = (COG_SIZE-1);
-
-//! Lowest LUT memory address
-const p2_LONG LUT_ADDR0 = (COG_ADDR0+COG_SIZE*4);
-
-//! Size of the LUT memory in longs
-constexpr p2_LONG LUT_SIZE = 0x200;
-
-//! Mask for the LUT memory longs
-constexpr p2_LONG LUT_MASK = (LUT_SIZE-1);
-
-//! Lowest HUB memory address
-const p2_LONG HUB_ADDR0 = (LUT_ADDR0+LUT_SIZE*4);
-
-//! Size of the HUB memory in bytes (1MiB)
-extern const p2_LONG MEM_SIZE;
-
-//! most significant bit in a 32 bit word
-const p2_LONG MSB = 1u << 31;
-
-//! least significant bit in a 32 bit word
-const p2_LONG LSB = 1u;
-
-//! least significant nibble in a 32 bit word
-const p2_LONG LNIBBLE = 0x0000000fu;
-
-//! least significant byte in a 32 bit word
-const p2_LONG LBYTE = 0x000000ffu;
-
-//! least significant word in a 32 bit word
-const p2_LONG LWORD = 0x0000ffffu;
-
-//! most significant word in a 32 bit word
-const p2_LONG HWORD = 0xffff0000u;
-
-//! bits without sign bit in a 32 bit word
-const p2_LONG IMAX = 0x7fffffffu;
-
-//! no bits in a 32 bit word
-const p2_LONG ZERO = 0x00000000u;
-
-//! all bits in a 32 bit word
-const p2_LONG FULL = 0xffffffffu;
-
-//! least significant 20 bits for an address value
-const p2_LONG A20MASK = (1u << 20) - 1;
-
-//! most significant 23 bits for an augmentation value
-const p2_LONG AUGMASK = 0xfffffe00;
-
-//! upper word max / mask in a 64 bit unsigned
-const p2_QUAD HMAX = Q_UINT64_C(0xffffffff00000000);
-
-//! lower word max / mask in a 64 bit unsigned
-const p2_QUAD LMAX = Q_UINT64_C(0x00000000ffffffff);
-
 const QString template_str_origin = QStringLiteral("FFFFFF ");
 const QString template_str_address = QStringLiteral("COG:1FF ");
 
@@ -126,6 +63,8 @@ const QString template_str_symbols = QStringLiteral("S");
 const QString template_str_errors = QStringLiteral("😞");
 const QString template_str_instruction = QStringLiteral(" label_name IF_NC_AND_NZ  INSTRUCTION #$1ff,#$1ff,#7 XORCZ ");
 const QString template_str_description = QStringLiteral(" Some description string... ");
+
+const QString key_tv_asm = QStringLiteral("tvAsm");
 
 QString format_opcode_bin(const p2_opcode_u& IR)
 {

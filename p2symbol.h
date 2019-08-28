@@ -37,24 +37,24 @@
 #include "p2atom.h"
 
 /**
- * @brief The P2AsmSymbol class is a wrapper for one symbolic name for a value
+ * @brief The P2Symbol class is a wrapper for one symbolic name for a value
  */
-class P2AsmSymbol
+class P2Symbol
 {
 public:
-    explicit P2AsmSymbol(const QString& name = QString(), const P2Atom& value = P2Atom());
+    explicit P2Symbol(const QString& name = QString(), const P2Atom& value = P2Atom());
 
     bool isNull() const;
     bool isEmpty() const;
     const QString& name() const;
     template <typename T>
     T value() const { return static_cast<T>(m_value.value()); }
-    bool setValue(const P2Atom& value);
+    bool set_atom(const P2Atom& value);
     P2Atom::Type type() const;
     const QString type_name() const;
     int defined_where() const;
     int reference(int idx = 0) const;
-    void addReference(int lineno);
+    void add_reference(int lineno);
     const QList<int> references() const;
 
 private:
@@ -63,4 +63,4 @@ private:
     QList<int> m_references;
 };
 
-Q_DECLARE_METATYPE(P2AsmSymbol);
+Q_DECLARE_METATYPE(P2Symbol);

@@ -42,11 +42,14 @@ class MainWindow;
 }
 class P2Hub;
 class P2CogView;
+
 class P2Asm;
-class P2Params;
 class P2AsmModel;
+
 class P2Dasm;
 class P2DasmModel;
+
+class P2SymbolsModel;
 
 class MainWindow : public QMainWindow
 {
@@ -95,6 +98,7 @@ private slots:
     void setDasmLowercase(bool check);
     void asmHeaderColums(const QPoint& pos);
     void dasmHeaderColums(const QPoint& pos);
+    void symbolsHeaderColums(const QPoint& pos);
 
     void hubSingleStep();
 
@@ -112,6 +116,7 @@ private:
     P2AsmModel* m_amodel;
     P2Dasm* m_dasm;
     P2DasmModel* m_dmodel;
+    P2SymbolsModel* m_smodel;
 
     void setupAssembler();
     void setupDisassembler();
@@ -122,5 +127,6 @@ private:
 
     void updateAsmColumnSizes();
     void updateDasmColumnSizes();
+    void updateSymbolsColumnSizes();
     void setupCogView();
 };

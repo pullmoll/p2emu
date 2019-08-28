@@ -150,12 +150,11 @@ void P2Opcode::set_im(bool on)
 bool P2Opcode::set_dst(const P2Atom& value, imm_to_e imm_to)
 {
     const p2_LONG val = value.to_long();
-    u.op.dst = val & 0x1ffu;
-    if (val & ~0x1ffu) {
+    u.op.dst = val & COG_MASK;
+    if (val > COG_MASK) {
         switch (imm_to) {
         case immediate_none:
-            error = dst_augd_none;
-            return false;
+            return true;
         case immediate_im:
             if (u.op.im)
                 break;
@@ -172,7 +171,7 @@ bool P2Opcode::set_dst(const P2Atom& value, imm_to_e imm_to)
             error = dst_augd_wc;
             return false;
         }
-        AUGD = val >> 9;
+        AUGD = val & ~COG_MASK;
     } else {
         AUGD.clear();
     }
@@ -188,12 +187,11 @@ bool P2Opcode::set_dst(const P2Atom& value, imm_to_e imm_to)
 bool P2Opcode::set_src(const P2Atom& value, imm_to_e imm_to)
 {
     const p2_LONG val = value.to_long();
-    u.op.src = val & 0x1ffu;
-    if (val & ~0x1ffu) {
+    u.op.src = val & COG_MASK;
+    if (val > COG_MASK) {
         switch (imm_to) {
         case immediate_none:
-            error = src_augs_none;
-            return false;
+            return true;
         case immediate_im:
             if (u.op.im)
                 break;
@@ -210,7 +208,7 @@ bool P2Opcode::set_src(const P2Atom& value, imm_to_e imm_to)
             error = src_augs_wc;
             return false;
         }
-        AUGS = val >> 9;
+        AUGS = val & ~COG_MASK;
     } else {
         AUGS.clear();
     }

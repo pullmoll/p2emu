@@ -150,9 +150,9 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
         switch (column) {
         case c_Address: // Address as COG[xxx], LUT[xxx], or xxxxxx in RAM
             if (PC < 0x200) {
-                result = QString("COG[%1]").arg(PC, 3, 16, QChar('0'));
+                result = QString("COG:%1").arg(PC, 3, 16, QChar('0'));
             } else if (PC < 0x400) {
-                result = QString("LUT[%1]").arg(PC - 0x200, 3, 16, QChar('0'));
+                result = QString("LUT:%1").arg(PC - 0x200, 3, 16, QChar('0'));
             } else {
                 result = QString("%1").arg(addr, 6, 16, QChar('0'));
             }
@@ -216,7 +216,7 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
         break;
 
     case Qt::SizeHintRole:
-        result = sizeHint(column);
+        result = sizeHint(column, false, data(index).toString());
         break;
 
     case Qt::InitialSortOrderRole:
@@ -235,7 +235,7 @@ QList<P2DasmModel::column_e> P2DasmModel::columns()
     return columns;
 }
 
-QSize P2DasmModel::sizeHint(P2DasmModel::column_e column, bool header) const
+QSize P2DasmModel::sizeHint(P2DasmModel::column_e column, bool header, const QString& text) const
 {
     QFont font(m_font);
     font.setBold(header);
@@ -243,28 +243,28 @@ QSize P2DasmModel::sizeHint(P2DasmModel::column_e column, bool header) const
 
     switch (column) {
     case c_Address:
-        return metrics.size(Qt::TextSingleLine, template_str_address);
+        return metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_address : text);
 
     case c_Opcode:
         switch (m_format) {
         case fmt_bin:
-            return metrics.size(Qt::TextSingleLine, template_str_opcode_bin);
+            return metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_bin : text);
         case fmt_byt:
-            return metrics.size(Qt::TextSingleLine, template_str_opcode_byt);
+            return metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_byt : text);
         case fmt_oct:
-            return metrics.size(Qt::TextSingleLine, template_str_opcode_oct);
+            return metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_oct : text);
         case fmt_dec:
-            return metrics.size(Qt::TextSingleLine, template_str_opcode_dec);
+            return metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_dec : text);
         case fmt_hex:
-            return metrics.size(Qt::TextSingleLine, template_str_opcode_hex);
+            return metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_hex : text);
         }
         break;
 
     case c_Instruction:
-        return metrics.size(Qt::TextSingleLine, template_str_instruction);
+        return metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_instruction : text);
 
     case c_Description:
-        return metrics.size(Qt::TextSingleLine, template_str_description);
+        return metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_description : text);
     }
     return QSize();
 }

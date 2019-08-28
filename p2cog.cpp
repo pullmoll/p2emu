@@ -9818,7 +9818,7 @@ int P2Cog::op_loc_ptrb()
  */
 int P2Cog::op_augs()
 {
-    S_aug = (IR.opcode << 9) & AUGMASK;
+    S_aug = (IR.opcode << AUG_SHIFT) & AUG_MASK;
     return 2;
 }
 
@@ -9833,6 +9833,6 @@ int P2Cog::op_augs()
  */
 int P2Cog::op_augd()
 {
-    D_aug = (IR.opcode << 9) & AUGMASK;
+    D_aug = (IR.opcode << AUG_SHIFT) & AUG_MASK;
     return 2;
 }

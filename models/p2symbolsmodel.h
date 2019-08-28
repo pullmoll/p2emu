@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Propeller2 disassembler data model for QItemView
+ * Propeller2 symbol table data model for QAbstractTableView
  *
  * Copyright (C) 2019 Jürgen Buchmüller <pullmoll@t-online.de>
  *
@@ -34,44 +34,45 @@
 #pragma once
 #include <QObject>
 #include <QAbstractTableModel>
-#include <QColor>
 #include <QFont>
 #include <QFontMetrics>
-#include "p2dasm.h"
+#include "p2symboltable.h"
 
-class P2DasmModel : public QAbstractTableModel
+class P2SymbolsModel : public QAbstractTableModel
 {
     Q_OBJECT
 public:
     enum column_e {
-        c_Address,
-        c_Opcode,
-        c_Instruction,
-        c_Description
+        c_Name,
+        c_Definition,
+        c_References,
+        c_Type,
+        c_Value,
     };
     Q_ENUM(column_e)
 
-    explicit P2DasmModel(P2Dasm* dasm, QObject *parent = nullptr);
+    explicit P2SymbolsModel(const P2SymbolTable& table = P2SymbolTable(), QObject *parent = nullptr);
 
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+    Qt::ItemFlags flags(const QModelIndex& index) const override;
 
     static QList<column_e> columns();
-    p2_opcode_format_e opcode_format() const { return m_format; }
     QSize sizeHint(column_e column, bool header = false, const QString& text = QString()) const;
 
 public slots:
     void invalidate();
-    void setOpcodeFormat(p2_opcode_format_e format);
     void setFont(const QFont& font);
+    bool setTable(const P2SymbolTable& table);
 
 private:
-    P2Dasm* m_dasm;
-    p2_opcode_format_e m_format;
+    P2SymbolTable m_table;
     QFont m_font;
+    QStringList m_names;
     QHash<column_e,QString> m_header;
     QHash<column_e,QRgb> m_background;
-    QHash<column_e,int> m_alignment;
+    QHash<column_e,int> m_header_alignment;
+    QHash<column_e,int> m_text_alignment;
 };

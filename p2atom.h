@@ -70,7 +70,14 @@ class P2Atom
 {
 public:
     enum Type {
-        Invalid, Byte, Word, Long, Quad, String
+        Invalid,
+        Bool,
+        Byte,
+        Word,
+        PC,
+        Long,
+        Quad,
+        String
     };
 
     explicit P2Atom();
@@ -81,13 +88,15 @@ public:
     P2Atom(p2_QUAD value);
     P2Atom(const P2Atom& other);
 
-    void clear();
+    void clear(Type type = Invalid);
     bool isNull() const;
     bool isEmpty() const;
     bool isValid() const;
+    int size() const;
+    int count() const;
     Type type() const;
     const QString type_name() const;
-    void setType(Type type);
+    void set_type(Type type);
 
     p2_QUAD value(bool *ok = nullptr) const;
 
@@ -100,6 +109,17 @@ public:
     bool set(Type type, p2_QUAD value);
     bool set(int nbits, p2_QUAD value);
     bool set(p2_QUAD value);
+
+    bool to_bool(bool *ok = nullptr) const;
+    p2_BYTE to_byte(bool *ok = nullptr) const;
+    p2_WORD to_word(bool *ok = nullptr) const;
+    p2_LONG to_long(bool *ok = nullptr) const;
+    p2_QUAD to_quad(bool *ok = nullptr) const;
+    QString to_string(bool *ok = nullptr) const;
+    QByteArray to_array() const;
+    p2_BYTES to_bytes() const;
+    p2_WORDS to_words() const;
+    p2_LONGS to_longs() const;
 
     void complement1(bool flag);
     void complement2(bool flag);
@@ -119,46 +139,13 @@ public:
     void binary_or(p2_QUAD mask);
     void binary_rev();
 
-    p2_BYTE to_byte(bool *ok = nullptr) const;
-    p2_WORD to_word(bool *ok = nullptr) const;
-    p2_LONG to_long(bool *ok = nullptr) const;
-    p2_QUAD to_quad(bool *ok = nullptr) const;
-    QString to_string(bool *ok = nullptr) const;
-
-    p2_BYTES to_bytes() const;
-    p2_WORDS to_words() const;
-    p2_LONGS to_longs() const;
-
-    template <typename T>
-    T operator= (T newval)
-    {
-        if (typeid(T) == typeid(p2_BYTE)) {
-            if (set(Byte, newval))
-                return newval;
-        } else if (typeid(T) == typeid(p2_WORD)) {
-            if (set(Word, newval))
-                return newval;
-        } else if (typeid(T) == typeid(p2_LONG)) {
-            if (set(Long, newval))
-                return newval;
-        } else if (typeid(T) == typeid(p2_QUAD)) {
-            if (set(Quad, newval))
-                return newval;
-        } else if (set(sizeof(T), newval)) {
-            return newval;
-        }
-        return static_cast<T>(value());
-    }
-
-    P2Atom& operator= (const P2Atom& other)
-    {
-        m_type = other.m_type;
-        m_data = other.m_data;
-        return *this;
-    }
-
-
-    bool operator== (const P2Atom& other);
+    P2Atom& operator = (const P2Atom& other);
+    bool operator == (const P2Atom& other);
+    bool operator != (const P2Atom& other);
+    bool operator < (const P2Atom& other);
+    bool operator <= (const P2Atom& other);
+    bool operator >(const P2Atom& other);
+    bool operator >=(const P2Atom& other);
     P2Atom& operator~();
     P2Atom& operator-();
     P2Atom& operator!();
@@ -179,55 +166,6 @@ public:
     static QStringList format_data(const P2Atom& data, const p2_LONG addr);
 
 private:
-
-    /**
-     * @brief Append a number of 8, 16, 32, or 64 bits to the data
-     * @return true on success, or false for wrong number of bits
-     */
-    template <Type type, typename T>
-    bool append(T value)
-    {
-        switch (type) {
-        case Byte:
-            m_data.append(static_cast<char>(value));
-            break;
-        case Word:
-            m_data.append(static_cast<char>(value>>0));
-            m_data.append(static_cast<char>(value>>8));
-            break;
-        case Long:
-            m_data.append(static_cast<char>(value>> 0));
-            m_data.append(static_cast<char>(value>> 8));
-            m_data.append(static_cast<char>(value>>16));
-            m_data.append(static_cast<char>(value>>24));
-            break;
-        case Quad:
-            m_data.append(static_cast<char>(value>> 0));
-            m_data.append(static_cast<char>(value>> 8));
-            m_data.append(static_cast<char>(value>>16));
-            m_data.append(static_cast<char>(value>>24));
-            m_data.append(static_cast<char>(value>>32));
-            m_data.append(static_cast<char>(value>>40));
-            m_data.append(static_cast<char>(value>>48));
-            m_data.append(static_cast<char>(value>>56));
-            break;
-        case String:
-            // always append one character
-            m_data.append(static_cast<char>(value));
-            while (value) {
-                // append non-NUL characters
-                value >>= 8;
-                m_data.append(static_cast<char>(value));
-            }
-            // always set type to String now
-            m_type = String;
-            break;
-        default:
-            return false;
-        }
-        return m_type != Invalid;
-    }
-
     Type m_type;
     QByteArray m_data;
 };

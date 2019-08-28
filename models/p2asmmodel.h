@@ -32,12 +32,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 #pragma once
+#include <QObject>
 #include <QAbstractTableModel>
 #include <QColor>
 #include <QFont>
 #include <QFontMetrics>
 #include <QIcon>
-
 #include "p2asm.h"
 
 #define OVERRIDE_FLAGS  1
@@ -45,7 +45,6 @@
 class P2AsmModel : public QAbstractTableModel
 {
     Q_OBJECT
-
 public:
     enum column_e {
         c_Origin,
@@ -56,6 +55,7 @@ public:
         c_Errors,
         c_Source,
     };
+    Q_ENUM(column_e)
 
     explicit P2AsmModel(P2Asm* p2asm, QObject *parent = nullptr);
 
@@ -88,6 +88,6 @@ private:
     QHash<column_e,int> m_header_alignment;
     QHash<column_e,int> m_text_alignment;
     QString tokenToolTip(const P2Words& words, const QString& bgd) const;
-    QString symbolsToolTip(const P2AsmSymTbl& symbols, const QStringList& defined, const QString& bgd) const;
+    QString symbolsToolTip(const P2SymbolTable& symbols, const QStringList& defined, const QString& bgd) const;
     QString errorsToolTip(const QStringList& list, const QString& bgd) const;
 };

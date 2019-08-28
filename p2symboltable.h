@@ -32,32 +32,39 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 #pragma once
-#include "p2asmsym.h"
+#include <QSharedPointer>
+#include "p2symbol.h"
+
+typedef QHash<QString,P2Symbol> p2_symbols_hash_t;
+typedef QMultiHash<int,QString> p2_lineno_hash_t;
 
 /**
- * @brief The SymbolTable class is a QHash<QString,Symbol>, i.e. a hash
+ * @brief The P2SymbolTable class is a QHash<QString,Symbol>, i.e. a hash
  * of symbol names containing their definitions.
  */
-class P2AsmSymTbl
+class P2SymbolTableObj
 {
 public:
-    explicit P2AsmSymTbl();
+    explicit P2SymbolTableObj();
 
     void clear();
-    bool contains(const QString& name);
-    bool insert(const P2AsmSymbol& symbol);
-    bool insert(const QString& name, const P2Atom& value);
-    bool setValue(const QString& name, const P2Atom& value);
-    P2AsmSymbol value(const QString& name) const;
+    int count(const QString& key = QString()) const;
+    bool contains(const QString& name) const;
+    bool insert(const P2Symbol& symbol);
+    bool insert(const QString& name, const P2Atom& symbol);
+    P2Symbol symbol(const QString& name) const;
     P2Atom::Type type(const QString& name) const;
     int defined_where(const QString& name) const;
     QStringList references_in(int lineno) const;
     int reference(const QString& name, int idx = 0) const;
-    bool add_reference(const QString& name, int lineno);
     const QList<int> references(const QString& name) const;
+    QStringList names() const;
 
-    const QHash<QString,P2AsmSymbol>& symbols() const;
-    const QMultiHash<int,QString>& references() const;
+    const p2_symbols_hash_t& symbols() const;
+    const p2_lineno_hash_t& references() const;
+
+    bool set_atom(const QString& name, const P2Atom& symbol);
+    bool add_reference(const QString& name, int lineno);
 
     /**
      * @brief Return a symbol value cast to the type T
@@ -67,11 +74,13 @@ public:
     template <typename T>
     T value(const QString& name) const
     {
-        const P2AsmSymbol sym = m_symbols.value(name);
+        const P2Symbol sym = m_symbols.value(name);
         return sym.value<T>();
     }
 
 private:
-    QHash<QString,P2AsmSymbol> m_symbols;
-    QMultiHash<int,QString> m_references;
+    p2_symbols_hash_t m_symbols;
+    p2_lineno_hash_t m_references;
 };
+
+typedef QSharedPointer<P2SymbolTableObj> P2SymbolTable;

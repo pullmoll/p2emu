@@ -32,6 +32,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 #include "p2defs.h"
+#include "p2token.h"
 #include "p2cog.h"
 #include "p2dasm.h"
 
@@ -2101,7 +2102,7 @@ void P2Dasm::format_imm23(QString* instruction, p2_token_e inst)
 {
     if (nullptr == instruction)
         return;
-    const p2_LONG nnnn = (IR.u.opcode << 9) & AUGMASK;
+    const p2_LONG nnnn = (IR.u.opcode << 9) & AUG_MASK;
     *instruction = QString("%1#$%2")
                .arg(Token.string(inst, m_lowercase), pad_inst)
                .arg(nnnn << 9, 0, 16, QChar('0'));

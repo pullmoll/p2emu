@@ -40,7 +40,7 @@
 #include "p2opcode.h"
 #include "p2token.h"
 #include "p2atom.h"
-#include "p2asmsymtbl.h"
+#include "p2symboltable.h"
 
 
 //! A QHash of PC and ORGH per line number
@@ -70,6 +70,7 @@ public:
         sec_pri,
         sec_var
     };
+    Q_ENUM(Section)
 
     explicit P2Asm(QObject *parent = nullptr);
     ~P2Asm();
@@ -100,7 +101,7 @@ public:
     QStringList errors(int lineno) const;
 
     const QStringList& listing() const;
-    const P2AsmSymTbl& symbols() const;
+    const P2SymbolTable& symbols() const;
 
     bool assemble_pass();
     bool assemble(const QStringList& source);
@@ -121,12 +122,11 @@ private:
     p2_opcode_hash_t m_hash_OPC;            //!< optional P2Opcode per line
     p2_words_hash_t m_hash_words;           //!< optional words per line
     p2_error_hash_t m_hash_error;           //!< optional (multiple) error messages per line
-    P2AsmSymTbl m_symbols;                  //!< symbol table
+    P2SymbolTable m_symbols;                //!< symbol table
     int m_lineno;                           //!< current line number
     int m_in_curly;                         //!< parser inside curly braces comment level
     QString m_line;                         //!< current line of source
     QStringList m_errors;                   //!< error message(s) from parameters parser
-    p2_LONG m_next_PC;                      //!< next program counter
     p2_LONG m_curr_PC;                      //!< current program counter (origin of the instruction)
     p2_LONG m_last_PC;                      //!< last program counter (maximum of next_pc)
     p2_LONG m_ORGH;                         //!< current origin, i.e. where the data is stored
@@ -160,7 +160,7 @@ private:
     bool skip_comments();
     bool tokenize(const QString& m_line);
     p2_cond_e conditional(p2_token_e cond);
-    p2_cond_e parse_modcz(p2_token_e cond);
+    p2_cond_e parse_modcz();
     P2Atom make_atom();
     P2Atom bin_const(const QString& str);
     P2Atom byt_const(const QString& str);
@@ -170,6 +170,7 @@ private:
     P2Atom str_const(const QString& str);
     QString find_symbol(Section sect = sec_con, const QString& func = QString(), bool all_sections = false);
     QString find_locsym(Section sect = sec_con, const QString& local = QString());
+    void add_const_symbol(const QString& pfx, const QString& str = QString(), const P2Atom& atom = P2Atom());
     P2Atom parse_atom(int level);
     P2Atom parse_primary(int level);
     P2Atom parse_unary(int level);
@@ -209,7 +210,6 @@ private:
     bool parse_d_imm_s();
     bool parse_d_wcz();
     bool parse_cz();
-    bool parse_cccc_zzzz_wcz();
     bool parse_d();
     bool parse_wz_d();
     bool parse_imm_d();
@@ -307,6 +307,7 @@ private:
     bool asm_zerox();
     bool asm_signx();
     bool asm_encod();
+    bool asm_encod_d();
     bool asm_ones();
     bool asm_test();
     bool asm_testn();

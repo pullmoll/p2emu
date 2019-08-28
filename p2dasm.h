@@ -34,7 +34,7 @@
 #pragma once
 #include <QObject>
 #include "p2opcode.h"
-#include "p2token.h"
+#include "p2tokens.h"
 
 class P2Cog;
 

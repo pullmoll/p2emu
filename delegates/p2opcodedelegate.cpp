@@ -1,6 +1,6 @@
+#include <QPainter>
 #include "p2opcodedelegate.h"
 #include "p2asmmodel.h"
-#include <QPainter>
 
 P2OpcodeDelegate::P2OpcodeDelegate(QObject* parent)
     : QStyledItemDelegate(parent)
@@ -65,5 +65,4 @@ void P2OpcodeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     }
 
     painter->restore();
-
 }

@@ -18,10 +18,12 @@ void P2AsmListing::setListing(const QStringList& listing)
     ui->tb_listing->setText(listing.join(QChar::LineFeed));
 }
 
-void P2AsmListing::setSymbols(const P2AsmSymTbl& table)
+void P2AsmListing::setSymbols(const P2SymbolTable& table)
 {
     ui->tb_symbols->clear();
-    foreach(const P2AsmSymbol& sym, table.symbols()) {
+    if (table.isNull())
+        return;
+    foreach(const P2Symbol& sym, table->symbols()) {
         QString name = sym.name();
         P2Atom val = sym.value<P2Atom>();
         QString line = QString("%1 %2 %3")

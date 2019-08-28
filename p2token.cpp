@@ -37,7 +37,7 @@
 #include "p2util.h"
 
 #define DBG_REGEX   0
-#define DBG_TOKEN   0
+#define DBG_TOKEN 0
 
 #if DBG_REGEX
 #define DEBUG_REGEX(x,...) qDebug(x,__VA_ARGS__)
@@ -867,35 +867,35 @@ P2Token::P2Token()
         foreach(p2_t_mask_t mask, m_token_type.values(tok))
             m_type_token.insertMulti(mask, tok);
 
-    m_t_type_name.insert(tt_none,            QStringLiteral("-"));
-    m_t_type_name.insert(tt_parens,          QStringLiteral("Parenthesis"));
-    m_t_type_name.insert(tt_primary,         QStringLiteral("Primary"));
-    m_t_type_name.insert(tt_unary,           QStringLiteral("Unary"));
-    m_t_type_name.insert(tt_mulop,           QStringLiteral("MulOp"));
-    m_t_type_name.insert(tt_addop,           QStringLiteral("AddOp"));
-    m_t_type_name.insert(tt_shiftop,         QStringLiteral("ShiftOp"));
-    m_t_type_name.insert(tt_relation,        QStringLiteral("Relation"));
-    m_t_type_name.insert(tt_equality,        QStringLiteral("Equality"));
-    m_t_type_name.insert(tt_binop_and,       QStringLiteral("Binary AND"));
-    m_t_type_name.insert(tt_binop_xor,       QStringLiteral("Binary XOR"));
-    m_t_type_name.insert(tt_binop_or,        QStringLiteral("Binary OR"));
-    m_t_type_name.insert(tt_binop_rev,       QStringLiteral("Binary REV"));
-    m_t_type_name.insert(tt_logop_and,       QStringLiteral("Logic AND"));
-    m_t_type_name.insert(tt_logop_or,        QStringLiteral("Logic OR"));
-    m_t_type_name.insert(tt_ternary,         QStringLiteral("Ternary"));
-    m_t_type_name.insert(tt_assignment,      QStringLiteral("Assignment"));
-    m_t_type_name.insert(tt_delimiter,       QStringLiteral("Delimiter"));
-    m_t_type_name.insert(tt_constant,        QStringLiteral("Constant"));
-    m_t_type_name.insert(tt_immediate,       QStringLiteral("Immediate"));
-    m_t_type_name.insert(tt_relative,        QStringLiteral("Relative"));
-    m_t_type_name.insert(tt_conditional,     QStringLiteral("Conditional"));
-    m_t_type_name.insert(tt_modcz_param,     QStringLiteral("MODCZ param"));
-    m_t_type_name.insert(tt_inst,            QStringLiteral("Instruction"));
-    m_t_type_name.insert(tt_wcz_suffix,      QStringLiteral("WC/WZ suffix"));
-    m_t_type_name.insert(tt_section,         QStringLiteral("Section"));
-    m_t_type_name.insert(tt_origin,          QStringLiteral("Origin"));
-    m_t_type_name.insert(tt_data,            QStringLiteral("Data"));
-    m_t_type_name.insert(tt_lexer,           QStringLiteral("Lexer"));
+    m_t_type_name.insert(tt_none,           QStringLiteral("-"));
+    m_t_type_name.insert(tt_parens,         QStringLiteral("Parenthesis"));
+    m_t_type_name.insert(tt_primary,        QStringLiteral("Primary"));
+    m_t_type_name.insert(tt_unary,          QStringLiteral("Unary"));
+    m_t_type_name.insert(tt_mulop,          QStringLiteral("MulOp"));
+    m_t_type_name.insert(tt_addop,          QStringLiteral("AddOp"));
+    m_t_type_name.insert(tt_shiftop,        QStringLiteral("ShiftOp"));
+    m_t_type_name.insert(tt_relation,       QStringLiteral("Relation"));
+    m_t_type_name.insert(tt_equality,       QStringLiteral("Equality"));
+    m_t_type_name.insert(tt_binop_and,      QStringLiteral("Binary AND"));
+    m_t_type_name.insert(tt_binop_xor,      QStringLiteral("Binary XOR"));
+    m_t_type_name.insert(tt_binop_or,       QStringLiteral("Binary OR"));
+    m_t_type_name.insert(tt_binop_rev,      QStringLiteral("Binary REV"));
+    m_t_type_name.insert(tt_logop_and,      QStringLiteral("Logic AND"));
+    m_t_type_name.insert(tt_logop_or,       QStringLiteral("Logic OR"));
+    m_t_type_name.insert(tt_ternary,        QStringLiteral("Ternary"));
+    m_t_type_name.insert(tt_assignment,     QStringLiteral("Assignment"));
+    m_t_type_name.insert(tt_delimiter,      QStringLiteral("Delimiter"));
+    m_t_type_name.insert(tt_constant,       QStringLiteral("Constant"));
+    m_t_type_name.insert(tt_immediate,      QStringLiteral("Immediate"));
+    m_t_type_name.insert(tt_relative,       QStringLiteral("Relative"));
+    m_t_type_name.insert(tt_conditional,    QStringLiteral("Conditional"));
+    m_t_type_name.insert(tt_modcz_param,    QStringLiteral("MODCZ param"));
+    m_t_type_name.insert(tt_inst,           QStringLiteral("Instruction"));
+    m_t_type_name.insert(tt_wcz_suffix,     QStringLiteral("WC/WZ suffix"));
+    m_t_type_name.insert(tt_section,        QStringLiteral("Section"));
+    m_t_type_name.insert(tt_origin,         QStringLiteral("Origin"));
+    m_t_type_name.insert(tt_data,           QStringLiteral("Data"));
+    m_t_type_name.insert(tt_regexp,         QStringLiteral("RegExp"));
 }
 
 /**
@@ -939,7 +939,8 @@ P2Words P2Token::tokenize(const QString& str, const int lineno, int& in_curly) c
     static QString re;
     P2Words words;
     p2_token_e tok;
-    int pos = 0, lastpos = -1;
+    int pos = 0;
+    int lastpos = -1;
 
 #if (DBG_REGEX || DBG_TOKEN)
     qDebug("%s: ····························· tokenize line ·································", __func__);
@@ -1079,30 +1080,49 @@ P2Words P2Token::tokenize(const QString& str, const int lineno, int& in_curly) c
         }
     }
 
+leave:
     if (words.isEmpty()) {
+
         const int pos = 0;
         const int len = str.length();
+        Q_UNUSED(pos)
+        Q_UNUSED(len)
         DEBUG_REGEX("%s: empty %d @%-3d #%-3d %s%s%s", __func__,
                     in_curly, pos, len,
                     qPrintable(chr_ldangle), qPrintable(str), qPrintable(chr_rdangle));
-        Q_UNUSED(len)
     } else {
-        for (int i = 0; i < words.count(); i++) {
-            const P2Word& word = words[i];
-            tok = word.tok();
-            if (t_unknown == tok)
-                words[i].set_token(token(word.str()));
+
+        // modify PTRA/PTRB with preinc/predec/postinc/postdec
+        P2Word::merge(words, t_PTRA, t__INC, t_PTRA_postinc);
+        P2Word::merge(words, t_PTRA, t__DEC, t_PTRA_postdec);
+        P2Word::merge(words, t__INC, t_PTRA, t_PTRA_preinc);
+        P2Word::merge(words, t__DEC, t_PTRA, t_PTRA_predec);
+
+        P2Word::merge(words, t_PTRB, t__INC, t_PTRB_postinc);
+        P2Word::merge(words, t_PTRB, t__DEC, t_PTRB_postdec);
+        P2Word::merge(words, t__INC, t_PTRB, t_PTRB_preinc);
+        P2Word::merge(words, t__DEC, t_PTRB, t_PTRB_predec);
+
+#if DBG_TOKEN
+        int i = 0;
+        foreach(const P2Word& word, words) {
+            const p2_token_e tok = word.tok();
+            const QString& name = enum_name(tok);
+            const QString& str = word.str();
+            const int pos = word.pos();
+            const int len = word.len();
+
             DEBUG_TOKEN("  word[%-3d] %s%s%s%*s @%-3d #%-3d %s%s%s",
                         i,
-                        qPrintable(chr_ldangle), qPrintable(enum_name(tok)), qPrintable(chr_rdangle),
-                        24 - enum_name(tok).length(), "",
-                        word.pos(), word.len(),
-                        qPrintable(chr_ldangle), qPrintable(word.str()), qPrintable(chr_rdangle));
-            pos = word.end() + 1;
+                        qPrintable(chr_ldangle), qPrintable(name), qPrintable(chr_rdangle),
+                        24 - name.length(), "",
+                        pos, len,
+                        qPrintable(chr_ldangle), qPrintable(str), qPrintable(chr_rdangle));
+            i++;
         }
+#endif
     }
 
-leave:
 #if (DBG_REGEX || DBG_TOKEN)
     qDebug("%s: ·············································································", __func__);
 #endif

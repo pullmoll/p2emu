@@ -182,13 +182,15 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     const int row = index.row();
     const int lineno = row + 1;
 
-    const P2AsmSymTbl& symbols = m_asm->symbols();
-    const QStringList& symrefs = symbols.references_in(lineno);
+    const P2SymbolTable symbols = m_asm->symbols();
+    const QStringList& symrefs = symbols.isNull() ? QStringList()
+                                                  : symbols->references_in(lineno);
     const QStringList& errors = m_asm->errors(lineno);
     const bool has_errors = !errors.isEmpty();
 
     const P2Words& words = m_asm->words(lineno);
-    const QStringList& references_in = symbols.references_in(lineno);
+    const QStringList& references_in = symbols.isNull() ? QStringList()
+                                                        : symbols->references_in(lineno);
 
     const bool has_PC = m_asm->has_PC(lineno);
     const p2_PC_ORGH_t PC_orgh = has_PC ? m_asm->PC_value(lineno) : p2_PC_ORGH_t();
@@ -567,24 +569,24 @@ QString P2AsmModel::tokenToolTip(const P2Words& words, const QString& bgd) const
 
     // heading
     html += html_start_tr();
-    html += html_th(tr("Position, Length"), bgd);
     html += html_th(tr("Token"), bgd);
     html += html_th(tr("Type"), bgd);
+    html += html_th(tr("Position, Length"), bgd);
     html += html_th(tr("Source code"), bgd);
     html += html_end_tr();
 
     for (int i = 0; i < words.count(); i++) {
         const P2Word& word = words[i];
         html += html_start_tr();
-        html += html_td(QString("@%1 +%2")
-                        .arg(word.pos())
-                        .arg(word.len()),
-                        bgd);
         html += html_td(QString("%1: %2")
                         .arg(word.tok(), 3, 16, QChar('0'))
                         .arg(Token.enum_name(word.tok())),
                         bgd);
         html += html_td(Token.type_names(word.tok()).join(QChar::Space),
+                        bgd);
+        html += html_td(QString("@%1 +%2")
+                        .arg(word.pos())
+                        .arg(word.len()),
                         bgd);
         html += html_td(word.str(),
                         bgd);
@@ -594,11 +596,15 @@ QString P2AsmModel::tokenToolTip(const P2Words& words, const QString& bgd) const
     return html.join(QChar::LineFeed);
 }
 
-QString P2AsmModel::symbolsToolTip(const P2AsmSymTbl& symbols, const QStringList& defined, const QString& bgd) const
+QString P2AsmModel::symbolsToolTip(const P2SymbolTable& symbols, const QStringList& defined, const QString& bgd) const
 {
+    if (symbols.isNull())
+        return QString();
+
     QStringList html = html_head();
     // heading
     html += html_start_tr();
+    html += html_th(tr("Line #"), bgd);
     html += html_th(tr("Section::name"), bgd);
     html += html_th(tr("Type"), bgd);
     html += html_th(tr("Value (dec)"), bgd);
@@ -608,9 +614,10 @@ QString P2AsmModel::symbolsToolTip(const P2AsmSymTbl& symbols, const QStringList
 
     for (int i = 0; i < defined.count(); i++) {
         const QString& symbol = defined[i];
-        P2AsmSymbol sym = symbols.value(symbol);
+        const P2Symbol& sym = symbols->symbol(symbol);
         p2_LONG val = sym.value<p2_LONG>();
         html += html_start_tr();
+        html += html_td(QString::number(sym.reference()), bgd);
         html += html_td(sym.name(), bgd);
         html += html_td(sym.type_name(), bgd);
         html += html_td(format_data_dec(val), bgd);

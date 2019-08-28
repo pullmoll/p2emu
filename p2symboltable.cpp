@@ -31,9 +31,9 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
-#include "p2asmsymtbl.h"
+#include "p2symboltable.h"
 
-P2AsmSymTbl::P2AsmSymTbl()
+P2SymbolTableObj::P2SymbolTableObj()
     : m_symbols()
     , m_references()
 {
@@ -42,10 +42,22 @@ P2AsmSymTbl::P2AsmSymTbl()
 /**
  * @brief Clear the symbol table
  */
-void P2AsmSymTbl::clear()
+void P2SymbolTableObj::clear()
 {
     m_symbols.clear();
     m_references.clear();
+}
+
+/**
+ * @brief Return the number of symols in the table
+ * @param key optional name of the symbol to return the count for
+ * @return Number of symbols
+ */
+int P2SymbolTableObj::count(const QString& key) const
+{
+    if (key.isEmpty())
+        return m_symbols.count();
+    return m_symbols.count(key);
 }
 
 /**
@@ -53,7 +65,7 @@ void P2AsmSymTbl::clear()
  * @param name symbol name to check for
  * @return true if known, or false if unknown
  */
-bool P2AsmSymTbl::contains(const QString& name)
+bool P2SymbolTableObj::contains(const QString& name) const
 {
     return m_symbols.contains(name);
 }
@@ -63,7 +75,7 @@ bool P2AsmSymTbl::contains(const QString& name)
  * @param symbol const reference to the symbol to insert
  * @return false if the symbol was already in the table, or true if inserted
  */
-bool P2AsmSymTbl::insert(const P2AsmSymbol& symbol)
+bool P2SymbolTableObj::insert(const P2Symbol& symbol)
 {
     if (m_symbols.contains(symbol.name()))
         return false;
@@ -77,9 +89,9 @@ bool P2AsmSymTbl::insert(const P2AsmSymbol& symbol)
  * @param value initial value of the new symbol
  * @return false if the symbol was already in the table, or true if inserted
  */
-bool P2AsmSymTbl::insert(const QString& name, const P2Atom& value)
+bool P2SymbolTableObj::insert(const QString& name, const P2Atom& value)
 {
-    return insert(P2AsmSymbol(name, value));
+    return insert(P2Symbol(name, value));
 }
 
 /**
@@ -88,29 +100,27 @@ bool P2AsmSymTbl::insert(const QString& name, const P2Atom& value)
  * @param value new symbol value
  * @return
  */
-bool P2AsmSymTbl::setValue(const QString& name, const P2Atom& value)
+bool P2SymbolTableObj::set_atom(const QString& name, const P2Atom& value)
 {
     if (!m_symbols.contains(name))
         return false;
-    m_symbols[name].setValue(value);
+    m_symbols[name].set_atom(value);
     return true;
 }
 
 /**
- * @brief Return a copy of the P2AsmSymbol with %name
+ * @brief Return a copy of the P2Symbol with %name
  * @param name name of the symbold
- * @return P2AsmSymbol which may be empty, if the symbol name is not in the table
+ * @return P2Symbol which may be empty, if the symbol name is not in the table
  */
-P2AsmSymbol P2AsmSymTbl::value(const QString& name) const
+P2Symbol P2SymbolTableObj::symbol(const QString& name) const
 {
     return m_symbols.value(name);
 }
 
-P2Atom::Type P2AsmSymTbl::type(const QString& name) const
+P2Atom::Type P2SymbolTableObj::type(const QString& name) const
 {
-    if (!m_symbols.contains(name))
-        return P2Atom::Invalid;
-    return m_symbols[name].type();
+    return m_symbols.value(name).type();
 }
 
 /**
@@ -120,46 +130,55 @@ P2Atom::Type P2AsmSymTbl::type(const QString& name) const
  */
 
 
-int P2AsmSymTbl::defined_where(const QString& name) const
+int P2SymbolTableObj::defined_where(const QString& name) const
 {
     if (!m_symbols.contains(name))
         return -1;
     return m_symbols[name].defined_where();
 }
 
-QStringList P2AsmSymTbl::references_in(int lineno) const
+QStringList P2SymbolTableObj::references_in(int lineno) const
 {
     return m_references.values(lineno);
 }
 
-int P2AsmSymTbl::reference(const QString& name, int idx) const
+int P2SymbolTableObj::reference(const QString& name, int idx) const
 {
     if (!m_symbols.contains(name))
         return -1;
     return m_symbols[name].reference(idx);
 }
 
-bool P2AsmSymTbl::add_reference(const QString& name, int lineno)
+bool P2SymbolTableObj::add_reference(const QString& name, int lineno)
 {
     if (!m_references.contains(lineno, name))
         m_references.insert(lineno, name);
     if (!m_symbols.contains(name))
         return false;
-    m_symbols[name].addReference(lineno);
+    m_symbols[name].add_reference(lineno);
     return true;
 }
 
-const QList<int> P2AsmSymTbl::references(const QString& name) const
+const QList<int> P2SymbolTableObj::references(const QString& name) const
 {
     return m_references.keys(name);
 }
 
-const QHash<QString, P2AsmSymbol>& P2AsmSymTbl::symbols() const
+QStringList P2SymbolTableObj::names() const
+{
+    QStringList names;
+    foreach (const P2Symbol sym, m_symbols)
+        names += sym.name();
+    names.sort();
+    return names;
+}
+
+const p2_symbols_hash_t& P2SymbolTableObj::symbols() const
 {
     return m_symbols;
 }
 
-const QMultiHash<int, QString>& P2AsmSymTbl::references() const
+const p2_lineno_hash_t& P2SymbolTableObj::references() const
 {
     return m_references;
 }

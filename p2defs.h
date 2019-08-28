@@ -61,47 +61,118 @@ typedef QVector<p2_LONG> p2_LONGS;
 /// Union of bytes, words, and a long in endianess aware ordering
 typedef union {
 #if (Q_BYTE_ORDER == Q_LITTLE_ENDIAN)
-    p2_LONG l;               //!< long
-    p2_WORD w0, w1;          //!< words 0, 1 as least significant word first
-    p2_WORD w[2];            //!< 2 words as an array
-    p2_BYTE b0, b1, b2, b3;  //!< bytes 0, 1, 2, 3 as least significant byte first
-    p2_BYTE b[4];            //!< 4 bytes as an array
+    p2_LONG l;                              //!< long
+    p2_WORD w0, w1;                         //!< words 0, 1 as least significant word first
+    p2_WORD w[2];                           //!< 2 words as an array
+    p2_BYTE b0, b1, b2, b3;                 //!< bytes 0, 1, 2, 3 as least significant byte first
+    p2_BYTE b[4];                           //!< 4 bytes as an array
 #elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
-    p2_LONG l;               //!< long
-    p2_WORD w1, w0;          //!< words 1, 0 as most significant word first
-    p2_WORD w[2];            //!< 2 words as an array
-    p2_BYTE b3, b2, b1, b0;  //!< bytes 3, 2, 1, 0 as most significant byte first
-    p2_BYTE b[4];            //!< 4 bytes as an array
+    p2_LONG l;                              //!< long
+    p2_WORD w1, w0;                         //!< words 1, 0 as most significant word first
+    p2_WORD w[2];                           //!< 2 words as an array
+    p2_BYTE b3, b2, b1, b0;                 //!< bytes 3, 2, 1, 0 as most significant byte first
+    p2_BYTE b[4];                           //!< 4 bytes as an array
 #else
 #error "Unknown byte order!"
 #endif
 }   p2_BWL;
 
+
+/// Union of bytes, words, and a long in endianess aware ordering
+typedef union {
+#if (Q_BYTE_ORDER == Q_LITTLE_ENDIAN)
+    p2_QUAD q;                              //!< quad
+    p2_LONG l0, l1;                         //!< long
+    p2_WORD w0, w1, w2, w3;                 //!< words 0, 1 as least significant word first
+    p2_WORD w[4];                           //!< 4 words as an array
+    p2_BYTE b0, b1, b2, b3, b4, b5, b6, b7; //!< bytes 0, 1, 2, 3, 4, 5, 6, 7 as least significant byte first
+    p2_BYTE b[8];                           //!< 8 bytes as an array
+    char c[8];                              //!< 8 chars as an array
+#elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
+    p2_QUAD q;                              //!< quad
+    p2_LONG l1, l0;                         //!< long
+    p2_WORD w3, w2, w1, w0;                 //!< words 3, 2, 1, 0 as least significant word last
+    p2_WORD w[4];                           //!< 4 words as an array
+    p2_BYTE b0, b1, b2, b3, b4, b5, b6, b7; //!< bytes 7, 6, 5, 4, 3, 2, 1, 0 as least significant byte last
+    p2_BYTE b[8];                           //!< 8 bytes as an array
+    char c[8];                              //!< 8 chars as an array
+#else
+#error "Unknown byte order!"
+#endif
+}   p2_BWLQ;
+
+
 //! Size of the HUB memory in bytes (1MiB)
-constexpr p2_LONG MEM_SIZE = 0x100000;
+static constexpr p2_LONG MEM_SIZE = 1u << 20;
 
-extern const p2_LONG COG_ADDR0;
-extern const p2_LONG COG_SIZE;
-extern const p2_LONG COG_MASK;
-extern const p2_LONG LUT_ADDR0;
-extern const p2_LONG LUT_SIZE;
-extern const p2_LONG LUT_MASK;
-extern const p2_LONG HUB_ADDR0;
+//! Lowest COG memory address
+static constexpr p2_LONG COG_ADDR0 = 0u;
 
-extern const p2_LONG PC_LONGS;
-extern const p2_LONG MSB;
-extern const p2_LONG LSB;
-extern const p2_LONG LNIBBLE;
-extern const p2_LONG LBYTE;
-extern const p2_LONG LWORD;
-extern const p2_LONG HWORD;
-extern const p2_LONG IMAX;
-extern const p2_LONG ZERO;
-extern const p2_LONG FULL;
-extern const p2_LONG A20MASK;
-extern const p2_LONG AUGMASK;
-extern const p2_QUAD HMAX;
-extern const p2_QUAD LMAX;
+//! COG shift value
+static constexpr p2_LONG COG_SHIFT = 9;
+
+//! Size of the COG memory in longs
+static constexpr p2_LONG COG_SIZE = 1u << COG_SHIFT;
+
+//! Mask for the COG memory longs
+static constexpr p2_LONG COG_MASK = (COG_SIZE-1);
+
+//! Lowest LUT memory address
+static constexpr p2_LONG LUT_ADDR0 = (COG_ADDR0+COG_SIZE*4u);
+
+//! COG shift value
+static constexpr p2_LONG LUT_SHIFT = 9;
+
+//! Size of the LUT memory in longs
+static constexpr p2_LONG LUT_SIZE = 1u << LUT_SHIFT;
+
+//! Mask for the LUT memory longs
+static constexpr p2_LONG LUT_MASK = (LUT_SIZE-1);
+
+//! Lowest HUB memory address
+static constexpr p2_LONG HUB_ADDR0 = (LUT_ADDR0+LUT_SIZE*4);
+
+//! most significant bit in a 32 bit word
+static constexpr p2_LONG MSB = 1u << 31;
+
+//! least significant bit in a 32 bit word
+static constexpr p2_LONG LSB = 1u;
+
+//! least significant nibble in a 32 bit word
+static constexpr p2_LONG LNIBBLE = 0x0000000fu;
+
+//! least significant byte in a 32 bit word
+static constexpr p2_LONG LBYTE = 0x000000ffu;
+
+//! least significant word in a 32 bit word
+static constexpr p2_LONG LWORD = 0x0000ffffu;
+
+//! most significant word in a 32 bit word
+static constexpr p2_LONG HWORD = 0xffff0000u;
+
+//! bits without sign bit in a 32 bit word
+static constexpr p2_LONG IMAX = 0x7fffffffu;
+
+//! no bits in a 32 bit word
+static constexpr p2_LONG ZERO = 0x00000000u;
+
+//! all bits in a 32 bit word
+static constexpr p2_LONG FULL = 0xffffffffu;
+
+//! least significant 20 bits for an address value
+static constexpr p2_LONG A20MASK = (1u << 20) - 1;
+
+//! AUGS/AUGD value shift
+static constexpr p2_LONG AUG_SHIFT = 9;
+
+//! most significant 23 bits for an augmentation value
+static constexpr p2_LONG AUG_MASK = FULL << AUG_SHIFT;
+
+//! upper word max / mask in a 64 bit unsigned
+static constexpr p2_QUAD HMAX = Q_UINT64_C(0xffffffff00000000);
+
+//! lower word max / mask in a 64 bit unsigned
+static constexpr p2_QUAD LMAX = Q_UINT64_C(0x00000000ffffffff);
 
 static constexpr QChar chr_comma(',');
 static constexpr QChar chr_apostrophe('\'');
@@ -1069,6 +1140,7 @@ extern const QString template_str_symbols;
 extern const QString template_str_errors;
 extern const QString template_str_instruction;
 extern const QString template_str_description;
+extern const QString key_tv_asm;
 
 typedef enum {
     color_source,
@@ -1112,3 +1184,106 @@ extern QString format_data_hex(const p2_LONG data);
 
 extern QString format_opcode(const p2_opcode_u& IR, const p2_opcode_format_e fmt = fmt_bin);
 extern QString format_data(const p2_opcode_u& IR, const p2_opcode_format_e fmt = fmt_bin);
+
+/**
+ * @brief enumeration of token types
+ */
+typedef enum {
+    tt_none,            //!< no specific type
+    tt_comment,         //!< comment
+    tt_parens,          //!< precedence  0: parenthesis "(", ")", "[", "]"
+    tt_primary,         //!< precedence  1: primary operators (++, --)
+    tt_unary,           //!< precedence  2: unary operators (+, -, !, ~, more?)
+    tt_mulop,           //!< precedence  3: multiplication operators (*, /, \)
+    tt_addop,           //!< precedence  4: addition operators (+, -)
+    tt_shiftop,         //!< precedence  5: shift operators (<<, >>)
+    tt_relation,        //!< precedence  6: comparisons (<, <=, >, >=)
+    tt_equality,        //!< precedence  7: comparisons (==, !=)
+    tt_binop_and,       //!< precedence  8: binary and (&)
+    tt_binop_xor,       //!< precedence  9: binary xor (^)
+    tt_binop_or,        //!< precedence 10: binary or (|)
+    tt_binop_rev,       //!< precedence 11: binary or (><)
+    tt_logop_and,       //!< precedence 12: logical and (&&)
+    tt_logop_or,        //!< precedence 13: logical or (||)
+    tt_ternary,         //!< precedence 14: ternary operator (?:)
+    tt_assignment,      //!< precedence 15: assignment (=)
+    tt_delimiter,       //!< delimiter (,)
+    tt_constant,        //!< constant value ($, PA, PB, PTRA, PTRB)
+    tt_immediate,       //!< immediate value (#, ##)
+    tt_relative,        //!< relative value (@)
+    tt_conditional,     //!< conditional execution
+    tt_modcz_param,     //!< MODCZ parameters
+    tt_inst,            //!< instruction
+    tt_wcz_suffix,      //!< suffixes WC, WZ, WCZ, ANDC, ANDZ, ORC, ORZ, XORC, XORZ
+    tt_section,         //!< section control
+    tt_origin,          //!< origin control
+    tt_data,            //!< data generating
+    tt_regexp,           //!< pseudo token from lexing a string
+}   p2_t_type_e;
+
+typedef quint64 p2_t_mask_t;
+
+/**
+ * @brief bit masks for token types
+ */
+#define TTMASK(tt) static_cast<p2_t_mask_t>(Q_UINT64_C(1) << (tt))
+
+static constexpr p2_t_mask_t tm_none        = 0;
+static constexpr p2_t_mask_t tm_comment     = TTMASK(tt_comment);
+static constexpr p2_t_mask_t tm_parens      = TTMASK(tt_parens);
+static constexpr p2_t_mask_t tm_primary     = TTMASK(tt_primary);
+static constexpr p2_t_mask_t tm_unary       = TTMASK(tt_unary);
+static constexpr p2_t_mask_t tm_mulop       = TTMASK(tt_mulop);
+static constexpr p2_t_mask_t tm_addop       = TTMASK(tt_addop);
+static constexpr p2_t_mask_t tm_shiftop     = TTMASK(tt_shiftop);
+static constexpr p2_t_mask_t tm_relation    = TTMASK(tt_relation);
+static constexpr p2_t_mask_t tm_equality    = TTMASK(tt_equality);
+static constexpr p2_t_mask_t tm_binop_and   = TTMASK(tt_binop_and);
+static constexpr p2_t_mask_t tm_binop_xor   = TTMASK(tt_binop_xor);
+static constexpr p2_t_mask_t tm_binop_or    = TTMASK(tt_binop_or);
+static constexpr p2_t_mask_t tm_binop_rev   = TTMASK(tt_binop_rev);
+static constexpr p2_t_mask_t tm_logop_and   = TTMASK(tt_logop_and);
+static constexpr p2_t_mask_t tm_logop_or    = TTMASK(tt_logop_or);
+static constexpr p2_t_mask_t tm_ternary     = TTMASK(tt_ternary);
+static constexpr p2_t_mask_t tm_assignment  = TTMASK(tt_assignment);
+static constexpr p2_t_mask_t tm_delimiter   = TTMASK(tt_delimiter);
+static constexpr p2_t_mask_t tm_constant    = TTMASK(tt_constant);
+static constexpr p2_t_mask_t tm_immediate   = TTMASK(tt_immediate);
+static constexpr p2_t_mask_t tm_relative    = TTMASK(tt_relative);
+static constexpr p2_t_mask_t tm_conditional = TTMASK(tt_conditional);
+static constexpr p2_t_mask_t tm_modcz_param = TTMASK(tt_modcz_param);
+static constexpr p2_t_mask_t tm_inst        = TTMASK(tt_inst);
+static constexpr p2_t_mask_t tm_wcz_suffix  = TTMASK(tt_wcz_suffix);
+static constexpr p2_t_mask_t tm_section     = TTMASK(tt_section);
+static constexpr p2_t_mask_t tm_origin      = TTMASK(tt_origin);
+static constexpr p2_t_mask_t tm_data        = TTMASK(tt_data);
+static constexpr p2_t_mask_t tm_lexer       = TTMASK(tt_regexp);
+
+static constexpr p2_t_mask_t tm_primary_unary =
+        tm_primary | tm_unary;
+
+static constexpr p2_t_mask_t tm_binop      =
+        tm_binop_and |
+        tm_binop_xor |
+        tm_binop_or |
+        tm_binop_rev;
+
+static constexpr p2_t_mask_t tm_operations  =
+        tm_parens |
+        tm_primary |
+        tm_unary |
+        tm_mulop |
+        tm_addop |
+        tm_shiftop |
+        tm_relation |
+        tm_equality |
+        tm_binop_and |
+        tm_binop_xor |
+        tm_binop_or |
+        tm_binop_rev |
+        tm_logop_and |
+        tm_logop_or;
+
+static constexpr p2_t_mask_t tm_expression =
+        tm_operations |
+        tm_constant;

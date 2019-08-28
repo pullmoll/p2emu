@@ -16,7 +16,7 @@ public:
     ~P2AsmListing();
 
     void setListing(const QStringList& listing);
-    void setSymbols(const P2AsmSymTbl& symbols);
+    void setSymbols(const P2SymbolTable& symbols);
 private:
     Ui::P2AsmListing *ui;
 };

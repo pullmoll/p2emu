@@ -25,14 +25,9 @@ QMAKE_CXXFLAGS += -Wno-signed-enum-bitfield -DVER_MAJ=$$VER_MAJ -DVER_MIN=$$VER_
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-		delegates/p2opcodedelegate.cpp \
-		delegates/p2sourcedelegate.cpp \
-		dialogs/gotoline.cpp \
 		main.cpp \
 		mainwindow.cpp \
 		p2asm.cpp \
-		p2asmsym.cpp \
-		p2asmsymtbl.cpp \
 		p2atom.cpp \
 		p2cog.cpp \
 		p2cogview.cpp \
@@ -41,22 +36,26 @@ SOURCES += \
 		p2hub.cpp \
 		p2hubview.cpp \
 		p2opcode.cpp \
+		p2symbol.cpp \
+		p2symboltable.cpp \
 		p2token.cpp \
+		delegates/p2opcodedelegate.cpp \
+		delegates/p2sourcedelegate.cpp \
+		delegates/p2referencesdelegate.cpp \
 		dialogs/about.cpp \
 		dialogs/gotoaddress.cpp \
+		dialogs/gotoline.cpp \
 		dialogs/p2asmlisting.cpp \
 		models/p2asmmodel.cpp \
 		models/p2dasmmodel.cpp \
+		models/p2symbolsmodel.cpp \
+		p2word.cpp \
 		util/p2util.cpp
 
 HEADERS += \
-		delegates/p2opcodedelegate.h \
-		delegates/p2sourcedelegate.h \
-		dialogs/gotoline.h \
 		mainwindow.h \
+		models/p2symbolsmodel.h \
 		p2asm.h \
-		p2asmsym.h \
-		p2asmsymtbl.h \
 		p2atom.h \
 		p2cog.h \
 		p2cogview.h \
@@ -65,21 +64,29 @@ HEADERS += \
 		p2hub.h \
 		p2hubview.h \
 		p2opcode.h \
+		p2symbol.h \
+		p2symboltable.h \
 		p2token.h \
+		delegates/p2opcodedelegate.h \
+		delegates/p2sourcedelegate.h \
+		delegates/p2referencesdelegate.h \
 		dialogs/about.h \
 		dialogs/gotoaddress.h \
+		dialogs/gotoline.h \
 		dialogs/p2asmlisting.h \
 		models/p2asmmodel.h \
 		models/p2dasmmodel.h \
+		p2tokens.h \
+		p2word.h \
 		util/p2util.h
 
 FORMS += \
-		dialogs/gotoline.ui \
 		mainwindow.ui \
 		p2cogview.ui \
 		p2hubview.ui \
 		dialogs/about.ui \
 		dialogs/gotoaddress.ui \
+		dialogs/gotoline.ui \
 		dialogs/p2asmlisting.ui
 
 INCLUDEPATH += $$PWD/delegates
