@@ -139,7 +139,7 @@ int P2AsmSymTbl::reference(const QString& name, int idx) const
     return m_symbols[name].reference(idx);
 }
 
-bool P2AsmSymTbl::addReference(const QString& name, int lineno)
+bool P2AsmSymTbl::add_reference(const QString& name, int lineno)
 {
     if (!m_references.contains(lineno, name))
         m_references.insert(lineno, name);

@@ -62,7 +62,7 @@ void P2Opcode::clear(const p2_LONG opcode, const p2_PC_ORGH_t& pc_orgh)
     as_EQU = false;
     AUGD.clear();
     AUGS.clear();
-    PC_ORGH = p2_PC_ORGH_t(0,0);
+    PC_ORGH = pc_orgh;
     u.opcode = opcode;
     DATA.clear();
 }
@@ -101,6 +101,44 @@ void P2Opcode::set_inst8(const p2_inst8_e inst)
 void P2Opcode::set_inst9(const p2_inst9_e inst)
 {
     u.op9.inst = static_cast<uint>(inst);
+}
+
+/**
+ * @brief Set the opcode's with C and with Z flags (wc, wz) on or off
+ * @param on true to set, false to clear
+ */
+void P2Opcode::set_wcz(bool on)
+{
+    u.op.wc = on;
+    u.op.wz = on;
+}
+
+
+/**
+ * @brief Set the opcode's with C flag (wc) on or off
+ * @param on true to set, false to clear
+ */
+void P2Opcode::set_wc(bool on)
+{
+    u.op.wc = on;
+}
+
+/**
+ * @brief Set the opcode's with Z flag (wz) on or off
+ * @param on true to set, false to clear
+ */
+void P2Opcode::set_wz(bool on)
+{
+    u.op.wz = on;
+}
+
+/**
+ * @brief Set the opcode's immediate flag (im) on or off
+ * @param on true to set, false to clear
+ */
+void P2Opcode::set_im(bool on)
+{
+    u.op.im = on;
 }
 
 /**

@@ -42,6 +42,10 @@ public:
     void set_inst7(const p2_inst7_e inst);
     void set_inst8(const p2_inst8_e inst);
     void set_inst9(const p2_inst9_e inst);
+    void set_wcz(bool on = true);
+    void set_wc(bool on = true);
+    void set_wz(bool on = true);
+    void set_im(bool on = true);
     bool set_dst(const P2Atom& value, imm_to_e imm_to = immediate_none);
     bool set_src(const P2Atom& value, imm_to_e imm_to = immediate_none);
 

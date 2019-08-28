@@ -1,3 +1,6 @@
 # Ignore QtCreator user settings and autosave files
 *.pro.user*
 *.autosave
+
+# Ignore generated translations
+*.qm

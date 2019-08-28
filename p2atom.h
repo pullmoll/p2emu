@@ -1,12 +1,70 @@
+/****************************************************************************
+ *
+ * Propeller2 assembler atomic data element class
+ *
+ * Copyright (C) 2019 Jürgen Buchmüller <pullmoll@t-online.de>
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ ****************************************************************************/
 #pragma once
 #include <QVariant>
 #include "p2defs.h"
 
 /**
- * @brief The P2Atom class is used to handle expression "atoms" for P2Asm.
+ * @brief The P2Atom class is used to handle expression "atoms" for the Propeller2 assembler.
  *
- * The data is stored in an array of bytes which is appended to from the
- * "BYTE", "WORD", or "LONG" definitions in the source code.
+ * The data is stored in an array of bytes (QByteArray) which is appended to from
+ * the basic BYTE, WORD, LONG, or FILE definitions in the source code.
+ * Also the virtual type QUAD (64 bit unsigned) is accessible for intermediate results.
+ *
+ * The data can grow arbitrary large e.g. for strings or FILE contents.
+ *
+ * There is a set of operations which can be performed on the atom:
+ *
+ * <ul>
+ *  <li>~: one's complement</li>
+ *  <li>-: two's complement (i.e. unary minus)</li>
+ *  <li>!: logical not</li>
+ *  <li>make_bool</li>
+ *  <li>--: unary decrement</li>
+ *  <li>++: unary increment</li>
+ *  <li>* atom: multiplication</li>
+ *  <li>/ atom: division</li>
+ *  <li>% atom: modulo</li>
+ *  <li>+ atom: addition</li>
+ *  <li>- atom: subtraction</li>
+ *  <li>&lt</li>&lt</li> atom: binary shift left</li>
+ *  <li>&gt</li>&gt</li> atom: binary shift right</li>
+ *  <li>&amp</li> atom: binary AND</li>
+ *  <li>^ atom: binary XOR</li>
+ *  <li>| atom: binary OR</li>
+ *  <li>binary_rev</li>
+ * </ul>
  */
 class P2Atom
 {

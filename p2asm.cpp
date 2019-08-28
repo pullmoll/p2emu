@@ -39,15 +39,18 @@
 #include "p2asm.h"
 #include "p2util.h"
 
+#define DBG_EXPR    1           //! set to 1 to debug expression parsing
+
 static const QString p2_section_dat = QStringLiteral("DAT");
 static const QString p2_section_con = QStringLiteral("CON");
 static const QString p2_section_pub = QStringLiteral("PUB");
 static const QString p2_section_pri = QStringLiteral("PRI");
 static const QString p2_section_var = QStringLiteral("VAR");
 
-#if 0
+
+#if DBG_EXPR
 //! debug expression parsing
-#define DEBUG_EXPR(x,...) qDebug(x,__VA_ARGS__)
+#define DEBUG_EXPR(x,...) do { if (m_pass > 1) { qDebug(x,__VA_ARGS__); } } while (0)
 #else
 #define DEBUG_EXPR(x,...)
 #endif
@@ -344,7 +347,7 @@ bool P2Asm::assemble_pass()
                 if (sym.isEmpty()) {
                     // Not defined yet
                     m_symbols.insert(m_symbol, P2Atom(PC));
-                    m_symbols.addReference(m_symbol, m_lineno);
+                    m_symbols.add_reference(m_symbol, m_lineno);
                 } else if (m_pass > 1) {
                     m_symbols.setValue(m_symbol, PC);
                 } else if (!sym.isNull()) {
@@ -2479,7 +2482,7 @@ QString P2Asm::find_locsym(Section sect, const QString& local)
  * @brief Parse an atomic part of an expression
  * @return value of the atom
  */
-P2Atom P2Asm::parse_atom()
+P2Atom P2Asm::parse_atom(int level)
 {
     P2Atom atom = make_atom();
     if (!skip_comments())
@@ -2488,48 +2491,52 @@ P2Atom P2Asm::parse_atom()
     P2Word word = m_words.value(m_idx);
     QString str = word.str();
     p2_token_e tok = word.tok();
-    bool take = true;
 
     switch (tok) {
     case t__LPAREN:
         // precedence 0
-        DEBUG_EXPR(" lparen: %s", qPrintable(str));
+        DEBUG_EXPR(" atom lparen: %s", qPrintable(str));
         m_idx++;
-        atom = parse_expression();
-        take = false;
+        atom = parse_expression(immediate_none, level+1);
+        --m_idx;
         break;
 
     case t__RPAREN:
-        DEBUG_EXPR(" rparen: %s", qPrintable(str));
+        DEBUG_EXPR(" atom rparen: %s", qPrintable(str));
+        --m_idx;
         break;
 
     case t__LBRACKET:
         // precedence 0
-        DEBUG_EXPR(" lbracket: %s", qPrintable(str));
+        DEBUG_EXPR(" atom lbracket: %s", qPrintable(str));
         m_idx++;
-        atom = parse_expression();
-        take = false;
+        atom = parse_expression(immediate_none, level+1);
+        --m_idx;
         break;
 
     case t__RBRACKET:
-        DEBUG_EXPR(" rbracket: %s", qPrintable(str));
+        DEBUG_EXPR(" atom rbracket: %s", qPrintable(str));
+        --m_idx;
         break;
 
     case t__RELATIVE:
     case t__RELATIVE_HUB:
-        DEBUG_EXPR(" relative: %s", qPrintable(str));
+        DEBUG_EXPR(" atom relative: %s", qPrintable(str));
+        m_idx++;
+        atom = parse_expression(immediate_none, level+1);
+        --m_idx;
         break;
 
     case t_locsym:
         {
             QString symbol = find_locsym(m_section, str);
             if (m_symbols.contains(symbol)) {
-                DEBUG_EXPR(" found locsym: %s", qPrintable(symbol));
                 P2AsmSymbol sym = m_symbols.value(symbol);
                 atom = sym.value<P2Atom>();
-                m_symbols.addReference(symbol, m_lineno);
+                DEBUG_EXPR(" atom found locsym: %s = %u", qPrintable(symbol), atom.to_long());
+                m_symbols.add_reference(symbol, m_lineno);
             } else {
-                DEBUG_EXPR(" undefined locsym: %s", qPrintable(symbol));
+                DEBUG_EXPR(" atom undefined locsym: %s", qPrintable(symbol));
                 atom = make_atom();
                 atom.set(P2Atom::Long, m_curr_PC);
             }
@@ -2540,12 +2547,12 @@ P2Atom P2Asm::parse_atom()
         {
             QString symbol = find_symbol(m_section, str, true);
             if (m_symbols.contains(symbol)) {
-                DEBUG_EXPR(" found symbol: %s", qPrintable(function));
                 P2AsmSymbol sym = m_symbols.value(symbol);
                 atom = sym.value<P2Atom>();
-                m_symbols.addReference(symbol, m_lineno);
+                DEBUG_EXPR(" atom found symbol: %s = %u", qPrintable(symbol), atom.to_long());
+                m_symbols.add_reference(symbol, m_lineno);
             } else {
-                DEBUG_EXPR(" undefined symbol: %s", qPrintable(function));
+                DEBUG_EXPR(" atom undefined symbol: %s", qPrintable(symbol));
                 atom = make_atom();
                 atom.set(P2Atom::Long, m_curr_PC);
             }
@@ -2553,72 +2560,72 @@ P2Atom P2Asm::parse_atom()
         break;
 
     case t_bin_const:
-        DEBUG_EXPR(" bin value: %s", qPrintable(str));
+        DEBUG_EXPR(" atom bin const: %s", qPrintable(str));
         atom = bin_const(str);
         break;
 
     case t_byt_const:
-        DEBUG_EXPR(" byt value: %s", qPrintable(str));
+        DEBUG_EXPR(" atom byt const: %s", qPrintable(str));
         atom = byt_const(str);
         break;
 
     case t_oct_const:
-        DEBUG_EXPR(" oct value: %s", qPrintable(str));
+        DEBUG_EXPR(" atom oct const: %s", qPrintable(str));
         atom = oct_const(str);
         break;
 
     case t_dec_const:
-        DEBUG_EXPR(" dec value: %s", qPrintable(str));
+        DEBUG_EXPR(" atom dec const: %s", qPrintable(str));
         atom = dec_const(str);
         break;
 
     case t_hex_const:
-        DEBUG_EXPR(" hex value: %s", qPrintable(str));
+        DEBUG_EXPR(" atom hex const: %s", qPrintable(str));
         atom = hex_const(str);
         break;
 
     case t_string:
-        DEBUG_EXPR(" str value: %s", qPrintable(str));
+        DEBUG_EXPR(" atom str const: %s", qPrintable(str));
         atom = str_const(str);
         break;
 
     case t_DIRA:
-        DEBUG_EXPR(" DIRA: %s", qPrintable(str));
+        DEBUG_EXPR(" atom DIRA: %s", qPrintable(str));
         atom.set(P2Atom::Long, offs_DIRA);
         break;
 
     case t_DIRB:
-        DEBUG_EXPR(" DIRB: %s", qPrintable(str));
+        DEBUG_EXPR(" atom DIRB: %s", qPrintable(str));
         atom.set(P2Atom::Long, offs_DIRB);
         break;
 
     case t_INA:
-        DEBUG_EXPR(" INA: %s", qPrintable(str));
+        DEBUG_EXPR(" atom INA: %s", qPrintable(str));
         atom.set(P2Atom::Long, offs_INA);
         break;
 
     case t_INB:
-        DEBUG_EXPR(" INB: %s", qPrintable(str));
+        DEBUG_EXPR(" atom INB: %s", qPrintable(str));
         atom.set(P2Atom::Long, offs_INB);
         break;
 
     case t_OUTA:
-        DEBUG_EXPR(" INA: %s", qPrintable(str));
+        DEBUG_EXPR(" atom OUTA: %s", qPrintable(str));
         atom.set(P2Atom::Long, offs_OUTA);
         break;
 
     case t_OUTB:
-        DEBUG_EXPR(" INB: %s", qPrintable(str));
+        DEBUG_EXPR(" atom OUTB: %s", qPrintable(str));
         atom.set(P2Atom::Long, offs_OUTB);
         break;
 
     case t_PA:
-        DEBUG_EXPR(" PA: %s", qPrintable(str));
+        DEBUG_EXPR(" atom PA: %s", qPrintable(str));
         atom.set(P2Atom::Long, offs_PA);
         break;
 
     case t_PB:
-        DEBUG_EXPR(" PB: %s", qPrintable(str));
+        DEBUG_EXPR(" atom PB: %s", qPrintable(str));
         atom.set(P2Atom::Long, offs_PB);
         break;
 
@@ -2627,7 +2634,7 @@ P2Atom P2Asm::parse_atom()
     case t_PTRA_postdec:
     case t_PTRA_preinc:
     case t_PTRA_predec:
-        DEBUG_EXPR(" PTRA: %s", qPrintable(str));
+        DEBUG_EXPR(" atom PTRA: %s", qPrintable(str));
         atom.set(P2Atom::Long, offs_PTRA);
         break;
 
@@ -2636,21 +2643,20 @@ P2Atom P2Asm::parse_atom()
     case t_PTRB_postdec:
     case t_PTRB_preinc:
     case t_PTRB_predec:
-        DEBUG_EXPR(" PTRB: %s", qPrintable(str));
+        DEBUG_EXPR(" atom PTRB: %s", qPrintable(str));
         atom.set(P2Atom::Long, offs_PTRB);
         break;
 
     case t__DOLLAR:
-        DEBUG_EXPR(" current PC: %s", qPrintable(str));
+        DEBUG_EXPR(" atom current PC: %s", qPrintable(str));
         atom.set(P2Atom::Long, m_curr_PC);
         break;
 
     default:
-        take = false;
+        --m_idx;
     }
 
-    if (take)
-        m_idx++;
+    m_idx++;
 
     return atom;
 }
@@ -2660,7 +2666,7 @@ P2Atom P2Asm::parse_atom()
  * @param str string to parse
  * @return P2Atom containing the result
  */
-P2Atom P2Asm::parse_primary()
+P2Atom P2Asm::parse_primary(int level)
 {
     P2Atom atom = make_atom();
     if (!skip_comments())
@@ -2677,12 +2683,12 @@ P2Atom P2Asm::parse_primary()
     while (Token.is_type(op, tm_primary)) {
         switch (op) {
         case t__INC:    // ++
-                DEBUG_EXPR(" unary inc: %s", qPrintable(str));
+                DEBUG_EXPR(" primary inc: %s", qPrintable(str));
                 do_inc = true;
             break;
 
         case t__DEC:    // --
-                DEBUG_EXPR(" unary dec: %s", qPrintable(str));
+                DEBUG_EXPR(" primary dec: %s", qPrintable(str));
                 do_dec = true;
             break;
 
@@ -2699,7 +2705,7 @@ P2Atom P2Asm::parse_primary()
         op = word.tok();
     }
 
-    atom = parse_atom();
+    atom = parse_atom(level);
 
     // apply primary ops
     atom.unary_dec(do_dec);
@@ -2713,7 +2719,7 @@ P2Atom P2Asm::parse_primary()
  * @param str string to parse
  * @return P2Atom containing the result
  */
-P2Atom P2Asm::parse_unary()
+P2Atom P2Asm::parse_unary(int level)
 {
     P2Atom atom = make_atom();
     if (!skip_comments())
@@ -2728,25 +2734,25 @@ P2Atom P2Asm::parse_unary()
     QString str = word.str();
     p2_token_e op = word.tok();
 
-    while (Token.is_type(op, tm_primary_unary)) {
+    while (Token.is_type(op, tm_unary)) {
         switch (op) {
-        case t__NEG:    // !
-                DEBUG_EXPR(" unary neg: %s", qPrintable(str));
-                do_not = !do_not;
+        case t__NEG:
+            DEBUG_EXPR(" unary neg: %s", qPrintable(str));
+            do_not = !do_not;
             break;
 
-        case t__NOT:    // ~
-                DEBUG_EXPR(" unary not: %s", qPrintable(str));
-                do_comp = !do_comp;
+        case t__NOT:
+            DEBUG_EXPR(" unary not: %s", qPrintable(str));
+            do_comp = !do_comp;
             break;
 
-        case t__MINUS:    // -
-                DEBUG_EXPR(" unary minus: %s", qPrintable(str));
-                do_neg = !do_neg;
+        case t__MINUS:
+            DEBUG_EXPR(" unary minus: %s", qPrintable(str));
+            do_neg = !do_neg;
             break;
 
-        case t__PLUS:    // +
-                DEBUG_EXPR(" unary plus: %s", qPrintable(str));
+        case t__PLUS:
+            DEBUG_EXPR(" unary plus: %s", qPrintable(str));
             break;
 
         default:
@@ -2755,14 +2761,14 @@ P2Atom P2Asm::parse_unary()
 
         if (do_break)
             break;
-        if (++m_idx >= m_cnt)
-            break;
+        if (!skip_comments())
+            return atom;
         word = m_words.value(m_idx);
         str = word.str();
         op = word.tok();
     }
 
-    atom = parse_primary();
+    atom = parse_primary(level);
 
     // apply unary ops
     atom.complement1(do_comp);
@@ -2777,21 +2783,20 @@ P2Atom P2Asm::parse_unary()
  * @param str string to parse
  * @return P2Atom containing the result
  */
-P2Atom P2Asm::parse_mulops()
+P2Atom P2Asm::parse_mulops(int level)
 {
-    P2Atom lvalue = parse_unary();
-    for (;;) {
-        if (!skip_comments())
-            return lvalue;
+    P2Atom lvalue = parse_unary(level);
+    if (!skip_comments())
+        return lvalue;
 
-        P2Word word = m_words.value(m_idx);
-        QString str = word.str();
-        p2_token_e op = word.tok();
-        if (!Token.is_type(op, tm_mulop))
-                return lvalue;
+    P2Word word = m_words.value(m_idx);
+    QString str = word.str();
+    p2_token_e op = word.tok();
+
+    while (Token.is_type(op, tm_mulop)) {
         m_idx++;
 
-        P2Atom rvalue = parse_unary();
+        P2Atom rvalue = parse_unary(level);
         if (!rvalue.isValid()) {
             DEBUG_EXPR(" invalid rvalue: %s", qPrintable(str));
             m_errors += tr("Invalid character in expression (mulops): %1")
@@ -2800,24 +2805,78 @@ P2Atom P2Asm::parse_mulops()
             break;
         }
 
-        p2_QUAD r = rvalue.to_quad();
         switch (op) {
         case t__MUL:
-            DEBUG_EXPR(" mul: %s", qPrintable(str));
-            lvalue.arith_mul(r);
+            DEBUG_EXPR(" mulop mul: %u %s %u", lvalue.to_long(), qPrintable(str), rvalue.to_long());
+            lvalue *= rvalue;
             break;
         case t__DIV:
-            DEBUG_EXPR(" div: %s", qPrintable(str));
-            lvalue.arith_div(r);
+            DEBUG_EXPR(" mulop div: %u %s %u", lvalue.to_long(), qPrintable(str), rvalue.to_long());
+            lvalue /= rvalue;
             break;
         case t__MOD:
-            DEBUG_EXPR(" mod: %s", qPrintable(str));
-            lvalue.arith_mod(r);
+            DEBUG_EXPR(" mulop mod: %u %s %u", lvalue.to_long(), qPrintable(str), rvalue.to_long());
+            lvalue %= rvalue;
             break;
         default:
-            // Q_ASSERT_X(false, "mulops", "invalid op");
+            Q_ASSERT_X(false, "mulops", "invalid op");
             return lvalue;
         }
+        if (!skip_comments())
+            return lvalue;
+        word = m_words.value(m_idx);
+        str = word.str();
+        op = word.tok();
+    }
+
+    return lvalue;
+}
+
+/**
+ * @brief Parse an an expression of shift operations (precedence 5)
+ * @param str string to parse
+ * @return P2Atom containing the result
+ */
+P2Atom P2Asm::parse_shiftops(int level)
+{
+    P2Atom lvalue = parse_mulops(level);
+    if (!skip_comments())
+        return lvalue;
+
+    P2Word word = m_words.value(m_idx);
+    QString str = word.str();
+    p2_token_e op = word.tok();
+
+    while (Token.is_type(op, tm_shiftop)) {
+        m_idx++;
+
+        P2Atom rvalue = parse_mulops(level);
+        if (!rvalue.isValid()) {
+            DEBUG_EXPR(" invalid rvalue: %s", qPrintable(str));
+            m_errors += tr("Invalid character in expression (shiftops): %1")
+                      .arg(str);
+            emit Error(m_pass, m_lineno, m_errors.last());
+            break;
+        }
+
+        switch (op) {
+        case t__SHL:
+            DEBUG_EXPR(" shiftop shl: %u %s %u", lvalue.to_long(), qPrintable(str), rvalue.to_long());
+            lvalue <<= rvalue;
+            break;
+        case t__SHR:
+            DEBUG_EXPR(" shiftop shr: %u %s %u", lvalue.to_long(), qPrintable(str), rvalue.to_long());
+            lvalue >>= rvalue;
+            break;
+        default:
+            Q_ASSERT_X(false, "shiftops", "Invalid op");
+            return lvalue;
+        }
+        if (!skip_comments())
+            return lvalue;
+        word = m_words.value(m_idx);
+        str = word.str();
+        op = word.tok();
     }
     return lvalue;
 }
@@ -2827,21 +2886,20 @@ P2Atom P2Asm::parse_mulops()
  * @param str string to parse
  * @return P2Atom containing the result
  */
-P2Atom P2Asm::parse_addops()
+P2Atom P2Asm::parse_addops(int level)
 {
-    P2Atom lvalue = parse_mulops();
-    for (;;) {
-        if (!skip_comments())
-            return lvalue;
+    P2Atom lvalue = parse_shiftops(level);
+    if (!skip_comments())
+        return lvalue;
 
-        P2Word word = m_words.value(m_idx);
-        QString str = word.str();
-        p2_token_e op = word.tok();
-        if (!Token.is_type(op, tm_addop))
-                return lvalue;
+    P2Word word = m_words.value(m_idx);
+    QString str = word.str();
+    p2_token_e op = word.tok();
+
+    while (Token.is_type(op, tm_addop)) {
         m_idx++;
 
-        P2Atom rvalue = parse_mulops();
+        P2Atom rvalue = parse_shiftops(level);
         if (!rvalue.isValid()) {
             DEBUG_EXPR(" invalid rvalue: %s", qPrintable(str));
             m_errors += tr("Invalid character in expression (addops): %1")
@@ -2850,67 +2908,24 @@ P2Atom P2Asm::parse_addops()
             break;
         }
 
-        p2_QUAD r = rvalue.to_quad();
         switch (op) {
         case t__PLUS:
-            DEBUG_EXPR(" add: %s", qPrintable(str));
-            lvalue.arith_add(r);
+            DEBUG_EXPR(" addop add: %u %s %u", lvalue.to_long(), qPrintable(str), rvalue.to_long());
+            lvalue += rvalue;
             break;
         case t__MINUS:
-            DEBUG_EXPR(" sub: %s", qPrintable(str));
-            lvalue.arith_sub(r);
+            DEBUG_EXPR(" addop sub: %u %s %u", lvalue.to_long(), qPrintable(str), rvalue.to_long());
+            lvalue -= rvalue;
             break;
         default:
-            // Q_ASSERT_X(false, "addops", "Invalid op");
+            Q_ASSERT_X(false, "addops", "Invalid op");
             return lvalue;
         }
-    }
-    return lvalue;
-}
-
-/**
- * @brief Parse an an expression of shift operations (precedence 5)
- * @param str string to parse
- * @return P2Atom containing the result
- */
-P2Atom P2Asm::parse_shiftops()
-{
-    P2Atom lvalue = parse_addops();
-
-    for (;;) {
         if (!skip_comments())
             return lvalue;
-
-        P2Word word = m_words.value(m_idx);
-        QString str = word.str();
-        p2_token_e op = word.tok();
-        if (!Token.is_type(op, tm_shiftop))
-                return lvalue;
-        m_idx++;
-
-        P2Atom rvalue = parse_addops();
-        if (!rvalue.isValid()) {
-            DEBUG_EXPR(" invalid rvalue: %s", qPrintable(str));
-            m_errors += tr("Invalid character in expression (shiftops): %1")
-                      .arg(str);
-            emit Error(m_pass, m_lineno, m_errors.last());
-            break;
-        }
-
-        p2_QUAD r = rvalue.to_quad();
-        switch (op) {
-        case t__SHL:
-            DEBUG_EXPR(" shl: %s", qPrintable(str));
-            lvalue.binary_shl(r);
-            break;
-        case t__SHR:
-            DEBUG_EXPR(" shr: %s", qPrintable(str));
-            lvalue.binary_shr(r);
-            break;
-        default:
-            // Q_ASSERT_X(false, "shiftops", "Invalid op");
-            return lvalue;
-        }
+        word = m_words.value(m_idx);
+        str = word.str();
+        op = word.tok();
     }
     return lvalue;
 }
@@ -2920,27 +2935,25 @@ P2Atom P2Asm::parse_shiftops()
  * @param str string to parse
  * @return P2Atom containing the result
  */
-P2Atom P2Asm::parse_binops()
+P2Atom P2Asm::parse_binops(int level)
 {
-    P2Atom lvalue = parse_shiftops();
+    P2Atom lvalue = parse_addops(level);
+    if (!skip_comments())
+        return lvalue;
 
-    for (;;) {
-        if (!skip_comments())
-            return lvalue;
+    P2Word word = m_words.value(m_idx);
+    QString str = word.str();
+    p2_token_e op = word.tok();
 
-        P2Word word = m_words.value(m_idx);
-        QString str = word.str();
-        p2_token_e op = word.tok();
-        if (!Token.is_type(op, tm_binops))
-                return lvalue;
+    while (Token.is_type(op, tm_binop)) {
         m_idx++;
         if (t__REV == op) {
-            DEBUG_EXPR(" binary reverse: %s", qPrintable(str));
+            DEBUG_EXPR(" binop reverse: %s %u", qPrintable(str), lvalue.to_long());
             lvalue.binary_rev();
             return lvalue;
         }
 
-        P2Atom rvalue = parse_shiftops();
+        P2Atom rvalue = parse_addops(level);
         if (!rvalue.isValid()) {
             DEBUG_EXPR(" invalid rvalue: %s", qPrintable(str));
             m_errors += tr("Invalid character in expression (binops): %1")
@@ -2949,58 +2962,48 @@ P2Atom P2Asm::parse_binops()
             break;
         }
 
-        p2_QUAD r = rvalue.to_quad();
         switch (op) {
         case t__AND:
-            DEBUG_EXPR(" binary and: %s", qPrintable(str));
-            lvalue.binary_and(r);
+            DEBUG_EXPR(" binop and: %u %s %u", lvalue.to_long(), qPrintable(str), rvalue.to_long());
+            lvalue &= rvalue;
             break;
         case t__XOR:
-            DEBUG_EXPR(" binary xor: %s", qPrintable(str));
-            lvalue.binary_xor(r);
+            DEBUG_EXPR(" binop xor: %u %s %u", lvalue.to_long(), qPrintable(str), rvalue.to_long());
+            lvalue ^= rvalue;
             break;
         case t__OR:
-            DEBUG_EXPR(" binary or: %s", qPrintable(str));
-            lvalue.binary_or(r);
+            DEBUG_EXPR(" binop or: %u %s %u", lvalue.to_long(), qPrintable(str), rvalue.to_long());
+            lvalue |= rvalue;
             break;
         default:
-            // Q_ASSERT_X(false, "binops", "Invalid op");
+            Q_ASSERT_X(false, "binops", "Invalid op");
             return lvalue;
         }
+        if (!skip_comments())
+            return lvalue;
+        word = m_words.value(m_idx);
+        str = word.str();
+        op = word.tok();
     }
     return lvalue;
 }
 
 /**
- * @brief Evaluate an expression
- * @param imm_to put immediate flag into: -1=nowhere (default), 0=imm, 1=wz, 2=wc
- * @return QVariant with the value of the expression
+ * @brief Check for a relative prefix (@)
+ * @return P2Atom with a possibly PC relative value
  */
-P2Atom P2Asm::parse_expression(imm_to_e imm_to)
+P2Atom P2Asm::parse_relative(bool& rel, int level)
 {
     P2Atom atom = make_atom();
-
     if (!skip_comments())
         return atom;
 
     P2Word word = m_words.value(m_idx);
     QString str = word.str();
     p2_token_e tok = word.tok();
-    bool imm = false;
-    bool rel = false;
 
-    while (Token.is_type(tok, tm_immediate | tm_relative)) {
+    while (Token.is_type(tok, tm_relative)) {
         switch (tok) {
-        case t__IMMEDIATE:
-            DEBUG_EXPR(" immediate: %s", qPrintable(str));
-            imm = true;
-            m_idx++;
-            break;
-        case t__IMMEDIATE2:
-            DEBUG_EXPR(" immediate2: %s", qPrintable(str));
-            imm = true;
-            m_idx++;
-            break;
         case t__RELATIVE:
             DEBUG_EXPR(" relative: %s", qPrintable(str));
             rel = true;
@@ -3014,31 +3017,90 @@ P2Atom P2Asm::parse_expression(imm_to_e imm_to)
         default:
             break;
         }
+        if (!skip_comments())
+            return atom;
         word = m_words.value(m_idx);
         str = word.str();
         tok = word.tok();
     }
 
-    atom = parse_binops();
+    return parse_binops(level);
+}
+
+/**
+ * @brief Evaluate an expression
+ * @param imm_to put immediate flag into: -1=nowhere (default), 0=imm, 1=wz, 2=wc
+ * @return QVariant with the value of the expression
+ */
+P2Atom P2Asm::parse_expression(imm_to_e imm_to, int level)
+{
+    P2Atom atom = make_atom();
+
+    DEBUG_EXPR("»»»» %d", level);
+
+    if (!skip_comments())
+        return atom;
+
+    P2Word word = m_words.value(m_idx);
+    QString str = word.str();
+    p2_token_e tok = word.tok();
+    bool imm = false;
+    bool rel = false;
+
+    while (Token.is_type(tok, tm_immediate)) {
+        switch (tok) {
+        case t__IMMEDIATE:
+            DEBUG_EXPR(" expr immediate: %s", qPrintable(str));
+            imm = true;
+            m_idx++;
+            break;
+        case t__IMMEDIATE2:
+            DEBUG_EXPR(" expr immediate2: %s", qPrintable(str));
+            imm = true;
+            m_idx++;
+            break;
+        default:
+            break;
+        }
+        if (!skip_comments())
+            return atom;
+        word = m_words.value(m_idx);
+        str = word.str();
+        tok = word.tok();
+    }
+
+    atom = parse_relative(rel, level);
+
+    // Relative value
+    if (rel) {
+        if (m_curr_PC < LUT_ADDR0) {
+            DEBUG_EXPR(" COG offset: %u", atom.to_long());
+        } else if (m_curr_PC < HUB_ADDR0) {
+            DEBUG_EXPR(" LUT offset: %u", atom.to_long());
+        } else  {
+            DEBUG_EXPR(" HUB offset: %u", atom.to_long());
+        }
+
+    }
+
 
     // Set immediate flag, if specified
     switch (imm_to) {
     case immediate_im:
-        DEBUG_EXPR(" set im: %s", imm ? "true" : "false");
-        m_IR.u.op.im = imm;
+        DEBUG_EXPR(" expr set im: %s", imm ? "true" : "false");
+        m_IR.set_im(imm);
         break;
     case immediate_wz:
-        DEBUG_EXPR(" set wz: %s", imm ? "true" : "false");
-        m_IR.u.op.wz = imm;
+        DEBUG_EXPR(" expr set wz: %s", imm ? "true" : "false");
+        m_IR.set_wz(imm);
         break;
     case immediate_wc:
-        DEBUG_EXPR(" set wz: %s", imm ? "true" : "false");
-        m_IR.u.op.wc = imm;
+        DEBUG_EXPR(" expr set wc: %s", imm ? "true" : "false");
+        m_IR.set_wc(imm);
         break;
     default:
-        // silence compiler warnings
         if (imm) {
-            DEBUG_EXPR(" ignore immediate: %s", imm ? "true" : "false");
+            DEBUG_EXPR(" expr ignore immediate: %s", imm ? "true" : "false");
         }
         break;
     }
@@ -3046,30 +3108,32 @@ P2Atom P2Asm::parse_expression(imm_to_e imm_to)
     while (m_idx < m_cnt) {
         if (!skip_comments())
             break;
-
         word = m_words.value(m_idx);
-        str = word.str();
         tok = word.tok();
 
         switch (tok) {
         case t__COMMA:
-            DEBUG_EXPR(" **** terminal: %s", qPrintable(str));
+        case t__LPAREN:
+        case t__LBRACKET:
+            DEBUG_EXPR(" expr **** terminal: %s", qPrintable(word.str()));
             break;
-        case t_comment:
+
+        case t__RPAREN:
+        case t__RBRACKET:
+            DEBUG_EXPR(" expr **** terminal: %s", qPrintable(word.str()));
             m_idx++;
             break;
+
         default:
-            DEBUG_EXPR(" **** non-terminal: %s", qPrintable(str));
-            m_idx++;
+            DEBUG_EXPR(" expr **** non-terminal: %s", qPrintable(word.str()));
+            // m_idx++;
             break;
         }
-        if (t_comment != tok)
+        if (!Token.is_type(tok, tm_comment))
             break;
     }
 
-    // TODO: handle relative expressions
-    Q_UNUSED(rel)
-
+    DEBUG_EXPR("«««« %d", level);
     return atom;
 }
 
@@ -3181,16 +3245,15 @@ bool P2Asm::optional_wcz()
         p2_token_e tok = m_words.value(m_idx).tok();
         switch (tok) {
         case t_WC:
-            m_IR.u.op.wc = true;
+            m_IR.set_wc();
             m_idx++;
             break;
         case t_WZ:
-            m_IR.u.op.wz = true;
+            m_IR.set_wz();
             m_idx++;
             break;
         case t_WCZ:
-            m_IR.u.op.wc = true;
-            m_IR.u.op.wz = true;
+            m_IR.set_wcz();
             m_idx++;
             break;
         case t__COMMA:
@@ -3219,7 +3282,7 @@ bool P2Asm::optional_wc()
         p2_token_e tok = m_words.value(m_idx).tok();
         switch (tok) {
         case t_WC:
-            m_IR.u.op.wc = true;
+            m_IR.set_wc();
             m_idx++;
             break;
         default:
@@ -3244,7 +3307,7 @@ bool P2Asm::optional_wz()
         p2_token_e tok = m_words.value(m_idx).tok();
         switch (tok) {
         case t_WZ:
-            m_IR.u.op.wz = true;
+            m_IR.set_wz();
             m_idx++;
             break;
         default:
@@ -3755,14 +3818,13 @@ bool P2Asm::parse_ptr_pc_abs()
     case t_PA:
         break;
     case t_PB:
-        m_IR.u.op.wz = true;
+        m_IR.set_wz();
         break;
     case t_PTRA:
-        m_IR.u.op.wc = true;
+        m_IR.set_wc();
         break;
     case t_PTRB:
-        m_IR.u.op.wz = true;
-        m_IR.u.op.wc = true;
+        m_IR.set_wcz();
         break;
     default:
         m_errors += tr("Invalid pointer parameter: %1")
@@ -6329,7 +6391,7 @@ bool P2Asm::asm_popa()
 {
     m_idx++;
     m_IR.set_inst7(p2_RDLONG);
-    m_IR.u.op.im = true;
+    m_IR.set_im(true);
     m_IR.u.op.src = 0x15f;
     return parse_d_wcz();
 }
@@ -6348,7 +6410,7 @@ bool P2Asm::asm_popb()
 {
     m_idx++;
     m_IR.set_inst7(p2_RDLONG);
-    m_IR.u.op.im = true;
+    m_IR.set_im(true);
     m_IR.u.op.src = 0x1df;
     return parse_d_wcz();
 }
@@ -6382,8 +6444,8 @@ bool P2Asm::asm_resi3()
 {
     m_idx++;
     m_IR.set_inst7(p2_CALLD);
-    m_IR.u.op.wc = true;
-    m_IR.u.op.wz = true;
+    m_IR.set_wc();
+    m_IR.set_wz();
     m_IR.u.op.dst = offs_IJMP3;
     m_IR.u.op.src = offs_IRET3;
     return parse_inst();
@@ -6402,8 +6464,7 @@ bool P2Asm::asm_resi2()
 {
     m_idx++;
     m_IR.set_inst7(p2_CALLD);
-    m_IR.u.op.wc = true;
-    m_IR.u.op.wz = true;
+    m_IR.set_wcz(true);
     m_IR.u.op.dst = offs_IJMP2;
     m_IR.u.op.src = offs_IRET2;
     return parse_inst();
@@ -6422,8 +6483,7 @@ bool P2Asm::asm_resi1()
 {
     m_idx++;
     m_IR.set_inst7(p2_CALLD);
-    m_IR.u.op.wc = true;
-    m_IR.u.op.wz = true;
+    m_IR.set_wcz(true);
     m_IR.u.op.dst = offs_IJMP1;
     m_IR.u.op.src = offs_IRET1;
     return parse_inst();
@@ -6442,8 +6502,7 @@ bool P2Asm::asm_resi0()
 {
     m_idx++;
     m_IR.set_inst7(p2_CALLD);
-    m_IR.u.op.wc = true;
-    m_IR.u.op.wz = true;
+    m_IR.set_wcz(true);
     m_IR.u.op.dst = offs_INA;
     m_IR.u.op.src = offs_INB;
     return parse_inst();
@@ -6462,8 +6521,7 @@ bool P2Asm::asm_reti3()
 {
     m_idx++;
     m_IR.set_inst7(p2_CALLD);
-    m_IR.u.op.wc = true;
-    m_IR.u.op.wz = true;
+    m_IR.set_wcz(true);
     m_IR.u.op.dst = offs_INB;
     m_IR.u.op.src = offs_IRET3;
     return parse_inst();
@@ -6482,8 +6540,7 @@ bool P2Asm::asm_reti2()
 {
     m_idx++;
     m_IR.set_inst7(p2_CALLD);
-    m_IR.u.op.wc = true;
-    m_IR.u.op.wz = true;
+    m_IR.set_wcz(true);
     m_IR.u.op.dst = offs_INB;
     m_IR.u.op.src = offs_IRET2;
     return parse_inst();
@@ -6502,8 +6559,7 @@ bool P2Asm::asm_reti1()
 {
     m_idx++;
     m_IR.set_inst7(p2_CALLD);
-    m_IR.u.op.wc = true;
-    m_IR.u.op.wz = true;
+    m_IR.set_wcz(true);
     m_IR.u.op.dst = offs_INB;
     m_IR.u.op.src = offs_IRET1;
     return parse_inst();
@@ -6522,8 +6578,7 @@ bool P2Asm::asm_reti0()
 {
     m_idx++;
     m_IR.set_inst7(p2_CALLD);
-    m_IR.u.op.wc = true;
-    m_IR.u.op.wz = true;
+    m_IR.set_wcz(true);
     m_IR.u.op.dst = offs_INB;
     m_IR.u.op.src = offs_INB;
     return parse_inst();
@@ -8974,7 +9029,7 @@ bool P2Asm::asm_ret()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.im = true;
+    m_IR.set_im(true);
     m_IR.u.op.dst = 0x000;
     m_IR.u.op.src = p2_OPSRC_CALL_RET;
     return parse_cz();
@@ -9010,7 +9065,7 @@ bool P2Asm::asm_reta()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.im = true;
+    m_IR.set_im(true);
     m_IR.u.op.dst = 0x000;
     m_IR.u.op.src = p2_OPSRC_CALLA_RETA;
     return parse_cz();
@@ -9046,7 +9101,7 @@ bool P2Asm::asm_retb()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.im = true;
+    m_IR.set_im(true);
     m_IR.u.op.dst = 0x000;
     m_IR.u.op.src = p2_OPSRC_CALLB_RETB;
     return parse_cz();
@@ -9152,7 +9207,7 @@ bool P2Asm::asm_getbrk()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.im = false;
+    m_IR.set_im(false);
     m_IR.u.op.src = p2_OPSRC_COGBRK;
     return parse_d_wcz();
 }

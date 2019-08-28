@@ -114,7 +114,7 @@ static constexpr p2_t_mask_t tm_lexer       = TTMASK(tt_lexer);
 static constexpr p2_t_mask_t tm_primary_unary =
         tm_primary | tm_unary;
 
-static constexpr p2_t_mask_t tm_binops      =
+static constexpr p2_t_mask_t tm_binop      =
         tm_binop_and |
         tm_binop_xor |
         tm_binop_or |

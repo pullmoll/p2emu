@@ -95,6 +95,9 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 RESOURCES += \
 	p2emu.qrc
 
+TRANSLATIONS += \
+	p2emu.de.ts
+
 DISTFILES += \
 		P2-qz80-rr032.spin2 \
 		README.md \

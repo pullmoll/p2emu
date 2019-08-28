@@ -170,14 +170,15 @@ private:
     P2Atom str_const(const QString& str);
     QString find_symbol(Section sect = sec_con, const QString& func = QString(), bool all_sections = false);
     QString find_locsym(Section sect = sec_con, const QString& local = QString());
-    P2Atom parse_atom();
-    P2Atom parse_primary();
-    P2Atom parse_unary();
-    P2Atom parse_mulops();
-    P2Atom parse_addops();
-    P2Atom parse_shiftops();
-    P2Atom parse_binops();
-    P2Atom parse_expression(imm_to_e imm_to = immediate_none);
+    P2Atom parse_atom(int level);
+    P2Atom parse_primary(int level);
+    P2Atom parse_unary(int level);
+    P2Atom parse_mulops(int level);
+    P2Atom parse_addops(int level);
+    P2Atom parse_shiftops(int level);
+    P2Atom parse_binops(int level);
+    P2Atom parse_relative(bool& rel, int level);
+    P2Atom parse_expression(imm_to_e imm_to = immediate_none, int level = 0);
 
     bool check_dst_src();
     bool end_of_line();

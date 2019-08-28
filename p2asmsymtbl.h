@@ -53,7 +53,7 @@ public:
     int defined_where(const QString& name) const;
     QStringList references_in(int lineno) const;
     int reference(const QString& name, int idx = 0) const;
-    bool addReference(const QString& name, int lineno);
+    bool add_reference(const QString& name, int lineno);
     const QList<int> references(const QString& name) const;
 
     const QHash<QString,P2AsmSymbol>& symbols() const;
