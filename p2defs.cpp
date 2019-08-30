@@ -49,6 +49,9 @@ const QString dec_digits = QStringLiteral("0123456789_");
 //! digits of hexadecimal numbers
 const QString hex_digits = QStringLiteral("0123456789ABCDEF_");
 
+//! digits of real numbers
+const QString real_digits = QStringLiteral("0123456789._");
+
 const QString template_str_origin = QStringLiteral("FFFFFF ");
 const QString template_str_address = QStringLiteral("COG:1FF ");
 
@@ -108,60 +111,67 @@ QString format_opcode_hex(const p2_opcode_u& IR)
     return QString("%1").arg(IR.opcode, 8, 16, QChar('0'));
 }
 
-QString format_data_bin(const p2_opcode_u& IR)
+QString format_data_bin(const p2_opcode_u& IR, bool prefix)
 {
     // 11111111_11111111_11111111_11111111
-    return QString("%1 %2 %3 %4")
+    return QString("%1%2 %3 %4 %5")
+            .arg(prefix ? QStringLiteral("%") : QString())
             .arg((IR.opcode >> 24) & 0xff, 8, 2, QChar('0'))
             .arg((IR.opcode >> 16) & 0xff, 8, 2, QChar('0'))
             .arg((IR.opcode >>  8) & 0xff, 8, 2, QChar('0'))
             .arg((IR.opcode >>  0) & 0xff, 8, 2, QChar('0'));
 }
 
-QString format_data_byt(const p2_opcode_u& IR)
+QString format_data_byt(const p2_opcode_u& IR, bool prefix)
 {
     // FF_FF_FF_FF
-    return QString("%1 %2 %3 %4")
+    return QString("%1%2 %3 %4 %5")
+            .arg(prefix ? QStringLiteral("%%") : QString())
              .arg((IR.opcode >> 24) & 0xff, 2, 16, QChar('0'))
              .arg((IR.opcode >> 16) & 0xff, 2, 16, QChar('0'))
              .arg((IR.opcode >>  8) & 0xff, 2, 16, QChar('0'))
              .arg((IR.opcode >>  0) & 0xff, 2, 16, QChar('0'));
 }
 
-QString format_data_oct(const p2_opcode_u& IR)
+QString format_data_oct(const p2_opcode_u& IR, bool prefix)
 {
     // 37777777777
-    return QString("%1").arg(IR.opcode, 11, 8, QChar('0'));
+    return QString("%1%2")
+            .arg(prefix ? QStringLiteral("0") : QString())
+            .arg(IR.opcode, 11, 8, QChar('0'));
 }
 
 QString format_data_dec(const p2_opcode_u& IR)
 {
     // 4294967295
-    return QString("%1").arg(IR.opcode, 10);
+    return QString("%1")
+            .arg(IR.opcode, 10);
 }
 
-QString format_data_hex(const p2_opcode_u& IR)
+QString format_data_hex(const p2_opcode_u& IR, bool prefix)
 {
     // FFFFFFFF
-    return QString("%1").arg(IR.opcode, 8, 16, QChar('0'));
+    return QString("%1%2")
+            .arg(prefix ? QStringLiteral("$") : QString())
+            .arg(IR.opcode, 8, 16, QChar('0'));
 }
 
-QString format_data_bin(const p2_LONG data)
+QString format_data_bin(const p2_LONG data, bool prefix)
 {
     p2_opcode_u IR = {data};
-    return format_data_bin(IR);
+    return format_data_bin(IR, prefix);
 }
 
-QString format_data_byt(const p2_LONG data)
+QString format_data_byt(const p2_LONG data, bool prefix)
 {
     p2_opcode_u IR = {data};
-    return format_data_byt(IR);
+    return format_data_byt(IR, prefix);
 }
 
-QString format_data_oct(const p2_LONG data)
+QString format_data_oct(const p2_LONG data, bool prefix)
 {
     p2_opcode_u IR = {data};
-    return format_data_oct(IR);
+    return format_data_oct(IR, prefix);
 }
 
 QString format_data_dec(const p2_LONG data)
@@ -170,10 +180,10 @@ QString format_data_dec(const p2_LONG data)
     return format_data_dec(IR);
 }
 
-QString format_data_hex(const p2_LONG data)
+QString format_data_hex(const p2_LONG data, bool prefix)
 {
     p2_opcode_u IR = {data};
-    return format_data_hex(IR);
+    return format_data_hex(IR, prefix);
 }
 
 QString format_opcode(const p2_opcode_u& IR, const p2_opcode_format_e fmt)
@@ -188,14 +198,14 @@ QString format_opcode(const p2_opcode_u& IR, const p2_opcode_format_e fmt)
     return QStringLiteral("<invalid format>");
 }
 
-QString format_data(const p2_opcode_u& IR, const p2_opcode_format_e fmt)
+QString format_data(const p2_opcode_u& IR, const p2_opcode_format_e fmt, bool prefix)
 {
     switch (fmt) {
-    case fmt_bin: return format_data_bin(IR);
-    case fmt_byt: return format_data_byt(IR);
-    case fmt_oct: return format_data_oct(IR);
+    case fmt_bin: return format_data_bin(IR, prefix);
+    case fmt_byt: return format_data_byt(IR, prefix);
+    case fmt_oct: return format_data_oct(IR, prefix);
     case fmt_dec: return format_data_dec(IR);
-    case fmt_hex: return format_data_hex(IR);
+    case fmt_hex: return format_data_hex(IR, prefix);
     }
     return QStringLiteral("<invalid format>");
 }
@@ -209,6 +219,7 @@ static const QColor dflt_color_byt_const    (0x00,0x60,0xff);   // blue2
 static const QColor dflt_color_oct_const    (0x00,0x40,0xff);   // blue3
 static const QColor dflt_color_dec_const    (0x00,0x20,0xff);   // blue4
 static const QColor dflt_color_hex_const    (0x00,0x00,0xff);   // blue
+static const QColor dflt_color_real_const   (0xc0,0xc0,0xff);   // light blue
 static const QColor dflt_color_locsym       (0xff,0x80,0xe0);   // pink
 static const QColor dflt_color_symbol       (0xff,0xc0,0x20);   // orange
 static const QColor dflt_color_expression   (0xff,0xc0,0x20);   // orange
@@ -231,6 +242,7 @@ QColor p2_palette(p2_palette_e pal, bool highlight)
         palette.insert(color_oct_const, dflt_color_oct_const);
         palette.insert(color_dec_const, dflt_color_dec_const);
         palette.insert(color_hex_const, dflt_color_hex_const);
+        palette.insert(color_real_const, dflt_color_real_const);
         palette.insert(color_locsym, dflt_color_locsym);
         palette.insert(color_symbol, dflt_color_symbol);
         palette.insert(color_expression, dflt_color_expression);
@@ -245,7 +257,7 @@ QColor p2_palette(p2_palette_e pal, bool highlight)
     if (highlight) {
         qreal h, s, v, a;
         color.getHsvF(&h, &s, &v, &a);
-        color.setHsvF(h, s, qMin(v * 1.1, 1.0), a);
+        color.setHsvF(h, s, v * 0.75, a);
     }
     return color;
 }

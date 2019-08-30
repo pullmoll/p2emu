@@ -7,8 +7,8 @@ P2Util::P2Util()
     Q_ASSERT(0x10000000u == msb(p2_LONG(0x11290023u)));
     Q_ASSERT(0x00020000u == msb(p2_LONG(0x0003f212u)));
 
-    Q_ASSERT(28 == encode(p2_LONG(0x10000000u)));
-    Q_ASSERT(31 == encode(p2_LONG(0x80000000u)));
+    Q_ASSERT(29 == encode(p2_LONG(0x10000000u)));
+    Q_ASSERT(32 == encode(p2_LONG(0x80000000u)));
 
     Q_ASSERT(16 == ones(p2_LONG(0xaaaa5555u)));
     Q_ASSERT(1 == ones(p2_LONG(0x00001000u)));
@@ -102,14 +102,15 @@ p2_BYTE P2Util::msb(p2_BYTE val)
  * @param val value
  * @return position of top most 1 bit
  */
-int P2Util::encode(p2_LONG val)
+uint P2Util::encode(p2_QUAD val)
 {
     val |= (val >> 1);
     val |= (val >> 2);
     val |= (val >> 4);
     val |= (val >> 8);
     val |= (val >> 16);
-    return static_cast<int>(ones(val)) - 1;
+    val |= (val >> 32);
+    return ones(val);
 }
 
 /**
@@ -117,13 +118,14 @@ int P2Util::encode(p2_LONG val)
  * @param val value
  * @return position of top most 1 bit
  */
-int P2Util::encode(p2_WORD val)
+uint P2Util::encode(p2_LONG val)
 {
     val |= (val >> 1);
     val |= (val >> 2);
     val |= (val >> 4);
     val |= (val >> 8);
-    return static_cast<int>(ones(val)) - 1;
+    val |= (val >> 16);
+    return ones(val);
 }
 
 /**
@@ -131,12 +133,26 @@ int P2Util::encode(p2_WORD val)
  * @param val value
  * @return position of top most 1 bit
  */
-int P2Util::encode(p2_BYTE val)
+uint P2Util::encode(p2_WORD val)
 {
     val |= (val >> 1);
     val |= (val >> 2);
     val |= (val >> 4);
-    return static_cast<int>(ones(val)) - 1;
+    val |= (val >> 8);
+    return ones(val);
+}
+
+/**
+ * @brief Find the most significant 1 bit position in value %val
+ * @param val value
+ * @return position of top most 1 bit
+ */
+uint P2Util::encode(p2_BYTE val)
+{
+    val |= (val >> 1);
+    val |= (val >> 2);
+    val |= (val >> 4);
+    return ones(val);
 }
 
 /**
@@ -362,9 +378,33 @@ p2_WORD P2Util::reverse(p2_WORD val)
  */
 p2_BYTE P2Util::reverse(p2_BYTE val)
 {
-    val = static_cast<p2_BYTE>(((val & 0xaaaa) >> 1) | ((val & 0x5555) << 1));
-    val = static_cast<p2_BYTE>(((val & 0xcccc) >> 2) | ((val & 0x3333) << 2));
+    val = static_cast<p2_BYTE>(((val & 0xaa) >> 1) | ((val & 0x55) << 1));
+    val = static_cast<p2_BYTE>(((val & 0xcc) >> 2) | ((val & 0x33) << 2));
     return static_cast<p2_BYTE>((val >> 4) | (val << 4));
+}
+
+/**
+ * @brief Reverse %bits in bit value
+ * @param val value to reverse
+ * @param bits number of bits to reverse
+ * @return bit reversed value
+ */
+p2_LONG P2Util::reverse(p2_LONG val, p2_LONG bits)
+{
+    p2_LONG result = 0;
+    switch (bits) {
+    case 8:
+        return reverse(static_cast<p2_BYTE>(val));
+    case 16:
+        return reverse(static_cast<p2_WORD>(val));
+    case 32:
+        return reverse(val);
+    }
+    for (p2_LONG i = 0; i < bits; i++) {
+        result = (result << 1) | (val & 1);
+        val >>= 1;
+    }
+    return result;
 }
 
 #define	SQRT_SHIFT_BITS     8       // 2, 4, 8, 16

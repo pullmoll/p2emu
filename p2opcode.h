@@ -38,10 +38,21 @@ public:
 
     void clear(const p2_LONG opcode = 0, const p2_PC_ORGH_t& pc_orgh = p2_PC_ORGH_t(0,0));
 
+    p2_cond_e cond() const;
+    p2_inst7_e inst7() const;
+    p2_inst8_e inst8() const;
+    p2_inst9_e inst9() const;
+    bool wc() const;
+    bool wz() const;
+    bool im() const;
+    p2_LONG dst() const;
+    p2_LONG src() const;
+
     void set_cond(const p2_cond_e cond);
     void set_inst7(const p2_inst7_e inst);
     void set_inst8(const p2_inst8_e inst);
     void set_inst9(const p2_inst9_e inst);
+    void set_imm23(const p2_LONG addr);
     void set_wcz(bool on = true);
     void set_wc(bool on = true);
     void set_wz(bool on = true);

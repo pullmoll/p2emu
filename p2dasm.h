@@ -68,15 +68,15 @@ private:
     static QString format_num(uint num, bool binary = false);
     static QString format_bin(uint num, int digits = 0);
 
-    void format_with_cz(QString* instruction, p2_token_e with = t_WCZ);
-    void format_with_c(QString* instruction, p2_token_e with = t_WC);
-    void format_with_z(QString* instruction, p2_token_e with = t_WZ);
+    void format_WCZ(QString* instruction, p2_token_e with = t_WCZ);
+    void format_WC(QString* instruction, p2_token_e with = t_WC);
+    void format_WZ(QString* instruction, p2_token_e with = t_WZ);
     void format_inst(QString* instruction, p2_token_e inst);
-    void format_d_imm_s_wcz(QString* instruction, p2_token_e inst, p2_token_e wcz = t_WCZ);
-    void format_d_imm_s_wc(QString* instruction, p2_token_e inst);
-    void format_d_imm_s_wz(QString* instruction, p2_token_e inst, p2_token_e with = t_WZ);
-    void format_wz_d_imm_s(QString* instruction, p2_token_e inst);
-    void format_wz_d_imm_s_wc(QString* instruction, p2_token_e inst);
+    void format_D_IM_S_WCZ(QString* instruction, p2_token_e inst, p2_token_e wcz = t_WCZ);
+    void format_D_IM_S_WC(QString* instruction, p2_token_e inst);
+    void format_D_IM_S_WZ(QString* instruction, p2_token_e inst, p2_token_e with = t_WZ);
+    void format_WZ_D_IM_S(QString* instruction, p2_token_e inst);
+    void format_WZ_D_IM_S_WC(QString* instruction, p2_token_e inst);
     void format_d_imm_s_nnn(QString* instruction, p2_token_e inst, int max = 7);
     void format_d_imm_s(QString* instruction, p2_token_e inst);
     void format_d_cz(QString* instruction, p2_token_e inst, p2_token_e with = t_WCZ);

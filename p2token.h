@@ -46,9 +46,9 @@ public:
 
     QString string(p2_token_e tok, bool lowercase = false) const;
     QString enum_name(p2_token_e tok) const;
-    p2_token_e token(const QString& str, bool chop = false, int* plen = nullptr) const;
+    p2_token_e token(const QString& line, int pos, int& len, bool chop = false) const;
 
-    P2Words tokenize(const QString& str, const int lineno, int& in_curly) const;
+    P2Words tokenize(const QString& line, const int lineno, int& in_curly) const;
 
     bool is_type(p2_token_e tok, p2_t_mask_t typemask) const;
     bool is_type(p2_token_e tok, p2_t_type_e type) const;
@@ -93,6 +93,18 @@ private:
     QHash<p2_token_e, p2_cond_e> m_lookup_cond;         //!< QHash for conditionals to condition bits lookup
     QHash<p2_token_e, p2_cond_e> m_lookup_modcz;        //!< QHash for MODCZ parameters to condition bits lookup
     QHash<p2_t_type_e, QString> m_t_type_name;          //!< QHash for token type mask to type name(s) lookup
+
+    QRegExp rx_comment_eol;                             //!< regular expression for a comment until end-of-line
+    QRegExp rx_comment_curly;                           //!< regular expression for a comment in curly braces
+    QRegExp rx_symbol;                                  //!< regular expression for a symbol name
+    QRegExp rx_locsym;                                  //!< regular expression for a local symbol name
+    QRegExp rx_bin_const;                               //!< regular expression for a binary constant
+    QRegExp rx_byt_const;                               //!< regular expression for a byt constant
+    QRegExp rx_oct_const;                               //!< regular expression for an octal constant
+    QRegExp rx_hex_const;                               //!< regular expression for a hexadecimal constant
+    QRegExp rx_dec_const;                               //!< regular expression for a decimal constant
+    QRegExp rx_str_const;                               //!< regular expression for a string constant
+    QRegExp rx_real_const;                              //!< regular expression for a qreal constant
 
     void tt_set(p2_token_e tok, p2_t_mask_t typemask);
     void tt_clr(p2_token_e tok, p2_t_mask_t typemask);

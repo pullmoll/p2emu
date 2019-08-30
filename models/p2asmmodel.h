@@ -40,8 +40,6 @@
 #include <QIcon>
 #include "p2asm.h"
 
-#define OVERRIDE_FLAGS  1
-
 class P2AsmModel : public QAbstractTableModel
 {
     Q_OBJECT
@@ -64,18 +62,18 @@ public:
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     bool setData(const QModelIndex& index, const QVariant& value, int role) override;
-#if OVERRIDE_FLAGS
     Qt::ItemFlags flags(const QModelIndex& index) const override;
-#endif
 
     static QList<column_e> columns();
-    p2_opcode_format_e opcode_format() const { return m_format; }
-    QSize sizeHint(column_e column, bool header = false) const;
+    p2_opcode_format_e opcode_format() const;
+    QSize sizeHint(column_e column, bool header = false, const QString& text = QString()) const;
+    const P2Word& highlight() const;
 
 public slots:
     void invalidate();
     void setOpcodeFormat(p2_opcode_format_e format);
     void setFont(const QFont& font);
+    void setHighlight(const P2Word& word);
 
 private:
     P2Asm* m_asm;
@@ -83,11 +81,12 @@ private:
     QFont m_font;
     QPixmap m_error_pixmap;
     QIcon m_error;
+    P2Word m_highlight;
     QHash<column_e,QString> m_header;
     QHash<column_e,QRgb> m_background;
-    QHash<column_e,int> m_header_alignment;
+    QHash<column_e,int> m_head_alignment;
     QHash<column_e,int> m_text_alignment;
     QString tokenToolTip(const P2Words& words, const QString& bgd) const;
-    QString symbolsToolTip(const P2SymbolTable& symbols, const QStringList& defined, const QString& bgd) const;
+    QString symbolsToolTip(const P2SymbolTable& symbols, const QList<P2Symbol>& symrefs, const QString& bgd) const;
     QString errorsToolTip(const QStringList& list, const QString& bgd) const;
 };

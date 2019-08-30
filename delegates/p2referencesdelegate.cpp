@@ -32,9 +32,12 @@ P2ReferencesDelegate::P2ReferencesDelegate(QObject* parent)
  */
 QWidget* P2ReferencesDelegate::createEditor(QWidget* parent, const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
+    const P2SymbolsModel* model = qobject_cast<const P2SymbolsModel*>(index.model());
+    Q_ASSERT(model);    // assert the model is really P2SymbolsModel
     Q_UNUSED(option)
     Q_UNUSED(index)
     QComboBox* cb = new QComboBox(parent);
+    cb->setFont(qvariant_cast<QFont>(model->data(index, Qt::FontRole)));
     cb->setFocusPolicy(Qt::StrongFocus);
     connect(cb, SIGNAL(currentIndexChanged(int)), SLOT(indexChanged(int)));
     return cb;
@@ -54,8 +57,6 @@ void P2ReferencesDelegate::setEditorData(QWidget* editor, const QModelIndex& ind
     QVariantList list = data.toList();
     QStringList texts;
 
-    // Don't list the definition
-    list.removeFirst();
     if (list.isEmpty()) {
         cb->setUpdatesEnabled(true);
         return;
@@ -64,12 +65,9 @@ void P2ReferencesDelegate::setEditorData(QWidget* editor, const QModelIndex& ind
     cb->addItem(tr("%1 refs").arg(list.count()));
     qobject_cast<QStandardItemModel*>(cb->model())->item(0)->setEnabled(false);
     foreach(const QVariant& var, list) {
-        const QString text = tr("Line #%1").arg(var.toString());
-        QUrl url(QString("%1#%2")
-                 .arg(key_tv_asm)
-                 .arg(var.toString()));
-        url.setFragment(var.toString());
-        cb->addItem(text, url);
+        const P2Word& word = qvariant_cast<P2Word>(var);
+        const QString text = tr("Line #%1").arg(word.lineno());
+        cb->addItem(text, P2Word::url(word));
     }
     cb->setMaxVisibleItems(10);
     cb->setUpdatesEnabled(true);
@@ -82,6 +80,8 @@ void P2ReferencesDelegate::setModelData(QWidget* editor, QAbstractItemModel* mod
         return;
     // model->setData(index, cb->currentText(), Qt::EditRole);
     emit urlSelected(cb->itemData(cb->currentIndex()).toUrl());
+    Q_UNUSED(model)
+    Q_UNUSED(index)
 }
 
 void P2ReferencesDelegate::updateEditorGeometry(QWidget* editor, const QStyleOptionViewItem& option, const QModelIndex& index) const
@@ -100,13 +100,16 @@ void P2ReferencesDelegate::paint(QPainter* painter, const QStyleOptionViewItem& 
     QVariant var = model->data(index, Qt::EditRole);
     QVariantList list = var.toList();
     QStyleOptionViewItem opt(option);
-    list.removeFirst();
+    QString text;
+    int flags = Qt::AlignRight | Qt::AlignVCenter |
+                Qt::TextSingleLine | Qt::TextDontClip;
+
     if (list.count() < 1) {
-        opt.text = tr("%1 refs").arg(tr("no"));
+        text = tr("%1 refs").arg(tr("no"));
     } else {
-        opt.text = tr("%1 refs").arg(list.count());
+        text = tr("%1 refs").arg(list.count());
     }
-    painter->drawText(opt.rect, opt.text);
+    painter->drawText(opt.rect, flags, text);
 }
 
 void P2ReferencesDelegate::indexChanged(int i) const

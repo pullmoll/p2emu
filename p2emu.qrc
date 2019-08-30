@@ -1,10 +1,10 @@
 <RCC>
 	<qresource prefix="/">
-		<file>P2 instruction set.csv</file>
-		<file>instructions_v33g.txt</file>
-		<file>ROM_Booter_v33_01j.bin</file>
-		<file>ROM_Booter_v33_01j.spin2</file>
-		<file>P2-qz80-rr032.spin2</file>
+		<file>doc/P2 instruction set.csv</file>
+		<file>doc/instructions_v33g.txt</file>
+		<file>bin/ROM_Booter_v33_01j.bin</file>
+		<file>spin2/ROM_Booter_v33_01j.spin2</file>
+		<file>spin2/P2-qz80-rr032.spin2</file>
 		<file>icons/go_to.png</file>
 		<file>icons/go_to_cog.png</file>
 		<file>icons/go_to_lut.png</file>

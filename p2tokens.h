@@ -45,12 +45,13 @@ enum p2_token_e {
     t_comment_eol,      //!< token is a comment until end of line (')
     t_comment_lcurly,   //!< token is a comment ({)
     t_comment_rcurly,   //!< token is a comment (})
-    t_string,           //!< token is a string starting with doublequote (")
+    t_str_const,           //!< token is a string starting with doublequote (")
     t_bin_const,        //!< token is a binary value (%)
     t_byt_const,        //!< token is a byte index (i.e. base 4) value (%%)
     t_oct_const,        //!< token is an octal value (0…)
     t_dec_const,        //!< token is a decimal value (starts with 1…9)
     t_hex_const,        //!< token is a hexadecimal value ($)
+    t_real_const,        //!< token is a floating point value (x.y)
     t_locsym,           //!< token is a local symbol (starts with .)
     t_symbol,           //!< token is a symbol (alphanumeric)
     t_empty,            //!< token is empty
@@ -115,8 +116,6 @@ enum p2_token_e {
     t_CRCNIB,
     t_DECMOD,
     t_DECOD,
-    t_DIRA,
-    t_DIRB,
     t_DIRC,
     t_DIRH,
     t_DIRL,
@@ -166,8 +165,6 @@ enum p2_token_e {
     t_HUBSET,
     t_IJNZ,
     t_IJZ,
-    t_INA,
-    t_INB,
     t_INCMOD,
     t_JATN,
     t_JCT1,
@@ -236,8 +233,6 @@ enum p2_token_e {
     t_NOT,
     t_ONES,
     t_OR,
-    t_OUTA,
-    t_OUTB,
     t_OUTC,
     t_OUTH,
     t_OUTL,
@@ -267,16 +262,6 @@ enum p2_token_e {
     t_POP,
     t_POPA,
     t_POPB,
-    t_PTRA,
-    t_PTRA_postinc,
-    t_PTRA_postdec,
-    t_PTRA_preinc,
-    t_PTRA_predec,
-    t_PTRB,
-    t_PTRB_postinc,
-    t_PTRB_postdec,
-    t_PTRB_preinc,
-    t_PTRB_predec,
     t_PUSH,
     t_PUSHA,
     t_PUSHB,
@@ -536,6 +521,24 @@ enum p2_token_e {
     // assignment
     t__ASSIGN,          //!< "="
 
+    // LUT shadow registers
+    t_DIRA,
+    t_DIRB,
+    t_INA,
+    t_INB,
+    t_OUTA,
+    t_OUTB,
+    t_PTRA,
+    t_PTRA_postinc,
+    t_PTRA_postdec,
+    t_PTRA_preinc,
+    t_PTRA_predec,
+    t_PTRB,
+    t_PTRB_postinc,
+    t_PTRB_postdec,
+    t_PTRB_preinc,
+    t_PTRB_predec,
+
     // origin (PC)
     t__DOLLAR,          //!< "$"
 
@@ -544,6 +547,8 @@ enum p2_token_e {
     // hash
     t__IMMEDIATE,       //!< "#"
     t__IMMEDIATE2,      //!< "##"
+
+    // relative address
     t__RELATIVE,        //!< "@"
     t__RELATIVE_HUB,    //!< "@@@"
 
@@ -588,8 +593,12 @@ enum p2_token_e {
     t__XOR,             //!< "^"
     t__REV,             //!< "><"
 
+    // encode/decode
+    t__ENCOD,          //!< "|<"
+    t__DECOD,          //!< ">|"
+
     t__LOGAND,          //!< "&&"
-    t__LOGOR,            //!< "||"
+    t__LOGOR,           //!< "||"
 };
 
 typedef QVector<p2_token_e> p2_token_v;

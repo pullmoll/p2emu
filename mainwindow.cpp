@@ -78,6 +78,8 @@ static const QLatin1String key_column_instruction("hide_instruction");
 static const QLatin1String key_column_source("hide_source");
 static const QLatin1String key_column_description("hide_description");
 static const QLatin1String key_font_size("font_size");
+static const QLatin1String key_splitter_source_percent("source_percent");
+static const QLatin1String key_splitter_results_percent("results_percent");
 
 static const QLatin1String key_source("source");
 static const QLatin1String key_directory("directory");
@@ -85,7 +87,6 @@ static const QLatin1String key_filename("filename");
 static const QLatin1String key_history("directory");
 
 static const QLatin1String key_status("status");
-
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -97,6 +98,8 @@ MainWindow::MainWindow(QWidget *parent)
     , m_dasm(new P2Dasm(m_hub->cog(0)))
     , m_dmodel(new P2DasmModel(m_dasm))
     , m_smodel(new P2SymbolsModel())
+    , m_source_percent(80)
+    , m_results_percent(40)
 {
     ui->setupUi(this);
     connect(ui->action_Quit, SIGNAL(triggered(bool)), this, SLOT(close()));
@@ -109,7 +112,7 @@ MainWindow::MainWindow(QWidget *parent)
     setupToolbars();
     setupStatusbar();
 
-    m_hub->load(":/ROM_Booter_v33_01j.bin");
+    m_hub->load(":/bin/ROM_Booter_v33_01j.bin");
 
     setupAssembler();
     setupDisassembler();
@@ -117,8 +120,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     restoreSettings();
 
-    // QString sourcecode = QStringLiteral(":/ROM_Booter_v33_01j.spin2");
-    QString sourcecode = QStringLiteral(":/P2-qz80-rr032.spin2");
+    // QString sourcecode = QStringLiteral(":/spin2/ROM_Booter_v33_01j.spin2");
+    QString sourcecode = QStringLiteral(":/spin2/P2-qz80-rr032.spin2");
     openSource(sourcecode);
 }
 
@@ -130,6 +133,17 @@ MainWindow::~MainWindow()
 
 void MainWindow::saveSettingsAsm(QSettings& s)
 {
+
+    QList<int> source_sizes = ui->splSource->sizes();
+    QSize size = ui->tvAsm->size();
+    if (!ui->splResults->isHidden()) {
+        if (!source_sizes.isEmpty() && 0 != size.height())
+            m_source_percent = source_sizes.first() * 100 / size.height();
+    }
+    QList<int> results_sizes = ui->splResults->sizes();
+    if (!results_sizes.isEmpty() && 0 != size.width())
+        m_results_percent = results_sizes.first() * 100 / size.width();
+
     s.beginGroup(grp_assembler);
     s.setValue(key_opcodes, m_amodel->opcode_format());
     s.setValue(key_column_origin, ui->tvAsm->isColumnHidden(P2AsmModel::c_Origin));
@@ -143,6 +157,9 @@ void MainWindow::saveSettingsAsm(QSettings& s)
     s.setValue(key_current_row, index.row());
     s.setValue(key_current_column, index.column());
     s.setValue(key_font_size, ui->tvAsm->font().pixelSize());
+    s.setValue(key_splitter_source_percent, m_source_percent);
+    s.setValue(key_splitter_results_percent, m_results_percent);
+
     s.endGroup();
 }
 
@@ -186,9 +203,11 @@ void MainWindow::restoreSettingsAsm(QSettings& s)
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Symbols, s.value(key_column_symbols, false).toBool());
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Errors, s.value(key_column_errors, false).toBool());
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Source, s.value(key_column_source, false).toBool());
-    setAsmFontSize(s.value(key_font_size, 8).toInt());
+    setAsmFontSize(s.value(key_font_size, 11).toInt());
+    m_source_percent = s.value(key_splitter_source_percent, m_source_percent).toInt();
+    m_results_percent = s.value(key_splitter_results_percent, m_results_percent).toInt();
     s.endGroup();
-
+    resize_source_panel();
 }
 
 void MainWindow::restoreSettingsDasm(QSettings& s)
@@ -201,7 +220,7 @@ void MainWindow::restoreSettingsDasm(QSettings& s)
     ui->tvDasm->setColumnHidden(P2DasmModel::c_Opcode, s.value(key_column_opcode, false).toBool());
     ui->tvDasm->setColumnHidden(P2DasmModel::c_Instruction, s.value(key_column_instruction, false).toBool());
     ui->tvDasm->setColumnHidden(P2DasmModel::c_Description, s.value(key_column_description, false).toBool());
-    setDasmFontSize(s.value(key_font_size, 8).toInt());
+    setDasmFontSize(s.value(key_font_size, 11).toInt());
     s.endGroup();
 }
 
@@ -497,9 +516,8 @@ void MainWindow::openSource(const QString& sourcefile)
 void MainWindow::assemble()
 {
     QStringList source = m_asm->source();
-    ui->tbErrors->setVisible(false);
+    ui->splResults->setVisible(false);
     ui->tbErrors->clear();
-    ui->tvSymbols->setVisible(false);
 
     qint64 t0 = QDateTime::currentMSecsSinceEpoch();
     if (m_asm->assemble(source)) {
@@ -507,20 +525,15 @@ void MainWindow::assemble()
         QLabel* status = ui->statusBar->findChild<QLabel*>(key_status);
         if (status)
             status->setText(tr("Assembly took %1 ms.").arg(t1 - t0));
+
         // Inspect result
         const QModelIndex idx = ui->tvAsm->currentIndex();
+
         m_amodel->invalidate();
         ui->tvAsm->setCurrentIndex(idx);
-
         m_smodel->setTable(m_asm->symbols());
-        ui->tvSymbols->setVisible(true);
-#if 0
-        P2AsmListing dlg;
-        dlg.setListing(m_asm->listing());
-        dlg.setSymbols(m_asm->symbols());
-        dlg.exec();
-#endif
     }
+    ui->splResults->setVisible(true);
 }
 
 void MainWindow::print_error(int pass, int line, const QString& message)
@@ -534,29 +547,30 @@ void MainWindow::print_error(int pass, int line, const QString& message)
                        .arg(QString::number(line));
     QString error = str_pass + str_line + message;
     ui->tbErrors->append(error);
-    if (!ui->tbErrors->isVisible()) {
-        ui->tbErrors->setVisible(true);
-        QList<int> sizes;
-        sizes += ui->tvAsm->height();
-        sizes += 120;
-        ui->splSourceResults->setSizes(sizes);
-        sizes.clear();
-        sizes += ui->tvAsm->width() / 2;
-        sizes += ui->tvAsm->width() / 2;
-        ui->splResults->setSizes(sizes);
+
+    if (!ui->splResults->isVisible()) {
+        ui->splResults->setVisible(true);
+        resize_source_panel();
     }
 }
 
 void MainWindow::goto_line(const QUrl& url)
 {
-    QString path = url.path();
-    QString frag = url.fragment();
+    const P2SymbolTable& table = m_asm->symbols();
+    const QString& path = url.path();
+    const QString& frag = url.fragment();
+    const QString& symbol = url.query();
+
     bool ok;
-    int line = frag.toInt(&ok);
+    const int line = frag.toInt(&ok);
+    const P2Symbol& sym = table->symbol(symbol);
+    const P2Word& word = table->definition(sym.name());
     if (path == key_tv_asm) {
         const QModelIndex idx = m_amodel->index(line - 1, P2AsmModel::c_Source);
-        ui->tvAsm->setSelectionBehavior(QAbstractItemView::SelectItems);
+        m_amodel->setHighlight(word);
         ui->tvAsm->setCurrentIndex(idx);
+        ui->tvAsm->viewport()->repaint();
+        // ui->tvAsm->setFocus(Qt::OtherFocusReason);
     }
 }
 
@@ -568,6 +582,23 @@ void MainWindow::goto_line_number()
     QUrl url(key_tv_asm);
     url.setFragment(QString::number(dlg.number()));
     goto_line(url);
+}
+
+void MainWindow::resize_source_panel(const int results_min)
+{
+    QSize size = ui->tvAsm->size();
+    QList<int> source_sizes;
+    if (100 - m_source_percent < results_min)
+        m_source_percent = 100 - results_min;
+    source_sizes += size.height() * m_source_percent / 100;
+    source_sizes += size.height() * (100 - m_source_percent) / 100;
+    ui->splSource->setSizes(source_sizes);
+
+    QList<int> err_sizes;
+    err_sizes += size.width() * m_results_percent / 100;
+    err_sizes += size.width() * (100 - m_results_percent) / 100;
+    ui->splResults->setSizes(err_sizes);
+
 }
 
 void MainWindow::setDasmLowercase(bool check)
@@ -590,8 +621,13 @@ void MainWindow::setupAssembler()
     // but connect to the anchorClicked(QUrl) signal
     connect(ui->tbErrors, SIGNAL(anchorClicked(QUrl)), SLOT(goto_line(QUrl)), Qt::UniqueConnection);
 
-    ui->tvAsm->setFocusPolicy(Qt::StrongFocus);
-    ui->tvAsm->setEditTriggers(QAbstractItemView::AnyKeyPressed);
+    ui->tvAsm->setFocusPolicy(Qt::ClickFocus);
+    ui->tvAsm->setEditTriggers(QAbstractItemView::DoubleClicked
+                               | QAbstractItemView::SelectedClicked
+                               | QAbstractItemView::EditKeyPressed
+                               | QAbstractItemView::AnyKeyPressed);
+    ui->tvAsm->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    ui->tvAsm->setSelectionBehavior(QAbstractItemView::SelectItems);
 
     QAbstractItemDelegate* od = ui->tvAsm->itemDelegateForColumn(P2AsmModel::c_Opcode);
     ui->tvAsm->setItemDelegateForColumn(P2AsmModel::c_Opcode, new P2OpcodeDelegate);
@@ -613,8 +649,7 @@ void MainWindow::setupAssembler()
     ui->tvSymbols->setModel(m_smodel);
     updateSymbolsColumnSizes();
 
-    ui->tbErrors->setVisible(false);
-    ui->tvSymbols->setVisible(false);
+    ui->splResults->setVisible(false);
 }
 
 void MainWindow::setupDisassembler()

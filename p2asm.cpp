@@ -53,6 +53,7 @@ static const QString p2_prefix_oct_const = QStringLiteral("_OCT::");
 static const QString p2_prefix_dec_const = QStringLiteral("_DEC::");
 static const QString p2_prefix_hex_const = QStringLiteral("_HEX::");
 static const QString p2_prefix_str_const = QStringLiteral("_STR::");
+static const QString p2_prefix_real_const = QStringLiteral("_REAL::");
 static const QString p2_prefix_lut_const = QStringLiteral("_LUT::");
 
 
@@ -81,8 +82,8 @@ P2Asm::P2Asm(QObject *parent)
     , m_in_curly(0)
     , m_line()
     , m_errors()
-    , m_curr_PC(0)
-    , m_last_PC(0)
+    , m_ORG(0)
+    , m_ORG_MAX(0)
     , m_ORGH(0)
     , m_advance(4)
     , m_IR()
@@ -90,7 +91,7 @@ P2Asm::P2Asm(QObject *parent)
     , m_instr()
     , m_symbol()
     , m_function()
-    , m_section()
+    , m_section(sec_dat)
     , m_cnt(0)
     , m_idx(0)
     , MEM()
@@ -134,8 +135,8 @@ void P2Asm::pass_clear()
     m_in_curly = 0;
     m_line.clear();
     m_errors.clear();
-    m_curr_PC = 0;
-    m_last_PC = 0;
+    m_ORG = 0;
+    m_ORG_MAX = 0;
     m_ORGH = 0;
     m_advance = 0;
     m_IR.clear();
@@ -160,12 +161,9 @@ const QStringList& P2Asm::source() const
     return m_source;
 }
 
-const QString& P2Asm::source(int idx) const
+const QString P2Asm::source(int idx) const
 {
-    static const QString empty;
-    if (idx  < 0 || idx >= m_source.count())
-        return empty;
-    return m_source.at(idx);
+    return m_source.value(idx);
 }
 
 void P2Asm::setSource(const QStringList& source)
@@ -181,17 +179,17 @@ int P2Asm::count() const
     return m_source.count();
 }
 
-const p2_pc_orgh_hash_t& P2Asm::PC_hash() const
+const p2_pc_orgh_hash_t& P2Asm::PC_ORGH_hash() const
 {
     return m_hash_PC;
 }
 
-p2_PC_ORGH_t P2Asm::PC_value(int lineno) const
+p2_PC_ORGH_t P2Asm::get_PC_ORGH(int lineno) const
 {
     return m_hash_PC.value(lineno);
 }
 
-bool P2Asm::has_PC(int lineno) const
+bool P2Asm::has_PC_ORGH(int lineno) const
 {
     return m_hash_PC.contains(lineno);
 }
@@ -201,7 +199,7 @@ const p2_opcode_hash_t& P2Asm::IR_hash() const
     return m_hash_OPC;
 }
 
-P2Opcode P2Asm::IR_value(int lineno) const
+P2Opcode P2Asm::get_IR(int lineno) const
 {
     return m_hash_OPC.value(lineno);
 }
@@ -246,12 +244,14 @@ const P2SymbolTable& P2Asm::symbols() const
     return m_symbols;
 }
 
-p2_cond_e P2Asm::conditional(p2_token_e cond)
+p2_cond_e P2Asm::conditional()
 {
-    if (!Token.is_type(cond, tm_conditional))
-        return cc_always;
-    p2_cond_e result = Token.conditional(cond, cc_always);
-    m_idx += 1;
+    p2_cond_e result = cc_always;
+    p2_token_e cond = m_words.value(m_idx).tok();
+    if (Token.is_type(cond, tm_conditional)) {
+        result = Token.conditional(cond, cc_always);
+        m_idx += 1;
+    }
     return result;
 }
 
@@ -296,6 +296,47 @@ bool P2Asm::tokenize(const QString& line)
 }
 
 /**
+ * @brief Return the current P2Word
+ * @return const reference to the current word
+ */
+const P2Word& P2Asm::curr_word() const
+{
+    static const P2Word empty = P2Word();
+    if (m_idx >= m_cnt)
+        return empty;
+    return m_words[m_idx];
+}
+
+/**
+ * @brief Return the current P2Word's string
+ * @return const reference to the current word
+ */
+const QString P2Asm::curr_str() const
+{
+    const P2Word& word = curr_word();
+    return word.str();
+}
+
+/**
+ * @brief Return the current P2Word's token
+ * @return token enumeration value
+ */
+p2_token_e P2Asm::curr_tok() const
+{
+    const P2Word& word = curr_word();
+    return word.tok();
+}
+
+/**
+ * @brief Go to the next P2Word
+ * @return true if more words, or false at end-of-line
+ */
+bool P2Asm::next()
+{
+    return ++m_idx < m_cnt;
+}
+
+/**
  * @brief Assemble a QStringList of lines of SPIN2 source code
  * @param source code
  * @return true on success
@@ -314,7 +355,7 @@ bool P2Asm::assemble_pass()
         m_data.clear();
         m_advance = 0;
         m_IR.as_IR = false;
-        m_IR.PC_ORGH = p2_PC_ORGH_t(m_curr_PC, m_ORGH);
+        m_IR.PC_ORGH = p2_PC_ORGH_t(m_ORG, m_ORGH);
         m_IR.DATA.clear();
 
         // Split line into words and tokenize it
@@ -328,7 +369,8 @@ bool P2Asm::assemble_pass()
 
         m_symbol.clear();
         while (m_idx < m_cnt) {
-            switch (m_words.at(m_idx).tok()) {
+            const P2Word& word = m_words[m_idx];
+            switch (word.tok()) {
             case t_comment:
             case t_comment_eol:
             case t_comment_lcurly:
@@ -339,20 +381,18 @@ bool P2Asm::assemble_pass()
             case t_locsym:
                 {
                     // append local name to section::function / section
-                    QString str = m_words.value(m_idx).str();
-                    m_symbol = find_locsym(m_section, str);
+                    m_symbol = find_locsym(m_section, curr_str());
                 }
-                m_idx++;
+                next();
                 break;
 
             case t_symbol:
                 {
                     // append global name to section::symbol
-                    QString str = m_words.value(m_idx).str();
-                    m_function.insert(m_section, str);
-                    m_symbol = find_symbol(m_section, str);
+                    m_symbol = find_symbol(m_section, curr_str());
+                    m_function.insert(m_section, curr_str());
                 }
-                m_idx++;
+                next();
                 break;
 
             default:
@@ -361,24 +401,22 @@ bool P2Asm::assemble_pass()
 
             // defining a symbol at the current PC
             if (!m_symbol.isEmpty()) {
-                const p2_LONG PC = m_curr_PC < HUB_ADDR0 ? m_curr_PC / 4 : m_curr_PC;
+                const p2_LONG PC = m_ORG < HUB_ADDR0 ? m_ORG / 4 : m_ORG;
                 P2Symbol sym = m_symbols->symbol(m_symbol);
                 if (sym.isEmpty()) {
-                    P2Atom atom(PC);
-                    atom.set_type(P2Atom::PC);
+                    P2Atom atom(PC, P2Atom::PC);
                     // Not defined yet
                     m_symbols->insert(m_symbol, atom);
-                    m_symbols->add_reference(m_symbol, m_lineno);
+                    m_symbols->add_reference(m_lineno, m_symbol, word);
                 } else if (m_pass > 1) {
-                    P2Atom atom(PC);
-                    atom.set_type(P2Atom::PC);
+                    P2Atom atom(PC, P2Atom::PC);
                     m_symbols->set_atom(m_symbol, atom);
                 } else if (!sym.isNull()) {
                     // Already defined
                     const p2_LONG value = sym.value<p2_LONG>();
                     m_errors += tr("Symbol '%1' already defined in line #%2 (Value: %3, $%4, %%5).")
                               .arg(m_symbol)
-                              .arg(sym.defined_where())
+                              .arg(sym.definition().lineno())
                               .arg(value)
                               .arg(value, 6, 16, QChar('0'))
                               .arg(value, 32, 2, QChar('0'));
@@ -405,7 +443,7 @@ bool P2Asm::assemble_pass()
         m_IR.as_IR = true;
 
         // Conditional execution prefix
-        m_IR.set_cond(conditional(m_words.value(m_idx).tok()));
+        m_IR.set_cond(conditional());
 
         // Expect a token for an instruction
         bool success = false;
@@ -413,7 +451,7 @@ bool P2Asm::assemble_pass()
             m_instr = m_words.value(m_idx).tok();
             switch (m_instr) {
             case t_comment:
-                m_idx++;
+                next();
                 break;
 
             case t__DAT:
@@ -1901,7 +1939,7 @@ bool P2Asm::assemble_pass()
                 break;
 
             default:
-                if (Token.is_type(m_instr, tm_inst)) {
+                if (Token.is_type(m_instr, tm_mnemonic)) {
                     // Missing handling of an instruction token
                     m_errors += tr("Missing handling of instruction token '%1'.")
                           .arg(Token.string(m_instr));
@@ -1972,25 +2010,29 @@ bool P2Asm::assemble(const QString& filename)
 
 bool P2Asm::setSource(int idx, const QString& source)
 {
-    if (idx >= m_source.count())
+    if (idx < 0 || idx >= m_source.count())
         return false;
+    if (source == m_source[idx])
+        return true;
+
     m_source.replace(idx, source);
     m_pass = -1;
     clear();
+
     return true;
 }
 
 /**
- * @brief Return number of commas following in the words/tokens
- * @return number of commas following
+ * @brief Return number of commata following in the words/tokens
+ * @return number of commata following
  */
-int P2Asm::commas_left() const
+int P2Asm::commata_left() const
 {
-    int left = 0;
+    int commata = 0;
     for (int i = m_idx; i < m_cnt; i++)
         if (t__COMMA == m_words[i].tok())
-            left++;
-    return left;
+            commata++;
+    return commata;
 }
 
 /**
@@ -2000,21 +2042,21 @@ int P2Asm::commas_left() const
  */
 QStringList P2Asm::results_instruction(bool wr_mem)
 {
-    p2_LONG PC = m_curr_PC;
-    p2_LONG ORGH = m_ORGH;
     QStringList output;
+    p2_LONG PC = m_ORG;
+    p2_LONG ORGH = m_ORGH;
 
     QString line = m_line;
     Q_ASSERT(m_advance == 4);
 
-    m_IR.PC_ORGH = p2_PC_ORGH_t(m_curr_PC, m_ORGH);
+    m_IR.PC_ORGH = p2_PC_ORGH_t(m_ORG, m_ORGH);
     m_hash_PC.insert(m_lineno, m_IR.PC_ORGH);
     m_hash_OPC.insert(m_lineno, m_IR);
 
     // Do we need to generate an AUGD instruction?
     if (m_IR.AUGD.isValid()) {
         p2_LONG value = m_IR.AUGD.value<p2_LONG>() & AUG_MASK;
-        P2Opcode IR(p2_AUGD_00, p2_PC_ORGH_t(PC, ORGH));
+        P2Opcode IR(p2_AUGD, p2_PC_ORGH_t(PC, ORGH));
         IR.u.opcode |= value >> AUG_SHIFT;
 
         output += QString("%1 %2 [%3] %4")
@@ -2034,7 +2076,7 @@ QStringList P2Asm::results_instruction(bool wr_mem)
     // Do we need to generate an AUGS instruction?
     if (m_IR.AUGS.isValid()) {
         p2_LONG value = m_IR.AUGS.value<p2_LONG>() & AUG_MASK;
-        P2Opcode IR(p2_AUGS_00, p2_PC_ORGH_t(PC, ORGH));
+        P2Opcode IR(p2_AUGS, p2_PC_ORGH_t(PC, ORGH));
         IR.u.opcode |= value >> AUG_SHIFT;
 
         output += QString("%1 %2 [%3] %4")
@@ -2073,7 +2115,7 @@ QString P2Asm::results_assignment()
     m_hash_OPC.insert(m_lineno, m_IR);
     output = QString("%1 %2 <%3> %4")
              .arg(m_lineno, -6)
-             .arg(m_curr_PC, 6, 16, QChar('0'))
+             .arg(m_ORG, 6, 16, QChar('0'))
              .arg(m_IR.u.opcode, 8, 16, QChar('0'))
              .arg(m_line);
     return output;
@@ -2088,7 +2130,7 @@ QString P2Asm::results_comment()
     QString output;
     output = QString("%1 %2 -%3- %4")
              .arg(m_lineno, -6)
-             .arg(m_curr_PC, 6, 16, QChar('0'))
+             .arg(m_ORG, 6, 16, QChar('0'))
              .arg(QStringLiteral("--------"))
              .arg(m_line);
     return output;
@@ -2102,15 +2144,14 @@ QString P2Asm::results_comment()
 QStringList P2Asm::results_data(bool wr_mem)
 {
     QStringList output;
-    QString line;
     const p2_BYTES& bytes = m_data.to_bytes();
-    const p2_LONG start = m_curr_PC;
-    p2_LONG offset = m_curr_PC;
+    const p2_LONG start = m_ORG;
+    p2_LONG offset = m_ORG;
     p2_LONG data = 0;
     p2_LONG mask = 0;
 
     m_IR.DATA = m_data;
-    m_hash_PC.insert(m_lineno, p2_PC_ORGH_t(m_curr_PC, m_ORGH));
+    m_hash_PC.insert(m_lineno, p2_PC_ORGH_t(m_ORG, m_ORGH));
     m_hash_OPC.insert(m_lineno, m_IR);
 
     for (int i = 0; i < bytes.count(); i++) {
@@ -2119,19 +2160,23 @@ QStringList P2Asm::results_data(bool wr_mem)
         mask |= 0xffu << shift;
         if (0 == (++offset & 3)) {
             // another p2_LONG to output
-            if (!line.isEmpty())
-                output += line;
-            line = QString("%1 %2 {%3} %4")
+            output += QString("%1 %2 {%3} %4")
                      .arg(m_lineno, -6)
                      .arg(offset - 4u, 6, 16, QChar('0'))
                      .arg(P2Atom::format_long_mask(data, mask))
                      .arg(m_line);
             mask = 0;
         }
+
+        if (wr_mem) {
+            p2_LONG addr = m_ORGH + static_cast<uint>(i);
+            if (addr < MEM_SIZE)
+                MEM.BYTES[addr] = bytes[i];
+        }
     }
 
     if (offset & 3) {
-        line = QString("%1 %2 {%3} %4")
+        output += QString("%1 %2 {%3} %4")
                  .arg(m_lineno, -6)
                  .arg(offset & ~3u, 6, 16, QChar('0'))
                  .arg(P2Atom::format_long_mask(data, mask))
@@ -2139,8 +2184,6 @@ QStringList P2Asm::results_data(bool wr_mem)
     }
 
     m_advance = offset - start;
-
-    Q_UNUSED(wr_mem)
 
     return output;
 }
@@ -2167,9 +2210,9 @@ void P2Asm::results()
 
     // Calculate next ORG and PC values by adding m_advance
     m_ORGH += m_advance;
-    m_curr_PC += m_advance;
-    if (m_curr_PC > m_last_PC)
-        m_last_PC = m_curr_PC;
+    m_ORG += m_advance;
+    if (m_ORG > m_ORG_MAX)
+        m_ORG_MAX = m_ORG;
 
     if (!m_words.isEmpty())
         m_hash_words.insert(m_lineno, m_words);
@@ -2271,12 +2314,12 @@ P2Atom P2Asm::bin_const(const QString& str)
         bits = (bits << 1) + static_cast<uint>(idx);
         nbits += 1;
         while (nbits >= 32) {
-            atom.append(bits);
+            atom.append_bits(32, bits);
             bits >>= 32;
             nbits -= 32;
         }
     }
-    atom.append(nbits, bits);
+    atom.append_bits(nbits, bits);
     return atom;
 }
 
@@ -2306,12 +2349,12 @@ P2Atom P2Asm::byt_const(const QString& str)
         bits = (bits << 2) + static_cast<uint>(idx);
         nbits += 2;
         while (nbits >= 32) {
-            atom.append(bits);
+            atom.append_bits(32, bits);
             bits >>= 32;
             nbits -= 32;
         }
     }
-    atom.append(nbits, bits);
+    atom.append_bits(nbits, bits);
     return atom;
 }
 
@@ -2338,13 +2381,13 @@ P2Atom P2Asm::oct_const(const QString& str)
         bits = (bits << 3) + static_cast<uint>(idx);
         nbits += 3;
         while (nbits >= 32) {
-            atom.append(bits);
+            atom.append_bits(32, bits);
             bits >>= 32;
             nbits -= 32;
         }
     }
 
-    atom.append(nbits, bits);
+    atom.append_bits(nbits, bits);
     return atom;
 }
 
@@ -2371,7 +2414,7 @@ P2Atom P2Asm::dec_const(const QString& str)
         // FIXME: no way to handle 64 bit overflow ?
     }
     // append all significant bits
-    atom.append(bits);
+    atom.append_bits(P2Util::encode(bits), bits);
     return atom;
 }
 
@@ -2401,12 +2444,12 @@ P2Atom P2Asm::hex_const(const QString& str)
         bits = (bits << 4) + static_cast<uint>(idx);
         nbits += 4;
         while (nbits >= 32) {
-            atom.append(bits);
+            atom.append_bits(32, bits);
             bits >>= 32;
             nbits -= 32;
         }
     }
-    atom.append(nbits, bits);
+    atom.append_bits(nbits, bits);
     return atom;
 }
 
@@ -2427,7 +2470,7 @@ P2Atom P2Asm::str_const(const QString& str)
     for (/**/; pos < str.length(); pos++) {
         ch = str.at(pos);
         if (escaped) {
-            atom.append(P2Atom::Byte, static_cast<p2_BYTE>(ch.toLatin1()));
+            atom.append_uint(P2Atom::Byte, static_cast<p2_BYTE>(ch.toLatin1()));
             escaped = false;
         } else if (ch == in_string) {
             pos++;
@@ -2435,11 +2478,23 @@ P2Atom P2Asm::str_const(const QString& str)
         } else if (ch == str_escape) {
             escaped = true;
         } else {
-            atom.append(P2Atom::Byte, static_cast<p2_BYTE>(ch.toLatin1()));
+            atom.append_uint(P2Atom::Byte, static_cast<p2_BYTE>(ch.toLatin1()));
         }
     }
 
     return atom;
+}
+
+/**
+ * @brief Convert a string of decimal digits into an unsigned value
+ * @param str decimal digits
+ * @return P2Atom value of decimal digits in str
+ */
+P2Atom P2Asm::real_const(const QString& str)
+{
+    QString num = str;
+    num.remove(chr_skip_digit);
+    return P2Atom(static_cast<qreal>(num.toDouble()));
 }
 
 /**
@@ -2503,17 +2558,17 @@ QString P2Asm::find_locsym(Section sect, const QString& local)
  * @param str string for the constant
  * @param atom atom value of the constant
  */
-void P2Asm::add_const_symbol(const QString& pfx, const QString& str, const P2Atom& atom)
+void P2Asm::add_const_symbol(const QString& pfx, const P2Word& word, const P2Atom& atom)
 {
     QString symbol = QString("%1%2")
                      .arg(pfx)
-                     .arg(str.toUpper());
+                     .arg(word.str().toUpper());
     if (m_symbols->contains(symbol)) {
         m_symbols->set_atom(symbol, atom);
     } else {
         m_symbols->insert(P2Symbol(symbol, atom));
     }
-    m_symbols->add_reference(symbol, m_lineno);
+    m_symbols->add_reference(m_lineno, symbol, word);
 }
 
 /**
@@ -2527,11 +2582,10 @@ P2Atom P2Asm::parse_atom(int level)
     if (!skip_comments())
         return atom;
 
-    P2Word word = m_words.value(m_idx);
+    const P2Word& word = curr_word();
     QString str = word.str();
-    p2_token_e tok = word.tok();
 
-    switch (tok) {
+    switch (word.tok()) {
     case t__LPAREN:
         // precedence 0
         DEBUG_EXPR(" atom lparen: %s", qPrintable(str));
@@ -2573,7 +2627,7 @@ P2Atom P2Asm::parse_atom(int level)
                 P2Symbol sym = m_symbols->symbol(symbol);
                 atom = sym.value<P2Atom>();
                 DEBUG_EXPR(" atom found locsym: %s = %u", qPrintable(symbol), atom.to_long());
-                m_symbols->add_reference(symbol, m_lineno);
+                m_symbols->add_reference(m_lineno, symbol, word);
             } else {
                 DEBUG_EXPR(" atom undefined locsym: %s", qPrintable(symbol));
             }
@@ -2589,7 +2643,7 @@ P2Atom P2Asm::parse_atom(int level)
                 atom.set_type(P2Atom::PC);
                 sym.set_atom(atom);
                 DEBUG_EXPR(" atom found symbol: %s = %u", qPrintable(symbol), atom.to_long());
-                m_symbols->add_reference(symbol, m_lineno);
+                m_symbols->add_reference(m_lineno, symbol, word);
             } else {
                 DEBUG_EXPR(" atom undefined symbol: %s", qPrintable(symbol));
             }
@@ -2599,85 +2653,91 @@ P2Atom P2Asm::parse_atom(int level)
     case t_bin_const:
         DEBUG_EXPR(" atom bin const: %s", qPrintable(str));
         atom = bin_const(str);
-        add_const_symbol(p2_prefix_bin_const, str, atom);
+        add_const_symbol(p2_prefix_bin_const, word, atom);
         break;
 
     case t_byt_const:
         DEBUG_EXPR(" atom byt const: %s", qPrintable(str));
         atom = byt_const(str);
-        add_const_symbol(p2_prefix_byt_const, str, atom);
+        add_const_symbol(p2_prefix_byt_const, word, atom);
         break;
 
     case t_oct_const:
         DEBUG_EXPR(" atom oct const: %s", qPrintable(str));
         atom = oct_const(str);
-        add_const_symbol(p2_prefix_oct_const, str, atom);
+        add_const_symbol(p2_prefix_oct_const, word, atom);
         break;
 
     case t_dec_const:
         DEBUG_EXPR(" atom dec const: %s", qPrintable(str));
         atom = dec_const(str);
-        add_const_symbol(p2_prefix_dec_const, str, atom);
+        add_const_symbol(p2_prefix_dec_const, word, atom);
         break;
 
     case t_hex_const:
         DEBUG_EXPR(" atom hex const: %s", qPrintable(str));
         atom = hex_const(str);
-        add_const_symbol(p2_prefix_hex_const, str, atom);
+        add_const_symbol(p2_prefix_hex_const, word, atom);
         break;
 
-    case t_string:
+    case t_str_const:
         DEBUG_EXPR(" atom str const: %s", qPrintable(str));
         atom = str_const(str);
-        add_const_symbol(p2_prefix_str_const, str, atom);
+        add_const_symbol(p2_prefix_str_const, word, atom);
+        break;
+
+    case t_real_const:
+        DEBUG_EXPR(" atom real const: %s", qPrintable(str));
+        atom = str_const(str);
+        add_const_symbol(p2_prefix_real_const, word, atom);
         break;
 
     case t_DIRA:
         DEBUG_EXPR(" atom DIRA: %s", qPrintable(str));
         atom.set(P2Atom::Long, offs_DIRA);
-        add_const_symbol(p2_prefix_lut_const, str, atom);
+        add_const_symbol(p2_prefix_lut_const, word, atom);
         break;
 
     case t_DIRB:
         DEBUG_EXPR(" atom DIRB: %s", qPrintable(str));
         atom.set(P2Atom::Long, offs_DIRB);
-        add_const_symbol(p2_prefix_lut_const, str, atom);
+        add_const_symbol(p2_prefix_lut_const, word, atom);
         break;
 
     case t_INA:
         DEBUG_EXPR(" atom INA: %s", qPrintable(str));
         atom.set(P2Atom::Long, offs_INA);
-        add_const_symbol(p2_prefix_lut_const, str, atom);
+        add_const_symbol(p2_prefix_lut_const, word, atom);
         break;
 
     case t_INB:
         DEBUG_EXPR(" atom INB: %s", qPrintable(str));
         atom.set(P2Atom::Long, offs_INB);
-        add_const_symbol(p2_prefix_lut_const, str, atom);
+        add_const_symbol(p2_prefix_lut_const, word, atom);
         break;
 
     case t_OUTA:
         DEBUG_EXPR(" atom OUTA: %s", qPrintable(str));
         atom.set(P2Atom::Long, offs_OUTA);
-        add_const_symbol(p2_prefix_lut_const, str, atom);
+        add_const_symbol(p2_prefix_lut_const, word, atom);
         break;
 
     case t_OUTB:
         DEBUG_EXPR(" atom OUTB: %s", qPrintable(str));
         atom.set(P2Atom::Long, offs_OUTB);
-        add_const_symbol(p2_prefix_lut_const, str, atom);
+        add_const_symbol(p2_prefix_lut_const, word, atom);
         break;
 
     case t_PA:
         DEBUG_EXPR(" atom PA: %s", qPrintable(str));
         atom.set(P2Atom::Long, offs_PA);
-        add_const_symbol(p2_prefix_lut_const, str, atom);
+        add_const_symbol(p2_prefix_lut_const, word, atom);
         break;
 
     case t_PB:
         DEBUG_EXPR(" atom PB: %s", qPrintable(str));
         atom.set(P2Atom::Long, offs_PB);
-        add_const_symbol(p2_prefix_lut_const, str, atom);
+        add_const_symbol(p2_prefix_lut_const, word, atom);
         break;
 
     case t_PTRA:
@@ -2687,7 +2747,7 @@ P2Atom P2Asm::parse_atom(int level)
     case t_PTRA_predec:
         DEBUG_EXPR(" atom PTRA: %s", qPrintable(str));
         atom.set(P2Atom::Long, offs_PTRA);
-        add_const_symbol(p2_prefix_lut_const, QStringLiteral("PTRA"), atom);
+        add_const_symbol(p2_prefix_lut_const, word, atom);
         break;
 
     case t_PTRB:
@@ -2697,15 +2757,16 @@ P2Atom P2Asm::parse_atom(int level)
     case t_PTRB_predec:
         DEBUG_EXPR(" atom PTRB: %s", qPrintable(str));
         atom.set(P2Atom::Long, offs_PTRB);
-        add_const_symbol(p2_prefix_lut_const, QStringLiteral("PTRB"), atom);
+        add_const_symbol(p2_prefix_lut_const, word, atom);
         break;
 
     case t__DOLLAR:
         DEBUG_EXPR(" atom current PC: %s", qPrintable(str));
-        atom.set(P2Atom::Long, m_curr_PC);
+        atom.set(P2Atom::Long, m_ORG);
         break;
 
     default:
+        DEBUG_EXPR(" not atomic: %s (%s)", qPrintable(str), qPrintable(Token.type_names(word.tok()).join(QStringLiteral(", "))));
         --m_idx;
     }
 
@@ -2715,7 +2776,7 @@ P2Atom P2Asm::parse_atom(int level)
 }
 
 /**
- * @brief Parse an an expression of primary operations (precedence 1)
+ * @brief Parse an expression of primary operations
  * @param str string to parse
  * @return P2Atom containing the result
  */
@@ -2725,50 +2786,45 @@ P2Atom P2Asm::parse_primary(int level)
     if (!skip_comments())
         return atom;
 
-    bool do_break = false;
-    bool do_inc = false;
-    bool do_dec = false;
+    p2_LONG inc_by = 0;
+    p2_LONG dec_by = 0;
 
-    P2Word word = m_words.value(m_idx);
-    QString str = word.str();
-    p2_token_e op = word.tok();
-
+    p2_token_e op = curr_tok();
     while (Token.is_type(op, tm_primary)) {
+
         switch (op) {
         case t__INC:    // ++
-                DEBUG_EXPR(" primary inc: %s", qPrintable(str));
-                do_inc = true;
+            DEBUG_EXPR(" primary inc: %s", qPrintable(curr_str()));
+            inc_by++;
             break;
 
         case t__DEC:    // --
-                DEBUG_EXPR(" primary dec: %s", qPrintable(str));
-                do_dec = true;
+            DEBUG_EXPR(" primary dec: %s", qPrintable(curr_str()));
+            dec_by--;
             break;
 
         default:
-            do_break = true;
+            Q_ASSERT_X(false, "primary", "Invalid op");
+            return atom;
         }
 
-        if (do_break)
-            break;
-        if (++m_idx >= m_cnt)
-            break;
-        word = m_words.value(m_idx);
-        str = word.str();
-        op = word.tok();
+        if (!skip_comments())
+            return atom;
+
+        op = curr_tok();
     }
 
     atom = parse_atom(level);
 
     // apply primary ops
-    atom.unary_dec(do_dec);
-    atom.unary_inc(do_inc);
+    atom.unary_dec(dec_by);
+    atom.unary_inc(inc_by);
 
     return atom;
 }
 
 /**
- * @brief Parse an an expression of unary operations (precedence 2)
+ * @brief Parse an expression of unary operations
  * @param str string to parse
  * @return P2Atom containing the result
  */
@@ -2782,29 +2838,31 @@ P2Atom P2Asm::parse_unary(int level)
     bool do_complement2 = false;
     bool do_complement1 = false;
 
-    P2Word word = m_words.value(m_idx);
-    QString str = word.str();
-    p2_token_e op = word.tok();
-
+    p2_token_e op = curr_tok();
     while (Token.is_type(op, tm_unary)) {
+
         switch (op) {
         case t__NEG:
-            DEBUG_EXPR(" unary neg: %s", qPrintable(str));
+            DEBUG_EXPR(" unary neg: %s", qPrintable(curr_str()));
             do_logical_not = !do_logical_not;
+            next();
             break;
 
         case t__NOT:
-            DEBUG_EXPR(" unary not: %s", qPrintable(str));
+            DEBUG_EXPR(" unary not: %s", qPrintable(curr_str()));
             do_complement1 = !do_complement1;
+            next();
             break;
 
         case t__MINUS:
-            DEBUG_EXPR(" unary minus: %s", qPrintable(str));
+            DEBUG_EXPR(" unary minus: %s", qPrintable(curr_str()));
             do_complement2 = !do_complement2;
+            next();
             break;
 
         case t__PLUS:
-            DEBUG_EXPR(" unary plus: %s", qPrintable(str));
+            DEBUG_EXPR(" unary plus: %s", qPrintable(curr_str()));
+            next();
             break;
 
         default:
@@ -2814,9 +2872,8 @@ P2Atom P2Asm::parse_unary(int level)
 
         if (!skip_comments())
             return atom;
-        word = m_words.value(m_idx);
-        str = word.str();
-        op = word.tok();
+
+        op = curr_tok();
     }
 
     atom = parse_primary(level);
@@ -2830,211 +2887,234 @@ P2Atom P2Asm::parse_unary(int level)
 }
 
 /**
- * @brief Parse an an expression of multiply operations (precedence 3)
+ * @brief Parse an expression of multiply operations
  * @param str string to parse
  * @return P2Atom containing the result
  */
 P2Atom P2Asm::parse_mulops(int level)
 {
     P2Atom lvalue = parse_unary(level);
+    P2Atom rvalue;
     if (!skip_comments())
         return lvalue;
 
-    P2Word word = m_words.value(m_idx);
-    QString str = word.str();
-    p2_token_e op = word.tok();
-
+    p2_token_e op = curr_tok();
     while (Token.is_type(op, tm_mulop)) {
-        m_idx++;
 
-        P2Atom rvalue = parse_unary(level);
+        if (!next()) {
+            DEBUG_EXPR(" mssing rvalue (%s)", "mulops");
+            m_errors += tr("End of line in expression (%1)")
+                      .arg(tr("mulops"));
+            emit Error(m_pass, m_lineno, m_errors.last());
+            break;
+        }
+
+        rvalue = parse_unary(level);
         if (!rvalue.isValid()) {
-            DEBUG_EXPR(" invalid rvalue: %s", qPrintable(str));
-            m_errors += tr("Invalid character in expression (mulops): %1")
-                       .arg(str);
+            DEBUG_EXPR(" invalid rvalue: %s", qPrintable(curr_str()));
+            m_errors += tr("Invalid character in expression (%1): %2")
+                        .arg(tr("mulops"))
+                        .arg(curr_str());
             emit Error(m_pass, m_lineno, m_errors.last());
             break;
         }
 
         switch (op) {
         case t__MUL:
-            DEBUG_EXPR(" mulop mul: %u %s %u", lvalue.to_long(), qPrintable(str), rvalue.to_long());
+            DEBUG_EXPR(" mulop mul: %u %s %u", lvalue.to_long(), qPrintable(curr_str()), rvalue.to_long());
             lvalue *= rvalue;
             break;
         case t__DIV:
-            DEBUG_EXPR(" mulop div: %u %s %u", lvalue.to_long(), qPrintable(str), rvalue.to_long());
+            DEBUG_EXPR(" mulop div: %u %s %u", lvalue.to_long(), qPrintable(curr_str()), rvalue.to_long());
             lvalue /= rvalue;
             break;
         case t__MOD:
-            DEBUG_EXPR(" mulop mod: %u %s %u", lvalue.to_long(), qPrintable(str), rvalue.to_long());
+            DEBUG_EXPR(" mulop mod: %u %s %u", lvalue.to_long(), qPrintable(curr_str()), rvalue.to_long());
             lvalue %= rvalue;
             break;
         default:
             Q_ASSERT_X(false, "mulops", "invalid op");
             return lvalue;
         }
+
         if (!skip_comments())
-            return lvalue;
-        word = m_words.value(m_idx);
-        str = word.str();
-        op = word.tok();
+            break;
+
+        op = curr_tok();
     }
 
     return lvalue;
 }
 
 /**
- * @brief Parse an an expression of shift operations (precedence 5)
+ * @brief Parse an expression of shift operations
  * @param str string to parse
  * @return P2Atom containing the result
  */
 P2Atom P2Asm::parse_shiftops(int level)
 {
     P2Atom lvalue = parse_mulops(level);
+    P2Atom rvalue;
     if (!skip_comments())
         return lvalue;
 
-    P2Word word = m_words.value(m_idx);
-    QString str = word.str();
-    p2_token_e op = word.tok();
-
+    p2_token_e op = curr_tok();
     while (Token.is_type(op, tm_shiftop)) {
-        m_idx++;
 
-        P2Atom rvalue = parse_mulops(level);
+        if (!next()) {
+            DEBUG_EXPR(" mssing rvalue (%s)", "shiftops");
+            m_errors += tr("End of line in expression (%1)")
+                      .arg(tr("shiftops"));
+            emit Error(m_pass, m_lineno, m_errors.last());
+            break;
+        }
+
+        rvalue = parse_mulops(level);
         if (!rvalue.isValid()) {
-            DEBUG_EXPR(" invalid rvalue: %s", qPrintable(str));
-            m_errors += tr("Invalid character in expression (shiftops): %1")
-                      .arg(str);
+            DEBUG_EXPR(" invalid rvalue: %s", qPrintable(curr_str()));
+            m_errors += tr("Invalid character in expression (%1): %2")
+                        .arg(tr("shiftops"))
+                        .arg(curr_str());
             emit Error(m_pass, m_lineno, m_errors.last());
             break;
         }
 
         switch (op) {
         case t__SHL:
-            DEBUG_EXPR(" shiftop shl: %u %s %u", lvalue.to_long(), qPrintable(str), rvalue.to_long());
+            DEBUG_EXPR(" shiftop shl: %u %s %u", lvalue.to_long(), qPrintable(curr_str()), rvalue.to_long());
             lvalue <<= rvalue;
             break;
         case t__SHR:
-            DEBUG_EXPR(" shiftop shr: %u %s %u", lvalue.to_long(), qPrintable(str), rvalue.to_long());
+            DEBUG_EXPR(" shiftop shr: %u %s %u", lvalue.to_long(), qPrintable(curr_str()), rvalue.to_long());
             lvalue >>= rvalue;
             break;
         default:
             Q_ASSERT_X(false, "shiftops", "Invalid op");
             return lvalue;
         }
+
         if (!skip_comments())
-            return lvalue;
-        word = m_words.value(m_idx);
-        str = word.str();
-        op = word.tok();
+            break;
+
+        op = curr_tok();
     }
     return lvalue;
 }
 
 /**
- * @brief Parse an an expression of add/subtract operations (precedence 4)
+ * @brief Parse an expression of add/subtract operations
  * @param str string to parse
  * @return P2Atom containing the result
  */
 P2Atom P2Asm::parse_addops(int level)
 {
     P2Atom lvalue = parse_shiftops(level);
+    P2Atom rvalue;
     if (!skip_comments())
         return lvalue;
 
-    P2Word word = m_words.value(m_idx);
-    QString str = word.str();
-    p2_token_e op = word.tok();
-
+    p2_token_e op = curr_tok();
     while (Token.is_type(op, tm_addop)) {
-        m_idx++;
 
-        P2Atom rvalue = parse_shiftops(level);
+        if (!next()) {
+            DEBUG_EXPR(" mssing rvalue (%s)", "addops");
+            m_errors += tr("End of line in expression (%1)")
+                      .arg(tr("addops"));
+            emit Error(m_pass, m_lineno, m_errors.last());
+            break;
+        }
+
+        rvalue = parse_shiftops(level);
         if (!rvalue.isValid()) {
-            DEBUG_EXPR(" invalid rvalue: %s", qPrintable(str));
-            m_errors += tr("Invalid character in expression (addops): %1")
-                      .arg(str);
+            DEBUG_EXPR(" invalid rvalue %s", qPrintable(curr_str()));
+            m_errors += tr("Invalid character in expression (%1): %2")
+                        .arg(tr("addops"))
+                        .arg(curr_str());
             emit Error(m_pass, m_lineno, m_errors.last());
             break;
         }
 
         switch (op) {
         case t__PLUS:
-            DEBUG_EXPR(" addop add: %u %s %u", lvalue.to_long(), qPrintable(str), rvalue.to_long());
+            DEBUG_EXPR(" addop add: %u %s %u", lvalue.to_long(), qPrintable(curr_str()), rvalue.to_long());
             lvalue += rvalue;
             break;
         case t__MINUS:
-            DEBUG_EXPR(" addop sub: %u %s %u", lvalue.to_long(), qPrintable(str), rvalue.to_long());
+            DEBUG_EXPR(" addop sub: %u %s %u", lvalue.to_long(), qPrintable(curr_str()), rvalue.to_long());
             lvalue -= rvalue;
             break;
         default:
             Q_ASSERT_X(false, "addops", "Invalid op");
             return lvalue;
         }
+
         if (!skip_comments())
-            return lvalue;
-        word = m_words.value(m_idx);
-        str = word.str();
-        op = word.tok();
+            break;
+
+        op = curr_tok();
     }
     return lvalue;
 }
 
 /**
- * @brief Parse an an expression of binary operations (precedence 8, 9, 10)
+ * @brief Parse an expression of binary operations
  * @param str string to parse
  * @return P2Atom containing the result
  */
 P2Atom P2Asm::parse_binops(int level)
 {
     P2Atom lvalue = parse_addops(level);
+    P2Atom rvalue;
+
     if (!skip_comments())
         return lvalue;
 
-    P2Word word = m_words.value(m_idx);
-    QString str = word.str();
-    p2_token_e op = word.tok();
-
+    p2_token_e op = curr_tok();
     while (Token.is_type(op, tm_binop)) {
-        m_idx++;
-        if (t__REV == op) {
-            DEBUG_EXPR(" binop reverse: %s %u", qPrintable(str), lvalue.to_long());
-            lvalue.binary_rev();
-            return lvalue;
+        if (!next()) {
+            DEBUG_EXPR(" mssing rvalue (%s)", "binops");
+            m_errors += tr("End of line in expression (%1)")
+                      .arg(tr("binops"));
+            emit Error(m_pass, m_lineno, m_errors.last());
+            break;
         }
 
         P2Atom rvalue = parse_addops(level);
         if (!rvalue.isValid()) {
-            DEBUG_EXPR(" invalid rvalue: %s", qPrintable(str));
-            m_errors += tr("Invalid character in expression (binops): %1")
-                      .arg(str);
+            DEBUG_EXPR(" invalid rvalue: %s", qPrintable(curr_str()));
+            m_errors += tr("Invalid character in expression (%1): %2")
+                        .arg(tr("binops"))
+                        .arg(curr_str());
             emit Error(m_pass, m_lineno, m_errors.last());
             break;
         }
 
         switch (op) {
         case t__AND:
-            DEBUG_EXPR(" binop and: %u %s %u", lvalue.to_long(), qPrintable(str), rvalue.to_long());
+            DEBUG_EXPR(" binop and: %u %s %u", lvalue.to_long(), qPrintable(curr_str()), rvalue.to_long());
             lvalue &= rvalue;
             break;
         case t__XOR:
-            DEBUG_EXPR(" binop xor: %u %s %u", lvalue.to_long(), qPrintable(str), rvalue.to_long());
+            DEBUG_EXPR(" binop xor: %u %s %u", lvalue.to_long(), qPrintable(curr_str()), rvalue.to_long());
             lvalue ^= rvalue;
             break;
         case t__OR:
-            DEBUG_EXPR(" binop or: %u %s %u", lvalue.to_long(), qPrintable(str), rvalue.to_long());
+            DEBUG_EXPR(" binop or: %u %s %u", lvalue.to_long(), qPrintable(curr_str()), rvalue.to_long());
             lvalue |= rvalue;
+            break;
+        case t__REV:
+            DEBUG_EXPR(" binop or: %u %s %u", lvalue.to_long(), qPrintable(curr_str()), rvalue.to_long());
+            // lvalue.reverse(rvalue);
             break;
         default:
             Q_ASSERT_X(false, "binops", "Invalid op");
             return lvalue;
         }
+
         if (!skip_comments())
             return lvalue;
-        word = m_words.value(m_idx);
-        str = word.str();
-        op = word.tok();
+
+        op = curr_tok();
     }
     return lvalue;
 }
@@ -3049,30 +3129,29 @@ P2Atom P2Asm::parse_relative(bool& rel, int level)
     if (!skip_comments())
         return atom;
 
-    P2Word word = m_words.value(m_idx);
-    QString str = word.str();
-    p2_token_e tok = word.tok();
+    p2_token_e tok = curr_tok();
 
     while (Token.is_type(tok, tm_relative)) {
         switch (tok) {
         case t__RELATIVE:
-            DEBUG_EXPR(" relative: %s", qPrintable(str));
+            DEBUG_EXPR(" relative: %s", qPrintable(curr_str()));
             rel = true;
-            m_idx++;
+            next();
             break;
         case t__RELATIVE_HUB:
-            DEBUG_EXPR(" relative HUB: %s", qPrintable(str));
+            DEBUG_EXPR(" relative HUB: %s", qPrintable(curr_str()));
             rel = true;
-            m_idx++;
+            next();
             break;
         default:
-            break;
+            Q_ASSERT_X(false, "binops", "Invalid op");
+            return parse_binops(level);
         }
+
         if (!skip_comments())
             return atom;
-        word = m_words.value(m_idx);
-        str = word.str();
-        tok = word.tok();
+
+        tok = curr_tok();
     }
 
     return parse_binops(level);
@@ -3092,32 +3171,29 @@ P2Atom P2Asm::parse_expression(imm_to_e imm_to, int level)
     if (!skip_comments())
         return atom;
 
-    P2Word word = m_words.value(m_idx);
-    QString str = word.str();
-    p2_token_e tok = word.tok();
     bool imm = false;
     bool rel = false;
+    p2_token_e tok = curr_tok();
 
     while (Token.is_type(tok, tm_immediate)) {
         switch (tok) {
         case t__IMMEDIATE:
-            DEBUG_EXPR(" expr immediate: %s", qPrintable(str));
+            DEBUG_EXPR(" expr immediate: %s", qPrintable(curr_str()));
             imm = true;
-            m_idx++;
+            next();
             break;
         case t__IMMEDIATE2:
-            DEBUG_EXPR(" expr immediate2: %s", qPrintable(str));
+            DEBUG_EXPR(" expr immediate2: %s", qPrintable(curr_str()));
             imm = true;
-            m_idx++;
+            next();
             break;
         default:
             break;
         }
+
         if (!skip_comments())
             return atom;
-        word = m_words.value(m_idx);
-        str = word.str();
-        tok = word.tok();
+        tok = curr_tok();
     }
 
     atom = parse_relative(rel, level);
@@ -3128,10 +3204,10 @@ P2Atom P2Asm::parse_expression(imm_to_e imm_to, int level)
         p2_LONG addr = atom.to_long();
         if (addr < LUT_ADDR0) {
             DEBUG_EXPR(" COG offset: %u", atom.to_long());
-            base = m_curr_PC / 4;
+            base = m_ORG / 4;
         } else if (addr < HUB_ADDR0) {
             DEBUG_EXPR(" LUT offset: %u", atom.to_long());
-            base = m_curr_PC / 4;
+            base = m_ORG / 4;
         } else{
             base = COG_SIZE + LUT_SIZE;
             DEBUG_EXPR(" HUB offset: %u", atom.to_long());
@@ -3144,20 +3220,20 @@ P2Atom P2Asm::parse_expression(imm_to_e imm_to, int level)
     // Set immediate flag, if specified
     switch (imm_to) {
     case immediate_im:
-        DEBUG_EXPR(" expr set im: %s", imm ? "true" : "false");
+        DEBUG_EXPR(" expr set im: %d", imm & 1);
         m_IR.set_im(imm);
         break;
     case immediate_wz:
-        DEBUG_EXPR(" expr set wz: %s", imm ? "true" : "false");
+        DEBUG_EXPR(" expr set wz: %d", imm & 1);
         m_IR.set_wz(imm);
         break;
     case immediate_wc:
-        DEBUG_EXPR(" expr set wc: %s", imm ? "true" : "false");
+        DEBUG_EXPR(" expr set wc: %d", imm & 1);
         m_IR.set_wc(imm);
         break;
     default:
         if (imm) {
-            DEBUG_EXPR(" expr ignore immediate: %s", imm ? "true" : "false");
+            DEBUG_EXPR(" expr ignore immediate: %d", imm & 1);
         }
         break;
     }
@@ -3165,27 +3241,28 @@ P2Atom P2Asm::parse_expression(imm_to_e imm_to, int level)
     while (m_idx < m_cnt) {
         if (!skip_comments())
             break;
-        word = m_words.value(m_idx);
-        tok = word.tok();
+
+        tok = curr_tok();
 
         switch (tok) {
         case t__COMMA:
         case t__LPAREN:
         case t__LBRACKET:
-            DEBUG_EXPR(" expr **** terminal: %s", qPrintable(word.str()));
+            DEBUG_EXPR(" expr **** terminal: %s", qPrintable(curr_str()));
             break;
 
         case t__RPAREN:
         case t__RBRACKET:
-            DEBUG_EXPR(" expr **** terminal: %s", qPrintable(word.str()));
-            m_idx++;
+            DEBUG_EXPR(" expr **** terminal: %s", qPrintable(curr_str()));
+            next();
             break;
 
         default:
-            DEBUG_EXPR(" expr **** non-terminal: %s", qPrintable(word.str()));
+            DEBUG_EXPR(" expr **** non-terminal: %s", qPrintable(curr_str()));
             // m_idx++;
             break;
         }
+
         if (!Token.is_type(tok, tm_comment))
             break;
     }
@@ -3333,7 +3410,7 @@ void P2Asm::optional_comma()
  *
  * @return true on success, or false on error
  */
-bool P2Asm::optional_wcz()
+bool P2Asm::optional_WCZ()
 {
     while (skip_comments()) {
         p2_token_e tok = m_words.value(m_idx).tok();
@@ -3370,7 +3447,7 @@ bool P2Asm::optional_wcz()
  *
  * @return true on success, or false on error
  */
-bool P2Asm::optional_wc()
+bool P2Asm::optional_WC()
 {
     if (skip_comments()) {
         p2_token_e tok = m_words.value(m_idx).tok();
@@ -3395,7 +3472,7 @@ bool P2Asm::optional_wc()
  *
  * @return true on success, or false on error
  */
-bool P2Asm::optional_wz()
+bool P2Asm::optional_WZ()
 {
     if (skip_comments()) {
         p2_token_e tok = m_words.value(m_idx).tok();
@@ -3413,6 +3490,360 @@ bool P2Asm::optional_wz()
         }
     }
     return true;
+}
+
+/**
+ * @brief Expect no more parameters after instruction
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_INST()
+{
+    return end_of_line();
+}
+
+/**
+ * @brief Expect parameters for D and {#}S
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_D_IM_S()
+{
+    P2Atom dst = parse_expression();
+    if (!m_IR.set_dst(dst))
+        check_dst_src();
+
+    if (!parse_comma())
+        return false;
+
+    P2Atom src = parse_expression(immediate_im);
+    if (!m_IR.set_src(src, immediate_im))
+        check_dst_src();
+
+    return end_of_line();
+}
+
+/**
+ * @brief Expect parameters for D and optional WC, WZ, or WCZ
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_D_WCZ()
+{
+    P2Atom dst = parse_expression();
+    if (!m_IR.set_dst(dst))
+        check_dst_src();
+
+    optional_WCZ();
+
+    return end_of_line();
+}
+
+/**
+ * @brief Expect optional WC, WZ, or WCZ
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_WCZ()
+{
+    optional_WCZ();
+    return end_of_line();
+}
+
+/**
+ * @brief Expect parameters for D
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_D()
+{
+    P2Atom dst = parse_expression();
+    if (!m_IR.set_dst(dst))
+        check_dst_src();
+    return end_of_line();
+}
+
+/**
+ * @brief Expect parameters for {#}D setting WZ for immediate
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_WZ_D()
+{
+    P2Atom dst = parse_expression(immediate_wz);
+    if (!m_IR.set_dst(dst, immediate_wz))
+        check_dst_src();
+    return end_of_line();
+}
+
+/**
+ * @brief Expect parameters for {#}D
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_IM_D()
+{
+    P2Atom dst = parse_expression(immediate_im);
+    if (!m_IR.set_dst(dst, immediate_im))
+        check_dst_src();
+    return end_of_line();
+}
+
+/**
+ * @brief Expect parameters for {#}D, and optional WC, WZ, or WCZ
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_IM_D_WCZ()
+{
+    P2Atom dst = parse_expression(immediate_im);
+    if (!m_IR.set_dst(dst, immediate_im))
+        check_dst_src();
+    optional_WCZ();
+    return end_of_line();
+}
+
+/**
+ * @brief Expect parameters for {#}D, and optional WC
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_IM_D_WC()
+{
+    P2Atom dst = parse_expression(immediate_im);
+    if (!m_IR.set_dst(dst, immediate_im))
+        check_dst_src();
+
+    optional_WC();
+    return end_of_line();
+}
+
+/**
+ * @brief Expect parameters for D, and {#}S, and optional WC, WZ, or WCZ
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_D_IM_S_WCZ()
+{
+    P2Atom dst = parse_expression();
+    if (!m_IR.set_dst(dst))
+        check_dst_src();
+
+    if (!parse_comma())
+        return false;
+
+    P2Atom src = parse_expression(immediate_im);
+    if (!m_IR.set_src(src, immediate_im))
+        check_dst_src();
+
+    optional_WCZ();
+    return end_of_line();
+}
+
+/**
+ * @brief Expect parameters for D, and {#}S, and optional WC
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_D_IM_S_WC()
+{
+    P2Atom dst = parse_expression();
+    if (!m_IR.set_dst(dst))
+        check_dst_src();
+
+    if (!parse_comma())
+        return false;
+
+    P2Atom src = parse_expression(immediate_im);
+    if (!m_IR.set_src(src, immediate_im))
+        check_dst_src();
+
+    optional_WC();
+    return end_of_line();
+}
+
+/**
+ * @brief Expect parameters for D, and {#}S, and optional WZ
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_D_IM_S_WZ()
+{
+    P2Atom dst = parse_expression();
+    if (!m_IR.set_dst(dst))
+        check_dst_src();
+
+    if (!parse_comma())
+        return false;
+
+    P2Atom src = parse_expression(immediate_im);
+    if (!m_IR.set_src(src, immediate_im))
+        check_dst_src();
+
+    optional_WZ();
+    return end_of_line();
+}
+
+/**
+ * @brief Expect parameters for {#}D, and {#}S
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_WZ_D_IM_S()
+{
+    P2Atom dst = parse_expression(immediate_wz);
+    if (!m_IR.set_dst(dst, immediate_wz))
+        check_dst_src();
+
+    if (!parse_comma())
+        return false;
+
+    P2Atom src = parse_expression(immediate_im);
+    if (!m_IR.set_src(src, immediate_im))
+        check_dst_src();
+
+    return end_of_line();
+}
+
+/**
+ * @brief Expect parameters for D, and {#}S, and #N (0 … 7)
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_D_IM_S_NNN(uint max)
+{
+    P2Atom dst = parse_expression();
+    if (!m_IR.set_dst(dst))
+        check_dst_src();
+
+    if (!parse_comma())
+        return false;
+
+    P2Atom src = parse_expression(immediate_im);
+    if (!m_IR.set_src(src, immediate_im))
+        check_dst_src();
+
+    if (parse_comma()) {
+        if (m_idx < m_cnt) {
+            P2Atom n = parse_expression();
+            if (n.isEmpty()) {
+                m_errors += tr("Expected immediate #n");
+                emit Error(m_pass, m_lineno, m_errors.last());
+                return false;
+            }
+            if (n.to_long() > max) {
+                m_errors += tr("Immediate #n not in 0-%1 (%2)")
+                          .arg(max)
+                          .arg(n.to_long());
+                emit Error(m_pass, m_lineno, m_errors.last());
+                return false;
+            }
+            p2_LONG opcode = static_cast<p2_LONG>(n.to_long() & max) << 18;
+            m_IR.u.opcode |= opcode;
+        } else {
+            m_errors += tr("Missing immediate #n");
+            emit Error(m_pass, m_lineno, m_errors.last());
+            return false;
+        }
+    } else {
+        // Default is 0
+    }
+    return end_of_line();
+}
+
+/**
+ * @brief Expect parameters for {#}S
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_IM_S()
+{
+    P2Atom src = parse_expression(immediate_im);
+    if (!m_IR.set_src(src, immediate_im))
+        check_dst_src();
+
+    return end_of_line();
+}
+
+/**
+ * @brief Expect parameters for {#}S, and optional WC
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_IM_S_WCZ()
+{
+    P2Atom src = parse_expression(immediate_im);
+    if (!m_IR.set_src(src, immediate_im))
+        check_dst_src();
+
+    optional_WC();
+    return end_of_line();
+}
+
+
+/**
+ * @brief Expect parameters for #AAAAAAAAAAAA (19 bit address for CALL/CALLA/CALLB/LOC)
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_PTRx_PC_ABS()
+{
+    p2_token_e dst = m_words.value(m_idx).tok();
+    switch (dst) {
+    case t_PA:
+        break;
+    case t_PB:
+        m_IR.set_wz();
+        break;
+    case t_PTRA:
+        m_IR.set_wc();
+        break;
+    case t_PTRB:
+        m_IR.set_wcz();
+        break;
+    default:
+        m_errors += tr("Invalid pointer parameter: %1")
+                  .arg(m_source[m_lineno].mid(m_words.value(m_idx).pos()));
+        emit Error(m_pass, m_lineno, m_errors.last());
+        return false;
+    }
+    m_idx++;
+    if (!parse_comma())
+        return false;
+
+    P2Atom atom = parse_expression();
+    p2_LONG addr = atom.to_long();
+    m_IR.u.opcode |= addr & A20MASK;
+
+    return end_of_line();
+}
+
+/**
+ * @brief Expect parameters for #AAAAAAAAAAAA (19 bit address for CALL/CALLA/CALLB)
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_PC_ABS()
+{
+    P2Atom atom = parse_expression();
+    p2_LONG addr = atom.to_long();
+    m_IR.u.opcode |= addr & A20MASK;
+
+    return end_of_line();
+}
+
+/**
+ * @brief Expect parameters for #AAAAAAAAAAAA (23 bit address for AUGD/AUGS)
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_IMM23()
+{
+    P2Atom atom = parse_expression();
+    p2_LONG addr = atom.to_long();
+    m_IR.set_imm23(addr);
+
+    return end_of_line();
 }
 
 /**
@@ -3442,7 +3873,7 @@ bool P2Asm::asm_alignw()
 {
     m_idx++;
     m_IR.as_IR = false;
-    m_advance = (m_curr_PC & ~1u) + 2u - m_curr_PC;
+    m_advance = (m_ORG & ~1u) + 2u - m_ORG;
     return end_of_line();
 }
 
@@ -3455,7 +3886,7 @@ bool P2Asm::asm_alignl()
 {
     m_idx++;
     m_IR.as_IR = false;
-    m_advance = (m_curr_PC & ~3u) + 4u - m_curr_PC;
+    m_advance = (m_ORG & ~3u) + 4u - m_ORG;
     return end_of_line();
 }
 
@@ -3470,14 +3901,14 @@ bool P2Asm::asm_org()
     m_advance = 0;      // Don't advance PC
     m_IR.as_IR = false;
     P2Atom atom = parse_expression();
-    p2_LONG value = atom.isEmpty() ? m_last_PC : 4 * atom.to_long();
+    p2_LONG value = atom.isEmpty() ? m_ORG_MAX : 4 * atom.to_long();
     if (value >= HUB_ADDR0) {
         m_errors += tr("COG origin exceeds limit ($%1)")
                     .arg(value, 0, 16, QChar('0'));
         emit Error(m_pass, m_lineno, m_errors.last());
-        value = m_last_PC;
+        value = m_ORG_MAX;
     }
-    m_curr_PC = value;
+    m_ORG = value;
     m_symbols->set_atom(m_symbol, value);
     return end_of_line();
 }
@@ -3518,7 +3949,7 @@ bool P2Asm::asm_fit()
     m_IR.as_IR = false;
     P2Atom atom = parse_expression();
     const p2_LONG fit = atom.isNull() ? HUB_ADDR0 : atom.to_long();
-    const p2_LONG PC = m_curr_PC / 4;
+    const p2_LONG PC = m_ORG / 4;
     if (fit < PC) {
         m_errors += tr("Code does not fit below $%1 (origin == $%2)")
                   .arg(fit, 0, 16)
@@ -3594,373 +4025,29 @@ bool P2Asm::asm_var()
 }
 
 /**
- * @brief Expect no more parameters after instruction
- *
- * @return true on success, or false on error
- */
-bool P2Asm::parse_inst()
-{
-    return end_of_line();
-}
-
-/**
- * @brief Expect parameters for D and {#}S
- *
- * @return true on success, or false on error
- */
-bool P2Asm::parse_d_imm_s()
-{
-    P2Atom dst = parse_expression();
-    if (!m_IR.set_dst(dst))
-        check_dst_src();
-
-    if (!parse_comma())
-        return false;
-
-    P2Atom src = parse_expression(immediate_im);
-    if (!m_IR.set_src(src, immediate_im))
-        check_dst_src();
-
-    return end_of_line();
-}
-
-/**
- * @brief Expect parameters for D and optional WC, WZ, or WCZ
- *
- * @return true on success, or false on error
- */
-bool P2Asm::parse_d_wcz()
-{
-    P2Atom dst = parse_expression();
-    if (!m_IR.set_dst(dst))
-        check_dst_src();
-
-    optional_wcz();
-
-    return end_of_line();
-}
-
-/**
- * @brief Expect optional WC, WZ, or WCZ
- *
- * @return true on success, or false on error
- */
-bool P2Asm::parse_cz()
-{
-    optional_wcz();
-    return end_of_line();
-}
-
-/**
- * @brief Expect parameters for D
- *
- * @return true on success, or false on error
- */
-bool P2Asm::parse_d()
-{
-    P2Atom dst = parse_expression();
-    if (!m_IR.set_dst(dst))
-        check_dst_src();
-    return end_of_line();
-}
-
-/**
- * @brief Expect parameters for {#}D setting WZ for immediate
- *
- * @return true on success, or false on error
- */
-bool P2Asm::parse_wz_d()
-{
-    P2Atom dst = parse_expression(immediate_wz);
-    if (!m_IR.set_dst(dst, immediate_wz))
-        check_dst_src();
-    return end_of_line();
-}
-
-/**
- * @brief Expect parameters for {#}D
- *
- * @return true on success, or false on error
- */
-bool P2Asm::parse_imm_d()
-{
-    P2Atom dst = parse_expression(immediate_im);
-    if (!m_IR.set_dst(dst, immediate_im))
-        check_dst_src();
-    return end_of_line();
-}
-
-/**
- * @brief Expect parameters for {#}D, and optional WC, WZ, or WCZ
- *
- * @return true on success, or false on error
- */
-bool P2Asm::parse_imm_d_wcz()
-{
-    P2Atom dst = parse_expression(immediate_im);
-    if (!m_IR.set_dst(dst, immediate_im))
-        check_dst_src();
-    optional_wcz();
-    return end_of_line();
-}
-
-/**
- * @brief Expect parameters for {#}D, and optional WC
- *
- * @return true on success, or false on error
- */
-bool P2Asm::parse_imm_d_wc()
-{
-    P2Atom dst = parse_expression(immediate_im);
-    if (!m_IR.set_dst(dst, immediate_im))
-        check_dst_src();
-
-    optional_wc();
-    return end_of_line();
-}
-
-/**
- * @brief Expect parameters for D, and {#}S, and optional WC, WZ, or WCZ
- *
- * @return true on success, or false on error
- */
-bool P2Asm::parse_d_imm_s_wcz()
-{
-    P2Atom dst = parse_expression();
-    if (!m_IR.set_dst(dst))
-        check_dst_src();
-
-    if (!parse_comma())
-        return false;
-
-    P2Atom src = parse_expression(immediate_im);
-    if (!m_IR.set_src(src, immediate_im))
-        check_dst_src();
-
-    optional_wcz();
-    return end_of_line();
-}
-
-/**
- * @brief Expect parameters for D, and {#}S, and optional WC
- *
- * @return true on success, or false on error
- */
-bool P2Asm::parse_d_imm_s_wc()
-{
-    P2Atom dst = parse_expression();
-    if (!m_IR.set_dst(dst))
-        check_dst_src();
-
-    if (!parse_comma())
-        return false;
-
-    P2Atom src = parse_expression(immediate_im);
-    if (!m_IR.set_src(src, immediate_im))
-        check_dst_src();
-
-    optional_wc();
-    return end_of_line();
-}
-
-/**
- * @brief Expect parameters for D, and {#}S, and optional WZ
- *
- * @return true on success, or false on error
- */
-bool P2Asm::parse_d_imm_s_wz()
-{
-    P2Atom dst = parse_expression();
-    if (!m_IR.set_dst(dst))
-        check_dst_src();
-
-    if (!parse_comma())
-        return false;
-
-    P2Atom src = parse_expression(immediate_im);
-    if (!m_IR.set_src(src, immediate_im))
-        check_dst_src();
-
-    optional_wz();
-    return end_of_line();
-}
-
-/**
- * @brief Expect parameters for {#}D, and {#}S
- *
- * @return true on success, or false on error
- */
-bool P2Asm::parse_wz_d_imm_s()
-{
-    P2Atom dst = parse_expression(immediate_wz);
-    if (!m_IR.set_dst(dst, immediate_wz))
-        check_dst_src();
-
-    if (!parse_comma())
-        return false;
-
-    P2Atom src = parse_expression(immediate_im);
-    if (!m_IR.set_src(src, immediate_im))
-        check_dst_src();
-
-    return end_of_line();
-}
-
-/**
- * @brief Expect parameters for D, and {#}S, and #N (0 … 7)
- *
- * @return true on success, or false on error
- */
-bool P2Asm::parse_d_imm_s_nnn(uint max)
-{
-    P2Atom dst = parse_expression();
-    if (!m_IR.set_dst(dst))
-        check_dst_src();
-
-    if (!parse_comma())
-        return false;
-
-    P2Atom src = parse_expression(immediate_im);
-    if (!m_IR.set_src(src, immediate_im))
-        check_dst_src();
-
-    if (parse_comma()) {
-        if (m_idx < m_cnt) {
-            P2Atom n = parse_expression();
-            if (n.isEmpty()) {
-                m_errors += tr("Expected immediate #n");
-                emit Error(m_pass, m_lineno, m_errors.last());
-                return false;
-            }
-            if (n.to_long() > max) {
-                m_errors += tr("Immediate #n not in 0-%1 (%2)")
-                          .arg(max)
-                          .arg(n.to_long());
-                emit Error(m_pass, m_lineno, m_errors.last());
-                return false;
-            }
-            p2_LONG opcode = static_cast<p2_LONG>(n.to_long() & max) << 18;
-            m_IR.u.opcode |= opcode;
-        } else {
-            m_errors += tr("Missing immediate #n");
-            emit Error(m_pass, m_lineno, m_errors.last());
-            return false;
-        }
-    } else {
-        // Default is 0
-    }
-    return end_of_line();
-}
-
-/**
- * @brief Expect parameters for {#}S
- *
- * @return true on success, or false on error
- */
-bool P2Asm::parse_imm_s()
-{
-    P2Atom src = parse_expression(immediate_im);
-    if (!m_IR.set_src(src, immediate_im))
-        check_dst_src();
-
-    return end_of_line();
-}
-
-/**
- * @brief Expect parameters for {#}S, and optional WC
- *
- * @return true on success, or false on error
- */
-bool P2Asm::parse_imm_s_wcz()
-{
-    P2Atom src = parse_expression(immediate_im);
-    if (!m_IR.set_src(src, immediate_im))
-        check_dst_src();
-
-    optional_wc();
-    return end_of_line();
-}
-
-
-/**
- * @brief Expect parameters for #AAAAAAAAAAAA (19 bit address for CALL/CALLA/CALLB/LOC)
- *
- * @return true on success, or false on error
- */
-bool P2Asm::parse_ptr_pc_abs()
-{
-    p2_token_e dst = m_words.value(m_idx).tok();
-    switch (dst) {
-    case t_PA:
-        break;
-    case t_PB:
-        m_IR.set_wz();
-        break;
-    case t_PTRA:
-        m_IR.set_wc();
-        break;
-    case t_PTRB:
-        m_IR.set_wcz();
-        break;
-    default:
-        m_errors += tr("Invalid pointer parameter: %1")
-                  .arg(m_source[m_lineno].mid(m_words.value(m_idx).pos()));
-        emit Error(m_pass, m_lineno, m_errors.last());
-        return false;
-    }
-    m_idx++;
-    if (!parse_comma())
-        return false;
-
-    P2Atom atom = parse_expression();
-    p2_LONG addr = atom.to_long();
-    m_IR.u.opcode |= addr & A20MASK;
-
-    return end_of_line();
-}
-
-/**
- * @brief Expect parameters for #AAAAAAAAAAAA (19 bit address for CALL/CALLA/CALLB)
- *
- * @return true on success, or false on error
- */
-bool P2Asm::parse_pc_abs()
-{
-    P2Atom atom = parse_expression();
-    p2_LONG addr = atom.to_long();
-    m_IR.u.opcode |= addr & A20MASK;
-
-    return end_of_line();
-}
-
-/**
- * @brief Expect parameters for #AAAAAAAAAAAA (23 bit address for AUGD/AUGS)
- *
- * @return true on success, or false on error
- */
-bool P2Asm::parse_imm23(QVector<p2_inst7_e> aug)
-{
-    P2Atom atom = parse_expression();
-    p2_LONG addr = atom.to_long();
-    m_IR.set_inst7(static_cast<p2_inst7_e>(m_IR.u.op.inst | aug[(addr >> 21) & 3]));
-
-    return end_of_line();
-}
-
-/**
  * @brief Expect one or more bytes of data
  *
  * @return true on success, or false on error
  */
 bool P2Asm::asm_byte()
 {
+    P2Atom atom;
+    QByteArray bytes;
     m_idx++;
     m_advance = 0;      // Don't advance PC, as it's done based on m_data
     m_IR.as_IR = false;
 
     while (m_idx < m_cnt) {
-        P2Atom atom = parse_expression();
-        m_data.append(atom.to_array());
+        if (t__LBRACKET == m_words.value(m_idx).tok()) {
+            P2Atom atom2 = parse_expression();
+            p2_LONG count = atom2.to_long();
+            while (count-- > 1)
+                m_data.append(atom);
+        } else {
+            atom = parse_expression();
+            bytes = atom.to_array();
+            m_data.append(bytes);
+        }
         optional_comma();
     }
     if (m_data.size() > 0) {
@@ -4001,14 +4088,23 @@ bool P2Asm::asm_word()
  */
 bool P2Asm::asm_long()
 {
+    P2Atom atom;
     m_idx++;
     m_advance = 0;      // Don't advance PC, as it's done based on m_data
     m_IR.as_IR = false;
 
     while (m_idx < m_cnt) {
-        P2Atom atom = parse_expression();
-        p2_LONG l = atom.to_long();
-        m_data.append(P2Atom::Long, l);
+        if (t__LBRACKET == m_words.value(m_idx).tok()) {
+            P2Atom atom2 = parse_expression();
+            p2_LONG l = atom.to_long();
+            p2_LONG count = atom2.to_long();
+            while (count-- > 1)
+                m_data.append_uint(P2Atom::Long, l);
+        } else {
+            atom = parse_expression();
+            p2_LONG l = atom.to_long();
+            m_data.append_uint(P2Atom::Long, l);
+        }
         optional_comma();
     }
     if (m_data.size() > 0)
@@ -4072,21 +4168,22 @@ bool P2Asm::asm_file()
 
 /**
  * @brief No operation.
- *
+ *<pre>
  * 0000 0000000 000 000000000 000000000
  *
  * NOP
+ *</pre>
  */
 bool P2Asm::asm_nop()
 {
     m_idx++;
     m_IR.u.opcode = 0;
-    return parse_inst();
+    return parse_INST();
 }
 
 /**
  * @brief Rotate right.
- *
+ *<pre>
  * EEEE 0000000 CZI DDDDDDDDD SSSSSSSSS
  *
  * ROR     D,{#}S   {WC/WZ/WCZ}
@@ -4094,17 +4191,18 @@ bool P2Asm::asm_nop()
  * D = [31:0]  of ({D[31:0], D[31:0]}     >> S[4:0]).
  * C = last bit shifted out if S[4:0] > 0, else D[0].
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_ror()
 {
     m_idx++;
     m_IR.set_inst7(p2_ROR);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Rotate left.
- *
+ *<pre>
  * EEEE 0000001 CZI DDDDDDDDD SSSSSSSSS
  *
  * ROL     D,{#}S   {WC/WZ/WCZ}
@@ -4112,17 +4210,18 @@ bool P2Asm::asm_ror()
  * D = [63:32] of ({D[31:0], D[31:0]}     << S[4:0]).
  * C = last bit shifted out if S[4:0] > 0, else D[31].
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_rol()
 {
     m_idx++;
     m_IR.set_inst7(p2_ROR);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Shift right.
- *
+ *<pre>
  * EEEE 0000010 CZI DDDDDDDDD SSSSSSSSS
  *
  * SHR     D,{#}S   {WC/WZ/WCZ}
@@ -4130,17 +4229,18 @@ bool P2Asm::asm_rol()
  * D = [31:0]  of ({32'b0, D[31:0]}       >> S[4:0]).
  * C = last bit shifted out if S[4:0] > 0, else D[0].
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_shr()
 {
     m_idx++;
     m_IR.set_inst7(p2_SHR);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Shift left.
- *
+ *<pre>
  * EEEE 0000011 CZI DDDDDDDDD SSSSSSSSS
  *
  * SHL     D,{#}S   {WC/WZ/WCZ}
@@ -4148,17 +4248,18 @@ bool P2Asm::asm_shr()
  * D = [63:32] of ({D[31:0], 32'b0}       << S[4:0]).
  * C = last bit shifted out if S[4:0] > 0, else D[31].
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_shl()
 {
     m_idx++;
     m_IR.set_inst7(p2_SHL);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Rotate carry right.
- *
+ *<pre>
  * EEEE 0000100 CZI DDDDDDDDD SSSSSSSSS
  *
  * RCR     D,{#}S   {WC/WZ/WCZ}
@@ -4166,17 +4267,18 @@ bool P2Asm::asm_shl()
  * D = [31:0]  of ({{32{C}}, D[31:0]}     >> S[4:0]).
  * C = last bit shifted out if S[4:0] > 0, else D[0].
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_rcr()
 {
     m_idx++;
     m_IR.set_inst7(p2_RCR);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Rotate carry left.
- *
+ *<pre>
  * EEEE 0000101 CZI DDDDDDDDD SSSSSSSSS
  *
  * RCL     D,{#}S   {WC/WZ/WCZ}
@@ -4184,17 +4286,18 @@ bool P2Asm::asm_rcr()
  * D = [63:32] of ({D[31:0], {32{C}}}     << S[4:0]).
  * C = last bit shifted out if S[4:0] > 0, else D[31].
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_rcl()
 {
     m_idx++;
     m_IR.set_inst7(p2_RCL);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Shift arithmetic right.
- *
+ *<pre>
  * EEEE 0000110 CZI DDDDDDDDD SSSSSSSSS
  *
  * SAR     D,{#}S   {WC/WZ/WCZ}
@@ -4202,17 +4305,18 @@ bool P2Asm::asm_rcl()
  * D = [31:0]  of ({{32{D[31]}}, D[31:0]} >> S[4:0]).
  * C = last bit shifted out if S[4:0] > 0, else D[0].
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_sar()
 {
     m_idx++;
     m_IR.set_inst7(p2_SAR);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Shift arithmetic left.
- *
+ *<pre>
  * EEEE 0000111 CZI DDDDDDDDD SSSSSSSSS
  *
  * SAL     D,{#}S   {WC/WZ/WCZ}
@@ -4220,17 +4324,18 @@ bool P2Asm::asm_sar()
  * D = [63:32] of ({D[31:0], {32{D[0]}}}  << S[4:0]).
  * C = last bit shifted out if S[4:0] > 0, else D[31].
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_sal()
 {
     m_idx++;
     m_IR.set_inst7(p2_SAL);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Add S into D.
- *
+ *<pre>
  * EEEE 0001000 CZI DDDDDDDDD SSSSSSSSS
  *
  * ADD     D,{#}S   {WC/WZ/WCZ}
@@ -4238,17 +4343,18 @@ bool P2Asm::asm_sal()
  * D = D + S.
  * C = carry of (D + S).
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_add()
 {
     m_idx++;
     m_IR.set_inst7(p2_ADD);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Add (S + C) into D, extended.
- *
+ *<pre>
  * EEEE 0001001 CZI DDDDDDDDD SSSSSSSSS
  *
  * ADDX    D,{#}S   {WC/WZ/WCZ}
@@ -4256,17 +4362,18 @@ bool P2Asm::asm_add()
  * D = D + S + C.
  * C = carry of (D + S + C).
  * Z = Z AND (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_addx()
 {
     m_idx++;
     m_IR.set_inst7(p2_ADDX);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Add S into D, signed.
- *
+ *<pre>
  * EEEE 0001010 CZI DDDDDDDDD SSSSSSSSS
  *
  * ADDS    D,{#}S   {WC/WZ/WCZ}
@@ -4274,17 +4381,18 @@ bool P2Asm::asm_addx()
  * D = D + S.
  * C = correct sign of (D + S).
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_adds()
 {
     m_idx++;
     m_IR.set_inst7(p2_ADDS);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Add (S + C) into D, signed and extended.
- *
+ *<pre>
  * EEEE 0001011 CZI DDDDDDDDD SSSSSSSSS
  *
  * ADDSX   D,{#}S   {WC/WZ/WCZ}
@@ -4292,17 +4400,18 @@ bool P2Asm::asm_adds()
  * D = D + S + C.
  * C = correct sign of (D + S + C).
  * Z = Z AND (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_addsx()
 {
     m_idx++;
     m_IR.set_inst7(p2_ADDSX);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Subtract S from D.
- *
+ *<pre>
  * EEEE 0001100 CZI DDDDDDDDD SSSSSSSSS
  *
  * SUB     D,{#}S   {WC/WZ/WCZ}
@@ -4310,17 +4419,18 @@ bool P2Asm::asm_addsx()
  * D = D - S.
  * C = borrow of (D - S).
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_sub()
 {
     m_idx++;
     m_IR.set_inst7(p2_SUB);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Subtract (S + C) from D, extended.
- *
+ *<pre>
  * EEEE 0001101 CZI DDDDDDDDD SSSSSSSSS
  *
  * SUBX    D,{#}S   {WC/WZ/WCZ}
@@ -4328,17 +4438,18 @@ bool P2Asm::asm_sub()
  * D = D - (S + C).
  * C = borrow of (D - (S + C)).
  * Z = Z AND (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_subx()
 {
     m_idx++;
     m_IR.set_inst7(p2_SUBX);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Subtract S from D, signed.
- *
+ *<pre>
  * EEEE 0001110 CZI DDDDDDDDD SSSSSSSSS
  *
  * SUBS    D,{#}S   {WC/WZ/WCZ}
@@ -4346,17 +4457,18 @@ bool P2Asm::asm_subx()
  * D = D - S.
  * C = correct sign of (D - S).
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_subs()
 {
     m_idx++;
     m_IR.set_inst7(p2_SUBS);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Subtract (S + C) from D, signed and extended.
- *
+ *<pre>
  * EEEE 0001111 CZI DDDDDDDDD SSSSSSSSS
  *
  * SUBSX   D,{#}S   {WC/WZ/WCZ}
@@ -4364,119 +4476,126 @@ bool P2Asm::asm_subs()
  * D = D - (S + C).
  * C = correct sign of (D - (S + C)).
  * Z = Z AND (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_subsx()
 {
     m_idx++;
     m_IR.set_inst7(p2_SUBSX);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Compare D to S.
- *
+ *<pre>
  * EEEE 0010000 CZI DDDDDDDDD SSSSSSSSS
  *
  * CMP     D,{#}S   {WC/WZ/WCZ}
  *
  * C = borrow of (D - S).
  * Z = (D == S).
+ *</pre>
  */
 bool P2Asm::asm_cmp()
 {
     m_idx++;
     m_IR.set_inst7(p2_CMP);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Compare D to (S + C), extended.
- *
+ *<pre>
  * EEEE 0010001 CZI DDDDDDDDD SSSSSSSSS
  *
  * CMPX    D,{#}S   {WC/WZ/WCZ}
  *
  * C = borrow of (D - (S + C)).
  * Z = Z AND (D == S + C).
+ *</pre>
  */
 bool P2Asm::asm_cmpx()
 {
     m_idx++;
     m_IR.set_inst7(p2_CMPX);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Compare D to S, signed.
- *
+ *<pre>
  * EEEE 0010010 CZI DDDDDDDDD SSSSSSSSS
  *
  * CMPS    D,{#}S   {WC/WZ/WCZ}
  *
  * C = correct sign of (D - S).
  * Z = (D == S).
+ *</pre>
  */
 bool P2Asm::asm_cmps()
 {
     m_idx++;
     m_IR.set_inst7(p2_CMPS);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Compare D to (S + C), signed and extended.
- *
+ *<pre>
  * EEEE 0010011 CZI DDDDDDDDD SSSSSSSSS
  *
  * CMPSX   D,{#}S   {WC/WZ/WCZ}
  *
  * C = correct sign of (D - (S + C)).
  * Z = Z AND (D == S + C).
+ *</pre>
  */
 bool P2Asm::asm_cmpsx()
 {
     m_idx++;
     m_IR.set_inst7(p2_CMPSX);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Compare S to D (reverse).
- *
+ *<pre>
  * EEEE 0010100 CZI DDDDDDDDD SSSSSSSSS
  *
  * CMPR    D,{#}S   {WC/WZ/WCZ}
  *
  * C = borrow of (S - D).
  * Z = (D == S).
+ *</pre>
  */
 bool P2Asm::asm_cmpr()
 {
     m_idx++;
     m_IR.set_inst7(p2_CMPR);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Compare D to S, get MSB of difference into C.
- *
+ *<pre>
  * EEEE 0010101 CZI DDDDDDDDD SSSSSSSSS
  *
  * CMPM    D,{#}S   {WC/WZ/WCZ}
  *
  * C = MSB of (D - S).
  * Z = (D == S).
+ *</pre>
  */
 bool P2Asm::asm_cmpm()
 {
     m_idx++;
     m_IR.set_inst7(p2_CMPM);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Subtract D from S (reverse).
- *
+ *<pre>
  * EEEE 0010110 CZI DDDDDDDDD SSSSSSSSS
  *
  * SUBR    D,{#}S   {WC/WZ/WCZ}
@@ -4484,102 +4603,108 @@ bool P2Asm::asm_cmpm()
  * D = S - D.
  * C = borrow of (S - D).
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_subr()
 {
     m_idx++;
     m_IR.set_inst7(p2_SUBR);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Compare and subtract S from D if D >= S.
- *
+ *<pre>
  * EEEE 0010111 CZI DDDDDDDDD SSSSSSSSS
  *
  * CMPSUB  D,{#}S   {WC/WZ/WCZ}
  *
  * If D => S then D = D - S and C = 1, else D same and C = 0.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_cmpsub()
 {
     m_idx++;
     m_IR.set_inst7(p2_CMPSUB);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Force D >= S.
- *
+ *<pre>
  * EEEE 0011000 CZI DDDDDDDDD SSSSSSSSS
  *
  * FGE     D,{#}S   {WC/WZ/WCZ}
  *
  * If D < S then D = S and C = 1, else D same and C = 0.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_fge()
 {
     m_idx++;
     m_IR.set_inst7(p2_FGE);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Force D <= S.
- *
+ *<pre>
  * EEEE 0011001 CZI DDDDDDDDD SSSSSSSSS
  *
  * FLE     D,{#}S   {WC/WZ/WCZ}
  *
  * If D > S then D = S and C = 1, else D same and C = 0.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_fle()
 {
     m_idx++;
     m_IR.set_inst7(p2_FLE);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Force D >= S, signed.
- *
+ *<pre>
  * EEEE 0011010 CZI DDDDDDDDD SSSSSSSSS
  *
  * FGES    D,{#}S   {WC/WZ/WCZ}
  *
  * If D < S then D = S and C = 1, else D same and C = 0.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_fges()
 {
     m_idx++;
     m_IR.set_inst7(p2_FGES);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Force D <= S, signed.
- *
+ *<pre>
  * EEEE 0011011 CZI DDDDDDDDD SSSSSSSSS
  *
  * FLES    D,{#}S   {WC/WZ/WCZ}
  *
  * If D > S then D = S and C = 1, else D same and C = 0.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_fles()
 {
     m_idx++;
     m_IR.set_inst7(p2_FLES);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Sum +/-S into D by  C.
- *
+ *<pre>
  * EEEE 0011100 CZI DDDDDDDDD SSSSSSSSS
  *
  * SUMC    D,{#}S   {WC/WZ/WCZ}
@@ -4587,17 +4712,18 @@ bool P2Asm::asm_fles()
  * If C = 1 then D = D - S, else D = D + S.
  * C = correct sign of (D +/- S).
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_sumc()
 {
     m_idx++;
     m_IR.set_inst7(p2_SUMC);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Sum +/-S into D by !C.
- *
+ *<pre>
  * EEEE 0011101 CZI DDDDDDDDD SSSSSSSSS
  *
  * SUMNC   D,{#}S   {WC/WZ/WCZ}
@@ -4605,17 +4731,18 @@ bool P2Asm::asm_sumc()
  * If C = 0 then D = D - S, else D = D + S.
  * C = correct sign of (D +/- S).
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_sumnc()
 {
     m_idx++;
     m_IR.set_inst7(p2_SUMNC);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Sum +/-S into D by  Z.
- *
+ *<pre>
  * EEEE 0011110 CZI DDDDDDDDD SSSSSSSSS
  *
  * SUMZ    D,{#}S   {WC/WZ/WCZ}
@@ -4623,17 +4750,18 @@ bool P2Asm::asm_sumnc()
  * If Z = 1 then D = D - S, else D = D + S.
  * C = correct sign of (D +/- S).
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_sumz()
 {
     m_idx++;
     m_IR.set_inst7(p2_SUMZ);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Sum +/-S into D by !Z.
- *
+ *<pre>
  * EEEE 0011111 CZI DDDDDDDDD SSSSSSSSS
  *
  * SUMNZ   D,{#}S   {WC/WZ/WCZ}
@@ -4641,257 +4769,274 @@ bool P2Asm::asm_sumz()
  * If Z = 0 then D = D - S, else D = D + S.
  * C = correct sign of (D +/- S).
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_sumnz()
 {
     m_idx++;
     m_IR.set_inst7(p2_SUMNZ);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Test bit S[4:0] of  D, write to C/Z.
- *
+ *<pre>
  * EEEE 0100000 CZI DDDDDDDDD SSSSSSSSS
  *
  * TESTB   D,{#}S         WC/WZ
  *
  * C/Z =          D[S[4:0]].
+ *</pre>
  */
 bool P2Asm::asm_testb_w()
 {
     m_idx++;
     m_IR.set_inst7(p2_TESTB_W);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Test bit S[4:0] of !D, write to C/Z.
- *
+ *<pre>
  * EEEE 0100001 CZI DDDDDDDDD SSSSSSSSS
  *
  * TESTBN  D,{#}S         WC/WZ
  *
  * C/Z =         !D[S[4:0]].
+ *</pre>
  */
 bool P2Asm::asm_testbn_w()
 {
     m_idx++;
     m_IR.set_inst7(p2_TESTBN_W);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Test bit S[4:0] of  D, AND into C/Z.
- *
+ *<pre>
  * EEEE 0100010 CZI DDDDDDDDD SSSSSSSSS
  *
  * TESTB   D,{#}S     ANDC/ANDZ
  *
  * C/Z = C/Z AND  D[S[4:0]].
+ *</pre>
  */
 bool P2Asm::asm_testb_and()
 {
     m_idx++;
     m_IR.set_inst7(p2_TESTB_AND);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Test bit S[4:0] of !D, AND into C/Z.
- *
+ *<pre>
  * EEEE 0100011 CZI DDDDDDDDD SSSSSSSSS
  *
  * TESTBN  D,{#}S     ANDC/ANDZ
  *
  * C/Z = C/Z AND !D[S[4:0]].
+ *</pre>
  */
 bool P2Asm::asm_testbn_and()
 {
     m_idx++;
     m_IR.set_inst7(p2_TESTBN_AND);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Test bit S[4:0] of  D, OR  into C/Z.
- *
+ *<pre>
  * EEEE 0100100 CZI DDDDDDDDD SSSSSSSSS
  *
  * TESTB   D,{#}S       ORC/ORZ
  *
  * C/Z = C/Z OR   D[S[4:0]].
+ *</pre>
  */
 bool P2Asm::asm_testb_or()
 {
     m_idx++;
     m_IR.set_inst7(p2_TESTB_OR);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Test bit S[4:0] of !D, OR  into C/Z.
- *
+ *<pre>
  * EEEE 0100101 CZI DDDDDDDDD SSSSSSSSS
  *
  * TESTBN  D,{#}S       ORC/ORZ
  *
  * C/Z = C/Z OR  !D[S[4:0]].
+ *</pre>
  */
 bool P2Asm::asm_testbn_or()
 {
     m_idx++;
     m_IR.set_inst7(p2_TESTBN_OR);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Test bit S[4:0] of  D, XOR into C/Z.
- *
+ *<pre>
  * EEEE 0100110 CZI DDDDDDDDD SSSSSSSSS
  *
  * TESTB   D,{#}S     XORC/XORZ
  *
  * C/Z = C/Z XOR  D[S[4:0]].
+ *</pre>
  */
 bool P2Asm::asm_testb_xor()
 {
     m_idx++;
     m_IR.set_inst7(p2_TESTB_XOR);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Test bit S[4:0] of !D, XOR into C/Z.
- *
+ *<pre>
  * EEEE 0100111 CZI DDDDDDDDD SSSSSSSSS
  *
  * TESTBN  D,{#}S     XORC/XORZ
  *
  * C/Z = C/Z XOR !D[S[4:0]].
+ *</pre>
  */
 bool P2Asm::asm_testbn_xor()
 {
     m_idx++;
     m_IR.set_inst7(p2_TESTBN_XOR);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Bit S[4:0] of D = 0,    C,Z = D[S[4:0]].
- *
+ *<pre>
  * EEEE 0100000 CZI DDDDDDDDD SSSSSSSSS
  *
  * BITL    D,{#}S         {WCZ}
+ *</pre>
  */
 bool P2Asm::asm_bitl()
 {
     m_idx++;
     m_IR.set_inst7(p2_BITL);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Bit S[4:0] of D = 1,    C,Z = D[S[4:0]].
- *
+ *<pre>
  * EEEE 0100001 CZI DDDDDDDDD SSSSSSSSS
  *
  * BITH    D,{#}S         {WCZ}
+ *</pre>
  */
 bool P2Asm::asm_bith()
 {
     m_idx++;
     m_IR.set_inst7(p2_BITH);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Bit S[4:0] of D = C,    C,Z = D[S[4:0]].
- *
+ *<pre>
  * EEEE 0100010 CZI DDDDDDDDD SSSSSSSSS
  *
  * BITC    D,{#}S         {WCZ}
+ *</pre>
  */
 bool P2Asm::asm_bitc()
 {
     m_idx++;
     m_IR.set_inst7(p2_BITC);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Bit S[4:0] of D = !C,   C,Z = D[S[4:0]].
- *
+ *<pre>
  * EEEE 0100011 CZI DDDDDDDDD SSSSSSSSS
  *
  * BITNC   D,{#}S         {WCZ}
+ *</pre>
  */
 bool P2Asm::asm_bitnc()
 {
     m_idx++;
     m_IR.set_inst7(p2_BITNC);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Bit S[4:0] of D = Z,    C,Z = D[S[4:0]].
- *
+ *<pre>
  * EEEE 0100100 CZI DDDDDDDDD SSSSSSSSS
  *
  * BITZ    D,{#}S         {WCZ}
+ *</pre>
  */
 bool P2Asm::asm_bitz()
 {
     m_idx++;
     m_IR.set_inst7(p2_BITZ);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Bit S[4:0] of D = !Z,   C,Z = D[S[4:0]].
- *
+ *<pre>
  * EEEE 0100101 CZI DDDDDDDDD SSSSSSSSS
  *
  * BITNZ   D,{#}S         {WCZ}
+ *</pre>
  */
 bool P2Asm::asm_bitnz()
 {
     m_idx++;
     m_IR.set_inst7(p2_BITNZ);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Bit S[4:0] of D = RND,  C,Z = D[S[4:0]].
- *
+ *<pre>
  * EEEE 0100110 CZI DDDDDDDDD SSSSSSSSS
  *
  * BITRND  D,{#}S         {WCZ}
+ *</pre>
  */
 bool P2Asm::asm_bitrnd()
 {
     m_idx++;
     m_IR.set_inst7(p2_BITRND);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Bit S[4:0] of D = !bit, C,Z = D[S[4:0]].
- *
+ *<pre>
  * EEEE 0100111 CZI DDDDDDDDD SSSSSSSSS
  *
  * BITNOT  D,{#}S         {WCZ}
+ *</pre>
  */
 bool P2Asm::asm_bitnot()
 {
     m_idx++;
     m_IR.set_inst7(p2_BITNOT);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief AND S into D.
- *
+ *<pre>
  * EEEE 0101000 CZI DDDDDDDDD SSSSSSSSS
  *
  * AND     D,{#}S   {WC/WZ/WCZ}
@@ -4899,17 +5044,18 @@ bool P2Asm::asm_bitnot()
  * D = D & S.
  * C = parity of result.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_and()
 {
     m_idx++;
     m_IR.set_inst7(p2_AND);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief AND !S into D.
- *
+ *<pre>
  * EEEE 0101001 CZI DDDDDDDDD SSSSSSSSS
  *
  * ANDN    D,{#}S   {WC/WZ/WCZ}
@@ -4917,17 +5063,18 @@ bool P2Asm::asm_and()
  * D = D & !S.
  * C = parity of result.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_andn()
 {
     m_idx++;
     m_IR.set_inst7(p2_ANDN);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief OR S into D.
- *
+ *<pre>
  * EEEE 0101010 CZI DDDDDDDDD SSSSSSSSS
  *
  * OR      D,{#}S   {WC/WZ/WCZ}
@@ -4935,17 +5082,18 @@ bool P2Asm::asm_andn()
  * D = D | S.
  * C = parity of result.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_or()
 {
     m_idx++;
     m_IR.set_inst7(p2_OR);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief XOR S into D.
- *
+ *<pre>
  * EEEE 0101011 CZI DDDDDDDDD SSSSSSSSS
  *
  * XOR     D,{#}S   {WC/WZ/WCZ}
@@ -4953,17 +5101,18 @@ bool P2Asm::asm_or()
  * D = D ^ S.
  * C = parity of result.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_xor()
 {
     m_idx++;
     m_IR.set_inst7(p2_XOR);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Mux C into each D bit that is '1' in S.
- *
+ *<pre>
  * EEEE 0101100 CZI DDDDDDDDD SSSSSSSSS
  *
  * MUXC    D,{#}S   {WC/WZ/WCZ}
@@ -4971,17 +5120,18 @@ bool P2Asm::asm_xor()
  * D = (!S & D ) | (S & {32{ C}}).
  * C = parity of result.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_muxc()
 {
     m_idx++;
     m_IR.set_inst7(p2_MUXC);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Mux !C into each D bit that is '1' in S.
- *
+ *<pre>
  * EEEE 0101101 CZI DDDDDDDDD SSSSSSSSS
  *
  * MUXNC   D,{#}S   {WC/WZ/WCZ}
@@ -4989,17 +5139,18 @@ bool P2Asm::asm_muxc()
  * D = (!S & D ) | (S & {32{!C}}).
  * C = parity of result.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_muxnc()
 {
     m_idx++;
     m_IR.set_inst7(p2_MUXNC);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Mux Z into each D bit that is '1' in S.
- *
+ *<pre>
  * EEEE 0101110 CZI DDDDDDDDD SSSSSSSSS
  *
  * MUXZ    D,{#}S   {WC/WZ/WCZ}
@@ -5007,17 +5158,18 @@ bool P2Asm::asm_muxnc()
  * D = (!S & D ) | (S & {32{ Z}}).
  * C = parity of result.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_muxz()
 {
     m_idx++;
     m_IR.set_inst7(p2_MUXZ);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Mux !Z into each D bit that is '1' in S.
- *
+ *<pre>
  * EEEE 0101111 CZI DDDDDDDDD SSSSSSSSS
  *
  * MUXNZ   D,{#}S   {WC/WZ/WCZ}
@@ -5025,17 +5177,18 @@ bool P2Asm::asm_muxz()
  * D = (!S & D ) | (S & {32{!Z}}).
  * C = parity of result.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_muxnz()
 {
     m_idx++;
     m_IR.set_inst7(p2_MUXNZ);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Move S into D.
- *
+ *<pre>
  * EEEE 0110000 CZI DDDDDDDDD SSSSSSSSS
  *
  * MOV     D,{#}S   {WC/WZ/WCZ}
@@ -5043,17 +5196,18 @@ bool P2Asm::asm_muxnz()
  * D = S.
  * C = S[31].
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_mov()
 {
     m_idx++;
     m_IR.set_inst7(p2_MOV);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Get !S into D.
- *
+ *<pre>
  * EEEE 0110001 CZI DDDDDDDDD SSSSSSSSS
  *
  * NOT     D,{#}S   {WC/WZ/WCZ}
@@ -5061,17 +5215,18 @@ bool P2Asm::asm_mov()
  * D = !S.
  * C = !S[31].
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_not()
 {
     m_idx++;
     m_IR.set_inst7(p2_NOT);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Get absolute value of S into D.
- *
+ *<pre>
  * EEEE 0110010 CZI DDDDDDDDD SSSSSSSSS
  *
  * ABS     D,{#}S   {WC/WZ/WCZ}
@@ -5079,17 +5234,18 @@ bool P2Asm::asm_not()
  * D = ABS(S).
  * C = S[31].
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_abs()
 {
     m_idx++;
     m_IR.set_inst7(p2_ABS);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Negate S into D.
- *
+ *<pre>
  * EEEE 0110011 CZI DDDDDDDDD SSSSSSSSS
  *
  * NEG     D,{#}S   {WC/WZ/WCZ}
@@ -5097,17 +5253,18 @@ bool P2Asm::asm_abs()
  * D = -S.
  * C = MSB of result.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_neg()
 {
     m_idx++;
     m_IR.set_inst7(p2_NEG);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Negate S by  C into D.
- *
+ *<pre>
  * EEEE 0110100 CZI DDDDDDDDD SSSSSSSSS
  *
  * NEGC    D,{#}S   {WC/WZ/WCZ}
@@ -5115,17 +5272,18 @@ bool P2Asm::asm_neg()
  * If C = 1 then D = -S, else D = S.
  * C = MSB of result.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_negc()
 {
     m_idx++;
     m_IR.set_inst7(p2_NEGC);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Negate S by !C into D.
- *
+ *<pre>
  * EEEE 0110101 CZI DDDDDDDDD SSSSSSSSS
  *
  * NEGNC   D,{#}S   {WC/WZ/WCZ}
@@ -5133,17 +5291,18 @@ bool P2Asm::asm_negc()
  * If C = 0 then D = -S, else D = S.
  * C = MSB of result.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_negnc()
 {
     m_idx++;
     m_IR.set_inst7(p2_NEGNC);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Negate S by  Z into D.
- *
+ *<pre>
  * EEEE 0110110 CZI DDDDDDDDD SSSSSSSSS
  *
  * NEGZ    D,{#}S   {WC/WZ/WCZ}
@@ -5151,17 +5310,18 @@ bool P2Asm::asm_negnc()
  * If Z = 1 then D = -S, else D = S.
  * C = MSB of result.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_negz()
 {
     m_idx++;
     m_IR.set_inst7(p2_NEGZ);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Negate S by !Z into D.
- *
+ *<pre>
  * EEEE 0110111 CZI DDDDDDDDD SSSSSSSSS
  *
  * NEGNZ   D,{#}S   {WC/WZ/WCZ}
@@ -5169,85 +5329,90 @@ bool P2Asm::asm_negz()
  * If Z = 0 then D = -S, else D = S.
  * C = MSB of result.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_negnz()
 {
     m_idx++;
     m_IR.set_inst7(p2_NEGNZ);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Increment with modulus.
- *
+ *<pre>
  * EEEE 0111000 CZI DDDDDDDDD SSSSSSSSS
  *
  * INCMOD  D,{#}S   {WC/WZ/WCZ}
  *
  * If D = S then D = 0 and C = 1, else D = D + 1 and C = 0.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_incmod()
 {
     m_idx++;
     m_IR.set_inst7(p2_INCMOD);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Decrement with modulus.
- *
+ *<pre>
  * EEEE 0111001 CZI DDDDDDDDD SSSSSSSSS
  *
  * DECMOD  D,{#}S   {WC/WZ/WCZ}
  *
  * If D = 0 then D = S and C = 1, else D = D - 1 and C = 0.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_decmod()
 {
     m_idx++;
     m_IR.set_inst7(p2_DECMOD);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Zero-extend D above bit S[4:0].
- *
+ *<pre>
  * EEEE 0111010 CZI DDDDDDDDD SSSSSSSSS
  *
  * ZEROX   D,{#}S   {WC/WZ/WCZ}
  *
  * C = MSB of result.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_zerox()
 {
     m_idx++;
     m_IR.set_inst7(p2_ZEROX);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Sign-extend D from bit S[4:0].
- *
+ *<pre>
  * EEEE 0111011 CZI DDDDDDDDD SSSSSSSSS
  *
  * SIGNX   D,{#}S   {WC/WZ/WCZ}
  *
  * C = MSB of result.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_signx()
 {
     m_idx++;
     m_IR.set_inst7(p2_SIGNX);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Get bit position of top-most '1' in S into D.
- *
+ *<pre>
  * EEEE 0111100 CZI DDDDDDDDD SSSSSSSSS
  *
  * ENCOD   D,{#}S   {WC/WZ/WCZ}
@@ -5255,19 +5420,20 @@ bool P2Asm::asm_signx()
  * D = position of top '1' in S (0..31).
  * C = (S != 0).
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_encod()
 {
-    if (commas_left() < 1)
+    if (commata_left() < 1)
         return asm_encod_d();
     m_idx++;
     m_IR.set_inst7(p2_ENCOD);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Get bit position of top-most '1' in S into D.
- *
+ *<pre>
  * EEEE 0111100 CZ0 DDDDDDDDD DDDDDDDDD
  *
  * ENCOD   D        {WC/WZ/WCZ}
@@ -5275,17 +5441,18 @@ bool P2Asm::asm_encod()
  * D = position of top '1' in S (0..31).
  * C = (S != 0).
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_encod_d()
 {
     m_idx++;
     m_IR.set_inst7(p2_ENCOD);
-    return parse_d_wcz();
+    return parse_D_WCZ();
 }
 
 /**
  * @brief Get number of '1's in S into D.
- *
+ *<pre>
  * EEEE 0111101 CZI DDDDDDDDD SSSSSSSSS
  *
  * ONES    D,{#}S   {WC/WZ/WCZ}
@@ -5293,832 +5460,883 @@ bool P2Asm::asm_encod_d()
  * D = number of '1's in S (0..32).
  * C = LSB of result.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_ones()
 {
     m_idx++;
     m_IR.set_inst7(p2_ONES);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Test D with S.
- *
+ *<pre>
  * EEEE 0111110 CZI DDDDDDDDD SSSSSSSSS
  *
  * TEST    D,{#}S   {WC/WZ/WCZ}
  *
  * C = parity of (D & S).
  * Z = ((D & S) == 0).
+ *</pre>
  */
 bool P2Asm::asm_test()
 {
     m_idx++;
     m_IR.set_inst7(p2_TEST);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Test D with !S.
- *
+ *<pre>
  * EEEE 0111111 CZI DDDDDDDDD SSSSSSSSS
  *
  * TESTN   D,{#}S   {WC/WZ/WCZ}
  *
  * C = parity of (D & !S).
  * Z = ((D & !S) == 0).
+ *</pre>
  */
 bool P2Asm::asm_testn()
 {
     m_idx++;
     m_IR.set_inst7(p2_TESTN);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Set S[3:0] into nibble N in D, keeping rest of D same.
- *
+ *<pre>
  * EEEE 100000N NNI DDDDDDDDD SSSSSSSSS
  *
  * SETNIB  D,{#}S,#N
+ *</pre>
  */
 bool P2Asm::asm_setnib()
 {
-    if (commas_left() < 1)
+    if (commata_left() < 1)
         return asm_setnib_altsn();
     m_idx++;
     m_IR.set_inst7(p2_SETNIB_0);
-    return parse_d_imm_s_nnn();
+    return parse_D_IM_S_NNN();
 }
 
 /**
  * @brief Set S[3:0] into nibble established by prior ALTSN instruction.
- *
+ *<pre>
  * EEEE 1000000 00I 000000000 SSSSSSSSS
  *
  * SETNIB  {#}S
+ *</pre>
  */
 bool P2Asm::asm_setnib_altsn()
 {
     m_idx++;
     m_IR.set_inst7(p2_SETNIB_0);
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Get nibble N of S into D.
- *
+ *<pre>
  * EEEE 100001N NNI DDDDDDDDD SSSSSSSSS
  *
  * GETNIB  D,{#}S,#N
  *
  * D = {28'b0, S.NIBBLE[N]).
+ *</pre>
  */
 bool P2Asm::asm_getnib()
 {
-    if (commas_left() < 1)
+    if (commata_left() < 1)
         return asm_getnib_altgn();
     m_idx++;
     m_IR.set_inst7(p2_GETNIB_0);
-    return parse_d_imm_s_nnn();
+    return parse_D_IM_S_NNN();
 }
 
 /**
  * @brief Get nibble established by prior ALTGN instruction into D.
- *
+ *<pre>
  * EEEE 1000010 000 DDDDDDDDD 000000000
  *
  * GETNIB  D
+ *</pre>
  */
 bool P2Asm::asm_getnib_altgn()
 {
     m_IR.set_inst7(p2_GETNIB_0);
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Rotate-left nibble N of S into D.
- *
+ *<pre>
  * EEEE 100010N NNI DDDDDDDDD SSSSSSSSS
  *
  * ROLNIB  D,{#}S,#N
  *
  * D = {D[27:0], S.NIBBLE[N]).
+ *</pre>
  */
 bool P2Asm::asm_rolnib()
 {
-    if (commas_left() < 1)
+    if (commata_left() < 1)
         return asm_rolnib_altgn();
     m_idx++;
     m_IR.set_inst7(p2_ROLNIB_0);
-    return parse_d_imm_s_nnn();
+    return parse_D_IM_S_NNN();
 }
 
 /**
  * @brief Rotate-left nibble established by prior ALTGN instruction into D.
- *
+ *<pre>
  * EEEE 1000100 000 DDDDDDDDD 000000000
  *
  * ROLNIB  D
+ *</pre>
  */
 bool P2Asm::asm_rolnib_altgn()
 {
     m_idx++;
     m_IR.set_inst7(p2_ROLNIB_0);
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Set S[7:0] into byte N in D, keeping rest of D same.
- *
+ *<pre>
  * EEEE 1000110 NNI DDDDDDDDD SSSSSSSSS
  *
  * SETBYTE D,{#}S,#N
+ *</pre>
  */
 bool P2Asm::asm_setbyte()
 {
-    if (commas_left() < 1)
+    if (commata_left() < 1)
         return asm_setbyte_altsb();
     m_idx++;
     m_IR.set_inst7(p2_SETBYTE);
-    return parse_d_imm_s_nnn();
+    return parse_D_IM_S_NNN();
 }
 
 /**
  * @brief Set S[7:0] into byte established by prior ALTSB instruction.
- *
+ *<pre>
  * EEEE 1000110 00I 000000000 SSSSSSSSS
  *
  * SETBYTE {#}S
+ *</pre>
  */
 bool P2Asm::asm_setbyte_altsb()
 {
     m_idx++;
     m_IR.set_inst7(p2_SETBYTE);
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Get byte N of S into D.
- *
+ *<pre>
  * EEEE 1000111 NNI DDDDDDDDD SSSSSSSSS
  *
  * GETBYTE D,{#}S,#N
  *
  * D = {24'b0, S.BYTE[N]).
+ *</pre>
  */
 bool P2Asm::asm_getbyte()
 {
-    if (commas_left() < 1)
+    if (commata_left() < 1)
         return asm_getbyte_altgb();
     m_idx++;
     m_IR.set_inst7(p2_GETBYTE);
-    return parse_d_imm_s_nnn();
+    return parse_D_IM_S_NNN();
 }
 
 /**
  * @brief Get byte established by prior ALTGB instruction into D.
- *
+ *<pre>
  * EEEE 1000111 000 DDDDDDDDD 000000000
  *
  * GETBYTE D
+ *</pre>
  */
 bool P2Asm::asm_getbyte_altgb()
 {
     m_idx++;
     m_IR.set_inst7(p2_GETBYTE);
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Rotate-left byte N of S into D.
- *
+ *<pre>
  * EEEE 1001000 NNI DDDDDDDDD SSSSSSSSS
  *
  * ROLBYTE D,{#}S,#N
  *
  * D = {D[23:0], S.BYTE[N]).
+ *</pre>
  */
 bool P2Asm::asm_rolbyte()
 {
-    if (commas_left() < 1)
+    if (commata_left() < 1)
         return asm_rolbyte_altgb();
     m_idx++;
     m_IR.set_inst7(p2_ROLBYTE);
-    return parse_d_imm_s_nnn(3);
+    return parse_D_IM_S_NNN(3);
 }
 
 /**
  * @brief Rotate-left byte established by prior ALTGB instruction into D.
- *
+ *<pre>
  * EEEE 1001000 000 DDDDDDDDD 000000000
  *
  * ROLBYTE D
+ *</pre>
  */
 bool P2Asm::asm_rolbyte_altgb()
 {
     m_idx++;
     m_IR.set_inst7(p2_ROLBYTE);
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Set S[15:0] into word N in D, keeping rest of D same.
- *
+ *<pre>
  * EEEE 1001001 0NI DDDDDDDDD SSSSSSSSS
  *
  * SETWORD D,{#}S,#N
+ *</pre>
  */
 bool P2Asm::asm_setword()
 {
-    if (commas_left() < 1)
+    if (commata_left() < 1)
         return asm_setword_altsw();
     m_idx++;
     m_IR.set_inst9(p2_SETWORD);
-    return parse_d_imm_s_nnn(1);
+    return parse_D_IM_S_NNN(1);
 }
 
 /**
  * @brief Set S[15:0] into word established by prior ALTSW instruction.
- *
+ *<pre>
  * EEEE 1001001 00I 000000000 SSSSSSSSS
  *
  * SETWORD {#}S
+ *</pre>
  */
 bool P2Asm::asm_setword_altsw()
 {
     m_idx++;
     m_IR.set_inst9(p2_SETWORD_ALTSW);
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Get word N of S into D.
- *
+ *<pre>
  * EEEE 1001001 1NI DDDDDDDDD SSSSSSSSS
  *
  * GETWORD D,{#}S,#N
  *
  * D = {16'b0, S.WORD[N]).
+ *</pre>
  */
 bool P2Asm::asm_getword()
 {
-    if (commas_left() < 1)
+    if (commata_left() < 1)
         return asm_getword_altgw();
     m_idx++;
     m_IR.set_inst9(p2_GETWORD);
-    return parse_d_imm_s_nnn(1);
+    return parse_D_IM_S_NNN(1);
 }
 
 /**
  * @brief Get word established by prior ALTGW instruction into D.
- *
+ *<pre>
  * EEEE 1001001 100 DDDDDDDDD 000000000
  *
  * GETWORD D
+ *</pre>
  */
 bool P2Asm::asm_getword_altgw()
 {
     m_idx++;
     m_IR.set_inst9(p2_GETWORD_ALTGW);
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Rotate-left word N of S into D.
- *
+ *<pre>
  * EEEE 1001010 0NI DDDDDDDDD SSSSSSSSS
  *
  * ROLWORD D,{#}S,#N
  *
  * D = {D[15:0], S.WORD[N]).
+ *</pre>
  */
 bool P2Asm::asm_rolword()
 {
-    if (commas_left() < 1)
+    if (commata_left() < 1)
         return asm_rolword_altgw();
     m_idx++;
     m_IR.set_inst9(p2_ROLWORD);
-    return parse_d_imm_s_nnn(1);
+    return parse_D_IM_S_NNN(1);
 }
 
 /**
  * @brief Rotate-left word established by prior ALTGW instruction into D.
- *
+ *<pre>
  * EEEE 1001010 000 DDDDDDDDD 000000000
  *
  * ROLWORD D
+ *</pre>
  */
 bool P2Asm::asm_rolword_altgw()
 {
     m_idx++;
     m_IR.set_inst9(p2_ROLWORD_ALTGW);
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Alter subsequent SETNIB instruction.
- *
+ *<pre>
  * EEEE 1001010 10I DDDDDDDDD SSSSSSSSS
  *
  * ALTSN   D,{#}S
  *
  * Next D field = (D[11:3] + S) & $1FF, N field = D[2:0].
  * D += sign-extended S[17:9].
+ *</pre>
  */
 bool P2Asm::asm_altsn()
 {
-    if (commas_left() < 1)
+    if (commata_left() < 1)
         return asm_altsn_d();
     m_idx++;
     m_IR.set_inst9(p2_ALTSN);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Alter subsequent SETNIB instruction.
- *
+ *<pre>
  * EEEE 1001010 101 DDDDDDDDD 000000000
  *
  * ALTSN   D
  *
  * Next D field = D[11:3], N field = D[2:0].
+ *</pre>
  */
 bool P2Asm::asm_altsn_d()
 {
     m_idx++;
     m_IR.set_inst9(p2_ALTSN);
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Alter subsequent GETNIB/ROLNIB instruction.
- *
+ *<pre>
  * EEEE 1001010 11I DDDDDDDDD SSSSSSSSS
  *
  * ALTGN   D,{#}S
  *
  * Next S field = (D[11:3] + S) & $1FF, N field = D[2:0].
  * D += sign-extended S[17:9].
+ *</pre>
  */
 bool P2Asm::asm_altgn()
 {
-    if (commas_left() < 1)
+    if (commata_left() < 1)
         return asm_altgn_d();
     m_idx++;
     m_IR.set_inst9(p2_ALTGN);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Alter subsequent GETNIB/ROLNIB instruction.
- *
+ *<pre>
  * EEEE 1001010 111 DDDDDDDDD 000000000
  *
  * ALTGN   D
  *
  * Next S field = D[11:3], N field = D[2:0].
+ *</pre>
  */
 bool P2Asm::asm_altgn_d()
 {
     m_idx++;
     m_IR.set_inst9(p2_ALTGN);
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Alter subsequent SETBYTE instruction.
- *
+ *<pre>
  * EEEE 1001011 00I DDDDDDDDD SSSSSSSSS
  *
  * ALTSB   D,{#}S
  *
  * Next D field = (D[10:2] + S) & $1FF, N field = D[1:0].
  * D += sign-extended S[17:9].
+ *</pre>
  */
 bool P2Asm::asm_altsb()
 {
-    if (commas_left() < 1)
+    if (commata_left() < 1)
         return asm_altsb_d();
     m_idx++;
     m_IR.set_inst9(p2_ALTSB);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Alter subsequent SETBYTE instruction.
- *
+ *<pre>
  * EEEE 1001011 001 DDDDDDDDD 000000000
  *
  * ALTSB   D
  *
  * Next D field = D[10:2], N field = D[1:0].
+ *</pre>
  */
 bool P2Asm::asm_altsb_d()
 {
     m_idx++;
     m_IR.set_inst9(p2_ALTSB);
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Alter subsequent GETBYTE/ROLBYTE instruction.
- *
+ *<pre>
  * EEEE 1001011 01I DDDDDDDDD SSSSSSSSS
  *
  * ALTGB   D,{#}S
  *
  * Next S field = (D[10:2] + S) & $1FF, N field = D[1:0].
  * D += sign-extended S[17:9].
+ *</pre>
  */
 bool P2Asm::asm_altgb()
 {
-    if (commas_left() < 1)
+    if (commata_left() < 1)
         return asm_altgb_d();
     m_idx++;
     m_IR.set_inst9(p2_ALTGB);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Alter subsequent GETBYTE/ROLBYTE instruction.
- *
+ *<pre>
  * EEEE 1001011 011 DDDDDDDDD 000000000
  *
  * ALTGB   D
  *
  * Next S field = D[10:2], N field = D[1:0].
+ *</pre>
  */
 bool P2Asm::asm_altgb_d()
 {
     m_idx++;
     m_IR.set_inst9(p2_ALTGB);
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Alter subsequent SETWORD instruction.
- *
+ *<pre>
  * EEEE 1001011 10I DDDDDDDDD SSSSSSSSS
  *
  * ALTSW   D,{#}S
  *
  * Next D field = (D[9:1] + S) & $1FF, N field = D[0].
  * D += sign-extended S[17:9].
+ *</pre>
  */
 bool P2Asm::asm_altsw()
 {
-    if (commas_left() < 1)
+    if (commata_left() < 1)
         return asm_altsw_d();
     m_idx++;
     m_IR.set_inst9(p2_ALTSW);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Alter subsequent SETWORD instruction.
- *
+ *<pre>
  * EEEE 1001011 101 DDDDDDDDD 000000000
  *
  * ALTSW   D
  *
  * Next D field = D[9:1], N field = D[0].
+ *</pre>
  */
 bool P2Asm::asm_altsw_d()
 {
     m_idx++;
     m_IR.set_inst9(p2_ALTSW);
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Alter subsequent GETWORD/ROLWORD instruction.
- *
+ *<pre>
  * EEEE 1001011 11I DDDDDDDDD SSSSSSSSS
  *
  * ALTGW   D,{#}S
  *
  * Next S field = ((D[9:1] + S) & $1FF), N field = D[0].
  * D += sign-extended S[17:9].
+ *</pre>
  */
 bool P2Asm::asm_altgw()
 {
-    if (commas_left() < 1)
+    if (commata_left() < 1)
         return asm_altgw_d();
     m_idx++;
     m_IR.set_inst9(p2_ALTGW);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Alter subsequent GETWORD/ROLWORD instruction.
- *
+ *<pre>
  * EEEE 1001011 111 DDDDDDDDD 000000000
  *
  * ALTGW   D
  *
  * Next S field = D[9:1], N field = D[0].
+ *</pre>
  */
 bool P2Asm::asm_altgw_d()
 {
     m_idx++;
     m_IR.set_inst9(p2_ALTGW);
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Alter result register address (normally D field) of next instruction to (D + S) & $1FF.
- *
+ *<pre>
  * EEEE 1001100 00I DDDDDDDDD SSSSSSSSS
  *
  * ALTR    D,{#}S
  *
  * D += sign-extended S[17:9].
+ *</pre>
  */
 bool P2Asm::asm_altr()
 {
-    if (commas_left() < 1)
+    if (commata_left() < 1)
         return asm_altr_d();
     m_idx++;
     m_IR.set_inst9(p2_ALTR);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Alter result register address (normally D field) of next instruction to D[8:0].
- *
+ *<pre>
  * EEEE 1001100 001 DDDDDDDDD 000000000
  *
  * ALTR    D
+ *</pre>
  */
 bool P2Asm::asm_altr_d()
 {
     m_idx++;
     m_IR.set_inst9(p2_ALTD);
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Alter D field of next instruction to (D + S) & $1FF.
- *
+ *<pre>
  * EEEE 1001100 01I DDDDDDDDD SSSSSSSSS
  *
  * ALTD    D,{#}S
  *
  * D += sign-extended S[17:9].
+ *</pre>
  */
 bool P2Asm::asm_altd()
 {
-    if (commas_left() < 1)
+    if (commata_left() < 1)
         return asm_altd_d();
     m_idx++;
     m_IR.set_inst9(p2_ALTD);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Alter D field of next instruction to D[8:0].
- *
+ *<pre>
  * EEEE 1001100 011 DDDDDDDDD 000000000
  *
  * ALTD    D
+ *</pre>
  */
 bool P2Asm::asm_altd_d()
 {
     m_idx++;
     m_IR.set_inst9(p2_ALTD);
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Alter S field of next instruction to (D + S) & $1FF.
- *
+ *<pre>
  * EEEE 1001100 10I DDDDDDDDD SSSSSSSSS
  *
  * ALTS    D,{#}S
  *
  * D += sign-extended S[17:9].
+ *</pre>
  */
 bool P2Asm::asm_alts()
 {
-    if (commas_left() < 1)
+    if (commata_left() < 1)
         return asm_alts_d();
     m_idx++;
     m_IR.set_inst9(p2_ALTS);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Alter S field of next instruction to D[8:0].
- *
+ *<pre>
  * EEEE 1001100 101 DDDDDDDDD 000000000
  *
  * ALTS    D
+ *</pre>
  */
 bool P2Asm::asm_alts_d()
 {
     m_idx++;
     m_IR.set_inst9(p2_ALTS);
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Alter D field of next instruction to (D[13:5] + S) & $1FF.
- *
+ *<pre>
  * EEEE 1001100 11I DDDDDDDDD SSSSSSSSS
  *
  * ALTB    D,{#}S
  *
  * D += sign-extended S[17:9].
+ *</pre>
  */
 bool P2Asm::asm_altb()
 {
-    if (commas_left() < 1)
+    if (commata_left() < 1)
         return asm_altb_d();
     m_idx++;
     m_IR.set_inst9(p2_ALTB);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Alter D field of next instruction to D[13:5].
- *
+ *<pre>
  * EEEE 1001100 111 DDDDDDDDD 000000000
  *
  * ALTB    D
+ *</pre>
  */
 bool P2Asm::asm_altb_d()
 {
     m_idx++;
     m_IR.set_inst9(p2_ALTB);
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Substitute next instruction's I/R/D/S fields with fields from D, per S.
- *
+ *<pre>
  * EEEE 1001101 00I DDDDDDDDD SSSSSSSSS
  *
  * ALTI    D,{#}S
  *
  * Modify D per S.
+ *</pre>
  */
 bool P2Asm::asm_alti()
 {
-    if (commas_left() < 1)
+    if (commata_left() < 1)
         return asm_alti_d();
     m_idx++;
     m_IR.set_inst9(p2_ALTI);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Execute D in place of next instruction.
- *
+ *<pre>
  * EEEE 1001101 001 DDDDDDDDD 101100100
  *
  * ALTI    D
  *
  * D stays same.
+ *</pre>
  */
 bool P2Asm::asm_alti_d()
 {
     m_idx++;
     m_IR.set_inst9(p2_ALTI);
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Set R field of D to S[8:0].
- *
+ *<pre>
  * EEEE 1001101 01I DDDDDDDDD SSSSSSSSS
  *
  * SETR    D,{#}S
  *
  * D = {D[31:28], S[8:0], D[18:0]}.
+ *</pre>
  */
 bool P2Asm::asm_setr()
 {
     m_idx++;
     m_IR.set_inst9(p2_SETR);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Set D field of D to S[8:0].
- *
+ *<pre>
  * EEEE 1001101 10I DDDDDDDDD SSSSSSSSS
  *
  * SETD    D,{#}S
  *
  * D = {D[31:18], S[8:0], D[8:0]}.
+ *</pre>
  */
 bool P2Asm::asm_setd()
 {
     m_idx++;
     m_IR.set_inst9(p2_SETD);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Set S field of D to S[8:0].
- *
+ *<pre>
  * EEEE 1001101 11I DDDDDDDDD SSSSSSSSS
  *
  * SETS    D,{#}S
  *
  * D = {D[31:9], S[8:0]}.
+ *</pre>
  */
 bool P2Asm::asm_sets()
 {
     m_idx++;
     m_IR.set_inst9(p2_SETS);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Decode S[4:0] into D.
- *
+ *<pre>
  * EEEE 1001110 00I DDDDDDDDD SSSSSSSSS
  *
  * DECOD   D,{#}S
  *
  * D = 1 << S[4:0].
+ *</pre>
  */
 bool P2Asm::asm_decod()
 {
     m_idx++;
     m_IR.set_inst9(p2_DECOD);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Decode D[4:0] into D.
- *
+ *<pre>
  * EEEE 1001110 000 DDDDDDDDD DDDDDDDDD
  *
  * DECOD   D
  *
  * D = 1 << D[4:0].
+ *</pre>
  */
 bool P2Asm::asm_decod_d()
 {
     m_idx++;
     m_IR.set_inst9(p2_DECOD);
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Get LSB-justified bit mask of size (S[4:0] + 1) into D.
- *
+ *<pre>
  * EEEE 1001110 01I DDDDDDDDD SSSSSSSSS
  *
  * BMASK   D,{#}S
  *
  * D = ($0000_0002 << S[4:0]) - 1.
+ *</pre>
  */
 bool P2Asm::asm_bmask()
 {
     m_idx++;
     m_IR.set_inst9(p2_BMASK);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Get LSB-justified bit mask of size (D[4:0] + 1) into D.
- *
+ *<pre>
  * EEEE 1001110 010 DDDDDDDDD DDDDDDDDD
  *
  * BMASK   D
  *
  * D = ($0000_0002 << D[4:0]) - 1.
+ *</pre>
  */
 bool P2Asm::asm_bmask_d()
 {
     m_idx++;
     m_IR.set_inst9(p2_BMASK);
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Iterate CRC value in D using C and polynomial in S.
- *
+ *<pre>
  * EEEE 1001110 10I DDDDDDDDD SSSSSSSSS
  *
  * CRCBIT  D,{#}S
  *
  * If (C XOR D[0]) then D = (D >> 1) XOR S, else D = (D >> 1).
+ *</pre>
  */
 bool P2Asm::asm_crcbit()
 {
     m_idx++;
     m_IR.set_inst9(p2_CRCBIT);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Iterate CRC value in D using Q[31:28] and polynomial in S.
- *
+ *<pre>
  * EEEE 1001110 11I DDDDDDDDD SSSSSSSSS
  *
  * CRCNIB  D,{#}S
@@ -6126,371 +6344,395 @@ bool P2Asm::asm_crcbit()
  * Like CRCBIT, but 4x.
  * Q = Q << 4.
  * Use SETQ+CRCNIB+CRCNIB+CRCNIB.
+ *</pre>
  */
 bool P2Asm::asm_crcnib()
 {
     m_idx++;
     m_IR.set_inst9(p2_CRCNIB);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief For each non-zero bit pair in S, copy that bit pair into the corresponding D bits, else leave that D bit pair the same.
- *
+ *<pre>
  * EEEE 1001111 00I DDDDDDDDD SSSSSSSSS
  *
  * MUXNITS D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_muxnits()
 {
     m_idx++;
     m_IR.set_inst9(p2_MUXNITS);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief For each non-zero nibble in S, copy that nibble into the corresponding D nibble, else leave that D nibble the same.
- *
+ *<pre>
  * EEEE 1001111 01I DDDDDDDDD SSSSSSSSS
  *
  * MUXNIBS D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_muxnibs()
 {
     m_idx++;
     m_IR.set_inst9(p2_MUXNIBS);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Used after SETQ.
- *
+ *<pre>
  * EEEE 1001111 10I DDDDDDDDD SSSSSSSSS
  *
  * MUXQ    D,{#}S
  *
  * For each '1' bit in Q, copy the corresponding bit in S into D.
  * D = (D & !Q) | (S & Q).
+ *</pre>
  */
 bool P2Asm::asm_muxq()
 {
     m_idx++;
     m_IR.set_inst9(p2_MUXQ);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Move bytes within D, per S.
- *
+ *<pre>
  * EEEE 1001111 11I DDDDDDDDD SSSSSSSSS
  *
  * MOVBYTS D,{#}S
  *
  * D = {D.BYTE[S[7:6]], D.BYTE[S[5:4]], D.BYTE[S[3:2]], D.BYTE[S[1:0]]}.
+ *</pre>
  */
 bool P2Asm::asm_movbyts()
 {
     m_idx++;
     m_IR.set_inst9(p2_MOVBYTS);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief D = unsigned (D[15:0] * S[15:0]).
- *
+ *<pre>
  * EEEE 1010000 0ZI DDDDDDDDD SSSSSSSSS
  *
  * MUL     D,{#}S          {WZ}
  *
  * Z = (S == 0) | (D == 0).
+ *</pre>
  */
 bool P2Asm::asm_mul()
 {
     m_idx++;
     m_IR.set_inst8(p2_MUL);
-    return parse_d_imm_s_wz();
+    return parse_D_IM_S_WZ();
 }
 
 /**
  * @brief D = signed (D[15:0] * S[15:0]).
- *
+ *<pre>
  * EEEE 1010000 1ZI DDDDDDDDD SSSSSSSSS
  *
  * MULS    D,{#}S          {WZ}
  *
  * Z = (S == 0) | (D == 0).
+ *</pre>
  */
 bool P2Asm::asm_muls()
 {
     m_idx++;
     m_IR.set_inst8(p2_MULS);
-    return parse_d_imm_s_wz();
+    return parse_D_IM_S_WZ();
 }
 
 /**
  * @brief Next instruction's S value = unsigned (D[15:0] * S[15:0]) >> 16.
- *
+ *<pre>
  * EEEE 1010001 0ZI DDDDDDDDD SSSSSSSSS
  *
  * SCA     D,{#}S          {WZ}
  *
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_sca()
 {
     m_idx++;
     m_IR.set_inst8(p2_SCA);
-    return parse_d_imm_s_wz();
+    return parse_D_IM_S_WZ();
 }
 
 /**
  * @brief Next instruction's S value = signed (D[15:0] * S[15:0]) >> 14.
- *
+ *<pre>
  * EEEE 1010001 1ZI DDDDDDDDD SSSSSSSSS
  *
  * SCAS    D,{#}S          {WZ}
  *
  * In this scheme, $4000 = 1.0 and $C000 = -1.0.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_scas()
 {
     m_idx++;
     m_IR.set_inst8(p2_SCAS);
-    return parse_d_imm_s_wz();
+    return parse_D_IM_S_WZ();
 }
 
 /**
  * @brief Add bytes of S into bytes of D, with $FF saturation.
- *
+ *<pre>
  * EEEE 1010010 00I DDDDDDDDD SSSSSSSSS
  *
  * ADDPIX  D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_addpix()
 {
     m_idx++;
     m_IR.set_inst9(p2_ADDPIX);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Multiply bytes of S into bytes of D, where $FF = 1.
- *
+ *<pre>
  * EEEE 1010010 01I DDDDDDDDD SSSSSSSSS
  *
  * MULPIX  D,{#}S
  *
  * 0.
+ *</pre>
  */
 bool P2Asm::asm_mulpix()
 {
     m_idx++;
     m_IR.set_inst9(p2_MULPIX);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Alpha-blend bytes of S into bytes of D, using SETPIV value.
- *
+ *<pre>
  * EEEE 1010010 10I DDDDDDDDD SSSSSSSSS
  *
  * BLNPIX  D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_blnpix()
 {
     m_idx++;
     m_IR.set_inst9(p2_BLNPIX);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Mix bytes of S into bytes of D, using SETPIX and SETPIV values.
- *
+ *<pre>
  * EEEE 1010010 11I DDDDDDDDD SSSSSSSSS
  *
  * MIXPIX  D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_mixpix()
 {
     m_idx++;
     m_IR.set_inst9(p2_MIXPIX);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Set CT1 event to trigger on CT = D + S.
- *
+ *<pre>
  * EEEE 1010011 00I DDDDDDDDD SSSSSSSSS
  *
  * ADDCT1  D,{#}S
  *
  * Adds S into D.
+ *</pre>
  */
 bool P2Asm::asm_addct1()
 {
     m_idx++;
     m_IR.set_inst9(p2_ADDCT1);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Set CT2 event to trigger on CT = D + S.
- *
+ *<pre>
  * EEEE 1010011 01I DDDDDDDDD SSSSSSSSS
  *
  * ADDCT2  D,{#}S
  *
  * Adds S into D.
+ *</pre>
  */
 bool P2Asm::asm_addct2()
 {
     m_idx++;
     m_IR.set_inst9(p2_ADDCT2);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Set CT3 event to trigger on CT = D + S.
- *
+ *<pre>
  * EEEE 1010011 10I DDDDDDDDD SSSSSSSSS
  *
  * ADDCT3  D,{#}S
  *
  * Adds S into D.
+ *</pre>
  */
 bool P2Asm::asm_addct3()
 {
     m_idx++;
     m_IR.set_inst9(p2_ADDCT3);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Write only non-$00 bytes in D[31:0] to hub address {#}S/PTRx.
- *
+ *<pre>
  * EEEE 1010011 11I DDDDDDDDD SSSSSSSSS
  *
  * WMLONG  D,{#}S/P
  *
  * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
+ *</pre>
  */
 bool P2Asm::asm_wmlong()
 {
     m_idx++;
     m_IR.set_inst9(p2_WMLONG);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Read smart pin S[5:0] result "Z" into D, don't acknowledge smart pin ("Q" in RQPIN means "quiet").
- *
+ *<pre>
  * EEEE 1010100 C0I DDDDDDDDD SSSSSSSSS
  *
  * RQPIN   D,{#}S          {WC}
  *
  * C = modal result.
+ *</pre>
  */
 bool P2Asm::asm_rqpin()
 {
     m_idx++;
     m_IR.set_inst8(p2_RQPIN);
-    return parse_d_imm_s_wc();
+    return parse_D_IM_S_WC();
 }
 
 /**
  * @brief Read smart pin S[5:0] result "Z" into D, acknowledge smart pin.
- *
+ *<pre>
  * EEEE 1010100 C1I DDDDDDDDD SSSSSSSSS
  *
  * RDPIN   D,{#}S          {WC}
  *
  * C = modal result.
+ *</pre>
  */
 bool P2Asm::asm_rdpin()
 {
     m_idx++;
     m_IR.set_inst8(p2_RDPIN);
-    return parse_d_imm_s_wc();
+    return parse_D_IM_S_WC();
 }
 
 /**
  * @brief Read LUT data from address S[8:0] into D.
- *
+ *<pre>
  * EEEE 1010101 CZI DDDDDDDDD SSSSSSSSS
  *
  * RDLUT   D,{#}S   {WC/WZ/WCZ}
  *
  * C = MSB of data.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_rdlut()
 {
     m_idx++;
     m_IR.set_inst7(p2_RDLUT);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Read zero-extended byte from hub address {#}S/PTRx into D.
- *
+ *<pre>
  * EEEE 1010110 CZI DDDDDDDDD SSSSSSSSS
  *
  * RDBYTE  D,{#}S/P {WC/WZ/WCZ}
  *
  * C = MSB of byte.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_rdbyte()
 {
     m_idx++;
     m_IR.set_inst7(p2_RDBYTE);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Read zero-extended word from hub address {#}S/PTRx into D.
- *
+ *<pre>
  * EEEE 1010111 CZI DDDDDDDDD SSSSSSSSS
  *
  * RDWORD  D,{#}S/P {WC/WZ/WCZ}
  *
  * C = MSB of word.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_rdword()
 {
     m_idx++;
     m_IR.set_inst7(p2_RDWORD);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Read long from hub address {#}S/PTRx into D.
- * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
+ * Prior <pre>SETQ/SETQ2 invokes cog/LUT block transfer.
  *
  * EEEE 1011000 CZI DDDDDDDDD SSSSSSSSS
  *
  * RDLONG  D,{#}S/P {WC/WZ/WCZ}
  *
  * C = MSB of long.
+ *</pre>
  */
 bool P2Asm::asm_rdlong()
 {
     m_idx++;
     m_IR.set_inst7(p2_RDLONG);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Read long from hub address --PTRA into D.
- *
+ *<pre>
  * EEEE 1011000 CZ1 DDDDDDDDD 101011111
  *
  * POPA    D        {WC/WZ/WCZ}
  *
  * C = MSB of long.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_popa()
 {
@@ -6498,18 +6740,19 @@ bool P2Asm::asm_popa()
     m_IR.set_inst7(p2_RDLONG);
     m_IR.set_im(true);
     m_IR.u.op.src = 0x15f;
-    return parse_d_wcz();
+    return parse_D_WCZ();
 }
 
 /**
  * @brief Read long from hub address --PTRB into D.
- *
+ *<pre>
  * EEEE 1011000 CZ1 DDDDDDDDD 111011111
  *
  * POPB    D        {WC/WZ/WCZ}
  *
  * C = MSB of long.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_popb()
 {
@@ -6517,33 +6760,35 @@ bool P2Asm::asm_popb()
     m_IR.set_inst7(p2_RDLONG);
     m_IR.set_im(true);
     m_IR.u.op.src = 0x1df;
-    return parse_d_wcz();
+    return parse_D_WCZ();
 }
 
 /**
  * @brief Call to S** by writing {C, Z, 10'b0, PC[19:0]} to D.
- *
+ *<pre>
  * EEEE 1011001 CZI DDDDDDDDD SSSSSSSSS
  *
  * CALLD   D,{#}S   {WC/WZ/WCZ}
  *
  * C = S[31], Z = S[30].
+ *</pre>
  */
 bool P2Asm::asm_calld()
 {
     m_idx++;
     m_IR.set_inst7(p2_CALLD);
-    return parse_d_imm_s_wcz();
+    return parse_D_IM_S_WCZ();
 }
 
 /**
  * @brief Resume from INT3.
- *
+ *<pre>
  * EEEE 1011001 110 111110000 111110001
  *
  * RESI3
  *
  * (CALLD $1F0,$1F1 WC,WZ).
+ *</pre>
  */
 bool P2Asm::asm_resi3()
 {
@@ -6553,17 +6798,18 @@ bool P2Asm::asm_resi3()
     m_IR.set_wz();
     m_IR.u.op.dst = offs_IJMP3;
     m_IR.u.op.src = offs_IRET3;
-    return parse_inst();
+    return parse_INST();
 }
 
 /**
  * @brief Resume from INT2.
- *
+ *<pre>
  * EEEE 1011001 110 111110010 111110011
  *
  * RESI2
  *
  * (CALLD $1F2,$1F3 WC,WZ).
+ *</pre>
  */
 bool P2Asm::asm_resi2()
 {
@@ -6572,17 +6818,18 @@ bool P2Asm::asm_resi2()
     m_IR.set_wcz(true);
     m_IR.u.op.dst = offs_IJMP2;
     m_IR.u.op.src = offs_IRET2;
-    return parse_inst();
+    return parse_INST();
 }
 
 /**
  * @brief Resume from INT1.
- *
+ *<pre>
  * EEEE 1011001 110 111110100 111110101
  *
  * RESI1
  *
  * (CALLD $1F4,$1F5 WC,WZ).
+ *</pre>
  */
 bool P2Asm::asm_resi1()
 {
@@ -6591,17 +6838,18 @@ bool P2Asm::asm_resi1()
     m_IR.set_wcz(true);
     m_IR.u.op.dst = offs_IJMP1;
     m_IR.u.op.src = offs_IRET1;
-    return parse_inst();
+    return parse_INST();
 }
 
 /**
  * @brief Resume from INT0.
- *
+ *<pre>
  * EEEE 1011001 110 111111110 111111111
  *
  * RESI0
  *
  * (CALLD $1FE,$1FF WC,WZ).
+ *</pre>
  */
 bool P2Asm::asm_resi0()
 {
@@ -6610,17 +6858,18 @@ bool P2Asm::asm_resi0()
     m_IR.set_wcz(true);
     m_IR.u.op.dst = offs_INA;
     m_IR.u.op.src = offs_INB;
-    return parse_inst();
+    return parse_INST();
 }
 
 /**
  * @brief Return from INT3.
- *
+ *<pre>
  * EEEE 1011001 110 111111111 111110001
  *
  * RETI3
  *
  * (CALLD $1FF,$1F1 WC,WZ).
+ *</pre>
  */
 bool P2Asm::asm_reti3()
 {
@@ -6629,17 +6878,18 @@ bool P2Asm::asm_reti3()
     m_IR.set_wcz(true);
     m_IR.u.op.dst = offs_INB;
     m_IR.u.op.src = offs_IRET3;
-    return parse_inst();
+    return parse_INST();
 }
 
 /**
  * @brief Return from INT2.
- *
+ *<pre>
  * EEEE 1011001 110 111111111 111110011
  *
  * RETI2
  *
  * (CALLD $1FF,$1F3 WC,WZ).
+ *</pre>
  */
 bool P2Asm::asm_reti2()
 {
@@ -6648,17 +6898,18 @@ bool P2Asm::asm_reti2()
     m_IR.set_wcz(true);
     m_IR.u.op.dst = offs_INB;
     m_IR.u.op.src = offs_IRET2;
-    return parse_inst();
+    return parse_INST();
 }
 
 /**
  * @brief Return from INT1.
- *
+ *<pre>
  * EEEE 1011001 110 111111111 111110101
  *
  * RETI1
  *
  * (CALLD $1FF,$1F5 WC,WZ).
+ *</pre>
  */
 bool P2Asm::asm_reti1()
 {
@@ -6667,17 +6918,18 @@ bool P2Asm::asm_reti1()
     m_IR.set_wcz(true);
     m_IR.u.op.dst = offs_INB;
     m_IR.u.op.src = offs_IRET1;
-    return parse_inst();
+    return parse_INST();
 }
 
 /**
  * @brief Return from INT0.
- *
+ *<pre>
  * EEEE 1011001 110 111111111 111111111
  *
  * RETI0
  *
  * (CALLD $1FF,$1FF WC,WZ).
+ *</pre>
  */
 bool P2Asm::asm_reti0()
 {
@@ -6686,763 +6938,815 @@ bool P2Asm::asm_reti0()
     m_IR.set_wcz(true);
     m_IR.u.op.dst = offs_INB;
     m_IR.u.op.src = offs_INB;
-    return parse_inst();
+    return parse_INST();
 }
 
 /**
  * @brief Call to S** by pushing {C, Z, 10'b0, PC[19:0]} onto stack, copy D to PA.
- *
+ *<pre>
  * EEEE 1011010 0LI DDDDDDDDD SSSSSSSSS
  *
  * CALLPA  {#}D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_callpa()
 {
     m_idx++;
     m_IR.set_inst8(p2_CALLPA);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief Call to S** by pushing {C, Z, 10'b0, PC[19:0]} onto stack, copy D to PB.
- *
+ *<pre>
  * EEEE 1011010 1LI DDDDDDDDD SSSSSSSSS
  *
  * CALLPB  {#}D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_callpb()
 {
     m_idx++;
     m_IR.set_inst8(p2_CALLPB);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief Decrement D and jump to S** if result is zero.
- *
+ *<pre>
  * EEEE 1011011 00I DDDDDDDDD SSSSSSSSS
  *
  * DJZ     D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_djz()
 {
     m_idx++;
     m_IR.set_inst9(p2_DJZ);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Decrement D and jump to S** if result is not zero.
- *
+ *<pre>
  * EEEE 1011011 01I DDDDDDDDD SSSSSSSSS
  *
  * DJNZ    D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_djnz()
 {
     m_idx++;
     m_IR.set_inst9(p2_DJNZ);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Decrement D and jump to S** if result is $FFFF_FFFF.
- *
+ *<pre>
  * EEEE 1011011 10I DDDDDDDDD SSSSSSSSS
  *
  * DJF     D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_djf()
 {
     m_idx++;
     m_IR.set_inst9(p2_DJF);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Decrement D and jump to S** if result is not $FFFF_FFFF.
- *
+ *<pre>
  * EEEE 1011011 11I DDDDDDDDD SSSSSSSSS
  *
  * DJNF    D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_djnf()
 {
     m_idx++;
     m_IR.set_inst9(p2_DJNF);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Increment D and jump to S** if result is zero.
- *
+ *<pre>
  * EEEE 1011100 00I DDDDDDDDD SSSSSSSSS
  *
  * IJZ     D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_ijz()
 {
     m_idx++;
     m_IR.set_inst9(p2_IJZ);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Increment D and jump to S** if result is not zero.
- *
+ *<pre>
  * EEEE 1011100 01I DDDDDDDDD SSSSSSSSS
  *
  * IJNZ    D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_ijnz()
 {
     m_idx++;
     m_IR.set_inst9(p2_IJNZ);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Test D and jump to S** if D is zero.
- *
+ *<pre>
  * EEEE 1011100 10I DDDDDDDDD SSSSSSSSS
  *
  * TJZ     D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_tjz()
 {
     m_idx++;
     m_IR.set_inst9(p2_TJZ);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Test D and jump to S** if D is not zero.
- *
+ *<pre>
  * EEEE 1011100 11I DDDDDDDDD SSSSSSSSS
  *
  * TJNZ    D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_tjnz()
 {
     m_idx++;
     m_IR.set_inst9(p2_TJNZ);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Test D and jump to S** if D is full (D = $FFFF_FFFF).
- *
+ *<pre>
  * EEEE 1011101 00I DDDDDDDDD SSSSSSSSS
  *
  * TJF     D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_tjf()
 {
     m_idx++;
     m_IR.set_inst9(p2_TJF);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Test D and jump to S** if D is not full (D != $FFFF_FFFF).
- *
+ *<pre>
  * EEEE 1011101 01I DDDDDDDDD SSSSSSSSS
  *
  * TJNF    D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_tjnf()
 {
     m_idx++;
     m_IR.set_inst9(p2_TJNF);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Test D and jump to S** if D is signed (D[31] = 1).
- *
+ *<pre>
  * EEEE 1011101 10I DDDDDDDDD SSSSSSSSS
  *
  * TJS     D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_tjs()
 {
     m_idx++;
     m_IR.set_inst9(p2_TJS);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Test D and jump to S** if D is not signed (D[31] = 0).
- *
+ *<pre>
  * EEEE 1011101 11I DDDDDDDDD SSSSSSSSS
  *
  * TJNS    D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_tjns()
 {
     m_idx++;
     m_IR.set_inst9(p2_TJNS);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Test D and jump to S** if D overflowed (D[31] != C, C = 'correct sign' from last addition/subtraction).
- *
+ *<pre>
  * EEEE 1011110 00I DDDDDDDDD SSSSSSSSS
  *
  * TJV     D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_tjv()
 {
     m_idx++;
     m_IR.set_inst9(p2_TJV);
-    return parse_d_imm_s();
+    return parse_D_IM_S();
 }
 
 /**
  * @brief Jump to S** if INT event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000000000 SSSSSSSSS
  *
  * JINT    {#}S
+ *</pre>
  */
 bool P2Asm::asm_jint()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JINT;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if CT1 event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000000001 SSSSSSSSS
  *
  * JCT1    {#}S
+ *</pre>
  */
 bool P2Asm::asm_jct1()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JCT1;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if CT2 event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000000010 SSSSSSSSS
  *
  * JCT2    {#}S
+ *</pre>
  */
 bool P2Asm::asm_jct2()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JCT2;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if CT3 event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000000011 SSSSSSSSS
  *
  * JCT3    {#}S
+ *</pre>
  */
 bool P2Asm::asm_jct3()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JCT3;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if SE1 event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000000100 SSSSSSSSS
  *
  * JSE1    {#}S
+ *</pre>
  */
 bool P2Asm::asm_jse1()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JSE1;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if SE2 event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000000101 SSSSSSSSS
  *
  * JSE2    {#}S
+ *</pre>
  */
 bool P2Asm::asm_jse2()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JSE2;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if SE3 event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000000110 SSSSSSSSS
  *
  * JSE3    {#}S
+ *</pre>
  */
 bool P2Asm::asm_jse3()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JSE3;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if SE4 event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000000111 SSSSSSSSS
  *
  * JSE4    {#}S
+ *</pre>
  */
 bool P2Asm::asm_jse4()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JSE4;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if PAT event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000001000 SSSSSSSSS
  *
  * JPAT    {#}S
+ *</pre>
  */
 bool P2Asm::asm_jpat()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JPAT;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if FBW event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000001001 SSSSSSSSS
  *
  * JFBW    {#}S
+ *</pre>
  */
 bool P2Asm::asm_jfbw()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JFBW;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if XMT event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000001010 SSSSSSSSS
  *
  * JXMT    {#}S
+ *</pre>
  */
 bool P2Asm::asm_jxmt()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JXMT;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if XFI event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000001011 SSSSSSSSS
  *
  * JXFI    {#}S
+ *</pre>
  */
 bool P2Asm::asm_jxfi()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JXFI;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if XRO event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000001100 SSSSSSSSS
  *
  * JXRO    {#}S
+ *</pre>
  */
 bool P2Asm::asm_jxro()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JXRO;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if XRL event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000001101 SSSSSSSSS
  *
  * JXRL    {#}S
+ *</pre>
  */
 bool P2Asm::asm_jxrl()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JXRL;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if ATN event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000001110 SSSSSSSSS
  *
  * JATN    {#}S
+ *</pre>
  */
 bool P2Asm::asm_jatn()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JATN;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if QMT event flag is set.
- *
+ *<pre>
  * EEEE 1011110 01I 000001111 SSSSSSSSS
  *
  * JQMT    {#}S
+ *</pre>
  */
 bool P2Asm::asm_jqmt()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JQMT;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if INT event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000010000 SSSSSSSSS
  *
  * JNINT   {#}S
+ *</pre>
  */
 bool P2Asm::asm_jnint()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JNINT;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if CT1 event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000010001 SSSSSSSSS
  *
  * JNCT1   {#}S
+ *</pre>
  */
 bool P2Asm::asm_jnct1()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JNCT1;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if CT2 event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000010010 SSSSSSSSS
  *
  * JNCT2   {#}S
+ *</pre>
  */
 bool P2Asm::asm_jnct2()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JNCT2;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if CT3 event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000010011 SSSSSSSSS
  *
  * JNCT3   {#}S
+ *</pre>
  */
 bool P2Asm::asm_jnct3()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JNCT3;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if SE1 event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000010100 SSSSSSSSS
  *
  * JNSE1   {#}S
+ *</pre>
  */
 bool P2Asm::asm_jnse1()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JNSE1;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if SE2 event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000010101 SSSSSSSSS
  *
  * JNSE2   {#}S
+ *</pre>
  */
 bool P2Asm::asm_jnse2()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JNSE2;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if SE3 event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000010110 SSSSSSSSS
  *
  * JNSE3   {#}S
+ *</pre>
  */
 bool P2Asm::asm_jnse3()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JNSE3;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if SE4 event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000010111 SSSSSSSSS
  *
  * JNSE4   {#}S
+ *</pre>
  */
 bool P2Asm::asm_jnse4()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JNSE4;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if PAT event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000011000 SSSSSSSSS
  *
  * JNPAT   {#}S
+ *</pre>
  */
 bool P2Asm::asm_jnpat()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JNPAT;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if FBW event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000011001 SSSSSSSSS
  *
  * JNFBW   {#}S
+ *</pre>
  */
 bool P2Asm::asm_jnfbw()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JNFBW;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if XMT event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000011010 SSSSSSSSS
  *
  * JNXMT   {#}S
+ *</pre>
  */
 bool P2Asm::asm_jnxmt()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JNXMT;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if XFI event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000011011 SSSSSSSSS
  *
  * JNXFI   {#}S
+ *</pre>
  */
 bool P2Asm::asm_jnxfi()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JNXFI;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if XRO event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000011100 SSSSSSSSS
  *
  * JNXRO   {#}S
+ *</pre>
  */
 bool P2Asm::asm_jnxro()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JNXRO;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if XRL event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000011101 SSSSSSSSS
  *
  * JNXRL   {#}S
+ *</pre>
  */
 bool P2Asm::asm_jnxrl()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JNXRL;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if ATN event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000011110 SSSSSSSSS
  *
  * JNATN   {#}S
+ *</pre>
  */
 bool P2Asm::asm_jnatn()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JNATN;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Jump to S** if QMT event flag is clear.
- *
+ *<pre>
  * EEEE 1011110 01I 000011111 SSSSSSSSS
  *
  * JNQMT   {#}S
+ *</pre>
  */
 bool P2Asm::asm_jnqmt()
 {
     m_idx++;
     m_IR.set_inst9(p2_OPDST);
     m_IR.u.op.dst = p2_OPDST_JNQMT;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief <empty>.
- *
+ *<pre>
  * EEEE 1011110 1LI DDDDDDDDD SSSSSSSSS
  *
  * <empty> {#}D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_1011110_1()
 {
     m_idx++;
     m_IR.set_inst9(p2_1011110_10);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief <empty>.
- *
+ *<pre>
  * EEEE 1011111 0LI DDDDDDDDD SSSSSSSSS
  *
  * <empty> {#}D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_1011111_0()
 {
     m_idx++;
     m_IR.set_inst8(p2_1011111_0);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief Set pin pattern for PAT event.
- *
+ *<pre>
  * EEEE 1011111 1LI DDDDDDDDD SSSSSSSSS
  *
  * SETPAT  {#}D,{#}S
  *
  * C selects INA/INB, Z selects =/!=, D provides mask value, S provides match value.
+ *</pre>
  */
 bool P2Asm::asm_setpat()
 {
     m_idx++;
     m_IR.set_inst8(p2_SETPAT);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief Write D to mode register of smart pin S[5:0], acknowledge smart pin.
- *
+ *<pre>
  * EEEE 1100000 0LI DDDDDDDDD SSSSSSSSS
  *
  * WRPIN   {#}D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_wrpin()
 {
     m_idx++;
     m_IR.set_inst8(p2_WRPIN);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief Acknowledge smart pin S[5:0].
- *
+ *<pre>
  * EEEE 1100000 01I 000000001 SSSSSSSSS
  *
  * AKPIN   {#}S
+ *</pre>
  */
 bool P2Asm::asm_akpin()
 {
@@ -7450,100 +7754,107 @@ bool P2Asm::asm_akpin()
     m_IR.set_inst8(p2_WRPIN);
     m_IR.u.op8.wz = true;
     m_IR.u.op.dst = 1;
-    return parse_imm_s();
+    return parse_IM_S();
 }
 
 /**
  * @brief Write D to parameter "X" of smart pin S[5:0], acknowledge smart pin.
- *
+ *<pre>
  * EEEE 1100000 1LI DDDDDDDDD SSSSSSSSS
  *
  * WXPIN   {#}D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_wxpin()
 {
     m_idx++;
     m_IR.set_inst8(p2_WXPIN);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief Write D to parameter "Y" of smart pin S[5:0], acknowledge smart pin.
- *
+ *<pre>
  * EEEE 1100001 0LI DDDDDDDDD SSSSSSSSS
  *
  * WYPIN   {#}D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_wypin()
 {
     m_idx++;
     m_IR.set_inst8(p2_WYPIN);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief Write D to LUT address S[8:0].
- *
+ *<pre>
  * EEEE 1100001 1LI DDDDDDDDD SSSSSSSSS
  *
  * WRLUT   {#}D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_wrlut()
 {
     m_idx++;
     m_IR.set_inst8(p2_WRLUT);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief Write byte in D[7:0] to hub address {#}S/PTRx.
- *
+ *<pre>
  * EEEE 1100010 0LI DDDDDDDDD SSSSSSSSS
  *
  * WRBYTE  {#}D,{#}S/P
+ *</pre>
  */
 bool P2Asm::asm_wrbyte()
 {
     m_idx++;
     m_IR.set_inst8(p2_WRBYTE);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief Write word in D[15:0] to hub address {#}S/PTRx.
- *
+ *<pre>
  * EEEE 1100010 1LI DDDDDDDDD SSSSSSSSS
  *
  * WRWORD  {#}D,{#}S/P
+ *</pre>
  */
 bool P2Asm::asm_wrword()
 {
     m_idx++;
     m_IR.set_inst8(p2_WRWORD);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief Write long in D[31:0] to hub address {#}S/PTRx.
- * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
+ * Prior <pre>SETQ/SETQ2 invokes cog/LUT block transfer.
  *
  * EEEE 1100011 0LI DDDDDDDDD SSSSSSSSS
  *
  * WRLONG  {#}D,{#}S/P
+ *</pre>
  */
 bool P2Asm::asm_wrlong()
 {
     m_idx++;
     m_IR.set_inst8(p2_WRLONG);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief Write long in D[31:0] to hub address PTRA++.
- *
+ *<pre>
  * EEEE 1100011 0L1 DDDDDDDDD 101100001
  *
  * PUSHA   {#}D
+ *</pre>
  */
 bool P2Asm::asm_pusha()
 {
@@ -7551,15 +7862,16 @@ bool P2Asm::asm_pusha()
     m_IR.set_inst8(p2_WRLONG);
     m_IR.u.op8.im = true;
     m_IR.u.op8.src = 0x161;
-    return parse_wz_d();
+    return parse_WZ_D();
 }
 
 /**
  * @brief Write long in D[31:0] to hub address PTRB++.
- *
+ *<pre>
  * EEEE 1100011 0L1 DDDDDDDDD 111100001
  *
  * PUSHB   {#}D
+ *</pre>
  */
 bool P2Asm::asm_pushb()
 {
@@ -7567,77 +7879,82 @@ bool P2Asm::asm_pushb()
     m_IR.set_inst8(p2_WRLONG);
     m_IR.u.op8.im = true;
     m_IR.u.op8.src = 0x1e1;
-    return parse_wz_d();
+    return parse_WZ_D();
 }
 
 /**
  * @brief Begin new fast hub read via FIFO.
- *
+ *<pre>
  * EEEE 1100011 1LI DDDDDDDDD SSSSSSSSS
  *
  * RDFAST  {#}D,{#}S
  *
  * D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
+ *</pre>
  */
 bool P2Asm::asm_rdfast()
 {
     m_idx++;
     m_IR.set_inst8(p2_RDFAST);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief Begin new fast hub write via FIFO.
- *
+ *<pre>
  * EEEE 1100100 0LI DDDDDDDDD SSSSSSSSS
  *
  * WRFAST  {#}D,{#}S
  *
  * D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
+ *</pre>
  */
 bool P2Asm::asm_wrfast()
 {
     m_idx++;
     m_IR.set_inst8(p2_WRFAST);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief Set next block for when block wraps.
- *
+ *<pre>
  * EEEE 1100100 1LI DDDDDDDDD SSSSSSSSS
  *
  * FBLOCK  {#}D,{#}S
  *
  * D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
+ *</pre>
  */
 bool P2Asm::asm_fblock()
 {
     m_idx++;
     m_IR.set_inst8(p2_FBLOCK);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief Issue streamer command immediately, zeroing phase.
- *
+ *<pre>
  * EEEE 1100101 0LI DDDDDDDDD SSSSSSSSS
  *
  * XINIT   {#}D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_xinit()
 {
     m_idx++;
     m_IR.set_inst8(p2_XINIT);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief Stop streamer immediately.
- *
+ *<pre>
  * EEEE 1100101 011 000000000 000000000
  *
  * XSTOP
+ *</pre>
  */
 bool P2Asm::asm_xstop()
 {
@@ -7647,250 +7964,265 @@ bool P2Asm::asm_xstop()
     m_IR.u.op8.im = true;
     m_IR.u.op8.dst = 0x000;
     m_IR.u.op8.src = 0x000;
-    return parse_inst();
+    return parse_INST();
 }
 
 /**
  * @brief Buffer new streamer command to be issued on final NCO rollover of current command, zeroing phase.
- *
+ *<pre>
  * EEEE 1100101 1LI DDDDDDDDD SSSSSSSSS
  *
  * XZERO   {#}D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_xzero()
 {
     m_idx++;
     m_IR.set_inst8(p2_XZERO);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief Buffer new streamer command to be issued on final NCO rollover of current command, continuing phase.
- *
+ *<pre>
  * EEEE 1100110 0LI DDDDDDDDD SSSSSSSSS
  *
  * XCONT   {#}D,{#}S
+ *</pre>
  */
 bool P2Asm::asm_xcont()
 {
     m_idx++;
     m_IR.set_inst8(p2_XCONT);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief Execute next D[8:0] instructions S times.
- *
+ *<pre>
  * EEEE 1100110 1LI DDDDDDDDD SSSSSSSSS
  *
  * REP     {#}D,{#}S
  *
  * If S = 0, repeat infinitely.
  * If D[8:0] = 0, nothing repeats.
+ *</pre>
  */
 bool P2Asm::asm_rep()
 {
     m_idx++;
     m_IR.set_inst8(p2_REP);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief Start cog selected by D.
- *
+ *<pre>
  * EEEE 1100111 CLI DDDDDDDDD SSSSSSSSS
  *
  * COGINIT {#}D,{#}S       {WC}
  *
  * S[19:0] sets hub startup address and PTRB of cog.
  * Prior SETQ sets PTRA of cog.
+ *</pre>
  */
 bool P2Asm::asm_coginit()
 {
     m_idx++;
     m_IR.set_inst7(p2_COGINIT);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief Begin CORDIC unsigned multiplication of D * S.
- *
+ *<pre>
  * EEEE 1101000 0LI DDDDDDDDD SSSSSSSSS
  *
  * QMUL    {#}D,{#}S
  *
  * GETQX/GETQY retrieves lower/upper product.
+ *</pre>
  */
 bool P2Asm::asm_qmul()
 {
     m_idx++;
     m_IR.set_inst8(p2_QMUL);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief Begin CORDIC unsigned division of {SETQ value or 32'b0, D} / S.
- *
+ *<pre>
  * EEEE 1101000 1LI DDDDDDDDD SSSSSSSSS
  *
  * QDIV    {#}D,{#}S
  *
  * GETQX/GETQY retrieves quotient/remainder.
+ *</pre>
  */
 bool P2Asm::asm_qdiv()
 {
     m_idx++;
     m_IR.set_inst8(p2_QDIV);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief Begin CORDIC unsigned division of {D, SETQ value or 32'b0} / S.
- *
+ *<pre>
  * EEEE 1101001 0LI DDDDDDDDD SSSSSSSSS
  *
  * QFRAC   {#}D,{#}S
  *
  * GETQX/GETQY retrieves quotient/remainder.
+ *</pre>
  */
 bool P2Asm::asm_qfrac()
 {
     m_idx++;
     m_IR.set_inst8(p2_QFRAC);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief Begin CORDIC square root of {S, D}.
- *
+ *<pre>
  * EEEE 1101001 1LI DDDDDDDDD SSSSSSSSS
  *
  * QSQRT   {#}D,{#}S
  *
  * GETQX retrieves root.
+ *</pre>
  */
 bool P2Asm::asm_qsqrt()
 {
     m_idx++;
     m_IR.set_inst8(p2_QSQRT);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief Begin CORDIC rotation of point (D, SETQ value or 32'b0) by angle S.
- *
+ *<pre>
  * EEEE 1101010 0LI DDDDDDDDD SSSSSSSSS
  *
  * QROTATE {#}D,{#}S
  *
  * GETQX/GETQY retrieves X/Y.
+ *</pre>
  */
 bool P2Asm::asm_qrotate()
 {
     m_idx++;
     m_IR.set_inst8(p2_QROTATE);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief Begin CORDIC vectoring of point (D, S).
- *
+ *<pre>
  * EEEE 1101010 1LI DDDDDDDDD SSSSSSSSS
  *
  * QVECTOR {#}D,{#}S
  *
  * GETQX/GETQY retrieves length/angle.
+ *</pre>
  */
 bool P2Asm::asm_qvector()
 {
     m_idx++;
     m_IR.set_inst8(p2_QVECTOR);
-    return parse_wz_d_imm_s();
+    return parse_WZ_D_IM_S();
 }
 
 /**
  * @brief Set hub configuration to D.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000000000
  *
  * HUBSET  {#}D
+ *</pre>
  */
 bool P2Asm::asm_hubset()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_HUBSET;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief If D is register and no WC, get cog ID (0 to 15) into D.
- *
+ *<pre>
  * EEEE 1101011 C0L DDDDDDDDD 000000001
  *
  * COGID   {#}D            {WC}
  *
  * If WC, check status of cog D[3:0], C = 1 if on.
+ *</pre>
  */
 bool P2Asm::asm_cogid()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_COGID;
-    return parse_imm_d_wc();
+    return parse_IM_D_WC();
 }
 
 /**
  * @brief Stop cog D[3:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000000011
  *
  * COGSTOP {#}D
+ *</pre>
  */
 bool P2Asm::asm_cogstop()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_COGSTOP;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Request a LOCK.
- *
+ *<pre>
  * EEEE 1101011 C00 DDDDDDDDD 000000100
  *
  * LOCKNEW D               {WC}
  *
  * D will be written with the LOCK number (0 to 15).
  * C = 1 if no LOCK available.
+ *</pre>
  */
 bool P2Asm::asm_locknew()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_LOCKNEW;
-    return parse_imm_d_wc();
+    return parse_IM_D_WC();
 }
 
 /**
  * @brief Return LOCK D[3:0] for reallocation.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000000101
  *
  * LOCKRET {#}D
+ *</pre>
  */
 bool P2Asm::asm_lockret()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_LOCKRET;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Try to get LOCK D[3:0].
- *
+ *<pre>
  * EEEE 1101011 C0L DDDDDDDDD 000000110
  *
  * LOCKTRY {#}D            {WC}
@@ -7898,204 +8230,216 @@ bool P2Asm::asm_lockret()
  * C = 1 if got LOCK.
  * LOCKREL releases LOCK.
  * LOCK is also released if owner cog stops or restarts.
+ *</pre>
  */
 bool P2Asm::asm_locktry()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_LOCKTRY;
-    return parse_imm_d_wc();
+    return parse_IM_D_WC();
 }
 
 /**
  * @brief Release LOCK D[3:0].
- *
+ *<pre>
  * EEEE 1101011 C0L DDDDDDDDD 000000111
  *
  * LOCKREL {#}D            {WC}
  *
  * If D is a register and WC, get current/last cog id of LOCK owner into D and LOCK status into C.
+ *</pre>
  */
 bool P2Asm::asm_lockrel()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_LOCKREL;
-    return parse_imm_d_wc();
+    return parse_IM_D_WC();
 }
 
 /**
  * @brief Begin CORDIC number-to-logarithm conversion of D.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000001110
  *
  * QLOG    {#}D
  *
  * GETQX retrieves log {5'whole_exponent, 27'fractional_exponent}.
+ *</pre>
  */
 bool P2Asm::asm_qlog()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_QLOG;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Begin CORDIC logarithm-to-number conversion of D.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000001111
  *
  * QEXP    {#}D
  *
  * GETQX retrieves number.
+ *</pre>
  */
 bool P2Asm::asm_qexp()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_QEXP;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Read zero-extended byte from FIFO into D. Used after RDFAST.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000010000
  *
  * RFBYTE  D        {WC/WZ/WCZ}
  *
  * C = MSB of byte.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_rfbyte()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_RFBYTE;
-    return parse_d_wcz();
+    return parse_D_WCZ();
 }
 
 /**
  * @brief Read zero-extended word from FIFO into D. Used after RDFAST.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000010001
  *
  * RFWORD  D        {WC/WZ/WCZ}
  *
  * C = MSB of word.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_rfword()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_RFWORD;
-    return parse_d_wcz();
+    return parse_D_WCZ();
 }
 
 /**
  * @brief Read long from FIFO into D. Used after RDFAST.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000010010
  *
  * RFLONG  D        {WC/WZ/WCZ}
  *
  * C = MSB of long.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_rflong()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_RFLONG;
-    return parse_d_wcz();
+    return parse_D_WCZ();
 }
 
 /**
  * @brief Read zero-extended 1..4-byte value from FIFO into D. Used after RDFAST.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000010011
  *
  * RFVAR   D        {WC/WZ/WCZ}
  *
  * C = 0.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_rfvar()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_RFVAR;
-    return parse_d_wcz();
+    return parse_D_WCZ();
 }
 
 /**
  * @brief Read sign-extended 1..4-byte value from FIFO into D. Used after RDFAST.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000010100
  *
  * RFVARS  D        {WC/WZ/WCZ}
  *
  * C = MSB of value.
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_rfvars()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_RFVARS;
-    return parse_d_wcz();
+    return parse_D_WCZ();
 }
 
 /**
  * @brief Write byte in D[7:0] into FIFO. Used after WRFAST.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000010101
  *
  * WFBYTE  {#}D
+ *</pre>
  */
 bool P2Asm::asm_wfbyte()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_WFBYTE;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Write word in D[15:0] into FIFO. Used after WRFAST.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000010110
  *
  * WFWORD  {#}D
+ *</pre>
  */
 bool P2Asm::asm_wfword()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_WFWORD;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Write long in D[31:0] into FIFO. Used after WRFAST.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000010111
  *
  * WFLONG  {#}D
+ *</pre>
  */
 bool P2Asm::asm_wflong()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_WFLONG;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Retrieve CORDIC result X into D.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000011000
  *
  * GETQX   D        {WC/WZ/WCZ}
@@ -8103,18 +8447,19 @@ bool P2Asm::asm_wflong()
  * Waits, in case result not ready.
  * C = X[31].
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_getqx()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_GETQX;
-    return parse_d_wcz();
+    return parse_D_WCZ();
 }
 
 /**
  * @brief Retrieve CORDIC result Y into D.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000011001
  *
  * GETQY   D        {WC/WZ/WCZ}
@@ -8122,196 +8467,209 @@ bool P2Asm::asm_getqx()
  * Waits, in case result no ready.
  * C = Y[31].
  * Z = (result == 0).
+ *</pre>
  */
 bool P2Asm::asm_getqy()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_GETQY;
-    return parse_d_wcz();
+    return parse_D_WCZ();
 }
 
 /**
  * @brief Get CT into D.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 000011010
  *
  * GETCT   D
  *
  * CT is the free-running 32-bit system counter that increments on every clock.
+ *</pre>
  */
 bool P2Asm::asm_getct()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_GETCT;
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Get RND into D/C/Z.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000011011
  *
  * GETRND  D        {WC/WZ/WCZ}
  *
  * RND is the PRNG that updates on every clock.
  * D = RND[31:0], C = RND[31], Z = RND[30], unique per cog.
+ *</pre>
  */
 bool P2Asm::asm_getrnd()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_GETRND;
-    return parse_d_wcz();
+    return parse_D_WCZ();
 }
 
 /**
  * @brief Get RND into C/Z.
- *
+ *<pre>
  * EEEE 1101011 CZ1 000000000 000011011
  *
  * GETRND            WC/WZ/WCZ
  *
  * C = RND[31], Z = RND[30], unique per cog.
+ *</pre>
  */
 bool P2Asm::asm_getrnd_cz()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_GETRND;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief DAC3 = D[31:24], DAC2 = D[23:16], DAC1 = D[15:8], DAC0 = D[7:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000011100
  *
  * SETDACS {#}D
+ *</pre>
  */
 bool P2Asm::asm_setdacs()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SETDACS;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Set streamer NCO frequency to D.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000011101
  *
  * SETXFRQ {#}D
+ *</pre>
  */
 bool P2Asm::asm_setxfrq()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SETXFRQ;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Get the streamer's Goertzel X accumulator into D and the Y accumulator into the next instruction's S, clear accumulators.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 000011110
  *
  * GETXACC D
+ *</pre>
  */
 bool P2Asm::asm_getxacc()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_GETXACC;
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Wait 2 + D clocks if no WC/WZ/WCZ.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000011111
  *
  * WAITX   {#}D     {WC/WZ/WCZ}
  *
  * If WC/WZ/WCZ, wait 2 + (D & RND) clocks.
  * C/Z = 0.
+ *</pre>
  */
 bool P2Asm::asm_waitx()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_WAITX;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief Set SE1 event configuration to D[8:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000100000
  *
  * SETSE1  {#}D
+ *</pre>
  */
 bool P2Asm::asm_setse1()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SETSE1;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Set SE2 event configuration to D[8:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000100001
  *
  * SETSE2  {#}D
+ *</pre>
  */
 bool P2Asm::asm_setse2()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SETSE2;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Set SE3 event configuration to D[8:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000100010
  *
  * SETSE3  {#}D
+ *</pre>
  */
 bool P2Asm::asm_setse3()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SETSE3;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Set SE4 event configuration to D[8:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000100011
  *
  * SETSE4  {#}D
+ *</pre>
  */
 bool P2Asm::asm_setse4()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SETSE4;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Get INT event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000000000 000100100
  *
  * POLLINT          {WC/WZ/WCZ}
+ *</pre>
  */
 bool P2Asm::asm_pollint()
 {
@@ -8319,15 +8677,16 @@ bool P2Asm::asm_pollint()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_POLLINT;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Get CT1 event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000000001 000100100
  *
  * POLLCT1          {WC/WZ/WCZ}
+ *</pre>
  */
 bool P2Asm::asm_pollct1()
 {
@@ -8335,15 +8694,16 @@ bool P2Asm::asm_pollct1()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_POLLCT1;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Get CT2 event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000000010 000100100
  *
  * POLLCT2          {WC/WZ/WCZ}
+ *</pre>
  */
 bool P2Asm::asm_pollct2()
 {
@@ -8351,15 +8711,16 @@ bool P2Asm::asm_pollct2()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_POLLCT2;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Get CT3 event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000000011 000100100
  *
  * POLLCT3          {WC/WZ/WCZ}
+ *</pre>
  */
 bool P2Asm::asm_pollct3()
 {
@@ -8367,15 +8728,16 @@ bool P2Asm::asm_pollct3()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_POLLCT3;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Get SE1 event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000000100 000100100
  *
  * POLLSE1          {WC/WZ/WCZ}
+ *</pre>
  */
 bool P2Asm::asm_pollse1()
 {
@@ -8383,15 +8745,16 @@ bool P2Asm::asm_pollse1()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_POLLSE1;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Get SE2 event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000000101 000100100
  *
  * POLLSE2          {WC/WZ/WCZ}
+ *</pre>
  */
 bool P2Asm::asm_pollse2()
 {
@@ -8399,15 +8762,16 @@ bool P2Asm::asm_pollse2()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_POLLSE2;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Get SE3 event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000000110 000100100
  *
  * POLLSE3          {WC/WZ/WCZ}
+ *</pre>
  */
 bool P2Asm::asm_pollse3()
 {
@@ -8415,15 +8779,16 @@ bool P2Asm::asm_pollse3()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_POLLSE3;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Get SE4 event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000000111 000100100
  *
  * POLLSE4          {WC/WZ/WCZ}
+ *</pre>
  */
 bool P2Asm::asm_pollse4()
 {
@@ -8431,15 +8796,16 @@ bool P2Asm::asm_pollse4()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_POLLSE4;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Get PAT event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000001000 000100100
  *
  * POLLPAT          {WC/WZ/WCZ}
+ *</pre>
  */
 bool P2Asm::asm_pollpat()
 {
@@ -8447,15 +8813,16 @@ bool P2Asm::asm_pollpat()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_POLLPAT;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Get FBW event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000001001 000100100
  *
  * POLLFBW          {WC/WZ/WCZ}
+ *</pre>
  */
 bool P2Asm::asm_pollfbw()
 {
@@ -8463,15 +8830,16 @@ bool P2Asm::asm_pollfbw()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_POLLFBW;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Get XMT event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000001010 000100100
  *
  * POLLXMT          {WC/WZ/WCZ}
+ *</pre>
  */
 bool P2Asm::asm_pollxmt()
 {
@@ -8479,15 +8847,16 @@ bool P2Asm::asm_pollxmt()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_POLLXMT;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Get XFI event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000001011 000100100
  *
  * POLLXFI          {WC/WZ/WCZ}
+ *</pre>
  */
 bool P2Asm::asm_pollxfi()
 {
@@ -8495,15 +8864,16 @@ bool P2Asm::asm_pollxfi()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_POLLXFI;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Get XRO event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000001100 000100100
  *
  * POLLXRO          {WC/WZ/WCZ}
+ *</pre>
  */
 bool P2Asm::asm_pollxro()
 {
@@ -8511,15 +8881,16 @@ bool P2Asm::asm_pollxro()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_POLLXRO;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Get XRL event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000001101 000100100
  *
  * POLLXRL          {WC/WZ/WCZ}
+ *</pre>
  */
 bool P2Asm::asm_pollxrl()
 {
@@ -8527,15 +8898,16 @@ bool P2Asm::asm_pollxrl()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_POLLXRL;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Get ATN event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000001110 000100100
  *
  * POLLATN          {WC/WZ/WCZ}
+ *</pre>
  */
 bool P2Asm::asm_pollatn()
 {
@@ -8543,15 +8915,16 @@ bool P2Asm::asm_pollatn()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_POLLATN;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Get QMT event flag into C/Z, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000001111 000100100
  *
  * POLLQMT          {WC/WZ/WCZ}
+ *</pre>
  */
 bool P2Asm::asm_pollqmt()
 {
@@ -8559,18 +8932,19 @@ bool P2Asm::asm_pollqmt()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_POLLQMT;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Wait for INT event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000010000 000100100
  *
  * WAITINT          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 bool P2Asm::asm_waitint()
 {
@@ -8578,18 +8952,19 @@ bool P2Asm::asm_waitint()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_WAITINT;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Wait for CT1 event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000010001 000100100
  *
  * WAITCT1          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 bool P2Asm::asm_waitct1()
 {
@@ -8597,18 +8972,19 @@ bool P2Asm::asm_waitct1()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_WAITCT1;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Wait for CT2 event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000010010 000100100
  *
  * WAITCT2          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 bool P2Asm::asm_waitct2()
 {
@@ -8616,18 +8992,19 @@ bool P2Asm::asm_waitct2()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_WAITCT2;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Wait for CT3 event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000010011 000100100
  *
  * WAITCT3          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 bool P2Asm::asm_waitct3()
 {
@@ -8635,18 +9012,19 @@ bool P2Asm::asm_waitct3()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_WAITCT3;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Wait for SE1 event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000010100 000100100
  *
  * WAITSE1          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 bool P2Asm::asm_waitse1()
 {
@@ -8654,18 +9032,19 @@ bool P2Asm::asm_waitse1()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_WAITSE1;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Wait for SE2 event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000010101 000100100
  *
  * WAITSE2          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 bool P2Asm::asm_waitse2()
 {
@@ -8673,18 +9052,19 @@ bool P2Asm::asm_waitse2()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_WAITSE2;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Wait for SE3 event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000010110 000100100
  *
  * WAITSE3          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 bool P2Asm::asm_waitse3()
 {
@@ -8692,18 +9072,19 @@ bool P2Asm::asm_waitse3()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_WAITSE3;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Wait for SE4 event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000010111 000100100
  *
  * WAITSE4          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 bool P2Asm::asm_waitse4()
 {
@@ -8711,18 +9092,19 @@ bool P2Asm::asm_waitse4()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_WAITSE4;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Wait for PAT event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000011000 000100100
  *
  * WAITPAT          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 bool P2Asm::asm_waitpat()
 {
@@ -8730,18 +9112,19 @@ bool P2Asm::asm_waitpat()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_WAITPAT;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Wait for FBW event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000011001 000100100
  *
  * WAITFBW          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 bool P2Asm::asm_waitfbw()
 {
@@ -8749,18 +9132,19 @@ bool P2Asm::asm_waitfbw()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_WAITFBW;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Wait for XMT event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000011010 000100100
  *
  * WAITXMT          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 bool P2Asm::asm_waitxmt()
 {
@@ -8768,18 +9152,19 @@ bool P2Asm::asm_waitxmt()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_WAITXMT;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Wait for XFI event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000011011 000100100
  *
  * WAITXFI          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 bool P2Asm::asm_waitxfi()
 {
@@ -8787,18 +9172,19 @@ bool P2Asm::asm_waitxfi()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_WAITXFI;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Wait for XRO event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000011100 000100100
  *
  * WAITXRO          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 bool P2Asm::asm_waitxro()
 {
@@ -8806,18 +9192,19 @@ bool P2Asm::asm_waitxro()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_WAITXRO;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Wait for XRL event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000011101 000100100
  *
  * WAITXRL          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 bool P2Asm::asm_waitxrl()
 {
@@ -8825,18 +9212,19 @@ bool P2Asm::asm_waitxrl()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_WAITXRL;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Wait for ATN event flag, then clear it.
- *
+ *<pre>
  * EEEE 1101011 CZ0 000011110 000100100
  *
  * WAITATN          {WC/WZ/WCZ}
  *
  * Prior SETQ sets optional CT timeout value.
  * C/Z = timeout.
+ *</pre>
  */
 bool P2Asm::asm_waitatn()
 {
@@ -8844,15 +9232,16 @@ bool P2Asm::asm_waitatn()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_WAITATN;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Allow interrupts (default).
- *
+ *<pre>
  * EEEE 1101011 000 000100000 000100100
  *
  * ALLOWI
+ *</pre>
  */
 bool P2Asm::asm_allowi()
 {
@@ -8860,15 +9249,16 @@ bool P2Asm::asm_allowi()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_ALLOWI;
-    return parse_inst();
+    return parse_INST();
 }
 
 /**
  * @brief Stall Interrupts.
- *
+ *<pre>
  * EEEE 1101011 000 000100001 000100100
  *
  * STALLI
+ *</pre>
  */
 bool P2Asm::asm_stalli()
 {
@@ -8876,15 +9266,16 @@ bool P2Asm::asm_stalli()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_STALLI;
-    return parse_inst();
+    return parse_INST();
 }
 
 /**
  * @brief Trigger INT1, regardless of STALLI mode.
- *
+ *<pre>
  * EEEE 1101011 000 000100010 000100100
  *
  * TRGINT1
+ *</pre>
  */
 bool P2Asm::asm_trgint1()
 {
@@ -8892,15 +9283,16 @@ bool P2Asm::asm_trgint1()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_TRGINT1;
-    return parse_inst();
+    return parse_INST();
 }
 
 /**
  * @brief Trigger INT2, regardless of STALLI mode.
- *
+ *<pre>
  * EEEE 1101011 000 000100011 000100100
  *
  * TRGINT2
+ *</pre>
  */
 bool P2Asm::asm_trgint2()
 {
@@ -8908,15 +9300,16 @@ bool P2Asm::asm_trgint2()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_TRGINT2;
-    return parse_inst();
+    return parse_INST();
 }
 
 /**
  * @brief Trigger INT3, regardless of STALLI mode.
- *
+ *<pre>
  * EEEE 1101011 000 000100100 000100100
  *
  * TRGINT3
+ *</pre>
  */
 bool P2Asm::asm_trgint3()
 {
@@ -8924,15 +9317,16 @@ bool P2Asm::asm_trgint3()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_TRGINT3;
-    return parse_inst();
+    return parse_INST();
 }
 
 /**
  * @brief Cancel INT1.
- *
+ *<pre>
  * EEEE 1101011 000 000100101 000100100
  *
  * NIXINT1
+ *</pre>
  */
 bool P2Asm::asm_nixint1()
 {
@@ -8940,15 +9334,16 @@ bool P2Asm::asm_nixint1()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_NIXINT1;
-    return parse_inst();
+    return parse_INST();
 }
 
 /**
  * @brief Cancel INT2.
- *
+ *<pre>
  * EEEE 1101011 000 000100110 000100100
  *
  * NIXINT2
+ *</pre>
  */
 bool P2Asm::asm_nixint2()
 {
@@ -8956,15 +9351,16 @@ bool P2Asm::asm_nixint2()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_NIXINT2;
-    return parse_inst();
+    return parse_INST();
 }
 
 /**
  * @brief Cancel INT3.
- *
+ *<pre>
  * EEEE 1101011 000 000100111 000100100
  *
  * NIXINT3
+ *</pre>
  */
 bool P2Asm::asm_nixint3()
 {
@@ -8972,163 +9368,173 @@ bool P2Asm::asm_nixint3()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_X24;
     m_IR.u.op.dst = p2_OPX24_NIXINT3;
-    return parse_inst();
+    return parse_INST();
 }
 
 /**
  * @brief Set INT1 source to D[3:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000100101
  *
  * SETINT1 {#}D
+ *</pre>
  */
 bool P2Asm::asm_setint1()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SETINT1;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Set INT2 source to D[3:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000100110
  *
  * SETINT2 {#}D
+ *</pre>
  */
 bool P2Asm::asm_setint2()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SETINT2;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Set INT3 source to D[3:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000100111
  *
  * SETINT3 {#}D
+ *</pre>
  */
 bool P2Asm::asm_setint3()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SETINT3;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Set Q to D.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000101000
  *
  * SETQ    {#}D
  *
  * Use before RDLONG/WRLONG/WMLONG to set block transfer.
  * Also used before MUXQ/COGINIT/QDIV/QFRAC/QROTATE/WAITxxx.
+ *</pre>
  */
 bool P2Asm::asm_setq()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SETQ;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Set Q to D.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000101001
  *
  * SETQ2   {#}D
  *
  * Use before RDLONG/WRLONG/WMLONG to set LUT block transfer.
+ *</pre>
  */
 bool P2Asm::asm_setq2()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SETQ2;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Push D onto stack.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000101010
  *
  * PUSH    {#}D
+ *</pre>
  */
 bool P2Asm::asm_push()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_PUSH;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Pop stack (K).
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000101011
  *
  * POP     D        {WC/WZ/WCZ}
  *
  * C = K[31], Z = K[30], D = K.
+ *</pre>
  */
 bool P2Asm::asm_pop()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_POP;
-    return parse_d_wcz();
+    return parse_D_WCZ();
 }
 
 /**
  * @brief Jump to D.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000101100
  *
  * JMP     {#}D     {WC/WZ/WCZ}
  *
  * C = D[31], Z = D[30], PC = D[19:0].
+ *</pre>
  */
 bool P2Asm::asm_jmp()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_JMP;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief Call to D by pushing {C, Z, 10'b0, PC[19:0]} onto stack.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000101101
  *
  * CALL    {#}D     {WC/WZ/WCZ}
  *
  * C = D[31], Z = D[30], PC = D[19:0].
+ *</pre>
  */
 bool P2Asm::asm_call()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_CALL_RET;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief Return by popping stack (K).
- *
+ *<pre>
  * EEEE 1101011 CZ1 000000000 000101101
  *
  * RET              {WC/WZ/WCZ}
  *
  * C = K[31], Z = K[30], PC = K[19:0].
+ *</pre>
  */
 bool P2Asm::asm_ret()
 {
@@ -9137,34 +9543,36 @@ bool P2Asm::asm_ret()
     m_IR.set_im(true);
     m_IR.u.op.dst = 0x000;
     m_IR.u.op.src = p2_OPSRC_CALL_RET;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Call to D by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRA++.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000101110
  *
  * CALLA   D        {WC/WZ/WCZ}
  *
  * C = D[31], Z = D[30], PC = D[19:0].
+ *</pre>
  */
 bool P2Asm::asm_calla()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_CALLA_RETA;
-    return parse_d_wcz();
+    return parse_D_WCZ();
 }
 
 /**
  * @brief Return by reading hub long (L) at --PTRA.
- *
+ *<pre>
  * EEEE 1101011 CZ1 000000000 000101110
  *
  * RETA             {WC/WZ/WCZ}
  *
  * C = L[31], Z = L[30], PC = L[19:0].
+ *</pre>
  */
 bool P2Asm::asm_reta()
 {
@@ -9173,34 +9581,36 @@ bool P2Asm::asm_reta()
     m_IR.set_im(true);
     m_IR.u.op.dst = 0x000;
     m_IR.u.op.src = p2_OPSRC_CALLA_RETA;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Call to D by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRB++.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000101111
  *
  * CALLB   D        {WC/WZ/WCZ}
  *
  * C = D[31], Z = D[30], PC = D[19:0].
+ *</pre>
  */
 bool P2Asm::asm_callb()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_CALLB_RETB;
-    return parse_d_wcz();
+    return parse_D_WCZ();
 }
 
 /**
  * @brief Return by reading hub long (L) at --PTRB.
- *
+ *<pre>
  * EEEE 1101011 CZ1 000000000 000101111
  *
  * RETB             {WC/WZ/WCZ}
  *
  * C = L[31], Z = L[30], PC = L[19:0].
+ *</pre>
  */
 bool P2Asm::asm_retb()
 {
@@ -9209,30 +9619,31 @@ bool P2Asm::asm_retb()
     m_IR.set_im(true);
     m_IR.u.op.dst = 0x000;
     m_IR.u.op.src = p2_OPSRC_CALLB_RETB;
-    return parse_cz();
+    return parse_WCZ();
 }
 
 /**
  * @brief Jump ahead/back by D instructions.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000110000
  *
  * JMPREL  {#}D
  *
  * For cogex, PC += D[19:0].
  * For hubex, PC += D[17:0] << 2.
+ *</pre>
  */
 bool P2Asm::asm_jmprel()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_JMPREL;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Skip instructions per D.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000110001
  *
  * SKIP    {#}D
@@ -9240,73 +9651,78 @@ bool P2Asm::asm_jmprel()
  * Subsequent instructions 0.
  * 31 get cancelled for each '1' bit in D[0].
  * D[31].
+ *</pre>
  */
 bool P2Asm::asm_skip()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SKIP;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Skip cog/LUT instructions fast per D.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000110010
  *
  * SKIPF   {#}D
  *
  * Like SKIP, but instead of cancelling instructions, the PC leaps over them.
+ *</pre>
  */
 bool P2Asm::asm_skipf()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SKIPF;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Jump to D[9:0] in cog/LUT and set SKIPF pattern to D[31:10].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000110011
  *
  * EXECF   {#}D
  *
  * PC = {10'b0, D[9:0]}.
+ *</pre>
  */
 bool P2Asm::asm_execf()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_EXECF;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Get current FIFO hub pointer into D.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 000110100
  *
  * GETPTR  D
+ *</pre>
  */
 bool P2Asm::asm_getptr()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_GETPTR;
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Get breakpoint status into D according to WC/WZ/WCZ.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 000110101
  *
  * GETBRK  D          WC/WZ/WCZ
  *
  * C = 0.
  * Z = 0.
+ *</pre>
  */
 bool P2Asm::asm_getbrk()
 {
@@ -9314,1156 +9730,1224 @@ bool P2Asm::asm_getbrk()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.set_im(false);
     m_IR.u.op.src = p2_OPSRC_COGBRK;
-    return parse_d_wcz();
+    return parse_D_WCZ();
 }
 
 /**
  * @brief If in debug ISR, trigger asynchronous breakpoint in cog D[3:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000110101
  *
  * COGBRK  {#}D
  *
  * Cog D[3:0] must have asynchronous breakpoint enabled.
+ *</pre>
  */
 bool P2Asm::asm_cogbrk()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_COGBRK;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief If in debug ISR, set next break condition to D.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000110110
  *
  * BRK     {#}D
  *
  * Else, trigger break if enabled, conditionally write break code to D[7:0].
+ *</pre>
  */
 bool P2Asm::asm_brk()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_BRK;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief If D[0] = 1 then enable LUT sharing, where LUT writes within the adjacent odd/even companion cog are copied to this LUT.
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000110111
  *
  * SETLUTS {#}D
+ *</pre>
  */
 bool P2Asm::asm_setluts()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SETLUTS;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Set the colorspace converter "CY" parameter to D[31:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000111000
  *
  * SETCY   {#}D
+ *</pre>
  */
 bool P2Asm::asm_setcy()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SETCY;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Set the colorspace converter "CI" parameter to D[31:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000111001
  *
  * SETCI   {#}D
+ *</pre>
  */
 bool P2Asm::asm_setci()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SETCI;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Set the colorspace converter "CQ" parameter to D[31:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000111010
  *
  * SETCQ   {#}D
+ *</pre>
  */
 bool P2Asm::asm_setcq()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SETCQ;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Set the colorspace converter "CFRQ" parameter to D[31:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000111011
  *
  * SETCFRQ {#}D
+ *</pre>
  */
 bool P2Asm::asm_setcfrq()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SETCFRQ;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Set the colorspace converter "CMOD" parameter to D[6:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000111100
  *
  * SETCMOD {#}D
+ *</pre>
  */
 bool P2Asm::asm_setcmod()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SETCMOD;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Set BLNPIX/MIXPIX blend factor to D[7:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000111101
  *
  * SETPIV  {#}D
+ *</pre>
  */
 bool P2Asm::asm_setpiv()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SETPIV;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Set MIXPIX mode to D[5:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000111110
  *
  * SETPIX  {#}D
+ *</pre>
  */
 bool P2Asm::asm_setpix()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SETPIX;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Strobe "attention" of all cogs whose corresponging bits are high in D[15:0].
- *
+ *<pre>
  * EEEE 1101011 00L DDDDDDDDD 000111111
  *
  * COGATN  {#}D
+ *</pre>
  */
 bool P2Asm::asm_cogatn()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_COGATN;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Test  IN bit of pin D[5:0], write to C/Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000000
  *
  * TESTP   {#}D           WC/WZ
  *
  * C/Z =          IN[D[5:0]].
+ *</pre>
  */
 bool P2Asm::asm_testp_w()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_TESTP_W_DIRL;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief Test !IN bit of pin D[5:0], write to C/Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000001
  *
  * TESTPN  {#}D           WC/WZ
  *
  * C/Z =         !IN[D[5:0]].
+ *</pre>
  */
 bool P2Asm::asm_testpn_w()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_TESTPN_W;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief Test  IN bit of pin D[5:0], AND into C/Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000010
  *
  * TESTP   {#}D       ANDC/ANDZ
  *
  * C/Z = C/Z AND  IN[D[5:0]].
+ *</pre>
  */
 bool P2Asm::asm_testp_and()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_TESTP_AND;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief Test !IN bit of pin D[5:0], AND into C/Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000011
  *
  * TESTPN  {#}D       ANDC/ANDZ
  *
  * C/Z = C/Z AND !IN[D[5:0]].
+ *</pre>
  */
 bool P2Asm::asm_testpn_and()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_TESTPN_AND;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief Test  IN bit of pin D[5:0], OR  into C/Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000100
  *
  * TESTP   {#}D         ORC/ORZ
  *
  * C/Z = C/Z OR   IN[D[5:0]].
+ *</pre>
  */
 bool P2Asm::asm_testp_or()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_TESTP_OR;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief Test !IN bit of pin D[5:0], OR  into C/Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000101
  *
  * TESTPN  {#}D         ORC/ORZ
  *
  * C/Z = C/Z OR  !IN[D[5:0]].
+ *</pre>
  */
 bool P2Asm::asm_testpn_or()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_TESTPN_OR;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief Test  IN bit of pin D[5:0], XOR into C/Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000110
  *
  * TESTP   {#}D       XORC/XORZ
  *
  * C/Z = C/Z XOR  IN[D[5:0]].
+ *</pre>
  */
 bool P2Asm::asm_testp_xor()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_TESTP_XOR;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief Test !IN bit of pin D[5:0], XOR into C/Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000111
  *
  * TESTPN  {#}D       XORC/XORZ
  *
  * C/Z = C/Z XOR !IN[D[5:0]].
+ *</pre>
  */
 bool P2Asm::asm_testpn_xor()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_TESTPN_XOR;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief DIR bit of pin D[5:0] = 0.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000000
  *
  * DIRL    {#}D           {WCZ}
  *
  * C,Z = DIR bit.
+ *</pre>
  */
 bool P2Asm::asm_dirl()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_DIRL;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief DIR bit of pin D[5:0] = 1.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000001
  *
  * DIRH    {#}D           {WCZ}
  *
  * C,Z = DIR bit.
+ *</pre>
  */
 bool P2Asm::asm_dirh()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_DIRH;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief DIR bit of pin D[5:0] = C.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000010
  *
  * DIRC    {#}D           {WCZ}
  *
  * C,Z = DIR bit.
+ *</pre>
  */
 bool P2Asm::asm_dirc()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_DIRC;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief DIR bit of pin D[5:0] = !C.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000011
  *
  * DIRNC   {#}D           {WCZ}
  *
  * C,Z = DIR bit.
+ *</pre>
  */
 bool P2Asm::asm_dirnc()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_DIRNC;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief DIR bit of pin D[5:0] = Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000100
  *
  * DIRZ    {#}D           {WCZ}
  *
  * C,Z = DIR bit.
+ *</pre>
  */
 bool P2Asm::asm_dirz()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_DIRZ;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief DIR bit of pin D[5:0] = !Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000101
  *
  * DIRNZ   {#}D           {WCZ}
  *
  * C,Z = DIR bit.
+ *</pre>
  */
 bool P2Asm::asm_dirnz()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_DIRNZ;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief DIR bit of pin D[5:0] = RND.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000110
  *
  * DIRRND  {#}D           {WCZ}
  *
  * C,Z = DIR bit.
+ *</pre>
  */
 bool P2Asm::asm_dirrnd()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_DIRRND;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief DIR bit of pin D[5:0] = !bit.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001000111
  *
  * DIRNOT  {#}D           {WCZ}
  *
  * C,Z = DIR bit.
+ *</pre>
  */
 bool P2Asm::asm_dirnot()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_DIRNOT;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief OUT bit of pin D[5:0] = 0.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001001000
  *
  * OUTL    {#}D           {WCZ}
  *
  * C,Z = OUT bit.
+ *</pre>
  */
 bool P2Asm::asm_outl()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_OUTL;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief OUT bit of pin D[5:0] = 1.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001001001
  *
  * OUTH    {#}D           {WCZ}
  *
  * C,Z = OUT bit.
+ *</pre>
  */
 bool P2Asm::asm_outh()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_OUTH;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief OUT bit of pin D[5:0] = C.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001001010
  *
  * OUTC    {#}D           {WCZ}
  *
  * C,Z = OUT bit.
+ *</pre>
  */
 bool P2Asm::asm_outc()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_OUTC;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief OUT bit of pin D[5:0] = !C.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001001011
  *
  * OUTNC   {#}D           {WCZ}
  *
  * C,Z = OUT bit.
+ *</pre>
  */
 bool P2Asm::asm_outnc()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_OUTNC;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief OUT bit of pin D[5:0] = Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001001100
  *
  * OUTZ    {#}D           {WCZ}
  *
  * C,Z = OUT bit.
+ *</pre>
  */
 bool P2Asm::asm_outz()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_OUTZ;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief OUT bit of pin D[5:0] = !Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001001101
  *
  * OUTNZ   {#}D           {WCZ}
  *
  * C,Z = OUT bit.
+ *</pre>
  */
 bool P2Asm::asm_outnz()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_OUTNZ;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief OUT bit of pin D[5:0] = RND.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001001110
  *
  * OUTRND  {#}D           {WCZ}
  *
  * C,Z = OUT bit.
+ *</pre>
  */
 bool P2Asm::asm_outrnd()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_OUTRND;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief OUT bit of pin D[5:0] = !bit.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001001111
  *
  * OUTNOT  {#}D           {WCZ}
  *
  * C,Z = OUT bit.
+ *</pre>
  */
 bool P2Asm::asm_outnot()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_OUTNOT;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief OUT bit of pin D[5:0] = 0.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001010000
  *
  * FLTL    {#}D           {WCZ}
  *
  * DIR bit = 0.
  * C,Z = OUT bit.
+ *</pre>
  */
 bool P2Asm::asm_fltl()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_FLTL;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief OUT bit of pin D[5:0] = 1.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001010001
  *
  * FLTH    {#}D           {WCZ}
  *
  * DIR bit = 0.
  * C,Z = OUT bit.
+ *</pre>
  */
 bool P2Asm::asm_flth()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_FLTH;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief OUT bit of pin D[5:0] = C.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001010010
  *
  * FLTC    {#}D           {WCZ}
  *
  * DIR bit = 0.
  * C,Z = OUT bit.
+ *</pre>
  */
 bool P2Asm::asm_fltc()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_FLTC;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief OUT bit of pin D[5:0] = !C.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001010011
  *
  * FLTNC   {#}D           {WCZ}
  *
  * DIR bit = 0.
  * C,Z = OUT bit.
+ *</pre>
  */
 bool P2Asm::asm_fltnc()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_FLTNC;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief OUT bit of pin D[5:0] = Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001010100
  *
  * FLTZ    {#}D           {WCZ}
  *
  * DIR bit = 0.
  * C,Z = OUT bit.
+ *</pre>
  */
 bool P2Asm::asm_fltz()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_FLTZ;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief OUT bit of pin D[5:0] = !Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001010101
  *
  * FLTNZ   {#}D           {WCZ}
  *
  * DIR bit = 0.
  * C,Z = OUT bit.
+ *</pre>
  */
 bool P2Asm::asm_fltnz()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_FLTNZ;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief OUT bit of pin D[5:0] = RND.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001010110
  *
  * FLTRND  {#}D           {WCZ}
  *
  * DIR bit = 0.
  * C,Z = OUT bit.
+ *</pre>
  */
 bool P2Asm::asm_fltrnd()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_FLTRND;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief OUT bit of pin D[5:0] = !bit.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001010111
  *
  * FLTNOT  {#}D           {WCZ}
  *
  * DIR bit = 0.
  * C,Z = OUT bit.
+ *</pre>
  */
 bool P2Asm::asm_fltnot()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_FLTNOT;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief OUT bit of pin D[5:0] = 0.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001011000
  *
  * DRVL    {#}D           {WCZ}
  *
  * DIR bit = 1.
  * C,Z = OUT bit.
+ *</pre>
  */
 bool P2Asm::asm_drvl()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_DRVL;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief OUT bit of pin D[5:0] = 1.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001011001
  *
  * DRVH    {#}D           {WCZ}
  *
  * DIR bit = 1.
  * C,Z = OUT bit.
+ *</pre>
  */
 bool P2Asm::asm_drvh()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_DRVH;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief OUT bit of pin D[5:0] = C.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001011010
  *
  * DRVC    {#}D           {WCZ}
  *
  * DIR bit = 1.
  * C,Z = OUT bit.
+ *</pre>
  */
 bool P2Asm::asm_drvc()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_DRVC;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief OUT bit of pin D[5:0] = !C.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001011011
  *
  * DRVNC   {#}D           {WCZ}
  *
  * DIR bit = 1.
  * C,Z = OUT bit.
+ *</pre>
  */
 bool P2Asm::asm_drvnc()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_DRVNC;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief OUT bit of pin D[5:0] = Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001011100
  *
  * DRVZ    {#}D           {WCZ}
  *
  * DIR bit = 1.
  * C,Z = OUT bit.
+ *</pre>
  */
 bool P2Asm::asm_drvz()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_DRVZ;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief OUT bit of pin D[5:0] = !Z.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001011101
  *
  * DRVNZ   {#}D           {WCZ}
  *
  * DIR bit = 1.
  * C,Z = OUT bit.
+ *</pre>
  */
 bool P2Asm::asm_drvnz()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_DRVNZ;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief OUT bit of pin D[5:0] = RND.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001011110
  *
  * DRVRND  {#}D           {WCZ}
  *
  * DIR bit = 1.
  * C,Z = OUT bit.
+ *</pre>
  */
 bool P2Asm::asm_drvrnd()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_DRVRND;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief OUT bit of pin D[5:0] = !bit.
- *
+ *<pre>
  * EEEE 1101011 CZL DDDDDDDDD 001011111
  *
  * DRVNOT  {#}D           {WCZ}
  *
  * DIR bit = 1.
  * C,Z = OUT bit.
+ *</pre>
  */
 bool P2Asm::asm_drvnot()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_DRVNOT;
-    return parse_imm_d_wcz();
+    return parse_IM_D_WCZ();
 }
 
 /**
  * @brief Split every 4th bit of S into bytes of D.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001100000
  *
  * SPLITB  D
  *
  * D = {S[31], S[27], S[23], S[19], ... S[12], S[8], S[4], S[0]}.
+ *</pre>
  */
 bool P2Asm::asm_splitb()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SPLITB;
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Merge bits of bytes in S into D.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001100001
  *
  * MERGEB  D
  *
  * D = {S[31], S[23], S[15], S[7], ... S[24], S[16], S[8], S[0]}.
+ *</pre>
  */
 bool P2Asm::asm_mergeb()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_MERGEB;
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Split bits of S into words of D.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001100010
  *
  * SPLITW  D
  *
  * D = {S[31], S[29], S[27], S[25], ... S[6], S[4], S[2], S[0]}.
+ *</pre>
  */
 bool P2Asm::asm_splitw()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SPLITW;
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Merge bits of words in S into D.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001100011
  *
  * MERGEW  D
  *
  * D = {S[31], S[15], S[30], S[14], ... S[17], S[1], S[16], S[0]}.
+ *</pre>
  */
 bool P2Asm::asm_mergew()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_MERGEW;
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Relocate and periodically invert bits from S into D.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001100100
  *
  * SEUSSF  D
  *
  * Returns to original value on 32nd iteration.
  * Forward pattern.
+ *</pre>
  */
 bool P2Asm::asm_seussf()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SEUSSF;
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Relocate and periodically invert bits from S into D.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001100101
  *
  * SEUSSR  D
  *
  * Returns to original value on 32nd iteration.
  * Reverse pattern.
+ *</pre>
  */
 bool P2Asm::asm_seussr()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SEUSSR;
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Squeeze 8:8:8 RGB value in S[31:8] into 5:6:5 value in D[15:0].
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001100110
  *
  * RGBSQZ  D
  *
  * D = {15'b0, S[31:27], S[23:18], S[15:11]}.
+ *</pre>
  */
 bool P2Asm::asm_rgbsqz()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_RGBSQZ;
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Expand 5:6:5 RGB value in S[15:0] into 8:8:8 value in D[31:8].
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001100111
  *
  * RGBEXP  D
  *
  * D = {S[15:11,15:13], S[10:5,10:9], S[4:0,4:2], 8'b0}.
+ *</pre>
  */
 bool P2Asm::asm_rgbexp()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_RGBEXP;
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Iterate D with xoroshiro32+ PRNG algorithm and put PRNG result into next instruction's S.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001101000
  *
  * XORO32  D
+ *</pre>
  */
 bool P2Asm::asm_xoro32()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_XORO32;
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Reverse D bits.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001101001
  *
  * REV     D
  *
  * D = D[0:31].
+ *</pre>
  */
 bool P2Asm::asm_rev()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_REV;
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Rotate C,Z right through D.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 001101010
  *
  * RCZR    D        {WC/WZ/WCZ}
  *
  * D = {C, Z, D[31:2]}.
  * C = D[1],  Z = D[0].
+ *</pre>
  */
 bool P2Asm::asm_rczr()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_RCZR;
-    return parse_d_wcz();
+    return parse_D_WCZ();
 }
 
 /**
  * @brief Rotate C,Z left through D.
- *
+ *<pre>
  * EEEE 1101011 CZ0 DDDDDDDDD 001101011
  *
  * RCZL    D        {WC/WZ/WCZ}
  *
  * D = {D[29:0], C, Z}.
  * C = D[31], Z = D[30].
+ *</pre>
  */
 bool P2Asm::asm_rczl()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_RCZL;
-    return parse_d_wcz();
+    return parse_D_WCZ();
 }
 
 /**
  * @brief Write 0 or 1 to D, according to  C.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001101100
  *
  * WRC     D
  *
  * D = {31'b0,  C).
+ *</pre>
  */
 bool P2Asm::asm_wrc()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_WRC;
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Write 0 or 1 to D, according to !C.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001101101
  *
  * WRNC    D
  *
  * D = {31'b0, !C).
+ *</pre>
  */
 bool P2Asm::asm_wrnc()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_WRNC;
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Write 0 or 1 to D, according to  Z.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001101110
  *
  * WRZ     D
  *
  * D = {31'b0,  Z).
+ *</pre>
  */
 bool P2Asm::asm_wrz()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_WRZ;
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Write 0 or 1 to D, according to !Z.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001101111
  *
  * WRNZ    D
  *
  * D = {31'b0, !Z).
+ *</pre>
  */
 bool P2Asm::asm_wrnz()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_WRNZ_MODCZ;
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Modify C and Z according to cccc and zzzz.
- *
+ *<pre>
  * EEEE 1101011 CZ1 0cccczzzz 001101111
  *
  * MODCZ   c,z      {WC/WZ/WCZ}
  *
  * C = cccc[{C,Z}], Z = zzzz[{C,Z}].
+ *</pre>
  */
 bool P2Asm::asm_modcz()
 {
@@ -10478,12 +10962,13 @@ bool P2Asm::asm_modcz()
     p2_cond_e zzzz = parse_modcz();
     m_IR.set_dst(static_cast<p2_LONG>((cccc << 4) | zzzz));
 
-    optional_wcz();
+    optional_WCZ();
     return end_of_line();
 }
 
 /**
  * @brief Set scope mode.
+ *<pre>
  * SETSCP points the scope mux to a set of four pins starting
  * at (D[5:0] AND $3C), with D[6]=1 to enable scope operation.
  *
@@ -10492,18 +10977,19 @@ bool P2Asm::asm_modcz()
  * SETSCP  {#}D
  *
  * Pins D[5:2], enable D[6].
+ *</pre>
  */
 bool P2Asm::asm_setscp()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_SETSCP;
-    return parse_imm_d();
+    return parse_IM_D();
 }
 
 /**
  * @brief Get scope values.
- *
+ *<pre>
  * EEEE 1101011 000 DDDDDDDDD 001110001
  *
  * Any time GETSCP is executed, the lower bytes of those four pins' RDPIN values are returned in D.
@@ -10512,155 +10998,165 @@ bool P2Asm::asm_setscp()
  * GETSCP  D
  *
  * C = cccc[{C,Z}], Z = zzzz[{C,Z}].
+ *</pre>
  */
 bool P2Asm::asm_getscp()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_GETSCP;
-    return parse_d();
+    return parse_D();
 }
 
 /**
  * @brief Jump to A.
- *
+ *<pre>
  * EEEE 1101100 RAA AAAAAAAAA AAAAAAAAA
  *
  * JMP     #A
  *
  * If R = 1, PC += A, else PC = A.
+ *</pre>
  */
 bool P2Asm::asm_jmp_abs()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_JMP;
-    return parse_pc_abs();
+    return parse_PC_ABS();
 }
 
 /**
  * @brief Call to A by pushing {C, Z, 10'b0, PC[19:0]} onto stack.
- *
+ *<pre>
  * EEEE 1101101 RAA AAAAAAAAA AAAAAAAAA
  *
  * CALL    #A
  *
  * If R = 1, PC += A, else PC = A.
+ *</pre>
  */
 bool P2Asm::asm_call_abs()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_CALL_RET;
-    return parse_pc_abs();
+    return parse_PC_ABS();
 }
 
 /**
  * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRA++.
- *
+ *<pre>
  * EEEE 1101110 RAA AAAAAAAAA AAAAAAAAA
  *
  * CALLA   #A
  *
  * If R = 1, PC += A, else PC = A.
+ *</pre>
  */
 bool P2Asm::asm_calla_abs()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_CALLA_RETA;
-    return parse_pc_abs();
+    return parse_PC_ABS();
 }
 
 /**
  * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRB++.
- *
+ *<pre>
  * EEEE 1101111 RAA AAAAAAAAA AAAAAAAAA
  *
  * CALLB   #A
  *
  * If R = 1, PC += A, else PC = A.
+ *</pre>
  */
 bool P2Asm::asm_callb_abs()
 {
     m_idx++;
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_CALLB_RETB;
-    return parse_pc_abs();
+    return parse_PC_ABS();
 }
 
 /**
  * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to PA/PB/PTRA/PTRB (per W).
- *
+ *<pre>
  * EEEE 1110000 RAA AAAAAAAAA AAAAAAAAA
  *
  * CALLD   PA,#A
  *
  * If R = 1, PC += A, else PC = A.
+ *</pre>
  */
 bool P2Asm::asm_calld_pa_abs()
 {
     m_idx++;
     m_IR.set_inst7(p2_CALLD_PA_ABS);
-    return parse_pc_abs();
+    return parse_PC_ABS();
 }
 
 /**
  * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to PA/PB/PTRA/PTRB (per W).
- *
+ *<pre>
  * EEEE 1110001 RAA AAAAAAAAA AAAAAAAAA
  *
  * CALLD   PB,#A
  *
  * If R = 1, PC += A, else PC = A.
+ *</pre>
  */
 bool P2Asm::asm_calld_pb_abs()
 {
     m_idx++;
     m_IR.set_inst7(p2_CALLD_PB_ABS);
-    return parse_pc_abs();
+    return parse_PC_ABS();
 }
 
 /**
  * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to PTRA (per W).
- *
+ *<pre>
  * EEEE 1110010 RAA AAAAAAAAA AAAAAAAAA
  *
  * CALLD   PTRA,#A
  *
  * If R = 1, PC += A, else PC = A.
+ *</pre>
  */
 bool P2Asm::asm_calld_ptra_abs()
 {
     m_idx++;
     m_IR.set_inst7(p2_CALLD_PTRA_ABS);
-    return parse_pc_abs();
+    return parse_PC_ABS();
 }
 
 /**
  * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to PTRB (per W).
- *
+ *<pre>
  * EEEE 1110011 RAA AAAAAAAAA AAAAAAAAA
  *
  * CALLD   PTRB,#A
  *
  * If R = 1, PC += A, else PC = A.
+ *</pre>
  */
 bool P2Asm::asm_calld_ptrb_abs()
 {
     m_idx++;
     m_IR.set_inst7(p2_CALLD_PTRB_ABS);
-    return parse_pc_abs();
+    return parse_PC_ABS();
 }
 
 /**
  * @brief Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).
- *
+ *<pre>
  * EEEE 11101WW RAA AAAAAAAAA AAAAAAAAA
  *
  * LOC     PA/PB/PTRA/PTRB,#A
  *
  * If R = 1, address = PC + A, else address = A.
+ *</pre>
  */
 bool P2Asm::asm_loc()
 {
@@ -10699,98 +11195,94 @@ bool P2Asm::asm_loc()
 
 /**
  * @brief Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).
- *
+ *<pre>
  * EEEE 11101WW RAA AAAAAAAAA AAAAAAAAA
  *
  * LOC     PA/PB/PTRA/PTRB,#A
  *
  * If R = 1, address = PC + A, else address = A.
+ *</pre>
  */
 bool P2Asm::asm_loc_pa()
 {
     m_IR.set_inst7(p2_LOC_PA);
-    return parse_pc_abs();
+    return parse_PC_ABS();
 }
 
 /**
  * @brief Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).
- *
+ *<pre>
  * EEEE 11101WW RAA AAAAAAAAA AAAAAAAAA
  *
  * LOC     PA/PB/PTRA/PTRB,#A
  *
  * If R = 1, address = PC + A, else address = A.
+ *</pre>
  */
 bool P2Asm::asm_loc_pb()
 {
     m_IR.set_inst7(p2_LOC_PB);
-    return parse_pc_abs();
+    return parse_PC_ABS();
 }
 
 /**
  * @brief Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).
- *
+ *<pre>
  * EEEE 11101WW RAA AAAAAAAAA AAAAAAAAA
  *
  * LOC     PA/PB/PTRA/PTRB,#A
  *
  * If R = 1, address = PC + A, else address = A.
+ *</pre>
  */
 bool P2Asm::asm_loc_ptra()
 {
     m_IR.set_inst7(p2_LOC_PTRA);
-    return parse_pc_abs();
+    return parse_PC_ABS();
 }
 
 /**
  * @brief Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).
- *
+ *<pre>
  * EEEE 11101WW RAA AAAAAAAAA AAAAAAAAA
  *
  * LOC     PA/PB/PTRA/PTRB,#A
  *
  * If R = 1, address = PC + A, else address = A.
+ *</pre>
  */
 bool P2Asm::asm_loc_ptrb()
 {
     m_IR.set_inst7(p2_LOC_PTRB);
-    return parse_pc_abs();
+    return parse_PC_ABS();
 }
 
 /**
  * @brief Queue #N[31:9] to be used as upper 23 bits for next #S occurrence, so that the next 9-bit #S will be augmented to 32 bits.
- *
+ *<pre>
  * EEEE 11110NN NNN NNNNNNNNN NNNNNNNNN
  *
  * AUGS    #N
+ *</pre>
  */
 bool P2Asm::asm_augs()
 {
-    static const QVector<p2_inst7_e> augs = QVector<p2_inst7_e>()
-                                            << p2_AUGS_00
-                                            << p2_AUGS_01
-                                            << p2_AUGS_10
-                                            << p2_AUGS_11;
     m_idx++;
-    m_IR.set_inst7(p2_AUGS_00);
-    return parse_imm23(augs);
+    m_IR.set_inst7(p2_AUGS);
+    return parse_IMM23();
 }
 
 /**
  * @brief Queue #N[31:9] to be used as upper 23 bits for next #D occurrence, so that the next 9-bit #D will be augmented to 32 bits.
- *
+ *<pre>
  * EEEE 11111NN NNN NNNNNNNNN NNNNNNNNN
  *
  * AUGD    #N
+ *</pre>
  */
 bool P2Asm::asm_augd()
 {
-    static const QVector<p2_inst7_e> augd = QVector<p2_inst7_e>()
-                                            << p2_AUGD_00
-                                            << p2_AUGD_01
-                                            << p2_AUGD_10
-                                            << p2_AUGD_11;
     m_idx++;
-    m_IR.set_inst7(p2_AUGD_00);
-    return parse_imm23(augd);
+    m_IR.set_inst7(p2_AUGD);
+    return parse_IMM23();
 }

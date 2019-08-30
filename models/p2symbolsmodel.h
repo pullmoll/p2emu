@@ -71,8 +71,9 @@ private:
     P2SymbolTable m_table;
     QFont m_font;
     QStringList m_names;
-    QHash<column_e,QString> m_header;
+    QHash<column_e,QString> m_header_text;
+    QHash<column_e,QString> m_header_tooltip;
     QHash<column_e,QRgb> m_background;
-    QHash<column_e,int> m_header_alignment;
+    QHash<column_e,int> m_head_alignment;
     QHash<column_e,int> m_text_alignment;
 };

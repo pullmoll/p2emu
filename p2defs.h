@@ -196,6 +196,7 @@ extern const QString byt_digits;
 extern const QString oct_digits;
 extern const QString dec_digits;
 extern const QString hex_digits;
+extern const QString real_digits;
 
 /**
  * @brief Enumeration of the 16 conditional execution modes
@@ -386,12 +387,12 @@ typedef enum {
     p2_LOC_PTRA                 = INST7(1,1,1,0,1,1,0),
     p2_LOC_PTRB                 = INST7(1,1,1,0,1,1,1),
 
-    p2_AUGS_00                  = INST7(1,1,1,1,0,0,0),
+    p2_AUGS                     = INST7(1,1,1,1,0,0,0),
     p2_AUGS_01                  = INST7(1,1,1,1,0,0,1),
     p2_AUGS_10                  = INST7(1,1,1,1,0,1,0),
     p2_AUGS_11                  = INST7(1,1,1,1,0,1,1),
 
-    p2_AUGD_00                  = INST7(1,1,1,1,1,0,0),
+    p2_AUGD                     = INST7(1,1,1,1,1,0,0),
     p2_AUGD_01                  = INST7(1,1,1,1,1,0,1),
     p2_AUGD_10                  = INST7(1,1,1,1,1,1,0),
     p2_AUGD_11                  = INST7(1,1,1,1,1,1,1),
@@ -1152,6 +1153,7 @@ typedef enum {
     color_oct_const,
     color_dec_const,
     color_hex_const,
+    color_real_const,
     color_locsym,
     color_symbol,
     color_expression,
@@ -1170,20 +1172,20 @@ extern QString format_opcode_oct(const p2_opcode_u& IR);
 extern QString format_opcode_dec(const p2_opcode_u& IR);
 extern QString format_opcode_hex(const p2_opcode_u& IR);
 
-extern QString format_data_bin(const p2_opcode_u& IR);
-extern QString format_data_byt(const p2_opcode_u& IR);
-extern QString format_data_oct(const p2_opcode_u& IR);
+extern QString format_data_bin(const p2_opcode_u& IR, bool prefix = false);
+extern QString format_data_byt(const p2_opcode_u& IR, bool prefix = false);
+extern QString format_data_oct(const p2_opcode_u& IR, bool prefix = false);
 extern QString format_data_dec(const p2_opcode_u& IR);
-extern QString format_data_hex(const p2_opcode_u& IR);
+extern QString format_data_hex(const p2_opcode_u& IR, bool prefix = false);
 
-extern QString format_data_bin(const p2_LONG data);
-extern QString format_data_byt(const p2_LONG data);
-extern QString format_data_oct(const p2_LONG data);
+extern QString format_data_bin(const p2_LONG data, bool prefix = false);
+extern QString format_data_byt(const p2_LONG data, bool prefix = false);
+extern QString format_data_oct(const p2_LONG data, bool prefix = false);
 extern QString format_data_dec(const p2_LONG data);
-extern QString format_data_hex(const p2_LONG data);
+extern QString format_data_hex(const p2_LONG data, bool prefix = false);
 
 extern QString format_opcode(const p2_opcode_u& IR, const p2_opcode_format_e fmt = fmt_bin);
-extern QString format_data(const p2_opcode_u& IR, const p2_opcode_format_e fmt = fmt_bin);
+extern QString format_data(const p2_opcode_u& IR, const p2_opcode_format_e fmt = fmt_bin, bool prefix = false);
 
 /**
  * @brief enumeration of token types
@@ -1194,31 +1196,33 @@ typedef enum {
     tt_parens,          //!< precedence  0: parenthesis "(", ")", "[", "]"
     tt_primary,         //!< precedence  1: primary operators (++, --)
     tt_unary,           //!< precedence  2: unary operators (+, -, !, ~, more?)
-    tt_mulop,           //!< precedence  3: multiplication operators (*, /, \)
-    tt_addop,           //!< precedence  4: addition operators (+, -)
-    tt_shiftop,         //!< precedence  5: shift operators (<<, >>)
-    tt_relation,        //!< precedence  6: comparisons (<, <=, >, >=)
-    tt_equality,        //!< precedence  7: comparisons (==, !=)
-    tt_binop_and,       //!< precedence  8: binary and (&)
-    tt_binop_xor,       //!< precedence  9: binary xor (^)
-    tt_binop_or,        //!< precedence 10: binary or (|)
-    tt_binop_rev,       //!< precedence 11: binary or (><)
-    tt_logop_and,       //!< precedence 12: logical and (&&)
-    tt_logop_or,        //!< precedence 13: logical or (||)
-    tt_ternary,         //!< precedence 14: ternary operator (?:)
-    tt_assignment,      //!< precedence 15: assignment (=)
+    tt_shiftop,         //!< precedence  3: shift operators (<<, >>)
+    tt_binop_rev,       //!< precedence  4: binary reverse (><)
+    tt_mulop,           //!< precedence  5: multiplication operators (*, /, \)
+    tt_addop,           //!< precedence  6: addition operators (+, -)
+    tt_binop_and,       //!< precedence  7: binary and (&)
+    tt_binop_xor,       //!< precedence  8: binary xor (^)
+    tt_binop_or,        //!< precedence  9: binary or (|)
+    tt_binop_encod,     //!< precedence 10: binary encode (>|)
+    tt_binop_decod,     //!< precedence 11: binary decode (|<)
+    tt_relation,        //!< precedence 12: comparisons (<, <=, >, >=)
+    tt_equality,        //!< precedence 13: comparisons (==, !=)
+    tt_logop_and,       //!< precedence 14: logical and (&&)
+    tt_logop_or,        //!< precedence 15: logical or (||)
+    tt_ternary,         //!< precedence 16: ternary operator (?:)
+    tt_assignment,      //!< precedence 17: assignment (=)
     tt_delimiter,       //!< delimiter (,)
     tt_constant,        //!< constant value ($, PA, PB, PTRA, PTRB)
     tt_immediate,       //!< immediate value (#, ##)
-    tt_relative,        //!< relative value (@)
+    tt_relative,        //!< relative value (@, @@@)
     tt_conditional,     //!< conditional execution
     tt_modcz_param,     //!< MODCZ parameters
-    tt_inst,            //!< instruction
+    tt_mnemonic,        //!< instruction mnemonic
     tt_wcz_suffix,      //!< suffixes WC, WZ, WCZ, ANDC, ANDZ, ORC, ORZ, XORC, XORZ
     tt_section,         //!< section control
     tt_origin,          //!< origin control
     tt_data,            //!< data generating
-    tt_regexp,           //!< pseudo token from lexing a string
+    tt_regexp,          //!< pseudo token from lexing a string
 }   p2_t_type_e;
 
 typedef quint64 p2_t_mask_t;
@@ -1233,15 +1237,17 @@ static constexpr p2_t_mask_t tm_comment     = TTMASK(tt_comment);
 static constexpr p2_t_mask_t tm_parens      = TTMASK(tt_parens);
 static constexpr p2_t_mask_t tm_primary     = TTMASK(tt_primary);
 static constexpr p2_t_mask_t tm_unary       = TTMASK(tt_unary);
+static constexpr p2_t_mask_t tm_shiftop     = TTMASK(tt_shiftop);
+static constexpr p2_t_mask_t tm_binop_rev   = TTMASK(tt_binop_rev);
 static constexpr p2_t_mask_t tm_mulop       = TTMASK(tt_mulop);
 static constexpr p2_t_mask_t tm_addop       = TTMASK(tt_addop);
-static constexpr p2_t_mask_t tm_shiftop     = TTMASK(tt_shiftop);
-static constexpr p2_t_mask_t tm_relation    = TTMASK(tt_relation);
-static constexpr p2_t_mask_t tm_equality    = TTMASK(tt_equality);
 static constexpr p2_t_mask_t tm_binop_and   = TTMASK(tt_binop_and);
 static constexpr p2_t_mask_t tm_binop_xor   = TTMASK(tt_binop_xor);
 static constexpr p2_t_mask_t tm_binop_or    = TTMASK(tt_binop_or);
-static constexpr p2_t_mask_t tm_binop_rev   = TTMASK(tt_binop_rev);
+static constexpr p2_t_mask_t tm_binop_encod = TTMASK(tt_binop_encod);
+static constexpr p2_t_mask_t tm_binop_decod = TTMASK(tt_binop_decod);
+static constexpr p2_t_mask_t tm_relation    = TTMASK(tt_relation);
+static constexpr p2_t_mask_t tm_equality    = TTMASK(tt_equality);
 static constexpr p2_t_mask_t tm_logop_and   = TTMASK(tt_logop_and);
 static constexpr p2_t_mask_t tm_logop_or    = TTMASK(tt_logop_or);
 static constexpr p2_t_mask_t tm_ternary     = TTMASK(tt_ternary);
@@ -1252,7 +1258,7 @@ static constexpr p2_t_mask_t tm_immediate   = TTMASK(tt_immediate);
 static constexpr p2_t_mask_t tm_relative    = TTMASK(tt_relative);
 static constexpr p2_t_mask_t tm_conditional = TTMASK(tt_conditional);
 static constexpr p2_t_mask_t tm_modcz_param = TTMASK(tt_modcz_param);
-static constexpr p2_t_mask_t tm_inst        = TTMASK(tt_inst);
+static constexpr p2_t_mask_t tm_mnemonic    = TTMASK(tt_mnemonic);
 static constexpr p2_t_mask_t tm_wcz_suffix  = TTMASK(tt_wcz_suffix);
 static constexpr p2_t_mask_t tm_section     = TTMASK(tt_section);
 static constexpr p2_t_mask_t tm_origin      = TTMASK(tt_origin);
@@ -1260,15 +1266,18 @@ static constexpr p2_t_mask_t tm_data        = TTMASK(tt_data);
 static constexpr p2_t_mask_t tm_lexer       = TTMASK(tt_regexp);
 
 static constexpr p2_t_mask_t tm_primary_unary =
-        tm_primary | tm_unary;
+        tm_primary |
+        tm_unary;
 
-static constexpr p2_t_mask_t tm_binop      =
+static constexpr p2_t_mask_t tm_binop =
         tm_binop_and |
         tm_binop_xor |
         tm_binop_or |
-        tm_binop_rev;
+        tm_binop_rev |
+        tm_binop_encod |
+        tm_binop_decod;
 
-static constexpr p2_t_mask_t tm_operations  =
+static constexpr p2_t_mask_t tm_operations =
         tm_parens |
         tm_primary |
         tm_unary |
@@ -1281,6 +1290,8 @@ static constexpr p2_t_mask_t tm_operations  =
         tm_binop_xor |
         tm_binop_or |
         tm_binop_rev |
+        tm_binop_encod |
+        tm_binop_decod |
         tm_logop_and |
         tm_logop_or;
 

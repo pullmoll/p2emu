@@ -76,18 +76,18 @@ const QString& P2Symbol::name() const
  * @param idx index into references; 0 == line number where defined
  * @return line number, or -1 if not referenced / defined or %idx >= number of references
  */
-int P2Symbol::reference(int idx) const
+P2Word P2Symbol::reference(int idx) const
 {
-    return m_references.value(idx, -1);
+    return m_references.value(idx);
 }
 
 /**
- * @brief Return the line number where the symbol was defined
+ * @brief Return the word where the symbol was defined
  * @return line number, or -1 if not defined
  */
-int P2Symbol::defined_where() const
+P2Word P2Symbol::definition() const
 {
-    return reference(0);
+    return m_definition;
 }
 
 /**
@@ -122,22 +122,38 @@ const QString P2Symbol::type_name() const
 }
 
 /**
- * @brief Add another line number to the list of references
+ * @brief Add another line number to the hash of references
  * @param lineno line number
+ * @param word word which references this symbol
  */
-void P2Symbol::add_reference(int lineno)
+void P2Symbol::add_reference(int lineno, const P2Word& word)
 {
-    m_references.append(lineno);
+    if (m_references.isEmpty())
+        m_definition = word;
+    else
+        m_references.insert(lineno, word);
 }
 
 /**
- * @brief Return the list of references to the symbol
+ * @brief Return the hash of references to the symbol
+ *
+ * NB: Index %idx == 0 is the line number where the symbol was defined.
+ *
+ * @return QList<int> with line numbers
+ */
+const p2_lineno_word_hash_t& P2Symbol::references() const
+{
+    return m_references;
+}
+
+/**
+ * @brief Return the hash of references to the symbol
  *
  * NB: Index %idx == 0 is the line number where the symbold was defined.
  *
  * @return QList<int> with line numbers
  */
-const QList<int> P2Symbol::references() const
+QList<P2Word> P2Symbol::references(const P2Symbol& sym) const
 {
-    return m_references;
+    return m_references.values(sym.definition().lineno());
 }

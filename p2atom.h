@@ -77,15 +77,17 @@ public:
         PC,
         Long,
         Quad,
+        Real,
         String
     };
 
     explicit P2Atom();
-    P2Atom(bool value);
-    P2Atom(p2_BYTE value);
-    P2Atom(p2_WORD value);
-    P2Atom(p2_LONG value);
-    P2Atom(p2_QUAD value);
+    P2Atom(bool value, Type type = Bool);
+    P2Atom(p2_BYTE value, Type type = Byte);
+    P2Atom(p2_WORD value, Type type = Word);
+    P2Atom(p2_LONG value, Type type = Long);
+    P2Atom(p2_QUAD value, Type type = Quad);
+    P2Atom(qreal value, Type type = Real);
     P2Atom(const P2Atom& other);
 
     void clear(Type type = Invalid);
@@ -100,21 +102,26 @@ public:
 
     p2_QUAD value(bool *ok = nullptr) const;
 
-    bool append(Type type, p2_QUAD value);
-    bool append(int nbits, p2_QUAD value);
+    bool append_uint(Type type, p2_QUAD value);
+    bool append_real(Type type, qreal value);
+    bool append_bits(int nbits, p2_QUAD value);
     bool append(p2_QUAD value);
+    bool append(qreal value);
     bool append(const P2Atom& atom);
     bool append(const QByteArray& data);
 
-    bool set(Type type, p2_QUAD value);
+    bool set_uint(Type type, p2_QUAD value);
+    bool set_real(Type type, qreal value);
     bool set(int nbits, p2_QUAD value);
     bool set(p2_QUAD value);
+    bool set(qreal value);
 
     bool to_bool(bool *ok = nullptr) const;
     p2_BYTE to_byte(bool *ok = nullptr) const;
     p2_WORD to_word(bool *ok = nullptr) const;
     p2_LONG to_long(bool *ok = nullptr) const;
     p2_QUAD to_quad(bool *ok = nullptr) const;
+    qreal to_real(bool *ok = nullptr) const;
     QString to_string(bool *ok = nullptr) const;
     QByteArray to_array() const;
     p2_BYTES to_bytes() const;
@@ -125,8 +132,8 @@ public:
     void complement2(bool flag);
     void logical_not(bool flag);
     void make_bool(bool flag);
-    void unary_dec(bool flag);
-    void unary_inc(bool flag);
+    void unary_dec(p2_LONG val);
+    void unary_inc(p2_LONG val);
     void arith_mul(p2_QUAD val);
     void arith_div(p2_QUAD val);
     void arith_mod(p2_QUAD val);

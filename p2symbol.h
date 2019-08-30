@@ -35,6 +35,7 @@
 #include <QString>
 #include <QVariant>
 #include "p2atom.h"
+#include "p2word.h"
 
 /**
  * @brief The P2Symbol class is a wrapper for one symbolic name for a value
@@ -52,15 +53,17 @@ public:
     bool set_atom(const P2Atom& value);
     P2Atom::Type type() const;
     const QString type_name() const;
-    int defined_where() const;
-    int reference(int idx = 0) const;
-    void add_reference(int lineno);
-    const QList<int> references() const;
+    P2Word definition() const;
+    P2Word reference(int idx = 0) const;
+    void add_reference(int lineno, const P2Word& word);
+    const p2_lineno_word_hash_t& references() const;
+    QList<P2Word> references(const P2Symbol& sym) const;
 
 private:
     QString m_name;
     P2Atom m_value;
-    QList<int> m_references;
+    P2Word m_definition;
+    p2_lineno_word_hash_t m_references;
 };
 
 Q_DECLARE_METATYPE(P2Symbol);

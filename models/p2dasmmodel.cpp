@@ -56,23 +56,20 @@ P2DasmModel::P2DasmModel(P2Dasm* dasm, QObject *parent)
     , m_background()
     , m_alignment()
 {
-
-    // Header section names
     m_header.insert(c_Address,       tr("Address"));
+    m_alignment.insert(c_Address,       Qt::AlignLeft | Qt::AlignVCenter);
+    m_background.insert(c_Address,      qRgb(0xff,0xfc,0xf8));
+
     m_header.insert(c_Opcode,        tr("Opcode"));
+    m_alignment.insert(c_Opcode,        Qt::AlignLeft | Qt::AlignVCenter);
+    m_background.insert(c_Opcode,       qRgb(0xf8,0xfc,0xff));
+
     m_header.insert(c_Instruction,   tr("Instruction"));
     m_header.insert(c_Description,   tr("Description"));
+    m_background.insert(c_Instruction,  qRgb(0xff,0xff,0xff));
 
-    // Horizontal section alignments
-    m_alignment.insert(c_Address,       Qt::AlignLeft | Qt::AlignVCenter);
-    m_alignment.insert(c_Opcode,        Qt::AlignLeft | Qt::AlignVCenter);
     m_alignment.insert(c_Instruction,   Qt::AlignLeft | Qt::AlignVCenter);
     m_alignment.insert(c_Description,   Qt::AlignLeft | Qt::AlignVCenter);
-
-    // Horizontal section background colors
-    m_background.insert(c_Address,      qRgb(0xff,0xfc,0xf8));
-    m_background.insert(c_Opcode,       qRgb(0xf8,0xfc,0xff));
-    m_background.insert(c_Instruction,  qRgb(0xff,0xff,0xff));
     m_background.insert(c_Description,  qRgb(0xf8,0xff,0xf8));
 }
 

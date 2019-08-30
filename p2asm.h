@@ -82,15 +82,15 @@ public:
     int pass() const;
 
     const QStringList& source() const;
-    const QString& source(int idx) const;
+    const QString source(int idx) const;
 
     int count() const;
-    const p2_pc_orgh_hash_t& PC_hash() const;
-    p2_PC_ORGH_t PC_value(int lineno) const;
-    bool has_PC(int lineno) const;
+    const p2_pc_orgh_hash_t& PC_ORGH_hash() const;
+    p2_PC_ORGH_t get_PC_ORGH(int lineno) const;
+    bool has_PC_ORGH(int lineno) const;
 
     const p2_opcode_hash_t& IR_hash() const;
-    P2Opcode IR_value(int lineno) const;
+    P2Opcode get_IR(int lineno) const;
     bool has_IR(int lineno) const;
 
     const p2_words_hash_t& words_hash() const;
@@ -127,8 +127,8 @@ private:
     int m_in_curly;                         //!< parser inside curly braces comment level
     QString m_line;                         //!< current line of source
     QStringList m_errors;                   //!< error message(s) from parameters parser
-    p2_LONG m_curr_PC;                      //!< current program counter (origin of the instruction)
-    p2_LONG m_last_PC;                      //!< last program counter (maximum of next_pc)
+    p2_LONG m_ORG;                          //!< current program counter (origin of the instruction)
+    p2_LONG m_ORG_MAX;                      //!< last program counter (maximum of m_ORG)
     p2_LONG m_ORGH;                         //!< current origin, i.e. where the data is stored
     p2_LONG m_advance;                      //!< advance by n longs
     P2Opcode m_IR;                          //!< current opcode with instruction register
@@ -150,7 +150,7 @@ private:
 private:
     QHash<Section,QString> m_sections;      //!< currently defined function symbol, i.e. a name w/o initial dot (.)
 
-    int commas_left() const;
+    int commata_left() const;
     QStringList results_instruction(bool wr_mem);
     QString results_assignment();
     QString results_comment();
@@ -159,7 +159,13 @@ private:
     QString expand_tabs(const QString& src);
     bool skip_comments();
     bool tokenize(const QString& m_line);
-    p2_cond_e conditional(p2_token_e cond);
+
+    const P2Word& curr_word() const;
+    const QString curr_str() const;
+    p2_token_e curr_tok() const;
+    bool next();
+
+    p2_cond_e conditional();
     p2_cond_e parse_modcz();
     P2Atom make_atom();
     P2Atom bin_const(const QString& str);
@@ -168,9 +174,10 @@ private:
     P2Atom dec_const(const QString& str);
     P2Atom hex_const(const QString& str);
     P2Atom str_const(const QString& str);
+    P2Atom real_const(const QString& str);
     QString find_symbol(Section sect = sec_con, const QString& func = QString(), bool all_sections = false);
     QString find_locsym(Section sect = sec_con, const QString& local = QString());
-    void add_const_symbol(const QString& pfx, const QString& str = QString(), const P2Atom& atom = P2Atom());
+    void add_const_symbol(const QString& pfx, const P2Word& word = P2Word(), const P2Atom& atom = P2Atom());
     P2Atom parse_atom(int level);
     P2Atom parse_primary(int level);
     P2Atom parse_unary(int level);
@@ -185,9 +192,29 @@ private:
     bool end_of_line();
     bool parse_comma();
     void optional_comma();
-    bool optional_wcz();
-    bool optional_wc();
-    bool optional_wz();
+    bool optional_WCZ();
+    bool optional_WC();
+    bool optional_WZ();
+
+    bool parse_INST();
+    bool parse_D_IM_S_WCZ();
+    bool parse_D_IM_S_WC();
+    bool parse_D_IM_S_WZ();
+    bool parse_WZ_D_IM_S();
+    bool parse_D_IM_S_NNN(uint max = 7);
+    bool parse_D_IM_S();
+    bool parse_D_WCZ();
+    bool parse_WCZ();
+    bool parse_D();
+    bool parse_WZ_D();
+    bool parse_IM_D();
+    bool parse_IM_D_WCZ();
+    bool parse_IM_D_WC();
+    bool parse_IM_S();
+    bool parse_IM_S_WCZ();
+    bool parse_PC_ABS();
+    bool parse_PTRx_PC_ABS();
+    bool parse_IMM23();
 
     bool asm_assign();
     bool asm_alignw();
@@ -200,26 +227,6 @@ private:
     bool asm_pub();
     bool asm_pri();
     bool asm_var();
-
-    bool parse_inst();
-    bool parse_d_imm_s_wcz();
-    bool parse_d_imm_s_wc();
-    bool parse_d_imm_s_wz();
-    bool parse_wz_d_imm_s();
-    bool parse_d_imm_s_nnn(uint max = 7);
-    bool parse_d_imm_s();
-    bool parse_d_wcz();
-    bool parse_cz();
-    bool parse_d();
-    bool parse_wz_d();
-    bool parse_imm_d();
-    bool parse_imm_d_wcz();
-    bool parse_imm_d_wc();
-    bool parse_imm_s();
-    bool parse_imm_s_wcz();
-    bool parse_pc_abs();
-    bool parse_ptr_pc_abs();
-    bool parse_imm23(QVector<p2_inst7_e> aug);
 
     bool asm_byte();
     bool asm_word();

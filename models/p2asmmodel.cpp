@@ -47,46 +47,45 @@ P2AsmModel::P2AsmModel(P2Asm* p2asm, QObject *parent)
     , m_font()
     , m_error_pixmap()
     , m_error()
-    , m_header_alignment()
+    , m_head_alignment()
     , m_text_alignment()
 {
     m_error_pixmap = QPixmap(":/icons/error.svg");
 
-    // Header section names
     m_header.insert(c_Origin,       tr("Origin"));
+    m_background.insert(c_Origin,       qRgb(0xff,0xfc,0xf8));
+    m_head_alignment.insert(c_Origin,   Qt::AlignLeft | Qt::AlignVCenter);
+    m_text_alignment.insert(c_Origin,   Qt::AlignLeft | Qt::AlignVCenter);
+
     m_header.insert(c_Address,      tr("Address"));
-    m_header.insert(c_Errors,       tr("Errors"));
-    m_header.insert(c_Tokens,       tr("Tokens"));
+    m_background.insert(c_Address,      qRgb(0xff,0xf0,0xe0));
+    m_head_alignment.insert(c_Address,  Qt::AlignLeft | Qt::AlignVCenter);
+    m_text_alignment.insert(c_Address,  Qt::AlignLeft | Qt::AlignVCenter);
+
     m_header.insert(c_Opcode,       tr("Opcode"));
+    m_background.insert(c_Opcode,       qRgb(0xf8,0xfc,0xff));
+    m_head_alignment.insert(c_Opcode,   Qt::AlignLeft | Qt::AlignVCenter);
+    m_text_alignment.insert(c_Opcode,   Qt::AlignLeft | Qt::AlignVCenter);
+
+    m_header.insert(c_Errors,       tr("Errors"));
+    m_background.insert(c_Errors,       qRgb(0xff,0xc0,0xc0));
+    m_head_alignment.insert(c_Errors,   Qt::AlignLeft | Qt::AlignVCenter);
+    m_text_alignment.insert(c_Errors,   Qt::AlignCenter);
+
+    m_header.insert(c_Tokens,       tr("Tokens"));
+    m_background.insert(c_Tokens,       qRgb(0x10,0xfc,0xff));
+    m_head_alignment.insert(c_Tokens,   Qt::AlignLeft | Qt::AlignVCenter);
+    m_text_alignment.insert(c_Tokens,   Qt::AlignCenter);
+
     m_header.insert(c_Symbols,      tr("Symbols"));
+    m_background.insert(c_Symbols,      qRgb(0xff,0xf0,0xff));
+    m_head_alignment.insert(c_Symbols,  Qt::AlignLeft | Qt::AlignVCenter);
+    m_text_alignment.insert(c_Symbols,  Qt::AlignCenter);
+
     m_header.insert(c_Source,       tr("Source"));
-    // Horizontal section background colors
-
-    m_background.insert(c_Origin,   qRgb(0xff,0xfc,0xf8));
-    m_background.insert(c_Address,  qRgb(0xff,0xf0,0xe0));
-    m_background.insert(c_Opcode,   qRgb(0xf8,0xfc,0xff));
-    m_background.insert(c_Tokens,   qRgb(0x10,0xfc,0xff));
-    m_background.insert(c_Symbols,  qRgb(0xff,0xf0,0xff));
-    m_background.insert(c_Errors,   qRgb(0xff,0xc0,0xc0));
-    m_background.insert(c_Source,   qRgb(0xff,0xff,0xff));
-
-    // Horizontal section alignments
-    m_header_alignment.insert(c_Origin,     Qt::AlignLeft | Qt::AlignVCenter);
-    m_header_alignment.insert(c_Address,    Qt::AlignLeft | Qt::AlignVCenter);
-    m_header_alignment.insert(c_Opcode,     Qt::AlignLeft | Qt::AlignVCenter);
-    m_header_alignment.insert(c_Tokens,     Qt::AlignLeft | Qt::AlignVCenter);
-    m_header_alignment.insert(c_Errors,     Qt::AlignLeft | Qt::AlignVCenter);
-    m_header_alignment.insert(c_Symbols,    Qt::AlignLeft | Qt::AlignVCenter);
-    m_header_alignment.insert(c_Source,     Qt::AlignLeft | Qt::AlignVCenter);
-
-    // Item alignments
-    m_text_alignment.insert(c_Origin,       Qt::AlignLeft | Qt::AlignVCenter);
-    m_text_alignment.insert(c_Opcode,       Qt::AlignLeft | Qt::AlignVCenter);
-    m_text_alignment.insert(c_Address,      Qt::AlignLeft | Qt::AlignVCenter);
-    m_text_alignment.insert(c_Tokens,       Qt::AlignCenter);
-    m_text_alignment.insert(c_Errors,       Qt::AlignCenter);
-    m_text_alignment.insert(c_Symbols,      Qt::AlignCenter);
-    m_text_alignment.insert(c_Source,       Qt::AlignLeft | Qt::AlignVCenter);
+    m_background.insert(c_Source,       qRgb(0xff,0xff,0xff));
+    m_head_alignment.insert(c_Source,   Qt::AlignLeft | Qt::AlignVCenter);
+    m_text_alignment.insert(c_Source,   Qt::AlignLeft | Qt::AlignVCenter);
 }
 
 QVariant P2AsmModel::headerData(int section, Qt::Orientation orientation, int role) const
@@ -114,7 +113,7 @@ QVariant P2AsmModel::headerData(int section, Qt::Orientation orientation, int ro
             break;
 
         case Qt::TextAlignmentRole:
-            result = m_header_alignment.value(column);
+            result = m_head_alignment.value(column);
             break;
 
         case Qt::ToolTipRole:
@@ -183,22 +182,20 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     const int lineno = row + 1;
 
     const P2SymbolTable symbols = m_asm->symbols();
-    const QStringList& symrefs = symbols.isNull() ? QStringList()
-                                                  : symbols->references_in(lineno);
+    const QList<P2Symbol>& symrefs = symbols.isNull() ? QList<P2Symbol>()
+                                                      : symbols->references_in(lineno);
     const QStringList& errors = m_asm->errors(lineno);
     const bool has_errors = !errors.isEmpty();
-
     const P2Words& words = m_asm->words(lineno);
-    const QStringList& references_in = symbols.isNull() ? QStringList()
-                                                        : symbols->references_in(lineno);
 
-    const bool has_PC = m_asm->has_PC(lineno);
-    const p2_PC_ORGH_t PC_orgh = has_PC ? m_asm->PC_value(lineno) : p2_PC_ORGH_t();
+    const bool has_PC = m_asm->has_PC_ORGH(lineno);
+    const p2_PC_ORGH_t PC_orgh = has_PC ? m_asm->get_PC_ORGH(lineno)
+                                        : p2_PC_ORGH_t();
     const p2_LONG PC = PC_orgh.first;
-    const p2_LONG orgh = PC_orgh.second;
+    const p2_LONG ORGH = PC_orgh.second;
 
     const bool has_IR = m_asm->has_IR(lineno);
-    const P2Opcode IR = m_asm->IR_value(lineno);
+    const P2Opcode IR = m_asm->get_IR(lineno);
 
     switch (role) {
     case Qt::DisplayRole:
@@ -206,7 +203,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
         case c_Origin: // Address as COG[xxx], LUT[xxx], or xxxxxx in RAM
             if (!has_PC)
                 break;
-            result = QString("%1").arg(orgh, 6, 16, QChar('0'));
+            result = QString("%1").arg(ORGH, 6, 16, QChar('0'));
             break;
 
         case c_Address:
@@ -284,7 +281,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
 
         case c_Symbols:
             if (!symrefs.isEmpty())
-                return symrefs;
+                return qVariantFromValue(symrefs);
             break;
 
         case c_Errors:
@@ -318,9 +315,9 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
             break;
 
         case c_Symbols:
-            if (references_in.isEmpty())
+            if (symrefs.isEmpty())
                 break;
-            result = symbolsToolTip(symbols, references_in, style_background_symbols);
+            result = symbolsToolTip(symbols, symrefs, style_background_symbols);
             break;
 
         case c_Errors:
@@ -377,7 +374,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
         break;
 
     case Qt::SizeHintRole:
-        result = sizeHint(column);
+        result = sizeHint(column, false, data(index).toString());
         break;
 
     case Qt::InitialSortOrderRole:
@@ -414,50 +411,61 @@ bool P2AsmModel::setData(const QModelIndex& index, const QVariant& value, int ro
     return result;
 }
 
-QSize P2AsmModel::sizeHint(P2AsmModel::column_e column, bool header) const
+QSize P2AsmModel::sizeHint(P2AsmModel::column_e column, bool header, const QString& text) const
 {
     QFont font(m_font);
     font.setBold(header);
     QFontMetrics metrics(font);
+    QSize size;
 
     switch (column) {
     case c_Origin:
-        return metrics.size(Qt::TextSingleLine, template_str_origin);
+        size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_origin : text);
+        break;
 
     case c_Address:
-        return metrics.size(Qt::TextSingleLine, template_str_address);
+        size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_address : text);
+        break;
 
     case c_Opcode:
         switch (m_format) {
         case fmt_bin:
-            return metrics.size(Qt::TextSingleLine, template_str_opcode_bin);
+            size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_bin : text);
+            break;
         case fmt_byt:
-            return metrics.size(Qt::TextSingleLine, template_str_opcode_byt);
+            size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_byt : text);
+            break;
         case fmt_oct:
-            return metrics.size(Qt::TextSingleLine, template_str_opcode_oct);
+            size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_oct : text);
+            break;
         case fmt_dec:
-            return metrics.size(Qt::TextSingleLine, template_str_opcode_dec);
+            size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_dec : text);
+            break;
         case fmt_hex:
-            return metrics.size(Qt::TextSingleLine, template_str_opcode_hex);
+            size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_hex : text);
+            break;
         }
         break;
 
     case c_Symbols:
-        return metrics.size(Qt::TextSingleLine, template_str_symbols);
+        size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_symbols : text);
+        break;
 
     case c_Tokens:
-        return metrics.size(Qt::TextSingleLine, template_str_tokens);
+        size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_tokens : text);
+        break;
 
     case c_Errors:
-        return metrics.size(Qt::TextSingleLine, template_str_errors);
+        size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_errors : text);
+        break;
 
     case c_Source:
-        return metrics.size(Qt::TextSingleLine, template_str_instruction);
+        size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_instruction : text);
+        break;
     }
-    return QSize();
+    return size;
 }
 
-#if OVERRIDE_FLAGS
 Qt::ItemFlags P2AsmModel::flags(const QModelIndex &index) const
 {
     Qt::ItemFlags flags = Qt::NoItemFlags;
@@ -465,14 +473,16 @@ Qt::ItemFlags P2AsmModel::flags(const QModelIndex &index) const
         return flags;
 
     column_e column = static_cast<column_e>(index.column());
-    if (c_Source == column)
+    switch (column) {
+    case c_Source:
         flags |= Qt::ItemIsEnabled | Qt::ItemIsEditable;
-    else
+        break;
+    default:
         flags |= Qt::ItemIsEnabled;
+    }
 
     return flags;
 }
-#endif
 
 QList<P2AsmModel::column_e> P2AsmModel::columns()
 {
@@ -487,6 +497,11 @@ QList<P2AsmModel::column_e> P2AsmModel::columns()
     return columns;
 }
 
+p2_opcode_format_e P2AsmModel::opcode_format() const
+{
+    return m_format;
+}
+
 void P2AsmModel::invalidate()
 {
     beginResetModel();
@@ -497,17 +512,29 @@ void P2AsmModel::setOpcodeFormat(p2_opcode_format_e format)
 {
     if (format == m_format)
         return;
+    beginResetModel();
     m_format = format;
-    invalidate();
+    endResetModel();
 }
 
 void P2AsmModel::setFont(const QFont& font)
 {
+    beginResetModel();
     m_font = font;
-    invalidate();
     QFontMetrics metrics(m_font);
     QSize size = QSize(metrics.averageCharWidth(), metrics.ascent() + metrics.descent());
     m_error = QIcon(m_error_pixmap.scaled(size, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    endResetModel();
+}
+
+const P2Word& P2AsmModel::highlight() const
+{
+    return m_highlight;
+}
+
+void P2AsmModel::setHighlight(const P2Word& word)
+{
+    m_highlight = word;
 }
 
 
@@ -563,6 +590,15 @@ static const QString html_td(const QString& text, const QString& bgd = QString()
             .arg(text);
 }
 
+static const QString esc(const QString& src)
+{
+    QString result = src;
+    result.replace(QChar('&'), QStringLiteral("&amp;"));
+    result.replace(QChar('<'), QStringLiteral("&lt;"));
+    result.replace(QChar('>'), QStringLiteral("&gt;"));
+    return result;
+}
+
 QString P2AsmModel::tokenToolTip(const P2Words& words, const QString& bgd) const
 {
     QStringList html = html_head();
@@ -577,26 +613,25 @@ QString P2AsmModel::tokenToolTip(const P2Words& words, const QString& bgd) const
 
     for (int i = 0; i < words.count(); i++) {
         const P2Word& word = words[i];
+        const QString& token_id = QString("%1").arg(word.tok(), 3, 16, QChar('0'));
+        const QString& token_str = esc(Token.enum_name(word.tok()));
+        const QString& token_id_str = QString("%1: %2").arg(token_id).arg(token_str);
+        const QString& type_names = esc(Token.type_names(word.tok()).join(QChar::Space));
+        const QString& pos_len = QString("@%1 +%2").arg(word.pos()).arg(word.len());
+        const QString& source = esc(word.str());
+
         html += html_start_tr();
-        html += html_td(QString("%1: %2")
-                        .arg(word.tok(), 3, 16, QChar('0'))
-                        .arg(Token.enum_name(word.tok())),
-                        bgd);
-        html += html_td(Token.type_names(word.tok()).join(QChar::Space),
-                        bgd);
-        html += html_td(QString("@%1 +%2")
-                        .arg(word.pos())
-                        .arg(word.len()),
-                        bgd);
-        html += html_td(word.str(),
-                        bgd);
+        html += html_td(token_id_str, bgd);
+        html += html_td(type_names, bgd);
+        html += html_td(pos_len, bgd);
+        html += html_td(source, bgd);
         html += html_end_tr();
     }
     html += html_end();
     return html.join(QChar::LineFeed);
 }
 
-QString P2AsmModel::symbolsToolTip(const P2SymbolTable& symbols, const QStringList& defined, const QString& bgd) const
+QString P2AsmModel::symbolsToolTip(const P2SymbolTable& symbols, const QList<P2Symbol>& symrefs, const QString& bgd) const
 {
     if (symbols.isNull())
         return QString();
@@ -612,12 +647,12 @@ QString P2AsmModel::symbolsToolTip(const P2SymbolTable& symbols, const QStringLi
     html += html_th(tr("Value (bin)"), bgd);
     html += html_end_tr();
 
-    for (int i = 0; i < defined.count(); i++) {
-        const QString& symbol = defined[i];
-        const P2Symbol& sym = symbols->symbol(symbol);
+    for (int i = 0; i < symrefs.count(); i++) {
+        const P2Symbol& sym = symrefs[i];
+        const P2Word& word = symbols->reference(sym.name());
         p2_LONG val = sym.value<p2_LONG>();
         html += html_start_tr();
-        html += html_td(QString::number(sym.reference()), bgd);
+        html += html_td(QString::number(word.lineno()), bgd);
         html += html_td(sym.name(), bgd);
         html += html_td(sym.type_name(), bgd);
         html += html_td(format_data_dec(val), bgd);

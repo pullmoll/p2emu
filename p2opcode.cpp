@@ -67,6 +67,51 @@ void P2Opcode::clear(const p2_LONG opcode, const p2_PC_ORGH_t& pc_orgh)
     DATA.clear();
 }
 
+p2_cond_e P2Opcode::cond() const
+{
+    return static_cast<p2_cond_e>(u.op.cond);
+}
+
+p2_inst7_e P2Opcode::inst7() const
+{
+    return static_cast<p2_inst7_e>(u.op.inst);
+}
+
+p2_inst8_e P2Opcode::inst8() const
+{
+    return static_cast<p2_inst8_e>(u.op8.inst);
+}
+
+p2_inst9_e P2Opcode::inst9() const
+{
+    return static_cast<p2_inst9_e>(u.op9.inst);
+}
+
+bool P2Opcode::wc() const
+{
+    return u.op.wc;
+}
+
+bool P2Opcode::wz() const
+{
+    return u.op.wz;
+}
+
+bool P2Opcode::im() const
+{
+    return u.op.im;
+}
+
+p2_LONG P2Opcode::dst() const
+{
+    return u.op.dst;
+}
+
+p2_LONG P2Opcode::src() const
+{
+    return u.op.src;
+}
+
 /**
  * @brief Set the opcode's cond field to %cond
  * @param cond enumeration value
@@ -101,6 +146,15 @@ void P2Opcode::set_inst8(const p2_inst8_e inst)
 void P2Opcode::set_inst9(const p2_inst9_e inst)
 {
     u.op9.inst = static_cast<uint>(inst);
+}
+
+/**
+ * @brief Set the opcode's bits [23:0] from AUGS/AUGD [31:9]
+ * @param addr augment address to set
+ */
+void P2Opcode::set_imm23(const p2_LONG addr)
+{
+    u.opcode |= addr >> AUG_SHIFT;
 }
 
 /**

@@ -108,6 +108,7 @@ private slots:
     void print_error(int pass, int lineno, const QString& message);
     void goto_line(const QUrl& url);
     void goto_line_number();
+    void resize_source_panel(const int results_min = 10);
 private:
     Ui::MainWindow *ui;
     QVector<P2CogView*> m_vcog;
@@ -117,6 +118,9 @@ private:
     P2Dasm* m_dasm;
     P2DasmModel* m_dmodel;
     P2SymbolsModel* m_smodel;
+
+    int m_source_percent;
+    int m_results_percent;
 
     void setupAssembler();
     void setupDisassembler();

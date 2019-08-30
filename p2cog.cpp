@@ -2437,14 +2437,14 @@ int P2Cog::decode()
         cycles = op_loc_ptrb();
         break;
 
-    case p2_AUGS_00:
+    case p2_AUGS:
     case p2_AUGS_01:
     case p2_AUGS_10:
     case p2_AUGS_11:
         cycles = op_augs();
         break;
 
-    case p2_AUGD_00:
+    case p2_AUGD:
     case p2_AUGD_01:
     case p2_AUGD_10:
     case p2_AUGD_11:

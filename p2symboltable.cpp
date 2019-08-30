@@ -130,32 +130,35 @@ P2Atom::Type P2SymbolTableObj::type(const QString& name) const
  */
 
 
-int P2SymbolTableObj::defined_where(const QString& name) const
+P2Word P2SymbolTableObj::definition(const QString& name) const
 {
-    if (!m_symbols.contains(name))
-        return -1;
-    return m_symbols[name].defined_where();
+    return m_symbols[name].definition();
 }
 
-QStringList P2SymbolTableObj::references_in(int lineno) const
+const QList<P2Symbol> P2SymbolTableObj::references_in(int lineno) const
 {
-    return m_references.values(lineno);
+    QList<P2Symbol> symbols;
+    QStringList names = m_references.values(lineno);
+    foreach(const QString& name, names)
+        symbols += m_symbols.values(name);
+    return symbols;
 }
 
-int P2SymbolTableObj::reference(const QString& name, int idx) const
+P2Word P2SymbolTableObj::reference(const QString& name, int idx) const
 {
     if (!m_symbols.contains(name))
-        return -1;
+        return P2Word();
     return m_symbols[name].reference(idx);
 }
 
-bool P2SymbolTableObj::add_reference(const QString& name, int lineno)
+bool P2SymbolTableObj::add_reference(int lineno, const QString& name, const P2Word& word)
 {
-    if (!m_references.contains(lineno, name))
-        m_references.insert(lineno, name);
+    if (m_references.contains(lineno, name))
+        return true;
+    m_references.insert(lineno, name);
     if (!m_symbols.contains(name))
         return false;
-    m_symbols[name].add_reference(lineno);
+    m_symbols[name].add_reference(lineno, word);
     return true;
 }
 
@@ -178,7 +181,7 @@ const p2_symbols_hash_t& P2SymbolTableObj::symbols() const
     return m_symbols;
 }
 
-const p2_lineno_hash_t& P2SymbolTableObj::references() const
+const QMultiHash<int,QString>& P2SymbolTableObj::references() const
 {
     return m_references;
 }

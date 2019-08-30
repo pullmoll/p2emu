@@ -112,5 +112,6 @@ DISTFILES += \
 		csv.cpp \
 		csv.h \
 		icons/decrease.png \
+		icons/down_arrow.png \
 		icons/error.png \
 		icons/increase.png

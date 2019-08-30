@@ -36,7 +36,6 @@
 #include "p2symbol.h"
 
 typedef QHash<QString,P2Symbol> p2_symbols_hash_t;
-typedef QMultiHash<int,QString> p2_lineno_hash_t;
 
 /**
  * @brief The P2SymbolTable class is a QHash<QString,Symbol>, i.e. a hash
@@ -54,17 +53,17 @@ public:
     bool insert(const QString& name, const P2Atom& symbol);
     P2Symbol symbol(const QString& name) const;
     P2Atom::Type type(const QString& name) const;
-    int defined_where(const QString& name) const;
-    QStringList references_in(int lineno) const;
-    int reference(const QString& name, int idx = 0) const;
+    P2Word definition(const QString& name) const;
+    const QList<P2Symbol> references_in(int lineno) const;
+    P2Word reference(const QString& name, int idx = 0) const;
     const QList<int> references(const QString& name) const;
     QStringList names() const;
 
     const p2_symbols_hash_t& symbols() const;
-    const p2_lineno_hash_t& references() const;
+    const QMultiHash<int, QString>& references() const;
 
     bool set_atom(const QString& name, const P2Atom& symbol);
-    bool add_reference(const QString& name, int lineno);
+    bool add_reference(int lineno, const QString& name, const P2Word& word);
 
     /**
      * @brief Return a symbol value cast to the type T
@@ -80,7 +79,7 @@ public:
 
 private:
     p2_symbols_hash_t m_symbols;
-    p2_lineno_hash_t m_references;
+    QMultiHash<int,QString> m_references;
 };
 
 typedef QSharedPointer<P2SymbolTableObj> P2SymbolTable;

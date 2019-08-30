@@ -1,4 +1,5 @@
 #include <QPainter>
+#include <QComboBox>
 #include "p2opcodedelegate.h"
 #include "p2asmmodel.h"
 
@@ -13,22 +14,28 @@ void P2OpcodeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     const P2AsmModel* model = qobject_cast<const P2AsmModel*>(index.model());
     Q_ASSERT(model);    // assert the model is really P2AsmModel
 
-    QStyleOptionViewItem opt(option);
-    initStyleOption(&opt, index);
+    QVariant var = model->data(index, Qt::EditRole);
+    if (var.isNull())
+        return;
 
-    QVariant var = model->data(index);
     const P2Opcode IR = qvariant_cast<P2Opcode>(var);
     p2_opcode_format_e format = model->opcode_format();
     QString text;
 
-    if (!var.isNull()) {
-        if (IR.as_IR) {
-            text = format_opcode(IR.u, format);
-        } else if (IR.as_EQU) {
-            text = format_data(IR.u, format);
-        } else if (!IR.DATA.isEmpty()) {
-            text = P2Atom::format_data(IR.DATA, IR.PC_ORGH.first).join(QChar::LineFeed);
-        }
+    QStyleOptionViewItem opt(option);
+    initStyleOption(&opt, index);
+
+    if (IR.as_IR) {
+        text = format_opcode(IR.u, format);
+    }
+    if (IR.as_EQU) {
+        text = format_data(IR.u, format);
+    }
+    if (text.isEmpty() && !IR.DATA.isEmpty()) {
+        const QStringList& lines = P2Atom::format_data(IR.DATA, IR.PC_ORGH.first);
+        text = lines.value(0);
+        if (lines.count() > 1)
+            text += QStringLiteral("…");
     }
 
     QRect rect = option.rect;

@@ -36,7 +36,7 @@
 #include "p2token.h"
 #include "p2util.h"
 
-#define DBG_REGEX   0
+#define DBG_REGEX 0
 #define DBG_TOKEN 0
 
 #if DBG_REGEX
@@ -60,7 +60,7 @@ static const QString re_comment_curly = QStringLiteral("\\{[^\\}]*\\}");
  * @brief Regular expression for comments
  */
 //static const QString re_comment_eol = QStringLiteral("'[^\\{\\}]*");
-static const QString re_comment_eol = QStringLiteral("'.*");
+static const QString re_comment_eol = QStringLiteral("^'.*");
 
 /**
  * @brief Regular expression for local symbol
@@ -68,7 +68,7 @@ static const QString re_comment_eol = QStringLiteral("'.*");
  * leading "."
  * then any number of "A"…"Z", "0"…"9", or "_"
  */
-static const QString re_locsym = QStringLiteral("[.][A-Z_]+[A-Z0-9_]*");
+static const QString re_locsym = QStringLiteral("^[.][A-Z_]+[A-Z0-9_]*");
 
 /**
  * @brief Regular expression for alphanumeric
@@ -76,7 +76,7 @@ static const QString re_locsym = QStringLiteral("[.][A-Z_]+[A-Z0-9_]*");
  * leading "A"…"Z", or "_"
  * then any number of "A"…"Z", "0"…"9", or "_"
  */
-static const QString re_symbol = QStringLiteral("[A-Z_]+[A-Z0-9_]*");
+static const QString re_symbol = QStringLiteral("^[A-Z_]+[A-Z0-9_]*");
 
 /**
  * @brief Regular expression for binary number
@@ -84,7 +84,7 @@ static const QString re_symbol = QStringLiteral("[A-Z_]+[A-Z0-9_]*");
  * leading "%"
  * then one or more of "0", "1", or "_"
  */
-static const QString re_bin_const = QStringLiteral("%[_]*[01_]+");
+static const QString re_bin_const = QStringLiteral("^%[_]*[01_]+");
 
 /**
  * @brief Regular expression for byte number
@@ -92,7 +92,7 @@ static const QString re_bin_const = QStringLiteral("%[_]*[01_]+");
  * leading "%%"
  * then one or more of "0"…"3", or "_"
  */
-static const QString re_byt_const = QStringLiteral("%%[_]*[0-3_]+");
+static const QString re_byt_const = QStringLiteral("^%%[_]*[0-3_]+");
 
 /**
  * @brief Regular expression for octal number
@@ -100,7 +100,7 @@ static const QString re_byt_const = QStringLiteral("%%[_]*[0-3_]+");
  * leading "0"
  * then one or more of "0"…"7", or "_"
  */
-static const QString re_oct_const = QStringLiteral("[0][_]*[0-7_]*");
+static const QString re_oct_const = QStringLiteral("^[0][_]*[0-7_]*");
 
 /**
  * @brief Regular expression for a decimal number
@@ -108,7 +108,7 @@ static const QString re_oct_const = QStringLiteral("[0][_]*[0-7_]*");
  * leading "0"…"9"
  * then any number of "0"…"9", or "_"
  */
-static const QString re_dec_const = QStringLiteral("[1-9][_]*[0-9_]*");
+static const QString re_dec_const = QStringLiteral("^[1-9]+[0-9_]*(?!\\.)");
 
 /**
  * @brief Regular expression an octal number
@@ -116,7 +116,7 @@ static const QString re_dec_const = QStringLiteral("[1-9][_]*[0-9_]*");
  * leading "$"
  * then any number of "0"…"9", "A"…"F", or "_"
  */
-static const QString re_hex_const = QStringLiteral("\\$[_]*[0-9A-F_]+");
+static const QString re_hex_const = QStringLiteral("^\\$[_]*[0-9A-F_]+");
 
 /**
  * @brief Regular expression for a string enclosed in doublequotes, possibly containing escaped doublequotes
@@ -124,7 +124,16 @@ static const QString re_hex_const = QStringLiteral("\\$[_]*[0-9A-F_]+");
  * then any number of escaped doublequotes (\") or other characters (.)
  * trailing '"'
  */
-static const QString re_str_const = QStringLiteral("\"([^\\\"]|\\\\.)*\"");
+static const QString re_str_const = QStringLiteral("^\"([^\\\"]|\\\\.)*\"");
+
+/**
+ * @brief Regular expression for a qreal number
+ *
+ * leading any number of "0"…"9"
+ * then one period "."
+ * then any number of "0"…"9"
+ */
+static const QString re_real_const = QStringLiteral("^[0-9_]*\\.[0-9_]*");
 
 //! Global static instance of the P2Token class
 P2Token Token;
@@ -231,6 +240,17 @@ P2Token::P2Token()
     , m_lookup_cond()
     , m_lookup_modcz()
     , m_t_type_name()
+    , rx_comment_eol(re_comment_eol, Qt::CaseInsensitive)
+    , rx_comment_curly(re_comment_curly, Qt::CaseInsensitive)
+    , rx_symbol(re_symbol, Qt::CaseInsensitive)
+    , rx_locsym(re_locsym, Qt::CaseInsensitive)
+    , rx_bin_const(re_bin_const, Qt::CaseInsensitive)
+    , rx_byt_const(re_byt_const, Qt::CaseInsensitive)
+    , rx_oct_const(re_oct_const, Qt::CaseInsensitive)
+    , rx_hex_const(re_hex_const, Qt::CaseInsensitive)
+    , rx_dec_const(re_dec_const, Qt::CaseInsensitive)
+    , rx_str_const(re_str_const, Qt::CaseInsensitive)
+    , rx_real_const(re_real_const, Qt::CaseInsensitive)
 {
     TN_ADD(t_invalid,          tm_lexer, QStringLiteral("·INVALID·"));
     TN_ADD(t_unknown,          tm_lexer, QStringLiteral("·unknown·"));
@@ -238,389 +258,374 @@ P2Token::P2Token()
     TN_ADD(t_comment_eol,      tm_comment, QStringLiteral("'"));
     TN_ADD(t_comment_lcurly,   tm_comment, QStringLiteral("{"));
     TN_ADD(t_comment_rcurly,   tm_comment, QStringLiteral("}"));
-    TN_ADD(t_string,           tm_lexer, QStringLiteral("·str_const·"));
+    TN_ADD(t_str_const,           tm_lexer, QStringLiteral("·str_const·"));
     TN_ADD(t_bin_const,        tm_lexer, QStringLiteral("·bin_const·"));
     TN_ADD(t_byt_const,        tm_lexer, QStringLiteral("·byt_const·"));
     TN_ADD(t_oct_const,        tm_lexer, QStringLiteral("·oct_const·"));
     TN_ADD(t_dec_const,        tm_lexer, QStringLiteral("·dec_const·"));
+    TN_ADD(t_real_const,       tm_lexer, QStringLiteral("·real_const·"));
     TN_ADD(t_hex_const,        tm_lexer, QStringLiteral("·hex_const·"));
     TN_ADD(t_locsym,           tm_lexer, QStringLiteral("·locsym·"));
     TN_ADD(t_symbol,           tm_lexer, QStringLiteral("·symbol·"));
 
-    TN_ADD(t_ABS,              tm_inst, QStringLiteral("ABS"));
-    TN_ADD(t_ADD,              tm_inst, QStringLiteral("ADD"));
-    TN_ADD(t_ADDCT1,           tm_inst, QStringLiteral("ADDCT1"));
-    TN_ADD(t_ADDCT2,           tm_inst, QStringLiteral("ADDCT2"));
-    TN_ADD(t_ADDCT3,           tm_inst, QStringLiteral("ADDCT3"));
-    TN_ADD(t_ADDPIX,           tm_inst, QStringLiteral("ADDPIX"));
-    TN_ADD(t_ADDS,             tm_inst, QStringLiteral("ADDS"));
-    TN_ADD(t_ADDSX,            tm_inst, QStringLiteral("ADDSX"));
-    TN_ADD(t_ADDX,             tm_inst, QStringLiteral("ADDX"));
-    TN_ADD(t_AKPIN,            tm_inst, QStringLiteral("AKPIN"));
-    TN_ADD(t_ALLOWI,           tm_inst, QStringLiteral("ALLOWI"));
-    TN_ADD(t_ALTB,             tm_inst, QStringLiteral("ALTB"));
-    TN_ADD(t_ALTD,             tm_inst, QStringLiteral("ALTD"));
-    TN_ADD(t_ALTGB,            tm_inst, QStringLiteral("ALTGB"));
-    TN_ADD(t_ALTGN,            tm_inst, QStringLiteral("ALTGN"));
-    TN_ADD(t_ALTGW,            tm_inst, QStringLiteral("ALTGW"));
-    TN_ADD(t_ALTI,             tm_inst, QStringLiteral("ALTI"));
-    TN_ADD(t_ALTR,             tm_inst, QStringLiteral("ALTR"));
-    TN_ADD(t_ALTS,             tm_inst, QStringLiteral("ALTS"));
-    TN_ADD(t_ALTSB,            tm_inst, QStringLiteral("ALTSB"));
-    TN_ADD(t_ALTSN,            tm_inst, QStringLiteral("ALTSN"));
-    TN_ADD(t_ALTSW,            tm_inst, QStringLiteral("ALTSW"));
-    TN_ADD(t_AND,              tm_inst, QStringLiteral("AND"));
-    TN_ADD(t_ANDN,             tm_inst, QStringLiteral("ANDN"));
-    TN_ADD(t_AUGD,             tm_inst, QStringLiteral("AUGD"));
-    TN_ADD(t_AUGS,             tm_inst, QStringLiteral("AUGS"));
-    TN_ADD(t_BITC,             tm_inst, QStringLiteral("BITC"));
-    TN_ADD(t_BITH,             tm_inst, QStringLiteral("BITH"));
-    TN_ADD(t_BITL,             tm_inst, QStringLiteral("BITL"));
-    TN_ADD(t_BITNC,            tm_inst, QStringLiteral("BITNC"));
-    TN_ADD(t_BITNOT,           tm_inst, QStringLiteral("BITNOT"));
-    TN_ADD(t_BITNZ,            tm_inst, QStringLiteral("BITNZ"));
-    TN_ADD(t_BITRND,           tm_inst, QStringLiteral("BITRND"));
-    TN_ADD(t_BITZ,             tm_inst, QStringLiteral("BITZ"));
-    TN_ADD(t_BLNPIX,           tm_inst, QStringLiteral("BLNPIX"));
-    TN_ADD(t_BMASK,            tm_inst, QStringLiteral("BMASK"));
-    TN_ADD(t_BRK,              tm_inst, QStringLiteral("BRK"));
-    TN_ADD(t_CALL,             tm_inst, QStringLiteral("CALL"));
-    TN_ADD(t_CALLA,            tm_inst, QStringLiteral("CALLA"));
-    TN_ADD(t_CALLB,            tm_inst, QStringLiteral("CALLB"));
-    TN_ADD(t_CALLD,            tm_inst, QStringLiteral("CALLD"));
-    TN_ADD(t_CALLPA,           tm_inst, QStringLiteral("CALLPA"));
-    TN_ADD(t_CALLPB,           tm_inst, QStringLiteral("CALLPB"));
-    TN_ADD(t_CMP,              tm_inst, QStringLiteral("CMP"));
-    TN_ADD(t_CMPM,             tm_inst, QStringLiteral("CMPM"));
-    TN_ADD(t_CMPR,             tm_inst, QStringLiteral("CMPR"));
-    TN_ADD(t_CMPS,             tm_inst, QStringLiteral("CMPS"));
-    TN_ADD(t_CMPSUB,           tm_inst, QStringLiteral("CMPSUB"));
-    TN_ADD(t_CMPSX,            tm_inst, QStringLiteral("CMPSX"));
-    TN_ADD(t_CMPX,             tm_inst, QStringLiteral("CMPX"));
-    TN_ADD(t_COGATN,           tm_inst, QStringLiteral("COGATN"));
-    TN_ADD(t_COGBRK,           tm_inst, QStringLiteral("COGBRK"));
-    TN_ADD(t_COGID,            tm_inst, QStringLiteral("COGID"));
-    TN_ADD(t_COGINIT,          tm_inst, QStringLiteral("COGINIT"));
-    TN_ADD(t_COGSTOP,          tm_inst, QStringLiteral("COGSTOP"));
-    TN_ADD(t_CRCBIT,           tm_inst, QStringLiteral("CRCBIT"));
-    TN_ADD(t_CRCNIB,           tm_inst, QStringLiteral("CRCNIB"));
-    TN_ADD(t_DECMOD,           tm_inst, QStringLiteral("DECMOD"));
-    TN_ADD(t_DECOD,            tm_inst, QStringLiteral("DECOD"));
-    TN_ADD(t_DIRA,             tm_constant, QStringLiteral("DIRA"));
-    TN_ADD(t_DIRB,             tm_constant, QStringLiteral("DIRB"));
-    TN_ADD(t_DIRC,             tm_inst, QStringLiteral("DIRC"));
-    TN_ADD(t_DIRH,             tm_inst, QStringLiteral("DIRH"));
-    TN_ADD(t_DIRL,             tm_inst, QStringLiteral("DIRL"));
-    TN_ADD(t_DIRNC,            tm_inst, QStringLiteral("DIRNC"));
-    TN_ADD(t_DIRNOT,           tm_inst, QStringLiteral("DIRNOT"));
-    TN_ADD(t_DIRNZ,            tm_inst, QStringLiteral("DIRNZ"));
-    TN_ADD(t_DIRRND,           tm_inst, QStringLiteral("DIRRND"));
-    TN_ADD(t_DIRZ,             tm_inst, QStringLiteral("DIRZ"));
-    TN_ADD(t_DJF,              tm_inst, QStringLiteral("DJF"));
-    TN_ADD(t_DJNF,             tm_inst, QStringLiteral("DJNF"));
-    TN_ADD(t_DJNZ,             tm_inst, QStringLiteral("DJNZ"));
-    TN_ADD(t_DJZ,              tm_inst, QStringLiteral("DJZ"));
-    TN_ADD(t_DRVC,             tm_inst, QStringLiteral("DRVC"));
-    TN_ADD(t_DRVH,             tm_inst, QStringLiteral("DRVH"));
-    TN_ADD(t_DRVL,             tm_inst, QStringLiteral("DRVL"));
-    TN_ADD(t_DRVNC,            tm_inst, QStringLiteral("DRVNC"));
-    TN_ADD(t_DRVNOT,           tm_inst, QStringLiteral("DRVNOT"));
-    TN_ADD(t_DRVNZ,            tm_inst, QStringLiteral("DRVNZ"));
-    TN_ADD(t_DRVRND,           tm_inst, QStringLiteral("DRVRND"));
-    TN_ADD(t_DRVZ,             tm_inst, QStringLiteral("DRVZ"));
-    TN_ADD(t_ENCOD,            tm_inst, QStringLiteral("ENCOD"));
-    TN_ADD(t_EXECF,            tm_inst, QStringLiteral("EXECF"));
-    TN_ADD(t_FBLOCK,           tm_inst, QStringLiteral("FBLOCK"));
-    TN_ADD(t_FGE,              tm_inst, QStringLiteral("FGE"));
-    TN_ADD(t_FGES,             tm_inst, QStringLiteral("FGES"));
-    TN_ADD(t_FLE,              tm_inst, QStringLiteral("FLE"));
-    TN_ADD(t_FLES,             tm_inst, QStringLiteral("FLES"));
-    TN_ADD(t_FLTC,             tm_inst, QStringLiteral("FLTC"));
-    TN_ADD(t_FLTH,             tm_inst, QStringLiteral("FLTH"));
-    TN_ADD(t_FLTL,             tm_inst, QStringLiteral("FLTL"));
-    TN_ADD(t_FLTNC,            tm_inst, QStringLiteral("FLTNC"));
-    TN_ADD(t_FLTNOT,           tm_inst, QStringLiteral("FLTNOT"));
-    TN_ADD(t_FLTNZ,            tm_inst, QStringLiteral("FLTNZ"));
-    TN_ADD(t_FLTRND,           tm_inst, QStringLiteral("FLTRND"));
-    TN_ADD(t_FLTZ,             tm_inst, QStringLiteral("FLTZ"));
-    TN_ADD(t_GETBRK,           tm_inst, QStringLiteral("GETBRK"));
-    TN_ADD(t_GETBYTE,          tm_inst, QStringLiteral("GETBYTE"));
-    TN_ADD(t_GETCT,            tm_inst, QStringLiteral("GETCT"));
-    TN_ADD(t_GETNIB,           tm_inst, QStringLiteral("GETNIB"));
-    TN_ADD(t_GETPTR,           tm_inst, QStringLiteral("GETPTR"));
-    TN_ADD(t_GETQX,            tm_inst, QStringLiteral("GETQX"));
-    TN_ADD(t_GETQY,            tm_inst, QStringLiteral("GETQY"));
-    TN_ADD(t_GETRND,           tm_inst, QStringLiteral("GETRND"));
-    TN_ADD(t_GETSCP,           tm_inst, QStringLiteral("GETSCP"));
-    TN_ADD(t_GETWORD,          tm_inst, QStringLiteral("GETWORD"));
-    TN_ADD(t_GETXACC,          tm_inst, QStringLiteral("GETXACC"));
-    TN_ADD(t_HUBSET,           tm_inst, QStringLiteral("HUBSET"));
-    TN_ADD(t_IJNZ,             tm_inst, QStringLiteral("IJNZ"));
-    TN_ADD(t_IJZ,              tm_inst, QStringLiteral("IJZ"));
-    TN_ADD(t_INA,              tm_constant, QStringLiteral("INA"));
-    TN_ADD(t_INB,              tm_constant, QStringLiteral("INB"));
-    TN_ADD(t_INCMOD,           tm_inst, QStringLiteral("INCMOD"));
-    TN_ADD(t_JATN,             tm_inst, QStringLiteral("JATN"));
-    TN_ADD(t_JCT1,             tm_inst, QStringLiteral("JCT1"));
-    TN_ADD(t_JCT2,             tm_inst, QStringLiteral("JCT2"));
-    TN_ADD(t_JCT3,             tm_inst, QStringLiteral("JCT3"));
-    TN_ADD(t_JFBW,             tm_inst, QStringLiteral("JFBW"));
-    TN_ADD(t_JINT,             tm_inst, QStringLiteral("JINT"));
-    TN_ADD(t_JMP,              tm_inst, QStringLiteral("JMP"));
-    TN_ADD(t_JMPREL,           tm_inst, QStringLiteral("JMPREL"));
-    TN_ADD(t_JNATN,            tm_inst, QStringLiteral("JNATN"));
-    TN_ADD(t_JNCT1,            tm_inst, QStringLiteral("JNCT1"));
-    TN_ADD(t_JNCT2,            tm_inst, QStringLiteral("JNCT2"));
-    TN_ADD(t_JNCT3,            tm_inst, QStringLiteral("JNCT3"));
-    TN_ADD(t_JNFBW,            tm_inst, QStringLiteral("JNFBW"));
-    TN_ADD(t_JNINT,            tm_inst, QStringLiteral("JNINT"));
-    TN_ADD(t_JNPAT,            tm_inst, QStringLiteral("JNPAT"));
-    TN_ADD(t_JNQMT,            tm_inst, QStringLiteral("JNQMT"));
-    TN_ADD(t_JNSE1,            tm_inst, QStringLiteral("JNSE1"));
-    TN_ADD(t_JNSE2,            tm_inst, QStringLiteral("JNSE2"));
-    TN_ADD(t_JNSE3,            tm_inst, QStringLiteral("JNSE3"));
-    TN_ADD(t_JNSE4,            tm_inst, QStringLiteral("JNSE4"));
-    TN_ADD(t_JNXFI,            tm_inst, QStringLiteral("JNXFI"));
-    TN_ADD(t_JNXMT,            tm_inst, QStringLiteral("JNXMT"));
-    TN_ADD(t_JNXRL,            tm_inst, QStringLiteral("JNXRL"));
-    TN_ADD(t_JNXRO,            tm_inst, QStringLiteral("JNXRO"));
-    TN_ADD(t_JPAT,             tm_inst, QStringLiteral("JPAT"));
-    TN_ADD(t_JQMT,             tm_inst, QStringLiteral("JQMT"));
-    TN_ADD(t_JSE1,             tm_inst, QStringLiteral("JSE1"));
-    TN_ADD(t_JSE2,             tm_inst, QStringLiteral("JSE2"));
-    TN_ADD(t_JSE3,             tm_inst, QStringLiteral("JSE3"));
-    TN_ADD(t_JSE4,             tm_inst, QStringLiteral("JSE4"));
-    TN_ADD(t_JXFI,             tm_inst, QStringLiteral("JXFI"));
-    TN_ADD(t_JXMT,             tm_inst, QStringLiteral("JXMT"));
-    TN_ADD(t_JXRL,             tm_inst, QStringLiteral("JXRL"));
-    TN_ADD(t_JXRO,             tm_inst, QStringLiteral("JXRO"));
-    TN_ADD(t_LOC,              tm_inst, QStringLiteral("LOC"));
-    TN_ADD(t_LOCKNEW,          tm_inst, QStringLiteral("LOCKNEW"));
-    TN_ADD(t_LOCKREL,          tm_inst, QStringLiteral("LOCKREL"));
-    TN_ADD(t_LOCKRET,          tm_inst, QStringLiteral("LOCKRET"));
-    TN_ADD(t_LOCKTRY,          tm_inst, QStringLiteral("LOCKTRY"));
-    TN_ADD(t_MERGEB,           tm_inst, QStringLiteral("MERGEB"));
-    TN_ADD(t_MERGEW,           tm_inst, QStringLiteral("MERGEW"));
-    TN_ADD(t_MIXPIX,           tm_inst, QStringLiteral("MIXPIX"));
-    TN_ADD(t_MODCZ,            tm_inst, QStringLiteral("MODCZ"));
-    TN_ADD(t_MOV,              tm_inst, QStringLiteral("MOV"));
-    TN_ADD(t_MOVBYTS,          tm_inst, QStringLiteral("MOVBYTS"));
-    TN_ADD(t_MUL,              tm_inst, QStringLiteral("MUL"));
-    TN_ADD(t_MULPIX,           tm_inst, QStringLiteral("MULPIX"));
-    TN_ADD(t_MULS,             tm_inst, QStringLiteral("MULS"));
-    TN_ADD(t_MUXC,             tm_inst, QStringLiteral("MUXC"));
-    TN_ADD(t_MUXNC,            tm_inst, QStringLiteral("MUXNC"));
-    TN_ADD(t_MUXNIBS,          tm_inst, QStringLiteral("MUXNIBS"));
-    TN_ADD(t_MUXNITS,          tm_inst, QStringLiteral("MUXNITS"));
-    TN_ADD(t_MUXNZ,            tm_inst, QStringLiteral("MUXNZ"));
-    TN_ADD(t_MUXQ,             tm_inst, QStringLiteral("MUXQ"));
-    TN_ADD(t_MUXZ,             tm_inst, QStringLiteral("MUXZ"));
-    TN_ADD(t_NEG,              tm_inst, QStringLiteral("NEG"));
-    TN_ADD(t_NEGC,             tm_inst, QStringLiteral("NEGC"));
-    TN_ADD(t_NEGNC,            tm_inst, QStringLiteral("NEGNC"));
-    TN_ADD(t_NEGNZ,            tm_inst, QStringLiteral("NEGNZ"));
-    TN_ADD(t_NEGZ,             tm_inst, QStringLiteral("NEGZ"));
-    TN_ADD(t_NIXINT1,          tm_inst, QStringLiteral("NIXINT1"));
-    TN_ADD(t_NIXINT2,          tm_inst, QStringLiteral("NIXINT2"));
-    TN_ADD(t_NIXINT3,          tm_inst, QStringLiteral("NIXINT3"));
-    TN_ADD(t_NOP,              tm_inst, QStringLiteral("NOP"));
-    TN_ADD(t_NOT,              tm_inst, QStringLiteral("NOT"));
-    TN_ADD(t_ONES,             tm_inst, QStringLiteral("ONES"));
-    TN_ADD(t_OR,               tm_inst, QStringLiteral("OR"));
-    TN_ADD(t_OUTA,             tm_constant, QStringLiteral("OUTA"));
-    TN_ADD(t_OUTB,             tm_constant, QStringLiteral("OUTB"));
-    TN_ADD(t_OUTC,             tm_inst, QStringLiteral("OUTC"));
-    TN_ADD(t_OUTH,             tm_inst, QStringLiteral("OUTH"));
-    TN_ADD(t_OUTL,             tm_inst, QStringLiteral("OUTL"));
-    TN_ADD(t_OUTNC,            tm_inst, QStringLiteral("OUTNC"));
-    TN_ADD(t_OUTNOT,           tm_inst, QStringLiteral("OUTNOT"));
-    TN_ADD(t_OUTNZ,            tm_inst, QStringLiteral("OUTNZ"));
-    TN_ADD(t_OUTRND,           tm_inst, QStringLiteral("OUTRND"));
-    TN_ADD(t_OUTZ,             tm_inst, QStringLiteral("OUTZ"));
-    TN_ADD(t_PA,               tm_inst, QStringLiteral("PA"));
-    TN_ADD(t_PB,               tm_inst, QStringLiteral("PB"));
-    TN_ADD(t_POLLATN,          tm_inst, QStringLiteral("POLLATN"));
-    TN_ADD(t_POLLCT1,          tm_inst, QStringLiteral("POLLCT1"));
-    TN_ADD(t_POLLCT2,          tm_inst, QStringLiteral("POLLCT2"));
-    TN_ADD(t_POLLCT3,          tm_inst, QStringLiteral("POLLCT3"));
-    TN_ADD(t_POLLFBW,          tm_inst, QStringLiteral("POLLFBW"));
-    TN_ADD(t_POLLINT,          tm_inst, QStringLiteral("POLLINT"));
-    TN_ADD(t_POLLPAT,          tm_inst, QStringLiteral("POLLPAT"));
-    TN_ADD(t_POLLQMT,          tm_inst, QStringLiteral("POLLQMT"));
-    TN_ADD(t_POLLSE1,          tm_inst, QStringLiteral("POLLSE1"));
-    TN_ADD(t_POLLSE2,          tm_inst, QStringLiteral("POLLSE2"));
-    TN_ADD(t_POLLSE3,          tm_inst, QStringLiteral("POLLSE3"));
-    TN_ADD(t_POLLSE4,          tm_inst, QStringLiteral("POLLSE4"));
-    TN_ADD(t_POLLXFI,          tm_inst, QStringLiteral("POLLXFI"));
-    TN_ADD(t_POLLXMT,          tm_inst, QStringLiteral("POLLXMT"));
-    TN_ADD(t_POLLXRL,          tm_inst, QStringLiteral("POLLXRL"));
-    TN_ADD(t_POLLXRO,          tm_inst, QStringLiteral("POLLXRO"));
-    TN_ADD(t_POP,              tm_inst, QStringLiteral("POP"));
-    TN_ADD(t_POPA,             tm_inst, QStringLiteral("POPA"));
-    TN_ADD(t_POPB,             tm_inst, QStringLiteral("POPB"));
-    TN_ADD(t_PTRA,             tm_constant, QStringLiteral("PTRA"));
-    TN_ADD(t_PTRA_postinc,     tm_constant, QStringLiteral("PTRA++"));
-    TN_ADD(t_PTRA_postdec,     tm_constant, QStringLiteral("PTRA--"));
-    TN_ADD(t_PTRA_preinc,      tm_constant, QStringLiteral("++PTRA"));
-    TN_ADD(t_PTRA_predec,      tm_constant, QStringLiteral("--PTRA"));
-    TN_ADD(t_PTRB,             tm_constant, QStringLiteral("PTRB"));
-    TN_ADD(t_PTRB_postinc,     tm_constant, QStringLiteral("PTRB++"));
-    TN_ADD(t_PTRB_postdec,     tm_constant, QStringLiteral("PTRB--"));
-    TN_ADD(t_PTRB_preinc,      tm_constant, QStringLiteral("++PTRB"));
-    TN_ADD(t_PTRB_predec,      tm_constant, QStringLiteral("--PTRB"));
-    TN_ADD(t_PUSH,             tm_inst, QStringLiteral("PUSH"));
-    TN_ADD(t_PUSHA,            tm_inst, QStringLiteral("PUSHA"));
-    TN_ADD(t_PUSHB,            tm_inst, QStringLiteral("PUSHB"));
-    TN_ADD(t_QDIV,             tm_inst, QStringLiteral("QDIV"));
-    TN_ADD(t_QEXP,             tm_inst, QStringLiteral("QEXP"));
-    TN_ADD(t_QFRAC,            tm_inst, QStringLiteral("QFRAC"));
-    TN_ADD(t_QLOG,             tm_inst, QStringLiteral("QLOG"));
-    TN_ADD(t_QMUL,             tm_inst, QStringLiteral("QMUL"));
-    TN_ADD(t_QROTATE,          tm_inst, QStringLiteral("QROTATE"));
-    TN_ADD(t_QSQRT,            tm_inst, QStringLiteral("QSQRT"));
-    TN_ADD(t_QVECTOR,          tm_inst, QStringLiteral("QVECTOR"));
-    TN_ADD(t_RCL,              tm_inst, QStringLiteral("RCL"));
-    TN_ADD(t_RCR,              tm_inst, QStringLiteral("RCR"));
-    TN_ADD(t_RCZL,             tm_inst, QStringLiteral("RCZL"));
-    TN_ADD(t_RCZR,             tm_inst, QStringLiteral("RCZR"));
-    TN_ADD(t_RDBYTE,           tm_inst, QStringLiteral("RDBYTE"));
-    TN_ADD(t_RDFAST,           tm_inst, QStringLiteral("RDFAST"));
-    TN_ADD(t_RDLONG,           tm_inst, QStringLiteral("RDLONG"));
-    TN_ADD(t_RDLUT,            tm_inst, QStringLiteral("RDLUT"));
-    TN_ADD(t_RDPIN,            tm_inst, QStringLiteral("RDPIN"));
-    TN_ADD(t_RDWORD,           tm_inst, QStringLiteral("RDWORD"));
-    TN_ADD(t_REP,              tm_inst, QStringLiteral("REP"));
-    TN_ADD(t_RESI0,            tm_inst, QStringLiteral("RESI0"));
-    TN_ADD(t_RESI1,            tm_inst, QStringLiteral("RESI1"));
-    TN_ADD(t_RESI2,            tm_inst, QStringLiteral("RESI2"));
-    TN_ADD(t_RESI3,            tm_inst, QStringLiteral("RESI3"));
-    TN_ADD(t_RET,              tm_inst, QStringLiteral("RET"));
-    TN_ADD(t_RETA,             tm_inst, QStringLiteral("RETA"));
-    TN_ADD(t_RETB,             tm_inst, QStringLiteral("RETB"));
-    TN_ADD(t_RETI0,            tm_inst, QStringLiteral("RETI0"));
-    TN_ADD(t_RETI1,            tm_inst, QStringLiteral("RETI1"));
-    TN_ADD(t_RETI2,            tm_inst, QStringLiteral("RETI2"));
-    TN_ADD(t_RETI3,            tm_inst, QStringLiteral("RETI3"));
-    TN_ADD(t_REV,              tm_inst, QStringLiteral("REV"));
-    TN_ADD(t_RFBYTE,           tm_inst, QStringLiteral("RFBYTE"));
-    TN_ADD(t_RFLONG,           tm_inst, QStringLiteral("RFLONG"));
-    TN_ADD(t_RFVAR,            tm_inst, QStringLiteral("RFVAR"));
-    TN_ADD(t_RFVARS,           tm_inst, QStringLiteral("RFVARS"));
-    TN_ADD(t_RFWORD,           tm_inst, QStringLiteral("RFWORD"));
-    TN_ADD(t_RGBEXP,           tm_inst, QStringLiteral("RGBEXP"));
-    TN_ADD(t_RGBSQZ,           tm_inst, QStringLiteral("RGBSQZ"));
-    TN_ADD(t_ROL,              tm_inst, QStringLiteral("ROL"));
-    TN_ADD(t_ROLBYTE,          tm_inst, QStringLiteral("ROLBYTE"));
-    TN_ADD(t_ROLNIB,           tm_inst, QStringLiteral("ROLNIB"));
-    TN_ADD(t_ROLWORD,          tm_inst, QStringLiteral("ROLWORD"));
-    TN_ADD(t_ROR,              tm_inst, QStringLiteral("ROR"));
-    TN_ADD(t_RQPIN,            tm_inst, QStringLiteral("RQPIN"));
-    TN_ADD(t_SAL,              tm_inst, QStringLiteral("SAL"));
-    TN_ADD(t_SAR,              tm_inst, QStringLiteral("SAR"));
-    TN_ADD(t_SCA,              tm_inst, QStringLiteral("SCA"));
-    TN_ADD(t_SCAS,             tm_inst, QStringLiteral("SCAS"));
-    TN_ADD(t_SETBYTE,          tm_inst, QStringLiteral("SETBYTE"));
-    TN_ADD(t_SETCFRQ,          tm_inst, QStringLiteral("SETCFRQ"));
-    TN_ADD(t_SETCI,            tm_inst, QStringLiteral("SETCI"));
-    TN_ADD(t_SETCMOD,          tm_inst, QStringLiteral("SETCMOD"));
-    TN_ADD(t_SETCQ,            tm_inst, QStringLiteral("SETCQ"));
-    TN_ADD(t_SETCY,            tm_inst, QStringLiteral("SETCY"));
-    TN_ADD(t_SETD,             tm_inst, QStringLiteral("SETD"));
-    TN_ADD(t_SETDACS,          tm_inst, QStringLiteral("SETDACS"));
-    TN_ADD(t_SETINT1,          tm_inst, QStringLiteral("SETINT1"));
-    TN_ADD(t_SETINT2,          tm_inst, QStringLiteral("SETINT2"));
-    TN_ADD(t_SETINT3,          tm_inst, QStringLiteral("SETINT3"));
-    TN_ADD(t_SETLUTS,          tm_inst, QStringLiteral("SETLUTS"));
-    TN_ADD(t_SETNIB,           tm_inst, QStringLiteral("SETNIB"));
-    TN_ADD(t_SETPAT,           tm_inst, QStringLiteral("SETPAT"));
-    TN_ADD(t_SETPIV,           tm_inst, QStringLiteral("SETPIV"));
-    TN_ADD(t_SETPIX,           tm_inst, QStringLiteral("SETPIX"));
-    TN_ADD(t_SETQ,             tm_inst, QStringLiteral("SETQ"));
-    TN_ADD(t_SETQ2,            tm_inst, QStringLiteral("SETQ2"));
-    TN_ADD(t_SETR,             tm_inst, QStringLiteral("SETR"));
-    TN_ADD(t_SETS,             tm_inst, QStringLiteral("SETS"));
-    TN_ADD(t_SETSCP,           tm_inst, QStringLiteral("SETSCP"));
-    TN_ADD(t_SETSE1,           tm_inst, QStringLiteral("SETSE1"));
-    TN_ADD(t_SETSE2,           tm_inst, QStringLiteral("SETSE2"));
-    TN_ADD(t_SETSE3,           tm_inst, QStringLiteral("SETSE3"));
-    TN_ADD(t_SETSE4,           tm_inst, QStringLiteral("SETSE4"));
-    TN_ADD(t_SETWORD,          tm_inst, QStringLiteral("SETWORD"));
-    TN_ADD(t_SETXFRQ,          tm_inst, QStringLiteral("SETXFRQ"));
-    TN_ADD(t_SEUSSF,           tm_inst, QStringLiteral("SEUSSF"));
-    TN_ADD(t_SEUSSR,           tm_inst, QStringLiteral("SEUSSR"));
-    TN_ADD(t_SHL,              tm_inst, QStringLiteral("SHL"));
-    TN_ADD(t_SHR,              tm_inst, QStringLiteral("SHR"));
-    TN_ADD(t_SIGNX,            tm_inst, QStringLiteral("SIGNX"));
-    TN_ADD(t_SKIP,             tm_inst, QStringLiteral("SKIP"));
-    TN_ADD(t_SKIPF,            tm_inst, QStringLiteral("SKIPF"));
-    TN_ADD(t_SPLITB,           tm_inst, QStringLiteral("SPLITB"));
-    TN_ADD(t_SPLITW,           tm_inst, QStringLiteral("SPLITW"));
-    TN_ADD(t_STALLI,           tm_inst, QStringLiteral("STALLI"));
-    TN_ADD(t_SUB,              tm_inst, QStringLiteral("SUB"));
-    TN_ADD(t_SUBR,             tm_inst, QStringLiteral("SUBR"));
-    TN_ADD(t_SUBS,             tm_inst, QStringLiteral("SUBS"));
-    TN_ADD(t_SUBSX,            tm_inst, QStringLiteral("SUBSX"));
-    TN_ADD(t_SUBX,             tm_inst, QStringLiteral("SUBX"));
-    TN_ADD(t_SUMC,             tm_inst, QStringLiteral("SUMC"));
-    TN_ADD(t_SUMNC,            tm_inst, QStringLiteral("SUMNC"));
-    TN_ADD(t_SUMNZ,            tm_inst, QStringLiteral("SUMNZ"));
-    TN_ADD(t_SUMZ,             tm_inst, QStringLiteral("SUMZ"));
-    TN_ADD(t_TEST,             tm_inst, QStringLiteral("TEST"));
-    TN_ADD(t_TESTB,            tm_inst, QStringLiteral("TESTB"));
-    TN_ADD(t_TESTBN,           tm_inst, QStringLiteral("TESTBN"));
-    TN_ADD(t_TESTN,            tm_inst, QStringLiteral("TESTN"));
-    TN_ADD(t_TESTP,            tm_inst, QStringLiteral("TESTP"));
-    TN_ADD(t_TESTPN,           tm_inst, QStringLiteral("TESTPN"));
-    TN_ADD(t_TJF,              tm_inst, QStringLiteral("TJF"));
-    TN_ADD(t_TJNF,             tm_inst, QStringLiteral("TJNF"));
-    TN_ADD(t_TJNS,             tm_inst, QStringLiteral("TJNS"));
-    TN_ADD(t_TJNZ,             tm_inst, QStringLiteral("TJNZ"));
-    TN_ADD(t_TJS,              tm_inst, QStringLiteral("TJS"));
-    TN_ADD(t_TJV,              tm_inst, QStringLiteral("TJV"));
-    TN_ADD(t_TJZ,              tm_inst, QStringLiteral("TJZ"));
-    TN_ADD(t_TRGINT1,          tm_inst, QStringLiteral("TRGINT1"));
-    TN_ADD(t_TRGINT2,          tm_inst, QStringLiteral("TRGINT2"));
-    TN_ADD(t_TRGINT3,          tm_inst, QStringLiteral("TRGINT3"));
-    TN_ADD(t_WAITATN,          tm_inst, QStringLiteral("WAITATN"));
-    TN_ADD(t_WAITCT1,          tm_inst, QStringLiteral("WAITCT1"));
-    TN_ADD(t_WAITCT2,          tm_inst, QStringLiteral("WAITCT2"));
-    TN_ADD(t_WAITCT3,          tm_inst, QStringLiteral("WAITCT3"));
-    TN_ADD(t_WAITFBW,          tm_inst, QStringLiteral("WAITFBW"));
-    TN_ADD(t_WAITINT,          tm_inst, QStringLiteral("WAITINT"));
-    TN_ADD(t_WAITPAT,          tm_inst, QStringLiteral("WAITPAT"));
-    TN_ADD(t_WAITSE1,          tm_inst, QStringLiteral("WAITSE1"));
-    TN_ADD(t_WAITSE2,          tm_inst, QStringLiteral("WAITSE2"));
-    TN_ADD(t_WAITSE3,          tm_inst, QStringLiteral("WAITSE3"));
-    TN_ADD(t_WAITSE4,          tm_inst, QStringLiteral("WAITSE4"));
-    TN_ADD(t_WAITX,            tm_inst, QStringLiteral("WAITX"));
-    TN_ADD(t_WAITXFI,          tm_inst, QStringLiteral("WAITXFI"));
-    TN_ADD(t_WAITXMT,          tm_inst, QStringLiteral("WAITXMT"));
-    TN_ADD(t_WAITXRL,          tm_inst, QStringLiteral("WAITXRL"));
-    TN_ADD(t_WAITXRO,          tm_inst, QStringLiteral("WAITXRO"));
-    TN_ADD(t_WFBYTE,           tm_inst, QStringLiteral("WFBYTE"));
-    TN_ADD(t_WFLONG,           tm_inst, QStringLiteral("WFLONG"));
-    TN_ADD(t_WFWORD,           tm_inst, QStringLiteral("WFWORD"));
-    TN_ADD(t_WMLONG,           tm_inst, QStringLiteral("WMLONG"));
-    TN_ADD(t_WRBYTE,           tm_inst, QStringLiteral("WRBYTE"));
-    TN_ADD(t_WRC,              tm_inst, QStringLiteral("WRC"));
-    TN_ADD(t_WRFAST,           tm_inst, QStringLiteral("WRFAST"));
-    TN_ADD(t_WRLONG,           tm_inst, QStringLiteral("WRLONG"));
-    TN_ADD(t_WRLUT,            tm_inst, QStringLiteral("WRLUT"));
-    TN_ADD(t_WRNC,             tm_inst, QStringLiteral("WRNC"));
-    TN_ADD(t_WRNZ,             tm_inst, QStringLiteral("WRNZ"));
-    TN_ADD(t_WRPIN,            tm_inst, QStringLiteral("WRPIN"));
-    TN_ADD(t_WRWORD,           tm_inst, QStringLiteral("WRWORD"));
-    TN_ADD(t_WRZ,              tm_inst, QStringLiteral("WRZ"));
-    TN_ADD(t_WXPIN,            tm_inst, QStringLiteral("WXPIN"));
-    TN_ADD(t_WYPIN,            tm_inst, QStringLiteral("WYPIN"));
-    TN_ADD(t_XCONT,            tm_inst, QStringLiteral("XCONT"));
-    TN_ADD(t_XINIT,            tm_inst, QStringLiteral("XINIT"));
-    TN_ADD(t_XOR,              tm_inst, QStringLiteral("XOR"));
-    TN_ADD(t_XORO32,           tm_inst, QStringLiteral("XORO32"));
-    TN_ADD(t_XSTOP,            tm_inst, QStringLiteral("XSTOP"));
-    TN_ADD(t_XZERO,            tm_inst, QStringLiteral("XZERO"));
-    TN_ADD(t_ZEROX,            tm_inst, QStringLiteral("ZEROX"));
-    TN_ADD(t_empty,            tm_inst, QStringLiteral("<empty>"));
+    TN_ADD(t_ABS,              tm_mnemonic, QStringLiteral("ABS"));
+    TN_ADD(t_ADD,              tm_mnemonic, QStringLiteral("ADD"));
+    TN_ADD(t_ADDCT1,           tm_mnemonic, QStringLiteral("ADDCT1"));
+    TN_ADD(t_ADDCT2,           tm_mnemonic, QStringLiteral("ADDCT2"));
+    TN_ADD(t_ADDCT3,           tm_mnemonic, QStringLiteral("ADDCT3"));
+    TN_ADD(t_ADDPIX,           tm_mnemonic, QStringLiteral("ADDPIX"));
+    TN_ADD(t_ADDS,             tm_mnemonic, QStringLiteral("ADDS"));
+    TN_ADD(t_ADDSX,            tm_mnemonic, QStringLiteral("ADDSX"));
+    TN_ADD(t_ADDX,             tm_mnemonic, QStringLiteral("ADDX"));
+    TN_ADD(t_AKPIN,            tm_mnemonic, QStringLiteral("AKPIN"));
+    TN_ADD(t_ALLOWI,           tm_mnemonic, QStringLiteral("ALLOWI"));
+    TN_ADD(t_ALTB,             tm_mnemonic, QStringLiteral("ALTB"));
+    TN_ADD(t_ALTD,             tm_mnemonic, QStringLiteral("ALTD"));
+    TN_ADD(t_ALTGB,            tm_mnemonic, QStringLiteral("ALTGB"));
+    TN_ADD(t_ALTGN,            tm_mnemonic, QStringLiteral("ALTGN"));
+    TN_ADD(t_ALTGW,            tm_mnemonic, QStringLiteral("ALTGW"));
+    TN_ADD(t_ALTI,             tm_mnemonic, QStringLiteral("ALTI"));
+    TN_ADD(t_ALTR,             tm_mnemonic, QStringLiteral("ALTR"));
+    TN_ADD(t_ALTS,             tm_mnemonic, QStringLiteral("ALTS"));
+    TN_ADD(t_ALTSB,            tm_mnemonic, QStringLiteral("ALTSB"));
+    TN_ADD(t_ALTSN,            tm_mnemonic, QStringLiteral("ALTSN"));
+    TN_ADD(t_ALTSW,            tm_mnemonic, QStringLiteral("ALTSW"));
+    TN_ADD(t_AND,              tm_mnemonic, QStringLiteral("AND"));
+    TN_ADD(t_ANDN,             tm_mnemonic, QStringLiteral("ANDN"));
+    TN_ADD(t_AUGD,             tm_mnemonic, QStringLiteral("AUGD"));
+    TN_ADD(t_AUGS,             tm_mnemonic, QStringLiteral("AUGS"));
+    TN_ADD(t_BITC,             tm_mnemonic, QStringLiteral("BITC"));
+    TN_ADD(t_BITH,             tm_mnemonic, QStringLiteral("BITH"));
+    TN_ADD(t_BITL,             tm_mnemonic, QStringLiteral("BITL"));
+    TN_ADD(t_BITNC,            tm_mnemonic, QStringLiteral("BITNC"));
+    TN_ADD(t_BITNOT,           tm_mnemonic, QStringLiteral("BITNOT"));
+    TN_ADD(t_BITNZ,            tm_mnemonic, QStringLiteral("BITNZ"));
+    TN_ADD(t_BITRND,           tm_mnemonic, QStringLiteral("BITRND"));
+    TN_ADD(t_BITZ,             tm_mnemonic, QStringLiteral("BITZ"));
+    TN_ADD(t_BLNPIX,           tm_mnemonic, QStringLiteral("BLNPIX"));
+    TN_ADD(t_BMASK,            tm_mnemonic, QStringLiteral("BMASK"));
+    TN_ADD(t_BRK,              tm_mnemonic, QStringLiteral("BRK"));
+    TN_ADD(t_CALL,             tm_mnemonic, QStringLiteral("CALL"));
+    TN_ADD(t_CALLA,            tm_mnemonic, QStringLiteral("CALLA"));
+    TN_ADD(t_CALLB,            tm_mnemonic, QStringLiteral("CALLB"));
+    TN_ADD(t_CALLD,            tm_mnemonic, QStringLiteral("CALLD"));
+    TN_ADD(t_CALLPA,           tm_mnemonic, QStringLiteral("CALLPA"));
+    TN_ADD(t_CALLPB,           tm_mnemonic, QStringLiteral("CALLPB"));
+    TN_ADD(t_CMP,              tm_mnemonic, QStringLiteral("CMP"));
+    TN_ADD(t_CMPM,             tm_mnemonic, QStringLiteral("CMPM"));
+    TN_ADD(t_CMPR,             tm_mnemonic, QStringLiteral("CMPR"));
+    TN_ADD(t_CMPS,             tm_mnemonic, QStringLiteral("CMPS"));
+    TN_ADD(t_CMPSUB,           tm_mnemonic, QStringLiteral("CMPSUB"));
+    TN_ADD(t_CMPSX,            tm_mnemonic, QStringLiteral("CMPSX"));
+    TN_ADD(t_CMPX,             tm_mnemonic, QStringLiteral("CMPX"));
+    TN_ADD(t_COGATN,           tm_mnemonic, QStringLiteral("COGATN"));
+    TN_ADD(t_COGBRK,           tm_mnemonic, QStringLiteral("COGBRK"));
+    TN_ADD(t_COGID,            tm_mnemonic, QStringLiteral("COGID"));
+    TN_ADD(t_COGINIT,          tm_mnemonic, QStringLiteral("COGINIT"));
+    TN_ADD(t_COGSTOP,          tm_mnemonic, QStringLiteral("COGSTOP"));
+    TN_ADD(t_CRCBIT,           tm_mnemonic, QStringLiteral("CRCBIT"));
+    TN_ADD(t_CRCNIB,           tm_mnemonic, QStringLiteral("CRCNIB"));
+    TN_ADD(t_DECMOD,           tm_mnemonic, QStringLiteral("DECMOD"));
+    TN_ADD(t_DECOD,            tm_mnemonic, QStringLiteral("DECOD"));
+    TN_ADD(t_DIRC,             tm_mnemonic, QStringLiteral("DIRC"));
+    TN_ADD(t_DIRH,             tm_mnemonic, QStringLiteral("DIRH"));
+    TN_ADD(t_DIRL,             tm_mnemonic, QStringLiteral("DIRL"));
+    TN_ADD(t_DIRNC,            tm_mnemonic, QStringLiteral("DIRNC"));
+    TN_ADD(t_DIRNOT,           tm_mnemonic, QStringLiteral("DIRNOT"));
+    TN_ADD(t_DIRNZ,            tm_mnemonic, QStringLiteral("DIRNZ"));
+    TN_ADD(t_DIRRND,           tm_mnemonic, QStringLiteral("DIRRND"));
+    TN_ADD(t_DIRZ,             tm_mnemonic, QStringLiteral("DIRZ"));
+    TN_ADD(t_DJF,              tm_mnemonic, QStringLiteral("DJF"));
+    TN_ADD(t_DJNF,             tm_mnemonic, QStringLiteral("DJNF"));
+    TN_ADD(t_DJNZ,             tm_mnemonic, QStringLiteral("DJNZ"));
+    TN_ADD(t_DJZ,              tm_mnemonic, QStringLiteral("DJZ"));
+    TN_ADD(t_DRVC,             tm_mnemonic, QStringLiteral("DRVC"));
+    TN_ADD(t_DRVH,             tm_mnemonic, QStringLiteral("DRVH"));
+    TN_ADD(t_DRVL,             tm_mnemonic, QStringLiteral("DRVL"));
+    TN_ADD(t_DRVNC,            tm_mnemonic, QStringLiteral("DRVNC"));
+    TN_ADD(t_DRVNOT,           tm_mnemonic, QStringLiteral("DRVNOT"));
+    TN_ADD(t_DRVNZ,            tm_mnemonic, QStringLiteral("DRVNZ"));
+    TN_ADD(t_DRVRND,           tm_mnemonic, QStringLiteral("DRVRND"));
+    TN_ADD(t_DRVZ,             tm_mnemonic, QStringLiteral("DRVZ"));
+    TN_ADD(t_ENCOD,            tm_mnemonic, QStringLiteral("ENCOD"));
+    TN_ADD(t_EXECF,            tm_mnemonic, QStringLiteral("EXECF"));
+    TN_ADD(t_FBLOCK,           tm_mnemonic, QStringLiteral("FBLOCK"));
+    TN_ADD(t_FGE,              tm_mnemonic, QStringLiteral("FGE"));
+    TN_ADD(t_FGES,             tm_mnemonic, QStringLiteral("FGES"));
+    TN_ADD(t_FLE,              tm_mnemonic, QStringLiteral("FLE"));
+    TN_ADD(t_FLES,             tm_mnemonic, QStringLiteral("FLES"));
+    TN_ADD(t_FLTC,             tm_mnemonic, QStringLiteral("FLTC"));
+    TN_ADD(t_FLTH,             tm_mnemonic, QStringLiteral("FLTH"));
+    TN_ADD(t_FLTL,             tm_mnemonic, QStringLiteral("FLTL"));
+    TN_ADD(t_FLTNC,            tm_mnemonic, QStringLiteral("FLTNC"));
+    TN_ADD(t_FLTNOT,           tm_mnemonic, QStringLiteral("FLTNOT"));
+    TN_ADD(t_FLTNZ,            tm_mnemonic, QStringLiteral("FLTNZ"));
+    TN_ADD(t_FLTRND,           tm_mnemonic, QStringLiteral("FLTRND"));
+    TN_ADD(t_FLTZ,             tm_mnemonic, QStringLiteral("FLTZ"));
+    TN_ADD(t_GETBRK,           tm_mnemonic, QStringLiteral("GETBRK"));
+    TN_ADD(t_GETBYTE,          tm_mnemonic, QStringLiteral("GETBYTE"));
+    TN_ADD(t_GETCT,            tm_mnemonic, QStringLiteral("GETCT"));
+    TN_ADD(t_GETNIB,           tm_mnemonic, QStringLiteral("GETNIB"));
+    TN_ADD(t_GETPTR,           tm_mnemonic, QStringLiteral("GETPTR"));
+    TN_ADD(t_GETQX,            tm_mnemonic, QStringLiteral("GETQX"));
+    TN_ADD(t_GETQY,            tm_mnemonic, QStringLiteral("GETQY"));
+    TN_ADD(t_GETRND,           tm_mnemonic, QStringLiteral("GETRND"));
+    TN_ADD(t_GETSCP,           tm_mnemonic, QStringLiteral("GETSCP"));
+    TN_ADD(t_GETWORD,          tm_mnemonic, QStringLiteral("GETWORD"));
+    TN_ADD(t_GETXACC,          tm_mnemonic, QStringLiteral("GETXACC"));
+    TN_ADD(t_HUBSET,           tm_mnemonic, QStringLiteral("HUBSET"));
+    TN_ADD(t_IJNZ,             tm_mnemonic, QStringLiteral("IJNZ"));
+    TN_ADD(t_IJZ,              tm_mnemonic, QStringLiteral("IJZ"));
+    TN_ADD(t_INCMOD,           tm_mnemonic, QStringLiteral("INCMOD"));
+    TN_ADD(t_JATN,             tm_mnemonic, QStringLiteral("JATN"));
+    TN_ADD(t_JCT1,             tm_mnemonic, QStringLiteral("JCT1"));
+    TN_ADD(t_JCT2,             tm_mnemonic, QStringLiteral("JCT2"));
+    TN_ADD(t_JCT3,             tm_mnemonic, QStringLiteral("JCT3"));
+    TN_ADD(t_JFBW,             tm_mnemonic, QStringLiteral("JFBW"));
+    TN_ADD(t_JINT,             tm_mnemonic, QStringLiteral("JINT"));
+    TN_ADD(t_JMP,              tm_mnemonic, QStringLiteral("JMP"));
+    TN_ADD(t_JMPREL,           tm_mnemonic, QStringLiteral("JMPREL"));
+    TN_ADD(t_JNATN,            tm_mnemonic, QStringLiteral("JNATN"));
+    TN_ADD(t_JNCT1,            tm_mnemonic, QStringLiteral("JNCT1"));
+    TN_ADD(t_JNCT2,            tm_mnemonic, QStringLiteral("JNCT2"));
+    TN_ADD(t_JNCT3,            tm_mnemonic, QStringLiteral("JNCT3"));
+    TN_ADD(t_JNFBW,            tm_mnemonic, QStringLiteral("JNFBW"));
+    TN_ADD(t_JNINT,            tm_mnemonic, QStringLiteral("JNINT"));
+    TN_ADD(t_JNPAT,            tm_mnemonic, QStringLiteral("JNPAT"));
+    TN_ADD(t_JNQMT,            tm_mnemonic, QStringLiteral("JNQMT"));
+    TN_ADD(t_JNSE1,            tm_mnemonic, QStringLiteral("JNSE1"));
+    TN_ADD(t_JNSE2,            tm_mnemonic, QStringLiteral("JNSE2"));
+    TN_ADD(t_JNSE3,            tm_mnemonic, QStringLiteral("JNSE3"));
+    TN_ADD(t_JNSE4,            tm_mnemonic, QStringLiteral("JNSE4"));
+    TN_ADD(t_JNXFI,            tm_mnemonic, QStringLiteral("JNXFI"));
+    TN_ADD(t_JNXMT,            tm_mnemonic, QStringLiteral("JNXMT"));
+    TN_ADD(t_JNXRL,            tm_mnemonic, QStringLiteral("JNXRL"));
+    TN_ADD(t_JNXRO,            tm_mnemonic, QStringLiteral("JNXRO"));
+    TN_ADD(t_JPAT,             tm_mnemonic, QStringLiteral("JPAT"));
+    TN_ADD(t_JQMT,             tm_mnemonic, QStringLiteral("JQMT"));
+    TN_ADD(t_JSE1,             tm_mnemonic, QStringLiteral("JSE1"));
+    TN_ADD(t_JSE2,             tm_mnemonic, QStringLiteral("JSE2"));
+    TN_ADD(t_JSE3,             tm_mnemonic, QStringLiteral("JSE3"));
+    TN_ADD(t_JSE4,             tm_mnemonic, QStringLiteral("JSE4"));
+    TN_ADD(t_JXFI,             tm_mnemonic, QStringLiteral("JXFI"));
+    TN_ADD(t_JXMT,             tm_mnemonic, QStringLiteral("JXMT"));
+    TN_ADD(t_JXRL,             tm_mnemonic, QStringLiteral("JXRL"));
+    TN_ADD(t_JXRO,             tm_mnemonic, QStringLiteral("JXRO"));
+    TN_ADD(t_LOC,              tm_mnemonic, QStringLiteral("LOC"));
+    TN_ADD(t_LOCKNEW,          tm_mnemonic, QStringLiteral("LOCKNEW"));
+    TN_ADD(t_LOCKREL,          tm_mnemonic, QStringLiteral("LOCKREL"));
+    TN_ADD(t_LOCKRET,          tm_mnemonic, QStringLiteral("LOCKRET"));
+    TN_ADD(t_LOCKTRY,          tm_mnemonic, QStringLiteral("LOCKTRY"));
+    TN_ADD(t_MERGEB,           tm_mnemonic, QStringLiteral("MERGEB"));
+    TN_ADD(t_MERGEW,           tm_mnemonic, QStringLiteral("MERGEW"));
+    TN_ADD(t_MIXPIX,           tm_mnemonic, QStringLiteral("MIXPIX"));
+    TN_ADD(t_MODCZ,            tm_mnemonic, QStringLiteral("MODCZ"));
+    TN_ADD(t_MOV,              tm_mnemonic, QStringLiteral("MOV"));
+    TN_ADD(t_MOVBYTS,          tm_mnemonic, QStringLiteral("MOVBYTS"));
+    TN_ADD(t_MUL,              tm_mnemonic, QStringLiteral("MUL"));
+    TN_ADD(t_MULPIX,           tm_mnemonic, QStringLiteral("MULPIX"));
+    TN_ADD(t_MULS,             tm_mnemonic, QStringLiteral("MULS"));
+    TN_ADD(t_MUXC,             tm_mnemonic, QStringLiteral("MUXC"));
+    TN_ADD(t_MUXNC,            tm_mnemonic, QStringLiteral("MUXNC"));
+    TN_ADD(t_MUXNIBS,          tm_mnemonic, QStringLiteral("MUXNIBS"));
+    TN_ADD(t_MUXNITS,          tm_mnemonic, QStringLiteral("MUXNITS"));
+    TN_ADD(t_MUXNZ,            tm_mnemonic, QStringLiteral("MUXNZ"));
+    TN_ADD(t_MUXQ,             tm_mnemonic, QStringLiteral("MUXQ"));
+    TN_ADD(t_MUXZ,             tm_mnemonic, QStringLiteral("MUXZ"));
+    TN_ADD(t_NEG,              tm_mnemonic, QStringLiteral("NEG"));
+    TN_ADD(t_NEGC,             tm_mnemonic, QStringLiteral("NEGC"));
+    TN_ADD(t_NEGNC,            tm_mnemonic, QStringLiteral("NEGNC"));
+    TN_ADD(t_NEGNZ,            tm_mnemonic, QStringLiteral("NEGNZ"));
+    TN_ADD(t_NEGZ,             tm_mnemonic, QStringLiteral("NEGZ"));
+    TN_ADD(t_NIXINT1,          tm_mnemonic, QStringLiteral("NIXINT1"));
+    TN_ADD(t_NIXINT2,          tm_mnemonic, QStringLiteral("NIXINT2"));
+    TN_ADD(t_NIXINT3,          tm_mnemonic, QStringLiteral("NIXINT3"));
+    TN_ADD(t_NOP,              tm_mnemonic, QStringLiteral("NOP"));
+    TN_ADD(t_NOT,              tm_mnemonic, QStringLiteral("NOT"));
+    TN_ADD(t_ONES,             tm_mnemonic, QStringLiteral("ONES"));
+    TN_ADD(t_OR,               tm_mnemonic, QStringLiteral("OR"));
+    TN_ADD(t_OUTC,             tm_mnemonic, QStringLiteral("OUTC"));
+    TN_ADD(t_OUTH,             tm_mnemonic, QStringLiteral("OUTH"));
+    TN_ADD(t_OUTL,             tm_mnemonic, QStringLiteral("OUTL"));
+    TN_ADD(t_OUTNC,            tm_mnemonic, QStringLiteral("OUTNC"));
+    TN_ADD(t_OUTNOT,           tm_mnemonic, QStringLiteral("OUTNOT"));
+    TN_ADD(t_OUTNZ,            tm_mnemonic, QStringLiteral("OUTNZ"));
+    TN_ADD(t_OUTRND,           tm_mnemonic, QStringLiteral("OUTRND"));
+    TN_ADD(t_OUTZ,             tm_mnemonic, QStringLiteral("OUTZ"));
+    TN_ADD(t_PA,               tm_mnemonic, QStringLiteral("PA"));
+    TN_ADD(t_PB,               tm_mnemonic, QStringLiteral("PB"));
+    TN_ADD(t_POLLATN,          tm_mnemonic, QStringLiteral("POLLATN"));
+    TN_ADD(t_POLLCT1,          tm_mnemonic, QStringLiteral("POLLCT1"));
+    TN_ADD(t_POLLCT2,          tm_mnemonic, QStringLiteral("POLLCT2"));
+    TN_ADD(t_POLLCT3,          tm_mnemonic, QStringLiteral("POLLCT3"));
+    TN_ADD(t_POLLFBW,          tm_mnemonic, QStringLiteral("POLLFBW"));
+    TN_ADD(t_POLLINT,          tm_mnemonic, QStringLiteral("POLLINT"));
+    TN_ADD(t_POLLPAT,          tm_mnemonic, QStringLiteral("POLLPAT"));
+    TN_ADD(t_POLLQMT,          tm_mnemonic, QStringLiteral("POLLQMT"));
+    TN_ADD(t_POLLSE1,          tm_mnemonic, QStringLiteral("POLLSE1"));
+    TN_ADD(t_POLLSE2,          tm_mnemonic, QStringLiteral("POLLSE2"));
+    TN_ADD(t_POLLSE3,          tm_mnemonic, QStringLiteral("POLLSE3"));
+    TN_ADD(t_POLLSE4,          tm_mnemonic, QStringLiteral("POLLSE4"));
+    TN_ADD(t_POLLXFI,          tm_mnemonic, QStringLiteral("POLLXFI"));
+    TN_ADD(t_POLLXMT,          tm_mnemonic, QStringLiteral("POLLXMT"));
+    TN_ADD(t_POLLXRL,          tm_mnemonic, QStringLiteral("POLLXRL"));
+    TN_ADD(t_POLLXRO,          tm_mnemonic, QStringLiteral("POLLXRO"));
+    TN_ADD(t_POP,              tm_mnemonic, QStringLiteral("POP"));
+    TN_ADD(t_POPA,             tm_mnemonic, QStringLiteral("POPA"));
+    TN_ADD(t_POPB,             tm_mnemonic, QStringLiteral("POPB"));
+    TN_ADD(t_PUSH,             tm_mnemonic, QStringLiteral("PUSH"));
+    TN_ADD(t_PUSHA,            tm_mnemonic, QStringLiteral("PUSHA"));
+    TN_ADD(t_PUSHB,            tm_mnemonic, QStringLiteral("PUSHB"));
+    TN_ADD(t_QDIV,             tm_mnemonic, QStringLiteral("QDIV"));
+    TN_ADD(t_QEXP,             tm_mnemonic, QStringLiteral("QEXP"));
+    TN_ADD(t_QFRAC,            tm_mnemonic, QStringLiteral("QFRAC"));
+    TN_ADD(t_QLOG,             tm_mnemonic, QStringLiteral("QLOG"));
+    TN_ADD(t_QMUL,             tm_mnemonic, QStringLiteral("QMUL"));
+    TN_ADD(t_QROTATE,          tm_mnemonic, QStringLiteral("QROTATE"));
+    TN_ADD(t_QSQRT,            tm_mnemonic, QStringLiteral("QSQRT"));
+    TN_ADD(t_QVECTOR,          tm_mnemonic, QStringLiteral("QVECTOR"));
+    TN_ADD(t_RCL,              tm_mnemonic, QStringLiteral("RCL"));
+    TN_ADD(t_RCR,              tm_mnemonic, QStringLiteral("RCR"));
+    TN_ADD(t_RCZL,             tm_mnemonic, QStringLiteral("RCZL"));
+    TN_ADD(t_RCZR,             tm_mnemonic, QStringLiteral("RCZR"));
+    TN_ADD(t_RDBYTE,           tm_mnemonic, QStringLiteral("RDBYTE"));
+    TN_ADD(t_RDFAST,           tm_mnemonic, QStringLiteral("RDFAST"));
+    TN_ADD(t_RDLONG,           tm_mnemonic, QStringLiteral("RDLONG"));
+    TN_ADD(t_RDLUT,            tm_mnemonic, QStringLiteral("RDLUT"));
+    TN_ADD(t_RDPIN,            tm_mnemonic, QStringLiteral("RDPIN"));
+    TN_ADD(t_RDWORD,           tm_mnemonic, QStringLiteral("RDWORD"));
+    TN_ADD(t_REP,              tm_mnemonic, QStringLiteral("REP"));
+    TN_ADD(t_RESI0,            tm_mnemonic, QStringLiteral("RESI0"));
+    TN_ADD(t_RESI1,            tm_mnemonic, QStringLiteral("RESI1"));
+    TN_ADD(t_RESI2,            tm_mnemonic, QStringLiteral("RESI2"));
+    TN_ADD(t_RESI3,            tm_mnemonic, QStringLiteral("RESI3"));
+    TN_ADD(t_RET,              tm_mnemonic, QStringLiteral("RET"));
+    TN_ADD(t_RETA,             tm_mnemonic, QStringLiteral("RETA"));
+    TN_ADD(t_RETB,             tm_mnemonic, QStringLiteral("RETB"));
+    TN_ADD(t_RETI0,            tm_mnemonic, QStringLiteral("RETI0"));
+    TN_ADD(t_RETI1,            tm_mnemonic, QStringLiteral("RETI1"));
+    TN_ADD(t_RETI2,            tm_mnemonic, QStringLiteral("RETI2"));
+    TN_ADD(t_RETI3,            tm_mnemonic, QStringLiteral("RETI3"));
+    TN_ADD(t_REV,              tm_mnemonic, QStringLiteral("REV"));
+    TN_ADD(t_RFBYTE,           tm_mnemonic, QStringLiteral("RFBYTE"));
+    TN_ADD(t_RFLONG,           tm_mnemonic, QStringLiteral("RFLONG"));
+    TN_ADD(t_RFVAR,            tm_mnemonic, QStringLiteral("RFVAR"));
+    TN_ADD(t_RFVARS,           tm_mnemonic, QStringLiteral("RFVARS"));
+    TN_ADD(t_RFWORD,           tm_mnemonic, QStringLiteral("RFWORD"));
+    TN_ADD(t_RGBEXP,           tm_mnemonic, QStringLiteral("RGBEXP"));
+    TN_ADD(t_RGBSQZ,           tm_mnemonic, QStringLiteral("RGBSQZ"));
+    TN_ADD(t_ROL,              tm_mnemonic, QStringLiteral("ROL"));
+    TN_ADD(t_ROLBYTE,          tm_mnemonic, QStringLiteral("ROLBYTE"));
+    TN_ADD(t_ROLNIB,           tm_mnemonic, QStringLiteral("ROLNIB"));
+    TN_ADD(t_ROLWORD,          tm_mnemonic, QStringLiteral("ROLWORD"));
+    TN_ADD(t_ROR,              tm_mnemonic, QStringLiteral("ROR"));
+    TN_ADD(t_RQPIN,            tm_mnemonic, QStringLiteral("RQPIN"));
+    TN_ADD(t_SAL,              tm_mnemonic, QStringLiteral("SAL"));
+    TN_ADD(t_SAR,              tm_mnemonic, QStringLiteral("SAR"));
+    TN_ADD(t_SCA,              tm_mnemonic, QStringLiteral("SCA"));
+    TN_ADD(t_SCAS,             tm_mnemonic, QStringLiteral("SCAS"));
+    TN_ADD(t_SETBYTE,          tm_mnemonic, QStringLiteral("SETBYTE"));
+    TN_ADD(t_SETCFRQ,          tm_mnemonic, QStringLiteral("SETCFRQ"));
+    TN_ADD(t_SETCI,            tm_mnemonic, QStringLiteral("SETCI"));
+    TN_ADD(t_SETCMOD,          tm_mnemonic, QStringLiteral("SETCMOD"));
+    TN_ADD(t_SETCQ,            tm_mnemonic, QStringLiteral("SETCQ"));
+    TN_ADD(t_SETCY,            tm_mnemonic, QStringLiteral("SETCY"));
+    TN_ADD(t_SETD,             tm_mnemonic, QStringLiteral("SETD"));
+    TN_ADD(t_SETDACS,          tm_mnemonic, QStringLiteral("SETDACS"));
+    TN_ADD(t_SETINT1,          tm_mnemonic, QStringLiteral("SETINT1"));
+    TN_ADD(t_SETINT2,          tm_mnemonic, QStringLiteral("SETINT2"));
+    TN_ADD(t_SETINT3,          tm_mnemonic, QStringLiteral("SETINT3"));
+    TN_ADD(t_SETLUTS,          tm_mnemonic, QStringLiteral("SETLUTS"));
+    TN_ADD(t_SETNIB,           tm_mnemonic, QStringLiteral("SETNIB"));
+    TN_ADD(t_SETPAT,           tm_mnemonic, QStringLiteral("SETPAT"));
+    TN_ADD(t_SETPIV,           tm_mnemonic, QStringLiteral("SETPIV"));
+    TN_ADD(t_SETPIX,           tm_mnemonic, QStringLiteral("SETPIX"));
+    TN_ADD(t_SETQ,             tm_mnemonic, QStringLiteral("SETQ"));
+    TN_ADD(t_SETQ2,            tm_mnemonic, QStringLiteral("SETQ2"));
+    TN_ADD(t_SETR,             tm_mnemonic, QStringLiteral("SETR"));
+    TN_ADD(t_SETS,             tm_mnemonic, QStringLiteral("SETS"));
+    TN_ADD(t_SETSCP,           tm_mnemonic, QStringLiteral("SETSCP"));
+    TN_ADD(t_SETSE1,           tm_mnemonic, QStringLiteral("SETSE1"));
+    TN_ADD(t_SETSE2,           tm_mnemonic, QStringLiteral("SETSE2"));
+    TN_ADD(t_SETSE3,           tm_mnemonic, QStringLiteral("SETSE3"));
+    TN_ADD(t_SETSE4,           tm_mnemonic, QStringLiteral("SETSE4"));
+    TN_ADD(t_SETWORD,          tm_mnemonic, QStringLiteral("SETWORD"));
+    TN_ADD(t_SETXFRQ,          tm_mnemonic, QStringLiteral("SETXFRQ"));
+    TN_ADD(t_SEUSSF,           tm_mnemonic, QStringLiteral("SEUSSF"));
+    TN_ADD(t_SEUSSR,           tm_mnemonic, QStringLiteral("SEUSSR"));
+    TN_ADD(t_SHL,              tm_mnemonic, QStringLiteral("SHL"));
+    TN_ADD(t_SHR,              tm_mnemonic, QStringLiteral("SHR"));
+    TN_ADD(t_SIGNX,            tm_mnemonic, QStringLiteral("SIGNX"));
+    TN_ADD(t_SKIP,             tm_mnemonic, QStringLiteral("SKIP"));
+    TN_ADD(t_SKIPF,            tm_mnemonic, QStringLiteral("SKIPF"));
+    TN_ADD(t_SPLITB,           tm_mnemonic, QStringLiteral("SPLITB"));
+    TN_ADD(t_SPLITW,           tm_mnemonic, QStringLiteral("SPLITW"));
+    TN_ADD(t_STALLI,           tm_mnemonic, QStringLiteral("STALLI"));
+    TN_ADD(t_SUB,              tm_mnemonic, QStringLiteral("SUB"));
+    TN_ADD(t_SUBR,             tm_mnemonic, QStringLiteral("SUBR"));
+    TN_ADD(t_SUBS,             tm_mnemonic, QStringLiteral("SUBS"));
+    TN_ADD(t_SUBSX,            tm_mnemonic, QStringLiteral("SUBSX"));
+    TN_ADD(t_SUBX,             tm_mnemonic, QStringLiteral("SUBX"));
+    TN_ADD(t_SUMC,             tm_mnemonic, QStringLiteral("SUMC"));
+    TN_ADD(t_SUMNC,            tm_mnemonic, QStringLiteral("SUMNC"));
+    TN_ADD(t_SUMNZ,            tm_mnemonic, QStringLiteral("SUMNZ"));
+    TN_ADD(t_SUMZ,             tm_mnemonic, QStringLiteral("SUMZ"));
+    TN_ADD(t_TEST,             tm_mnemonic, QStringLiteral("TEST"));
+    TN_ADD(t_TESTB,            tm_mnemonic, QStringLiteral("TESTB"));
+    TN_ADD(t_TESTBN,           tm_mnemonic, QStringLiteral("TESTBN"));
+    TN_ADD(t_TESTN,            tm_mnemonic, QStringLiteral("TESTN"));
+    TN_ADD(t_TESTP,            tm_mnemonic, QStringLiteral("TESTP"));
+    TN_ADD(t_TESTPN,           tm_mnemonic, QStringLiteral("TESTPN"));
+    TN_ADD(t_TJF,              tm_mnemonic, QStringLiteral("TJF"));
+    TN_ADD(t_TJNF,             tm_mnemonic, QStringLiteral("TJNF"));
+    TN_ADD(t_TJNS,             tm_mnemonic, QStringLiteral("TJNS"));
+    TN_ADD(t_TJNZ,             tm_mnemonic, QStringLiteral("TJNZ"));
+    TN_ADD(t_TJS,              tm_mnemonic, QStringLiteral("TJS"));
+    TN_ADD(t_TJV,              tm_mnemonic, QStringLiteral("TJV"));
+    TN_ADD(t_TJZ,              tm_mnemonic, QStringLiteral("TJZ"));
+    TN_ADD(t_TRGINT1,          tm_mnemonic, QStringLiteral("TRGINT1"));
+    TN_ADD(t_TRGINT2,          tm_mnemonic, QStringLiteral("TRGINT2"));
+    TN_ADD(t_TRGINT3,          tm_mnemonic, QStringLiteral("TRGINT3"));
+    TN_ADD(t_WAITATN,          tm_mnemonic, QStringLiteral("WAITATN"));
+    TN_ADD(t_WAITCT1,          tm_mnemonic, QStringLiteral("WAITCT1"));
+    TN_ADD(t_WAITCT2,          tm_mnemonic, QStringLiteral("WAITCT2"));
+    TN_ADD(t_WAITCT3,          tm_mnemonic, QStringLiteral("WAITCT3"));
+    TN_ADD(t_WAITFBW,          tm_mnemonic, QStringLiteral("WAITFBW"));
+    TN_ADD(t_WAITINT,          tm_mnemonic, QStringLiteral("WAITINT"));
+    TN_ADD(t_WAITPAT,          tm_mnemonic, QStringLiteral("WAITPAT"));
+    TN_ADD(t_WAITSE1,          tm_mnemonic, QStringLiteral("WAITSE1"));
+    TN_ADD(t_WAITSE2,          tm_mnemonic, QStringLiteral("WAITSE2"));
+    TN_ADD(t_WAITSE3,          tm_mnemonic, QStringLiteral("WAITSE3"));
+    TN_ADD(t_WAITSE4,          tm_mnemonic, QStringLiteral("WAITSE4"));
+    TN_ADD(t_WAITX,            tm_mnemonic, QStringLiteral("WAITX"));
+    TN_ADD(t_WAITXFI,          tm_mnemonic, QStringLiteral("WAITXFI"));
+    TN_ADD(t_WAITXMT,          tm_mnemonic, QStringLiteral("WAITXMT"));
+    TN_ADD(t_WAITXRL,          tm_mnemonic, QStringLiteral("WAITXRL"));
+    TN_ADD(t_WAITXRO,          tm_mnemonic, QStringLiteral("WAITXRO"));
+    TN_ADD(t_WFBYTE,           tm_mnemonic, QStringLiteral("WFBYTE"));
+    TN_ADD(t_WFLONG,           tm_mnemonic, QStringLiteral("WFLONG"));
+    TN_ADD(t_WFWORD,           tm_mnemonic, QStringLiteral("WFWORD"));
+    TN_ADD(t_WMLONG,           tm_mnemonic, QStringLiteral("WMLONG"));
+    TN_ADD(t_WRBYTE,           tm_mnemonic, QStringLiteral("WRBYTE"));
+    TN_ADD(t_WRC,              tm_mnemonic, QStringLiteral("WRC"));
+    TN_ADD(t_WRFAST,           tm_mnemonic, QStringLiteral("WRFAST"));
+    TN_ADD(t_WRLONG,           tm_mnemonic, QStringLiteral("WRLONG"));
+    TN_ADD(t_WRLUT,            tm_mnemonic, QStringLiteral("WRLUT"));
+    TN_ADD(t_WRNC,             tm_mnemonic, QStringLiteral("WRNC"));
+    TN_ADD(t_WRNZ,             tm_mnemonic, QStringLiteral("WRNZ"));
+    TN_ADD(t_WRPIN,            tm_mnemonic, QStringLiteral("WRPIN"));
+    TN_ADD(t_WRWORD,           tm_mnemonic, QStringLiteral("WRWORD"));
+    TN_ADD(t_WRZ,              tm_mnemonic, QStringLiteral("WRZ"));
+    TN_ADD(t_WXPIN,            tm_mnemonic, QStringLiteral("WXPIN"));
+    TN_ADD(t_WYPIN,            tm_mnemonic, QStringLiteral("WYPIN"));
+    TN_ADD(t_XCONT,            tm_mnemonic, QStringLiteral("XCONT"));
+    TN_ADD(t_XINIT,            tm_mnemonic, QStringLiteral("XINIT"));
+    TN_ADD(t_XOR,              tm_mnemonic, QStringLiteral("XOR"));
+    TN_ADD(t_XORO32,           tm_mnemonic, QStringLiteral("XORO32"));
+    TN_ADD(t_XSTOP,            tm_mnemonic, QStringLiteral("XSTOP"));
+    TN_ADD(t_XZERO,            tm_mnemonic, QStringLiteral("XZERO"));
+    TN_ADD(t_ZEROX,            tm_mnemonic, QStringLiteral("ZEROX"));
+    TN_ADD(t_empty,            tm_mnemonic, QStringLiteral("<empty>"));
 
     TN_ADD(t_WC,               tm_wcz_suffix, QStringLiteral("WC"));
     TN_ADD(t_WZ,               tm_wcz_suffix, QStringLiteral("WZ"));
@@ -633,11 +638,11 @@ P2Token::P2Token()
     TN_ADD(t_XORZ,             tm_wcz_suffix, QStringLiteral("XORZ"));
 
     // Data
-    TN_ADD(t__BYTE,            tm_inst | tm_data, QStringLiteral("BYTE"));
-    TN_ADD(t__WORD,            tm_inst | tm_data, QStringLiteral("WORD"));
-    TN_ADD(t__LONG,            tm_inst | tm_data, QStringLiteral("LONG"));
-    TN_ADD(t__RES,             tm_inst | tm_data, QStringLiteral("RES"));
-    TN_ADD(t__FILE,            tm_inst | tm_data, QStringLiteral("FILE"));
+    TN_ADD(t__BYTE,            tm_mnemonic | tm_data, QStringLiteral("BYTE"));
+    TN_ADD(t__WORD,            tm_mnemonic | tm_data, QStringLiteral("WORD"));
+    TN_ADD(t__LONG,            tm_mnemonic | tm_data, QStringLiteral("LONG"));
+    TN_ADD(t__RES,             tm_mnemonic | tm_data, QStringLiteral("RES"));
+    TN_ADD(t__FILE,            tm_mnemonic | tm_data, QStringLiteral("FILE"));
 
     // Section control
     TN_ADD(t__DAT,             tm_section, QStringLiteral("DAT"));
@@ -647,11 +652,11 @@ P2Token::P2Token()
     TN_ADD(t__VAR,             tm_section, QStringLiteral("VAR"));
 
     // Origin control
-    TN_ADD(t__ALIGNW,          tm_inst | tm_origin, QStringLiteral("ALIGNW"));
-    TN_ADD(t__ALIGNL,          tm_inst | tm_origin, QStringLiteral("ALIGNL"));
-    TN_ADD(t__ORG,             tm_inst | tm_origin, QStringLiteral("ORG"));
-    TN_ADD(t__ORGH,            tm_inst | tm_origin, QStringLiteral("ORGH"));
-    TN_ADD(t__FIT,             tm_inst | tm_origin, QStringLiteral("FIT"));
+    TN_ADD(t__ALIGNW,          tm_mnemonic | tm_origin, QStringLiteral("ALIGNW"));
+    TN_ADD(t__ALIGNL,          tm_mnemonic | tm_origin, QStringLiteral("ALIGNL"));
+    TN_ADD(t__ORG,             tm_mnemonic | tm_origin, QStringLiteral("ORG"));
+    TN_ADD(t__ORGH,            tm_mnemonic | tm_origin, QStringLiteral("ORGH"));
+    TN_ADD(t__FIT,             tm_mnemonic | tm_origin, QStringLiteral("FIT"));
 
     // Conditionals
     TN_ADD(t__RET_,            tm_conditional, QStringLiteral("_RET_"));
@@ -726,21 +731,43 @@ P2Token::P2Token()
     TN_ADD(t_MODCZ__SET,       tm_modcz_param, QStringLiteral("_SET"));
 
     // Assignment
-    TN_ADD(t__ASSIGN,          tm_inst | tm_assignment, QStringLiteral("="));
+    TN_ADD(t__ASSIGN,          tm_mnemonic | tm_assignment, QStringLiteral("="));
     TN_ADD(t__COMMA,           tm_delimiter, QStringLiteral(","));
+
+    // LUT shadow register constants
+    TN_ADD(t_DIRA,             tm_constant, QStringLiteral("DIRA"));
+    TN_ADD(t_DIRB,             tm_constant, QStringLiteral("DIRB"));
+    TN_ADD(t_INA,              tm_constant, QStringLiteral("INA"));
+    TN_ADD(t_INB,              tm_constant, QStringLiteral("INB"));
+    TN_ADD(t_OUTA,             tm_constant, QStringLiteral("OUTA"));
+    TN_ADD(t_OUTB,             tm_constant, QStringLiteral("OUTB"));
+    TN_ADD(t_PTRA,             tm_constant, QStringLiteral("PTRA"));
+    TN_ADD(t_PTRA_postinc,     tm_constant, QStringLiteral("PTRA++"));
+    TN_ADD(t_PTRA_postdec,     tm_constant, QStringLiteral("PTRA--"));
+    TN_ADD(t_PTRA_preinc,      tm_constant, QStringLiteral("++PTRA"));
+    TN_ADD(t_PTRA_predec,      tm_constant, QStringLiteral("--PTRA"));
+    TN_ADD(t_PTRB,             tm_constant, QStringLiteral("PTRB"));
+    TN_ADD(t_PTRB_postinc,     tm_constant, QStringLiteral("PTRB++"));
+    TN_ADD(t_PTRB_postdec,     tm_constant, QStringLiteral("PTRB--"));
+    TN_ADD(t_PTRB_preinc,      tm_constant, QStringLiteral("++PTRB"));
+    TN_ADD(t_PTRB_predec,      tm_constant, QStringLiteral("--PTRB"));
 
     // Current PC reference
     TN_ADD(t__DOLLAR,          tm_constant, QStringLiteral("$"));
 
-    // Immedia value
-    TN_ADD(t__IMMEDIATE2,      tm_immediate, QStringLiteral("##"));
+    // Immediate value
     TN_ADD(t__IMMEDIATE,       tm_immediate, QStringLiteral("#"));
-    TN_ADD(t__RELATIVE_HUB,    tm_relative, QStringLiteral("@@@"));
+    TN_ADD(t__IMMEDIATE2,      tm_immediate, QStringLiteral("##"));
+
+    // Relative address
     TN_ADD(t__RELATIVE,        tm_relative, QStringLiteral("@"));
+    TN_ADD(t__RELATIVE_HUB,    tm_relative, QStringLiteral("@@@"));
 
     // Sub expression in parens
     TN_ADD(t__LPAREN,          tm_parens, QStringLiteral("("));
     TN_ADD(t__RPAREN,          tm_parens, QStringLiteral(")"));
+
+    // Index expression in brackets
     TN_ADD(t__LBRACKET,        tm_parens, QStringLiteral("["));
     TN_ADD(t__RBRACKET,        tm_parens, QStringLiteral("]"));
 
@@ -780,6 +807,10 @@ P2Token::P2Token()
     TN_ADD(t__XOR,             tm_binop_xor, QStringLiteral("^"));
     TN_ADD(t__OR,              tm_binop_or,  QStringLiteral("|"));
     TN_ADD(t__REV,             tm_binop_rev, QStringLiteral("><"));
+
+    // Encode / Decode
+    TN_ADD(t__ENCOD,           tm_binop_encod, QStringLiteral(">|"));
+    TN_ADD(t__DECOD,           tm_binop_decod, QStringLiteral("|<"));
 
     // Set the logical operators
     TN_ADD(t__LOGAND,          tm_logop_and, QStringLiteral("&&"));
@@ -890,7 +921,7 @@ P2Token::P2Token()
     m_t_type_name.insert(tt_relative,       QStringLiteral("Relative"));
     m_t_type_name.insert(tt_conditional,    QStringLiteral("Conditional"));
     m_t_type_name.insert(tt_modcz_param,    QStringLiteral("MODCZ param"));
-    m_t_type_name.insert(tt_inst,           QStringLiteral("Instruction"));
+    m_t_type_name.insert(tt_mnemonic,       QStringLiteral("Instruction"));
     m_t_type_name.insert(tt_wcz_suffix,     QStringLiteral("WC/WZ suffix"));
     m_t_type_name.insert(tt_section,        QStringLiteral("Section"));
     m_t_type_name.insert(tt_origin,         QStringLiteral("Origin"));
@@ -918,47 +949,54 @@ QString P2Token::enum_name(p2_token_e tok) const
     return m_token_enum_name.value(tok);
 }
 
-static int count_curly(const QString& str)
+/**
+ * @brief Count number of curly braces, left and right, return the sum
+ * @param ref QStringRef to a portion of a string to scan
+ * @return number of lcurly - number of rcruly braces
+ */
+static int count_curly(const QStringRef& ref)
 {
     int curly = 0;
-    curly += str.count(chr_lcurly);
-    curly -= str.count(chr_rcurly);
+    curly += ref.count(chr_lcurly);
+    curly -= ref.count(chr_rcurly);
     return curly;
 }
 
 /**
  * @brief Tokenize a string and append to P2AsmWords
- * @param pos starting position in string
- * @param str string to tokenize
- * @param words vector of P2AsmWord to append to
- * @return true on success, or false on error
+ * @param line string to tokenize
+ * @param lineno line number
+ * @param in_curly reference to an integer with the current curly braces level
+ * @return A QVector of P2Words for the line
  */
-P2Words P2Token::tokenize(const QString& str, const int lineno, int& in_curly) const
+P2Words P2Token::tokenize(const QString& line, const int lineno, int& in_curly) const
 {
     static QRegExp rx;
     static QString re;
     P2Words words;
     p2_token_e tok;
+    const int len = line.length();
     int pos = 0;
-    int lastpos = -1;
+    int lastpos = 0;
 
 #if (DBG_REGEX || DBG_TOKEN)
     qDebug("%s: ····························· tokenize line ·································", __func__);
-    qDebug("%-4d: %s%s%s", lineno, qPrintable(chr_ldangle), qPrintable(str), qPrintable(chr_rdangle));
+    qDebug("%-4d: %s%s%s", lineno, qPrintable(chr_ldangle), qPrintable(line), qPrintable(chr_rdangle));
 #endif
 
     if (rx.isEmpty()) {
         // first time initialization of the QRegExp
         QStringList list;
 
-        list += QStringLiteral("\\s+");                 // spaces
+        list += QStringLiteral("^\\s+");                // spaces
         list += re_comment_curly;                       // comments in {curly braces}
         list += re_comment_eol;                         // Comments 'something...
-        list += re_symbol;                              // symbols
         list += re_locsym;                              // local symbols
+        list += re_symbol;                              // symbols
         list += re_bin_const;                           // bin constants
         list += re_byt_const;                           // byt constants
         list += re_oct_const;                           // oct constants
+        list += re_real_const;                          // real constants
         list += re_dec_const;                           // dec constants
         list += re_hex_const;                           // hex constants
         list += re_str_const;                           // str constants
@@ -1005,93 +1043,98 @@ P2Words P2Token::tokenize(const QString& str, const int lineno, int& in_curly) c
         Q_ASSERT(rx.isValid());
     }
 
-    while ((pos = rx.indexIn(str, pos)) != -1) {
-        QString word = rx.cap(1).trimmed();
-        int len = rx.matchedLength();
+    while (pos < line.length() && line[pos].isSpace())
+        ++pos;
 
-        if (word.isEmpty()) {
-            if (len > 0) {
-                pos += len;
-                continue;
+    while (-1 != (pos = rx.indexIn(line, lastpos, QRegExp::CaretAtOffset))) {
+        int tlen = rx.matchedLength();
+        QStringRef ref(&line, pos, tlen);
+
+        if (tlen > 0 && ref.trimmed().isEmpty()) {
+            DEBUG_REGEX("  match %d @%-3d #%-3d SPACE(S)", in_curly, pos, tlen);
+            while (pos < line.length() && line[pos].isSpace())
+                ++pos;
+            lastpos = pos;
+            if (pos >= len) {
+                DEBUG_REGEX("  match %d @%-3d #%-3d end-of-line", in_curly, pos, tlen);
+                break;
             }
-            DEBUG_REGEX("  match %d @%-3d #%-3d", in_curly, pos, len);
+            continue;
+        }
+
+        if (pos >= len) {
+            DEBUG_REGEX("  match %d @%-3d #%-3d end-of-line", in_curly, pos, tlen);
             break;
         }
 
-        if (!word.startsWith(chr_dquote) &&
-                !word.startsWith(chr_apostrophe) &&
-                (word.contains(chr_lcurly) || word.contains(chr_rcurly))) {
-            int curly = count_curly(word);
+        if (ref[0] != chr_dquote && ref[0] != chr_apostrophe) {
+            int curly = count_curly(ref);
             if (curly) {
                 in_curly = qMax(in_curly + curly, 0);
-                const int len = str.length() - pos;
+                const int tlen = len - pos;
                 tok = curly >= 0 ? t_comment_lcurly : t_comment_rcurly;
-                words.append(P2Word(tok, str, lineno, pos, len));
-                pos += len;
+                words.append(P2Word(tok, line, lineno, pos, tlen));
+                pos += tlen;
                 DEBUG_REGEX("  match %d @%-3d #%-3d %s%s%s",
-                            in_curly, pos, len,
-                            qPrintable(chr_ldangle), qPrintable(word), qPrintable(chr_rdangle));
+                            in_curly, pos, tlen,
+                            qPrintable(chr_ldangle), qPrintable(ref.toString()), qPrintable(chr_rdangle));
                 goto leave;
             }
         }
 
-        if (word.startsWith(chr_apostrophe)) {
-            word = str.mid(pos);
+        if (ref[0] == chr_apostrophe) {
+            const int tlen = len - pos;
             tok = t_comment_eol;
-            words.append(P2Word(tok, word, lineno, pos, len));
+            words.append(P2Word(tok, ref.toString(), lineno, pos, tlen));
             DEBUG_REGEX("  comnt %d @%-3d #%-3d %s%s%s",
-                        in_curly, pos, len,
-                        qPrintable(chr_ldangle), qPrintable(word), qPrintable(chr_rdangle));
+                        in_curly, pos, tlen,
+                        qPrintable(chr_ldangle), qPrintable(ref.toString()), qPrintable(chr_rdangle));
             goto leave;
         }
 
         if (in_curly > 0) {
-            const int len = str.length() - pos;
-            const QString word = str.mid(pos, len);
-            int curly = count_curly(word);
+            const int tlen = len - pos;
+            QStringRef ref(&line, pos, tlen);
+            int curly = count_curly(ref);
             in_curly = qMax(in_curly + curly, 0);
 
             tok = in_curly > 0 ? t_comment_lcurly : t_comment_rcurly;
-            words.append(P2Word(tok, word, lineno, pos, len));
+            words.append(P2Word(tok, ref.toString(), lineno, pos, tlen));
             DEBUG_REGEX("  curly %d @%-3d #%-3d %s%s%s",
-                        in_curly, pos, len,
-                        qPrintable(chr_ldangle), qPrintable(word), qPrintable(chr_rdangle));
+                        in_curly, pos, tlen,
+                        qPrintable(chr_ldangle), qPrintable(ref.toString()), qPrintable(chr_rdangle));
             goto leave;
         }
 
         DEBUG_REGEX("  match %d @%-3d #%-3d %s%s%s",
-                    in_curly, pos, len,
-                    qPrintable(chr_ldangle), qPrintable(word), qPrintable(chr_rdangle));
+                    in_curly, pos, tlen,
+                    qPrintable(chr_ldangle), qPrintable(line.mid(pos, tlen)), qPrintable(chr_rdangle));
 
-        int tlen = 0;
-        tok = token(word, false, &tlen);
-        word = str.mid(pos, tlen);
-
-        int curly = count_curly(word);
-        in_curly = qMax(in_curly + curly, 0);
-        words.append(P2Word(tok, word, lineno, pos, tlen));
-        pos += tlen;
-
-        if (pos == lastpos) {
-            DEBUG_REGEX("\t%s", "******break******");
-            break;
-        } else {
-            lastpos = pos;
+        tok = token(line, pos, tlen);
+        ref = QStringRef(&line, pos, tlen);
+        words.append(P2Word(tok, ref.toString(), lineno, pos, tlen));
+        if (tok != t_str_const) {
+            int curly = count_curly(ref);
+            in_curly = qMax(in_curly + curly, 0);
         }
+        pos += tlen;
+        lastpos = pos;
     }
 
 leave:
     if (words.isEmpty()) {
 
-        const int pos = 0;
-        const int len = str.length();
-        Q_UNUSED(pos)
-        Q_UNUSED(len)
         DEBUG_REGEX("%s: empty %d @%-3d #%-3d %s%s%s", __func__,
-                    in_curly, pos, len,
-                    qPrintable(chr_ldangle), qPrintable(str), qPrintable(chr_rdangle));
-    } else {
+                    in_curly, 0, line.length(),
+                    qPrintable(chr_ldangle), qPrintable(line), qPrintable(chr_rdangle));
+        return words;
 
+    }
+
+    if (words.count() > 0)
+        P2Word::remove(words, t_comment);
+
+    if (words.count() > 1) {
         // modify PTRA/PTRB with preinc/predec/postinc/postdec
         P2Word::merge(words, t_PTRA, t__INC, t_PTRA_postinc);
         P2Word::merge(words, t_PTRA, t__DEC, t_PTRA_postdec);
@@ -1102,26 +1145,27 @@ leave:
         P2Word::merge(words, t_PTRB, t__DEC, t_PTRB_postdec);
         P2Word::merge(words, t__INC, t_PTRB, t_PTRB_preinc);
         P2Word::merge(words, t__DEC, t_PTRB, t_PTRB_predec);
+    }
 
 #if DBG_TOKEN
-        int i = 0;
-        foreach(const P2Word& word, words) {
-            const p2_token_e tok = word.tok();
-            const QString& name = enum_name(tok);
-            const QString& str = word.str();
-            const int pos = word.pos();
-            const int len = word.len();
+    int i = 0;
+    foreach(const P2Word& word, words) {
+        const p2_token_e tok = word.tok();
+        const QString& name = enum_name(tok);
+        const QString& str = word.str();
+        const int pos = word.pos();
+        const int len = word.len();
 
-            DEBUG_TOKEN("  word[%-3d] %s%s%s%*s @%-3d #%-3d %s%s%s",
-                        i,
-                        qPrintable(chr_ldangle), qPrintable(name), qPrintable(chr_rdangle),
-                        24 - name.length(), "",
-                        pos, len,
-                        qPrintable(chr_ldangle), qPrintable(str), qPrintable(chr_rdangle));
-            i++;
-        }
-#endif
+        DEBUG_TOKEN("  word[%-3d] %s%s%s%*s @%-3d #%-3d %s%s%s",
+                    i,
+                    qPrintable(chr_ldangle), qPrintable(name), qPrintable(chr_rdangle),
+                    24 - name.length(), "",
+                    pos, len,
+                    qPrintable(chr_ldangle), qPrintable(str), qPrintable(chr_rdangle));
+        i++;
     }
+#endif
+
 
 #if (DBG_REGEX || DBG_TOKEN)
     qDebug("%s: ·············································································", __func__);
@@ -1136,80 +1180,82 @@ leave:
  * @param plen optional pointer to an int to receive the length of the token
  * @return p2_token_e enumeration value, or t_nothing if not a known string
  */
-p2_token_e P2Token::token(const QString& str, bool chop, int* plen) const
+p2_token_e P2Token::token(const QString& line, int pos, int& len, bool chop) const
 {
-    static QRegExp rx_comment_eol(re_comment_eol);
-    static QRegExp rx_comment_curly(re_comment_curly);
-    static QRegExp rx_symbol(re_symbol);
-    static QRegExp rx_locsym(re_locsym);
-    static QRegExp rx_bin_const(re_bin_const);
-    static QRegExp rx_byt_const(re_byt_const);
-    static QRegExp rx_oct_const(re_oct_const);
-    static QRegExp rx_hex_const(re_hex_const);
-    static QRegExp rx_dec_const(re_dec_const);
-    static QRegExp rx_str_const(re_str_const);
-    QString ustr = str.toUpper();
     p2_token_e tok = t_unknown;
+    QStringRef ref(&line, pos, len);
 
     for (;;) {
-        if (ustr.isEmpty())
-            break;
 
-        if (ustr.startsWith(m_token_string.value(t__IMMEDIATE2))) {
-
-        }
-
-        tok = m_string_token.value(ustr);
+        tok = m_string_token.value(ref.toString().toUpper());
         if (t_unknown != tok) {
-            QString name = m_token_string.value(tok);
-            ustr.truncate(name.length());
+            len = m_token_string.value(tok).length();
             break;
         }
 
-        if (rx_comment_eol.exactMatch(ustr)) {
+        if (pos == rx_comment_eol.indexIn(line, pos, QRegExp::CaretAtOffset)) {
+            len = rx_comment_eol.matchedLength();
             tok = t_comment_eol;
             break;
         }
-        if (rx_comment_curly.exactMatch(ustr)) {
+
+        if (pos == rx_comment_curly.indexIn(line, pos, QRegExp::CaretAtOffset)) {
+            len = rx_comment_curly.matchedLength();
             tok = t_comment;
             break;
         }
-        if (rx_symbol.exactMatch(ustr)) {
+
+        if (pos == rx_symbol.indexIn(line, pos, QRegExp::CaretAtOffset)) {
+            len = rx_symbol.matchedLength();
             tok = t_symbol;
             break;
         }
-        if (rx_locsym.exactMatch(ustr)) {
+
+        if (pos == rx_locsym.indexIn(line, pos, QRegExp::CaretAtOffset)) {
+            len = rx_locsym.matchedLength();
             tok = t_locsym;
             break;
         }
 
-        if (rx_bin_const.exactMatch(ustr)) {
+        if (pos == rx_bin_const.indexIn(line, pos, QRegExp::CaretAtOffset)) {
+            len = rx_bin_const.matchedLength();
             tok = t_bin_const;
             break;
         }
 
-        if (rx_byt_const.exactMatch(ustr)) {
+        if (pos == rx_byt_const.indexIn(line, pos, QRegExp::CaretAtOffset)) {
+            len = rx_byt_const.matchedLength();
             tok = t_byt_const;
             break;
         }
 
-        if (rx_oct_const.exactMatch(ustr)) {
+        if (pos == rx_oct_const.indexIn(line, pos, QRegExp::CaretAtOffset)) {
+            len = rx_oct_const.matchedLength();
             tok = t_oct_const;
             break;
         }
 
-        if (rx_hex_const.exactMatch(ustr)) {
+        if (pos == rx_hex_const.indexIn(line, pos, QRegExp::CaretAtOffset)) {
+            len = rx_hex_const.matchedLength();
             tok = t_hex_const;
             break;
         }
 
-        if (rx_dec_const.exactMatch(ustr)) {
+        if (pos == rx_real_const.indexIn(line, pos, QRegExp::CaretAtOffset)) {
+            len = rx_real_const.matchedLength();
+            tok = t_real_const;
+            break;
+        }
+
+        if (pos == rx_dec_const.indexIn(line, pos, QRegExp::CaretAtOffset)) {
+            len = rx_dec_const.matchedLength();
             tok = t_dec_const;
             break;
         }
 
-        if (rx_str_const.exactMatch(ustr)) {
-            tok = t_string;
+        if (pos == rx_str_const.indexIn(line, pos, QRegExp::CaretAtOffset)) {
+            len = rx_str_const.matchedLength();
+            tok = t_str_const;
             break;
         }
 
@@ -1217,11 +1263,10 @@ p2_token_e P2Token::token(const QString& str, bool chop, int* plen) const
             break;
 
         // chop off one character
-        ustr.chop(1);
+        if (--len <= 0)
+            break;
+        ref.chop(1);
     }
-
-    if (plen)
-        *plen = ustr.length();
 
     return tok;
 }
@@ -1304,8 +1349,8 @@ QStringList P2Token::type_names(p2_token_e tok) const
  */
 p2_token_e P2Token::at_token(int& pos, const QString& str, QList<p2_token_e> tokens, p2_token_e dflt) const
 {
-    int len = 0;
-    p2_token_e tok = token(str.mid(pos), true, &len);
+    int len = str.length() - pos;
+    p2_token_e tok = token(str.mid(pos), true, pos, len);
     if (t_unknown == tok)
         return dflt;
     if (tokens.contains(tok)) {
@@ -1372,8 +1417,8 @@ bool P2Token::is_modcz_param(p2_token_e tok) const
  */
 p2_token_e P2Token::at_type(int& pos, const QString& str, p2_t_mask_t typemask, p2_token_e dflt) const
 {
-    int len = 0;
-    p2_token_e tok = token(str.mid(pos), true, &len);
+    int len = str.length() - pos;
+    p2_token_e tok = token(str, true, pos, len);
 
     if (t_unknown == tok)
         return dflt;
@@ -1400,8 +1445,8 @@ p2_token_e P2Token::at_type(int& pos, const QString& str, p2_t_mask_t typemask, 
  */
 p2_token_e P2Token::at_type(int& pos, const QString& str, p2_t_type_e type, p2_token_e dflt) const
 {
-    int len = 0;
-    p2_token_e tok = token(str.mid(pos), true, &len);
+    int len = str.length() - pos;
+    p2_token_e tok = token(str, true, pos, len);
 
     if (t_unknown == tok)
         return dflt;
@@ -1443,8 +1488,8 @@ p2_token_e P2Token::at_type(const QString& str, p2_t_type_e type, p2_token_e dfl
 
 p2_token_e P2Token::at_types(int& pos, const QString& str, p2_t_mask_t typemask, p2_token_e dflt) const
 {
-    int len = 0;
-    p2_token_e tok = token(str.mid(pos), true, &len);
+    int len = str.length() - pos;
+    p2_token_e tok = token(str, true, pos, len);
 
     if (t_unknown == tok)
         return dflt;

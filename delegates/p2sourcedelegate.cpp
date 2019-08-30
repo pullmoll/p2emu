@@ -13,6 +13,7 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     Q_ASSERT(model);
     QVariant v_words = model->data(index, Qt::UserRole);
     const P2Words words = qvariant_cast<P2Words>(v_words);
+    const P2Word& hword = model->highlight();
 
     QStyleOptionViewItem opt(option);
     initStyleOption(&opt, index);
@@ -55,8 +56,7 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
         const QString text = line.mid(pos, len);
 
         QPalette pal;
-
-        painter->setPen(p2_palette(color_source, highlight));
+        QColor color = p2_palette(color_source, highlight);
 
         p2_token_e tok = word.tok();
         switch (tok) {
@@ -64,62 +64,76 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
         case t_comment_eol:
         case t_comment_lcurly:
         case t_comment_rcurly:
-            painter->setPen(p2_palette(color_comment, highlight));
+            color = p2_palette(color_comment, highlight);
             break;
 
         case t__COMMA:
-            painter->setPen(p2_palette(color_comma, highlight));
+            color = p2_palette(color_comma, highlight);
             break;
 
-        case t_string:
-            painter->setPen(p2_palette(color_str_const, highlight));
+        case t_str_const:
+            color = p2_palette(color_str_const, highlight);
             break;
 
         case t_bin_const:
-            painter->setPen(p2_palette(color_bin_const, highlight));
+            color = p2_palette(color_bin_const, highlight);
             break;
 
         case t_byt_const:
-            painter->setPen(p2_palette(color_byt_const, highlight));
+            color = p2_palette(color_byt_const, highlight);
             break;
 
         case t_oct_const:
-            painter->setPen(p2_palette(color_oct_const, highlight));
+            color = p2_palette(color_oct_const, highlight);
             break;
 
         case t_dec_const:
-            painter->setPen(p2_palette(color_dec_const, highlight));
+            color = p2_palette(color_dec_const, highlight);
             break;
 
         case t_hex_const:
-            painter->setPen(p2_palette(color_hex_const, highlight));
+            color = p2_palette(color_hex_const, highlight);
+            break;
+
+        case t_real_const:
+            color = p2_palette(color_real_const, highlight);
             break;
 
         case t_locsym:
-            painter->setPen(p2_palette(color_locsym, highlight));
+            color = p2_palette(color_locsym, highlight);
             break;
 
         case t_symbol:
-            painter->setPen(p2_palette(color_symbol, highlight));
+            color = p2_palette(color_symbol, highlight);
             break;
 
         default:
             if (Token.is_type(tok, tm_section))
-                painter->setPen(p2_palette(color_section, highlight));
+                color = p2_palette(color_section, highlight);
             if (Token.is_type(tok, tm_conditional))
-                painter->setPen(p2_palette(color_conditional, highlight));
-            if (Token.is_type(tok, tm_inst))
-                painter->setPen(p2_palette(color_instruction, highlight));
+                color = p2_palette(color_conditional, highlight);
+            if (Token.is_type(tok, tm_mnemonic))
+                color = p2_palette(color_instruction, highlight);
             if (Token.is_type(tok, tm_wcz_suffix))
-                painter->setPen(p2_palette(color_wcz_suffix, highlight));
+                color = p2_palette(color_wcz_suffix, highlight);
             if (Token.is_type(tok, tm_expression))
-                painter->setPen(p2_palette(color_expression, highlight));
+                color = p2_palette(color_expression, highlight);
             break;
         }
+        painter->setPen(color);
 
         // draw the character
-        foreach(const QChar ch, text)
-            painter->drawText(bounding[pos++], flags, ch);
+        QRect box;
+        foreach(const QChar ch, text) {
+            QRect br = bounding[pos++];
+            painter->drawText(br, flags, ch);
+            box = box.united(br);
+        }
+
+        if (word == hword) {
+            painter->setPen(QColor(0x00,0x00,0xff));
+            painter->drawRect(box);
+        }
     }
 
     if (highlight) {
