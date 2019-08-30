@@ -248,8 +248,6 @@ QSize P2DasmModel::sizeHint(P2DasmModel::column_e column, bool header, const QSt
             return metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_bin : text);
         case fmt_byt:
             return metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_byt : text);
-        case fmt_oct:
-            return metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_oct : text);
         case fmt_dec:
             return metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_dec : text);
         case fmt_hex:

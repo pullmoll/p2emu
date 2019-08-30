@@ -95,20 +95,12 @@ static const QString re_bin_const = QStringLiteral("^%[_]*[01_]+");
 static const QString re_byt_const = QStringLiteral("^%%[_]*[0-3_]+");
 
 /**
- * @brief Regular expression for octal number
- *
- * leading "0"
- * then one or more of "0"…"7", or "_"
- */
-static const QString re_oct_const = QStringLiteral("^[0][_]*[0-7_]*");
-
-/**
  * @brief Regular expression for a decimal number
  *
  * leading "0"…"9"
  * then any number of "0"…"9", or "_"
  */
-static const QString re_dec_const = QStringLiteral("^[1-9]+[0-9_]*(?!\\.)");
+static const QString re_dec_const = QStringLiteral("^[0-9_]+(?!\\.)");
 
 /**
  * @brief Regular expression an octal number
@@ -246,7 +238,6 @@ P2Token::P2Token()
     , rx_locsym(re_locsym, Qt::CaseInsensitive)
     , rx_bin_const(re_bin_const, Qt::CaseInsensitive)
     , rx_byt_const(re_byt_const, Qt::CaseInsensitive)
-    , rx_oct_const(re_oct_const, Qt::CaseInsensitive)
     , rx_hex_const(re_hex_const, Qt::CaseInsensitive)
     , rx_dec_const(re_dec_const, Qt::CaseInsensitive)
     , rx_str_const(re_str_const, Qt::CaseInsensitive)
@@ -261,7 +252,6 @@ P2Token::P2Token()
     TN_ADD(t_str_const,           tm_lexer, QStringLiteral("·str_const·"));
     TN_ADD(t_bin_const,        tm_lexer, QStringLiteral("·bin_const·"));
     TN_ADD(t_byt_const,        tm_lexer, QStringLiteral("·byt_const·"));
-    TN_ADD(t_oct_const,        tm_lexer, QStringLiteral("·oct_const·"));
     TN_ADD(t_dec_const,        tm_lexer, QStringLiteral("·dec_const·"));
     TN_ADD(t_real_const,       tm_lexer, QStringLiteral("·real_const·"));
     TN_ADD(t_hex_const,        tm_lexer, QStringLiteral("·hex_const·"));
@@ -922,6 +912,7 @@ P2Token::P2Token()
     m_t_type_name.insert(tt_assignment,     QStringLiteral("Assignment"));
     m_t_type_name.insert(tt_delimiter,      QStringLiteral("Delimiter"));
     m_t_type_name.insert(tt_constant,       QStringLiteral("Constant"));
+    m_t_type_name.insert(tt_function,       QStringLiteral("Function"));
     m_t_type_name.insert(tt_immediate,      QStringLiteral("Immediate"));
     m_t_type_name.insert(tt_relative,       QStringLiteral("Relative"));
     m_t_type_name.insert(tt_conditional,    QStringLiteral("Conditional"));
@@ -1000,7 +991,6 @@ P2Words P2Token::tokenize(const QString& line, const int lineno, int& in_curly) 
         list += re_symbol;                              // symbols
         list += re_bin_const;                           // bin constants
         list += re_byt_const;                           // byt constants
-        list += re_oct_const;                           // oct constants
         list += re_real_const;                          // real constants
         list += re_dec_const;                           // dec constants
         list += re_hex_const;                           // hex constants
@@ -1136,9 +1126,6 @@ leave:
 
     }
 
-    if (words.count() > 0)
-        P2Word::remove(words, t_comment);
-
     if (words.count() > 1) {
         // modify PTRA/PTRB with preinc/predec/postinc/postdec
         P2Word::merge(words, t_PTRA, t__INC, t_PTRA_postinc);
@@ -1231,12 +1218,6 @@ p2_token_e P2Token::token(const QString& line, int pos, int& len, bool chop) con
         if (pos == rx_byt_const.indexIn(line, pos, QRegExp::CaretAtOffset)) {
             len = rx_byt_const.matchedLength();
             tok = t_byt_const;
-            break;
-        }
-
-        if (pos == rx_oct_const.indexIn(line, pos, QRegExp::CaretAtOffset)) {
-            len = rx_oct_const.matchedLength();
-            tok = t_oct_const;
             break;
         }
 

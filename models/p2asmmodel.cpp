@@ -52,37 +52,37 @@ P2AsmModel::P2AsmModel(P2Asm* p2asm, QObject *parent)
 {
     m_error_pixmap = QPixmap(":/icons/error.svg");
 
-    m_header.insert(c_Origin,       tr("Origin"));
+    m_header.insert(c_Origin,           tr("OrgH"));
     m_background.insert(c_Origin,       qRgb(0xff,0xfc,0xf8));
     m_head_alignment.insert(c_Origin,   Qt::AlignLeft | Qt::AlignVCenter);
     m_text_alignment.insert(c_Origin,   Qt::AlignLeft | Qt::AlignVCenter);
 
-    m_header.insert(c_Address,      tr("Address"));
+    m_header.insert(c_Address,          tr("Org"));
     m_background.insert(c_Address,      qRgb(0xff,0xf0,0xe0));
     m_head_alignment.insert(c_Address,  Qt::AlignLeft | Qt::AlignVCenter);
     m_text_alignment.insert(c_Address,  Qt::AlignLeft | Qt::AlignVCenter);
 
-    m_header.insert(c_Opcode,       tr("Opcode"));
+    m_header.insert(c_Opcode,           tr("Opcode"));
     m_background.insert(c_Opcode,       qRgb(0xf8,0xfc,0xff));
     m_head_alignment.insert(c_Opcode,   Qt::AlignLeft | Qt::AlignVCenter);
     m_text_alignment.insert(c_Opcode,   Qt::AlignLeft | Qt::AlignVCenter);
 
-    m_header.insert(c_Errors,       tr("Errors"));
+    m_header.insert(c_Errors,           tr("Errors"));
     m_background.insert(c_Errors,       qRgb(0xff,0xc0,0xc0));
     m_head_alignment.insert(c_Errors,   Qt::AlignLeft | Qt::AlignVCenter);
     m_text_alignment.insert(c_Errors,   Qt::AlignCenter);
 
-    m_header.insert(c_Tokens,       tr("Tokens"));
+    m_header.insert(c_Tokens,           tr("Tokens"));
     m_background.insert(c_Tokens,       qRgb(0x10,0xfc,0xff));
     m_head_alignment.insert(c_Tokens,   Qt::AlignLeft | Qt::AlignVCenter);
     m_text_alignment.insert(c_Tokens,   Qt::AlignCenter);
 
-    m_header.insert(c_Symbols,      tr("Symbols"));
+    m_header.insert(c_Symbols,          tr("Symbols"));
     m_background.insert(c_Symbols,      qRgb(0xff,0xf0,0xff));
     m_head_alignment.insert(c_Symbols,  Qt::AlignLeft | Qt::AlignVCenter);
     m_text_alignment.insert(c_Symbols,  Qt::AlignCenter);
 
-    m_header.insert(c_Source,       tr("Source"));
+    m_header.insert(c_Source,           tr("Source"));
     m_background.insert(c_Source,       qRgb(0xff,0xff,0xff));
     m_head_alignment.insert(c_Source,   Qt::AlignLeft | Qt::AlignVCenter);
     m_text_alignment.insert(c_Source,   Qt::AlignLeft | Qt::AlignVCenter);
@@ -434,9 +434,6 @@ QSize P2AsmModel::sizeHint(P2AsmModel::column_e column, bool header, const QStri
             break;
         case fmt_byt:
             size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_byt : text);
-            break;
-        case fmt_oct:
-            size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_oct : text);
             break;
         case fmt_dec:
             size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_dec : text);

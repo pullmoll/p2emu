@@ -40,9 +40,6 @@ const QString bin_digits = QStringLiteral("01_");
 //! digits of byte indices
 const QString byt_digits = QStringLiteral("0123_");
 
-//! digits of octal numbers
-const QString oct_digits = QStringLiteral("01234567_");
-
 //! digits of decimal numbers
 const QString dec_digits = QStringLiteral("0123456789_");
 
@@ -57,7 +54,6 @@ const QString template_str_address = QStringLiteral("COG:1FF ");
 
 const QString template_str_opcode_bin = QStringLiteral("EEEE OOOOOOO CZI DDDDDDDDD SSSSSSSSS ");
 const QString template_str_opcode_byt = QStringLiteral("F FF FFF FFF FFF ");
-const QString template_str_opcode_oct = QStringLiteral("37777777777 ");
 const QString template_str_opcode_dec = QStringLiteral("999999999999 ");
 const QString template_str_opcode_hex = QStringLiteral("FFFFFFFF ");
 
@@ -91,12 +87,6 @@ QString format_opcode_byt(const p2_opcode_u& IR)
             .arg(IR.op.im,   1, 16, QChar('0'))
             .arg(IR.op.dst,  3, 16, QChar('0'))
             .arg(IR.op.src,  3, 16, QChar('0'));
-}
-
-QString format_opcode_oct(const p2_opcode_u& IR)
-{
-    // 37777777777
-    return QString("%1").arg(IR.opcode, 11, 8, QChar('0'));
 }
 
 QString format_opcode_dec(const p2_opcode_u& IR)
@@ -133,19 +123,11 @@ QString format_data_byt(const p2_opcode_u& IR, bool prefix)
              .arg((IR.opcode >>  0) & 0xff, 2, 16, QChar('0'));
 }
 
-QString format_data_oct(const p2_opcode_u& IR, bool prefix)
-{
-    // 37777777777
-    return QString("%1%2")
-            .arg(prefix ? QStringLiteral("0") : QString())
-            .arg(IR.opcode, 11, 8, QChar('0'));
-}
-
 QString format_data_dec(const p2_opcode_u& IR)
 {
     // 4294967295
     return QString("%1")
-            .arg(IR.opcode, 10);
+            .arg(IR.opcode, 0, 10);
 }
 
 QString format_data_hex(const p2_opcode_u& IR, bool prefix)
@@ -153,7 +135,7 @@ QString format_data_hex(const p2_opcode_u& IR, bool prefix)
     // FFFFFFFF
     return QString("%1%2")
             .arg(prefix ? QStringLiteral("$") : QString())
-            .arg(IR.opcode, 8, 16, QChar('0'));
+            .arg(IR.opcode, 0, 16, QChar('0'));
 }
 
 QString format_data_bin(const p2_LONG data, bool prefix)
@@ -166,12 +148,6 @@ QString format_data_byt(const p2_LONG data, bool prefix)
 {
     p2_opcode_u IR = {data};
     return format_data_byt(IR, prefix);
-}
-
-QString format_data_oct(const p2_LONG data, bool prefix)
-{
-    p2_opcode_u IR = {data};
-    return format_data_oct(IR, prefix);
 }
 
 QString format_data_dec(const p2_LONG data)
@@ -191,7 +167,6 @@ QString format_opcode(const p2_opcode_u& IR, const p2_opcode_format_e fmt)
     switch (fmt) {
     case fmt_bin: return format_opcode_bin(IR);
     case fmt_byt: return format_opcode_byt(IR);
-    case fmt_oct: return format_opcode_oct(IR);
     case fmt_dec: return format_opcode_dec(IR);
     case fmt_hex: return format_opcode_hex(IR);
     }
@@ -203,11 +178,16 @@ QString format_data(const p2_opcode_u& IR, const p2_opcode_format_e fmt, bool pr
     switch (fmt) {
     case fmt_bin: return format_data_bin(IR, prefix);
     case fmt_byt: return format_data_byt(IR, prefix);
-    case fmt_oct: return format_data_oct(IR, prefix);
     case fmt_dec: return format_data_dec(IR);
     case fmt_hex: return format_data_hex(IR, prefix);
     }
     return QStringLiteral("<invalid format>");
+}
+
+QString format_data(const p2_LONG data, const p2_opcode_format_e fmt, bool prefix)
+{
+    p2_opcode_u IR = {data};
+    return format_data(IR, fmt, prefix);
 }
 
 static const QColor dflt_color_source       (0x00,0x00,0x00);   // black
@@ -216,8 +196,7 @@ static const QColor dflt_color_comma        (0x00,0x00,0x00);   // black
 static const QColor dflt_color_str_const    (0x00,0xe0,0xff);   // bright cyan
 static const QColor dflt_color_bin_const    (0x00,0x80,0xff);   // blue1
 static const QColor dflt_color_byt_const    (0x00,0x60,0xff);   // blue2
-static const QColor dflt_color_oct_const    (0x00,0x40,0xff);   // blue3
-static const QColor dflt_color_dec_const    (0x00,0x20,0xff);   // blue4
+static const QColor dflt_color_dec_const    (0x00,0x40,0xff);   // blue4
 static const QColor dflt_color_hex_const    (0x00,0x00,0xff);   // blue
 static const QColor dflt_color_real_const   (0xc0,0xc0,0xff);   // light blue
 static const QColor dflt_color_locsym       (0xff,0x80,0xe0);   // pink
@@ -239,7 +218,6 @@ QColor p2_palette(p2_palette_e pal, bool highlight)
         palette.insert(color_str_const, dflt_color_str_const);
         palette.insert(color_bin_const, dflt_color_bin_const);
         palette.insert(color_byt_const, dflt_color_byt_const);
-        palette.insert(color_oct_const, dflt_color_oct_const);
         palette.insert(color_dec_const, dflt_color_dec_const);
         palette.insert(color_hex_const, dflt_color_hex_const);
         palette.insert(color_real_const, dflt_color_real_const);

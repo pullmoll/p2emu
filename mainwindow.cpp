@@ -101,6 +101,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_source_percent(80)
     , m_results_percent(40)
 {
+    qsrand(static_cast<uint>(QDateTime::currentMSecsSinceEpoch()));
     ui->setupUi(this);
     connect(ui->action_Quit, SIGNAL(triggered(bool)), this, SLOT(close()));
     connect(ui->action_About, SIGNAL(triggered(bool)), this, SLOT(about()));
@@ -120,9 +121,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     restoreSettings();
 
-    // QString sourcecode = QStringLiteral(":/spin2/ROM_Booter_v33_01j.spin2");
-    QString sourcecode = QStringLiteral(":/spin2/P2-qz80-rr032.spin2");
-    openSource(sourcecode);
+    loadSourceRandom();
 }
 
 MainWindow::~MainWindow()
@@ -283,7 +282,6 @@ void MainWindow::setAsmOpcodes(int mode)
     p2_opcode_format_e format = static_cast<p2_opcode_format_e>(mode);
     ui->action_Asm_Opcodes_bin->setChecked(format == fmt_bin);
     ui->action_Asm_Opcodes_byt->setChecked(format == fmt_byt);
-    ui->action_Asm_Opcodes_oct->setChecked(format == fmt_oct);
     ui->action_Asm_Opcodes_dec->setChecked(format == fmt_dec);
     ui->action_Asm_Opcodes_hex->setChecked(format == fmt_hex);
     m_amodel->setOpcodeFormat(format);
@@ -334,7 +332,6 @@ void MainWindow::setDasmOpcodes(int mode)
     p2_opcode_format_e format = static_cast<p2_opcode_format_e>(mode);
     ui->action_Dasm_Opcodes_bin->setChecked(format == fmt_bin);
     ui->action_Dasm_Opcodes_byt->setChecked(format == fmt_byt);
-    ui->action_Dasm_Opcodes_oct->setChecked(format == fmt_oct);
     ui->action_Dasm_Opcodes_dec->setChecked(format == fmt_dec);
     ui->action_Dasm_Opcodes_hex->setChecked(format == fmt_hex);
     m_dmodel->setOpcodeFormat(format);
@@ -499,18 +496,44 @@ void MainWindow::openSource(const QString& sourcefile)
         filename = sourcefile;
     }
 
+    loadSource(filename);
+}
+
+void MainWindow::loadSource(const QString& filename)
+{
+    QFileInfo info(filename);
+
     QFile file(filename);
     if (!file.open(QIODevice::ReadOnly))
         return;
+
     QTextStream stream(&file);
     QStringList source;
     while (!stream.atEnd()) {
         QString line = stream.readLine();
         source += line;
     }
+
+    ui->tabWidget->setTabText(0, QString("%1 [%2]").arg(tr("Assembler")).arg(info.fileName()));
+
+    if (!info.path().startsWith(QChar(':')))
+        m_asm->setPathname(info.path());
     m_asm->setSource(source);
     m_amodel->invalidate();
-    updateAsmColumnSizes();
+    ui->tvAsm->update();
+}
+
+void MainWindow::loadSourceRandom()
+{
+    QDir dir(QStringLiteral(":/spin2"));
+    QStringList name_filters = QStringList() << QStringLiteral("*.spin2");
+    QDir::Filters filters = QDir::Files;
+    QDir::SortFlags sort = QDir::Name;
+    QStringList files = dir.entryList(name_filters, filters, sort);
+    QString sourcecode = QString("%1/%2")
+                         .arg(dir.path())
+                         .arg(files[qrand() % files.count()]);
+    loadSource(sourcecode);
 }
 
 void MainWindow::assemble()
@@ -661,6 +684,7 @@ void MainWindow::setupDisassembler()
 void MainWindow::setupMenu()
 {
     connect(ui->action_Open, SIGNAL(triggered()), SLOT(openSource()));
+    connect(ui->action_Open_random, SIGNAL(triggered()), SLOT(loadSourceRandom()));
     connect(ui->action_Go_to_line, SIGNAL(triggered()), SLOT(goto_line_number()));
 }
 
@@ -693,10 +717,6 @@ void MainWindow::setupToolbars()
     connect(ui->action_Asm_Opcodes_byt, SIGNAL(triggered(bool)), SLOT(setAsmOpcodes()));
     ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_byt);
 
-    ui->action_Asm_Opcodes_oct->setData(fmt_oct);
-    connect(ui->action_Asm_Opcodes_oct, SIGNAL(triggered(bool)), SLOT(setAsmOpcodes()));
-    ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_oct);
-
     ui->action_Asm_Opcodes_dec->setData(fmt_dec);
     connect(ui->action_Asm_Opcodes_dec, SIGNAL(triggered(bool)), SLOT(setAsmOpcodes()));
     ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_dec);
@@ -721,10 +741,6 @@ void MainWindow::setupToolbars()
     ui->action_Dasm_Opcodes_byt->setData(fmt_byt);
     connect(ui->action_Dasm_Opcodes_byt, SIGNAL(triggered(bool)), SLOT(setDasmOpcodes()));
     ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_byt);
-
-    ui->action_Dasm_Opcodes_oct->setData(fmt_oct);
-    connect(ui->action_Dasm_Opcodes_oct, SIGNAL(triggered(bool)), SLOT(setDasmOpcodes()));
-    ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_oct);
 
     ui->action_Dasm_Opcodes_dec->setData(fmt_dec);
     connect(ui->action_Dasm_Opcodes_dec, SIGNAL(triggered(bool)), SLOT(setDasmOpcodes()));
@@ -760,6 +776,11 @@ void MainWindow::setupToolbars()
 
     connect(ui->action_Dasm_IncFontSize, SIGNAL(triggered(bool)), SLOT(incDasmFontSize()));
     ui->toolbarDasm->addAction(ui->action_Dasm_IncFontSize);
+
+    // Main toolbar
+    ui->toolbar->addAction(ui->action_Open);
+    ui->toolbar->addAction(ui->action_Open_random);
+    ui->toolbar->addAction(ui->action_Quit);
 }
 
 void MainWindow::setupStatusbar()

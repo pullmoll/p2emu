@@ -4,10 +4,10 @@
  <widget class="QMainWindow" name="MainWindow">
   <property name="geometry">
    <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>706</width>
-    <height>506</height>
+	<x>0</x>
+	<y>0</y>
+	<width>706</width>
+	<height>506</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,321 +15,320 @@
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout">
-    <item>
-     <widget class="QTabWidget" name="tabWidget">
-      <property name="currentIndex">
-       <number>0</number>
-      </property>
-      <widget class="QWidget" name="tabAsm">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="font">
-        <font>
-         <family>DejaVu Sans Mono</family>
-         <pointsize>9</pointsize>
-        </font>
-       </property>
-       <property name="accessibleName">
-        <string>tabAsm</string>
-       </property>
-       <attribute name="title">
-        <string>Assembler</string>
-       </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_2">
-        <item>
-         <widget class="QToolBar" name="toolbarAsm"/>
-        </item>
-        <item>
-         <widget class="QSplitter" name="splSource">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <widget class="QTableView" name="tvAsm">
-           <property name="font">
-            <font>
-             <family>Monospace</family>
-             <pointsize>11</pointsize>
-            </font>
-           </property>
-           <property name="verticalScrollBarPolicy">
-            <enum>Qt::ScrollBarAlwaysOn</enum>
-           </property>
-           <property name="editTriggers">
-            <set>QAbstractItemView::AnyKeyPressed|QAbstractItemView::DoubleClicked|QAbstractItemView::EditKeyPressed|QAbstractItemView::SelectedClicked</set>
-           </property>
-           <property name="tabKeyNavigation">
-            <bool>false</bool>
-           </property>
-           <property name="showDropIndicator" stdset="0">
-            <bool>false</bool>
-           </property>
-           <property name="dragDropOverwriteMode">
-            <bool>false</bool>
-           </property>
-           <property name="selectionMode">
-            <enum>QAbstractItemView::SingleSelection</enum>
-           </property>
-           <property name="showGrid">
-            <bool>false</bool>
-           </property>
-           <property name="wordWrap">
-            <bool>false</bool>
-           </property>
-           <attribute name="horizontalHeaderStretchLastSection">
-            <bool>true</bool>
-           </attribute>
-           <attribute name="verticalHeaderVisible">
-            <bool>false</bool>
-           </attribute>
-           <attribute name="verticalHeaderCascadingSectionResizes">
-            <bool>true</bool>
-           </attribute>
-          </widget>
-          <widget class="QSplitter" name="splResults">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <widget class="QTextBrowser" name="tbErrors">
-            <property name="openLinks">
-             <bool>false</bool>
-            </property>
-           </widget>
-           <widget class="QTableView" name="tvSymbols">
-            <property name="editTriggers">
-             <set>QAbstractItemView::AllEditTriggers</set>
-            </property>
-            <property name="tabKeyNavigation">
-             <bool>false</bool>
-            </property>
-           </widget>
-          </widget>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="tabDasm">
-       <property name="font">
-        <font>
-         <family>DejaVu Sans Mono</family>
-        </font>
-       </property>
-       <property name="accessibleName">
-        <string>tabDasm</string>
-       </property>
-       <attribute name="title">
-        <string>Disassembler</string>
-       </attribute>
-       <layout class="QVBoxLayout" name="vlayDasm">
-        <item>
-         <widget class="QToolBar" name="toolbarDasm"/>
-        </item>
-        <item>
-         <widget class="QTableView" name="tvDasm">
-          <property name="verticalScrollBarPolicy">
-           <enum>Qt::ScrollBarAlwaysOn</enum>
-          </property>
-          <property name="editTriggers">
-           <set>QAbstractItemView::NoEditTriggers</set>
-          </property>
-          <property name="showDropIndicator" stdset="0">
-           <bool>false</bool>
-          </property>
-          <property name="dragDropOverwriteMode">
-           <bool>false</bool>
-          </property>
-          <property name="selectionMode">
-           <enum>QAbstractItemView::SingleSelection</enum>
-          </property>
-          <property name="selectionBehavior">
-           <enum>QAbstractItemView::SelectRows</enum>
-          </property>
-          <property name="textElideMode">
-           <enum>Qt::ElideNone</enum>
-          </property>
-          <property name="showGrid">
-           <bool>false</bool>
-          </property>
-          <property name="wordWrap">
-           <bool>false</bool>
-          </property>
-          <property name="cornerButtonEnabled">
-           <bool>true</bool>
-          </property>
-          <attribute name="horizontalHeaderStretchLastSection">
-           <bool>true</bool>
-          </attribute>
-          <attribute name="verticalHeaderVisible">
-           <bool>false</bool>
-          </attribute>
-          <attribute name="verticalHeaderCascadingSectionResizes">
-           <bool>true</bool>
-          </attribute>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="tabHub">
-       <property name="accessibleName">
-        <string>tabHub</string>
-       </property>
-       <attribute name="title">
-        <string>HUB</string>
-       </attribute>
-       <layout class="QVBoxLayout" name="vlayCOgs">
-        <item>
-         <widget class="QToolBar" name="toolbarHub"/>
-        </item>
-        <item>
-         <widget class="QScrollArea" name="saCOGs">
-          <property name="verticalScrollBarPolicy">
-           <enum>Qt::ScrollBarAlwaysOn</enum>
-          </property>
-          <property name="widgetResizable">
-           <bool>true</bool>
-          </property>
-          <widget class="QWidget" name="sawcCOGs">
-           <property name="geometry">
-            <rect>
-             <x>0</x>
-             <y>0</y>
-             <width>662</width>
-             <height>383</height>
-            </rect>
-           </property>
-           <layout class="QGridLayout" name="gridLayout">
-            <property name="leftMargin">
-             <number>2</number>
-            </property>
-            <property name="topMargin">
-             <number>2</number>
-            </property>
-            <property name="rightMargin">
-             <number>2</number>
-            </property>
-            <property name="bottomMargin">
-             <number>2</number>
-            </property>
-            <property name="spacing">
-             <number>2</number>
-            </property>
-            <item row="0" column="1">
-             <widget class="P2CogView" name="cog0" native="true"/>
-            </item>
-            <item row="0" column="2">
-             <widget class="P2CogView" name="cog1" native="true"/>
-            </item>
-            <item row="0" column="3">
-             <widget class="P2CogView" name="cog2" native="true"/>
-            </item>
-            <item row="1" column="1">
-             <widget class="P2CogView" name="cog7" native="true"/>
-            </item>
-            <item row="1" column="2">
-             <widget class="P2HubView" name="hub" native="true"/>
-            </item>
-            <item row="1" column="3">
-             <widget class="P2CogView" name="cog3" native="true"/>
-            </item>
-            <item row="2" column="1">
-             <widget class="P2CogView" name="cog6" native="true"/>
-            </item>
-            <item row="2" column="2">
-             <widget class="P2CogView" name="cog5" native="true"/>
-            </item>
-            <item row="2" column="3">
-             <widget class="P2CogView" name="cog4" native="true"/>
-            </item>
-           </layout>
-          </widget>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </widget>
-    </item>
+	<item>
+	 <widget class="QTabWidget" name="tabWidget">
+	  <property name="currentIndex">
+	   <number>0</number>
+	  </property>
+	  <widget class="QWidget" name="tabAsm">
+	   <property name="enabled">
+		<bool>true</bool>
+	   </property>
+	   <property name="font">
+		<font>
+		 <family>DejaVu Sans Mono</family>
+		 <pointsize>9</pointsize>
+		</font>
+	   </property>
+	   <property name="accessibleName">
+		<string>tabAsm</string>
+	   </property>
+	   <attribute name="title">
+		<string>Assembler</string>
+	   </attribute>
+	   <layout class="QVBoxLayout" name="verticalLayout_2">
+		<item>
+		 <widget class="QToolBar" name="toolbarAsm"/>
+		</item>
+		<item>
+		 <widget class="QSplitter" name="splSource">
+		  <property name="orientation">
+		   <enum>Qt::Vertical</enum>
+		  </property>
+		  <widget class="QTableView" name="tvAsm">
+		   <property name="font">
+			<font>
+			 <family>Monospace</family>
+			 <pointsize>11</pointsize>
+			</font>
+		   </property>
+		   <property name="verticalScrollBarPolicy">
+			<enum>Qt::ScrollBarAlwaysOn</enum>
+		   </property>
+		   <property name="editTriggers">
+			<set>QAbstractItemView::AnyKeyPressed|QAbstractItemView::DoubleClicked|QAbstractItemView::EditKeyPressed|QAbstractItemView::SelectedClicked</set>
+		   </property>
+		   <property name="tabKeyNavigation">
+			<bool>false</bool>
+		   </property>
+		   <property name="showDropIndicator" stdset="0">
+			<bool>false</bool>
+		   </property>
+		   <property name="dragDropOverwriteMode">
+			<bool>false</bool>
+		   </property>
+		   <property name="selectionMode">
+			<enum>QAbstractItemView::SingleSelection</enum>
+		   </property>
+		   <property name="showGrid">
+			<bool>false</bool>
+		   </property>
+		   <property name="wordWrap">
+			<bool>false</bool>
+		   </property>
+		   <attribute name="horizontalHeaderStretchLastSection">
+			<bool>true</bool>
+		   </attribute>
+		   <attribute name="verticalHeaderVisible">
+			<bool>false</bool>
+		   </attribute>
+		   <attribute name="verticalHeaderCascadingSectionResizes">
+			<bool>true</bool>
+		   </attribute>
+		  </widget>
+		  <widget class="QSplitter" name="splResults">
+		   <property name="orientation">
+			<enum>Qt::Horizontal</enum>
+		   </property>
+		   <widget class="QTextBrowser" name="tbErrors">
+			<property name="openLinks">
+			 <bool>false</bool>
+			</property>
+		   </widget>
+		   <widget class="QTableView" name="tvSymbols">
+			<property name="editTriggers">
+			 <set>QAbstractItemView::AllEditTriggers</set>
+			</property>
+			<property name="tabKeyNavigation">
+			 <bool>false</bool>
+			</property>
+		   </widget>
+		  </widget>
+		 </widget>
+		</item>
+	   </layout>
+	  </widget>
+	  <widget class="QWidget" name="tabDasm">
+	   <property name="font">
+		<font>
+		 <family>DejaVu Sans Mono</family>
+		</font>
+	   </property>
+	   <property name="accessibleName">
+		<string>tabDasm</string>
+	   </property>
+	   <attribute name="title">
+		<string>Disassembler</string>
+	   </attribute>
+	   <layout class="QVBoxLayout" name="vlayDasm">
+		<item>
+		 <widget class="QToolBar" name="toolbarDasm"/>
+		</item>
+		<item>
+		 <widget class="QTableView" name="tvDasm">
+		  <property name="verticalScrollBarPolicy">
+		   <enum>Qt::ScrollBarAlwaysOn</enum>
+		  </property>
+		  <property name="editTriggers">
+		   <set>QAbstractItemView::NoEditTriggers</set>
+		  </property>
+		  <property name="showDropIndicator" stdset="0">
+		   <bool>false</bool>
+		  </property>
+		  <property name="dragDropOverwriteMode">
+		   <bool>false</bool>
+		  </property>
+		  <property name="selectionMode">
+		   <enum>QAbstractItemView::SingleSelection</enum>
+		  </property>
+		  <property name="selectionBehavior">
+		   <enum>QAbstractItemView::SelectRows</enum>
+		  </property>
+		  <property name="textElideMode">
+		   <enum>Qt::ElideNone</enum>
+		  </property>
+		  <property name="showGrid">
+		   <bool>false</bool>
+		  </property>
+		  <property name="wordWrap">
+		   <bool>false</bool>
+		  </property>
+		  <property name="cornerButtonEnabled">
+		   <bool>true</bool>
+		  </property>
+		  <attribute name="horizontalHeaderStretchLastSection">
+		   <bool>true</bool>
+		  </attribute>
+		  <attribute name="verticalHeaderVisible">
+		   <bool>false</bool>
+		  </attribute>
+		  <attribute name="verticalHeaderCascadingSectionResizes">
+		   <bool>true</bool>
+		  </attribute>
+		 </widget>
+		</item>
+	   </layout>
+	  </widget>
+	  <widget class="QWidget" name="tabHub">
+	   <property name="accessibleName">
+		<string>tabHub</string>
+	   </property>
+	   <attribute name="title">
+		<string>HUB</string>
+	   </attribute>
+	   <layout class="QVBoxLayout" name="vlayCOgs">
+		<item>
+		 <widget class="QToolBar" name="toolbarHub"/>
+		</item>
+		<item>
+		 <widget class="QScrollArea" name="saCOGs">
+		  <property name="verticalScrollBarPolicy">
+		   <enum>Qt::ScrollBarAlwaysOn</enum>
+		  </property>
+		  <property name="widgetResizable">
+		   <bool>true</bool>
+		  </property>
+		  <widget class="QWidget" name="sawcCOGs">
+		   <property name="geometry">
+			<rect>
+			 <x>0</x>
+			 <y>0</y>
+			 <width>662</width>
+			 <height>383</height>
+			</rect>
+		   </property>
+		   <layout class="QGridLayout" name="gridLayout">
+			<property name="leftMargin">
+			 <number>2</number>
+			</property>
+			<property name="topMargin">
+			 <number>2</number>
+			</property>
+			<property name="rightMargin">
+			 <number>2</number>
+			</property>
+			<property name="bottomMargin">
+			 <number>2</number>
+			</property>
+			<property name="spacing">
+			 <number>2</number>
+			</property>
+			<item row="0" column="1">
+			 <widget class="P2CogView" name="cog0" native="true"/>
+			</item>
+			<item row="0" column="2">
+			 <widget class="P2CogView" name="cog1" native="true"/>
+			</item>
+			<item row="0" column="3">
+			 <widget class="P2CogView" name="cog2" native="true"/>
+			</item>
+			<item row="1" column="1">
+			 <widget class="P2CogView" name="cog7" native="true"/>
+			</item>
+			<item row="1" column="2">
+			 <widget class="P2HubView" name="hub" native="true"/>
+			</item>
+			<item row="1" column="3">
+			 <widget class="P2CogView" name="cog3" native="true"/>
+			</item>
+			<item row="2" column="1">
+			 <widget class="P2CogView" name="cog6" native="true"/>
+			</item>
+			<item row="2" column="2">
+			 <widget class="P2CogView" name="cog5" native="true"/>
+			</item>
+			<item row="2" column="3">
+			 <widget class="P2CogView" name="cog4" native="true"/>
+			</item>
+		   </layout>
+		  </widget>
+		 </widget>
+		</item>
+	   </layout>
+	  </widget>
+	 </widget>
+	</item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>706</width>
-     <height>19</height>
-    </rect>
+	<rect>
+	 <x>0</x>
+	 <y>0</y>
+	 <width>706</width>
+	 <height>19</height>
+	</rect>
    </property>
    <widget class="QMenu" name="menu_File">
-    <property name="title">
-     <string>&amp;File</string>
-    </property>
-    <addaction name="separator"/>
-    <addaction name="action_Open"/>
-    <addaction name="separator"/>
-    <addaction name="action_Assemble"/>
-    <addaction name="separator"/>
-    <addaction name="action_Quit"/>
+	<property name="title">
+	 <string>&amp;File</string>
+	</property>
+	<addaction name="separator"/>
+	<addaction name="action_Open"/>
+	<addaction name="action_Open_random"/>
+	<addaction name="separator"/>
+	<addaction name="action_Assemble"/>
+	<addaction name="separator"/>
+	<addaction name="action_Quit"/>
    </widget>
    <widget class="QMenu" name="menu_Help">
-    <property name="title">
-     <string>&amp;Help</string>
-    </property>
-    <addaction name="action_About"/>
-    <addaction name="separator"/>
-    <addaction name="action_AboutQt5"/>
+	<property name="title">
+	 <string>&amp;Help</string>
+	</property>
+	<addaction name="action_About"/>
+	<addaction name="separator"/>
+	<addaction name="action_AboutQt5"/>
    </widget>
    <widget class="QMenu" name="menu_Edit">
-    <property name="title">
-     <string>&amp;Edit</string>
-    </property>
-    <addaction name="action_Go_to_address"/>
-    <addaction name="action_Go_to_COG"/>
-    <addaction name="action_Go_to_LUT"/>
-    <addaction name="action_Go_to_ROM"/>
-    <addaction name="action_Go_to_line"/>
+	<property name="title">
+	 <string>&amp;Edit</string>
+	</property>
+	<addaction name="action_Go_to_address"/>
+	<addaction name="action_Go_to_COG"/>
+	<addaction name="action_Go_to_LUT"/>
+	<addaction name="action_Go_to_ROM"/>
+	<addaction name="action_Go_to_line"/>
    </widget>
    <widget class="QMenu" name="menu_View">
-    <property name="title">
-     <string>&amp;View</string>
-    </property>
-    <widget class="QMenu" name="menu_Disassembler">
-     <property name="title">
-      <string>&amp;Disassembler …</string>
-     </property>
-     <addaction name="action_Dasm_Opcodes_bin"/>
-     <addaction name="action_Dasm_Opcodes_byt"/>
-     <addaction name="action_Dasm_Opcodes_oct"/>
-     <addaction name="action_Dasm_Opcodes_dec"/>
-     <addaction name="action_Dasm_Opcodes_hex"/>
-     <addaction name="separator"/>
-     <addaction name="action_Dasm_Lowercase"/>
-     <addaction name="separator"/>
-     <addaction name="action_Dasm_IncFontSize"/>
-     <addaction name="action_Dasm_DecFontSize"/>
-    </widget>
-    <widget class="QMenu" name="menuAssembler">
-     <property name="title">
-      <string>Assembler</string>
-     </property>
-     <addaction name="action_Asm_Opcodes_bin"/>
-     <addaction name="action_Asm_Opcodes_byt"/>
-     <addaction name="action_Asm_Opcodes_oct"/>
-     <addaction name="action_Asm_Opcodes_dec"/>
-     <addaction name="action_Asm_Opcodes_hex"/>
-     <addaction name="separator"/>
-     <addaction name="action_Asm_IncFontSize"/>
-     <addaction name="action_Asm_DecFontSize"/>
-    </widget>
-    <addaction name="separator"/>
-    <addaction name="separator"/>
-    <addaction name="menuAssembler"/>
-    <addaction name="menu_Disassembler"/>
+	<property name="title">
+	 <string>&amp;View</string>
+	</property>
+	<widget class="QMenu" name="menu_Disassembler">
+	 <property name="title">
+	  <string>&amp;Disassembler …</string>
+	 </property>
+	 <addaction name="action_Dasm_Opcodes_bin"/>
+	 <addaction name="action_Dasm_Opcodes_byt"/>
+	 <addaction name="action_Dasm_Opcodes_dec"/>
+	 <addaction name="action_Dasm_Opcodes_hex"/>
+	 <addaction name="separator"/>
+	 <addaction name="action_Dasm_Lowercase"/>
+	 <addaction name="separator"/>
+	 <addaction name="action_Dasm_IncFontSize"/>
+	 <addaction name="action_Dasm_DecFontSize"/>
+	</widget>
+	<widget class="QMenu" name="menuAssembler">
+	 <property name="title">
+	  <string>Assembler</string>
+	 </property>
+	 <addaction name="action_Asm_Opcodes_bin"/>
+	 <addaction name="action_Asm_Opcodes_byt"/>
+	 <addaction name="action_Asm_Opcodes_dec"/>
+	 <addaction name="action_Asm_Opcodes_hex"/>
+	 <addaction name="separator"/>
+	 <addaction name="action_Asm_IncFontSize"/>
+	 <addaction name="action_Asm_DecFontSize"/>
+	</widget>
+	<addaction name="separator"/>
+	<addaction name="separator"/>
+	<addaction name="menuAssembler"/>
+	<addaction name="menu_Disassembler"/>
    </widget>
    <widget class="QMenu" name="menu_Run">
-    <property name="title">
-     <string>&amp;Run</string>
-    </property>
-    <addaction name="action_SingleStep"/>
+	<property name="title">
+	 <string>&amp;Run</string>
+	</property>
+	<addaction name="action_SingleStep"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Run"/>
@@ -339,288 +338,280 @@
   </widget>
   <widget class="QToolBar" name="toolbar">
    <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
+	<enum>TopToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
-    <bool>false</bool>
+	<bool>false</bool>
    </attribute>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="action_Quit">
    <property name="text">
-    <string>&amp;Quit</string>
+	<string>&amp;Quit</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+Q</string>
+	<string>Ctrl+Q</string>
    </property>
   </action>
   <action name="action_About">
    <property name="text">
-    <string>&amp;About …</string>
+	<string>&amp;About …</string>
    </property>
   </action>
   <action name="action_AboutQt5">
    <property name="text">
-    <string>About &amp;Qt5</string>
+	<string>About &amp;Qt5</string>
    </property>
   </action>
   <action name="action_Open">
+   <property name="icon">
+	<iconset resource="p2emu.qrc">
+	 <normaloff>:/icons/open_spin2.png</normaloff>:/icons/open_spin2.png</iconset>
+   </property>
    <property name="text">
-    <string>&amp;Open …</string>
+	<string>&amp;Open …</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+O</string>
+	<string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="action_Open_random">
+   <property name="icon">
+	<iconset resource="p2emu.qrc">
+	 <normaloff>:/icons/open_random.png</normaloff>:/icons/open_random.png</iconset>
+   </property>
+   <property name="text">
+	<string>Open &amp;random resource file</string>
+   </property>
+   <property name="shortcut">
+	<string>Ctrl+R</string>
    </property>
   </action>
   <action name="action_Go_to_address">
    <property name="icon">
-    <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/go_to.png</normaloff>:/icons/go_to.png</iconset>
+	<iconset resource="p2emu.qrc">
+	 <normaloff>:/icons/go_to.png</normaloff>:/icons/go_to.png</iconset>
    </property>
    <property name="text">
-    <string>Go to &amp;address …</string>
+	<string>Go to &amp;address …</string>
    </property>
   </action>
   <action name="action_Go_to_COG">
    <property name="icon">
-    <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/go_to_cog.png</normaloff>:/icons/go_to_cog.png</iconset>
+	<iconset resource="p2emu.qrc">
+	 <normaloff>:/icons/go_to_cog.png</normaloff>:/icons/go_to_cog.png</iconset>
    </property>
    <property name="text">
-    <string>Go to &amp;COG</string>
+	<string>Go to &amp;COG</string>
    </property>
    <property name="shortcut">
-    <string>Shift+C</string>
+	<string>Shift+C</string>
    </property>
   </action>
   <action name="action_Go_to_LUT">
    <property name="icon">
-    <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/go_to_lut.png</normaloff>:/icons/go_to_lut.png</iconset>
+	<iconset resource="p2emu.qrc">
+	 <normaloff>:/icons/go_to_lut.png</normaloff>:/icons/go_to_lut.png</iconset>
    </property>
    <property name="text">
-    <string>Go to &amp;LUT</string>
+	<string>Go to &amp;LUT</string>
    </property>
    <property name="shortcut">
-    <string>Shift+L</string>
+	<string>Shift+L</string>
    </property>
   </action>
   <action name="action_Go_to_ROM">
    <property name="icon">
-    <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/go_to_rom.png</normaloff>:/icons/go_to_rom.png</iconset>
+	<iconset resource="p2emu.qrc">
+	 <normaloff>:/icons/go_to_rom.png</normaloff>:/icons/go_to_rom.png</iconset>
    </property>
    <property name="text">
-    <string>Go to &amp;ROM</string>
+	<string>Go to &amp;ROM</string>
    </property>
    <property name="shortcut">
-    <string>Shift+R</string>
+	<string>Shift+R</string>
    </property>
   </action>
   <action name="action_SingleStep">
    <property name="icon">
-    <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/single_step.png</normaloff>:/icons/single_step.png</iconset>
+	<iconset resource="p2emu.qrc">
+	 <normaloff>:/icons/single_step.png</normaloff>:/icons/single_step.png</iconset>
    </property>
    <property name="text">
-    <string>Single &amp;step</string>
+	<string>Single &amp;step</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+Return</string>
+	<string>Ctrl+Return</string>
    </property>
   </action>
   <action name="action_Assemble">
    <property name="icon">
-    <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/assemble.png</normaloff>:/icons/assemble.png</iconset>
+	<iconset resource="p2emu.qrc">
+	 <normaloff>:/icons/assemble.png</normaloff>:/icons/assemble.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Assemble …</string>
+	<string>&amp;Assemble …</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+A</string>
+	<string>Ctrl+A</string>
    </property>
   </action>
   <action name="action_Asm_Opcodes_bin">
    <property name="checkable">
-    <bool>true</bool>
+	<bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/opcode_bin.png</normaloff>:/icons/opcode_bin.png</iconset>
+	<iconset resource="p2emu.qrc">
+	 <normaloff>:/icons/opcode_bin.png</normaloff>:/icons/opcode_bin.png</iconset>
    </property>
    <property name="text">
-    <string>Opcodes &amp;binary</string>
+	<string>Opcodes &amp;binary</string>
    </property>
   </action>
   <action name="action_Asm_Opcodes_byt">
    <property name="checkable">
-    <bool>true</bool>
+	<bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/opcode_byt.png</normaloff>:/icons/opcode_byt.png</iconset>
+	<iconset resource="p2emu.qrc">
+	 <normaloff>:/icons/opcode_byt.png</normaloff>:/icons/opcode_byt.png</iconset>
    </property>
    <property name="text">
-    <string>Opcodes b&amp;ytes</string>
-   </property>
-  </action>
-  <action name="action_Asm_Opcodes_oct">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/opcode_oct.png</normaloff>:/icons/opcode_oct.png</iconset>
-   </property>
-   <property name="text">
-    <string>Opcodes &amp;octal</string>
+	<string>Opcodes b&amp;ytes</string>
    </property>
   </action>
   <action name="action_Asm_Opcodes_dec">
    <property name="checkable">
-    <bool>true</bool>
+	<bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/opcode_dec.png</normaloff>:/icons/opcode_dec.png</iconset>
+	<iconset resource="p2emu.qrc">
+	 <normaloff>:/icons/opcode_dec.png</normaloff>:/icons/opcode_dec.png</iconset>
    </property>
    <property name="text">
-    <string>Opcodes &amp;decimal</string>
+	<string>Opcodes &amp;decimal</string>
    </property>
   </action>
   <action name="action_Asm_Opcodes_hex">
    <property name="checkable">
-    <bool>true</bool>
+	<bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/opcode_hex.png</normaloff>:/icons/opcode_hex.png</iconset>
+	<iconset resource="p2emu.qrc">
+	 <normaloff>:/icons/opcode_hex.png</normaloff>:/icons/opcode_hex.png</iconset>
    </property>
    <property name="text">
-    <string>Opcodes &amp;hexadecimal</string>
+	<string>Opcodes &amp;hexadecimal</string>
    </property>
   </action>
   <action name="action_Asm_IncFontSize">
    <property name="icon">
-    <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/increase.png</normaloff>:/icons/increase.png</iconset>
+	<iconset resource="p2emu.qrc">
+	 <normaloff>:/icons/increase.png</normaloff>:/icons/increase.png</iconset>
    </property>
    <property name="text">
-    <string>Increase font size</string>
+	<string>Increase font size</string>
    </property>
   </action>
   <action name="action_Asm_DecFontSize">
    <property name="icon">
-    <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/decrease.png</normaloff>:/icons/decrease.png</iconset>
+	<iconset resource="p2emu.qrc">
+	 <normaloff>:/icons/decrease.png</normaloff>:/icons/decrease.png</iconset>
    </property>
    <property name="text">
-    <string>Decrease font size</string>
+	<string>Decrease font size</string>
    </property>
   </action>
   <action name="action_Dasm_Opcodes_bin">
    <property name="checkable">
-    <bool>true</bool>
+	<bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/opcode_bin.png</normaloff>:/icons/opcode_bin.png</iconset>
+	<iconset resource="p2emu.qrc">
+	 <normaloff>:/icons/opcode_bin.png</normaloff>:/icons/opcode_bin.png</iconset>
    </property>
    <property name="text">
-    <string>Opcodes &amp;binary</string>
+	<string>Opcodes &amp;binary</string>
    </property>
   </action>
   <action name="action_Dasm_Opcodes_byt">
    <property name="checkable">
-    <bool>true</bool>
+	<bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/opcode_byt.png</normaloff>:/icons/opcode_byt.png</iconset>
+	<iconset resource="p2emu.qrc">
+	 <normaloff>:/icons/opcode_byt.png</normaloff>:/icons/opcode_byt.png</iconset>
    </property>
    <property name="text">
-    <string>Opcodes &amp;bytes</string>
-   </property>
-  </action>
-  <action name="action_Dasm_Opcodes_oct">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/opcode_oct.png</normaloff>:/icons/opcode_oct.png</iconset>
-   </property>
-   <property name="text">
-    <string>Opcodes &amp;octal</string>
+	<string>Opcodes &amp;bytes</string>
    </property>
   </action>
   <action name="action_Dasm_Opcodes_dec">
    <property name="checkable">
-    <bool>true</bool>
+	<bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/opcode_dec.png</normaloff>:/icons/opcode_dec.png</iconset>
+	<iconset resource="p2emu.qrc">
+	 <normaloff>:/icons/opcode_dec.png</normaloff>:/icons/opcode_dec.png</iconset>
    </property>
    <property name="text">
-    <string>Opcodes &amp;decimal</string>
+	<string>Opcodes &amp;decimal</string>
    </property>
   </action>
   <action name="action_Dasm_Opcodes_hex">
    <property name="checkable">
-    <bool>true</bool>
+	<bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/opcode_hex.png</normaloff>:/icons/opcode_hex.png</iconset>
+	<iconset resource="p2emu.qrc">
+	 <normaloff>:/icons/opcode_hex.png</normaloff>:/icons/opcode_hex.png</iconset>
    </property>
    <property name="text">
-    <string>Opcodes &amp;hexadecimal</string>
+	<string>Opcodes &amp;hexadecimal</string>
    </property>
   </action>
   <action name="action_Dasm_Lowercase">
    <property name="checkable">
-    <bool>true</bool>
+	<bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/lowercase.png</normaloff>:/icons/lowercase.png</iconset>
+	<iconset resource="p2emu.qrc">
+	 <normaloff>:/icons/lowercase.png</normaloff>:/icons/lowercase.png</iconset>
    </property>
    <property name="text">
-    <string>Instructions &amp;lowercase</string>
+	<string>Instructions &amp;lowercase</string>
    </property>
   </action>
   <action name="action_Dasm_IncFontSize">
    <property name="icon">
-    <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/increase.png</normaloff>:/icons/increase.png</iconset>
+	<iconset resource="p2emu.qrc">
+	 <normaloff>:/icons/increase.png</normaloff>:/icons/increase.png</iconset>
    </property>
    <property name="text">
-    <string>Increase font size</string>
+	<string>Increase font size</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl++</string>
+	<string>Ctrl++</string>
    </property>
   </action>
   <action name="action_Dasm_DecFontSize">
    <property name="icon">
-    <iconset resource="p2emu.qrc">
-     <normaloff>:/icons/decrease.png</normaloff>:/icons/decrease.png</iconset>
+	<iconset resource="p2emu.qrc">
+	 <normaloff>:/icons/decrease.png</normaloff>:/icons/decrease.png</iconset>
    </property>
    <property name="text">
-    <string>Decrease font size</string>
+	<string>Decrease font size</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+-</string>
+	<string>Ctrl+-</string>
    </property>
   </action>
   <action name="action_Go_to_line">
    <property name="text">
-    <string>Go to line…</string>
+	<string>Go to line…</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+L</string>
+	<string>Ctrl+L</string>
    </property>
   </action>
  </widget>

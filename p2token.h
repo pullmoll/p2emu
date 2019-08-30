@@ -100,7 +100,6 @@ private:
     QRegExp rx_locsym;                                  //!< regular expression for a local symbol name
     QRegExp rx_bin_const;                               //!< regular expression for a binary constant
     QRegExp rx_byt_const;                               //!< regular expression for a byt constant
-    QRegExp rx_oct_const;                               //!< regular expression for an octal constant
     QRegExp rx_hex_const;                               //!< regular expression for a hexadecimal constant
     QRegExp rx_dec_const;                               //!< regular expression for a decimal constant
     QRegExp rx_str_const;                               //!< regular expression for a string constant

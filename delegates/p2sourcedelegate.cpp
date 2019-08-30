@@ -83,10 +83,6 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
             color = p2_palette(color_byt_const, highlight);
             break;
 
-        case t_oct_const:
-            color = p2_palette(color_oct_const, highlight);
-            break;
-
         case t_dec_const:
             color = p2_palette(color_dec_const, highlight);
             break;

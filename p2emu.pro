@@ -114,4 +114,52 @@ DISTFILES += \
 		icons/decrease.png \
 		icons/down_arrow.png \
 		icons/error.png \
-		icons/increase.png
+		icons/increase.png \
+		spin2/MainLoader.spin2 \
+		spin2/NTSC_256_x_192.spin2 \
+		spin2/NTSC_256_x_192_interrupt.spin2 \
+		spin2/P2-qz80-rr032.spin2 \
+		spin2/ROM_137PBJ.spin2 \
+		spin2/ROM_Booter_v32.spin2 \
+		spin2/ROM_Booter_v33_01j.spin2 \
+		spin2/SD2_test_121a.spin2 \
+		spin2/USBHost.spin2 \
+		spin2/VGA_640_x_480_16bpp.spin2 \
+		spin2/VGA_640_x_480_4bpp1.spin2 \
+		spin2/VGA_640_x_480_8bpp.spin2 \
+		spin2/all_cogs_blink.spin2 \
+		spin2/bas.spin2 \
+		spin2/birds_16bpp.bmp \
+		spin2/bitmap.bmp \
+		spin2/bitmap2.bmp \
+		spin2/blink.spin2 \
+		spin2/blinkit.spin2 \
+		spin2/chess.spin2 \
+		spin2/crcbit_crcnib.spin2 \
+		spin2/dry.spin2 \
+		spin2/echo1.spin2 \
+		spin2/echo2.spin2 \
+		spin2/fibo.spin2 \
+		spin2/fibo1.spin2 \
+		spin2/fibo2.spin2 \
+		spin2/fibo3.spin2 \
+		spin2/lock_test.spin2 \
+		spin2/ml.spin2 \
+		spin2/p2pfth.spin2 \
+		spin2/pointers.spin2 \
+		spin2/prefix.spin2 \
+		spin2/printf.spin2 \
+		spin2/programmer.spin2 \
+		spin2/sin_cos_dacs.spin2 \
+		spin2/single_step.spin2 \
+		spin2/smartpin_pwm.spin2 \
+		spin2/smartpin_serial_turnaround.spin2 \
+		spin2/smartpin_usb_turnaround.spin2 \
+		spin2/spin2_interpreter.spin2 \
+		spin2/test1.spin2 \
+		spin2/testjmploc.spin2 \
+		spin2/testops.spin2 \
+		spin2/tt.spin2 \
+		spin2/xbyte.spin2 \
+		spin2/xoro32.spin2 \
+		spin2/xoroshiro128plus.spin2

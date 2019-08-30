@@ -6,7 +6,6 @@
 P2OpcodeDelegate::P2OpcodeDelegate(QObject* parent)
     : QStyledItemDelegate(parent)
 {
-
 }
 
 void P2OpcodeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
@@ -25,12 +24,12 @@ void P2OpcodeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     QStyleOptionViewItem opt(option);
     initStyleOption(&opt, index);
 
-    if (IR.as_IR) {
+    if (IR.as_IR)
         text = format_opcode(IR.u, format);
-    }
-    if (IR.as_EQU) {
-        text = format_data(IR.u, format);
-    }
+
+    if (IR.as_EQU)
+        text = format_data(IR.EQU.to_long(), format);
+
     if (text.isEmpty() && !IR.DATA.isEmpty()) {
         const QStringList& lines = P2Atom::format_data(IR.DATA, IR.PC_ORGH.first);
         text = lines.value(0);

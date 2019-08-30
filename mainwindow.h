@@ -103,6 +103,8 @@ private slots:
     void hubSingleStep();
 
     void openSource(const QString& filename = QString());
+    void loadSource(const QString& filename = QString());
+    void loadSourceRandom();
     void assemble();
 
     void print_error(int pass, int lineno, const QString& message);

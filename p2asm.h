@@ -81,6 +81,7 @@ public:
 
     int pass() const;
 
+    const QString& pathname() const;
     const QStringList& source() const;
     const QString source(int idx) const;
 
@@ -111,11 +112,13 @@ signals:
     void Error(int pass, int lineno, QString message);
 
 public slots:
+    bool setPathname(const QString& pathname);
     bool setSource(int idx, const QString& source);
     void setSource(const QStringList& source);
 
 private:
     int m_pass;                             //!< current pass
+    QString m_pathname;                     //!< current path name for FILE "filename.ext"
     QStringList m_source;                   //!< source code as QStringList
     QStringList m_listing;                  //!< listing as QStringList
     p2_pc_orgh_hash_t m_hash_PC;            //!< optional program counters per line
@@ -171,14 +174,15 @@ private:
     P2Atom make_atom();
     P2Atom bin_const(const QString& str);
     P2Atom byt_const(const QString& str);
-    P2Atom oct_const(const QString& str);
     P2Atom dec_const(const QString& str);
     P2Atom hex_const(const QString& str);
-    P2Atom str_const(const QString& str);
     P2Atom real_const(const QString& str);
+    P2Atom str_const(const QString& str);
+
     QString find_symbol(Section sect = sec_con, const QString& func = QString(), bool all_sections = false);
     QString find_locsym(Section sect = sec_con, const QString& local = QString());
     void add_const_symbol(const QString& pfx, const P2Word& word = P2Word(), const P2Atom& atom = P2Atom());
+
     P2Atom parse_atom(int level);
     P2Atom parse_primary(int level);
     P2Atom parse_unary(int level);
@@ -187,20 +191,28 @@ private:
     P2Atom parse_shiftops(int level);
     P2Atom parse_binops(int level);
     P2Atom parse_relative(bool& rel, int level);
-    P2Atom parse_expression(imm_to_e imm_to = immediate_none, int level = 0);
+    P2Atom parse_expression(imm_to_e imm_to = imm_none, int level = 0);
 
-    bool check_dst_src();
+    bool error_dst_or_src();
+    bool check_dst(const P2Atom& value, imm_to_e imm_to = imm_none);
+    bool check_src(const P2Atom& value, imm_to_e imm_to = imm_none);
     bool end_of_line();
     bool parse_comma();
     void optional_comma();
     bool optional_WCZ();
     bool optional_WC();
     bool optional_WZ();
+    bool mandatory_ANDC_ANDZ();
+    bool mandatory_ORC_ORZ();
+    bool mandatory_XORC_XORZ();
 
     bool parse_INST();
     bool parse_D_IM_S_WCZ();
     bool parse_D_IM_S_WC();
     bool parse_D_IM_S_WZ();
+    bool parse_D_IM_S_ANDCZ();
+    bool parse_D_IM_S_ORCZ();
+    bool parse_D_IM_S_XORCZ();
     bool parse_WZ_D_IM_S();
     bool parse_D_IM_S_NNN(uint max = 7);
     bool parse_D_IM_S();
@@ -211,8 +223,11 @@ private:
     bool parse_IM_D();
     bool parse_IM_D_WCZ();
     bool parse_IM_D_WC();
+    bool parse_IM_D_ANDC_ANDZ();
+    bool parse_IM_D_ORC_ORZ();
+    bool parse_IM_D_XORC_XORZ();
     bool parse_IM_S();
-    bool parse_IM_S_WCZ();
+    bool parse_IM_S_WC();
     bool parse_PC_ABS();
     bool parse_PTRx_PC_ABS();
     bool parse_IMM23();

@@ -4,10 +4,10 @@
 
 //! enumeration of possible targets for the immediate (#) prefix(es)
 typedef enum {
-    immediate_none,                     //!< don't care about immediate
-    immediate_im,                       //!< set the immediate (im) flag in IR
-    immediate_wz,                       //!< set the with-zero (wz) flag in IR
-    immediate_wc                        //!< set the with-carry (wc) flag in IR
+    imm_none,                       //!< don't care about immediate
+    imm_to_im,                      //!< set the immediate (im) flag in IR
+    imm_to_wz,                      //!< set the with-zero (wz) flag in IR
+    imm_to_wc                       //!< set the with-carry (wc) flag in IR
 }   imm_to_e;
 
 //! A pair of p2_LONG where the first is the PC, the second the ORGH address
@@ -57,8 +57,8 @@ public:
     void set_wc(bool on = true);
     void set_wz(bool on = true);
     void set_im(bool on = true);
-    bool set_dst(const P2Atom& value, imm_to_e imm_to = immediate_none);
-    bool set_src(const P2Atom& value, imm_to_e imm_to = immediate_none);
+    bool set_dst(const P2Atom& value, imm_to_e imm_to = imm_none);
+    bool set_src(const P2Atom& value, imm_to_e imm_to = imm_none);
 
     p2_opcode_u u;                  //!< instruction opcode or assignment value
     p2_PC_ORGH_t PC_ORGH;           //!< QPair of the instruction's PC and ORGH values
@@ -67,6 +67,7 @@ public:
     QVariant AUGD;                  //!< optional value in case an AUGD is required
     QVariant AUGS;                  //!< optional value in case an AUGS is required
     P2Atom DATA;                    //!< optional data generated from BYTE, WORD, LONG, FILE, etc.
+    P2Atom EQU;                     //!< optional atom from an assignment (=)
     Error error;                    //!< error set when set_dst() or set_src() return false
 };
 

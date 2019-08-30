@@ -48,7 +48,6 @@ enum p2_token_e {
     t_str_const,           //!< token is a string starting with doublequote (")
     t_bin_const,        //!< token is a binary value (%)
     t_byt_const,        //!< token is a byte index (i.e. base 4) value (%%)
-    t_oct_const,        //!< token is an octal value (0…)
     t_dec_const,        //!< token is a decimal value (starts with 1…9)
     t_hex_const,        //!< token is a hexadecimal value ($)
     t_real_const,        //!< token is a floating point value (x.y)

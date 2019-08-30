@@ -207,19 +207,19 @@ bool P2Opcode::set_dst(const P2Atom& value, imm_to_e imm_to)
     u.op.dst = val & COG_MASK;
     if (val > COG_MASK) {
         switch (imm_to) {
-        case immediate_none:
+        case imm_none:
             return true;
-        case immediate_im:
+        case imm_to_im:
             if (u.op.im)
                 break;
             error = dst_augd_im;
             return false;
-        case immediate_wz:
+        case imm_to_wz:
             if (u.op.wz)
                 break;
             error = dst_augd_wz;
             return false;
-        case immediate_wc:
+        case imm_to_wc:
             if (u.op.wc)
                 break;
             error = dst_augd_wc;
@@ -244,19 +244,19 @@ bool P2Opcode::set_src(const P2Atom& value, imm_to_e imm_to)
     u.op.src = val & COG_MASK;
     if (val > COG_MASK) {
         switch (imm_to) {
-        case immediate_none:
+        case imm_none:
             return true;
-        case immediate_im:
+        case imm_to_im:
             if (u.op.im)
                 break;
             error = src_augs_im;
             return false;
-        case immediate_wz:
+        case imm_to_wz:
             if (u.op.wz)
                 break;
             error = src_augs_wz;
             return false;
-        case immediate_wc:
+        case imm_to_wc:
             if (u.op.wc)
                 break;
             error = src_augs_wc;

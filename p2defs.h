@@ -200,7 +200,6 @@ static constexpr QChar chr_rdangle(L'»');
 
 extern const QString bin_digits;
 extern const QString byt_digits;
-extern const QString oct_digits;
 extern const QString dec_digits;
 extern const QString hex_digits;
 extern const QString real_digits;
@@ -1131,7 +1130,6 @@ typedef struct {
 typedef enum {
     fmt_bin,
     fmt_byt,
-    fmt_oct,
     fmt_dec,
     fmt_hex,
 }   p2_opcode_format_e;
@@ -1157,7 +1155,6 @@ typedef enum {
     color_str_const,
     color_bin_const,
     color_byt_const,
-    color_oct_const,
     color_dec_const,
     color_hex_const,
     color_real_const,
@@ -1194,6 +1191,7 @@ extern QString format_data_hex(const p2_LONG data, bool prefix = false);
 
 extern QString format_opcode(const p2_opcode_u& IR, const p2_opcode_format_e fmt = fmt_bin);
 extern QString format_data(const p2_opcode_u& IR, const p2_opcode_format_e fmt = fmt_bin, bool prefix = false);
+extern QString format_data(const p2_LONG data, const p2_opcode_format_e fmt = fmt_bin, bool prefix = false);
 
 /**
  * @brief enumeration of token types

@@ -389,18 +389,20 @@ p2_BYTE P2Util::reverse(p2_BYTE val)
  * @param bits number of bits to reverse
  * @return bit reversed value
  */
-p2_LONG P2Util::reverse(p2_LONG val, p2_LONG bits)
+p2_QUAD P2Util::reverse(p2_QUAD val, uint bits)
 {
-    p2_LONG result = 0;
+    p2_QUAD result = 0;
     switch (bits) {
     case 8:
         return reverse(static_cast<p2_BYTE>(val));
     case 16:
         return reverse(static_cast<p2_WORD>(val));
     case 32:
-        return reverse(val);
+        return reverse(static_cast<p2_LONG>(val));
+    case 64:
+        return reverse(static_cast<p2_QUAD>(val));
     }
-    for (p2_LONG i = 0; i < bits; i++) {
+    for (uint i = 0; i < bits; i++) {
         result = (result << 1) | (val & 1);
         val >>= 1;
     }

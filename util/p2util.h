@@ -32,7 +32,7 @@ public:
     static p2_LONG reverse(p2_LONG val);
     static p2_WORD reverse(p2_WORD val);
     static p2_BYTE reverse(p2_BYTE val);
-    static p2_LONG reverse(p2_LONG val, p2_LONG bits);
+    static p2_QUAD reverse(p2_QUAD val, uint bits);
     static p2_QUAD sqrt(p2_QUAD val, int fract_bits = 64, p2_QUAD* fraction = nullptr);
 };
 
