@@ -164,6 +164,7 @@ private:
     const QString curr_str() const;
     p2_token_e curr_tok() const;
     bool next();
+    bool prev();
 
     p2_cond_e conditional();
     p2_cond_e parse_modcz();

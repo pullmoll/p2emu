@@ -539,9 +539,13 @@ enum p2_token_e {
     t_PTRB_preinc,
     t_PTRB_predec,
 
+    // conversion
+    t__FLOAT,
+    t__ROUND,
+    t__TRUNC,
+
     // origin (PC)
     t__DOLLAR,          //!< "$"
-
     t__COMMA,           //!< ","
 
     // hash

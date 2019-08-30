@@ -165,19 +165,22 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
                                         : QStringLiteral("false");
                 break;
             case P2Atom::Byte:
-                result = QString("$%1").arg(atom.to_byte(), 2, 16, QChar('0'));
+                result = QString("$%1").arg(atom.to_byte(), 0, 16, QChar('0'));
                 break;
             case P2Atom::Word:
-                result = QString("$%1").arg(atom.to_word(), 4, 16, QChar('0'));
+                result = QString("$%1").arg(atom.to_word(), 0, 16, QChar('0'));
                 break;
             case P2Atom::PC:
-                result = QString("$%1").arg(atom.to_word(), 8, 16, QChar('0'));
+                result = QString("$%1").arg(atom.to_word(), 0, 16, QChar('0'));
                 break;
             case P2Atom::Long:
-                result = QString("$%1").arg(atom.to_word(), 8, 16, QChar('0'));
+                result = QString("$%1").arg(atom.to_word(), 0, 16, QChar('0'));
                 break;
             case P2Atom::Quad:
-                result = QString("$%1").arg(atom.to_word(), 16, 16, QChar('0'));
+                result = QString("$%1").arg(atom.to_word(), 0, 16, QChar('0'));
+                break;
+            case P2Atom::Real:
+                result = QString("%1").arg(atom.to_real());
                 break;
             case P2Atom::String:
                 result = atom.to_string();

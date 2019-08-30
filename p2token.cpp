@@ -752,6 +752,11 @@ P2Token::P2Token()
     TN_ADD(t_PTRB_preinc,      tm_constant, QStringLiteral("++PTRB"));
     TN_ADD(t_PTRB_predec,      tm_constant, QStringLiteral("--PTRB"));
 
+    // Conversion to different type
+    TN_ADD(t__FLOAT,           tm_function, QStringLiteral("FLOAT"));
+    TN_ADD(t__ROUND,           tm_function, QStringLiteral("ROUND"));
+    TN_ADD(t__TRUNC,           tm_function, QStringLiteral("TRUNC"));
+
     // Current PC reference
     TN_ADD(t__DOLLAR,          tm_constant, QStringLiteral("$"));
 

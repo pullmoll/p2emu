@@ -37,6 +37,8 @@
 #include <QColor>
 #include <QHash>
 
+#include "p2tokens.h"
+
 //!< Type of the Propeller2 BYTE
 typedef quint8 p2_BYTE;
 
@@ -48,6 +50,9 @@ typedef quint32 p2_LONG;
 
 //!< Intermediate type (unsigned long long); not a Propeller2 type
 typedef quint64 p2_QUAD;
+
+//!< Intermediate type (unsigned long long); not a Propeller2 type
+typedef qreal p2_REAL;
 
 //!< Type for an array (vector) of BYTEs
 typedef QVector<p2_BYTE> p2_BYTES;
@@ -186,6 +191,8 @@ static constexpr QChar chr_lcurly('{');
 static constexpr QChar chr_rcurly('}');
 static constexpr QChar chr_number_sign('#');
 static constexpr QChar chr_ampersand('@');
+static constexpr QChar chr_percent('%');
+static constexpr QChar chr_dollar('$');
 static constexpr QChar chr_pilcrow(L'¶');
 static constexpr QChar chr_centerdot(L'·');
 static constexpr QChar chr_ldangle(L'«');
@@ -1165,6 +1172,7 @@ typedef enum {
 }   p2_palette_e;
 
 extern QColor p2_palette(p2_palette_e pal, bool highlight = false);
+extern QColor p2_palette(p2_token_e tok, bool highlight = false);
 
 extern QString format_opcode_bin(const p2_opcode_u& IR);
 extern QString format_opcode_byt(const p2_opcode_u& IR);
@@ -1213,6 +1221,7 @@ typedef enum {
     tt_assignment,      //!< precedence 17: assignment (=)
     tt_delimiter,       //!< delimiter (,)
     tt_constant,        //!< constant value ($, PA, PB, PTRA, PTRB)
+    tt_function,        //!< function on value: FLOAT()
     tt_immediate,       //!< immediate value (#, ##)
     tt_relative,        //!< relative value (@, @@@)
     tt_conditional,     //!< conditional execution
@@ -1254,6 +1263,7 @@ static constexpr p2_t_mask_t tm_ternary     = TTMASK(tt_ternary);
 static constexpr p2_t_mask_t tm_assignment  = TTMASK(tt_assignment);
 static constexpr p2_t_mask_t tm_delimiter   = TTMASK(tt_delimiter);
 static constexpr p2_t_mask_t tm_constant    = TTMASK(tt_constant);
+static constexpr p2_t_mask_t tm_function    = TTMASK(tt_function);
 static constexpr p2_t_mask_t tm_immediate   = TTMASK(tt_immediate);
 static constexpr p2_t_mask_t tm_relative    = TTMASK(tt_relative);
 static constexpr p2_t_mask_t tm_conditional = TTMASK(tt_conditional);
@@ -1296,5 +1306,6 @@ static constexpr p2_t_mask_t tm_operations =
         tm_logop_or;
 
 static constexpr p2_t_mask_t tm_expression =
+        tm_function |
         tm_operations |
         tm_constant;
