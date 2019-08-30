@@ -77,8 +77,8 @@ HEADERS += \
 		models/p2dasmmodel.h \
 		models/p2symbolsmodel.h \
 		util/p2util.h \
-		p2cogview.h \
-		p2hubview.h
+		views/p2cogview.h \
+		views/p2hubview.h
 
 FORMS += \
 		mainwindow.ui \

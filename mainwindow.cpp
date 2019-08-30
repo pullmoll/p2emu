@@ -681,13 +681,6 @@ void MainWindow::setupDisassembler()
     updateDasmColumnSizes();
 }
 
-void MainWindow::setupMenu()
-{
-    connect(ui->action_Open, SIGNAL(triggered()), SLOT(openSource()));
-    connect(ui->action_Open_random, SIGNAL(triggered()), SLOT(loadSourceRandom()));
-    connect(ui->action_Go_to_line, SIGNAL(triggered()), SLOT(goto_line_number()));
-}
-
 void MainWindow::setupTabWidget()
 {
     QTabBar* bar = ui->tabWidget->tabBar();
@@ -697,89 +690,87 @@ void MainWindow::setupTabWidget()
     bar->setTabData(2, id_hub);
 }
 
+void MainWindow::setupMenu()
+{
+    connect(ui->action_Open, SIGNAL(triggered()), SLOT(openSource()));
+    connect(ui->action_Open_random, SIGNAL(triggered()), SLOT(loadSourceRandom()));
+    connect(ui->action_Go_to_line, SIGNAL(triggered()), SLOT(goto_line_number()));
+    connect(ui->action_Assemble, SIGNAL(triggered()), SLOT(assemble()));
+    connect(ui->action_SingleStep, SIGNAL(triggered()), SLOT(hubSingleStep()));
+
+    connect(ui->action_Asm_Opcodes_bin, SIGNAL(triggered(bool)), SLOT(setAsmOpcodes()));
+    connect(ui->action_Asm_Opcodes_byt, SIGNAL(triggered(bool)), SLOT(setAsmOpcodes()));
+    connect(ui->action_Asm_Opcodes_dec, SIGNAL(triggered(bool)), SLOT(setAsmOpcodes()));
+    connect(ui->action_Asm_Opcodes_hex, SIGNAL(triggered(bool)), SLOT(setAsmOpcodes()));
+
+    connect(ui->action_Asm_DecFontSize, SIGNAL(triggered(bool)), SLOT(decAsmFontSize()));
+    connect(ui->action_Asm_IncFontSize, SIGNAL(triggered(bool)), SLOT(incAsmFontSize()));
+
+    connect(ui->action_Dasm_Opcodes_bin, SIGNAL(triggered(bool)), SLOT(setDasmOpcodes()));
+    connect(ui->action_Dasm_Opcodes_byt, SIGNAL(triggered(bool)), SLOT(setDasmOpcodes()));
+    connect(ui->action_Dasm_Opcodes_dec, SIGNAL(triggered(bool)), SLOT(setDasmOpcodes()));
+    connect(ui->action_Dasm_Opcodes_hex, SIGNAL(triggered(bool)), SLOT(setDasmOpcodes()));
+
+    connect(ui->action_Dasm_Lowercase, SIGNAL(triggered(bool)), SLOT(setDasmLowercase(bool)));
+    connect(ui->action_Dasm_DecFontSize, SIGNAL(triggered(bool)), SLOT(decDasmFontSize()));
+    connect(ui->action_Dasm_IncFontSize, SIGNAL(triggered(bool)), SLOT(incDasmFontSize()));
+
+    connect(ui->action_Go_to_COG, SIGNAL(triggered()), SLOT(goto_cog()));
+    connect(ui->action_Go_to_LUT, SIGNAL(triggered()), SLOT(goto_lut()));
+    connect(ui->action_Go_to_ROM, SIGNAL(triggered()), SLOT(goto_rom()));
+    connect(ui->action_Go_to_address, SIGNAL(triggered()), SLOT(goto_address()));
+}
+
 void MainWindow::setupToolbars()
 {
     // HUB toolbar
-    connect(ui->action_SingleStep, SIGNAL(triggered()), SLOT(hubSingleStep()));
     ui->toolbarHub->addAction(ui->action_SingleStep);
 
     // Assembler toolbar
-    connect(ui->action_Assemble, SIGNAL(triggered()), SLOT(assemble()));
-    ui->toolbarAsm->addAction(ui->action_Assemble);
-
-    ui->toolbarAsm->addSeparator();
-
     ui->action_Asm_Opcodes_bin->setData(fmt_bin);
-    connect(ui->action_Asm_Opcodes_bin, SIGNAL(triggered(bool)), SLOT(setAsmOpcodes()));
     ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_bin);
-
     ui->action_Asm_Opcodes_byt->setData(fmt_byt);
-    connect(ui->action_Asm_Opcodes_byt, SIGNAL(triggered(bool)), SLOT(setAsmOpcodes()));
     ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_byt);
-
     ui->action_Asm_Opcodes_dec->setData(fmt_dec);
-    connect(ui->action_Asm_Opcodes_dec, SIGNAL(triggered(bool)), SLOT(setAsmOpcodes()));
     ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_dec);
-
     ui->action_Asm_Opcodes_hex->setData(fmt_hex);
-    connect(ui->action_Asm_Opcodes_hex, SIGNAL(triggered(bool)), SLOT(setAsmOpcodes()));
     ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_hex);
 
     ui->toolbarAsm->addSeparator();
-
-    connect(ui->action_Asm_DecFontSize, SIGNAL(triggered(bool)), SLOT(decAsmFontSize()));
     ui->toolbarAsm->addAction(ui->action_Asm_DecFontSize);
-
-    connect(ui->action_Asm_IncFontSize, SIGNAL(triggered(bool)), SLOT(incAsmFontSize()));
     ui->toolbarAsm->addAction(ui->action_Asm_IncFontSize);
 
     // Disassembler toolbar
     ui->action_Dasm_Opcodes_bin->setData(fmt_bin);
-    connect(ui->action_Dasm_Opcodes_bin, SIGNAL(triggered(bool)), SLOT(setDasmOpcodes()));
     ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_bin);
-
     ui->action_Dasm_Opcodes_byt->setData(fmt_byt);
-    connect(ui->action_Dasm_Opcodes_byt, SIGNAL(triggered(bool)), SLOT(setDasmOpcodes()));
     ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_byt);
-
     ui->action_Dasm_Opcodes_dec->setData(fmt_dec);
-    connect(ui->action_Dasm_Opcodes_dec, SIGNAL(triggered(bool)), SLOT(setDasmOpcodes()));
     ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_dec);
-
     ui->action_Dasm_Opcodes_hex->setData(fmt_hex);
-    connect(ui->action_Dasm_Opcodes_hex, SIGNAL(triggered(bool)), SLOT(setDasmOpcodes()));
     ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_hex);
 
     ui->toolbarDasm->addSeparator();
-
-    connect(ui->action_Go_to_COG, SIGNAL(triggered()), SLOT(goto_cog()));
     ui->toolbarDasm->addAction(ui->action_Go_to_COG);
-
-    connect(ui->action_Go_to_LUT, SIGNAL(triggered()), SLOT(goto_lut()));
     ui->toolbarDasm->addAction(ui->action_Go_to_LUT);
-
-    connect(ui->action_Go_to_ROM, SIGNAL(triggered()), SLOT(goto_rom()));
     ui->toolbarDasm->addAction(ui->action_Go_to_ROM);
-
-    connect(ui->action_Go_to_address, SIGNAL(triggered()), SLOT(goto_address()));
     ui->toolbarDasm->addAction(ui->action_Go_to_address);
 
     ui->toolbarDasm->addSeparator();
-
-    connect(ui->action_Dasm_Lowercase, SIGNAL(triggered(bool)), SLOT(setDasmLowercase(bool)));
     ui->toolbarDasm->addAction(ui->action_Dasm_Lowercase);
 
     ui->toolbarDasm->addSeparator();
-
-    connect(ui->action_Dasm_DecFontSize, SIGNAL(triggered(bool)), SLOT(decDasmFontSize()));
     ui->toolbarDasm->addAction(ui->action_Dasm_DecFontSize);
-
-    connect(ui->action_Dasm_IncFontSize, SIGNAL(triggered(bool)), SLOT(incDasmFontSize()));
     ui->toolbarDasm->addAction(ui->action_Dasm_IncFontSize);
 
     // Main toolbar
     ui->toolbar->addAction(ui->action_Open);
     ui->toolbar->addAction(ui->action_Open_random);
+
+    ui->toolbarAsm->addSeparator();
+    ui->toolbarAsm->addAction(ui->action_Assemble);
+
+    ui->toolbarAsm->addSeparator();
     ui->toolbar->addAction(ui->action_Quit);
 }
 
