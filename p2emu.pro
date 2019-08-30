@@ -30,15 +30,14 @@ SOURCES += \
 		p2asm.cpp \
 		p2atom.cpp \
 		p2cog.cpp \
-		p2cogview.cpp \
 		p2dasm.cpp \
 		p2defs.cpp \
 		p2hub.cpp \
-		p2hubview.cpp \
 		p2opcode.cpp \
 		p2symbol.cpp \
 		p2symboltable.cpp \
 		p2token.cpp \
+		p2word.cpp \
 		delegates/p2opcodedelegate.cpp \
 		delegates/p2sourcedelegate.cpp \
 		delegates/p2referencesdelegate.cpp \
@@ -49,24 +48,24 @@ SOURCES += \
 		models/p2asmmodel.cpp \
 		models/p2dasmmodel.cpp \
 		models/p2symbolsmodel.cpp \
-		p2word.cpp \
-		util/p2util.cpp
+		util/p2util.cpp \
+		views/p2cogview.cpp \
+		views/p2hubview.cpp
 
 HEADERS += \
 		mainwindow.h \
-		models/p2symbolsmodel.h \
 		p2asm.h \
 		p2atom.h \
 		p2cog.h \
-		p2cogview.h \
 		p2dasm.h \
 		p2defs.h \
 		p2hub.h \
-		p2hubview.h \
 		p2opcode.h \
 		p2symbol.h \
 		p2symboltable.h \
 		p2token.h \
+		p2tokens.h \
+		p2word.h \
 		delegates/p2opcodedelegate.h \
 		delegates/p2sourcedelegate.h \
 		delegates/p2referencesdelegate.h \
@@ -76,22 +75,24 @@ HEADERS += \
 		dialogs/p2asmlisting.h \
 		models/p2asmmodel.h \
 		models/p2dasmmodel.h \
-		p2tokens.h \
-		p2word.h \
-		util/p2util.h
+		models/p2symbolsmodel.h \
+		util/p2util.h \
+		p2cogview.h \
+		p2hubview.h
 
 FORMS += \
 		mainwindow.ui \
-		p2cogview.ui \
-		p2hubview.ui \
 		dialogs/about.ui \
 		dialogs/gotoaddress.ui \
 		dialogs/gotoline.ui \
-		dialogs/p2asmlisting.ui
+		dialogs/p2asmlisting.ui \
+		views/p2cogview.ui \
+		views/p2hubview.ui
 
 INCLUDEPATH += $$PWD/delegates
 INCLUDEPATH += $$PWD/dialogs
 INCLUDEPATH += $$PWD/models
+INCLUDEPATH += $$PWD/views
 INCLUDEPATH += $$PWD/util
 
 # Default rules for deployment.
