@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Propeller2 constants, enumerations, and opcode structure
+ * Propeller2 constants, enumerations, opcode structure, helpers...
  *
  * Copyright (C) 2019 Jürgen Buchmüller <pullmoll@t-online.de>
  *

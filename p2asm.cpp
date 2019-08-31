@@ -173,12 +173,44 @@ const QString P2Asm::source(int idx) const
     return m_source.value(idx);
 }
 
-void P2Asm::setSource(const QStringList& source)
+/**
+ * @brief Set new source code
+ * @param source const reference to a QStringList with source lines
+ */
+void P2Asm::set_source(const QStringList& source)
 {
     clear();
     m_source.clear();
     foreach(const QString& line, source)
         m_source += expand_tabs(line);
+}
+
+/**
+ * @brief Set new source code for line at %idx
+ *
+ * If %idx is greater or equal to m_source.count() the line is appended.
+ * The assembler state is cleared.
+ *
+ * @param idx index in range 0 … m_source.count()
+ * @param line source code line
+ * @return true if changed, unchaged, or appended; false otherwise
+ */
+bool P2Asm::set_source(int idx, const QString& line)
+{
+    if (idx < 0)
+        return false;
+    QString source = expand_tabs(line);
+    if (source == m_source[idx])
+        return true;
+
+    if (idx >= m_source.count())
+        m_source.append(source);
+    else
+        m_source.replace(idx, source);
+    m_pass = -1;
+    clear();
+
+    return true;
 }
 
 int P2Asm::count() const
@@ -475,23 +507,23 @@ bool P2Asm::assemble_pass()
                 next();
                 break;
 
-            case t__DAT:
+            case t_DAT:
                 success = asm_dat();
                 break;
 
-            case t__CON:
+            case t_CON:
                 success = asm_con();
                 break;
 
-            case t__PUB:
+            case t_PUB:
                 success = asm_pub();
                 break;
 
-            case t__PRI:
+            case t_PRI:
                 success = asm_pri();
                 break;
 
-            case t__VAR:
+            case t_VAR:
                 success = asm_var();
                 break;
 
@@ -1915,47 +1947,47 @@ bool P2Asm::assemble_pass()
                 success = asm_zerox();
                 break;
 
-            case t__BYTE:
+            case t_BYTE:
                 success = asm_byte();
                 break;
 
-            case t__WORD:
+            case t_WORD:
                 success = asm_word();
                 break;
 
-            case t__LONG:
+            case t_LONG:
                 success = asm_long();
                 break;
 
-            case t__FILE:
+            case t_FILE:
                 success = asm_file();
                 break;
 
-            case t__RES:
+            case t_RES:
                 success = asm_res();
                 break;
 
-            case t__ALIGNW:
+            case t_ALIGNW:
                 success = asm_alignw();
                 break;
 
-            case t__ALIGNL:
+            case t_ALIGNL:
                 success = asm_alignl();
                 break;
 
-            case t__ORG:
+            case t_ORG:
                 success = asm_org();
                 break;
 
-            case t__ORGH:
+            case t_ORGH:
                 success = asm_orgh();
                 break;
 
-            case t__FIT:
+            case t_FIT:
                 success = asm_fit();
                 break;
 
-            case t__ASSIGN:
+            case t_ASSIGN:
                 success = asm_assign();
                 break;
 
@@ -2037,20 +2069,6 @@ bool P2Asm::setPathname(const QString& pathname)
     return true;
 }
 
-bool P2Asm::setSource(int idx, const QString& source)
-{
-    if (idx < 0 || idx >= m_source.count())
-        return false;
-    if (source == m_source[idx])
-        return true;
-
-    m_source.replace(idx, source);
-    m_pass = -1;
-    clear();
-
-    return true;
-}
-
 /**
  * @brief Return number of commata following in the words/tokens
  * @return number of commata following
@@ -2059,7 +2077,7 @@ int P2Asm::commata_left() const
 {
     int commata = 0;
     for (int i = m_idx; i < m_cnt; i++)
-        if (t__COMMA == m_words[i].tok())
+        if (t_COMMA == m_words[i].tok())
             commata++;
     return commata;
 }
@@ -2307,13 +2325,13 @@ bool P2Asm::skip_comments()
 P2Atom P2Asm::make_atom()
 {
     switch (m_instr) {
-    case t__BYTE:
+    case t_BYTE:
         return P2Atom(P2Atom::Byte);
-    case t__WORD:
+    case t_WORD:
         return P2Atom(P2Atom::Word);
-    case t__LONG:
+    case t_LONG:
         return P2Atom(P2Atom::Long);
-    case t__FILE:
+    case t_FILE:
         return P2Atom(P2Atom::String);
     default:
         return P2Atom(P2Atom::Long);
@@ -2578,8 +2596,8 @@ P2Atom P2Asm::parse_atom(int level)
         prev();
         break;
 
-    case t__RELATIVE:
-    case t__RELATIVE_HUB:
+    case t_RELATIVE:
+    case t_RELATIVE_HUB:
         DEBUG_EXPR(" atom relative: %s", qPrintable(str));
         next();
         atom = parse_expression(level+1);
@@ -2688,13 +2706,13 @@ P2Atom P2Asm::parse_atom(int level)
 
     case t_PA:
         DEBUG_EXPR(" atom PA: %s", qPrintable(str));
-        atom.set(P2Atom::Long, offs_PA);
+        atom.set_uint(P2Atom::Long, offs_PA);
         add_const_symbol(p2_prefix_lut_const, word, atom);
         break;
 
     case t_PB:
         DEBUG_EXPR(" atom PB: %s", qPrintable(str));
-        atom.set(P2Atom::Long, offs_PB);
+        atom.set_uint(P2Atom::Long, offs_PB);
         add_const_symbol(p2_prefix_lut_const, word, atom);
         break;
 
@@ -2704,7 +2722,7 @@ P2Atom P2Asm::parse_atom(int level)
     case t_PTRA_preinc:
     case t_PTRA_predec:
         DEBUG_EXPR(" atom PTRA: %s", qPrintable(str));
-        atom.set(P2Atom::Long, offs_PTRA);
+        atom.set_uint(P2Atom::Long, offs_PTRA);
         add_const_symbol(p2_prefix_lut_const, word, atom);
         break;
 
@@ -2714,11 +2732,11 @@ P2Atom P2Asm::parse_atom(int level)
     case t_PTRB_preinc:
     case t_PTRB_predec:
         DEBUG_EXPR(" atom PTRB: %s", qPrintable(str));
-        atom.set(P2Atom::Long, offs_PTRB);
+        atom.set_uint(P2Atom::Long, offs_PTRB);
         add_const_symbol(p2_prefix_lut_const, word, atom);
         break;
 
-    case t__DOLLAR:
+    case t_DOLLAR:
         DEBUG_EXPR(" atom current PC: %s", qPrintable(str));
         atom.set(P2Atom::Long, m_ORG);
         break;
@@ -3111,12 +3129,12 @@ P2Atom P2Asm::parse_relative(bool& rel, int level)
 
     while (Token.is_type(tok, tm_relative)) {
         switch (tok) {
-        case t__RELATIVE:
+        case t_RELATIVE:
             DEBUG_EXPR(" relative: %s", qPrintable(curr_str()));
             rel = true;
             next();
             break;
-        case t__RELATIVE_HUB:
+        case t_RELATIVE_HUB:
             DEBUG_EXPR(" relative HUB: %s", qPrintable(curr_str()));
             rel = true;
             next();
@@ -3154,12 +3172,12 @@ P2Atom P2Asm::parse_expression(int level)
 
     while (Token.is_type(tok, tm_immediate)) {
         switch (tok) {
-        case t__IMMEDIATE:
+        case t_IMMEDIATE:
             DEBUG_EXPR(" expr immediate: %s", qPrintable(curr_str()));
             m_IR.imm_set = true;
             next();
             break;
-        case t__IMMEDIATE_HUB:
+        case t_IMMEDIATE_HUB:
             DEBUG_EXPR(" expr immediate HUB: %s", qPrintable(curr_str()));
             m_IR.imm_hub = true;
             next();
@@ -3204,7 +3222,7 @@ P2Atom P2Asm::parse_expression(int level)
         tok = curr_tok();
 
         switch (tok) {
-        case t__COMMA:
+        case t_COMMA:
         case t__LPAREN:
         case t__LBRACKET:
             DEBUG_EXPR(" expr **** terminal: %s", qPrintable(curr_str()));
@@ -3345,14 +3363,14 @@ bool P2Asm::parse_comma()
 {
     if (!skip_comments()) {
         m_errors += tr("Expected %1 but found %2.")
-                  .arg(Token.string(t__COMMA))
+                  .arg(Token.string(t_COMMA))
                   .arg(tr("end of line"));
         emit Error(m_pass, m_lineno, m_errors.last());
         return false;
     }
-    if (t__COMMA != m_words.value(m_idx).tok()) {
+    if (t_COMMA != m_words.value(m_idx).tok()) {
         m_errors += tr("Expected %1 but found %2.")
-                  .arg(Token.string(t__COMMA))
+                  .arg(Token.string(t_COMMA))
                   .arg(Token.string(m_words.value(m_idx).tok()));
         emit Error(m_pass, m_lineno, m_errors.last());
         return false;
@@ -3369,7 +3387,7 @@ void P2Asm::optional_comma()
 {
     if (!skip_comments())
         return;
-    if (t__COMMA != m_words.value(m_idx).tok())
+    if (t_COMMA != m_words.value(m_idx).tok())
         return;
     next();
 }
@@ -3396,7 +3414,7 @@ bool P2Asm::optional_WCZ()
             m_IR.set_wcz();
             next();
             break;
-        case t__COMMA:
+        case t_COMMA:
             // expect more flags
             next();
             break;
@@ -7793,7 +7811,7 @@ bool P2Asm::asm_jnqmt()
 bool P2Asm::asm_1011110_1()
 {
     next();
-    m_IR.set_inst9(p2_1011110_10);
+    m_IR.set_inst8(p2_1011110_1);
     return parse_WZ_D_IM_S();
 }
 

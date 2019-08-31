@@ -425,25 +425,25 @@ enum p2_token_e {
     t_XORZ,
 
     // Section control
-    t__DAT,
-    t__CON,
-    t__PUB,
-    t__PRI,
-    t__VAR,
+    t_DAT,
+    t_CON,
+    t_PUB,
+    t_PRI,
+    t_VAR,
 
     // Origin control
-    t__ORG,
-    t__ORGH,
-    t__ALIGNW,
-    t__ALIGNL,
-    t__FIT,
+    t_ORG,
+    t_ORGH,
+    t_ALIGNW,
+    t_ALIGNL,
+    t_FIT,
 
     // Data types and space reserving
-    t__BYTE,
-    t__WORD,
-    t__LONG,
-    t__RES,
-    t__FILE,
+    t_BYTE,
+    t_WORD,
+    t_LONG,
+    t_RES,
+    t_FILE,
 
     // conditials
     t__RET_,            //!< cond_never
@@ -518,7 +518,7 @@ enum p2_token_e {
     t_MODCZ__SET,       //!< cond_always
 
     // assignment
-    t__ASSIGN,          //!< "="
+    t_ASSIGN,          //!< "="
 
     // LUT shadow registers
     t_DIRA,
@@ -544,16 +544,16 @@ enum p2_token_e {
     t__TRUNC,
 
     // origin (PC)
-    t__DOLLAR,          //!< "$"
-    t__COMMA,           //!< ","
+    t_DOLLAR,           //!< "$"
+    t_COMMA,            //!< ","
 
     // hash
-    t__IMMEDIATE,       //!< "#"
-    t__IMMEDIATE_HUB,      //!< "##"
+    t_IMMEDIATE,        //!< "#"
+    t_IMMEDIATE_HUB,    //!< "##"
 
     // relative address
-    t__RELATIVE,        //!< "@"
-    t__RELATIVE_HUB,    //!< "@@@"
+    t_RELATIVE,         //!< "@"
+    t_RELATIVE_HUB,     //!< "@@@"
 
     // relations
     t__LE,              //!< "<="

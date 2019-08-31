@@ -805,120 +805,126 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         }
         break;
 
-    case p2_TJV_OPDST:
-        switch (IR.inst9()) {
-        case p2_TJV:
-            dasm_tjv(instruction, brief);
-            break;
-        case p2_OPDST:
-            switch (IR.u.op.dst) {
-            case p2_OPDST_JINT:
-                dasm_jint(instruction, brief);
+    case p2_TJV_OPDST_empty:
+        switch (IR.inst8()) {
+        case p2_TJV_OPDST:
+            switch (IR.inst9()) {
+            case p2_TJV:
+                dasm_tjv(instruction, brief);
                 break;
-            case p2_OPDST_JCT1:
-                dasm_jct1(instruction, brief);
+            case p2_OPDST:
+                switch (IR.u.op.dst) {
+                case p2_OPDST_JINT:
+                    dasm_jint(instruction, brief);
+                    break;
+                case p2_OPDST_JCT1:
+                    dasm_jct1(instruction, brief);
+                    break;
+                case p2_OPDST_JCT2:
+                    dasm_jct2(instruction, brief);
+                    break;
+                case p2_OPDST_JCT3:
+                    dasm_jct3(instruction, brief);
+                    break;
+                case p2_OPDST_JSE1:
+                    dasm_jse1(instruction, brief);
+                    break;
+                case p2_OPDST_JSE2:
+                    dasm_jse2(instruction, brief);
+                    break;
+                case p2_OPDST_JSE3:
+                    dasm_jse3(instruction, brief);
+                    break;
+                case p2_OPDST_JSE4:
+                    dasm_jse4(instruction, brief);
+                    break;
+                case p2_OPDST_JPAT:
+                    dasm_jpat(instruction, brief);
+                    break;
+                case p2_OPDST_JFBW:
+                    dasm_jfbw(instruction, brief);
+                    break;
+                case p2_OPDST_JXMT:
+                    dasm_jxmt(instruction, brief);
+                    break;
+                case p2_OPDST_JXFI:
+                    dasm_jxfi(instruction, brief);
+                    break;
+                case p2_OPDST_JXRO:
+                    dasm_jxro(instruction, brief);
+                    break;
+                case p2_OPDST_JXRL:
+                    dasm_jxrl(instruction, brief);
+                    break;
+                case p2_OPDST_JATN:
+                    dasm_jatn(instruction, brief);
+                    break;
+                case p2_OPDST_JQMT:
+                    dasm_jqmt(instruction, brief);
+                    break;
+                case p2_OPDST_JNINT:
+                    dasm_jnint(instruction, brief);
+                    break;
+                case p2_OPDST_JNCT1:
+                    dasm_jnct1(instruction, brief);
+                    break;
+                case p2_OPDST_JNCT2:
+                    dasm_jnct2(instruction, brief);
+                    break;
+                case p2_OPDST_JNCT3:
+                    dasm_jnct3(instruction, brief);
+                    break;
+                case p2_OPDST_JNSE1:
+                    dasm_jnse1(instruction, brief);
+                    break;
+                case p2_OPDST_JNSE2:
+                    dasm_jnse2(instruction, brief);
+                    break;
+                case p2_OPDST_JNSE3:
+                    dasm_jnse3(instruction, brief);
+                    break;
+                case p2_OPDST_JNSE4:
+                    dasm_jnse4(instruction, brief);
+                    break;
+                case p2_OPDST_JNPAT:
+                    dasm_jnpat(instruction, brief);
+                    break;
+                case p2_OPDST_JNFBW:
+                    dasm_jnfbw(instruction, brief);
+                    break;
+                case p2_OPDST_JNXMT:
+                    dasm_jnxmt(instruction, brief);
+                    break;
+                case p2_OPDST_JNXFI:
+                    dasm_jnxfi(instruction, brief);
+                    break;
+                case p2_OPDST_JNXRO:
+                    dasm_jnxro(instruction, brief);
+                    break;
+                case p2_OPDST_JNXRL:
+                    dasm_jnxrl(instruction, brief);
+                    break;
+                case p2_OPDST_JNATN:
+                    dasm_jnatn(instruction, brief);
+                    break;
+                case p2_OPDST_JNQMT:
+                    dasm_jnqmt(instruction, brief);
+                    break;
+                default:
+                    // TODO: invalid D value
+                    break;
+                }
                 break;
-            case p2_OPDST_JCT2:
-                dasm_jct2(instruction, brief);
-                break;
-            case p2_OPDST_JCT3:
-                dasm_jct3(instruction, brief);
-                break;
-            case p2_OPDST_JSE1:
-                dasm_jse1(instruction, brief);
-                break;
-            case p2_OPDST_JSE2:
-                dasm_jse2(instruction, brief);
-                break;
-            case p2_OPDST_JSE3:
-                dasm_jse3(instruction, brief);
-                break;
-            case p2_OPDST_JSE4:
-                dasm_jse4(instruction, brief);
-                break;
-            case p2_OPDST_JPAT:
-                dasm_jpat(instruction, brief);
-                break;
-            case p2_OPDST_JFBW:
-                dasm_jfbw(instruction, brief);
-                break;
-            case p2_OPDST_JXMT:
-                dasm_jxmt(instruction, brief);
-                break;
-            case p2_OPDST_JXFI:
-                dasm_jxfi(instruction, brief);
-                break;
-            case p2_OPDST_JXRO:
-                dasm_jxro(instruction, brief);
-                break;
-            case p2_OPDST_JXRL:
-                dasm_jxrl(instruction, brief);
-                break;
-            case p2_OPDST_JATN:
-                dasm_jatn(instruction, brief);
-                break;
-            case p2_OPDST_JQMT:
-                dasm_jqmt(instruction, brief);
-                break;
-            case p2_OPDST_JNINT:
-                dasm_jnint(instruction, brief);
-                break;
-            case p2_OPDST_JNCT1:
-                dasm_jnct1(instruction, brief);
-                break;
-            case p2_OPDST_JNCT2:
-                dasm_jnct2(instruction, brief);
-                break;
-            case p2_OPDST_JNCT3:
-                dasm_jnct3(instruction, brief);
-                break;
-            case p2_OPDST_JNSE1:
-                dasm_jnse1(instruction, brief);
-                break;
-            case p2_OPDST_JNSE2:
-                dasm_jnse2(instruction, brief);
-                break;
-            case p2_OPDST_JNSE3:
-                dasm_jnse3(instruction, brief);
-                break;
-            case p2_OPDST_JNSE4:
-                dasm_jnse4(instruction, brief);
-                break;
-            case p2_OPDST_JNPAT:
-                dasm_jnpat(instruction, brief);
-                break;
-            case p2_OPDST_JNFBW:
-                dasm_jnfbw(instruction, brief);
-                break;
-            case p2_OPDST_JNXMT:
-                dasm_jnxmt(instruction, brief);
-                break;
-            case p2_OPDST_JNXFI:
-                dasm_jnxfi(instruction, brief);
-                break;
-            case p2_OPDST_JNXRO:
-                dasm_jnxro(instruction, brief);
-                break;
-            case p2_OPDST_JNXRL:
-                dasm_jnxrl(instruction, brief);
-                break;
-            case p2_OPDST_JNATN:
-                dasm_jnatn(instruction, brief);
-                break;
-            case p2_OPDST_JNQMT:
-                dasm_jnqmt(instruction, brief);
+            case p2_1011110_10:
+            case p2_1011110_11:
+                dasm_1011110_1(instruction, brief);
                 break;
             default:
-                // TODO: invalid D value
-                break;
+                Q_ASSERT_X(false, "p2_inst9_e", "TJV/OPDST/1011110_10/1011110_11");
             }
             break;
-        case p2_1011110_10:
-        case p2_1011110_11:
-            dasm_1011110_1(instruction, brief);
-            break;
         default:
-            Q_ASSERT_X(false, "p2_inst9_e", "TJV/OPDST/1011110_10/1011110_11");
+            break;
         }
         break;
 

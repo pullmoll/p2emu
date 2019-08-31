@@ -361,7 +361,7 @@ typedef enum {
     p2_DJZ_DJNZ_DJF_DJNF        = INST7(1,0,1,1,0,1,1),
     p2_IJZ_IJNZ_TJZ_TJNZ        = INST7(1,0,1,1,1,0,0),
     p2_TJF_TJNF_TJS_TJNS        = INST7(1,0,1,1,1,0,1),
-    p2_TJV_OPDST                = INST7(1,0,1,1,1,1,0),
+    p2_TJV_OPDST_empty          = INST7(1,0,1,1,1,1,0),
     p2_empty_SETPAT             = INST7(1,0,1,1,1,1,1),
 
     p2_WRPIN_AKPIN_WXPIN        = INST7(1,1,0,0,0,0,0),
@@ -687,6 +687,8 @@ typedef enum {
     p2_QROTATE                  = INST8(p2_QROTATE_QVECTOR,0),
     p2_QVECTOR                  = INST8(p2_QROTATE_QVECTOR,1),
 
+    p2_TJV_OPDST                = INST8(p2_TJV_OPDST_empty,0),
+    p2_1011110_1                = INST8(p2_TJV_OPDST_empty,1),
     p2_1011111_0                = INST8(p2_empty_SETPAT,0),
     p2_SETPAT                   = INST8(p2_empty_SETPAT,1),
 
@@ -696,23 +698,23 @@ typedef enum {
     p2_WRPIN                    = INST8(p2_WRPIN_AKPIN_WXPIN, 0),
     p2_WXPIN                    = INST8(p2_WRPIN_AKPIN_WXPIN, 1),
 
-    p2_WYPIN                    = INST8(p2_WYPIN_WRLUT, 0),
-    p2_WRLUT                    = INST8(p2_WYPIN_WRLUT, 1),
+    p2_WYPIN                    = INST8(p2_WYPIN_WRLUT,0),
+    p2_WRLUT                    = INST8(p2_WYPIN_WRLUT,1),
 
-    p2_WRBYTE                   = INST8(p2_WRBYTE_WRWORD, 0),
-    p2_WRWORD                   = INST8(p2_WRBYTE_WRWORD, 1),
+    p2_WRBYTE                   = INST8(p2_WRBYTE_WRWORD,0),
+    p2_WRWORD                   = INST8(p2_WRBYTE_WRWORD,1),
 
-    p2_WRLONG                   = INST8(p2_WRLONG_RDFAST, 0),
-    p2_RDFAST                   = INST8(p2_WRLONG_RDFAST, 1),
+    p2_WRLONG                   = INST8(p2_WRLONG_RDFAST,0),
+    p2_RDFAST                   = INST8(p2_WRLONG_RDFAST,1),
 
-    p2_WRFAST                   = INST8(p2_WRFAST_FBLOCK, 0),
-    p2_FBLOCK                   = INST8(p2_WRFAST_FBLOCK, 1),
+    p2_WRFAST                   = INST8(p2_WRFAST_FBLOCK,0),
+    p2_FBLOCK                   = INST8(p2_WRFAST_FBLOCK,1),
 
-    p2_XINIT                    = INST8(p2_XINIT_XSTOP_XZERO, 0),
-    p2_XZERO                    = INST8(p2_XINIT_XSTOP_XZERO, 1),
+    p2_XINIT                    = INST8(p2_XINIT_XSTOP_XZERO,0),
+    p2_XZERO                    = INST8(p2_XINIT_XSTOP_XZERO,1),
 
-    p2_XCONT                    = INST8(p2_XCONT_REP, 0),
-    p2_REP                      = INST8(p2_XCONT_REP, 1),
+    p2_XCONT                    = INST8(p2_XCONT_REP,0),
+    p2_REP                      = INST8(p2_XCONT_REP,1),
 
 }   p2_inst8_e;
 
@@ -821,10 +823,10 @@ typedef enum {
     p2_TJS                      = INST9(p2_TJF_TJNF_TJS_TJNS,1,0),
     p2_TJNS                     = INST9(p2_TJF_TJNF_TJS_TJNS,1,1),
 
-    p2_TJV                      = INST9(p2_TJV_OPDST,0,0),
-    p2_OPDST                    = INST9(p2_TJV_OPDST,0,1),
-    p2_1011110_10               = INST9(p2_TJV_OPDST,1,0),
-    p2_1011110_11               = INST9(p2_TJV_OPDST,1,1),
+    p2_TJV                      = INST9(p2_TJV_OPDST_empty,0,0),
+    p2_OPDST                    = INST9(p2_TJV_OPDST_empty,0,1),
+    p2_1011110_10               = INST9(p2_TJV_OPDST_empty,1,0),
+    p2_1011110_11               = INST9(p2_TJV_OPDST_empty,1,1),
 
     p2_COGBRK                   = INST9(p2_OPSRC_COGBRK,0,0),
     p2_GETBRK_WZ                = INST9(p2_OPSRC_COGBRK,0,1),

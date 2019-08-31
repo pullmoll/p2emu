@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Propeller2 assembler table model implementation
+ * Propeller2 assembler data model for QTableView implementation
  *
  * Copyright (C) 2019 Jürgen Buchmüller <pullmoll@t-online.de>
  *
@@ -36,9 +36,6 @@
 static const QString style_nowrap = QStringLiteral("style='white-space:nowrap;'");
 static const QString style_left = QStringLiteral("style='text-align:left;'");
 static const QString style_padding = QStringLiteral("style='padding:0px 4px 0px 4px;'");
-static const QString style_background_error = QStringLiteral("style='background:#fff0f0; border: 1px solid #ddd;'");
-static const QString style_background_tokens = QStringLiteral("style='background:#10fcff; border: 1px solid #ddd;'");
-static const QString style_background_symbols = QStringLiteral("style='background:#fff0ff; border: 1px solid #ddd;'");
 
 P2AsmModel::P2AsmModel(P2Asm* p2asm, QObject *parent)
     : QAbstractTableModel(parent)
@@ -109,7 +106,7 @@ QVariant P2AsmModel::headerData(int section, Qt::Orientation orientation, int ro
             break;
 
         case Qt::SizeHintRole:
-            result = sizeHint(column, true);
+            result = sizeHint(createIndex(0, column), true);
             break;
 
         case Qt::TextAlignmentRole:
@@ -311,19 +308,19 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
         case c_Tokens:
             if (words.isEmpty())
                 break;
-            result = tokenToolTip(words, style_background_tokens);
+            result = tokenToolTip(words);
             break;
 
         case c_Symbols:
             if (symrefs.isEmpty())
                 break;
-            result = symbolsToolTip(symbols, symrefs, style_background_symbols);
+            result = symbolsToolTip(symbols, symrefs);
             break;
 
         case c_Errors:
             if (!has_errors)
                 break;
-            result = errorsToolTip(errors, style_background_error);
+            result = errorsToolTip(errors);
             break;
 
         case c_Source:
@@ -358,20 +355,9 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
         }
         break;
 
-    case Qt::ForegroundRole:
-        break;
-
-    case Qt::CheckStateRole:
-        break;
-
-    case Qt::AccessibleTextRole:
-        break;
-
-    case Qt::AccessibleDescriptionRole:
-        break;
-
     case Qt::SizeHintRole:
-        result = sizeHint(column, false, data(index).toString());
+        if (c_Opcode != column)
+            result = sizeHint(index, false, data(index).toString());
         break;
 
     case Qt::InitialSortOrderRole:
@@ -397,7 +383,7 @@ bool P2AsmModel::setData(const QModelIndex& index, const QVariant& value, int ro
     case Qt::EditRole:
         switch (column) {
         case c_Source:
-            result = m_asm->setSource(row, value.toString());
+            result = m_asm->set_source(row, value.toString());
             break;
         default:
             result = false;
@@ -408,8 +394,9 @@ bool P2AsmModel::setData(const QModelIndex& index, const QVariant& value, int ro
     return result;
 }
 
-QSize P2AsmModel::sizeHint(P2AsmModel::column_e column, bool header, const QString& text) const
+QSize P2AsmModel::sizeHint(const QModelIndex& index, bool header, const QString& text) const
 {
+    const column_e column = static_cast<column_e>(index.column());
     QFont font(m_font);
     font.setBold(header);
     QFontMetrics metrics(font);
@@ -535,13 +522,12 @@ void P2AsmModel::setHighlight(const QModelIndex& index, const P2Word& word)
 }
 
 
-static const QStringList html_head(const QString& bgd = QString())
+static const QStringList html_head()
 {
     QStringList html;
     html += QStringLiteral("<html>");
     html += QStringLiteral("<body>");
-    html += QString("<table %1>")
-            .arg(bgd);
+    html += QString("<table>");
     return html;
 }
 
@@ -567,23 +553,21 @@ static const QString html_end_tr()
 
 }
 
-static const QString html_th(const QString& text, const QString& bgd = QString())
+static const QString html_th(const QString& text)
 {
-    return QString("<th %1 %2 %3 %4><tt>%5</tt></th>")
+    return QString("<th %1 %2 %3><tt>%4</tt></th>")
             .arg(style_padding)
             .arg(style_nowrap)
             .arg(style_left)
-            .arg(bgd)
             .arg(text);
 
 }
 
-static const QString html_td(const QString& text, const QString& bgd = QString())
+static const QString html_td(const QString& text)
 {
-    return QString("<td %1 %2 %3><tt>%4</tt></td>")
+    return QString("<td %1 %2><tt>%3</tt></td>")
             .arg(style_padding)
             .arg(style_nowrap)
-            .arg(bgd)
             .arg(text);
 }
 
@@ -596,16 +580,16 @@ static const QString esc(const QString& src)
     return result;
 }
 
-QString P2AsmModel::tokenToolTip(const P2Words& words, const QString& bgd) const
+QString P2AsmModel::tokenToolTip(const P2Words& words) const
 {
     QStringList html = html_head();
 
     // heading
     html += html_start_tr();
-    html += html_th(tr("Token"), bgd);
-    html += html_th(tr("Type"), bgd);
-    html += html_th(tr("Position, Length"), bgd);
-    html += html_th(tr("Source code"), bgd);
+    html += html_th(tr("Token"));
+    html += html_th(tr("Type"));
+    html += html_th(tr("Position, Length"));
+    html += html_th(tr("Source code"));
     html += html_end_tr();
 
     for (int i = 0; i < words.count(); i++) {
@@ -618,17 +602,17 @@ QString P2AsmModel::tokenToolTip(const P2Words& words, const QString& bgd) const
         const QString& source = esc(word.str());
 
         html += html_start_tr();
-        html += html_td(token_id_str, bgd);
-        html += html_td(type_names, bgd);
-        html += html_td(pos_len, bgd);
-        html += html_td(source, bgd);
+        html += html_td(token_id_str);
+        html += html_td(type_names);
+        html += html_td(pos_len);
+        html += html_td(source);
         html += html_end_tr();
     }
     html += html_end();
     return html.join(QChar::LineFeed);
 }
 
-QString P2AsmModel::symbolsToolTip(const P2SymbolTable& symbols, const QList<P2Symbol>& symrefs, const QString& bgd) const
+QString P2AsmModel::symbolsToolTip(const P2SymbolTable& symbols, const QList<P2Symbol>& symrefs) const
 {
     if (symbols.isNull())
         return QString();
@@ -636,12 +620,12 @@ QString P2AsmModel::symbolsToolTip(const P2SymbolTable& symbols, const QList<P2S
     QStringList html = html_head();
     // heading
     html += html_start_tr();
-    html += html_th(tr("Line #"), bgd);
-    html += html_th(tr("Section::name"), bgd);
-    html += html_th(tr("Type"), bgd);
-    html += html_th(tr("Value (dec)"), bgd);
-    html += html_th(tr("Value (hex)"), bgd);
-    html += html_th(tr("Value (bin)"), bgd);
+    html += html_th(tr("Line #"));
+    html += html_th(tr("Section::name"));
+    html += html_th(tr("Type"));
+    html += html_th(tr("Value (dec)"));
+    html += html_th(tr("Value (hex)"));
+    html += html_th(tr("Value (bin)"));
     html += html_end_tr();
 
     for (int i = 0; i < symrefs.count(); i++) {
@@ -650,27 +634,27 @@ QString P2AsmModel::symbolsToolTip(const P2SymbolTable& symbols, const QList<P2S
         const P2Atom& atom = sym.atom();
         p2_LONG val = atom.to_long();
         html += html_start_tr();
-        html += html_td(QString::number(word.lineno()), bgd);
-        html += html_td(sym.name(), bgd);
-        html += html_td(sym.type_name(), bgd);
-        html += html_td(format_data_dec(val), bgd);
-        html += html_td(format_data_hex(val), bgd);
-        html += html_td(format_data_bin(val), bgd);
+        html += html_td(QString::number(word.lineno()));
+        html += html_td(sym.name());
+        html += html_td(sym.type_name());
+        html += html_td(format_data_dec(val));
+        html += html_td(format_data_hex(val));
+        html += html_td(format_data_bin(val));
         html += html_end_tr();
     }
     html += html_end();
     return html.join(QChar::LineFeed);
 }
 
-QString P2AsmModel::errorsToolTip(const QStringList& list, const QString& bgd) const
+QString P2AsmModel::errorsToolTip(const QStringList& list) const
 {
     QStringList html = html_head();
     html += html_start_tr();
-    html += html_th(tr("Error message"), bgd);
+    html += html_th(tr("Error message"));
     html += html_end_tr();
     foreach (const QString& error, list) {
         html += html_start_tr();
-        html += html_td(error, bgd);
+        html += html_td(error);
         html += html_end_tr();
     }
     html += html_end();

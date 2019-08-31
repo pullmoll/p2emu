@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Propeller2 symbol table data model for QAbstractTableView
+ * Propeller2 symbol table data model for QTableView
  *
  * Copyright (C) 2019 Jürgen Buchmüller <pullmoll@t-online.de>
  *

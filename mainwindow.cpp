@@ -86,6 +86,7 @@ static const QLatin1String key_directory("directory");
 static const QLatin1String key_filename("filename");
 static const QLatin1String key_history("directory");
 
+static const QLatin1String key_lines("lines");
 static const QLatin1String key_status("status");
 
 MainWindow::MainWindow(QWidget *parent)
@@ -518,9 +519,15 @@ void MainWindow::loadSource(const QString& filename)
 
     if (!info.path().startsWith(QChar(':')))
         m_asm->setPathname(info.path());
-    m_asm->setSource(source);
+    m_asm->set_source(source);
     m_amodel->invalidate();
+    updateAsmColumnSizes();
+    updateSymbolsColumnSizes();
     ui->tvAsm->update();
+
+    QLabel* lbl_lines = ui->toolbarAsm->findChild<QLabel*>(key_lines);
+    if (lbl_lines)
+        lbl_lines->setText(tr("%1 lines").arg(source.count()));
 }
 
 void MainWindow::loadSourceRandom()
@@ -667,11 +674,8 @@ void MainWindow::setupAssembler()
     delete ss;
 
     ui->tvAsm->setModel(m_amodel);
-    updateAsmColumnSizes();
 
     ui->tvSymbols->setModel(m_smodel);
-    updateSymbolsColumnSizes();
-
     ui->splResults->setVisible(false);
 }
 
@@ -740,6 +744,22 @@ void MainWindow::setupToolbars()
     ui->toolbarAsm->addAction(ui->action_Asm_DecFontSize);
     ui->toolbarAsm->addAction(ui->action_Asm_IncFontSize);
 
+    // Expanding spacer
+    QWidget* spacer = new QWidget();
+    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    ui->toolbarAsm->addWidget(spacer);
+
+    // Label for count of lines
+    QLabel* lbl_lines = new QLabel(tr("%1 lines").arg(0));
+    lbl_lines->setObjectName(key_lines);
+    lbl_lines->setMinimumWidth(12*10);
+    lbl_lines->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    lbl_lines->setFrameStyle(QLabel::StyledPanel);
+    lbl_lines->setFrameStyle(QLabel::StyledPanel);
+    lbl_lines->setFrameShadow(QLabel::Sunken);
+    lbl_lines->setBackgroundRole(QPalette::Base);
+    ui->toolbarAsm->addWidget(lbl_lines);
+
     // Disassembler toolbar
     ui->action_Dasm_Opcodes_bin->setData(fmt_bin);
     ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_bin);
@@ -796,8 +816,10 @@ void MainWindow::updateAsmColumnSizes()
     connect(hh, SIGNAL(customContextMenuRequested(QPoint)), SLOT(asmHeaderColums(QPoint)), Qt::UniqueConnection);
 
     for (int i = 0; i < m_amodel->columnCount(); i++) {
-        QSize size = m_amodel->sizeHint(static_cast<P2AsmModel::column_e>(i));
-        ui->tvAsm->setColumnWidth(i, size.width());
+        QModelIndex index = m_amodel->index(0, i);
+        QSize size = m_amodel->sizeHint(index, false);
+        if (size.isValid())
+            ui->tvAsm->setColumnWidth(i, size.width());
     }
 }
 

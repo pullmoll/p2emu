@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * P2 emulator Cog view widget implementation
+ * Propeller2 emulator Cog view widget implementation
  *
  * Copyright (C) 2019 Jürgen Buchmüller <pullmoll@t-online.de>
  *

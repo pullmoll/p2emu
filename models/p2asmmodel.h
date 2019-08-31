@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Propeller2 assembler table model class
+ * Propeller2 assembler data model for QTableView
  *
  * Copyright (C) 2019 Jürgen Buchmüller <pullmoll@t-online.de>
  *
@@ -66,7 +66,7 @@ public:
 
     static QList<column_e> columns();
     p2_opcode_format_e opcode_format() const;
-    QSize sizeHint(column_e column, bool header = false, const QString& text = QString()) const;
+    QSize sizeHint(const QModelIndex &parent = QModelIndex(), bool header = false, const QString& text = QString()) const;
     const P2Word highlight(const QModelIndex& index) const;
 
 public slots:
@@ -87,7 +87,7 @@ private:
     QHash<column_e,QRgb> m_background;
     QHash<column_e,int> m_head_alignment;
     QHash<column_e,int> m_text_alignment;
-    QString tokenToolTip(const P2Words& words, const QString& bgd) const;
-    QString symbolsToolTip(const P2SymbolTable& symbols, const QList<P2Symbol>& symrefs, const QString& bgd) const;
-    QString errorsToolTip(const QStringList& list, const QString& bgd) const;
+    QString tokenToolTip(const P2Words& words) const;
+    QString symbolsToolTip(const P2SymbolTable& symbols, const QList<P2Symbol>& symrefs) const;
+    QString errorsToolTip(const QStringList& list) const;
 };

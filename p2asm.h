@@ -113,8 +113,8 @@ signals:
 
 public slots:
     bool setPathname(const QString& pathname);
-    bool setSource(int idx, const QString& source);
-    void setSource(const QStringList& source);
+    bool set_source(int idx, const QString& source);
+    void set_source(const QStringList& source);
 
 private:
     int m_pass;                             //!< current pass

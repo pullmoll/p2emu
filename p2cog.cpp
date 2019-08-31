@@ -1637,7 +1637,7 @@ int P2Cog::decode()
         }
         break;
 
-    case p2_TJV_OPDST:
+    case p2_TJV_OPDST_empty:
         if (IR.op.wc == 0) {
             if (IR.op.wz == 0) {
                 cycles = op_tjv();

@@ -32,6 +32,7 @@ SOURCES += \
 		p2cog.cpp \
 		p2dasm.cpp \
 		p2defs.cpp \
+		p2doc.cpp \
 		p2hub.cpp \
 		p2opcode.cpp \
 		p2symbol.cpp \
@@ -59,6 +60,7 @@ HEADERS += \
 		p2cog.h \
 		p2dasm.h \
 		p2defs.h \
+		p2doc.h \
 		p2hub.h \
 		p2opcode.h \
 		p2symbol.h \

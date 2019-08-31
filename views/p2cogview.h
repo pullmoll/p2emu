@@ -1,8 +1,6 @@
 /****************************************************************************
  *
- * P2 emulator Cog view widget class
- *
- * Function bodies and comments generated from ":/P2 instruction set.csv"
+ * Propeller2 emulator Cog view widget class
  *
  * Copyright (C) 2019 Jürgen Buchmüller <pullmoll@t-online.de>
  *
