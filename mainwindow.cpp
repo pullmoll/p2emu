@@ -528,6 +528,8 @@ void MainWindow::loadSource(const QString& filename)
     QLabel* lbl_lines = ui->toolbarAsm->findChild<QLabel*>(key_lines);
     if (lbl_lines)
         lbl_lines->setText(tr("%1 lines").arg(source.count()));
+
+    assemble();
 }
 
 void MainWindow::loadSourceRandom()

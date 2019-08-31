@@ -433,6 +433,7 @@ enum p2_token_e {
 
     // Origin control
     t_ORG,
+    t_ORGF,
     t_ORGH,
     t_ALIGNW,
     t_ALIGNL,

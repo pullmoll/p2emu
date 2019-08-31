@@ -42,5 +42,5 @@ public:
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 private:
-    QStringList itemLines(const QModelIndex& index) const;
+    QStringList opcodeLines(const QModelIndex& index) const;
 };

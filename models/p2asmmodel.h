@@ -87,6 +87,7 @@ private:
     QHash<column_e,QRgb> m_background;
     QHash<column_e,int> m_head_alignment;
     QHash<column_e,int> m_text_alignment;
+    QString opcodeToolTip(const P2Opcode& IR) const;
     QString tokenToolTip(const P2Words& words) const;
     QString symbolsToolTip(const P2SymbolTable& symbols, const QList<P2Symbol>& symrefs) const;
     QString errorsToolTip(const QStringList& list) const;

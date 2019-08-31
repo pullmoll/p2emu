@@ -302,7 +302,8 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
             break;
 
         case c_Opcode:
-            result = tr("This column shows the opcode for, or the data emitted by, the instruction on this line.");
+            if (has_IR)
+                result = opcodeToolTip(IR);
             break;
 
         case c_Tokens:
@@ -578,6 +579,43 @@ static const QString esc(const QString& src)
     result.replace(QChar('<'), QStringLiteral("&lt;"));
     result.replace(QChar('>'), QStringLiteral("&gt;"));
     return result;
+}
+
+
+QString P2AsmModel::opcodeToolTip(const P2Opcode& IR) const
+{
+    QStringList html = html_head();
+    QString title;
+    QStringList lines;
+
+    if (IR.as_IR) {
+        title = tr("Opcode");
+        lines += format_opcode(IR.u, m_format);
+    }
+
+    if (IR.as_EQU) {
+        title = tr("Assigment");
+        lines += format_data(IR.EQU.to_long(), m_format);
+    }
+
+    if (lines.isEmpty() && !IR.DATA.isEmpty()) {
+        title = tr("Data");
+        lines = P2Atom::format_data(IR.DATA, IR.PC_ORGH.first);
+    }
+
+    // heading
+    html += html_start_tr();
+    html += html_th(title);
+    html += html_end_tr();
+
+    foreach(const QString& line, lines) {
+        html += html_start_tr();
+        html += html_td(line);
+        html += html_end_tr();
+    }
+
+    html += html_end();
+    return html.join(QChar::LineFeed);
 }
 
 QString P2AsmModel::tokenToolTip(const P2Words& words) const

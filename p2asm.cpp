@@ -88,6 +88,8 @@ P2Asm::P2Asm(QObject *parent)
     , m_ORGH(0)
     , m_advance(4)
     , m_IR()
+    , m_data()
+    , m_enum()
     , m_words()
     , m_instr()
     , m_symbol()
@@ -143,6 +145,7 @@ void P2Asm::pass_clear()
     m_advance = 0;
     m_IR.clear();
     m_data.clear();
+    m_enum.clear();
     m_words.clear();
     m_instr = t_invalid;
     m_symbol.clear();
@@ -385,6 +388,56 @@ bool P2Asm::prev()
 }
 
 /**
+ * @brief Define a symbol value
+ * @param symbol string for the symbol
+ * @param atom initial or new value for the symbol
+ * @return true on success, or false if already defined
+ */
+bool P2Asm::define_symbol(const QString& symbol, const P2Atom& atom)
+{
+    const P2Word& word = curr_word();
+    P2Symbol sym = m_symbols->symbol(symbol);
+    next();
+
+    if (sym.isEmpty()) {
+        // Not defined yet
+        m_symbols->insert(symbol, atom);
+        m_symbols->add_reference(m_lineno, symbol, word);
+        return true;
+    }
+
+    if (m_pass > 1) {
+        // Redefine in pass 2
+        m_symbols->set_atom(symbol, atom);
+        return true;
+    }
+
+    if (sym.isNull()) {
+        // Invalid
+        return true;
+    }
+
+    // Already defined
+    const P2Atom& old_atom = sym.atom();
+    if (P2Atom::Real == old_atom.type()) {
+        const p2_REAL value = atom.to_real();
+        m_errors += tr("Symbol '%1' already defined in line #%2 (Value: %3).")
+                  .arg(symbol)
+                  .arg(sym.definition().lineno())
+                  .arg(value);
+    } else {
+        const p2_LONG value = old_atom.to_long();
+        m_errors += tr("Symbol '%1' already defined in line #%2 (Value: %3, $%4, %%5).")
+                    .arg(symbol)
+                    .arg(sym.definition().lineno())
+                    .arg(value)
+                    .arg(value, 6, 16, QChar('0'))
+                    .arg(value, 32, 2, QChar('0'));
+    }
+    return false;
+}
+
+/**
  * @brief Assemble a QStringList of lines of SPIN2 source code
  * @param source code
  * @return true on success
@@ -440,40 +493,18 @@ bool P2Asm::assemble_pass()
                 m_symbol.clear();
             }
 
-            // defining a symbol at the current PC
             if (!m_symbol.isEmpty()) {
-                const P2Word& word = curr_word();
                 const p2_LONG PC = m_ORG < HUB_ADDR0 ? m_ORG / 4 : m_ORG;
-                P2Symbol sym = m_symbols->symbol(m_symbol);
-                next();
-
-                if (sym.isEmpty()) {
-                    P2Atom atom(PC, P2Atom::PC);
-                    // Not defined yet
-                    m_symbols->insert(m_symbol, atom);
-                    m_symbols->add_reference(m_lineno, m_symbol, word);
-                } else if (m_pass > 1) {
-                    P2Atom atom(PC, P2Atom::PC);
-                    m_symbols->set_atom(m_symbol, atom);
-                } else if (!sym.isNull()) {
-                    // Already defined
-                    const P2Atom& atom = sym.atom();
-                    if (P2Atom::Real == atom.type()) {
-                        const p2_REAL value = atom.to_real();
-                        m_errors += tr("Symbol '%1' already defined in line #%2 (Value: %3).")
-                                  .arg(m_symbol)
-                                  .arg(sym.definition().lineno())
-                                  .arg(value);
-                    } else {
-                        const p2_LONG value = atom.to_long();
-                        m_errors += tr("Symbol '%1' already defined in line #%2 (Value: %3, $%4, %%5).")
-                                    .arg(m_symbol)
-                                    .arg(sym.definition().lineno())
-                                    .arg(value)
-                                    .arg(value, 6, 16, QChar('0'))
-                                    .arg(value, 32, 2, QChar('0'));
-                    }
-                    emit Error(m_pass, m_lineno, m_errors.last());
+                if (sec_con == m_section) {
+                    // defining a symbol with the current enumeration value
+                    const P2Atom atom(m_enum);
+                    define_symbol(m_symbol, atom);
+                    // increase enumerator
+                    m_enum += 1u;
+                } else {
+                    // defining a symbol at the current PC
+                    const P2Atom atom(PC, P2Atom::PC);
+                    define_symbol(m_symbol, atom);
                 }
             }
             break;
@@ -1992,30 +2023,55 @@ bool P2Asm::assemble_pass()
                 break;
 
             default:
+                if (t_IMMEDIATE == m_instr && sec_con == m_section) {
+                    success = asm_enum_initial();
+                    break;
+                }
+
+                if (t_COMMA == m_instr && sec_con == m_section) {
+                    success = asm_enum_continue();
+                    break;
+                }
+
                 if (Token.is_type(m_instr, tm_mnemonic)) {
                     // Missing handling of an instruction token
                     m_errors += tr("Missing handling of instruction token '%1'.")
                           .arg(Token.string(m_instr));
                     emit Error(m_pass, m_lineno, m_errors.last());
+                    m_idx = m_cnt;
+                    break;
                 }
+
                 if (Token.is_type(m_instr, tm_constant)) {
                     // Unexpected constant token
                     m_errors += tr("Constant '%1' used as an instruction.")
                               .arg(Token.string(m_instr));
                     emit Error(m_pass, m_lineno, m_errors.last());
+                    m_idx = m_cnt;
+                    break;
                 }
+
                 if (Token.is_type(m_instr, tm_conditional)) {
                     // Unexpected conditional token
                     m_errors += tr("Extraneous conditional '%1'.")
                               .arg(Token.string(m_instr));
                     emit Error(m_pass, m_lineno, m_errors.last());
+                    m_idx = m_cnt;
+                    break;
                 }
+
                 if (Token.is_type(m_instr, tm_modcz_param)) {
                     // Unexpected MODCZ parameter token
                     m_errors += tr("Extraneous MODCZ parameter '%1'.")
                               .arg(Token.string(m_instr));
                     emit Error(m_pass, m_lineno, m_errors.last());
+                    m_idx = m_cnt;
+                    break;
                 }
+
+                m_errors += tr("Not an instruction token '%1'.")
+                          .arg(Token.string(m_instr));
+                emit Error(m_pass, m_lineno, m_errors.last());
                 m_idx = m_cnt;
             }
         }
@@ -3981,6 +4037,111 @@ bool P2Asm::asm_assign()
     m_symbols->set_atom(m_symbol, atom);
     m_IR.as_EQU = true;
     m_IR.EQU = atom;
+    if (sec_con != m_section) {
+        m_errors += tr("Not in constant section (CON) but found %1.")
+                    .arg(tr("assignment"));
+        emit Error(m_pass, m_lineno, m_errors.last());
+    }
+    return end_of_line();
+}
+
+/**
+ * @brief Start value for an enumeration, i.e. list of constant symbols
+ *
+ * Example:
+ *      #32, port32, port33, port34, led1, led2, led3
+ *
+ * Result:
+ *      port32  = 32
+ *      port33  = 33
+ *      port34  = 34
+ *      led1    = 35
+ *      led2    = 36
+ *      led3    = 37
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::asm_enum_initial()
+{
+    next();             // skip over "#"
+    m_advance = 0;      // Don't advance PC
+    m_IR.as_IR = false;
+    P2Atom atom = parse_expression();
+    m_IR.as_EQU = true;
+    m_IR.EQU = atom;
+    if (sec_con == m_section) {
+        if (!skip_comments())
+            return false;
+        if (!parse_comma())
+            return false;
+        while (m_idx < m_cnt) {
+            if (!skip_comments())
+                break;
+            QString symbol = find_symbol(m_section, curr_str());
+            p2_token_e tok = curr_tok();
+            if (t_symbol == tok) {
+                // append global name to section::symbol
+                define_symbol(symbol, atom);
+                // increase enumerator
+                atom += 1u;
+                next();
+            } else if (t_COMMA == tok) {
+                // skip next comma
+                next();
+            } else {
+                m_errors += tr("Unexpected token in enumeration: %1.")
+                            .arg(symbol);
+                emit Error(m_pass, m_lineno, m_errors.last());
+                m_idx = m_cnt;
+            }
+        }
+        m_enum = atom;
+    } else {
+        m_errors += tr("Not in constant section (CON) but found %1.")
+                    .arg(tr("enumeration start"));
+        emit Error(m_pass, m_lineno, m_errors.last());
+    }
+    return end_of_line();
+}
+
+bool P2Asm::asm_enum_continue()
+{
+    // first symbol was already taken and defined
+    m_advance = 0;      // Don't advance PC
+    m_IR.as_IR = false;
+    P2Atom atom = m_enum;
+    m_IR.as_EQU = true;
+    m_IR.EQU = atom;
+    if (sec_con == m_section) {
+        if (!parse_comma())
+            return false;
+        while (m_idx < m_cnt) {
+            if (!skip_comments())
+                break;
+            QString symbol = find_symbol(m_section, curr_str());
+            p2_token_e tok = curr_tok();
+            if (t_symbol == tok) {
+                // append global name to section::symbol
+                define_symbol(symbol, atom);
+                // increase enumerator
+                atom += 1u;
+                next();
+            } else if (t_COMMA == tok) {
+                // skip comma
+                next();
+            } else {
+                m_errors += tr("Unexpected token in enumeration: %1.")
+                            .arg(symbol);
+                emit Error(m_pass, m_lineno, m_errors.last());
+                m_idx = m_cnt;
+            }
+        }
+        m_enum = atom;
+    } else {
+        m_errors += tr("Not in constant section (CON) but found %1.")
+                    .arg(tr("enumeration start"));
+        emit Error(m_pass, m_lineno, m_errors.last());
+    }
     return end_of_line();
 }
 

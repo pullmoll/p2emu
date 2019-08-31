@@ -915,6 +915,12 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
                     break;
                 }
                 break;
+            default:
+                Q_ASSERT_X(false, "p2_inst9_e", "TJV/OPDST/1011110_10/1011110_11");
+            }
+            break;
+        case p2_1011110_1:
+            switch (IR.inst9()) {
             case p2_1011110_10:
             case p2_1011110_11:
                 dasm_1011110_1(instruction, brief);

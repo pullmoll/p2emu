@@ -643,6 +643,7 @@ P2Token::P2Token()
     TN_ADD(t_ALIGNW,            tm_mnemonic | tm_origin, QStringLiteral("ALIGNW"));
     TN_ADD(t_ALIGNL,            tm_mnemonic | tm_origin, QStringLiteral("ALIGNL"));
     TN_ADD(t_ORG,               tm_mnemonic | tm_origin, QStringLiteral("ORG"));
+    TN_ADD(t_ORGF,              tm_mnemonic | tm_origin, QStringLiteral("ORGF"));
     TN_ADD(t_ORGH,              tm_mnemonic | tm_origin, QStringLiteral("ORGH"));
     TN_ADD(t_FIT,               tm_mnemonic | tm_origin, QStringLiteral("FIT"));
 
@@ -1005,35 +1006,36 @@ P2Words P2Token::tokenize(const QString& line, const int lineno, int& in_curly) 
         list += QRegExp::escape(m_token_string.value(t_PTRB_postdec));
         list += QRegExp::escape(m_token_string.value(t_PTRB_preinc));
         list += QRegExp::escape(m_token_string.value(t_PTRB_predec));
-        list += QRegExp::escape(m_token_string.value(t_RELATIVE_HUB));      // relative HUB
-        list += QRegExp::escape(m_token_string.value(t_RELATIVE));          // relative
-        list += QRegExp::escape(m_token_string.value(t_IMMEDIATE_HUB));     // immediate 2
-        list += QRegExp::escape(m_token_string.value(t_IMMEDIATE));         // immediate
-        list += QRegExp::escape(m_token_string.value(t_COMMA));             // comma
-        list += QRegExp::escape(m_token_string.value(t__LBRACKET));         // left bracket (index expression start)
-        list += QRegExp::escape(m_token_string.value(t__RBRACKET));         // right bracket (index expression end)
-        list += QRegExp::escape(m_token_string.value(t__INC));              // increment
-        list += QRegExp::escape(m_token_string.value(t__PLUS));             // add / unary plus
-        list += QRegExp::escape(m_token_string.value(t__DEC));              // decrement
-        list += QRegExp::escape(m_token_string.value(t__MINUS));            // subtract / unary minus
-        list += QRegExp::escape(m_token_string.value(t__SHL));              // shift left
-        list += QRegExp::escape(m_token_string.value(t__LT));               // less than
-        list += QRegExp::escape(m_token_string.value(t__SHR));              // shift right
-        list += QRegExp::escape(m_token_string.value(t__REV));              // reverse
-        list += QRegExp::escape(m_token_string.value(t__DECOD));            // binary decode
-        list += QRegExp::escape(m_token_string.value(t__GT));               // greater than
-        list += QRegExp::escape(m_token_string.value(t__MUL));              // multiply
-        list += QRegExp::escape(m_token_string.value(t__DIV));              // divide
-        list += QRegExp::escape(m_token_string.value(t__MOD));              // modulo
-        list += QRegExp::escape(m_token_string.value(t__AND));              // binary AND
-        list += QRegExp::escape(m_token_string.value(t__ENCOD));            // binary encode
-        list += QRegExp::escape(m_token_string.value(t__OR));               // binary OR
-        list += QRegExp::escape(m_token_string.value(t__LPAREN));           // left parenthesis (sub expression start)
-        list += QRegExp::escape(m_token_string.value(t__RPAREN));           // right parenthesis (sub expression end)
-        list += QRegExp::escape(m_token_string.value(t__EQ));               // equals
-        list += QRegExp::escape(m_token_string.value(t_ASSIGN));            // assignment
-        list += QRegExp::escape(m_token_string.value(t_comment_lcurly));    // left curly brace (comment start)
-        list += QRegExp::escape(m_token_string.value(t_comment_rcurly));    // right curly brace (comment end)
+        list += QRegExp::escape(m_token_string.value(t_RELATIVE_HUB));      // relative HUB (@@@)
+        list += QRegExp::escape(m_token_string.value(t_RELATIVE));          // relative (@)
+        list += QRegExp::escape(m_token_string.value(t_IMMEDIATE_HUB));     // immediate 2 (##)
+        list += QRegExp::escape(m_token_string.value(t_IMMEDIATE));         // immediate (#)
+        list += QRegExp::escape(m_token_string.value(t_DOLLAR));            // dollar ($)
+        list += QRegExp::escape(m_token_string.value(t_COMMA));             // comma (,)
+        list += QRegExp::escape(m_token_string.value(t__LBRACKET));         // left bracket ([) (index expression start)
+        list += QRegExp::escape(m_token_string.value(t__RBRACKET));         // right bracket (]) (index expression end)
+        list += QRegExp::escape(m_token_string.value(t__INC));              // increment (++)
+        list += QRegExp::escape(m_token_string.value(t__PLUS));             // add / unary plus (+)
+        list += QRegExp::escape(m_token_string.value(t__DEC));              // decrement (--)
+        list += QRegExp::escape(m_token_string.value(t__MINUS));            // subtract / unary minus (-)
+        list += QRegExp::escape(m_token_string.value(t__SHL));              // shift left (<<)
+        list += QRegExp::escape(m_token_string.value(t__LT));               // less than (<)
+        list += QRegExp::escape(m_token_string.value(t__SHR));              // shift right (>>)
+        list += QRegExp::escape(m_token_string.value(t__REV));              // reverse (><)
+        list += QRegExp::escape(m_token_string.value(t__DECOD));            // binary decode (>|)
+        list += QRegExp::escape(m_token_string.value(t__ENCOD));            // binary encode (|<)
+        list += QRegExp::escape(m_token_string.value(t__GT));               // greater than (>)
+        list += QRegExp::escape(m_token_string.value(t__MUL));              // multiply (*)
+        list += QRegExp::escape(m_token_string.value(t__DIV));              // divide (/)
+        list += QRegExp::escape(m_token_string.value(t__MOD));              // modulo (\)
+        list += QRegExp::escape(m_token_string.value(t__AND));              // binary AND (&)
+        list += QRegExp::escape(m_token_string.value(t__OR));               // binary OR (|)
+        list += QRegExp::escape(m_token_string.value(t__LPAREN));           // left parenthesis "(" (sub expression start)
+        list += QRegExp::escape(m_token_string.value(t__RPAREN));           // right parenthesis ")" (sub expression end)
+        list += QRegExp::escape(m_token_string.value(t__EQ));               // equals (==)
+        list += QRegExp::escape(m_token_string.value(t_ASSIGN));            // assignment (=)
+        list += QRegExp::escape(m_token_string.value(t_comment_lcurly));    // left curly brace ({) (comment start)
+        list += QRegExp::escape(m_token_string.value(t_comment_rcurly));    // right curly brace (}) (comment end)
 
         re = QString("(%1)").arg(list.join(QChar('|')));
         rx.setPatternSyntax(QRegExp::RegExp2);  // greedy syntax

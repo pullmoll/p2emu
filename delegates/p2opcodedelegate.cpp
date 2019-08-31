@@ -41,7 +41,7 @@ P2OpcodeDelegate::P2OpcodeDelegate(QObject* parent)
 {
 }
 
-QStringList P2OpcodeDelegate::itemLines(const QModelIndex& index) const
+QStringList P2OpcodeDelegate::opcodeLines(const QModelIndex& index) const
 {
     const P2AsmModel* model = qobject_cast<const P2AsmModel*>(index.model());
     Q_ASSERT(model);    // assert the model is really P2AsmModel
@@ -71,7 +71,7 @@ void P2OpcodeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     QStyleOptionViewItem opt(option);
     initStyleOption(&opt, index);
 
-    const QStringList& lines = itemLines(index);
+    const QStringList& lines = opcodeLines(index);
     QString text = lines.value(0);
     if (lines.count() > 1)
         text += QStringLiteral("…");
@@ -107,7 +107,7 @@ void P2OpcodeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
 
 QSize P2OpcodeDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
-    QStringList lines = itemLines(index);
+    QStringList lines = opcodeLines(index);
     QFontMetrics metrics(option.font);
     return metrics.boundingRect(lines.join(QChar::LineFeed)).size();
 }
