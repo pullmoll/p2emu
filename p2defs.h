@@ -941,22 +941,22 @@ typedef struct {
  * @brief Offsets of the LUT shadow registers
  */
 typedef enum {
-    offs_IJMP3 = offsetof(p2_lutregs_t, IJMP3) / sizeof(p2_LONG),
-    offs_IRET3 = offsetof(p2_lutregs_t, IRET3) / sizeof(p2_LONG),
-    offs_IJMP2 = offsetof(p2_lutregs_t, IJMP2) / sizeof(p2_LONG),
-    offs_IRET2 = offsetof(p2_lutregs_t, IRET2) / sizeof(p2_LONG),
-    offs_IJMP1 = offsetof(p2_lutregs_t, IJMP1) / sizeof(p2_LONG),
-    offs_IRET1 = offsetof(p2_lutregs_t, IRET1) / sizeof(p2_LONG),
-    offs_PA    = offsetof(p2_lutregs_t,    PA) / sizeof(p2_LONG),
-    offs_PB    = offsetof(p2_lutregs_t,    PB) / sizeof(p2_LONG),
-    offs_PTRA  = offsetof(p2_lutregs_t,  PTRA) / sizeof(p2_LONG),
-    offs_PTRB  = offsetof(p2_lutregs_t,  PTRB) / sizeof(p2_LONG),
-    offs_DIRA  = offsetof(p2_lutregs_t,  DIRA) / sizeof(p2_LONG),
-    offs_DIRB  = offsetof(p2_lutregs_t,  DIRB) / sizeof(p2_LONG),
-    offs_OUTA  = offsetof(p2_lutregs_t,  OUTA) / sizeof(p2_LONG),
-    offs_OUTB  = offsetof(p2_lutregs_t,  OUTB) / sizeof(p2_LONG),
-    offs_INA   = offsetof(p2_lutregs_t,   INA) / sizeof(p2_LONG),
-    offs_INB   = offsetof(p2_lutregs_t,   INB) / sizeof(p2_LONG)
+    offs_IJMP3 = 0x1f0,         //!< offset of interrupt call address for INT3
+    offs_IRET3,                 //!< offset of interrupt return address for INT3
+    offs_IJMP2,                 //!< offset of interrupt call address for INT2
+    offs_IRET2,                 //!< offset of interrupt return address for INT2
+    offs_IJMP1,                 //!< offset of interrupt call address for INT1
+    offs_IRET1,                 //!< offset of interrupt return address for INT1
+    offs_PA,                    //!< offset of CALLD-imm return, CALLPA parameter, or LOC address
+    offs_PB,                    //!< offset of CALLD-imm return, CALLPB parameter, or LOC address
+    offs_PTRA,                  //!< offset of pointer A to hub RAM
+    offs_PTRB,                  //!< offset of pointer B to hub RAM
+    offs_DIRA,                  //!< offset of output enables for P31 ... P0
+    offs_DIRB,                  //!< offset of output enables for P63 ... P32
+    offs_OUTA,                  //!< offset of output states for P31 ... P0
+    offs_OUTB,                  //!< offset of output states for P63 ... P32
+    offs_INA,                   //!< offset of input states for P31 ... P0
+    offs_INB,                   //!< offset of input states for P63 ... P32
 }   p2_lutregs_e;
 
 Q_STATIC_ASSERT(offs_INB == 0x1ff);

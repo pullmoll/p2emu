@@ -752,7 +752,7 @@ P2Token::P2Token()
 
     // Immediate value
     TN_ADD(t__IMMEDIATE,       tm_immediate, QStringLiteral("#"));
-    TN_ADD(t__IMMEDIATE2,      tm_immediate, QStringLiteral("##"));
+    TN_ADD(t__IMMEDIATE_HUB,      tm_immediate, QStringLiteral("##"));
 
     // Relative address
     TN_ADD(t__RELATIVE,        tm_relative, QStringLiteral("@"));

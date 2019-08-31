@@ -25,10 +25,10 @@ void P2AsmListing::setSymbols(const P2SymbolTable& table)
         return;
     foreach(const P2Symbol& sym, table->symbols()) {
         QString name = sym.name();
-        P2Atom val = sym.value<P2Atom>();
+        P2Atom atom = sym.atom();
         QString line = QString("%1 %2 %3")
                        .arg(name, -40)
-                       .arg(val.type_name())
-                       .arg(val.to_long(), 8, 16, QChar(0));
+                       .arg(atom.type_name())
+                       .arg(atom.to_long(), 8, 16, QChar(0));
     }
 }

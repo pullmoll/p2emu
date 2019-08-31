@@ -13,11 +13,13 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     Q_ASSERT(model);
     QVariant v_words = model->data(index, Qt::UserRole);
     const P2Words words = qvariant_cast<P2Words>(v_words);
-    const P2Word& hword = model->highlight();
+    const P2Word hword = model->highlight(index);
 
     QStyleOptionViewItem opt(option);
     initStyleOption(&opt, index);
+    opt.showDecorationSelected = true;
 
+    const bool highlight = opt.state & QStyle::State_HasFocus ? true : false;
     const QString line = model->data(index).toString();
     const int ll = line.length() ? line.length() : 1;
 
@@ -34,11 +36,18 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
 
     // fill the background
     painter->setBackgroundMode(Qt::OpaqueMode);
-    painter->fillRect(opt.rect, opt.backgroundBrush);
+    if (highlight) {
+        int size = painter->pen().width();
+        QBrush brush = opt.backgroundBrush;
+        brush.setColor(brush.color().darker(105));
+        painter->fillRect(opt.rect.adjusted(0,0,-size,-size), brush);
+        painter->drawRect(opt.rect);
+    } else {
+        painter->fillRect(opt.rect, opt.backgroundBrush);
+    }
 
     painter->setBackgroundMode(Qt::TransparentMode);
     painter->setFont(opt.font);
-    const bool highlight = opt.state & QStyle::State_HasFocus ? true : false;
     painter->setPen(p2_palette(color_source, highlight));
 
     // paint all text character wise to collect the bounding rects
@@ -130,20 +139,6 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
             painter->setPen(QColor(0x00,0x00,0xff));
             painter->drawRect(box);
         }
-    }
-
-    if (highlight) {
-        painter->setBackgroundMode(Qt::OpaqueMode);
-        QPen pen(QColor(0x00,0x30,0x30));
-        painter->setPen(pen);
-        qreal size = pen.width();
-        QRectF rect = QRectF(opt.rect).adjusted(size,size,3*size,3*size);
-
-        painter->setOpacity(0.1);
-        painter->fillRect(rect, QColor(0x00,0xcf,0xef));
-
-        painter->setOpacity(0.5);
-        painter->drawRect(rect);
     }
 
     painter->restore();

@@ -134,7 +134,7 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
     const P2Symbol& symbol = m_table->symbol(name);
     const P2Word& definition = symbol.definition();
     const int definition_lineno = definition.lineno();
-    const P2Atom& atom = symbol.value<P2Atom>();
+    const P2Atom& atom = symbol.atom();
     const P2Atom::Type type = atom.type();
 
     switch (role) {

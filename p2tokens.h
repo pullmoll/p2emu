@@ -549,7 +549,7 @@ enum p2_token_e {
 
     // hash
     t__IMMEDIATE,       //!< "#"
-    t__IMMEDIATE2,      //!< "##"
+    t__IMMEDIATE_HUB,      //!< "##"
 
     // relative address
     t__RELATIVE,        //!< "@"

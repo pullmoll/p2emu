@@ -33,7 +33,7 @@
  ****************************************************************************/
 #include "p2symboltable.h"
 
-P2SymbolTableObj::P2SymbolTableObj()
+P2SymbolTableClass::P2SymbolTableClass()
     : m_symbols()
     , m_references()
 {
@@ -42,7 +42,7 @@ P2SymbolTableObj::P2SymbolTableObj()
 /**
  * @brief Clear the symbol table
  */
-void P2SymbolTableObj::clear()
+void P2SymbolTableClass::clear()
 {
     m_symbols.clear();
     m_references.clear();
@@ -53,11 +53,11 @@ void P2SymbolTableObj::clear()
  * @param key optional name of the symbol to return the count for
  * @return Number of symbols
  */
-int P2SymbolTableObj::count(const QString& key) const
+int P2SymbolTableClass::count(const QString& name) const
 {
-    if (key.isEmpty())
+    if (name.isEmpty())
         return m_symbols.count();
-    return m_symbols.count(key);
+    return m_symbols.count(name);
 }
 
 /**
@@ -65,7 +65,7 @@ int P2SymbolTableObj::count(const QString& key) const
  * @param name symbol name to check for
  * @return true if known, or false if unknown
  */
-bool P2SymbolTableObj::contains(const QString& name) const
+bool P2SymbolTableClass::contains(const QString& name) const
 {
     return m_symbols.contains(name);
 }
@@ -75,7 +75,7 @@ bool P2SymbolTableObj::contains(const QString& name) const
  * @param symbol const reference to the symbol to insert
  * @return false if the symbol was already in the table, or true if inserted
  */
-bool P2SymbolTableObj::insert(const P2Symbol& symbol)
+bool P2SymbolTableClass::insert(const P2Symbol& symbol)
 {
     if (m_symbols.contains(symbol.name()))
         return false;
@@ -89,7 +89,7 @@ bool P2SymbolTableObj::insert(const P2Symbol& symbol)
  * @param value initial value of the new symbol
  * @return false if the symbol was already in the table, or true if inserted
  */
-bool P2SymbolTableObj::insert(const QString& name, const P2Atom& value)
+bool P2SymbolTableClass::insert(const QString& name, const P2Atom& value)
 {
     return insert(P2Symbol(name, value));
 }
@@ -100,7 +100,7 @@ bool P2SymbolTableObj::insert(const QString& name, const P2Atom& value)
  * @param value new symbol value
  * @return
  */
-bool P2SymbolTableObj::set_atom(const QString& name, const P2Atom& value)
+bool P2SymbolTableClass::set_atom(const QString& name, const P2Atom& value)
 {
     if (!m_symbols.contains(name))
         return false;
@@ -113,12 +113,12 @@ bool P2SymbolTableObj::set_atom(const QString& name, const P2Atom& value)
  * @param name name of the symbold
  * @return P2Symbol which may be empty, if the symbol name is not in the table
  */
-P2Symbol P2SymbolTableObj::symbol(const QString& name) const
+P2Symbol P2SymbolTableClass::symbol(const QString& name) const
 {
     return m_symbols.value(name);
 }
 
-P2Atom::Type P2SymbolTableObj::type(const QString& name) const
+P2Atom::Type P2SymbolTableClass::type(const QString& name) const
 {
     return m_symbols.value(name).type();
 }
@@ -130,12 +130,12 @@ P2Atom::Type P2SymbolTableObj::type(const QString& name) const
  */
 
 
-P2Word P2SymbolTableObj::definition(const QString& name) const
+P2Word P2SymbolTableClass::definition(const QString& name) const
 {
-    return m_symbols[name].definition();
+    return m_symbols.value(name).definition();
 }
 
-const QList<P2Symbol> P2SymbolTableObj::references_in(int lineno) const
+const QList<P2Symbol> P2SymbolTableClass::references_in(int lineno) const
 {
     QList<P2Symbol> symbols;
     QStringList names = m_references.values(lineno);
@@ -144,14 +144,23 @@ const QList<P2Symbol> P2SymbolTableObj::references_in(int lineno) const
     return symbols;
 }
 
-P2Word P2SymbolTableObj::reference(const QString& name, int idx) const
+P2Word P2SymbolTableClass::reference(const QString& name, int idx) const
 {
     if (!m_symbols.contains(name))
         return P2Word();
     return m_symbols[name].reference(idx);
 }
 
-bool P2SymbolTableObj::add_reference(int lineno, const QString& name, const P2Word& word)
+const QList<int> P2SymbolTableClass::references(const QString& name) const
+{
+    QList<int> references = m_references.keys(name);
+    QMap<int,int> sorted;
+    foreach(int lineno, references)
+        sorted.insert(lineno, 1);
+    return sorted.keys();
+}
+
+bool P2SymbolTableClass::add_reference(int lineno, const QString& name, const P2Word& word)
 {
     if (m_references.contains(lineno, name))
         return true;
@@ -162,12 +171,17 @@ bool P2SymbolTableObj::add_reference(int lineno, const QString& name, const P2Wo
     return true;
 }
 
-const QList<int> P2SymbolTableObj::references(const QString& name) const
+/**
+ * @brief Return a symbol's atom
+ * The symbol values are stored as P2Atoms
+ */
+const P2Atom& P2SymbolTableClass::atom(const QString& name) const
 {
-    return m_references.keys(name);
+    const P2Symbol sym = m_symbols.value(name);
+    return sym.atom();
 }
 
-QStringList P2SymbolTableObj::names() const
+QStringList P2SymbolTableClass::names() const
 {
     QStringList names;
     foreach (const P2Symbol sym, m_symbols)
@@ -176,12 +190,12 @@ QStringList P2SymbolTableObj::names() const
     return names;
 }
 
-const p2_symbols_hash_t& P2SymbolTableObj::symbols() const
+const p2_symbols_hash_t& P2SymbolTableClass::symbols() const
 {
     return m_symbols;
 }
 
-const QMultiHash<int,QString>& P2SymbolTableObj::references() const
+const QMultiHash<int,QString>& P2SymbolTableClass::references() const
 {
     return m_references;
 }

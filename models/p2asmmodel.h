@@ -67,13 +67,13 @@ public:
     static QList<column_e> columns();
     p2_opcode_format_e opcode_format() const;
     QSize sizeHint(column_e column, bool header = false, const QString& text = QString()) const;
-    const P2Word& highlight() const;
+    const P2Word highlight(const QModelIndex& index) const;
 
 public slots:
     void invalidate();
     void setOpcodeFormat(p2_opcode_format_e format);
     void setFont(const QFont& font);
-    void setHighlight(const P2Word& word);
+    void setHighlight(const QModelIndex& index, const P2Word& word);
 
 private:
     P2Asm* m_asm;
@@ -81,7 +81,8 @@ private:
     QFont m_font;
     QPixmap m_error_pixmap;
     QIcon m_error;
-    P2Word m_highlight;
+    QModelIndex m_highlight_index;
+    P2Word m_highlight_word;
     QHash<column_e,QString> m_header;
     QHash<column_e,QRgb> m_background;
     QHash<column_e,int> m_head_alignment;

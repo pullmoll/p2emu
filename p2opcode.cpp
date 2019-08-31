@@ -1,8 +1,44 @@
+/****************************************************************************
+ *
+ * Propeller2 assembler opcode data implementation
+ *
+ * Copyright (C) 2019 Jürgen Buchmüller <pullmoll@t-online.de>
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ ****************************************************************************/
 #include "p2opcode.h"
 
 P2Opcode::P2Opcode(const p2_LONG opcode, const p2_PC_ORGH_t& pc_orgh)
     : u()
     , PC_ORGH(pc_orgh)
+    , src_imm_flag(imm_none)
+    , imm_set(false)
+    , imm_hub(false)
     , as_IR(false)
     , as_EQU(false)
     , AUGD()
@@ -16,6 +52,9 @@ P2Opcode::P2Opcode(const p2_LONG opcode, const p2_PC_ORGH_t& pc_orgh)
 P2Opcode::P2Opcode(const p2_inst7_e inst7, const p2_PC_ORGH_t& pc_orgh)
     : u()
     , PC_ORGH(pc_orgh)
+    , src_imm_flag(imm_none)
+    , imm_set(false)
+    , imm_hub(false)
     , as_IR(false)
     , as_EQU(false)
     , AUGD()
@@ -29,6 +68,9 @@ P2Opcode::P2Opcode(const p2_inst7_e inst7, const p2_PC_ORGH_t& pc_orgh)
 P2Opcode::P2Opcode(const p2_inst8_e inst8, const p2_PC_ORGH_t& pc_orgh)
     : u()
     , PC_ORGH(pc_orgh)
+    , src_imm_flag(imm_none)
+    , imm_set(false)
+    , imm_hub(false)
     , as_IR(false)
     , as_EQU(false)
     , AUGD()
@@ -42,6 +84,9 @@ P2Opcode::P2Opcode(const p2_inst8_e inst8, const p2_PC_ORGH_t& pc_orgh)
 P2Opcode::P2Opcode(const p2_inst9_e inst9, const p2_PC_ORGH_t& pc_orgh)
     : u()
     , PC_ORGH(pc_orgh)
+    , src_imm_flag(imm_none)
+    , imm_set(false)
+    , imm_hub(false)
     , as_IR(false)
     , as_EQU(false)
     , AUGD()
@@ -58,6 +103,9 @@ P2Opcode::P2Opcode(const p2_inst9_e inst9, const p2_PC_ORGH_t& pc_orgh)
  */
 void P2Opcode::clear(const p2_LONG opcode, const p2_PC_ORGH_t& pc_orgh)
 {
+    src_imm_flag = imm_none;
+    imm_set = false;
+    imm_hub = false;
     as_IR = false;
     as_EQU = false;
     AUGD.clear();
@@ -196,17 +244,45 @@ void P2Opcode::set_im(bool on)
 }
 
 /**
+ * @brief Set the immediate flag specified in imm_to to %on
+ * @param on true to set, false to clear the flag
+ */
+void P2Opcode::set_to(bool on)
+{
+    switch (src_imm_flag) {
+    case imm_none:
+        break;
+    case imm_to_im:
+        set_im(on);
+        break;
+    case imm_to_wz:
+        set_wz(on);
+        break;
+    }
+    switch (dst_imm_flag) {
+    case imm_none:
+        break;
+    case imm_to_im:
+        set_im(on);
+        break;
+    case imm_to_wz:
+        set_wz(on);
+        break;
+    }
+}
+
+/**
  * @brief Set the opcode's dst field and possibly set the AUGD value
  * @param value value to set
  * @param imm_to where to find the immediate bit (L)
  * @return true on success, or false on error
  */
-bool P2Opcode::set_dst(const P2Atom& value, imm_to_e imm_to)
+bool P2Opcode::set_dst(const P2Atom& value)
 {
     const p2_LONG val = value.to_long();
     u.op.dst = val & COG_MASK;
     if (val > COG_MASK) {
-        switch (imm_to) {
+        switch (dst_imm_flag) {
         case imm_none:
             return true;
         case imm_to_im:
@@ -218,11 +294,6 @@ bool P2Opcode::set_dst(const P2Atom& value, imm_to_e imm_to)
             if (u.op.wz)
                 break;
             error = dst_augd_wz;
-            return false;
-        case imm_to_wc:
-            if (u.op.wc)
-                break;
-            error = dst_augd_wc;
             return false;
         }
         AUGD = val & ~COG_MASK;
@@ -238,12 +309,12 @@ bool P2Opcode::set_dst(const P2Atom& value, imm_to_e imm_to)
  * @param imm_to where to find the immediate bit (I)
  * @return true on success, or false on error
  */
-bool P2Opcode::set_src(const P2Atom& value, imm_to_e imm_to)
+bool P2Opcode::set_src(const P2Atom& value)
 {
     const p2_LONG val = value.to_long();
     u.op.src = val & COG_MASK;
     if (val > COG_MASK) {
-        switch (imm_to) {
+        switch (src_imm_flag) {
         case imm_none:
             return true;
         case imm_to_im:
@@ -255,11 +326,6 @@ bool P2Opcode::set_src(const P2Atom& value, imm_to_e imm_to)
             if (u.op.wz)
                 break;
             error = src_augs_wz;
-            return false;
-        case imm_to_wc:
-            if (u.op.wc)
-                break;
-            error = src_augs_wc;
             return false;
         }
         AUGS = val & ~COG_MASK;

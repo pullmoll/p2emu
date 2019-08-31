@@ -78,7 +78,7 @@ P2Asm::P2Asm(QObject *parent)
     , m_hash_OPC()
     , m_hash_words()
     , m_hash_error()
-    , m_symbols(P2SymbolTable(new P2SymbolTableObj()))
+    , m_symbols(P2SymbolTable(new P2SymbolTableClass()))
     , m_lineno(0)
     , m_in_curly(0)
     , m_line()
@@ -425,13 +425,22 @@ bool P2Asm::assemble_pass()
                     m_symbols->set_atom(m_symbol, atom);
                 } else if (!sym.isNull()) {
                     // Already defined
-                    const p2_LONG value = sym.value<p2_LONG>();
-                    m_errors += tr("Symbol '%1' already defined in line #%2 (Value: %3, $%4, %%5).")
-                              .arg(m_symbol)
-                              .arg(sym.definition().lineno())
-                              .arg(value)
-                              .arg(value, 6, 16, QChar('0'))
-                              .arg(value, 32, 2, QChar('0'));
+                    const P2Atom& atom = sym.atom();
+                    if (P2Atom::Real == atom.type()) {
+                        const p2_REAL value = atom.to_real();
+                        m_errors += tr("Symbol '%1' already defined in line #%2 (Value: %3).")
+                                  .arg(m_symbol)
+                                  .arg(sym.definition().lineno())
+                                  .arg(value);
+                    } else {
+                        const p2_LONG value = atom.to_long();
+                        m_errors += tr("Symbol '%1' already defined in line #%2 (Value: %3, $%4, %%5).")
+                                    .arg(m_symbol)
+                                    .arg(sym.definition().lineno())
+                                    .arg(value)
+                                    .arg(value, 6, 16, QChar('0'))
+                                    .arg(value, 32, 2, QChar('0'));
+                    }
                     emit Error(m_pass, m_lineno, m_errors.last());
                 }
             }
@@ -2522,7 +2531,7 @@ P2Atom P2Asm::parse_atom(int level)
     case t__FLOAT:
         DEBUG_EXPR(" atom float function: %s", qPrintable(str));
         next();
-        atom = parse_expression(imm_none, level+1);
+        atom = parse_expression(level+1);
         atom.make_real();
         prev();
         break;
@@ -2530,7 +2539,7 @@ P2Atom P2Asm::parse_atom(int level)
     case t__ROUND:
         DEBUG_EXPR(" atom round function: %s", qPrintable(str));
         next();
-        atom = parse_expression(imm_none, level+1);
+        atom = parse_expression(level+1);
         atom.set_real(P2Atom::Real, static_cast<p2_QUAD>(atom.to_real() + 0.5));
         prev();
         break;
@@ -2538,7 +2547,7 @@ P2Atom P2Asm::parse_atom(int level)
     case t__TRUNC:
         DEBUG_EXPR(" atom trunc function: %s", qPrintable(str));
         next();
-        atom = parse_expression(imm_none, level+1);
+        atom = parse_expression(level+1);
         atom.set_uint(P2Atom::Quad, static_cast<p2_QUAD>(atom.to_real()));
         prev();
         break;
@@ -2547,7 +2556,7 @@ P2Atom P2Asm::parse_atom(int level)
         // precedence 0
         DEBUG_EXPR(" atom lparen: %s", qPrintable(str));
         next();
-        atom = parse_expression(imm_none, level+1);
+        atom = parse_expression(level+1);
         prev();
         break;
 
@@ -2560,7 +2569,7 @@ P2Atom P2Asm::parse_atom(int level)
         // precedence 0
         DEBUG_EXPR(" atom lbracket: %s", qPrintable(str));
         next();
-        atom = parse_expression(imm_none, level+1);
+        atom = parse_expression(level+1);
         prev();
         break;
 
@@ -2573,7 +2582,7 @@ P2Atom P2Asm::parse_atom(int level)
     case t__RELATIVE_HUB:
         DEBUG_EXPR(" atom relative: %s", qPrintable(str));
         next();
-        atom = parse_expression(imm_none, level+1);
+        atom = parse_expression(level+1);
         prev();
         break;
 
@@ -2581,7 +2590,7 @@ P2Atom P2Asm::parse_atom(int level)
         symbol = find_locsym(m_section, str);
         if (m_symbols->contains(symbol)) {
             P2Symbol sym = m_symbols->symbol(symbol);
-            atom = sym.value<P2Atom>();
+            atom = sym.atom();
             if (P2Atom::Invalid == sym.type())
                 atom.set_type(P2Atom::PC);
             DEBUG_EXPR(" atom found locsym: %s = %u", qPrintable(symbol), atom.to_long());
@@ -2595,7 +2604,7 @@ P2Atom P2Asm::parse_atom(int level)
         symbol = find_symbol(m_section, str, true);
         if (m_symbols->contains(symbol)) {
             P2Symbol sym = m_symbols->symbol(symbol);
-            atom = sym.value<P2Atom>();
+            atom = sym.atom();
             if (P2Atom::Invalid == sym.type())
                 atom.set_type(P2Atom::PC);
             DEBUG_EXPR(" atom found symbol: %s = %u", qPrintable(symbol), atom.to_long());
@@ -3128,10 +3137,10 @@ P2Atom P2Asm::parse_relative(bool& rel, int level)
 
 /**
  * @brief Evaluate an expression
- * @param imm_to put immediate flag into: -1=nowhere (default), 0=imm, 1=wz, 2=wc
+ * @param level expression nesting level
  * @return QVariant with the value of the expression
  */
-P2Atom P2Asm::parse_expression(imm_to_e imm_to, int level)
+P2Atom P2Asm::parse_expression(int level)
 {
     P2Atom atom = make_atom();
 
@@ -3140,7 +3149,6 @@ P2Atom P2Asm::parse_expression(imm_to_e imm_to, int level)
     if (!skip_comments())
         return atom;
 
-    bool imm = false;
     bool rel = false;
     p2_token_e tok = curr_tok();
 
@@ -3148,12 +3156,12 @@ P2Atom P2Asm::parse_expression(imm_to_e imm_to, int level)
         switch (tok) {
         case t__IMMEDIATE:
             DEBUG_EXPR(" expr immediate: %s", qPrintable(curr_str()));
-            imm = true;
+            m_IR.imm_set = true;
             next();
             break;
-        case t__IMMEDIATE2:
-            DEBUG_EXPR(" expr immediate2: %s", qPrintable(curr_str()));
-            imm = true;
+        case t__IMMEDIATE_HUB:
+            DEBUG_EXPR(" expr immediate HUB: %s", qPrintable(curr_str()));
+            m_IR.imm_hub = true;
             next();
             break;
         default:
@@ -3187,25 +3195,7 @@ P2Atom P2Asm::parse_expression(imm_to_e imm_to, int level)
 
 
     // Set immediate flag, if specified
-    switch (imm_to) {
-    case imm_to_im:
-        DEBUG_EXPR(" expr set im: %d", imm & 1);
-        m_IR.set_im(imm);
-        break;
-    case imm_to_wz:
-        DEBUG_EXPR(" expr set wz: %d", imm & 1);
-        m_IR.set_wz(imm);
-        break;
-    case imm_to_wc:
-        DEBUG_EXPR(" expr set wc: %d", imm & 1);
-        m_IR.set_wc(imm);
-        break;
-    default:
-        if (imm) {
-            DEBUG_EXPR(" expr ignore immediate: %d", imm & 1);
-        }
-        break;
-    }
+    m_IR.set_to(m_IR.imm_set || m_IR.imm_hub);
 
     while (m_idx < m_cnt) {
         if (!skip_comments())
@@ -3273,13 +3263,6 @@ bool P2Asm::error_dst_or_src()
                          .arg(QStringLiteral("L")));
         break;
 
-    case P2Opcode::dst_augd_wc:
-        m_errors += tr("%1 constant larger than $1ff but %2.")
-                    .arg(QStringLiteral("DST"))
-                    .arg(tr("%1 is not set for %2")
-                         .arg(QStringLiteral("WC"))
-                         .arg(QStringLiteral("L")));
-        break;
 
     case P2Opcode::src_augs_none:
         m_errors += tr("%1 constant larger than $1ff but %2.")
@@ -3303,14 +3286,6 @@ bool P2Asm::error_dst_or_src()
                          .arg(QStringLiteral("L")));
         break;
 
-    case P2Opcode::src_augs_wc:
-        m_errors += tr("%1 constant larger than $1ff but %2.")
-                    .arg(QStringLiteral("SRC"))
-                    .arg(tr("%1 is not set for %2")
-                         .arg(QStringLiteral("WC"))
-                         .arg(QStringLiteral("L")));
-        break;
-
     default:
         m_errors += tr("Missing handling for P2Opcode enum value.");
         break;
@@ -3323,18 +3298,26 @@ bool P2Asm::error_dst_or_src()
  * @brief Set the destination %dst in the opcode and check for errors
  * @return true if no error, or false for error
  */
-bool P2Asm::check_dst(const P2Atom& value, imm_to_e imm_to)
+P2Atom P2Asm::parse_dst(P2Opcode::ImmFlag flag)
 {
-    return m_IR.set_dst(value, imm_to) || error_dst_or_src();
+    m_IR.dst_imm_flag = flag;
+    P2Atom dst = parse_expression();
+    if (!m_IR.set_dst(dst))
+            error_dst_or_src();
+    return dst;
 }
 
 /**
  * @brief Set the source %src in the opcode and check for errors
  * @return true if no error, or false for error
  */
-bool P2Asm::check_src(const P2Atom& value, imm_to_e imm_to)
+P2Atom P2Asm::parse_src(P2Opcode::ImmFlag flag)
 {
-    return m_IR.set_src(value, imm_to) || error_dst_or_src();
+    m_IR.src_imm_flag = flag;
+    P2Atom src = parse_expression();
+    if (!m_IR.set_src(src))
+        error_dst_or_src();
+    return src;
 }
 
 /**
@@ -3344,14 +3327,13 @@ bool P2Asm::check_src(const P2Atom& value, imm_to_e imm_to)
  */
 bool P2Asm::end_of_line()
 {
-    if (skip_comments()) {
-        // ignore extra parameters?
-        m_errors += tr("Found extra parameters: %1")
-                  .arg(m_source[m_lineno].mid(m_words.value(m_idx).pos()));
-        emit Error(m_pass, m_lineno, m_errors.last());
-        return false;
-    }
-    return true;
+    if (!skip_comments())
+        return true;
+    // ignore extra parameters?
+    m_errors += tr("Found extra parameters: %1")
+              .arg(m_source[m_lineno].mid(m_words.value(m_idx).pos()));
+    emit Error(m_pass, m_lineno, m_errors.last());
+    return false;
 }
 
 /**
@@ -3583,14 +3565,12 @@ bool P2Asm::parse_INST()
  */
 bool P2Asm::parse_D_IM_S()
 {
-    P2Atom dst = parse_expression();
-    check_dst(dst);
+    P2Atom dst = parse_dst();
 
     if (!parse_comma())
         return false;
 
-    P2Atom src = parse_expression(imm_to_im);
-    check_src(src, imm_to_im);
+    P2Atom src = parse_src(P2Opcode::imm_to_im);
 
     return end_of_line();
 }
@@ -3602,11 +3582,8 @@ bool P2Asm::parse_D_IM_S()
  */
 bool P2Asm::parse_D_WCZ()
 {
-    P2Atom dst = parse_expression();
-    check_dst(dst);
-
+    P2Atom dst = parse_dst();
     optional_WCZ();
-
     return end_of_line();
 }
 
@@ -3628,8 +3605,7 @@ bool P2Asm::parse_WCZ()
  */
 bool P2Asm::parse_D()
 {
-    P2Atom dst = parse_expression();
-    check_dst(dst);
+    P2Atom dst = parse_dst();
     return end_of_line();
 }
 
@@ -3640,8 +3616,7 @@ bool P2Asm::parse_D()
  */
 bool P2Asm::parse_WZ_D()
 {
-    P2Atom dst = parse_expression(imm_to_wz);
-    check_dst(dst, imm_to_wz);
+    P2Atom dst = parse_dst(P2Opcode::imm_to_wz);
     return end_of_line();
 }
 
@@ -3652,8 +3627,7 @@ bool P2Asm::parse_WZ_D()
  */
 bool P2Asm::parse_IM_D()
 {
-    P2Atom dst = parse_expression(imm_to_im);
-    check_dst(dst, imm_to_im);
+    P2Atom dst = parse_dst(P2Opcode::imm_to_im);
     return end_of_line();
 }
 
@@ -3664,8 +3638,7 @@ bool P2Asm::parse_IM_D()
  */
 bool P2Asm::parse_IM_D_WCZ()
 {
-    P2Atom dst = parse_expression(imm_to_im);
-    check_dst(dst, imm_to_im);
+    P2Atom dst = parse_dst(P2Opcode::imm_to_im);
     optional_WCZ();
     return end_of_line();
 }
@@ -3677,8 +3650,7 @@ bool P2Asm::parse_IM_D_WCZ()
  */
 bool P2Asm::parse_IM_D_WC()
 {
-    P2Atom dst = parse_expression(imm_to_im);
-    check_dst(dst, imm_to_im);
+    P2Atom dst = parse_dst(P2Opcode::imm_to_im);
     optional_WC();
     return end_of_line();
 }
@@ -3690,8 +3662,7 @@ bool P2Asm::parse_IM_D_WC()
  */
 bool P2Asm::parse_IM_D_ANDC_ANDZ()
 {
-    P2Atom dst = parse_expression(imm_to_im);
-    check_dst(dst, imm_to_im);
+    P2Atom dst = parse_dst(P2Opcode::imm_to_im);
     mandatory_ANDC_ANDZ();
     return end_of_line();
 }
@@ -3703,8 +3674,7 @@ bool P2Asm::parse_IM_D_ANDC_ANDZ()
  */
 bool P2Asm::parse_IM_D_ORC_ORZ()
 {
-    P2Atom dst = parse_expression(imm_to_im);
-    check_dst(dst, imm_to_im);
+    P2Atom dst = parse_dst(P2Opcode::imm_to_im);
     mandatory_ORC_ORZ();
     return end_of_line();
 }
@@ -3716,8 +3686,7 @@ bool P2Asm::parse_IM_D_ORC_ORZ()
  */
 bool P2Asm::parse_IM_D_XORC_XORZ()
 {
-    P2Atom dst = parse_expression(imm_to_im);
-    check_dst(dst, imm_to_im);
+    P2Atom dst = parse_dst(P2Opcode::imm_to_im);
     mandatory_XORC_XORZ();
     return end_of_line();
 }
@@ -3729,14 +3698,12 @@ bool P2Asm::parse_IM_D_XORC_XORZ()
  */
 bool P2Asm::parse_D_IM_S_WCZ()
 {
-    P2Atom dst = parse_expression();
-    check_dst(dst);
+    P2Atom dst = parse_dst();
 
     if (!parse_comma())
         return false;
 
-    P2Atom src = parse_expression(imm_to_im);
-    check_src(src, imm_to_im);
+    P2Atom src = parse_src(P2Opcode::imm_to_im);
 
     optional_WCZ();
     return end_of_line();
@@ -3749,14 +3716,12 @@ bool P2Asm::parse_D_IM_S_WCZ()
  */
 bool P2Asm::parse_D_IM_S_ANDCZ()
 {
-    P2Atom dst = parse_expression();
-    check_dst(dst);
+    P2Atom dst = parse_dst();
 
     if (!parse_comma())
         return false;
 
-    P2Atom src = parse_expression(imm_to_im);
-    check_src(src, imm_to_im);
+    P2Atom src = parse_src(P2Opcode::imm_to_im);
 
     mandatory_ANDC_ANDZ();
     return end_of_line();
@@ -3769,14 +3734,12 @@ bool P2Asm::parse_D_IM_S_ANDCZ()
  */
 bool P2Asm::parse_D_IM_S_ORCZ()
 {
-    P2Atom dst = parse_expression();
-    check_dst(dst);
+    P2Atom dst = parse_dst();
 
     if (!parse_comma())
         return false;
 
-    P2Atom src = parse_expression(imm_to_im);
-    check_src(src, imm_to_im);
+    P2Atom src = parse_src(P2Opcode::imm_to_im);
 
     mandatory_ORC_ORZ();
     return end_of_line();
@@ -3789,14 +3752,12 @@ bool P2Asm::parse_D_IM_S_ORCZ()
  */
 bool P2Asm::parse_D_IM_S_XORCZ()
 {
-    P2Atom dst = parse_expression();
-    check_dst(dst);
+    P2Atom dst = parse_dst();
 
     if (!parse_comma())
         return false;
 
-    P2Atom src = parse_expression(imm_to_im);
-    check_src(src, imm_to_im);
+    P2Atom src = parse_src(P2Opcode::imm_to_im);
 
     mandatory_XORC_XORZ();
     return end_of_line();
@@ -3809,14 +3770,12 @@ bool P2Asm::parse_D_IM_S_XORCZ()
  */
 bool P2Asm::parse_D_IM_S_WC()
 {
-    P2Atom dst = parse_expression();
-    check_dst(dst);
+    P2Atom dst = parse_dst();
 
     if (!parse_comma())
         return false;
 
-    P2Atom src = parse_expression(imm_to_im);
-    check_src(src, imm_to_im);
+    P2Atom src = parse_src(P2Opcode::imm_to_im);
 
     optional_WC();
     return end_of_line();
@@ -3829,14 +3788,12 @@ bool P2Asm::parse_D_IM_S_WC()
  */
 bool P2Asm::parse_D_IM_S_WZ()
 {
-    P2Atom dst = parse_expression();
-    check_dst(dst);
+    P2Atom dst = parse_dst();
 
     if (!parse_comma())
         return false;
 
-    P2Atom src = parse_expression(imm_to_im);
-    check_src(src, imm_to_im);
+    P2Atom src = parse_src(P2Opcode::imm_to_im);
 
     optional_WZ();
     return end_of_line();
@@ -3849,14 +3806,12 @@ bool P2Asm::parse_D_IM_S_WZ()
  */
 bool P2Asm::parse_WZ_D_IM_S()
 {
-    P2Atom dst = parse_expression(imm_to_wz);
-    check_dst(dst, imm_to_wz);
+    P2Atom dst = parse_dst(P2Opcode::imm_to_wz);
 
     if (!parse_comma())
         return false;
 
-    P2Atom src = parse_expression(imm_to_im);
-    check_src(src, imm_to_im);
+    P2Atom src = parse_src(P2Opcode::imm_to_im);
 
     return end_of_line();
 }
@@ -3868,14 +3823,12 @@ bool P2Asm::parse_WZ_D_IM_S()
  */
 bool P2Asm::parse_D_IM_S_NNN(uint max)
 {
-    P2Atom dst = parse_expression();
-    check_dst(dst);
+    P2Atom dst = parse_dst();
 
     if (!parse_comma())
         return false;
 
-    P2Atom src = parse_expression(imm_to_im);
-    check_src(src, imm_to_im);
+    P2Atom src = parse_src(P2Opcode::imm_to_im);
 
     if (!parse_comma())
         return false;
@@ -3911,8 +3864,7 @@ bool P2Asm::parse_D_IM_S_NNN(uint max)
  */
 bool P2Asm::parse_IM_S()
 {
-    P2Atom src = parse_expression(imm_to_im);
-    check_src(src, imm_to_im);
+    P2Atom src = parse_src(P2Opcode::imm_to_im);
     return end_of_line();
 }
 
@@ -3923,8 +3875,7 @@ bool P2Asm::parse_IM_S()
  */
 bool P2Asm::parse_IM_S_WC()
 {
-    P2Atom src = parse_expression(imm_to_im);
-    check_src(src, imm_to_im);
+    P2Atom src = parse_src(P2Opcode::imm_to_im);
     optional_WC();
     return end_of_line();
 }
@@ -3937,26 +3888,25 @@ bool P2Asm::parse_IM_S_WC()
  */
 bool P2Asm::parse_PTRx_PC_ABS()
 {
-    p2_token_e dst = m_words.value(m_idx).tok();
-    switch (dst) {
-    case t_PA:
+    P2Atom dst = parse_expression();
+    switch (dst.to_long()) {
+    case offs_PA:
         break;
-    case t_PB:
+    case offs_PB:
         m_IR.set_wz();
         break;
-    case t_PTRA:
+    case offs_PTRA:
         m_IR.set_wc();
         break;
-    case t_PTRB:
+    case offs_PTRB:
         m_IR.set_wcz();
         break;
     default:
         m_errors += tr("Invalid pointer parameter: %1")
-                  .arg(m_source[m_lineno].mid(m_words.value(m_idx).pos()));
+                  .arg(dst.to_long());
         emit Error(m_pass, m_lineno, m_errors.last());
         return false;
     }
-    next();
     if (!parse_comma())
         return false;
 
@@ -11315,32 +11265,28 @@ bool P2Asm::asm_calld_ptrb_abs()
 bool P2Asm::asm_loc()
 {
     next();
-    p2_token_e tok = m_words.value(m_idx).tok();
+    P2Atom ptr = parse_dst();
     bool success = false;
-    switch (tok) {
-    case t_PA:
-        next();
-        parse_comma();
+    if (!parse_comma())
+        return false;
+    switch (ptr.to_long()) {
+    case offs_PA:
         success = asm_loc_pa();
         break;
-    case t_PB:
-        next();
-        parse_comma();
+    case offs_PB:
         success = asm_loc_pb();
         break;
-    case t_PTRA:
-        next();
-        parse_comma();
+    case offs_PTRA:
         success = asm_loc_ptra();
         break;
-    case t_PTRB:
-        next();
-        parse_comma();
+    case offs_PTRB:
         success = asm_loc_ptrb();
         break;
     default:
-        m_errors += tr("Invalid pointer type '%1'; expected one of %2.")
-                  .arg(m_words.value(m_idx).str())
+        prev();
+        prev();
+        m_errors += tr("Invalid pointer '%1'; expected one of %2.")
+                  .arg(curr_str())
                   .arg(tr("PA, PB, PTRA, or PTRB"));
         emit Error(m_pass, m_lineno, m_errors.last());
     }

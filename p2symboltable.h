@@ -36,18 +36,19 @@
 #include "p2symbol.h"
 
 typedef QHash<QString,P2Symbol> p2_symbols_hash_t;
+typedef QMultiHash<int,QString> p2_references_hash_t;
 
 /**
  * @brief The P2SymbolTable class is a QHash<QString,Symbol>, i.e. a hash
  * of symbol names containing their definitions.
  */
-class P2SymbolTableObj
+class P2SymbolTableClass
 {
 public:
-    explicit P2SymbolTableObj();
+    explicit P2SymbolTableClass();
 
     void clear();
-    int count(const QString& key = QString()) const;
+    int count(const QString& name = QString()) const;
     bool contains(const QString& name) const;
     bool insert(const P2Symbol& symbol);
     bool insert(const QString& name, const P2Atom& symbol);
@@ -62,24 +63,13 @@ public:
     const p2_symbols_hash_t& symbols() const;
     const QMultiHash<int, QString>& references() const;
 
+    const P2Atom& atom(const QString& name) const;
     bool set_atom(const QString& name, const P2Atom& symbol);
     bool add_reference(int lineno, const QString& name, const P2Word& word);
 
-    /**
-     * @brief Return a symbol value cast to the type T
-     * The symbol values are stored as QVariant and this
-     * template maps to the qvariant_cast<T> for the value.
-     */
-    template <typename T>
-    T value(const QString& name) const
-    {
-        const P2Symbol sym = m_symbols.value(name);
-        return sym.value<T>();
-    }
-
 private:
     p2_symbols_hash_t m_symbols;
-    QMultiHash<int,QString> m_references;
+    p2_references_hash_t m_references;
 };
 
-typedef QSharedPointer<P2SymbolTableObj> P2SymbolTable;
+typedef QSharedPointer<P2SymbolTableClass> P2SymbolTable;

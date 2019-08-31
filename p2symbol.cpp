@@ -40,7 +40,7 @@
  */
 P2Symbol::P2Symbol(const QString& name, const P2Atom& value)
     : m_name(name)
-    , m_value(value)
+    , m_atom(value)
     , m_references()
 {}
 
@@ -50,7 +50,7 @@ P2Symbol::P2Symbol(const QString& name, const P2Atom& value)
  */
 bool P2Symbol::isNull() const
 {
-    return m_value.isEmpty();
+    return m_atom.isEmpty();
 }
 
 /**
@@ -64,11 +64,20 @@ bool P2Symbol::isEmpty() const
 
 /**
  * @brief Return the symbol name
- * @return const QString reference to the name
+ * @return const reference to QString with the name
  */
 const QString& P2Symbol::name() const
 {
     return m_name;
+}
+
+/**
+ * @brief Return the symbol's atom
+ * @return const reference to the value
+ */
+const P2Atom& P2Symbol::atom() const
+{
+    return m_atom;
 }
 
 /**
@@ -97,9 +106,9 @@ P2Word P2Symbol::definition() const
  */
 bool P2Symbol::set_atom(const P2Atom& value)
 {
-    if (m_value == value)
+    if (m_atom == value)
         return false;
-    m_value = value;
+    m_atom = value;
     return true;
 }
 
@@ -109,7 +118,7 @@ bool P2Symbol::set_atom(const P2Atom& value)
  */
 P2Atom::Type P2Symbol::type() const
 {
-    return m_value.type();
+    return m_atom.type();
 }
 
 /**
@@ -118,7 +127,7 @@ P2Atom::Type P2Symbol::type() const
  */
 const QString P2Symbol::type_name() const
 {
-    return m_value.type_name();
+    return m_atom.type_name();
 }
 
 /**

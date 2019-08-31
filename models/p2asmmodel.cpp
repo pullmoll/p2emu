@@ -36,7 +36,7 @@
 static const QString style_nowrap = QStringLiteral("style='white-space:nowrap;'");
 static const QString style_left = QStringLiteral("style='text-align:left;'");
 static const QString style_padding = QStringLiteral("style='padding:0px 4px 0px 4px;'");
-static const QString style_background_error = QStringLiteral("style='background:#ffc0c0; border: 1px solid #ddd;'");
+static const QString style_background_error = QStringLiteral("style='background:#fff0f0; border: 1px solid #ddd;'");
 static const QString style_background_tokens = QStringLiteral("style='background:#10fcff; border: 1px solid #ddd;'");
 static const QString style_background_symbols = QStringLiteral("style='background:#fff0ff; border: 1px solid #ddd;'");
 
@@ -172,7 +172,7 @@ int P2AsmModel::columnCount(const QModelIndex &parent) const
 QVariant P2AsmModel::data(const QModelIndex &index, int role) const
 {
     QVariant result;
-    QFont font;
+    QFont font(m_font);
 
     if (!index.isValid())
         return result;
@@ -326,8 +326,9 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
             result = errorsToolTip(errors, style_background_error);
             break;
 
-        default:
-            result.clear();
+        case c_Source:
+            result = tr("This column shows the source code.");
+            break;
         }
         break;
 
@@ -351,10 +352,6 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
         case c_Errors:
             if (!has_errors)
                 result = QColor(m_background.value(c_Source));
-            break;
-        case c_Source:
-            if (has_errors)
-                result = QColor(m_background.value(c_Errors));
             break;
         default:
             ;
@@ -524,14 +521,17 @@ void P2AsmModel::setFont(const QFont& font)
     endResetModel();
 }
 
-const P2Word& P2AsmModel::highlight() const
+const P2Word P2AsmModel::highlight(const QModelIndex& index) const
 {
-    return m_highlight;
+    if (index != m_highlight_index)
+        return P2Word();
+    return m_highlight_word;
 }
 
-void P2AsmModel::setHighlight(const P2Word& word)
+void P2AsmModel::setHighlight(const QModelIndex& index, const P2Word& word)
 {
-    m_highlight = word;
+    m_highlight_index = index;
+    m_highlight_word = word;
 }
 
 
@@ -647,7 +647,8 @@ QString P2AsmModel::symbolsToolTip(const P2SymbolTable& symbols, const QList<P2S
     for (int i = 0; i < symrefs.count(); i++) {
         const P2Symbol& sym = symrefs[i];
         const P2Word& word = symbols->reference(sym.name());
-        p2_LONG val = sym.value<p2_LONG>();
+        const P2Atom& atom = sym.atom();
+        p2_LONG val = atom.to_long();
         html += html_start_tr();
         html += html_td(QString::number(word.lineno()), bgd);
         html += html_td(sym.name(), bgd);

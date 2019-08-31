@@ -48,8 +48,7 @@ public:
     bool isNull() const;
     bool isEmpty() const;
     const QString& name() const;
-    template <typename T>
-    T value() const { return static_cast<T>(m_value.value()); }
+    const P2Atom& atom() const;
     bool set_atom(const P2Atom& value);
     P2Atom::Type type() const;
     const QString type_name() const;
@@ -61,7 +60,7 @@ public:
 
 private:
     QString m_name;
-    P2Atom m_value;
+    P2Atom m_atom;
     P2Word m_definition;
     p2_lineno_word_hash_t m_references;
 };

@@ -191,11 +191,11 @@ private:
     P2Atom parse_shiftops(int level);
     P2Atom parse_binops(int level);
     P2Atom parse_relative(bool& rel, int level);
-    P2Atom parse_expression(imm_to_e imm_to = imm_none, int level = 0);
+    P2Atom parse_expression(int level = 0);
 
     bool error_dst_or_src();
-    bool check_dst(const P2Atom& value, imm_to_e imm_to = imm_none);
-    bool check_src(const P2Atom& value, imm_to_e imm_to = imm_none);
+    P2Atom parse_dst(P2Opcode::ImmFlag flag = P2Opcode::imm_none);
+    P2Atom parse_src(P2Opcode::ImmFlag flag = P2Opcode::imm_none);
     bool end_of_line();
     bool parse_comma();
     void optional_comma();

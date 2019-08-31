@@ -590,7 +590,7 @@ void MainWindow::goto_line(const QUrl& url)
     const P2Word& word = table->definition(sym.name());
     if (path == key_tv_asm) {
         const QModelIndex idx = m_amodel->index(line - 1, P2AsmModel::c_Source);
-        m_amodel->setHighlight(word);
+        m_amodel->setHighlight(idx, word);
         ui->tvAsm->setCurrentIndex(idx);
         ui->tvAsm->viewport()->repaint();
         // ui->tvAsm->setFocus(Qt::OtherFocusReason);
@@ -767,10 +767,10 @@ void MainWindow::setupToolbars()
     ui->toolbar->addAction(ui->action_Open);
     ui->toolbar->addAction(ui->action_Open_random);
 
-    ui->toolbarAsm->addSeparator();
-    ui->toolbarAsm->addAction(ui->action_Assemble);
+    ui->toolbar->addSeparator();
+    ui->toolbar->addAction(ui->action_Assemble);
 
-    ui->toolbarAsm->addSeparator();
+    ui->toolbar->addSeparator();
     ui->toolbar->addAction(ui->action_Quit);
 }
 

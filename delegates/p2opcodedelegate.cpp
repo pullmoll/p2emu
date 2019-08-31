@@ -14,8 +14,6 @@ void P2OpcodeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     Q_ASSERT(model);    // assert the model is really P2AsmModel
 
     QVariant var = model->data(index, Qt::EditRole);
-    if (var.isNull())
-        return;
 
     const P2Opcode IR = qvariant_cast<P2Opcode>(var);
     p2_opcode_format_e format = model->opcode_format();
