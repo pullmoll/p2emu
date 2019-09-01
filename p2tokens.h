@@ -549,12 +549,12 @@ enum p2_token_e {
     t_DOLLAR,           //!< "$"
     t_COMMA,            //!< ","
 
-    // hash
+    // traits
     t_IMMEDIATE,        //!< "#"
-    t_IMMEDIATE_HUB,    //!< "##"
-
-    // relative address
+    t_AUGMENTED,        //!< "##"
     t_RELATIVE,         //!< "@"
+    t_ABSOLUTE,         //!< "\"
+    t_ADDRESS_HUB,      //!< "#@"
     t_RELATIVE_HUB,     //!< "@@@"
 
     // relations
@@ -582,7 +582,7 @@ enum p2_token_e {
     // multiplication ops
     t__MUL,             //!< "*"
     t__DIV,             //!< "/"
-    t__MOD,             //!< "\"
+    t__MOD,             //!< "%"
 
     // addition ops
     t__PLUS,            //!< "+"

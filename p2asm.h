@@ -154,6 +154,7 @@ private:
     QHash<Section,QString> m_sections;      //!< section names as strings
 
     int commata_left() const;
+    bool find_tok(p2_token_e tok) const;
     QStringList results_instruction(bool wr_mem);
     QString results_assignment();
     QString results_comment();
@@ -189,14 +190,16 @@ private:
     bool assemble_pass();
 
     P2Atom parse_atom(int level);
+    P2Atom parse_ptr_index(int level);
     P2Atom parse_primary(int level);
     P2Atom parse_unary(int level);
     P2Atom parse_mulops(int level);
     P2Atom parse_addops(int level);
     P2Atom parse_shiftops(int level);
     P2Atom parse_binops(int level);
-    P2Atom parse_relative(bool& rel, int level);
     P2Atom parse_expression(int level = 0);
+
+    bool encode_ptr_index(const P2Atom& index);
 
     bool error_dst_or_src();
     P2Atom parse_dst(P2Opcode::ImmFlag flag = P2Opcode::imm_none);
@@ -304,6 +307,8 @@ private:
     bool asm_testbn_or();
     bool asm_testb_xor();
     bool asm_testbn_xor();
+    bool asm_testb();
+    bool asm_testbn();
 
     bool asm_bitl();
     bool asm_bith();
@@ -634,6 +639,8 @@ private:
     bool asm_testpn_or();
     bool asm_testp_xor();
     bool asm_testpn_xor();
+    bool asm_testp();
+    bool asm_testpn();
 
     bool asm_dirl();
     bool asm_dirh();

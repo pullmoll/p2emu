@@ -37,18 +37,21 @@
 
 P2Atom::P2Atom(P2Atom::Type type)
     : m_type(type)
+    , m_trait(None)
     , m_data()
 {
 }
 
 P2Atom::P2Atom(const P2Atom& other)
     : m_type(other.m_type)
+    , m_trait(None)
     , m_data(other.m_data)
 {
 }
 
 P2Atom::P2Atom(bool value, Type type)
     : m_type(type)
+    , m_trait(None)
     , m_data()
 {
     set_uint(m_type, value & 1);
@@ -56,6 +59,7 @@ P2Atom::P2Atom(bool value, Type type)
 
 P2Atom::P2Atom(p2_BYTE value, Type type)
     : m_type(type)
+    , m_trait(None)
     , m_data()
 {
     set_uint(m_type, value);
@@ -63,6 +67,7 @@ P2Atom::P2Atom(p2_BYTE value, Type type)
 
 P2Atom::P2Atom(p2_WORD value, Type type)
     : m_type(type)
+    , m_trait(None)
     , m_data()
 {
     set_uint(m_type, value);
@@ -70,6 +75,7 @@ P2Atom::P2Atom(p2_WORD value, Type type)
 
 P2Atom::P2Atom(p2_LONG value, Type type)
     : m_type(type)
+    , m_trait(None)
     , m_data()
 {
     set_uint(m_type, value);
@@ -77,6 +83,7 @@ P2Atom::P2Atom(p2_LONG value, Type type)
 
 P2Atom::P2Atom(p2_QUAD value, Type type)
     : m_type(type)
+    , m_trait(None)
     , m_data()
 {
     set_uint(m_type, value);
@@ -84,6 +91,7 @@ P2Atom::P2Atom(p2_QUAD value, Type type)
 
 P2Atom::P2Atom(p2_REAL value, P2Atom::Type type)
     : m_type(type)
+    , m_trait(None)
     , m_data()
 {
     set_real(m_type, value);
@@ -96,6 +104,7 @@ void P2Atom::clear(Type type)
 {
     m_data.clear();
     m_type = type;
+    m_trait = None;
 }
 
 /**
@@ -154,6 +163,15 @@ bool P2Atom::isZero() const
 bool P2Atom::isValid() const
 {
     return m_type != Invalid;
+}
+
+/**
+ * @brief Return the trait of the atom
+ * @return Enumeration value from Trait
+ */
+P2Atom::Trait P2Atom::trait() const
+{
+    return m_trait;
 }
 
 /**
@@ -270,6 +288,33 @@ p2_QUAD P2Atom::value(bool* ok) const
             result |= static_cast<p2_QUAD>(m_data[7]) << 56;
     }
     return result;
+}
+
+/**
+ * @brief Set the atom's trait
+ * @param trait new trait to set
+ * @return true if set, false if not changed
+ */
+bool P2Atom::set_trait(P2Atom::Trait trait)
+{
+    if (trait == m_trait)
+        return false;
+    m_trait = trait;
+    return true;
+}
+
+/**
+ * @brief Add a trait to the atom's trait
+ * @param trait trait to add
+ * @return true if added, false if not changed
+ */
+bool P2Atom::add_trait(P2Atom::Trait add)
+{
+    Trait trait = static_cast<Trait>(m_trait | add);
+    if (trait == m_trait)
+        return false;
+    m_trait = trait;
+    return true;
 }
 
 /**

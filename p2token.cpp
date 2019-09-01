@@ -752,13 +752,13 @@ P2Token::P2Token()
     // Current PC reference
     TN_ADD(t_DOLLAR,            tm_constant, QStringLiteral("$"));
 
-    // Immediate value
-    TN_ADD(t_IMMEDIATE,         tm_immediate, QStringLiteral("#"));
-    TN_ADD(t_IMMEDIATE_HUB,     tm_immediate, QStringLiteral("##"));
-
-    // Relative address
-    TN_ADD(t_RELATIVE,          tm_relative, QStringLiteral("@"));
-    TN_ADD(t_RELATIVE_HUB,      tm_relative, QStringLiteral("@@@"));
+    // Traits
+    TN_ADD(t_IMMEDIATE,         tm_traits, QStringLiteral("#"));
+    TN_ADD(t_AUGMENTED,         tm_traits, QStringLiteral("##"));
+    TN_ADD(t_RELATIVE,          tm_traits, QStringLiteral("@"));
+    TN_ADD(t_ABSOLUTE,          tm_traits, QStringLiteral("\\"));
+    TN_ADD(t_ADDRESS_HUB,       tm_traits, QStringLiteral("#@"));
+    TN_ADD(t_RELATIVE_HUB,      tm_traits, QStringLiteral("@@@"));
 
     // Sub expression in parens
     TN_ADD(t__LPAREN,           tm_parens, QStringLiteral("("));
@@ -779,7 +779,7 @@ P2Token::P2Token()
     // Set the multiplication operators
     TN_ADD(t__MUL,              tm_mulop, QStringLiteral("*"));
     TN_ADD(t__DIV,              tm_mulop, QStringLiteral("/"));
-    TN_ADD(t__MOD,              tm_mulop, QStringLiteral("\\"));
+    TN_ADD(t__MOD,              tm_mulop, QStringLiteral("%"));
 
     // Set the addition operators
     TN_ADD(t__PLUS,             tm_addop | tm_unary, QStringLiteral("+"));
@@ -915,8 +915,7 @@ P2Token::P2Token()
     m_t_type_name.insert(tt_delimiter,      QStringLiteral("Delimiter"));
     m_t_type_name.insert(tt_constant,       QStringLiteral("Constant"));
     m_t_type_name.insert(tt_function,       QStringLiteral("Function"));
-    m_t_type_name.insert(tt_immediate,      QStringLiteral("Immediate"));
-    m_t_type_name.insert(tt_relative,       QStringLiteral("Relative"));
+    m_t_type_name.insert(tt_traits,         QStringLiteral("Traits"));
     m_t_type_name.insert(tt_conditional,    QStringLiteral("Conditional"));
     m_t_type_name.insert(tt_modcz_param,    QStringLiteral("MODCZ param"));
     m_t_type_name.insert(tt_mnemonic,       QStringLiteral("Instruction"));
@@ -1007,10 +1006,12 @@ P2Words P2Token::tokenize(const QString& line, const int lineno, int& in_curly) 
         list += QRegExp::escape(m_token_string.value(t_PTRB_postdec));
         list += QRegExp::escape(m_token_string.value(t_PTRB_preinc));
         list += QRegExp::escape(m_token_string.value(t_PTRB_predec));
-        list += QRegExp::escape(m_token_string.value(t_RELATIVE_HUB));      // relative HUB (@@@)
-        list += QRegExp::escape(m_token_string.value(t_RELATIVE));          // relative (@)
-        list += QRegExp::escape(m_token_string.value(t_IMMEDIATE_HUB));     // immediate 2 (##)
         list += QRegExp::escape(m_token_string.value(t_IMMEDIATE));         // immediate (#)
+        list += QRegExp::escape(m_token_string.value(t_AUGMENTED));         // immediate 2 (##)
+        list += QRegExp::escape(m_token_string.value(t_RELATIVE));          // relative (@)
+        list += QRegExp::escape(m_token_string.value(t_ABSOLUTE));          // absolute (\)
+        list += QRegExp::escape(m_token_string.value(t_ADDRESS_HUB));       // relative HUB (#@)
+        list += QRegExp::escape(m_token_string.value(t_RELATIVE_HUB));      // relative HUB (@@@)
         list += QRegExp::escape(m_token_string.value(t_DOLLAR));            // dollar ($)
         list += QRegExp::escape(m_token_string.value(t_COMMA));             // comma (,)
         list += QRegExp::escape(m_token_string.value(t__LBRACKET));         // left bracket ([) (index expression start)
@@ -1028,7 +1029,7 @@ P2Words P2Token::tokenize(const QString& line, const int lineno, int& in_curly) 
         list += QRegExp::escape(m_token_string.value(t__GT));               // greater than (>)
         list += QRegExp::escape(m_token_string.value(t__MUL));              // multiply (*)
         list += QRegExp::escape(m_token_string.value(t__DIV));              // divide (/)
-        list += QRegExp::escape(m_token_string.value(t__MOD));              // modulo (\)
+        list += QRegExp::escape(m_token_string.value(t__MOD));              // modulo (%)
         list += QRegExp::escape(m_token_string.value(t__AND));              // binary AND (&)
         list += QRegExp::escape(m_token_string.value(t__OR));               // binary OR (|)
         list += QRegExp::escape(m_token_string.value(t__LPAREN));           // left parenthesis "(" (sub expression start)

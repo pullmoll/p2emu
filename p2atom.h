@@ -70,15 +70,25 @@ class P2Atom
 {
 public:
     enum Type {
-        Invalid,
-        Bool,
-        Byte,
-        Word,
-        PC,
-        Long,
-        Quad,
-        Real,
-        String
+        Invalid         = -1,       //!< Type is not set
+        Bool,                       //!< Value is bool
+        Byte,                       //!< Value is BYTE sized
+        Word,                       //!< Value is WORD sized
+        PC,                         //!< Value is an address (Program Counter)
+        Long,                       //!< Value is LONG sized
+        Quad,                       //!< Value is QUAD sized
+        Real,                       //!< Value is REAL sized (qreal can be float or double)
+        String                      //!< Value is an array of BYTE
+    };
+
+    enum Trait {
+        None            = 0,        //!< no special trait
+        Immediate       = (1 << 0), //!< expression started with '#'
+        Augmented       = (1 << 1), //!< expression started with '##'
+        Relative        = (1 << 2), //!< expression started with '@'
+        Absolute        = (1 << 3), //!< expression contained a '\'
+        AddressHub      = (1 << 4), //!< expression started with '#@'
+        RelativeHub     = (1 << 5), //!< expression started with '@@@'
     };
 
     static constexpr int sz_BYTE = sizeof(p2_BYTE);
@@ -101,6 +111,7 @@ public:
     bool isEmpty() const;
     bool isZero() const;
     bool isValid() const;
+    Trait trait() const;
     int size() const;
     p2_LONG usize() const;
     int count() const;
@@ -109,6 +120,9 @@ public:
     void set_type(Type type);
 
     p2_QUAD value(bool *ok = nullptr) const;
+
+    bool set_trait(Trait trait);
+    bool add_trait(Trait add);
 
     bool append_uint(Type type, p2_QUAD value);
     bool append_real(Type type, p2_REAL value);
@@ -184,5 +198,6 @@ public:
 
 private:
     Type m_type;
+    Trait m_trait;
     QVector<p2_BYTE> m_data;
 };

@@ -37,8 +37,6 @@ P2Opcode::P2Opcode(const p2_LONG opcode, const p2_PC_ORGH_t& pc_orgh)
     : u()
     , PC_ORGH(pc_orgh)
     , src_imm_flag(imm_none)
-    , imm_set(false)
-    , imm_hub(false)
     , as_IR(false)
     , as_EQU(false)
     , AUGD()
@@ -53,8 +51,6 @@ P2Opcode::P2Opcode(const p2_inst7_e inst7, const p2_PC_ORGH_t& pc_orgh)
     : u()
     , PC_ORGH(pc_orgh)
     , src_imm_flag(imm_none)
-    , imm_set(false)
-    , imm_hub(false)
     , as_IR(false)
     , as_EQU(false)
     , AUGD()
@@ -69,8 +65,6 @@ P2Opcode::P2Opcode(const p2_inst8_e inst8, const p2_PC_ORGH_t& pc_orgh)
     : u()
     , PC_ORGH(pc_orgh)
     , src_imm_flag(imm_none)
-    , imm_set(false)
-    , imm_hub(false)
     , as_IR(false)
     , as_EQU(false)
     , AUGD()
@@ -85,8 +79,6 @@ P2Opcode::P2Opcode(const p2_inst9_e inst9, const p2_PC_ORGH_t& pc_orgh)
     : u()
     , PC_ORGH(pc_orgh)
     , src_imm_flag(imm_none)
-    , imm_set(false)
-    , imm_hub(false)
     , as_IR(false)
     , as_EQU(false)
     , AUGD()
@@ -104,8 +96,6 @@ P2Opcode::P2Opcode(const p2_inst9_e inst9, const p2_PC_ORGH_t& pc_orgh)
 void P2Opcode::clear(const p2_LONG opcode, const p2_PC_ORGH_t& pc_orgh)
 {
     src_imm_flag = imm_none;
-    imm_set = false;
-    imm_hub = false;
     as_IR = false;
     as_EQU = false;
     AUGD.clear();
@@ -113,6 +103,15 @@ void P2Opcode::clear(const p2_LONG opcode, const p2_PC_ORGH_t& pc_orgh)
     PC_ORGH = pc_orgh;
     u.opcode = opcode;
     DATA.clear();
+    EQU.clear();
+}
+
+const P2Atom& P2Opcode::equ() const
+{
+    static P2Atom empty;
+    if (!as_EQU)
+        return empty;
+    return EQU;
 }
 
 p2_cond_e P2Opcode::cond() const
@@ -158,6 +157,14 @@ p2_LONG P2Opcode::dst() const
 p2_LONG P2Opcode::src() const
 {
     return u.op.src;
+}
+
+bool P2Opcode::set_equ(const P2Atom& value)
+{
+    as_IR = false;
+    as_EQU = true;
+    EQU = value;
+    return true;
 }
 
 /**
@@ -256,6 +263,7 @@ void P2Opcode::set_to(bool on)
         set_im(on);
         break;
     case imm_to_wz:
+        Q_ASSERT_X(false, "set WZ for SRC?", "This is wrong");
         set_wz(on);
         break;
     }
@@ -277,11 +285,23 @@ void P2Opcode::set_to(bool on)
  * @param imm_to where to find the immediate bit (L)
  * @return true on success, or false on error
  */
-bool P2Opcode::set_dst(const P2Atom& value)
+bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH)
 {
-    const p2_LONG val = value.to_long();
-    u.op.dst = val & COG_MASK;
-    if (val > COG_MASK) {
+    p2_LONG value;
+
+    switch (atom.trait()) {
+    case P2Atom::Relative:
+        value = atom.to_long() - ORG;
+        break;
+    case P2Atom::AddressHub:
+        value = atom.to_long() - ORG + ORGH;
+        break;
+    default:
+        value = atom.to_long();
+    }
+
+    u.op.dst = value & COG_MASK;
+    if (value > COG_MASK || atom.trait() == P2Atom::Augmented) {
         switch (dst_imm_flag) {
         case imm_none:
             return true;
@@ -296,7 +316,7 @@ bool P2Opcode::set_dst(const P2Atom& value)
             error = dst_augd_wz;
             return false;
         }
-        AUGD = val & ~COG_MASK;
+        AUGD = value & ~COG_MASK;
     } else {
         AUGD.clear();
     }
@@ -309,18 +329,33 @@ bool P2Opcode::set_dst(const P2Atom& value)
  * @param imm_to where to find the immediate bit (I)
  * @return true on success, or false on error
  */
-bool P2Opcode::set_src(const P2Atom& value)
+bool P2Opcode::set_src(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH)
 {
-    const p2_LONG val = value.to_long();
-    u.op.src = val & COG_MASK;
-    if (val > COG_MASK) {
+    p2_LONG value;
+
+    switch (atom.trait()) {
+    case P2Atom::Relative:
+        value = atom.to_long() - ORG;
+        break;
+    case P2Atom::AddressHub:
+        value = atom.to_long() - ORG + ORGH;
+        break;
+    default:
+        value = atom.to_long();
+    }
+
+    u.op.src = value & COG_MASK;
+    if (value > COG_MASK || atom.trait() == P2Atom::Augmented) {
         switch (src_imm_flag) {
         case imm_none:
             return true;
         case imm_to_im:
             if (u.op.im)
                 break;
-            error = src_augs_im;
+            // XXX: can we do this...
+            u.op.im = true;
+            // instead of printing an error?
+            // error = src_augs_im;
             return false;
         case imm_to_wz:
             if (u.op.wz)
@@ -328,7 +363,7 @@ bool P2Opcode::set_src(const P2Atom& value)
             error = src_augs_wz;
             return false;
         }
-        AUGS = val & ~COG_MASK;
+        AUGS = value & ~COG_MASK;
     } else {
         AUGS.clear();
     }

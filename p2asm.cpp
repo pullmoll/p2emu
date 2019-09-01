@@ -1818,11 +1818,11 @@ bool P2Asm::assemble_dat()
             break;
 
         case t_TESTB:
-            success = asm_testb_w();
+            success = asm_testb();
             break;
 
         case t_TESTBN:
-            success = asm_testbn_w();
+            success = asm_testbn();
             break;
 
         case t_TESTN:
@@ -1830,11 +1830,11 @@ bool P2Asm::assemble_dat()
             break;
 
         case t_TESTP:
-            success = asm_testp_w();
+            success = asm_testp();
             break;
 
         case t_TESTPN:
-            success = asm_testpn_w();
+            success = asm_testpn();
             break;
 
         case t_TJF:
@@ -2247,6 +2247,18 @@ int P2Asm::commata_left() const
         if (t_COMMA == m_words[i].tok())
             commata++;
     return commata;
+}
+
+/**
+ * @brief Return true, if %tok is found in the following words
+ * @return true if %tok is found, or false otherwise
+ */
+bool P2Asm::find_tok(p2_token_e tok) const
+{
+    for (int i = m_idx; i < m_cnt; i++)
+        if (tok == m_words[i].tok())
+            return true;
+    return false;
 }
 
 /**
@@ -2703,6 +2715,7 @@ P2Atom P2Asm::parse_atom(int level)
 {
     QString symbol;
     P2Atom atom = make_atom();
+    P2Atom index;
 
     if (!skip_comments())
         return atom;
@@ -2762,7 +2775,7 @@ P2Atom P2Asm::parse_atom(int level)
         break;
 
     case t_RELATIVE:
-    case t_RELATIVE_HUB:
+    case t_ADDRESS_HUB:
         DEBUG_EXPR(" atom relative: %s", qPrintable(str));
         next();
         atom = parse_expression(level+1);
@@ -2889,6 +2902,8 @@ P2Atom P2Asm::parse_atom(int level)
         DEBUG_EXPR(" atom PTRA: %s", qPrintable(str));
         atom.set_uint(P2Atom::Long, offs_PTRA);
         add_const_symbol(p2_prefix_lut_const, word, atom);
+        index = parse_ptr_index(level);
+        encode_ptr_index(index);
         break;
 
     case t_PTRB:
@@ -2899,6 +2914,7 @@ P2Atom P2Asm::parse_atom(int level)
         DEBUG_EXPR(" atom PTRB: %s", qPrintable(str));
         atom.set_uint(P2Atom::Long, offs_PTRB);
         add_const_symbol(p2_prefix_lut_const, word, atom);
+        index = parse_ptr_index(level);
         break;
 
     case t_DOLLAR:
@@ -2913,6 +2929,21 @@ P2Atom P2Asm::parse_atom(int level)
 
     next();
 
+    return atom;
+}
+
+P2Atom P2Asm::parse_ptr_index(int level)
+{
+    P2Atom atom;
+    if (next() && t__LBRACKET != curr_tok()) {
+        prev();
+        return atom;
+    }
+    // index expression
+    DEBUG_EXPR(" atom index: %s", qPrintable(str));
+    next(); // skip left bracket
+    atom = parse_expression(level+1);
+    prev(); // return to right bracket
     return atom;
 }
 
@@ -3281,44 +3312,6 @@ P2Atom P2Asm::parse_binops(int level)
 }
 
 /**
- * @brief Check for a relative prefix (@)
- * @return P2Atom with a possibly PC relative value
- */
-P2Atom P2Asm::parse_relative(bool& rel, int level)
-{
-    P2Atom atom = make_atom();
-    if (!skip_comments())
-        return atom;
-
-    p2_token_e tok = curr_tok();
-
-    while (Token.is_type(tok, tm_relative)) {
-        switch (tok) {
-        case t_RELATIVE:
-            DEBUG_EXPR(" relative: %s", qPrintable(curr_str()));
-            rel = true;
-            next();
-            break;
-        case t_RELATIVE_HUB:
-            DEBUG_EXPR(" relative HUB: %s", qPrintable(curr_str()));
-            rel = true;
-            next();
-            break;
-        default:
-            Q_ASSERT_X(false, "binops", "Invalid op");
-            return parse_binops(level);
-        }
-
-        if (!skip_comments())
-            return atom;
-
-        tok = curr_tok();
-    }
-
-    return parse_binops(level);
-}
-
-/**
  * @brief Evaluate an expression
  * @param level expression nesting level
  * @return QVariant with the value of the expression
@@ -3326,25 +3319,45 @@ P2Atom P2Asm::parse_relative(bool& rel, int level)
 P2Atom P2Asm::parse_expression(int level)
 {
     P2Atom atom = make_atom();
+    P2Atom::Trait trait = P2Atom::None;
 
     DEBUG_EXPR("»»»» %d", level);
 
     if (!skip_comments())
         return atom;
 
-    bool rel = false;
     p2_token_e tok = curr_tok();
 
-    while (Token.is_type(tok, tm_immediate)) {
+    while (Token.is_type(tok, tm_traits)) {
         switch (tok) {
         case t_IMMEDIATE:
             DEBUG_EXPR(" expr immediate: %s", qPrintable(curr_str()));
-            m_IR.imm_set = true;
+            trait = P2Atom::Immediate;
             next();
             break;
-        case t_IMMEDIATE_HUB:
-            DEBUG_EXPR(" expr immediate HUB: %s", qPrintable(curr_str()));
-            m_IR.imm_hub = true;
+        case t_AUGMENTED:
+            DEBUG_EXPR(" expr force AUGS/AUGD: %s", qPrintable(curr_str()));
+            trait = P2Atom::Augmented;
+            next();
+            break;
+        case t_RELATIVE:
+            DEBUG_EXPR(" expr relative: %s", qPrintable(curr_str()));
+            trait = P2Atom::Relative;
+            next();
+            break;
+        case t_ABSOLUTE:
+            DEBUG_EXPR(" expr absolute: %s", qPrintable(curr_str()));
+            trait = P2Atom::Absolute;
+            next();
+            break;
+        case t_ADDRESS_HUB:
+            DEBUG_EXPR(" expr address HUB: %s", qPrintable(curr_str()));
+            trait = P2Atom::AddressHub;
+            next();
+            break;
+        case t_RELATIVE_HUB:
+            DEBUG_EXPR(" expr address HUB: %s", qPrintable(curr_str()));
+            trait = P2Atom::AddressHub;
             next();
             break;
         default:
@@ -3356,29 +3369,29 @@ P2Atom P2Asm::parse_expression(int level)
         tok = curr_tok();
     }
 
-    atom = parse_relative(rel, level);
+    atom = parse_binops(level);
 
-    // Relative value
-    if (rel) {
-        p2_LONG base = 0;
-        p2_LONG addr = atom.to_long();
-        if (addr < LUT_ADDR0) {
-            DEBUG_EXPR(" COG offset: %u", atom.to_long());
-            base = m_ORG / 4;
-        } else if (addr < HUB_ADDR0) {
-            DEBUG_EXPR(" LUT offset: %u", atom.to_long());
-            base = m_ORG / 4;
-        } else{
-            base = COG_SIZE + LUT_SIZE;
-            DEBUG_EXPR(" HUB offset: %u", atom.to_long());
-        }
+    atom.set_trait(trait);
 
-        atom.set(P2Atom::Long, addr - base);
+    // Set immediate flag according to traits
+    switch (trait) {
+    case P2Atom::Immediate:
+    case P2Atom::Augmented:
+    case P2Atom::AddressHub:
+        m_IR.set_to(true);
+        break;
+    default:
+        break;
     }
 
-
-    // Set immediate flag, if specified
-    m_IR.set_to(m_IR.imm_set || m_IR.imm_hub);
+    // Adjust atom according to traits
+    switch (trait) {
+    case P2Atom::RelativeHub:
+        atom -= HUB_ADDR0;
+        break;
+    default:
+        break;
+    }
 
     while (m_idx < m_cnt) {
         if (!skip_comments())
@@ -3411,6 +3424,20 @@ P2Atom P2Asm::parse_expression(int level)
 
     DEBUG_EXPR("«««« %d", level);
     return atom;
+}
+
+/**
+ * @brief Encode a PTRA/PTRB with or without pre/post inc/dec index expression
+ * @param index const reference to the P2Atom with the index value
+ * @return true on success, or false on error
+ */
+bool P2Asm::encode_ptr_index(const P2Atom& index)
+{
+    if (index.isEmpty())
+        return true;
+    // TODO: encode ...
+    p2_LONG value = index.to_long();
+    return false;
 }
 
 /**
@@ -3485,7 +3512,7 @@ P2Atom P2Asm::parse_dst(P2Opcode::ImmFlag flag)
 {
     m_IR.dst_imm_flag = flag;
     P2Atom dst = parse_expression();
-    if (!m_IR.set_dst(dst))
+    if (!m_IR.set_dst(dst, m_ORG, m_ORGH))
             error_dst_or_src();
     return dst;
 }
@@ -3498,7 +3525,7 @@ P2Atom P2Asm::parse_src(P2Opcode::ImmFlag flag)
 {
     m_IR.src_imm_flag = flag;
     P2Atom src = parse_expression();
-    if (!m_IR.set_src(src))
+    if (!m_IR.set_src(src, m_ORG, m_ORGH))
         error_dst_or_src();
     return src;
 }
@@ -4137,15 +4164,13 @@ bool P2Asm::asm_assign()
 {
     next();
     m_advance = 0;      // Don't advance PC
-    m_IR.as_IR = false;
     P2Atom atom = parse_expression();
 #if 0
     if (atom.type() != P2Atom::Real)
         atom.set_type(P2Atom::Long);    // extend to LONG
 #endif
     m_symbols->set_atom(m_symbol, atom);
-    m_IR.as_EQU = true;
-    m_IR.EQU = atom;
+    m_IR.set_equ(atom);
     if (sec_con != m_section) {
         m_errors += tr("Not in constant section (CON) but found %1.")
                     .arg(tr("assignment"));
@@ -4174,10 +4199,8 @@ bool P2Asm::asm_enum_initial()
 {
     next();             // skip over "#"
     m_advance = 0;      // Don't advance PC
-    m_IR.as_IR = false;
     P2Atom atom = parse_expression();
-    m_IR.as_EQU = true;
-    m_IR.EQU = atom;
+    m_IR.set_equ(atom);
     if (sec_con == m_section) {
         if (!skip_comments())
             return false;
@@ -4219,8 +4242,7 @@ bool P2Asm::asm_enum_continue()
     m_advance = 0;      // Don't advance PC
     m_IR.as_IR = false;
     P2Atom atom = m_enum;
-    m_IR.as_EQU = true;
-    m_IR.EQU = atom;
+    m_IR.set_equ(atom);
     if (sec_con == m_section) {
         if (!parse_comma())
             return false;
@@ -4289,7 +4311,6 @@ bool P2Asm::asm_org()
 {
     next();
     m_advance = 0;      // Don't advance PC
-    m_IR.as_IR = false;
     P2Atom atom = parse_expression();
     p2_LONG value = atom.isEmpty() ? 0 : 4 * atom.to_long();
     if (value >= HUB_ADDR0) {
@@ -4299,6 +4320,7 @@ bool P2Asm::asm_org()
     } else {
         m_ORG = value;
     }
+    m_IR.set_equ(m_ORG);
     m_symbols->set_atom(m_symbol, value);
     return end_of_line();
 }
@@ -4350,6 +4372,7 @@ bool P2Asm::asm_orgh()
         value = MEM_SIZE;
     }
     m_ORGH = value;
+    m_IR.set_equ(m_ORGH);
     m_symbols->set_atom(m_symbol, value);
     return end_of_line();
 }
@@ -5330,6 +5353,40 @@ bool P2Asm::asm_testbn_xor()
     next();
     m_IR.set_inst7(p2_TESTBN_XOR);
     return parse_D_IM_S_XORCZ();
+}
+
+/**
+ * @brief Test bit S[4:0] of  D[5:0], SET/AND/OR/XOR nto C/Z.
+ * @return true on success, or false on error
+ */
+bool P2Asm::asm_testb()
+{
+    if (find_tok(t_WC) || find_tok(t_WZ))
+        return asm_testb_w();
+    if (find_tok(t_ANDC) || find_tok(t_ANDZ))
+        return asm_testb_and();
+    if (find_tok(t_ORC) || find_tok(t_ORZ))
+        return asm_testb_or();
+    if (find_tok(t_XORC) || find_tok(t_XORZ))
+        return asm_testb_xor();
+    return false;
+}
+
+/**
+ * @brief Test bit S[4:0] of !D[5:0], SET/AND/OR/XOR nto C/Z.
+ * @return true on success, or false on error
+ */
+bool P2Asm::asm_testbn()
+{
+    if (find_tok(t_WC) || find_tok(t_WZ))
+        return asm_testbn_w();
+    if (find_tok(t_ANDC) || find_tok(t_ANDZ))
+        return asm_testbn_and();
+    if (find_tok(t_ORC) || find_tok(t_ORZ))
+        return asm_testbn_or();
+    if (find_tok(t_XORC) || find_tok(t_XORZ))
+        return asm_testbn_xor();
+    return false;
 }
 
 /**
@@ -10066,9 +10123,7 @@ bool P2Asm::asm_jmprel()
  *
  * SKIP    {#}D
  *
- * Subsequent instructions 0.
- * 31 get cancelled for each '1' bit in D[0].
- * D[31].
+ * Subsequent instructions 0..31 get cancelled for each '1' bit in D[0]..D[31].
  *</pre>
  */
 bool P2Asm::asm_skip()
@@ -10473,6 +10528,40 @@ bool P2Asm::asm_testpn_xor()
     m_IR.set_inst7(p2_OPSRC);
     m_IR.u.op.src = p2_OPSRC_TESTPN_XOR;
     return parse_IM_D_XORC_XORZ();
+}
+
+/**
+ * @brief Test IN bit of pin D[5:0], SET/AND/OR/XOR nto C/Z.
+ * @return true on success, or false on error
+ */
+bool P2Asm::asm_testp()
+{
+    if (find_tok(t_WC) || find_tok(t_WZ))
+        return asm_testp_w();
+    if (find_tok(t_ANDC) || find_tok(t_ANDZ))
+        return asm_testp_and();
+    if (find_tok(t_ORC) || find_tok(t_ORZ))
+        return asm_testp_or();
+    if (find_tok(t_XORC) || find_tok(t_XORZ))
+        return asm_testp_xor();
+    return false;
+}
+
+/**
+ * @brief Test !IN bit of pin D[5:0], SET, AND, OR, XOR into C/Z.
+ * @return true on success, or false on error
+ */
+bool P2Asm::asm_testpn()
+{
+    if (find_tok(t_WC) || find_tok(t_WZ))
+        return asm_testpn_w();
+    if (find_tok(t_ANDC) || find_tok(t_ANDZ))
+        return asm_testpn_and();
+    if (find_tok(t_ORC) || find_tok(t_ORZ))
+        return asm_testpn_or();
+    if (find_tok(t_XORC) || find_tok(t_XORZ))
+        return asm_testpn_xor();
+    return false;
 }
 
 /**
@@ -11378,7 +11467,7 @@ bool P2Asm::asm_modcz()
         return false;
 
     p2_cond_e zzzz = parse_modcz();
-    m_IR.set_dst(static_cast<p2_LONG>((cccc << 4) | zzzz));
+    m_IR.set_dst(static_cast<p2_LONG>((cccc << 4) | zzzz), m_ORG, m_ORGH);
 
     optional_WCZ();
     return end_of_line();

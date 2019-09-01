@@ -734,7 +734,8 @@ void MainWindow::setupFonts()
     font.setPixelSize(m_asm_font_size);
     ui->tvAsm->setFont(font);
     ui->tvSymbols->setFont(font);
-    font.setPixelSize(8);
+
+    font.setPointSize(9);
     ui->tbErrors->setFont(font);
 
     font.setPixelSize(m_dasm_font_size);

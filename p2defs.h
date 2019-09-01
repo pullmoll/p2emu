@@ -1240,7 +1240,7 @@ typedef enum {
     tt_delimiter,       //!< delimiter (,)
     tt_constant,        //!< constant value ($, PA, PB, PTRA, PTRB)
     tt_function,        //!< function on value: FLOAT()
-    tt_immediate,       //!< immediate value (#, ##)
+    tt_traits,          //!< immediate (#), relative (@), HUB address (#@), force augmented (##), force absolute (\)
     tt_relative,        //!< relative value (@, @@@)
     tt_conditional,     //!< conditional execution
     tt_modcz_param,     //!< MODCZ parameters
@@ -1282,8 +1282,7 @@ static constexpr p2_t_mask_t tm_assignment  = TTMASK(tt_assignment);
 static constexpr p2_t_mask_t tm_delimiter   = TTMASK(tt_delimiter);
 static constexpr p2_t_mask_t tm_constant    = TTMASK(tt_constant);
 static constexpr p2_t_mask_t tm_function    = TTMASK(tt_function);
-static constexpr p2_t_mask_t tm_immediate   = TTMASK(tt_immediate);
-static constexpr p2_t_mask_t tm_relative    = TTMASK(tt_relative);
+static constexpr p2_t_mask_t tm_traits      = TTMASK(tt_traits);
 static constexpr p2_t_mask_t tm_conditional = TTMASK(tt_conditional);
 static constexpr p2_t_mask_t tm_modcz_param = TTMASK(tt_modcz_param);
 static constexpr p2_t_mask_t tm_mnemonic    = TTMASK(tt_mnemonic);
