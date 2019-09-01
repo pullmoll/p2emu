@@ -104,7 +104,6 @@ public:
     const QStringList& listing() const;
     const P2SymbolTable& symbols() const;
 
-    bool assemble_pass();
     bool assemble(const QStringList& source);
     bool assemble(const QString& filename);
 
@@ -184,6 +183,10 @@ private:
     QString find_locsym(Section sect = sec_con, const QString& local = QString());
     bool define_symbol(const QString& symbol, const P2Atom& atom);
     void add_const_symbol(const QString& pfx, const P2Word& word = P2Word(), const P2Atom& atom = P2Atom());
+
+    bool assemble_con();
+    bool assemble_dat();
+    bool assemble_pass();
 
     P2Atom parse_atom(int level);
     P2Atom parse_primary(int level);

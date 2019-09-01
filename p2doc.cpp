@@ -39,11 +39,19 @@ P2Doc Doc;
 
 P2Doc::P2Doc(QObject* parent)
     : QObject(parent)
+    , m_masks()
     , m_pattern()
     , m_brief()
     , m_instr()
     , m_token()
 {
+    m_masks += MaskMatch(p2_mask_opx24,0);
+    m_masks += MaskMatch(p2_mask_opsrc,0);
+    m_masks += MaskMatch(p2_mask_opdst,0);
+    m_masks += MaskMatch(p2_mask_inst9,0);
+    m_masks += MaskMatch(p2_mask_inst8,0);
+    m_masks += MaskMatch(p2_mask_inst7,0);
+
     doc_nop(p2_ROR);
     doc_ror(p2_ROR);
     doc_rol(p2_ROL);
@@ -94,6 +102,7 @@ P2Doc::P2Doc(QObject* parent)
     doc_testb_xor(p2_TESTB_XORZ);
     doc_testbn_xor(p2_TESTBN_XORC);
     doc_testbn_xor(p2_TESTBN_XORZ);
+
     doc_bitl(p2_BITL_eol);
     doc_bitl(p2_BITL_WCZ);
     doc_bith(p2_BITH_eol);
@@ -151,7 +160,6 @@ P2Doc::P2Doc(QObject* parent)
     doc_setword(p2_SETWORD);
     doc_getword_altgw(p2_GETWORD_ALTGW);
     doc_getword(p2_GETWORD);
-
     doc_rolword_altgw(p2_ROLWORD_ALTGW);
     doc_rolword(p2_ROLWORD_ALTGW);
     doc_rolword(p2_ROLWORD);
@@ -256,6 +264,7 @@ P2Doc::P2Doc(QObject* parent)
     doc_jxrl(p2_OPDST_JXRL);
     doc_jatn(p2_OPDST_JATN);
     doc_jqmt(p2_OPDST_JQMT);
+
     doc_jnint(p2_OPDST_JNINT);
     doc_jnct1(p2_OPDST_JNCT1);
     doc_jnct2(p2_OPDST_JNCT2);
@@ -273,7 +282,6 @@ P2Doc::P2Doc(QObject* parent)
     doc_jnatn(p2_OPDST_JNATN);
     doc_jnqmt(p2_OPDST_JNQMT);
     doc_1011110_1(p2_1011110_1);
-    // doc_1011110_1(p2_1011110_11);
 
     doc_1011111_0(p2_1011111_0);
     doc_setpat(p2_SETPAT);
@@ -289,6 +297,7 @@ P2Doc::P2Doc(QObject* parent)
     doc_rdfast(p2_RDFAST);
     doc_wrfast(p2_WRFAST);
     doc_fblock(p2_FBLOCK);
+
     doc_xstop(p2_XINIT);
     doc_xinit(p2_XINIT);
     doc_xzero(p2_XZERO);
@@ -311,6 +320,7 @@ P2Doc::P2Doc(QObject* parent)
     doc_lockrel(p2_OPSRC_LOCKREL);
     doc_qlog(p2_OPSRC_QLOG);
     doc_qexp(p2_OPSRC_QEXP);
+
     doc_rfbyte(p2_OPSRC_RFBYTE);
     doc_rfword(p2_OPSRC_RFWORD);
     doc_rflong(p2_OPSRC_RFLONG);
@@ -319,6 +329,7 @@ P2Doc::P2Doc(QObject* parent)
     doc_wfbyte(p2_OPSRC_WFBYTE);
     doc_wfword(p2_OPSRC_WFWORD);
     doc_wflong(p2_OPSRC_WFLONG);
+
     doc_getqx(p2_OPSRC_GETQX);
     doc_getqy(p2_OPSRC_GETQY);
     doc_getct(p2_OPSRC_GETCT);
@@ -491,37 +502,173 @@ P2Doc::P2Doc(QObject* parent)
 }
 
 /**
+ * @brief Return the brief description for an instruction
+ * @param instr 32 bit value of the masked opcode
+ * @return pointer to brief descr, or nullptr if none exists
+ */
+const char* P2Doc::brief(p2_LONG opcode)
+{
+    foreach(MaskMatch mask_match, m_masks) {
+        mask_match.second = opcode & mask_match.first;
+        if (m_brief.contains(mask_match))
+            return m_brief[mask_match];
+    }
+    return nullptr;
+}
+
+/**
+ * @brief Return the assembler source example for an instruction
+ * @param instr 32 bit value of the masked opcode
+ * @return pointer to instruction example, or nullptr if none exists
+ */
+const char* P2Doc::instr(p2_LONG opcode)
+{
+    foreach(MaskMatch mask_match, m_masks) {
+        mask_match.second = opcode & mask_match.first;
+        if (m_instr.contains(mask_match))
+            return m_instr[mask_match];
+    }
+    return nullptr;
+}
+
+/**
+ * @brief Return the effects description for an instruction
+ * @param instr 32 bit value of the masked opcode
+ * @return QList of pointers to the effects description
+ */
+QList<const char*> P2Doc::descr(p2_LONG opcode)
+{
+    foreach(MaskMatch mask_match, m_masks) {
+        mask_match.second = opcode & mask_match.first;
+        if (m_descr.contains(mask_match))
+            return m_descr[mask_match];
+    }
+    return QList<const char *>();
+}
+
+/**
+ * @brief Return the token value for the mnemonic of an instruction
+ * @param instr 32 bit value of the masked opcode
+ * @return token value for the instruction, or t_invalid if none exists
+ */
+p2_token_e P2Doc::token(p2_LONG opcode)
+{
+    foreach(MaskMatch mask_match, m_masks) {
+        mask_match.second = opcode & mask_match.first;
+        if (m_token.contains(mask_match))
+            return m_token[mask_match];
+    }
+    return t_invalid;
+}
+
+/**
+ * @brief Build the opcode for a p2_inst7_e enumeration value
+ * @param instr instruction's enumeration value
+ * @return adjusted opcode
+ */
+p2_LONG P2Doc::inst7(const p2_inst7_e instr)
+{
+    p2_LONG inst7 = static_cast<p2_LONG>(instr) << p2_shift_inst7;
+    return inst7;
+}
+
+/**
+ * @brief Build the opcode for a p2_inst8_e enumeration value
+ * @param instr instruction's enumeration value
+ * @return adjusted opcode
+ */
+p2_LONG P2Doc::inst8(const p2_inst8_e instr)
+{
+    p2_LONG inst8 = static_cast<p2_LONG>(instr) << p2_shift_inst8;
+    return inst8;
+}
+
+/**
+ * @brief Build the opcode for a p2_inst9_e enumeration value
+ * @param instr instruction's enumeration value
+ * @return adjusted opcode
+ */
+p2_LONG P2Doc::inst9(const p2_inst9_e instr)
+{
+    p2_LONG inst9 = static_cast<p2_LONG>(instr) << p2_shift_inst9;
+    return inst9;
+}
+
+/**
+ * @brief Build the opcode for a p2_opdst_e enumeration value
+ * @param instr instruction's enumeration value
+ * @return adjusted opcode
+ */
+p2_LONG P2Doc::opdst(const p2_opdst_e instr)
+{
+    p2_LONG opdst = inst9(p2_OPDST) | static_cast<p2_LONG>(instr) << p2_shift_opdst;
+    return opdst;
+}
+
+p2_LONG P2Doc::opsrc(const p2_opsrc_e instr)
+{
+    p2_LONG opsrc = inst7(p2_OPSRC) | static_cast<p2_LONG>(instr) << p2_shift_opsrc;
+    return opsrc;
+}
+
+p2_LONG P2Doc::opx24(const p2_opx24_e instr)
+{
+    p2_LONG opx24 = opsrc(p2_OPSRC_X24) | static_cast<p2_LONG>(instr) << p2_shift_opdst;
+    return opx24;
+}
+
+/**
  * @brief Return a mask / match for an instruction's pattern
+ *
+ * Meaning of the special characters in the pattern strings:
+ * E    conditional execution flags (EEEE)
+ * C    with carry flag (WC)
+ * Z    with zero flag (WZ)
+ * I    immediate flag for source (#S)
+ * L    immediate flag for destination (#D)
+ * N    nibble, byte, word index or absolute address (N, NN, NNN, ...)
+ * D    destination register / immediate value (DDDDDDDDD)
+ * S    source register / immediate value
+ * c    MODCZ condition for the C flag (cccc)
+ * z    MODCZ condition for the Z flag (zzzz)
+ * R    relative 20 bit address flag (R)
+ * A    20 bit address (AA AAAAAAAAA AAAAAAAAA)
+ * W    PTR selection (PA, PB, PTRA, PTRB)
+ *
+ * Additional characters not used in the original comment:
+ * h    for WC + WZ bits which have to be either 00 or 11 (equal)
+ * x    for WC + WZ bits which have to be either 10 or 01 (unequal)
+ *
  * @param instr instruction's opcode
  * @param pat pattern
  * @return mask / match value in 64 bits
  */
-quint64 P2Doc::pattern(uint instr, const char* pat, const char* source)
+P2Doc::MaskMatch P2Doc::pattern(const char* _func, p2_LONG instr, const char* pat)
 {
-    quint64 result = 0;
+    MaskMatch result(FULL,instr);
     QString pack = QString::fromLatin1(pat);
 
-    // without spaces
+    // pattern without spaces
     pack.remove(QChar(' '));
-    Q_ASSERT(pack.size() == 32);        // must be 32 bits
+    // size must be 32 bits
+    Q_ASSERT(pack.size() == 32);
 
-    // replace '0' with '1'
+    // instr_mask: replace '0', 'N', 'H', and 'x' with '1'
     QString instr_mask = pack;
-    instr_mask.replace(QChar('0'), QChar('1'));
-    instr_mask.replace(QChar('N'), QChar('1')); // SETNIBGETNIB/ROLNIB/SETWORD/GETWORD/ROLWORD
-    instr_mask.replace(QChar('h'), QChar('1'));
-    instr_mask.replace(QChar('x'), QChar('1'));
+    instr_mask.replace(QRegExp("[0Nhx]"), QChar('1'));
 
-    // replace any special characters with '0'
+    // binary_mask: replace any special characters with '0'
     QString binary_mask = instr_mask;
     binary_mask.replace(QRegExp("[ECZILNDSczRAW]"), QChar('0'));
+
+    // sum of counts of '0's and '1's must be 32 bits
     Q_ASSERT(binary_mask.count(QChar('0')) + binary_mask.count(QChar('1')) == 32);
 
-    // put the binary mask in the upper 32 bits
     bool ok;
-    quint64 mask = binary_mask.toULongLong(&ok, 2);
+    p2_LONG mask = static_cast<p2_LONG>(binary_mask.toULong(&ok, 2));
     if (ok) {
-        result = mask << 32;
+        // put the binary mask in the first item
+        result.first = mask;
     } else {
         qDebug("you missed a special character: %s", qPrintable(binary_mask));
     }
@@ -534,92 +681,92 @@ quint64 P2Doc::pattern(uint instr, const char* pat, const char* source)
         qDebug("mask does not cover instr: %s %s (%s)",
                qPrintable(dbg_mask),
                qPrintable(dbg_instr),
-               source);
+               _func);
     }
 
     // conditional mask
     QString cond_mask = instr_mask;
+
     // replace '1' with '0'
     cond_mask.replace(QChar('1'), QChar('0'));
+    // replace 'E' with '1'
     cond_mask.replace(QChar('E'), QChar('1'));
 
-    result |= instr;
     m_pattern.insert(result, pat);
 
     return result;
 }
 
 /**
- * @brief Pattern for 7 bit instruction
+ * @brief Make pattern for 7 bit instruction
+ * @param _func calling function's name
  * @param instr instruction enum value
- * @param src pattern string
- * @return mask / match value in 64 bits
+ * @param pat pattern string
+ * @return mask / match value pair
  */
-quint64 P2Doc::pattern(p2_inst7_e instr, const char* pat)
+P2Doc::MaskMatch P2Doc::pattern(const char* _func, p2_inst7_e instr, const char* pat)
 {
-    uint inst7 = static_cast<uint>(instr) << 21;
-    return pattern(inst7, pat, m_instr.value(instr));
+    return pattern(_func, inst7(instr), pat);
 }
 
 /**
- * @brief Pattern for 8 bit instruction
+ * @brief Make pattern for 8 bit instruction
+ * @param _func calling function's name
  * @param instr instruction enum value
- * @param src pattern string
- * @return mask / match value in 64 bits
+ * @param pat pattern string
+ * @return mask / match value pair
  */
-quint64 P2Doc::pattern(p2_inst8_e instr, const char* pat)
+P2Doc::MaskMatch P2Doc::pattern(const char* _func, p2_inst8_e instr, const char* pat)
 {
-    uint inst8 = static_cast<uint>(instr) << 20;
-    return pattern(inst8, pat, m_instr.value(instr));
+    return pattern(_func, inst8(instr), pat);
 }
 
 /**
  * @brief Pattern for 9 bit instruction
+ * @param _func calling function's name
  * @param instr instruction enum value
- * @param src pattern string
- * @return mask / match value in 64 bits
+ * @param pat pattern string
+ * @return mask / match value pair
  */
-quint64 P2Doc::pattern(p2_inst9_e instr, const char* pat)
+P2Doc::MaskMatch P2Doc::pattern(const char* _func, p2_inst9_e instr, const char* pat)
 {
-    uint inst9 = static_cast<uint>(instr) << 19;
-    return pattern(inst9, pat, m_instr.value(instr));
+    return pattern(_func, inst9(instr), pat);
 }
 
 /**
  * @brief Pattern for instruction with dst field enumeration value
+ * @param _func calling function's name
  * @param instr instruction enum value
- * @param src pattern string
- * @return mask / match value in 64 bits
+ * @param pat pattern string
+ * @return mask / match value pair
  */
-quint64 P2Doc::pattern(p2_opdst_e instr, const char* pat)
+P2Doc::MaskMatch P2Doc::pattern(const char* _func, p2_opdst_e instr, const char* pat)
 {
-    // p2_inst9_t 1011110 01
-    uint opdst = (0x179 << 19) | static_cast<uint>(instr) << 9;
-    return pattern(opdst, pat, m_instr.value(instr));
+    return pattern(_func, opdst(instr), pat);
 }
 
 /**
  * @brief Pattern for instruction with src field enumeration value
+ * @param _func calling function's name
  * @param instr instruction enum value
- * @param src pattern string
- * @return mask / match value in 64 bits
+ * @param pat pattern string
+ * @return mask / match value pair
  */
-quint64 P2Doc::pattern(p2_opsrc_e instr, const char* pat)
+P2Doc::MaskMatch P2Doc::pattern(const char* _func, p2_opsrc_e instr, const char* pat)
 {
-    uint opsrc = static_cast<uint>(instr);
-    return pattern(opsrc, pat, m_instr.value(instr));
+    return pattern(_func, opsrc(instr), pat);
 }
 
 /**
  * @brief Pattern for instruction with dst field enumeration value, src = %000100100
+ * @param _func calling function's name
  * @param instr instruction enum value
- * @param src pattern string
- * @return mask / match value in 64 bits
+ * @param pat pattern string
+ * @return mask / match value pair
  */
-quint64 P2Doc::pattern(p2_opx24_e instr, const char* pat)
+P2Doc::MaskMatch P2Doc::pattern(const char* _func, p2_opx24_e instr, const char* pat)
 {
-    uint opx24 = static_cast<uint>(instr) << 9 | 0x24;
-    return pattern(opx24, pat, m_instr.value(instr));
+    return pattern(_func, opx24(instr), pat);
 }
 
 /**
@@ -632,10 +779,11 @@ quint64 P2Doc::pattern(p2_opx24_e instr, const char* pat)
  */
 void P2Doc::doc_nop(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("No operation."));
-    m_instr.insert(instr, "NOP");
-    m_token.insert(instr, t_NOP);
-    pattern(instr, "0000 0000000 000 000000000 000000000");
+    MaskMatch mask_match = pattern(__func__, instr, "0000 0000000 000 000000000 000000000");
+    m_token.insert(mask_match, t_NOP);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "No operation.");
+    m_instr.insert(mask_match, "NOP");
 }
 
 /**
@@ -651,10 +799,15 @@ void P2Doc::doc_nop(p2_inst7_e instr)
  */
 void P2Doc::doc_ror(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Rotate right."));
-    m_instr.insert(instr, "ROR     D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_ROR);
-    pattern(instr, "EEEE 0000000 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0000000 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ROR);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Rotate right.");
+    m_instr.insert(mask_match, "ROR     D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = [31:0]  of ({D[31:0], D[31:0]}     >> S[4:0]).";
+    descr += "C = last bit shifted out if S[4:0] > 0, else D[0].";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -671,10 +824,15 @@ void P2Doc::doc_ror(p2_inst7_e instr)
  */
 void P2Doc::doc_rol(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Rotate left."));
-    m_instr.insert(instr, "ROL     D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_ROL);
-    pattern(instr, "EEEE 0000001 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0000001 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ROL);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Rotate left.");
+    m_instr.insert(mask_match, "ROL     D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = [63:32] of ({D[31:0], D[31:0]}     << S[4:0]).";
+    descr += "C = last bit shifted out if S[4:0] > 0, else D[31].";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -691,10 +849,15 @@ void P2Doc::doc_rol(p2_inst7_e instr)
  */
 void P2Doc::doc_shr(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Shift right."));
-    m_instr.insert(instr, "SHR     D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_SHR);
-    pattern(instr, "EEEE 0000010 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0000010 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_SHR);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Shift right.");
+    m_instr.insert(mask_match, "SHR     D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = [31:0]  of ({32'b0, D[31:0]}       >> S[4:0]).";
+    descr += "C = last bit shifted out if S[4:0] > 0, else D[0].";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -711,10 +874,15 @@ void P2Doc::doc_shr(p2_inst7_e instr)
  */
 void P2Doc::doc_shl(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Shift left."));
-    m_instr.insert(instr, "SHL     D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_SHL);
-    pattern(instr, "EEEE 0000011 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0000011 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_SHL);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Shift left.");
+    m_instr.insert(mask_match, "SHL     D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = [63:32] of ({D[31:0], 32'b0}       << S[4:0]).";
+    descr += "C = last bit shifted out if S[4:0] > 0, else D[31].";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -731,10 +899,15 @@ void P2Doc::doc_shl(p2_inst7_e instr)
  */
 void P2Doc::doc_rcr(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Rotate carry right."));
-    m_instr.insert(instr, "RCR     D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_RCR);
-    pattern(instr, "EEEE 0000100 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0000100 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_RCR);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Rotate carry right.");
+    m_instr.insert(mask_match, "RCR     D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = [31:0]  of ({{32{C}}, D[31:0]}     >> S[4:0]).";
+    descr += "C = last bit shifted out if S[4:0] > 0, else D[0].";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -751,10 +924,15 @@ void P2Doc::doc_rcr(p2_inst7_e instr)
  */
 void P2Doc::doc_rcl(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Rotate carry left."));
-    m_instr.insert(instr, "RCL     D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_RCL);
-    pattern(instr, "EEEE 0000101 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0000101 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_RCL);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Rotate carry left.");
+    m_instr.insert(mask_match, "RCL     D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = [63:32] of ({D[31:0], {32{C}}}     << S[4:0]).";
+    descr += "C = last bit shifted out if S[4:0] > 0, else D[31].";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -771,10 +949,15 @@ void P2Doc::doc_rcl(p2_inst7_e instr)
  */
 void P2Doc::doc_sar(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Shift arithmetic right."));
-    m_instr.insert(instr, "SAR     D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_SAR);
-    pattern(instr, "EEEE 0000110 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0000110 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_SAR);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Shift arithmetic right.");
+    m_instr.insert(mask_match, "SAR     D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = [31:0]  of ({{32{D[31]}}, D[31:0]} >> S[4:0]).";
+    descr += "C = last bit shifted out if S[4:0] > 0, else D[0].";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -791,10 +974,15 @@ void P2Doc::doc_sar(p2_inst7_e instr)
  */
 void P2Doc::doc_sal(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Shift arithmetic left."));
-    m_instr.insert(instr, "SAL     D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_SAL);
-    pattern(instr, "EEEE 0000111 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0000111 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_SAL);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Shift arithmetic left.");
+    m_instr.insert(mask_match, "SAL     D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = [63:32] of ({D[31:0], {32{D[0]}}}  << S[4:0]).";
+    descr += "C = last bit shifted out if S[4:0] > 0, else D[31].";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -811,10 +999,15 @@ void P2Doc::doc_sal(p2_inst7_e instr)
  */
 void P2Doc::doc_add(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Add S into D."));
-    m_instr.insert(instr, "ADD     D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_ADD);
-    pattern(instr, "EEEE 0001000 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0001000 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ADD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Add S into D.");
+    m_instr.insert(mask_match, "ADD     D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = D + S.";
+    descr += "C = carry of (D + S).";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -831,10 +1024,15 @@ void P2Doc::doc_add(p2_inst7_e instr)
  */
 void P2Doc::doc_addx(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Add (S + C) into D, extended."));
-    m_instr.insert(instr, "ADDX    D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_ADDX);
-    pattern(instr, "EEEE 0001001 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0001001 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ADDX);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Add (S + C) into D, extended.");
+    m_instr.insert(mask_match, "ADDX    D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = D + S + C.";
+    descr += "C = carry of (D + S + C).";
+    descr += "Z = Z AND (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -851,10 +1049,15 @@ void P2Doc::doc_addx(p2_inst7_e instr)
  */
 void P2Doc::doc_adds(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Add S into D, signed."));
-    m_instr.insert(instr, "ADDS    D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_ADDS);
-    pattern(instr, "EEEE 0001010 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0001010 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ADDS);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Add S into D, signed.");
+    m_instr.insert(mask_match, "ADDS    D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = D + S.";
+    descr += "C = correct sign of (D + S).";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -871,10 +1074,15 @@ void P2Doc::doc_adds(p2_inst7_e instr)
  */
 void P2Doc::doc_addsx(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Add (S + C) into D, signed and extended."));
-    m_instr.insert(instr, "ADDSX   D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_ADDSX);
-    pattern(instr, "EEEE 0001011 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0001011 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ADDSX);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Add (S + C) into D, signed and extended.");
+    m_instr.insert(mask_match, "ADDSX   D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = D + S + C.";
+    descr += "C = correct sign of (D + S + C).";
+    descr += "Z = Z AND (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -891,10 +1099,15 @@ void P2Doc::doc_addsx(p2_inst7_e instr)
  */
 void P2Doc::doc_sub(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Subtract S from D."));
-    m_instr.insert(instr, "SUB     D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_SUB);
-    pattern(instr, "EEEE 0001100 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0001100 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_SUB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Subtract S from D.");
+    m_instr.insert(mask_match, "SUB     D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = D - S.";
+    descr += "C = borrow of (D - S).";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -911,10 +1124,15 @@ void P2Doc::doc_sub(p2_inst7_e instr)
  */
 void P2Doc::doc_subx(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Subtract (S + C) from D, extended."));
-    m_instr.insert(instr, "SUBX    D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_SUBX);
-    pattern(instr, "EEEE 0001101 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0001101 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_SUBX);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Subtract (S + C) from D, extended.");
+    m_instr.insert(mask_match, "SUBX    D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = D - (S + C).";
+    descr += "C = borrow of (D - (S + C)).";
+    descr += "Z = Z AND (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -931,10 +1149,15 @@ void P2Doc::doc_subx(p2_inst7_e instr)
  */
 void P2Doc::doc_subs(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Subtract S from D, signed."));
-    m_instr.insert(instr, "SUBS    D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_SUBS);
-    pattern(instr, "EEEE 0001110 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0001110 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_SUBS);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Subtract S from D, signed.");
+    m_instr.insert(mask_match, "SUBS    D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = D - S.";
+    descr += "C = correct sign of (D - S).";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -951,10 +1174,15 @@ void P2Doc::doc_subs(p2_inst7_e instr)
  */
 void P2Doc::doc_subsx(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Subtract (S + C) from D, signed and extended."));
-    m_instr.insert(instr, "SUBSX   D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_SUBSX);
-    pattern(instr, "EEEE 0001111 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0001111 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_SUBSX);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Subtract (S + C) from D, signed and extended.");
+    m_instr.insert(mask_match, "SUBSX   D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = D - (S + C).";
+    descr += "C = correct sign of (D - (S + C)).";
+    descr += "Z = Z AND (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -970,10 +1198,14 @@ void P2Doc::doc_subsx(p2_inst7_e instr)
  */
 void P2Doc::doc_cmp(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Compare D to S."));
-    m_instr.insert(instr, "CMP     D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_CMP);
-    pattern(instr, "EEEE 0010000 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0010000 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_CMP);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Compare D to S.");
+    m_instr.insert(mask_match, "CMP     D,{#}S   {WC/WZ/WCZ}");
+    descr += "C = borrow of (D - S).";
+    descr += "Z = (D == S).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -989,10 +1221,14 @@ void P2Doc::doc_cmp(p2_inst7_e instr)
  */
 void P2Doc::doc_cmpx(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Compare D to (S + C), extended."));
-    m_instr.insert(instr, "CMPX    D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_CMPX);
-    pattern(instr, "EEEE 0010001 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0010001 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_CMPX);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Compare D to (S + C), extended.");
+    m_instr.insert(mask_match, "CMPX    D,{#}S   {WC/WZ/WCZ}");
+    descr += "C = borrow of (D - (S + C)).";
+    descr += "Z = Z AND (D == S + C).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1008,10 +1244,14 @@ void P2Doc::doc_cmpx(p2_inst7_e instr)
  */
 void P2Doc::doc_cmps(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Compare D to S, signed."));
-    m_instr.insert(instr, "CMPS    D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_CMPS);
-    pattern(instr, "EEEE 0010010 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0010010 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_CMPS);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Compare D to S, signed.");
+    m_instr.insert(mask_match, "CMPS    D,{#}S   {WC/WZ/WCZ}");
+    descr += "C = correct sign of (D - S).";
+    descr += "Z = (D == S).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1027,10 +1267,14 @@ void P2Doc::doc_cmps(p2_inst7_e instr)
  */
 void P2Doc::doc_cmpsx(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Compare D to (S + C), signed and extended."));
-    m_instr.insert(instr, "CMPSX   D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_CMPSX);
-    pattern(instr, "EEEE 0010011 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0010011 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_CMPSX);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Compare D to (S + C), signed and extended.");
+    m_instr.insert(mask_match, "CMPSX   D,{#}S   {WC/WZ/WCZ}");
+    descr += "C = correct sign of (D - (S + C)).";
+    descr += "Z = Z AND (D == S + C).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1046,10 +1290,14 @@ void P2Doc::doc_cmpsx(p2_inst7_e instr)
  */
 void P2Doc::doc_cmpr(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Compare S to D (reverse)."));
-    m_instr.insert(instr, "CMPR    D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_CMPR);
-    pattern(instr, "EEEE 0010100 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0010100 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_CMPR);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Compare S to D (reverse).");
+    m_instr.insert(mask_match, "CMPR    D,{#}S   {WC/WZ/WCZ}");
+    descr += "C = borrow of (S - D).";
+    descr += "Z = (D == S).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1065,10 +1313,14 @@ void P2Doc::doc_cmpr(p2_inst7_e instr)
  */
 void P2Doc::doc_cmpm(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Compare D to S, get MSB of difference into C."));
-    m_instr.insert(instr, "CMPM    D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_CMPM);
-    pattern(instr, "EEEE 0010101 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0010101 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_CMPM);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Compare D to S, get MSB of difference into C.");
+    m_instr.insert(mask_match, "CMPM    D,{#}S   {WC/WZ/WCZ}");
+    descr += "C = MSB of (D - S).";
+    descr += "Z = (D == S).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1085,10 +1337,15 @@ void P2Doc::doc_cmpm(p2_inst7_e instr)
  */
 void P2Doc::doc_subr(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Subtract D from S (reverse)."));
-    m_instr.insert(instr, "SUBR    D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_SUBR);
-    pattern(instr, "EEEE 0010110 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0010110 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_SUBR);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Subtract D from S (reverse).");
+    m_instr.insert(mask_match, "SUBR    D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = S - D.";
+    descr += "C = borrow of (S - D).";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1104,10 +1361,14 @@ void P2Doc::doc_subr(p2_inst7_e instr)
  */
 void P2Doc::doc_cmpsub(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Compare and subtract S from D if D >= S."));
-    m_instr.insert(instr, "CMPSUB  D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_CMPSUB);
-    pattern(instr, "EEEE 0010111 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0010111 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_CMPSUB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Compare and subtract S from D if D >= S.");
+    m_instr.insert(mask_match, "CMPSUB  D,{#}S   {WC/WZ/WCZ}");
+    descr += "If D => S then D = D - S and C = 1, else D same and C = 0.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1123,10 +1384,14 @@ void P2Doc::doc_cmpsub(p2_inst7_e instr)
  */
 void P2Doc::doc_fge(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Force D >= S."));
-    m_instr.insert(instr, "FGE     D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_FGE);
-    pattern(instr, "EEEE 0011000 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0011000 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_FGE);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Force D >= S.");
+    m_instr.insert(mask_match, "FGE     D,{#}S   {WC/WZ/WCZ}");
+    descr += "If D < S then D = S and C = 1, else D same and C = 0.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1142,10 +1407,14 @@ void P2Doc::doc_fge(p2_inst7_e instr)
  */
 void P2Doc::doc_fle(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Force D <= S."));
-    m_instr.insert(instr, "FLE     D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_FLE);
-    pattern(instr, "EEEE 0011001 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0011001 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_FLE);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Force D <= S.");
+    m_instr.insert(mask_match, "FLE     D,{#}S   {WC/WZ/WCZ}");
+    descr += "If D > S then D = S and C = 1, else D same and C = 0.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1161,10 +1430,14 @@ void P2Doc::doc_fle(p2_inst7_e instr)
  */
 void P2Doc::doc_fges(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Force D >= S, signed."));
-    m_instr.insert(instr, "FGES    D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_FGES);
-    pattern(instr, "EEEE 0011010 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0011010 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_FGES);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Force D >= S, signed.");
+    m_instr.insert(mask_match, "FGES    D,{#}S   {WC/WZ/WCZ}");
+    descr += "If D < S then D = S and C = 1, else D same and C = 0.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1180,10 +1453,14 @@ void P2Doc::doc_fges(p2_inst7_e instr)
  */
 void P2Doc::doc_fles(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Force D <= S, signed."));
-    m_instr.insert(instr, "FLES    D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_FLES);
-    pattern(instr, "EEEE 0011011 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0011011 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_FLES);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Force D <= S, signed.");
+    m_instr.insert(mask_match, "FLES    D,{#}S   {WC/WZ/WCZ}");
+    descr += "If D > S then D = S and C = 1, else D same and C = 0.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1200,10 +1477,15 @@ void P2Doc::doc_fles(p2_inst7_e instr)
  */
 void P2Doc::doc_sumc(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Sum +/-S into D by  C."));
-    m_instr.insert(instr, "SUMC    D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_SUMC);
-    pattern(instr, "EEEE 0011100 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0011100 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_SUMC);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Sum +/-S into D by  C.");
+    m_instr.insert(mask_match, "SUMC    D,{#}S   {WC/WZ/WCZ}");
+    descr += "If C = 1 then D = D - S, else D = D + S.";
+    descr += "C = correct sign of (D +/- S).";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1220,10 +1502,15 @@ void P2Doc::doc_sumc(p2_inst7_e instr)
  */
 void P2Doc::doc_sumnc(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Sum +/-S into D by !C."));
-    m_instr.insert(instr, "SUMNC   D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_SUMNC);
-    pattern(instr, "EEEE 0011101 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0011101 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_SUMNC);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Sum +/-S into D by !C.");
+    m_instr.insert(mask_match, "SUMNC   D,{#}S   {WC/WZ/WCZ}");
+    descr += "If C = 0 then D = D - S, else D = D + S.";
+    descr += "C = correct sign of (D +/- S).";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1240,10 +1527,15 @@ void P2Doc::doc_sumnc(p2_inst7_e instr)
  */
 void P2Doc::doc_sumz(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Sum +/-S into D by  Z."));
-    m_instr.insert(instr, "SUMZ    D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_SUMZ);
-    pattern(instr, "EEEE 0011110 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0011110 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_SUMZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Sum +/-S into D by  Z.");
+    m_instr.insert(mask_match, "SUMZ    D,{#}S   {WC/WZ/WCZ}");
+    descr += "If Z = 1 then D = D - S, else D = D + S.";
+    descr += "C = correct sign of (D +/- S).";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1260,10 +1552,15 @@ void P2Doc::doc_sumz(p2_inst7_e instr)
  */
 void P2Doc::doc_sumnz(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Sum +/-S into D by !Z."));
-    m_instr.insert(instr, "SUMNZ   D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_SUMNZ);
-    pattern(instr, "EEEE 0011111 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0011111 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_SUMNZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Sum +/-S into D by !Z.");
+    m_instr.insert(mask_match, "SUMNZ   D,{#}S   {WC/WZ/WCZ}");
+    descr += "If Z = 0 then D = D - S, else D = D + S.";
+    descr += "C = correct sign of (D +/- S).";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1278,10 +1575,13 @@ void P2Doc::doc_sumnz(p2_inst7_e instr)
  */
 void P2Doc::doc_testb_w(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Test bit S[4:0] of  D, write to C/Z."));
-    m_instr.insert(instr, "TESTB   D,{#}S         WC/WZ");
-    m_token.insert(instr, t_TESTB);
-    pattern(instr, "EEEE 0100000 xxI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0100000 xxI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_TESTB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Test bit S[4:0] of  D, write to C/Z.");
+    m_instr.insert(mask_match, "TESTB   D,{#}S         WC/WZ");
+    descr += "C/Z =          D[S[4:0]].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1296,10 +1596,13 @@ void P2Doc::doc_testb_w(p2_inst9_e instr)
  */
 void P2Doc::doc_testbn_w(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Test bit S[4:0] of !D, write to C/Z."));
-    m_instr.insert(instr, "TESTBN  D,{#}S         WC/WZ");
-    m_token.insert(instr, t_TESTBN);
-    pattern(instr, "EEEE 0100001 xxI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0100001 xxI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_TESTBN);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Test bit S[4:0] of !D, write to C/Z.");
+    m_instr.insert(mask_match, "TESTBN  D,{#}S         WC/WZ");
+    descr += "C/Z =         !D[S[4:0]].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1314,10 +1617,13 @@ void P2Doc::doc_testbn_w(p2_inst9_e instr)
  */
 void P2Doc::doc_testb_and(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Test bit S[4:0] of  D, AND into C/Z."));
-    m_instr.insert(instr, "TESTB   D,{#}S     ANDC/ANDZ");
-    m_token.insert(instr, t_TESTB);    // t_AND
-    pattern(instr, "EEEE 0100010 xxI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0100010 xxI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_TESTB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Test bit S[4:0] of  D, AND into C/Z.");
+    m_instr.insert(mask_match, "TESTB   D,{#}S     ANDC/ANDZ");
+    descr += "C/Z = C/Z AND  D[S[4:0]].";
+    m_descr.insert(mask_match, descr);    // t_AND
 }
 
 /**
@@ -1332,10 +1638,13 @@ void P2Doc::doc_testb_and(p2_inst9_e instr)
  */
 void P2Doc::doc_testbn_and(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Test bit S[4:0] of !D, AND into C/Z."));
-    m_instr.insert(instr, "TESTBN  D,{#}S     ANDC/ANDZ");
-    m_token.insert(instr, t_TESTBN);   // t_AND
-    pattern(instr, "EEEE 0100011 xxI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0100011 xxI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_TESTBN);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Test bit S[4:0] of !D, AND into C/Z.");
+    m_instr.insert(mask_match, "TESTBN  D,{#}S     ANDC/ANDZ");
+    descr += "C/Z = C/Z AND !D[S[4:0]].";
+    m_descr.insert(mask_match, descr);   // t_AND
 }
 
 /**
@@ -1350,10 +1659,13 @@ void P2Doc::doc_testbn_and(p2_inst9_e instr)
  */
 void P2Doc::doc_testb_or(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Test bit S[4:0] of  D, OR  into C/Z."));
-    m_instr.insert(instr, "TESTB   D,{#}S       ORC/ORZ");
-    m_token.insert(instr, t_TESTB);    // t_OR
-    pattern(instr, "EEEE 0100100 xxI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0100100 xxI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_TESTB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Test bit S[4:0] of  D, OR  into C/Z.");
+    m_instr.insert(mask_match, "TESTB   D,{#}S       ORC/ORZ");
+    descr += "C/Z = C/Z OR   D[S[4:0]].";
+    m_descr.insert(mask_match, descr);    // t_OR
 }
 
 /**
@@ -1368,10 +1680,13 @@ void P2Doc::doc_testb_or(p2_inst9_e instr)
  */
 void P2Doc::doc_testbn_or(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Test bit S[4:0] of !D, OR  into C/Z."));
-    m_instr.insert(instr, "TESTBN  D,{#}S       ORC/ORZ");
-    m_token.insert(instr, t_TESTBN);   // t_OR
-    pattern(instr, "EEEE 0100101 xxI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0100101 xxI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_TESTBN);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Test bit S[4:0] of !D, OR  into C/Z.");
+    m_instr.insert(mask_match, "TESTBN  D,{#}S       ORC/ORZ");
+    descr += "C/Z = C/Z OR  !D[S[4:0]].";
+    m_descr.insert(mask_match, descr);   // t_OR
 }
 
 /**
@@ -1386,10 +1701,13 @@ void P2Doc::doc_testbn_or(p2_inst9_e instr)
  */
 void P2Doc::doc_testb_xor(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Test bit S[4:0] of  D, XOR into C/Z."));
-    m_instr.insert(instr, "TESTB   D,{#}S     XORC/XORZ");
-    m_token.insert(instr, t_TESTB);    // t_XOR
-    pattern(instr, "EEEE 0100110 xxI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0100110 xxI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_TESTB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Test bit S[4:0] of  D, XOR into C/Z.");
+    m_instr.insert(mask_match, "TESTB   D,{#}S     XORC/XORZ");
+    descr += "C/Z = C/Z XOR  D[S[4:0]].";
+    m_descr.insert(mask_match, descr);    // t_XOR
 }
 
 /**
@@ -1404,10 +1722,13 @@ void P2Doc::doc_testb_xor(p2_inst9_e instr)
  */
 void P2Doc::doc_testbn_xor(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Test bit S[4:0] of !D, XOR into C/Z."));
-    m_instr.insert(instr, "TESTBN  D,{#}S     XORC/XORZ");
-    m_token.insert(instr, t_TESTBN);   // t_XOR
-    pattern(instr, "EEEE 0100111 xxI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0100111 xxI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_TESTBN);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Test bit S[4:0] of !D, XOR into C/Z.");
+    m_instr.insert(mask_match, "TESTBN  D,{#}S     XORC/XORZ");
+    descr += "C/Z = C/Z XOR !D[S[4:0]].";
+    m_descr.insert(mask_match, descr);   // t_XOR
 }
 
 /**
@@ -1421,10 +1742,13 @@ void P2Doc::doc_testbn_xor(p2_inst9_e instr)
  */
 void P2Doc::doc_bitl(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Bit S[4:0] of D = 0,    C,Z = D[S[4:0]]."));
-    m_instr.insert(instr, "BITL    D,{#}S         {WCZ}");
-    m_token.insert(instr, t_BITL);
-    pattern(instr, "EEEE 0100000 hhI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0100000 hhI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_BITL);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Bit S[4:0] of D = 0,    C,Z = D[S[4:0]].");
+    m_instr.insert(mask_match, "BITL    D,{#}S         {WCZ}");
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1438,10 +1762,13 @@ void P2Doc::doc_bitl(p2_inst9_e instr)
  */
 void P2Doc::doc_bith(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Bit S[4:0] of D = 1,    C,Z = D[S[4:0]]."));
-    m_instr.insert(instr, "BITH    D,{#}S         {WCZ}");
-    m_token.insert(instr, t_BITH);
-    pattern(instr, "EEEE 0100001 hhI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0100001 hhI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_BITH);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Bit S[4:0] of D = 1,    C,Z = D[S[4:0]].");
+    m_instr.insert(mask_match, "BITH    D,{#}S         {WCZ}");
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1455,10 +1782,13 @@ void P2Doc::doc_bith(p2_inst9_e instr)
  */
 void P2Doc::doc_bitc(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Bit S[4:0] of D = C,    C,Z = D[S[4:0]]."));
-    m_instr.insert(instr, "BITC    D,{#}S         {WCZ}");
-    m_token.insert(instr, t_BITC);
-    pattern(instr, "EEEE 0100010 hhI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0100010 hhI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_BITC);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Bit S[4:0] of D = C,    C,Z = D[S[4:0]].");
+    m_instr.insert(mask_match, "BITC    D,{#}S         {WCZ}");
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1472,10 +1802,13 @@ void P2Doc::doc_bitc(p2_inst9_e instr)
  */
 void P2Doc::doc_bitnc(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Bit S[4:0] of D = !C,   C,Z = D[S[4:0]]."));
-    m_instr.insert(instr, "BITNC   D,{#}S         {WCZ}");
-    m_token.insert(instr, t_BITNC);
-    pattern(instr, "EEEE 0100011 hhI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0100011 hhI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_BITNC);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Bit S[4:0] of D = !C,   C,Z = D[S[4:0]].");
+    m_instr.insert(mask_match, "BITNC   D,{#}S         {WCZ}");
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1489,10 +1822,13 @@ void P2Doc::doc_bitnc(p2_inst9_e instr)
  */
 void P2Doc::doc_bitz(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Bit S[4:0] of D = Z,    C,Z = D[S[4:0]]."));
-    m_instr.insert(instr, "BITZ    D,{#}S         {WCZ}");
-    m_token.insert(instr, t_BITZ);
-    pattern(instr, "EEEE 0100100 hhI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0100100 hhI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_BITZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Bit S[4:0] of D = Z,    C,Z = D[S[4:0]].");
+    m_instr.insert(mask_match, "BITZ    D,{#}S         {WCZ}");
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1506,10 +1842,13 @@ void P2Doc::doc_bitz(p2_inst9_e instr)
  */
 void P2Doc::doc_bitnz(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Bit S[4:0] of D = !Z,   C,Z = D[S[4:0]]."));
-    m_instr.insert(instr, "BITNZ   D,{#}S         {WCZ}");
-    m_token.insert(instr, t_BITNZ);
-    pattern(instr, "EEEE 0100101 hhI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0100101 hhI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_BITNZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Bit S[4:0] of D = !Z,   C,Z = D[S[4:0]].");
+    m_instr.insert(mask_match, "BITNZ   D,{#}S         {WCZ}");
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1523,10 +1862,13 @@ void P2Doc::doc_bitnz(p2_inst9_e instr)
  */
 void P2Doc::doc_bitrnd(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Bit S[4:0] of D = RND,  C,Z = D[S[4:0]]."));
-    m_instr.insert(instr, "BITRND  D,{#}S         {WCZ}");
-    m_token.insert(instr, t_BITRND);
-    pattern(instr, "EEEE 0100110 hhI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0100110 hhI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_BITRND);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Bit S[4:0] of D = RND,  C,Z = D[S[4:0]].");
+    m_instr.insert(mask_match, "BITRND  D,{#}S         {WCZ}");
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1540,10 +1882,13 @@ void P2Doc::doc_bitrnd(p2_inst9_e instr)
  */
 void P2Doc::doc_bitnot(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Bit S[4:0] of D = !bit, C,Z = D[S[4:0]]."));
-    m_instr.insert(instr, "BITNOT  D,{#}S         {WCZ}");
-    m_token.insert(instr, t_BITNOT);
-    pattern(instr, "EEEE 0100111 hhI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0100111 hhI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_BITNOT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Bit S[4:0] of D = !bit, C,Z = D[S[4:0]].");
+    m_instr.insert(mask_match, "BITNOT  D,{#}S         {WCZ}");
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1560,10 +1905,15 @@ void P2Doc::doc_bitnot(p2_inst9_e instr)
  */
 void P2Doc::doc_and(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("AND S into D."));
-    m_instr.insert(instr, "AND     D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_AND);
-    pattern(instr, "EEEE 0101000 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0101000 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_AND);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "AND S into D.");
+    m_instr.insert(mask_match, "AND     D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = D & S.";
+    descr += "C = parity of result.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1580,10 +1930,15 @@ void P2Doc::doc_and(p2_inst7_e instr)
  */
 void P2Doc::doc_andn(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("AND !S into D."));
-    m_instr.insert(instr, "ANDN    D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_ANDN);
-    pattern(instr, "EEEE 0101001 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0101001 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ANDN);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "AND !S into D.");
+    m_instr.insert(mask_match, "ANDN    D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = D & !S.";
+    descr += "C = parity of result.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1600,10 +1955,15 @@ void P2Doc::doc_andn(p2_inst7_e instr)
  */
 void P2Doc::doc_or(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("OR S into D."));
-    m_instr.insert(instr, "OR      D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_OR);
-    pattern(instr, "EEEE 0101010 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0101010 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_OR);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "OR S into D.");
+    m_instr.insert(mask_match, "OR      D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = D | S.";
+    descr += "C = parity of result.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1620,10 +1980,15 @@ void P2Doc::doc_or(p2_inst7_e instr)
  */
 void P2Doc::doc_xor(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("XOR S into D."));
-    m_instr.insert(instr, "XOR     D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_XOR);
-    pattern(instr, "EEEE 0101011 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0101011 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_XOR);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "XOR S into D.");
+    m_instr.insert(mask_match, "XOR     D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = D ^ S.";
+    descr += "C = parity of result.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1640,10 +2005,15 @@ void P2Doc::doc_xor(p2_inst7_e instr)
  */
 void P2Doc::doc_muxc(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Mux C into each D bit that is '1' in S."));
-    m_instr.insert(instr, "MUXC    D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_MUXC);
-    pattern(instr, "EEEE 0101100 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0101100 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_MUXC);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Mux C into each D bit that is '1' in S.");
+    m_instr.insert(mask_match, "MUXC    D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = (!S & D ) | (S & {32{ C}}).";
+    descr += "C = parity of result.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1660,10 +2030,15 @@ void P2Doc::doc_muxc(p2_inst7_e instr)
  */
 void P2Doc::doc_muxnc(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Mux !C into each D bit that is '1' in S."));
-    m_instr.insert(instr, "MUXNC   D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_MUXNC);
-    pattern(instr, "EEEE 0101101 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0101101 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_MUXNC);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Mux !C into each D bit that is '1' in S.");
+    m_instr.insert(mask_match, "MUXNC   D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = (!S & D ) | (S & {32{!C}}).";
+    descr += "C = parity of result.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1680,10 +2055,15 @@ void P2Doc::doc_muxnc(p2_inst7_e instr)
  */
 void P2Doc::doc_muxz(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Mux Z into each D bit that is '1' in S."));
-    m_instr.insert(instr, "MUXZ    D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_MUXZ);
-    pattern(instr, "EEEE 0101110 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0101110 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_MUXZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Mux Z into each D bit that is '1' in S.");
+    m_instr.insert(mask_match, "MUXZ    D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = (!S & D ) | (S & {32{ Z}}).";
+    descr += "C = parity of result.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1700,10 +2080,15 @@ void P2Doc::doc_muxz(p2_inst7_e instr)
  */
 void P2Doc::doc_muxnz(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Mux !Z into each D bit that is '1' in S."));
-    m_instr.insert(instr, "MUXNZ   D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_MUXNZ);
-    pattern(instr, "EEEE 0101111 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0101111 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_MUXNZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Mux !Z into each D bit that is '1' in S.");
+    m_instr.insert(mask_match, "MUXNZ   D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = (!S & D ) | (S & {32{!Z}}).";
+    descr += "C = parity of result.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1720,10 +2105,15 @@ void P2Doc::doc_muxnz(p2_inst7_e instr)
  */
 void P2Doc::doc_mov(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Move S into D."));
-    m_instr.insert(instr, "MOV     D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_MOV);
-    pattern(instr, "EEEE 0110000 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0110000 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_MOV);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Move S into D.");
+    m_instr.insert(mask_match, "MOV     D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = S.";
+    descr += "C = S[31].";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1740,10 +2130,15 @@ void P2Doc::doc_mov(p2_inst7_e instr)
  */
 void P2Doc::doc_not(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Get !S into D."));
-    m_instr.insert(instr, "NOT     D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_NOT);
-    pattern(instr, "EEEE 0110001 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0110001 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_NOT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get !S into D.");
+    m_instr.insert(mask_match, "NOT     D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = !S.";
+    descr += "C = !S[31].";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1760,10 +2155,15 @@ void P2Doc::doc_not(p2_inst7_e instr)
  */
 void P2Doc::doc_abs(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Get absolute value of S into D."));
-    m_instr.insert(instr, "ABS     D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_ABS);
-    pattern(instr, "EEEE 0110010 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0110010 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ABS);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get absolute value of S into D.");
+    m_instr.insert(mask_match, "ABS     D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = ABS(S).";
+    descr += "C = S[31].";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1780,10 +2180,15 @@ void P2Doc::doc_abs(p2_inst7_e instr)
  */
 void P2Doc::doc_neg(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Negate S into D."));
-    m_instr.insert(instr, "NEG     D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_NEG);
-    pattern(instr, "EEEE 0110011 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0110011 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_NEG);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Negate S into D.");
+    m_instr.insert(mask_match, "NEG     D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = -S.";
+    descr += "C = MSB of result.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1800,10 +2205,15 @@ void P2Doc::doc_neg(p2_inst7_e instr)
  */
 void P2Doc::doc_negc(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Negate S by  C into D."));
-    m_instr.insert(instr, "NEGC    D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_NEGC);
-    pattern(instr, "EEEE 0110100 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0110100 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_NEGC);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Negate S by  C into D.");
+    m_instr.insert(mask_match, "NEGC    D,{#}S   {WC/WZ/WCZ}");
+    descr += "If C = 1 then D = -S, else D = S.";
+    descr += "C = MSB of result.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1820,10 +2230,15 @@ void P2Doc::doc_negc(p2_inst7_e instr)
  */
 void P2Doc::doc_negnc(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Negate S by !C into D."));
-    m_instr.insert(instr, "NEGNC   D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_NEGNC);
-    pattern(instr, "EEEE 0110101 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0110101 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_NEGNC);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Negate S by !C into D.");
+    m_instr.insert(mask_match, "NEGNC   D,{#}S   {WC/WZ/WCZ}");
+    descr += "If C = 0 then D = -S, else D = S.";
+    descr += "C = MSB of result.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1840,10 +2255,15 @@ void P2Doc::doc_negnc(p2_inst7_e instr)
  */
 void P2Doc::doc_negz(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Negate S by  Z into D."));
-    m_instr.insert(instr, "NEGZ    D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_NEGZ);
-    pattern(instr, "EEEE 0110110 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0110110 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_NEGZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Negate S by  Z into D.");
+    m_instr.insert(mask_match, "NEGZ    D,{#}S   {WC/WZ/WCZ}");
+    descr += "If Z = 1 then D = -S, else D = S.";
+    descr += "C = MSB of result.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1860,10 +2280,15 @@ void P2Doc::doc_negz(p2_inst7_e instr)
  */
 void P2Doc::doc_negnz(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Negate S by !Z into D."));
-    m_instr.insert(instr, "NEGNZ   D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_NEGNZ);
-    pattern(instr, "EEEE 0110111 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0110111 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_NEGNZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Negate S by !Z into D.");
+    m_instr.insert(mask_match, "NEGNZ   D,{#}S   {WC/WZ/WCZ}");
+    descr += "If Z = 0 then D = -S, else D = S.";
+    descr += "C = MSB of result.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1879,10 +2304,14 @@ void P2Doc::doc_negnz(p2_inst7_e instr)
  */
 void P2Doc::doc_incmod(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Increment with modulus."));
-    m_instr.insert(instr, "INCMOD  D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_INCMOD);
-    pattern(instr, "EEEE 0111000 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0111000 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_INCMOD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Increment with modulus.");
+    m_instr.insert(mask_match, "INCMOD  D,{#}S   {WC/WZ/WCZ}");
+    descr += "If D = S then D = 0 and C = 1, else D = D + 1 and C = 0.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1898,10 +2327,14 @@ void P2Doc::doc_incmod(p2_inst7_e instr)
  */
 void P2Doc::doc_decmod(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Decrement with modulus."));
-    m_instr.insert(instr, "DECMOD  D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_DECMOD);
-    pattern(instr, "EEEE 0111001 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0111001 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_DECMOD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Decrement with modulus.");
+    m_instr.insert(mask_match, "DECMOD  D,{#}S   {WC/WZ/WCZ}");
+    descr += "If D = 0 then D = S and C = 1, else D = D - 1 and C = 0.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1917,10 +2350,14 @@ void P2Doc::doc_decmod(p2_inst7_e instr)
  */
 void P2Doc::doc_zerox(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Zero-extend D above bit S[4:0]."));
-    m_instr.insert(instr, "ZEROX   D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_ZEROX);
-    pattern(instr, "EEEE 0111010 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0111010 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ZEROX);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Zero-extend D above bit S[4:0].");
+    m_instr.insert(mask_match, "ZEROX   D,{#}S   {WC/WZ/WCZ}");
+    descr += "C = MSB of result.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1936,10 +2373,14 @@ void P2Doc::doc_zerox(p2_inst7_e instr)
  */
 void P2Doc::doc_signx(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Sign-extend D from bit S[4:0]."));
-    m_instr.insert(instr, "SIGNX   D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_SIGNX);
-    pattern(instr, "EEEE 0111011 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0111011 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_SIGNX);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Sign-extend D from bit S[4:0].");
+    m_instr.insert(mask_match, "SIGNX   D,{#}S   {WC/WZ/WCZ}");
+    descr += "C = MSB of result.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1956,10 +2397,15 @@ void P2Doc::doc_signx(p2_inst7_e instr)
  */
 void P2Doc::doc_encod(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Get bit position of top-most '1' in S into D."));
-    m_instr.insert(instr, "ENCOD   D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_ENCOD);
-    pattern(instr, "EEEE 0111100 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0111100 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ENCOD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get bit position of top-most '1' in S into D.");
+    m_instr.insert(mask_match, "ENCOD   D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = position of top '1' in S (0..31).";
+    descr += "C = (S != 0).";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1976,10 +2422,15 @@ void P2Doc::doc_encod(p2_inst7_e instr)
  */
 void P2Doc::doc_ones(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Get number of '1's in S into D."));
-    m_instr.insert(instr, "ONES    D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_ONES);
-    pattern(instr, "EEEE 0111101 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0111101 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ONES);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get number of '1's in S into D.");
+    m_instr.insert(mask_match, "ONES    D,{#}S   {WC/WZ/WCZ}");
+    descr += "D = number of '1's in S (0..32).";
+    descr += "C = LSB of result.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -1995,10 +2446,14 @@ void P2Doc::doc_ones(p2_inst7_e instr)
  */
 void P2Doc::doc_test(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Test D with S."));
-    m_instr.insert(instr, "TEST    D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_TEST);
-    pattern(instr, "EEEE 0111110 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0111110 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_TEST);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Test D with S.");
+    m_instr.insert(mask_match, "TEST    D,{#}S   {WC/WZ/WCZ}");
+    descr += "C = parity of (D & S).";
+    descr += "Z = ((D & S) == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2014,10 +2469,14 @@ void P2Doc::doc_test(p2_inst7_e instr)
  */
 void P2Doc::doc_testn(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Test D with !S."));
-    m_instr.insert(instr, "TESTN   D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_TESTN);
-    pattern(instr, "EEEE 0111111 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 0111111 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_TESTN);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Test D with !S.");
+    m_instr.insert(mask_match, "TESTN   D,{#}S   {WC/WZ/WCZ}");
+    descr += "C = parity of (D & !S).";
+    descr += "Z = ((D & !S) == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2031,10 +2490,13 @@ void P2Doc::doc_testn(p2_inst7_e instr)
  */
 void P2Doc::doc_setnib(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Set S[3:0] into nibble N in D, keeping rest of D same."));
-    m_instr.insert(instr, "SETNIB  D,{#}S,#N");
-    m_token.insert(instr, t_SETNIB);
-    pattern(instr, "EEEE 100000N NNI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 100000N NNI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_SETNIB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set S[3:0] into nibble N in D, keeping rest of D same.");
+    m_instr.insert(mask_match, "SETNIB  D,{#}S,#N");
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2048,10 +2510,13 @@ void P2Doc::doc_setnib(p2_inst7_e instr)
  */
 void P2Doc::doc_setnib_altsn(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Set S[3:0] into nibble established by prior ALTSN instruction."));
-    m_instr.insert(instr, "SETNIB  {#}S");
-    m_token.insert(instr, t_SETNIB);
-    pattern(instr, "EEEE 1000000 00I 000000000 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1000000 00I 000000000 SSSSSSSSS");
+    m_token.insert(mask_match, t_SETNIB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set S[3:0] into nibble established by prior ALTSN instruction.");
+    m_instr.insert(mask_match, "SETNIB  {#}S");
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2066,10 +2531,13 @@ void P2Doc::doc_setnib_altsn(p2_inst7_e instr)
  */
 void P2Doc::doc_getnib(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Get nibble N of S into D."));
-    m_instr.insert(instr, "GETNIB  D,{#}S,#N");
-    m_token.insert(instr, t_GETNIB);
-    pattern(instr, "EEEE 100001N NNI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 100001N NNI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_GETNIB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get nibble N of S into D.");
+    m_instr.insert(mask_match, "GETNIB  D,{#}S,#N");
+    descr += "D = {28'b0, S.NIBBLE[N]).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2083,10 +2551,13 @@ void P2Doc::doc_getnib(p2_inst7_e instr)
  */
 void P2Doc::doc_getnib_altgn(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Get nibble established by prior ALTGN instruction into D."));
-    m_instr.insert(instr, "GETNIB  D");
-    m_token.insert(instr, t_GETNIB);
-    pattern(instr, "EEEE 1000010 000 DDDDDDDDD 000000000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1000010 000 DDDDDDDDD 000000000");
+    m_token.insert(mask_match, t_GETNIB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get nibble established by prior ALTGN instruction into D.");
+    m_instr.insert(mask_match, "GETNIB  D");
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2101,10 +2572,13 @@ void P2Doc::doc_getnib_altgn(p2_inst7_e instr)
  */
 void P2Doc::doc_rolnib(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Rotate-left nibble N of S into D."));
-    m_instr.insert(instr, "ROLNIB  D,{#}S,#N");
-    m_token.insert(instr, t_ROLNIB);
-    pattern(instr, "EEEE 100010N NNI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 100010N NNI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ROLNIB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Rotate-left nibble N of S into D.");
+    m_instr.insert(mask_match, "ROLNIB  D,{#}S,#N");
+    descr += "D = {D[27:0], S.NIBBLE[N]).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2118,10 +2592,13 @@ void P2Doc::doc_rolnib(p2_inst7_e instr)
  */
 void P2Doc::doc_rolnib_altgn(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Rotate-left nibble established by prior ALTGN instruction into D."));
-    m_instr.insert(instr, "ROLNIB  D");
-    m_token.insert(instr, t_ROLNIB);
-    pattern(instr, "EEEE 1000100 000 DDDDDDDDD 000000000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1000100 000 DDDDDDDDD 000000000");
+    m_token.insert(mask_match, t_ROLNIB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Rotate-left nibble established by prior ALTGN instruction into D.");
+    m_instr.insert(mask_match, "ROLNIB  D");
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2135,10 +2612,13 @@ void P2Doc::doc_rolnib_altgn(p2_inst7_e instr)
  */
 void P2Doc::doc_setbyte(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Set S[7:0] into byte N in D, keeping rest of D same."));
-    m_instr.insert(instr, "SETBYTE D,{#}S,#N");
-    m_token.insert(instr, t_SETBYTE);
-    pattern(instr, "EEEE 1000110 NNI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1000110 NNI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_SETBYTE);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set S[7:0] into byte N in D, keeping rest of D same.");
+    m_instr.insert(mask_match, "SETBYTE D,{#}S,#N");
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2152,10 +2632,13 @@ void P2Doc::doc_setbyte(p2_inst7_e instr)
  */
 void P2Doc::doc_setbyte_altsb(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Set S[7:0] into byte established by prior ALTSB instruction."));
-    m_instr.insert(instr, "SETBYTE {#}S");
-    m_token.insert(instr, t_SETBYTE);
-    pattern(instr, "EEEE 1000110 00I 000000000 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1000110 00I 000000000 SSSSSSSSS");
+    m_token.insert(mask_match, t_SETBYTE);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set S[7:0] into byte established by prior ALTSB instruction.");
+    m_instr.insert(mask_match, "SETBYTE {#}S");
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2170,10 +2653,13 @@ void P2Doc::doc_setbyte_altsb(p2_inst7_e instr)
  */
 void P2Doc::doc_getbyte(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Get byte N of S into D."));
-    m_instr.insert(instr, "GETBYTE D,{#}S,#N");
-    m_token.insert(instr, t_GETBYTE);
-    pattern(instr, "EEEE 1000111 NNI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1000111 NNI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_GETBYTE);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get byte N of S into D.");
+    m_instr.insert(mask_match, "GETBYTE D,{#}S,#N");
+    descr += "D = {24'b0, S.BYTE[N]).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2187,10 +2673,13 @@ void P2Doc::doc_getbyte(p2_inst7_e instr)
  */
 void P2Doc::doc_getbyte_altgb(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Get byte established by prior ALTGB instruction into D."));
-    m_instr.insert(instr, "GETBYTE D");
-    m_token.insert(instr, t_GETBYTE);
-    pattern(instr, "EEEE 1000111 000 DDDDDDDDD 000000000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1000111 000 DDDDDDDDD 000000000");
+    m_token.insert(mask_match, t_GETBYTE);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get byte established by prior ALTGB instruction into D.");
+    m_instr.insert(mask_match, "GETBYTE D");
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2205,10 +2694,13 @@ void P2Doc::doc_getbyte_altgb(p2_inst7_e instr)
  */
 void P2Doc::doc_rolbyte(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Rotate-left byte N of S into D."));
-    m_instr.insert(instr, "ROLBYTE D,{#}S,#N");
-    m_token.insert(instr, t_ROLBYTE);
-    pattern(instr, "EEEE 1001000 NNI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001000 NNI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ROLBYTE);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Rotate-left byte N of S into D.");
+    m_instr.insert(mask_match, "ROLBYTE D,{#}S,#N");
+    descr += "D = {D[23:0], S.BYTE[N]).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2222,10 +2714,13 @@ void P2Doc::doc_rolbyte(p2_inst7_e instr)
  */
 void P2Doc::doc_rolbyte_altgb(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Rotate-left byte established by prior ALTGB instruction into D."));
-    m_instr.insert(instr, "ROLBYTE D");
-    m_token.insert(instr, t_ROLBYTE);
-    pattern(instr, "EEEE 1001000 000 DDDDDDDDD 000000000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001000 000 DDDDDDDDD 000000000");
+    m_token.insert(mask_match, t_ROLBYTE);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Rotate-left byte established by prior ALTGB instruction into D.");
+    m_instr.insert(mask_match, "ROLBYTE D");
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2239,10 +2734,13 @@ void P2Doc::doc_rolbyte_altgb(p2_inst7_e instr)
  */
 void P2Doc::doc_setword(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Set S[15:0] into word N in D, keeping rest of D same."));
-    m_instr.insert(instr, "SETWORD D,{#}S,#N");
-    m_token.insert(instr, t_SETWORD);
-    pattern(instr, "EEEE 1001001 0NI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001001 0NI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_SETWORD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set S[15:0] into word N in D, keeping rest of D same.");
+    m_instr.insert(mask_match, "SETWORD D,{#}S,#N");
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2256,10 +2754,13 @@ void P2Doc::doc_setword(p2_inst9_e instr)
  */
 void P2Doc::doc_setword_altsw(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Set S[15:0] into word established by prior ALTSW instruction."));
-    m_instr.insert(instr, "SETWORD {#}S");
-    m_token.insert(instr, t_SETWORD);
-    pattern(instr, "EEEE 1001001 00I 000000000 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001001 00I 000000000 SSSSSSSSS");
+    m_token.insert(mask_match, t_SETWORD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set S[15:0] into word established by prior ALTSW instruction.");
+    m_instr.insert(mask_match, "SETWORD {#}S");
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2274,10 +2775,13 @@ void P2Doc::doc_setword_altsw(p2_inst9_e instr)
  */
 void P2Doc::doc_getword(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Get word N of S into D."));
-    m_instr.insert(instr, "GETWORD D,{#}S,#N");
-    m_token.insert(instr, t_GETWORD);
-    pattern(instr, "EEEE 1001001 1NI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001001 1NI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_GETWORD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get word N of S into D.");
+    m_instr.insert(mask_match, "GETWORD D,{#}S,#N");
+    descr += "D = {16'b0, S.WORD[N]).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2291,10 +2795,13 @@ void P2Doc::doc_getword(p2_inst9_e instr)
  */
 void P2Doc::doc_getword_altgw(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Get word established by prior ALTGW instruction into D."));
-    m_instr.insert(instr, "GETWORD D");
-    m_token.insert(instr, t_GETWORD);
-    pattern(instr, "EEEE 1001001 100 DDDDDDDDD 000000000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001001 100 DDDDDDDDD 000000000");
+    m_token.insert(mask_match, t_GETWORD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get word established by prior ALTGW instruction into D.");
+    m_instr.insert(mask_match, "GETWORD D");
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2309,10 +2816,13 @@ void P2Doc::doc_getword_altgw(p2_inst9_e instr)
  */
 void P2Doc::doc_rolword(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Rotate-left word N of S into D."));
-    m_instr.insert(instr, "ROLWORD D,{#}S,#N");
-    m_token.insert(instr, t_ROLWORD);
-    pattern(instr, "EEEE 1001010 0NI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001010 0NI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ROLWORD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Rotate-left word N of S into D.");
+    m_instr.insert(mask_match, "ROLWORD D,{#}S,#N");
+    descr += "D = {D[15:0], S.WORD[N]).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2326,10 +2836,13 @@ void P2Doc::doc_rolword(p2_inst9_e instr)
  */
 void P2Doc::doc_rolword_altgw(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Rotate-left word established by prior ALTGW instruction into D."));
-    m_instr.insert(instr, "ROLWORD D");
-    m_token.insert(instr, t_ROLWORD);
-    pattern(instr, "EEEE 1001010 000 DDDDDDDDD 000000000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001010 000 DDDDDDDDD 000000000");
+    m_token.insert(mask_match, t_ROLWORD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Rotate-left word established by prior ALTGW instruction into D.");
+    m_instr.insert(mask_match, "ROLWORD D");
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2345,10 +2858,14 @@ void P2Doc::doc_rolword_altgw(p2_inst9_e instr)
  */
 void P2Doc::doc_altsn(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Alter subsequent SETNIB instruction."));
-    m_instr.insert(instr, "ALTSN   D,{#}S");
-    m_token.insert(instr, t_ALTSN);
-    pattern(instr, "EEEE 1001010 10I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001010 10I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ALTSN);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Alter subsequent SETNIB instruction.");
+    m_instr.insert(mask_match, "ALTSN   D,{#}S");
+    descr += "Next D field = (D[11:3] + S) & $1FF, N field = D[2:0].";
+    descr += "D += sign-extended S[17:9].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2363,10 +2880,13 @@ void P2Doc::doc_altsn(p2_inst9_e instr)
  */
 void P2Doc::doc_altsn_d(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Alter subsequent SETNIB instruction."));
-    m_instr.insert(instr, "ALTSN   D");
-    m_token.insert(instr, t_ALTSN);
-    pattern(instr, "EEEE 1001010 101 DDDDDDDDD 000000000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001010 101 DDDDDDDDD 000000000");
+    m_token.insert(mask_match, t_ALTSN);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Alter subsequent SETNIB instruction.");
+    m_instr.insert(mask_match, "ALTSN   D");
+    descr += "Next D field = D[11:3], N field = D[2:0].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2382,10 +2902,14 @@ void P2Doc::doc_altsn_d(p2_inst9_e instr)
  */
 void P2Doc::doc_altgn(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Alter subsequent GETNIB/ROLNIB instruction."));
-    m_instr.insert(instr, "ALTGN   D,{#}S");
-    m_token.insert(instr, t_ALTGN);
-    pattern(instr, "EEEE 1001010 11I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001010 11I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ALTGN);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Alter subsequent GETNIB/ROLNIB instruction.");
+    m_instr.insert(mask_match, "ALTGN   D,{#}S");
+    descr += "Next S field = (D[11:3] + S) & $1FF, N field = D[2:0].";
+    descr += "D += sign-extended S[17:9].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2400,10 +2924,13 @@ void P2Doc::doc_altgn(p2_inst9_e instr)
  */
 void P2Doc::doc_altgn_d(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Alter subsequent GETNIB/ROLNIB instruction."));
-    m_instr.insert(instr, "ALTGN   D");
-    m_token.insert(instr, t_ALTGN);
-    pattern(instr, "EEEE 1001010 111 DDDDDDDDD 000000000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001010 111 DDDDDDDDD 000000000");
+    m_token.insert(mask_match, t_ALTGN);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Alter subsequent GETNIB/ROLNIB instruction.");
+    m_instr.insert(mask_match, "ALTGN   D");
+    descr += "Next S field = D[11:3], N field = D[2:0].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2419,10 +2946,14 @@ void P2Doc::doc_altgn_d(p2_inst9_e instr)
  */
 void P2Doc::doc_altsb(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Alter subsequent SETBYTE instruction."));
-    m_instr.insert(instr, "ALTSB   D,{#}S");
-    m_token.insert(instr, t_ALTSB);
-    pattern(instr, "EEEE 1001011 00I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001011 00I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ALTSB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Alter subsequent SETBYTE instruction.");
+    m_instr.insert(mask_match, "ALTSB   D,{#}S");
+    descr += "Next D field = (D[10:2] + S) & $1FF, N field = D[1:0].";
+    descr += "D += sign-extended S[17:9].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2437,10 +2968,13 @@ void P2Doc::doc_altsb(p2_inst9_e instr)
  */
 void P2Doc::doc_altsb_d(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Alter subsequent SETBYTE instruction."));
-    m_instr.insert(instr, "ALTSB   D");
-    m_token.insert(instr, t_ALTSB);
-    pattern(instr, "EEEE 1001011 001 DDDDDDDDD 000000000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001011 001 DDDDDDDDD 000000000");
+    m_token.insert(mask_match, t_ALTSB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Alter subsequent SETBYTE instruction.");
+    m_instr.insert(mask_match, "ALTSB   D");
+    descr += "Next D field = D[10:2], N field = D[1:0].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2456,10 +2990,14 @@ void P2Doc::doc_altsb_d(p2_inst9_e instr)
  */
 void P2Doc::doc_altgb(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Alter subsequent GETBYTE/ROLBYTE instruction."));
-    m_instr.insert(instr, "ALTGB   D,{#}S");
-    m_token.insert(instr, t_ALTGB);
-    pattern(instr, "EEEE 1001011 01I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001011 01I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ALTGB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Alter subsequent GETBYTE/ROLBYTE instruction.");
+    m_instr.insert(mask_match, "ALTGB   D,{#}S");
+    descr += "Next S field = (D[10:2] + S) & $1FF, N field = D[1:0].";
+    descr += "D += sign-extended S[17:9].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2474,10 +3012,13 @@ void P2Doc::doc_altgb(p2_inst9_e instr)
  */
 void P2Doc::doc_altgb_d(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Alter subsequent GETBYTE/ROLBYTE instruction."));
-    m_instr.insert(instr, "ALTGB   D");
-    m_token.insert(instr, t_ALTGB);
-    pattern(instr, "EEEE 1001011 011 DDDDDDDDD 000000000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001011 011 DDDDDDDDD 000000000");
+    m_token.insert(mask_match, t_ALTGB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Alter subsequent GETBYTE/ROLBYTE instruction.");
+    m_instr.insert(mask_match, "ALTGB   D");
+    descr += "Next S field = D[10:2], N field = D[1:0].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2493,10 +3034,14 @@ void P2Doc::doc_altgb_d(p2_inst9_e instr)
  */
 void P2Doc::doc_altsw(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Alter subsequent SETWORD instruction."));
-    m_instr.insert(instr, "ALTSW   D,{#}S");
-    m_token.insert(instr, t_ALTSW);
-    pattern(instr, "EEEE 1001011 10I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001011 10I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ALTSW);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Alter subsequent SETWORD instruction.");
+    m_instr.insert(mask_match, "ALTSW   D,{#}S");
+    descr += "Next D field = (D[9:1] + S) & $1FF, N field = D[0].";
+    descr += "D += sign-extended S[17:9].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2511,10 +3056,13 @@ void P2Doc::doc_altsw(p2_inst9_e instr)
  */
 void P2Doc::doc_altsw_d(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Alter subsequent SETWORD instruction."));
-    m_instr.insert(instr, "ALTSW   D");
-    m_token.insert(instr, t_ALTSW);
-    pattern(instr, "EEEE 1001011 101 DDDDDDDDD 000000000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001011 101 DDDDDDDDD 000000000");
+    m_token.insert(mask_match, t_ALTSW);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Alter subsequent SETWORD instruction.");
+    m_instr.insert(mask_match, "ALTSW   D");
+    descr += "Next D field = D[9:1], N field = D[0].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2530,10 +3078,14 @@ void P2Doc::doc_altsw_d(p2_inst9_e instr)
  */
 void P2Doc::doc_altgw(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Alter subsequent GETWORD/ROLWORD instruction."));
-    m_instr.insert(instr, "ALTGW   D,{#}S");
-    m_token.insert(instr, t_ALTGW);
-    pattern(instr, "EEEE 1001011 11I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001011 11I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ALTGW);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Alter subsequent GETWORD/ROLWORD instruction.");
+    m_instr.insert(mask_match, "ALTGW   D,{#}S");
+    descr += "Next S field = ((D[9:1] + S) & $1FF), N field = D[0].";
+    descr += "D += sign-extended S[17:9].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2548,10 +3100,13 @@ void P2Doc::doc_altgw(p2_inst9_e instr)
  */
 void P2Doc::doc_altgw_d(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Alter subsequent GETWORD/ROLWORD instruction."));
-    m_instr.insert(instr, "ALTGW   D");
-    m_token.insert(instr, t_ALTGW);
-    pattern(instr, "EEEE 1001011 111 DDDDDDDDD 000000000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001011 111 DDDDDDDDD 000000000");
+    m_token.insert(mask_match, t_ALTGW);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Alter subsequent GETWORD/ROLWORD instruction.");
+    m_instr.insert(mask_match, "ALTGW   D");
+    descr += "Next S field = D[9:1], N field = D[0].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2566,10 +3121,13 @@ void P2Doc::doc_altgw_d(p2_inst9_e instr)
  */
 void P2Doc::doc_altr(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Alter result register address (normally D field) of next instruction to (D + S) & $1FF."));
-    m_instr.insert(instr, "ALTR    D,{#}S");
-    m_token.insert(instr, t_ALTR);
-    pattern(instr, "EEEE 1001100 00I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001100 00I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ALTR);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Alter result register address (normally D field) of next instruction to (D + S) & $1FF.");
+    m_instr.insert(mask_match, "ALTR    D,{#}S");
+    descr += "D += sign-extended S[17:9].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2583,10 +3141,16 @@ void P2Doc::doc_altr(p2_inst9_e instr)
  */
 void P2Doc::doc_altr_d(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Alter result register address (normally D field) of next instruction to D[8:0]."));
-    m_instr.insert(instr, "ALTR    D");
-    m_token.insert(instr, t_ALTD);
-    pattern(instr, "EEEE 1001100 001 DDDDDDDDD 000000000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001100 001 DDDDDDDDD 000000000");
+    m_token.insert(mask_match, t_ALTD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Alter result register address (normally D field) of next instruction to D[8:0].");
+    m_instr.insert(mask_match, "ALTR    D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2601,10 +3165,13 @@ void P2Doc::doc_altr_d(p2_inst9_e instr)
  */
 void P2Doc::doc_altd(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Alter D field of next instruction to (D + S) & $1FF."));
-    m_instr.insert(instr, "ALTD    D,{#}S");
-    m_token.insert(instr, t_ALTD);
-    pattern(instr, "EEEE 1001100 01I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001100 01I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ALTD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Alter D field of next instruction to (D + S) & $1FF.");
+    m_instr.insert(mask_match, "ALTD    D,{#}S");
+    descr += "D += sign-extended S[17:9].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2618,10 +3185,16 @@ void P2Doc::doc_altd(p2_inst9_e instr)
  */
 void P2Doc::doc_altd_d(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Alter D field of next instruction to D[8:0]."));
-    m_instr.insert(instr, "ALTD    D");
-    m_token.insert(instr, t_ALTD);
-    pattern(instr, "EEEE 1001100 011 DDDDDDDDD 000000000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001100 011 DDDDDDDDD 000000000");
+    m_token.insert(mask_match, t_ALTD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Alter D field of next instruction to D[8:0].");
+    m_instr.insert(mask_match, "ALTD    D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2636,10 +3209,13 @@ void P2Doc::doc_altd_d(p2_inst9_e instr)
  */
 void P2Doc::doc_alts(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Alter S field of next instruction to (D + S) & $1FF."));
-    m_instr.insert(instr, "ALTS    D,{#}S");
-    m_token.insert(instr, t_ALTS);
-    pattern(instr, "EEEE 1001100 10I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001100 10I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ALTS);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Alter S field of next instruction to (D + S) & $1FF.");
+    m_instr.insert(mask_match, "ALTS    D,{#}S");
+    descr += "D += sign-extended S[17:9].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2653,10 +3229,16 @@ void P2Doc::doc_alts(p2_inst9_e instr)
  */
 void P2Doc::doc_alts_d(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Alter S field of next instruction to D[8:0]."));
-    m_instr.insert(instr, "ALTS    D");
-    m_token.insert(instr, t_ALTS);
-    pattern(instr, "EEEE 1001100 101 DDDDDDDDD 000000000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001100 101 DDDDDDDDD 000000000");
+    m_token.insert(mask_match, t_ALTS);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Alter S field of next instruction to D[8:0].");
+    m_instr.insert(mask_match, "ALTS    D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2671,10 +3253,13 @@ void P2Doc::doc_alts_d(p2_inst9_e instr)
  */
 void P2Doc::doc_altb(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Alter D field of next instruction to (D[13:5] + S) & $1FF."));
-    m_instr.insert(instr, "ALTB    D,{#}S");
-    m_token.insert(instr, t_ALTB);
-    pattern(instr, "EEEE 1001100 11I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001100 11I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ALTB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Alter D field of next instruction to (D[13:5] + S) & $1FF.");
+    m_instr.insert(mask_match, "ALTB    D,{#}S");
+    descr += "D += sign-extended S[17:9].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2688,10 +3273,16 @@ void P2Doc::doc_altb(p2_inst9_e instr)
  */
 void P2Doc::doc_altb_d(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Alter D field of next instruction to D[13:5]."));
-    m_instr.insert(instr, "ALTB    D");
-    m_token.insert(instr, t_ALTB);
-    pattern(instr, "EEEE 1001100 111 DDDDDDDDD 000000000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001100 111 DDDDDDDDD 000000000");
+    m_token.insert(mask_match, t_ALTB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Alter D field of next instruction to D[13:5].");
+    m_instr.insert(mask_match, "ALTB    D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2706,10 +3297,13 @@ void P2Doc::doc_altb_d(p2_inst9_e instr)
  */
 void P2Doc::doc_alti(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Substitute next instruction's I/R/D/S fields with fields from D, per S."));
-    m_instr.insert(instr, "ALTI    D,{#}S");
-    m_token.insert(instr, t_ALTI);
-    pattern(instr, "EEEE 1001101 00I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001101 00I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ALTI);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Substitute next instruction's I/R/D/S fields with fields from D, per S.");
+    m_instr.insert(mask_match, "ALTI    D,{#}S");
+    descr += "Modify D per S.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2724,10 +3318,13 @@ void P2Doc::doc_alti(p2_inst9_e instr)
  */
 void P2Doc::doc_alti_d(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Execute D in place of next instruction."));
-    m_instr.insert(instr, "ALTI    D");
-    m_token.insert(instr, t_ALTI);
-    pattern(instr, "EEEE 1001101 001 DDDDDDDDD 101100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001101 001 DDDDDDDDD 101100100");
+    m_token.insert(mask_match, t_ALTI);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Execute D in place of next instruction.");
+    m_instr.insert(mask_match, "ALTI    D");
+    descr += "D stays same.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2742,10 +3339,13 @@ void P2Doc::doc_alti_d(p2_inst9_e instr)
  */
 void P2Doc::doc_setr(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Set R field of D to S[8:0]."));
-    m_instr.insert(instr, "SETR    D,{#}S");
-    m_token.insert(instr, t_SETR);
-    pattern(instr, "EEEE 1001101 01I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001101 01I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_SETR);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set R field of D to S[8:0].");
+    m_instr.insert(mask_match, "SETR    D,{#}S");
+    descr += "D = {D[31:28], S[8:0], D[18:0]}.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2760,10 +3360,13 @@ void P2Doc::doc_setr(p2_inst9_e instr)
  */
 void P2Doc::doc_setd(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Set D field of D to S[8:0]."));
-    m_instr.insert(instr, "SETD    D,{#}S");
-    m_token.insert(instr, t_SETD);
-    pattern(instr, "EEEE 1001101 10I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001101 10I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_SETD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set D field of D to S[8:0].");
+    m_instr.insert(mask_match, "SETD    D,{#}S");
+    descr += "D = {D[31:18], S[8:0], D[8:0]}.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2778,10 +3381,13 @@ void P2Doc::doc_setd(p2_inst9_e instr)
  */
 void P2Doc::doc_sets(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Set S field of D to S[8:0]."));
-    m_instr.insert(instr, "SETS    D,{#}S");
-    m_token.insert(instr, t_SETS);
-    pattern(instr, "EEEE 1001101 11I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001101 11I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_SETS);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set S field of D to S[8:0].");
+    m_instr.insert(mask_match, "SETS    D,{#}S");
+    descr += "D = {D[31:9], S[8:0]}.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2796,10 +3402,13 @@ void P2Doc::doc_sets(p2_inst9_e instr)
  */
 void P2Doc::doc_decod(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Decode S[4:0] into D."));
-    m_instr.insert(instr, "DECOD   D,{#}S");
-    m_token.insert(instr, t_DECOD);
-    pattern(instr, "EEEE 1001110 00I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001110 00I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_DECOD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Decode S[4:0] into D.");
+    m_instr.insert(mask_match, "DECOD   D,{#}S");
+    descr += "D = 1 << S[4:0].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2814,10 +3423,13 @@ void P2Doc::doc_decod(p2_inst9_e instr)
  */
 void P2Doc::doc_decod_d(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Decode D[4:0] into D."));
-    m_instr.insert(instr, "DECOD   D");
-    m_token.insert(instr, t_DECOD);
-    pattern(instr, "EEEE 1001110 000 DDDDDDDDD DDDDDDDDD");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001110 000 DDDDDDDDD DDDDDDDDD");
+    m_token.insert(mask_match, t_DECOD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Decode D[4:0] into D.");
+    m_instr.insert(mask_match, "DECOD   D");
+    descr += "D = 1 << D[4:0].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2832,10 +3444,13 @@ void P2Doc::doc_decod_d(p2_inst9_e instr)
  */
 void P2Doc::doc_bmask(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Get LSB-justified bit mask of size (S[4:0] + 1) into D."));
-    m_instr.insert(instr, "BMASK   D,{#}S");
-    m_token.insert(instr, t_BMASK);
-    pattern(instr, "EEEE 1001110 01I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001110 01I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_BMASK);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get LSB-justified bit mask of size (S[4:0] + 1) into D.");
+    m_instr.insert(mask_match, "BMASK   D,{#}S");
+    descr += "D = ($0000_0002 << S[4:0]) - 1.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2850,10 +3465,13 @@ void P2Doc::doc_bmask(p2_inst9_e instr)
  */
 void P2Doc::doc_bmask_d(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Get LSB-justified bit mask of size (D[4:0] + 1) into D."));
-    m_instr.insert(instr, "BMASK   D");
-    m_token.insert(instr, t_BMASK);
-    pattern(instr, "EEEE 1001110 010 DDDDDDDDD DDDDDDDDD");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001110 010 DDDDDDDDD DDDDDDDDD");
+    m_token.insert(mask_match, t_BMASK);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get LSB-justified bit mask of size (D[4:0] + 1) into D.");
+    m_instr.insert(mask_match, "BMASK   D");
+    descr += "D = ($0000_0002 << D[4:0]) - 1.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2868,10 +3486,13 @@ void P2Doc::doc_bmask_d(p2_inst9_e instr)
  */
 void P2Doc::doc_crcbit(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Iterate CRC value in D using C and polynomial in S."));
-    m_instr.insert(instr, "CRCBIT  D,{#}S");
-    m_token.insert(instr, t_CRCBIT);
-    pattern(instr, "EEEE 1001110 10I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001110 10I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_CRCBIT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Iterate CRC value in D using C and polynomial in S.");
+    m_instr.insert(mask_match, "CRCBIT  D,{#}S");
+    descr += "If (C XOR D[0]) then D = (D >> 1) XOR S, else D = (D >> 1).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2888,10 +3509,15 @@ void P2Doc::doc_crcbit(p2_inst9_e instr)
  */
 void P2Doc::doc_crcnib(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Iterate CRC value in D using Q[31:28] and polynomial in S."));
-    m_instr.insert(instr, "CRCNIB  D,{#}S");
-    m_token.insert(instr, t_CRCNIB);
-    pattern(instr, "EEEE 1001110 11I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001110 11I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_CRCNIB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Iterate CRC value in D using Q[31:28] and polynomial in S.");
+    m_instr.insert(mask_match, "CRCNIB  D,{#}S");
+    descr += "Like CRCBIT, but 4x.";
+    descr += "Q = Q << 4.";
+    descr += "Use SETQ+CRCNIB+CRCNIB+CRCNIB.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2905,10 +3531,16 @@ void P2Doc::doc_crcnib(p2_inst9_e instr)
  */
 void P2Doc::doc_muxnits(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("For each non-zero bit pair in S, copy that bit pair into the corresponding D bits, else leave that D bit pair the same."));
-    m_instr.insert(instr, "MUXNITS D,{#}S");
-    m_token.insert(instr, t_MUXNITS);
-    pattern(instr, "EEEE 1001111 00I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001111 00I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_MUXNITS);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "For each non-zero bit pair in S, copy that bit pair into the corresponding D bits, else leave that D bit pair the same.");
+    m_instr.insert(mask_match, "MUXNITS D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2922,10 +3554,16 @@ void P2Doc::doc_muxnits(p2_inst9_e instr)
  */
 void P2Doc::doc_muxnibs(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("For each non-zero nibble in S, copy that nibble into the corresponding D nibble, else leave that D nibble the same."));
-    m_instr.insert(instr, "MUXNIBS D,{#}S");
-    m_token.insert(instr, t_MUXNIBS);
-    pattern(instr, "EEEE 1001111 01I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001111 01I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_MUXNIBS);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "For each non-zero nibble in S, copy that nibble into the corresponding D nibble, else leave that D nibble the same.");
+    m_instr.insert(mask_match, "MUXNIBS D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2941,10 +3579,14 @@ void P2Doc::doc_muxnibs(p2_inst9_e instr)
  */
 void P2Doc::doc_muxq(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Used after SETQ."));
-    m_instr.insert(instr, "MUXQ    D,{#}S");
-    m_token.insert(instr, t_MUXQ);
-    pattern(instr, "EEEE 1001111 10I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001111 10I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_MUXQ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Used after SETQ.");
+    m_instr.insert(mask_match, "MUXQ    D,{#}S");
+    descr += "For each '1' bit in Q, copy the corresponding bit in S into D.";
+    descr += "D = (D & !Q) | (S & Q).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2959,10 +3601,13 @@ void P2Doc::doc_muxq(p2_inst9_e instr)
  */
 void P2Doc::doc_movbyts(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Move bytes within D, per S."));
-    m_instr.insert(instr, "MOVBYTS D,{#}S");
-    m_token.insert(instr, t_MOVBYTS);
-    pattern(instr, "EEEE 1001111 11I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1001111 11I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_MOVBYTS);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Move bytes within D, per S.");
+    m_instr.insert(mask_match, "MOVBYTS D,{#}S");
+    descr += "D = {D.BYTE[S[7:6]], D.BYTE[S[5:4]], D.BYTE[S[3:2]], D.BYTE[S[1:0]]}.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2977,10 +3622,13 @@ void P2Doc::doc_movbyts(p2_inst9_e instr)
  */
 void P2Doc::doc_mul(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("D = unsigned (D[15:0] * S[15:0])."));
-    m_instr.insert(instr, "MUL     D,{#}S          {WZ}");
-    m_token.insert(instr, t_MUL);
-    pattern(instr, "EEEE 1010000 0ZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1010000 0ZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_MUL);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "D = unsigned (D[15:0] * S[15:0]).");
+    m_instr.insert(mask_match, "MUL     D,{#}S          {WZ}");
+    descr += "Z = (S == 0) | (D == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -2995,10 +3643,13 @@ void P2Doc::doc_mul(p2_inst8_e instr)
  */
 void P2Doc::doc_muls(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("D = signed (D[15:0] * S[15:0])."));
-    m_instr.insert(instr, "MULS    D,{#}S          {WZ}");
-    m_token.insert(instr, t_MULS);
-    pattern(instr, "EEEE 1010000 1ZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1010000 1ZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_MULS);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "D = signed (D[15:0] * S[15:0]).");
+    m_instr.insert(mask_match, "MULS    D,{#}S          {WZ}");
+    descr += "Z = (S == 0) | (D == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3013,10 +3664,13 @@ void P2Doc::doc_muls(p2_inst8_e instr)
  */
 void P2Doc::doc_sca(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Next instruction's S value = unsigned (D[15:0] * S[15:0]) >> 16."));
-    m_instr.insert(instr, "SCA     D,{#}S          {WZ}");
-    m_token.insert(instr, t_SCA);
-    pattern(instr, "EEEE 1010001 0ZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1010001 0ZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_SCA);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Next instruction's S value = unsigned (D[15:0] * S[15:0]) >> 16.");
+    m_instr.insert(mask_match, "SCA     D,{#}S          {WZ}");
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3032,10 +3686,14 @@ void P2Doc::doc_sca(p2_inst8_e instr)
  */
 void P2Doc::doc_scas(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Next instruction's S value = signed (D[15:0] * S[15:0]) >> 14."));
-    m_instr.insert(instr, "SCAS    D,{#}S          {WZ}");
-    m_token.insert(instr, t_SCAS);
-    pattern(instr, "EEEE 1010001 1ZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1010001 1ZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_SCAS);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Next instruction's S value = signed (D[15:0] * S[15:0]) >> 14.");
+    m_instr.insert(mask_match, "SCAS    D,{#}S          {WZ}");
+    descr += "In this scheme, $4000 = 1.0 and $C000 = -1.0.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3049,10 +3707,16 @@ void P2Doc::doc_scas(p2_inst8_e instr)
  */
 void P2Doc::doc_addpix(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Add bytes of S into bytes of D, with $FF saturation."));
-    m_instr.insert(instr, "ADDPIX  D,{#}S");
-    m_token.insert(instr, t_ADDPIX);
-    pattern(instr, "EEEE 1010010 00I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1010010 00I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ADDPIX);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Add bytes of S into bytes of D, with $FF saturation.");
+    m_instr.insert(mask_match, "ADDPIX  D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3067,10 +3731,13 @@ void P2Doc::doc_addpix(p2_inst9_e instr)
  */
 void P2Doc::doc_mulpix(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Multiply bytes of S into bytes of D, where $FF = 1."));
-    m_instr.insert(instr, "MULPIX  D,{#}S");
-    m_token.insert(instr, t_MULPIX);
-    pattern(instr, "EEEE 1010010 01I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1010010 01I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_MULPIX);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Multiply bytes of S into bytes of D, where $FF = 1.");
+    m_instr.insert(mask_match, "MULPIX  D,{#}S");
+    descr += "0.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3084,10 +3751,16 @@ void P2Doc::doc_mulpix(p2_inst9_e instr)
  */
 void P2Doc::doc_blnpix(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Alpha-blend bytes of S into bytes of D, using SETPIV value."));
-    m_instr.insert(instr, "BLNPIX  D,{#}S");
-    m_token.insert(instr, t_BLNPIX);
-    pattern(instr, "EEEE 1010010 10I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1010010 10I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_BLNPIX);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Alpha-blend bytes of S into bytes of D, using SETPIV value.");
+    m_instr.insert(mask_match, "BLNPIX  D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3101,10 +3774,16 @@ void P2Doc::doc_blnpix(p2_inst9_e instr)
  */
 void P2Doc::doc_mixpix(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Mix bytes of S into bytes of D, using SETPIX and SETPIV values."));
-    m_instr.insert(instr, "MIXPIX  D,{#}S");
-    m_token.insert(instr, t_MIXPIX);
-    pattern(instr, "EEEE 1010010 11I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1010010 11I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_MIXPIX);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Mix bytes of S into bytes of D, using SETPIX and SETPIV values.");
+    m_instr.insert(mask_match, "MIXPIX  D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3119,10 +3798,13 @@ void P2Doc::doc_mixpix(p2_inst9_e instr)
  */
 void P2Doc::doc_addct1(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Set CT1 event to trigger on CT = D + S."));
-    m_instr.insert(instr, "ADDCT1  D,{#}S");
-    m_token.insert(instr, t_ADDCT1);
-    pattern(instr, "EEEE 1010011 00I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1010011 00I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ADDCT1);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set CT1 event to trigger on CT = D + S.");
+    m_instr.insert(mask_match, "ADDCT1  D,{#}S");
+    descr += "Adds S into D.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3137,10 +3819,13 @@ void P2Doc::doc_addct1(p2_inst9_e instr)
  */
 void P2Doc::doc_addct2(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Set CT2 event to trigger on CT = D + S."));
-    m_instr.insert(instr, "ADDCT2  D,{#}S");
-    m_token.insert(instr, t_ADDCT2);
-    pattern(instr, "EEEE 1010011 01I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1010011 01I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ADDCT2);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set CT2 event to trigger on CT = D + S.");
+    m_instr.insert(mask_match, "ADDCT2  D,{#}S");
+    descr += "Adds S into D.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3155,10 +3840,13 @@ void P2Doc::doc_addct2(p2_inst9_e instr)
  */
 void P2Doc::doc_addct3(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Set CT3 event to trigger on CT = D + S."));
-    m_instr.insert(instr, "ADDCT3  D,{#}S");
-    m_token.insert(instr, t_ADDCT3);
-    pattern(instr, "EEEE 1010011 10I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1010011 10I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_ADDCT3);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set CT3 event to trigger on CT = D + S.");
+    m_instr.insert(mask_match, "ADDCT3  D,{#}S");
+    descr += "Adds S into D.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3173,10 +3861,13 @@ void P2Doc::doc_addct3(p2_inst9_e instr)
  */
 void P2Doc::doc_wmlong(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Write only non-$00 bytes in D[31:0] to hub address {#}S/PTRx."));
-    m_instr.insert(instr, "WMLONG  D,{#}S/P");
-    m_token.insert(instr, t_WMLONG);
-    pattern(instr, "EEEE 1010011 11I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1010011 11I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_WMLONG);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Write only non-$00 bytes in D[31:0] to hub address {#}S/PTRx.");
+    m_instr.insert(mask_match, "WMLONG  D,{#}S/P");
+    descr += "Prior SETQ/SETQ2 invokes cog/LUT block transfer.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3191,10 +3882,13 @@ void P2Doc::doc_wmlong(p2_inst9_e instr)
  */
 void P2Doc::doc_rqpin(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Read smart pin S[5:0] result \"Z\" into D, don't acknowledge smart pin (\"Q\" in RQPIN means \"quiet\")."));
-    m_instr.insert(instr, "RQPIN   D,{#}S          {WC}");
-    m_token.insert(instr, t_RQPIN);
-    pattern(instr, "EEEE 1010100 C0I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1010100 C0I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_RQPIN);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Read smart pin S[5:0] result \"Z\" into D, don't acknowledge smart pin (\"Q\" in RQPIN means \"quiet\").");
+    m_instr.insert(mask_match, "RQPIN   D,{#}S          {WC}");
+    descr += "C = modal result.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3209,10 +3903,13 @@ void P2Doc::doc_rqpin(p2_inst8_e instr)
  */
 void P2Doc::doc_rdpin(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Read smart pin S[5:0] result \"Z\" into D, acknowledge smart pin."));
-    m_instr.insert(instr, "RDPIN   D,{#}S          {WC}");
-    m_token.insert(instr, t_RDPIN);
-    pattern(instr, "EEEE 1010100 x1I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1010100 x1I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_RDPIN);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Read smart pin S[5:0] result \"Z\" into D, acknowledge smart pin.");
+    m_instr.insert(mask_match, "RDPIN   D,{#}S          {WC}");
+    descr += "C = modal result.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3228,10 +3925,14 @@ void P2Doc::doc_rdpin(p2_inst8_e instr)
  */
 void P2Doc::doc_rdlut(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Read LUT data from address S[8:0] into D."));
-    m_instr.insert(instr, "RDLUT   D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_RDLUT);
-    pattern(instr, "EEEE 1010101 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1010101 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_RDLUT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Read LUT data from address S[8:0] into D.");
+    m_instr.insert(mask_match, "RDLUT   D,{#}S   {WC/WZ/WCZ}");
+    descr += "C = MSB of data.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3247,10 +3948,14 @@ void P2Doc::doc_rdlut(p2_inst7_e instr)
  */
 void P2Doc::doc_rdbyte(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Read zero-extended byte from hub address {#}S/PTRx into D."));
-    m_instr.insert(instr, "RDBYTE  D,{#}S/P {WC/WZ/WCZ}");
-    m_token.insert(instr, t_RDBYTE);
-    pattern(instr, "EEEE 1010110 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1010110 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_RDBYTE);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Read zero-extended byte from hub address {#}S/PTRx into D.");
+    m_instr.insert(mask_match, "RDBYTE  D,{#}S/P {WC/WZ/WCZ}");
+    descr += "C = MSB of byte.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3266,10 +3971,14 @@ void P2Doc::doc_rdbyte(p2_inst7_e instr)
  */
 void P2Doc::doc_rdword(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Read zero-extended word from hub address {#}S/PTRx into D."));
-    m_instr.insert(instr, "RDWORD  D,{#}S/P {WC/WZ/WCZ}");
-    m_token.insert(instr, t_RDWORD);
-    pattern(instr, "EEEE 1010111 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1010111 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_RDWORD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Read zero-extended word from hub address {#}S/PTRx into D.");
+    m_instr.insert(mask_match, "RDWORD  D,{#}S/P {WC/WZ/WCZ}");
+    descr += "C = MSB of word.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3280,15 +3989,19 @@ void P2Doc::doc_rdword(p2_inst7_e instr)
  * RDLONG  D,{#}S/P {WC/WZ/WCZ}
  *
  * C = MSB of long.
- * *   Prior SETQ/SETQ2 invokes cog/LUT block transfer.
+ * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  *
  */
 void P2Doc::doc_rdlong(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Read long from hub address {#}S/PTRx into D."));
-    m_instr.insert(instr, "RDLONG  D,{#}S/P {WC/WZ/WCZ}");
-    m_token.insert(instr, t_RDLONG);
-    pattern(instr, "EEEE 1011000 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011000 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_RDLONG);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Read long from hub address {#}S/PTRx into D.");
+    m_instr.insert(mask_match, "RDLONG  D,{#}S/P {WC/WZ/WCZ}");
+    descr += "C = MSB of long.";
+    descr += "Prior SETQ/SETQ2 invokes cog/LUT block transfer.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3304,10 +4017,14 @@ void P2Doc::doc_rdlong(p2_inst7_e instr)
  */
 void P2Doc::doc_popa(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Read long from hub address --PTRA into D."));
-    m_instr.insert(instr, "POPA    D        {WC/WZ/WCZ}");
-    m_token.insert(instr, t_POPA);
-    pattern(instr, "EEEE 1011000 CZ1 DDDDDDDDD 101011111");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011000 CZ1 DDDDDDDDD 101011111");
+    m_token.insert(mask_match, t_POPA);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Read long from hub address --PTRA into D.");
+    m_instr.insert(mask_match, "POPA    D        {WC/WZ/WCZ}");
+    descr += "C = MSB of long.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3323,10 +4040,14 @@ void P2Doc::doc_popa(p2_inst7_e instr)
  */
 void P2Doc::doc_popb(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Read long from hub address --PTRB into D."));
-    m_instr.insert(instr, "POPB    D        {WC/WZ/WCZ}");
-    m_token.insert(instr, t_POPB);
-    pattern(instr, "EEEE 1011000 CZ1 DDDDDDDDD 111011111");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011000 CZ1 DDDDDDDDD 111011111");
+    m_token.insert(mask_match, t_POPB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Read long from hub address --PTRB into D.");
+    m_instr.insert(mask_match, "POPB    D        {WC/WZ/WCZ}");
+    descr += "C = MSB of long.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3341,10 +4062,13 @@ void P2Doc::doc_popb(p2_inst7_e instr)
  */
 void P2Doc::doc_calld(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Call to S** by writing {C, Z, 10'b0, PC[19:0]} to D."));
-    m_instr.insert(instr, "CALLD   D,{#}S   {WC/WZ/WCZ}");
-    m_token.insert(instr, t_CALLD);
-    pattern(instr, "EEEE 1011001 CZI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011001 CZI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_CALLD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Call to S** by writing {C, Z, 10'b0, PC[19:0]} to D.");
+    m_instr.insert(mask_match, "CALLD   D,{#}S   {WC/WZ/WCZ}");
+    descr += "C = S[31], Z = S[30].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3359,10 +4083,13 @@ void P2Doc::doc_calld(p2_inst7_e instr)
  */
 void P2Doc::doc_resi3(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Resume from INT3."));
-    m_instr.insert(instr, "RESI3");
-    m_token.insert(instr, t_RESI3);
-    pattern(instr, "EEEE 1011001 110 111110000 111110001");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011001 110 111110000 111110001");
+    m_token.insert(mask_match, t_RESI3);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Resume from INT3.");
+    m_instr.insert(mask_match, "RESI3");
+    descr += "(CALLD $1F0,$1F1 WC,WZ).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3377,10 +4104,13 @@ void P2Doc::doc_resi3(p2_inst7_e instr)
  */
 void P2Doc::doc_resi2(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Resume from INT2."));
-    m_instr.insert(instr, "RESI2");
-    m_token.insert(instr, t_RESI2);
-    pattern(instr, "EEEE 1011001 110 111110010 111110011");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011001 110 111110010 111110011");
+    m_token.insert(mask_match, t_RESI2);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Resume from INT2.");
+    m_instr.insert(mask_match, "RESI2");
+    descr += "(CALLD $1F2,$1F3 WC,WZ).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3395,10 +4125,13 @@ void P2Doc::doc_resi2(p2_inst7_e instr)
  */
 void P2Doc::doc_resi1(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Resume from INT1."));
-    m_instr.insert(instr, "RESI1");
-    m_token.insert(instr, t_RESI1);
-    pattern(instr, "EEEE 1011001 110 111110100 111110101");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011001 110 111110100 111110101");
+    m_token.insert(mask_match, t_RESI1);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Resume from INT1.");
+    m_instr.insert(mask_match, "RESI1");
+    descr += "(CALLD $1F4,$1F5 WC,WZ).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3413,10 +4146,13 @@ void P2Doc::doc_resi1(p2_inst7_e instr)
  */
 void P2Doc::doc_resi0(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Resume from INT0."));
-    m_instr.insert(instr, "RESI0");
-    m_token.insert(instr, t_RESI0);
-    pattern(instr, "EEEE 1011001 110 111111110 111111111");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011001 110 111111110 111111111");
+    m_token.insert(mask_match, t_RESI0);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Resume from INT0.");
+    m_instr.insert(mask_match, "RESI0");
+    descr += "(CALLD $1FE,$1FF WC,WZ).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3431,10 +4167,13 @@ void P2Doc::doc_resi0(p2_inst7_e instr)
  */
 void P2Doc::doc_reti3(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Return from INT3."));
-    m_instr.insert(instr, "RETI3");
-    m_token.insert(instr, t_RETI3);
-    pattern(instr, "EEEE 1011001 110 111111111 111110001");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011001 110 111111111 111110001");
+    m_token.insert(mask_match, t_RETI3);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Return from INT3.");
+    m_instr.insert(mask_match, "RETI3");
+    descr += "(CALLD $1FF,$1F1 WC,WZ).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3449,10 +4188,13 @@ void P2Doc::doc_reti3(p2_inst7_e instr)
  */
 void P2Doc::doc_reti2(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Return from INT2."));
-    m_instr.insert(instr, "RETI2");
-    m_token.insert(instr, t_RETI2);
-    pattern(instr, "EEEE 1011001 110 111111111 111110011");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011001 110 111111111 111110011");
+    m_token.insert(mask_match, t_RETI2);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Return from INT2.");
+    m_instr.insert(mask_match, "RETI2");
+    descr += "(CALLD $1FF,$1F3 WC,WZ).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3467,10 +4209,13 @@ void P2Doc::doc_reti2(p2_inst7_e instr)
  */
 void P2Doc::doc_reti1(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Return from INT1."));
-    m_instr.insert(instr, "RETI1");
-    m_token.insert(instr, t_RETI1);
-    pattern(instr, "EEEE 1011001 110 111111111 111110101");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011001 110 111111111 111110101");
+    m_token.insert(mask_match, t_RETI1);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Return from INT1.");
+    m_instr.insert(mask_match, "RETI1");
+    descr += "(CALLD $1FF,$1F5 WC,WZ).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3485,10 +4230,13 @@ void P2Doc::doc_reti1(p2_inst7_e instr)
  */
 void P2Doc::doc_reti0(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Return from INT0."));
-    m_instr.insert(instr, "RETI0");
-    m_token.insert(instr, t_RETI0);
-    pattern(instr, "EEEE 1011001 110 111111111 111111111");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011001 110 111111111 111111111");
+    m_token.insert(mask_match, t_RETI0);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Return from INT0.");
+    m_instr.insert(mask_match, "RETI0");
+    descr += "(CALLD $1FF,$1FF WC,WZ).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3502,10 +4250,14 @@ void P2Doc::doc_reti0(p2_inst7_e instr)
  */
 void P2Doc::doc_callpa(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Call to S** by pushing {C, Z, 10'b0, PC[19:0]} onto stack, copy D to PA."));
-    m_instr.insert(instr, "CALLPA  {#}D,{#}S");
-    m_token.insert(instr, t_CALLPA);
-    pattern(instr, "EEEE 1011010 0LI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011010 0LI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_CALLPA);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Call to S** by pushing {C, Z, 10'b0, PC[19:0]} onto stack, copy D to PA.");
+    m_instr.insert(mask_match, "CALLPA  {#}D,{#}S");
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3519,10 +4271,16 @@ void P2Doc::doc_callpa(p2_inst8_e instr)
  */
 void P2Doc::doc_callpb(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Call to S** by pushing {C, Z, 10'b0, PC[19:0]} onto stack, copy D to PB."));
-    m_instr.insert(instr, "CALLPB  {#}D,{#}S");
-    m_token.insert(instr, t_CALLPB);
-    pattern(instr, "EEEE 1011010 1LI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011010 1LI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_CALLPB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Call to S** by pushing {C, Z, 10'b0, PC[19:0]} onto stack, copy D to PB.");
+    m_instr.insert(mask_match, "CALLPB  {#}D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3536,10 +4294,16 @@ void P2Doc::doc_callpb(p2_inst8_e instr)
  */
 void P2Doc::doc_djz(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Decrement D and jump to S** if result is zero."));
-    m_instr.insert(instr, "DJZ     D,{#}S");
-    m_token.insert(instr, t_DJZ);
-    pattern(instr, "EEEE 1011011 00I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011011 00I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_DJZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Decrement D and jump to S** if result is zero.");
+    m_instr.insert(mask_match, "DJZ     D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3553,10 +4317,16 @@ void P2Doc::doc_djz(p2_inst9_e instr)
  */
 void P2Doc::doc_djnz(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Decrement D and jump to S** if result is not zero."));
-    m_instr.insert(instr, "DJNZ    D,{#}S");
-    m_token.insert(instr, t_DJNZ);
-    pattern(instr, "EEEE 1011011 01I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011011 01I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_DJNZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Decrement D and jump to S** if result is not zero.");
+    m_instr.insert(mask_match, "DJNZ    D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3570,10 +4340,16 @@ void P2Doc::doc_djnz(p2_inst9_e instr)
  */
 void P2Doc::doc_djf(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Decrement D and jump to S** if result is $FFFF_FFFF."));
-    m_instr.insert(instr, "DJF     D,{#}S");
-    m_token.insert(instr, t_DJF);
-    pattern(instr, "EEEE 1011011 10I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011011 10I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_DJF);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Decrement D and jump to S** if result is $FFFF_FFFF.");
+    m_instr.insert(mask_match, "DJF     D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3587,10 +4363,16 @@ void P2Doc::doc_djf(p2_inst9_e instr)
  */
 void P2Doc::doc_djnf(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Decrement D and jump to S** if result is not $FFFF_FFFF."));
-    m_instr.insert(instr, "DJNF    D,{#}S");
-    m_token.insert(instr, t_DJNF);
-    pattern(instr, "EEEE 1011011 11I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011011 11I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_DJNF);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Decrement D and jump to S** if result is not $FFFF_FFFF.");
+    m_instr.insert(mask_match, "DJNF    D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3604,10 +4386,16 @@ void P2Doc::doc_djnf(p2_inst9_e instr)
  */
 void P2Doc::doc_ijz(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Increment D and jump to S** if result is zero."));
-    m_instr.insert(instr, "IJZ     D,{#}S");
-    m_token.insert(instr, t_IJZ);
-    pattern(instr, "EEEE 1011100 00I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011100 00I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_IJZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Increment D and jump to S** if result is zero.");
+    m_instr.insert(mask_match, "IJZ     D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3621,10 +4409,16 @@ void P2Doc::doc_ijz(p2_inst9_e instr)
  */
 void P2Doc::doc_ijnz(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Increment D and jump to S** if result is not zero."));
-    m_instr.insert(instr, "IJNZ    D,{#}S");
-    m_token.insert(instr, t_IJNZ);
-    pattern(instr, "EEEE 1011100 01I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011100 01I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_IJNZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Increment D and jump to S** if result is not zero.");
+    m_instr.insert(mask_match, "IJNZ    D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3638,10 +4432,16 @@ void P2Doc::doc_ijnz(p2_inst9_e instr)
  */
 void P2Doc::doc_tjz(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Test D and jump to S** if D is zero."));
-    m_instr.insert(instr, "TJZ     D,{#}S");
-    m_token.insert(instr, t_TJZ);
-    pattern(instr, "EEEE 1011100 10I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011100 10I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_TJZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Test D and jump to S** if D is zero.");
+    m_instr.insert(mask_match, "TJZ     D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3655,10 +4455,16 @@ void P2Doc::doc_tjz(p2_inst9_e instr)
  */
 void P2Doc::doc_tjnz(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Test D and jump to S** if D is not zero."));
-    m_instr.insert(instr, "TJNZ    D,{#}S");
-    m_token.insert(instr, t_TJNZ);
-    pattern(instr, "EEEE 1011100 11I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011100 11I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_TJNZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Test D and jump to S** if D is not zero.");
+    m_instr.insert(mask_match, "TJNZ    D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3672,10 +4478,16 @@ void P2Doc::doc_tjnz(p2_inst9_e instr)
  */
 void P2Doc::doc_tjf(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Test D and jump to S** if D is full (D = $FFFF_FFFF)."));
-    m_instr.insert(instr, "TJF     D,{#}S");
-    m_token.insert(instr, t_TJF);
-    pattern(instr, "EEEE 1011101 00I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011101 00I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_TJF);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Test D and jump to S** if D is full (D = $FFFF_FFFF).");
+    m_instr.insert(mask_match, "TJF     D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3689,10 +4501,16 @@ void P2Doc::doc_tjf(p2_inst9_e instr)
  */
 void P2Doc::doc_tjnf(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Test D and jump to S** if D is not full (D != $FFFF_FFFF)."));
-    m_instr.insert(instr, "TJNF    D,{#}S");
-    m_token.insert(instr, t_TJNF);
-    pattern(instr, "EEEE 1011101 01I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011101 01I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_TJNF);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Test D and jump to S** if D is not full (D != $FFFF_FFFF).");
+    m_instr.insert(mask_match, "TJNF    D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3706,10 +4524,16 @@ void P2Doc::doc_tjnf(p2_inst9_e instr)
  */
 void P2Doc::doc_tjs(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Test D and jump to S** if D is signed (D[31] = 1)."));
-    m_instr.insert(instr, "TJS     D,{#}S");
-    m_token.insert(instr, t_TJS);
-    pattern(instr, "EEEE 1011101 10I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011101 10I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_TJS);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Test D and jump to S** if D is signed (D[31] = 1).");
+    m_instr.insert(mask_match, "TJS     D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3723,10 +4547,16 @@ void P2Doc::doc_tjs(p2_inst9_e instr)
  */
 void P2Doc::doc_tjns(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Test D and jump to S** if D is not signed (D[31] = 0)."));
-    m_instr.insert(instr, "TJNS    D,{#}S");
-    m_token.insert(instr, t_TJNS);
-    pattern(instr, "EEEE 1011101 11I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011101 11I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_TJNS);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Test D and jump to S** if D is not signed (D[31] = 0).");
+    m_instr.insert(mask_match, "TJNS    D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3740,10 +4570,16 @@ void P2Doc::doc_tjns(p2_inst9_e instr)
  */
 void P2Doc::doc_tjv(p2_inst9_e instr)
 {
-    m_brief.insert(instr, tr("Test D and jump to S** if D overflowed (D[31] != C, C = 'correct sign' from last addition/subtraction)."));
-    m_instr.insert(instr, "TJV     D,{#}S");
-    m_token.insert(instr, t_TJV);
-    pattern(instr, "EEEE 1011110 00I DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 00I DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_TJV);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Test D and jump to S** if D overflowed (D[31] != C, C = 'correct sign' from last addition/subtraction).");
+    m_instr.insert(mask_match, "TJV     D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3757,10 +4593,16 @@ void P2Doc::doc_tjv(p2_inst9_e instr)
  */
 void P2Doc::doc_jint(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if INT event flag is set."));
-    m_instr.insert(instr, "JINT    {#}S");
-    m_token.insert(instr, t_JINT);
-    pattern(instr, "EEEE 1011110 01I 000000000 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000000000 SSSSSSSSS");
+    m_token.insert(mask_match, t_JINT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if INT event flag is set.");
+    m_instr.insert(mask_match, "JINT    {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3774,10 +4616,16 @@ void P2Doc::doc_jint(p2_opdst_e instr)
  */
 void P2Doc::doc_jct1(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if CT1 event flag is set."));
-    m_instr.insert(instr, "JCT1    {#}S");
-    m_token.insert(instr, t_JCT1);
-    pattern(instr, "EEEE 1011110 01I 000000001 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000000001 SSSSSSSSS");
+    m_token.insert(mask_match, t_JCT1);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if CT1 event flag is set.");
+    m_instr.insert(mask_match, "JCT1    {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3791,10 +4639,16 @@ void P2Doc::doc_jct1(p2_opdst_e instr)
  */
 void P2Doc::doc_jct2(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if CT2 event flag is set."));
-    m_instr.insert(instr, "JCT2    {#}S");
-    m_token.insert(instr, t_JCT2);
-    pattern(instr, "EEEE 1011110 01I 000000010 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000000010 SSSSSSSSS");
+    m_token.insert(mask_match, t_JCT2);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if CT2 event flag is set.");
+    m_instr.insert(mask_match, "JCT2    {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3808,10 +4662,16 @@ void P2Doc::doc_jct2(p2_opdst_e instr)
  */
 void P2Doc::doc_jct3(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if CT3 event flag is set."));
-    m_instr.insert(instr, "JCT3    {#}S");
-    m_token.insert(instr, t_JCT3);
-    pattern(instr, "EEEE 1011110 01I 000000011 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000000011 SSSSSSSSS");
+    m_token.insert(mask_match, t_JCT3);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if CT3 event flag is set.");
+    m_instr.insert(mask_match, "JCT3    {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3825,10 +4685,16 @@ void P2Doc::doc_jct3(p2_opdst_e instr)
  */
 void P2Doc::doc_jse1(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if SE1 event flag is set."));
-    m_instr.insert(instr, "JSE1    {#}S");
-    m_token.insert(instr, t_JSE1);
-    pattern(instr, "EEEE 1011110 01I 000000100 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000000100 SSSSSSSSS");
+    m_token.insert(mask_match, t_JSE1);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if SE1 event flag is set.");
+    m_instr.insert(mask_match, "JSE1    {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3842,10 +4708,16 @@ void P2Doc::doc_jse1(p2_opdst_e instr)
  */
 void P2Doc::doc_jse2(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if SE2 event flag is set."));
-    m_instr.insert(instr, "JSE2    {#}S");
-    m_token.insert(instr, t_JSE2);
-    pattern(instr, "EEEE 1011110 01I 000000101 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000000101 SSSSSSSSS");
+    m_token.insert(mask_match, t_JSE2);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if SE2 event flag is set.");
+    m_instr.insert(mask_match, "JSE2    {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3859,10 +4731,16 @@ void P2Doc::doc_jse2(p2_opdst_e instr)
  */
 void P2Doc::doc_jse3(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if SE3 event flag is set."));
-    m_instr.insert(instr, "JSE3    {#}S");
-    m_token.insert(instr, t_JSE3);
-    pattern(instr, "EEEE 1011110 01I 000000110 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000000110 SSSSSSSSS");
+    m_token.insert(mask_match, t_JSE3);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if SE3 event flag is set.");
+    m_instr.insert(mask_match, "JSE3    {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3876,10 +4754,16 @@ void P2Doc::doc_jse3(p2_opdst_e instr)
  */
 void P2Doc::doc_jse4(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if SE4 event flag is set."));
-    m_instr.insert(instr, "JSE4    {#}S");
-    m_token.insert(instr, t_JSE4);
-    pattern(instr, "EEEE 1011110 01I 000000111 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000000111 SSSSSSSSS");
+    m_token.insert(mask_match, t_JSE4);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if SE4 event flag is set.");
+    m_instr.insert(mask_match, "JSE4    {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3893,10 +4777,16 @@ void P2Doc::doc_jse4(p2_opdst_e instr)
  */
 void P2Doc::doc_jpat(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if PAT event flag is set."));
-    m_instr.insert(instr, "JPAT    {#}S");
-    m_token.insert(instr, t_JPAT);
-    pattern(instr, "EEEE 1011110 01I 000001000 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000001000 SSSSSSSSS");
+    m_token.insert(mask_match, t_JPAT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if PAT event flag is set.");
+    m_instr.insert(mask_match, "JPAT    {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3910,10 +4800,16 @@ void P2Doc::doc_jpat(p2_opdst_e instr)
  */
 void P2Doc::doc_jfbw(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if FBW event flag is set."));
-    m_instr.insert(instr, "JFBW    {#}S");
-    m_token.insert(instr, t_JFBW);
-    pattern(instr, "EEEE 1011110 01I 000001001 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000001001 SSSSSSSSS");
+    m_token.insert(mask_match, t_JFBW);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if FBW event flag is set.");
+    m_instr.insert(mask_match, "JFBW    {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3927,10 +4823,16 @@ void P2Doc::doc_jfbw(p2_opdst_e instr)
  */
 void P2Doc::doc_jxmt(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if XMT event flag is set."));
-    m_instr.insert(instr, "JXMT    {#}S");
-    m_token.insert(instr, t_JXMT);
-    pattern(instr, "EEEE 1011110 01I 000001010 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000001010 SSSSSSSSS");
+    m_token.insert(mask_match, t_JXMT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if XMT event flag is set.");
+    m_instr.insert(mask_match, "JXMT    {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3944,10 +4846,16 @@ void P2Doc::doc_jxmt(p2_opdst_e instr)
  */
 void P2Doc::doc_jxfi(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if XFI event flag is set."));
-    m_instr.insert(instr, "JXFI    {#}S");
-    m_token.insert(instr, t_JXFI);
-    pattern(instr, "EEEE 1011110 01I 000001011 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000001011 SSSSSSSSS");
+    m_token.insert(mask_match, t_JXFI);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if XFI event flag is set.");
+    m_instr.insert(mask_match, "JXFI    {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3961,10 +4869,16 @@ void P2Doc::doc_jxfi(p2_opdst_e instr)
  */
 void P2Doc::doc_jxro(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if XRO event flag is set."));
-    m_instr.insert(instr, "JXRO    {#}S");
-    m_token.insert(instr, t_JXRO);
-    pattern(instr, "EEEE 1011110 01I 000001100 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000001100 SSSSSSSSS");
+    m_token.insert(mask_match, t_JXRO);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if XRO event flag is set.");
+    m_instr.insert(mask_match, "JXRO    {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3978,10 +4892,16 @@ void P2Doc::doc_jxro(p2_opdst_e instr)
  */
 void P2Doc::doc_jxrl(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if XRL event flag is set."));
-    m_instr.insert(instr, "JXRL    {#}S");
-    m_token.insert(instr, t_JXRL);
-    pattern(instr, "EEEE 1011110 01I 000001101 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000001101 SSSSSSSSS");
+    m_token.insert(mask_match, t_JXRL);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if XRL event flag is set.");
+    m_instr.insert(mask_match, "JXRL    {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -3995,10 +4915,16 @@ void P2Doc::doc_jxrl(p2_opdst_e instr)
  */
 void P2Doc::doc_jatn(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if ATN event flag is set."));
-    m_instr.insert(instr, "JATN    {#}S");
-    m_token.insert(instr, t_JATN);
-    pattern(instr, "EEEE 1011110 01I 000001110 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000001110 SSSSSSSSS");
+    m_token.insert(mask_match, t_JATN);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if ATN event flag is set.");
+    m_instr.insert(mask_match, "JATN    {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4012,10 +4938,16 @@ void P2Doc::doc_jatn(p2_opdst_e instr)
  */
 void P2Doc::doc_jqmt(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if QMT event flag is set."));
-    m_instr.insert(instr, "JQMT    {#}S");
-    m_token.insert(instr, t_JQMT);
-    pattern(instr, "EEEE 1011110 01I 000001111 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000001111 SSSSSSSSS");
+    m_token.insert(mask_match, t_JQMT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if QMT event flag is set.");
+    m_instr.insert(mask_match, "JQMT    {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4029,10 +4961,16 @@ void P2Doc::doc_jqmt(p2_opdst_e instr)
  */
 void P2Doc::doc_jnint(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if INT event flag is clear."));
-    m_instr.insert(instr, "JNINT   {#}S");
-    m_token.insert(instr, t_JNINT);
-    pattern(instr, "EEEE 1011110 01I 000010000 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000010000 SSSSSSSSS");
+    m_token.insert(mask_match, t_JNINT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if INT event flag is clear.");
+    m_instr.insert(mask_match, "JNINT   {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4046,10 +4984,16 @@ void P2Doc::doc_jnint(p2_opdst_e instr)
  */
 void P2Doc::doc_jnct1(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if CT1 event flag is clear."));
-    m_instr.insert(instr, "JNCT1   {#}S");
-    m_token.insert(instr, t_JNCT1);
-    pattern(instr, "EEEE 1011110 01I 000010001 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000010001 SSSSSSSSS");
+    m_token.insert(mask_match, t_JNCT1);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if CT1 event flag is clear.");
+    m_instr.insert(mask_match, "JNCT1   {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4063,10 +5007,16 @@ void P2Doc::doc_jnct1(p2_opdst_e instr)
  */
 void P2Doc::doc_jnct2(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if CT2 event flag is clear."));
-    m_instr.insert(instr, "JNCT2   {#}S");
-    m_token.insert(instr, t_JNCT2);
-    pattern(instr, "EEEE 1011110 01I 000010010 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000010010 SSSSSSSSS");
+    m_token.insert(mask_match, t_JNCT2);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if CT2 event flag is clear.");
+    m_instr.insert(mask_match, "JNCT2   {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4080,10 +5030,16 @@ void P2Doc::doc_jnct2(p2_opdst_e instr)
  */
 void P2Doc::doc_jnct3(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if CT3 event flag is clear."));
-    m_instr.insert(instr, "JNCT3   {#}S");
-    m_token.insert(instr, t_JNCT3);
-    pattern(instr, "EEEE 1011110 01I 000010011 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000010011 SSSSSSSSS");
+    m_token.insert(mask_match, t_JNCT3);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if CT3 event flag is clear.");
+    m_instr.insert(mask_match, "JNCT3   {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4097,10 +5053,16 @@ void P2Doc::doc_jnct3(p2_opdst_e instr)
  */
 void P2Doc::doc_jnse1(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if SE1 event flag is clear."));
-    m_instr.insert(instr, "JNSE1   {#}S");
-    m_token.insert(instr, t_JNSE1);
-    pattern(instr, "EEEE 1011110 01I 000010100 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000010100 SSSSSSSSS");
+    m_token.insert(mask_match, t_JNSE1);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if SE1 event flag is clear.");
+    m_instr.insert(mask_match, "JNSE1   {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4114,10 +5076,16 @@ void P2Doc::doc_jnse1(p2_opdst_e instr)
  */
 void P2Doc::doc_jnse2(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if SE2 event flag is clear."));
-    m_instr.insert(instr, "JNSE2   {#}S");
-    m_token.insert(instr, t_JNSE2);
-    pattern(instr, "EEEE 1011110 01I 000010101 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000010101 SSSSSSSSS");
+    m_token.insert(mask_match, t_JNSE2);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if SE2 event flag is clear.");
+    m_instr.insert(mask_match, "JNSE2   {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4131,10 +5099,16 @@ void P2Doc::doc_jnse2(p2_opdst_e instr)
  */
 void P2Doc::doc_jnse3(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if SE3 event flag is clear."));
-    m_instr.insert(instr, "JNSE3   {#}S");
-    m_token.insert(instr, t_JNSE3);
-    pattern(instr, "EEEE 1011110 01I 000010110 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000010110 SSSSSSSSS");
+    m_token.insert(mask_match, t_JNSE3);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if SE3 event flag is clear.");
+    m_instr.insert(mask_match, "JNSE3   {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4148,10 +5122,16 @@ void P2Doc::doc_jnse3(p2_opdst_e instr)
  */
 void P2Doc::doc_jnse4(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if SE4 event flag is clear."));
-    m_instr.insert(instr, "JNSE4   {#}S");
-    m_token.insert(instr, t_JNSE4);
-    pattern(instr, "EEEE 1011110 01I 000010111 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000010111 SSSSSSSSS");
+    m_token.insert(mask_match, t_JNSE4);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if SE4 event flag is clear.");
+    m_instr.insert(mask_match, "JNSE4   {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4165,10 +5145,16 @@ void P2Doc::doc_jnse4(p2_opdst_e instr)
  */
 void P2Doc::doc_jnpat(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if PAT event flag is clear."));
-    m_instr.insert(instr, "JNPAT   {#}S");
-    m_token.insert(instr, t_JNPAT);
-    pattern(instr, "EEEE 1011110 01I 000011000 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000011000 SSSSSSSSS");
+    m_token.insert(mask_match, t_JNPAT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if PAT event flag is clear.");
+    m_instr.insert(mask_match, "JNPAT   {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4182,10 +5168,16 @@ void P2Doc::doc_jnpat(p2_opdst_e instr)
  */
 void P2Doc::doc_jnfbw(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if FBW event flag is clear."));
-    m_instr.insert(instr, "JNFBW   {#}S");
-    m_token.insert(instr, t_JNFBW);
-    pattern(instr, "EEEE 1011110 01I 000011001 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000011001 SSSSSSSSS");
+    m_token.insert(mask_match, t_JNFBW);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if FBW event flag is clear.");
+    m_instr.insert(mask_match, "JNFBW   {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4199,10 +5191,16 @@ void P2Doc::doc_jnfbw(p2_opdst_e instr)
  */
 void P2Doc::doc_jnxmt(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if XMT event flag is clear."));
-    m_instr.insert(instr, "JNXMT   {#}S");
-    m_token.insert(instr, t_JNXMT);
-    pattern(instr, "EEEE 1011110 01I 000011010 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000011010 SSSSSSSSS");
+    m_token.insert(mask_match, t_JNXMT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if XMT event flag is clear.");
+    m_instr.insert(mask_match, "JNXMT   {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4216,10 +5214,16 @@ void P2Doc::doc_jnxmt(p2_opdst_e instr)
  */
 void P2Doc::doc_jnxfi(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if XFI event flag is clear."));
-    m_instr.insert(instr, "JNXFI   {#}S");
-    m_token.insert(instr, t_JNXFI);
-    pattern(instr, "EEEE 1011110 01I 000011011 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000011011 SSSSSSSSS");
+    m_token.insert(mask_match, t_JNXFI);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if XFI event flag is clear.");
+    m_instr.insert(mask_match, "JNXFI   {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4233,10 +5237,16 @@ void P2Doc::doc_jnxfi(p2_opdst_e instr)
  */
 void P2Doc::doc_jnxro(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if XRO event flag is clear."));
-    m_instr.insert(instr, "JNXRO   {#}S");
-    m_token.insert(instr, t_JNXRO);
-    pattern(instr, "EEEE 1011110 01I 000011100 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000011100 SSSSSSSSS");
+    m_token.insert(mask_match, t_JNXRO);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if XRO event flag is clear.");
+    m_instr.insert(mask_match, "JNXRO   {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4250,10 +5260,16 @@ void P2Doc::doc_jnxro(p2_opdst_e instr)
  */
 void P2Doc::doc_jnxrl(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if XRL event flag is clear."));
-    m_instr.insert(instr, "JNXRL   {#}S");
-    m_token.insert(instr, t_JNXRL);
-    pattern(instr, "EEEE 1011110 01I 000011101 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000011101 SSSSSSSSS");
+    m_token.insert(mask_match, t_JNXRL);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if XRL event flag is clear.");
+    m_instr.insert(mask_match, "JNXRL   {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4267,10 +5283,16 @@ void P2Doc::doc_jnxrl(p2_opdst_e instr)
  */
 void P2Doc::doc_jnatn(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if ATN event flag is clear."));
-    m_instr.insert(instr, "JNATN   {#}S");
-    m_token.insert(instr, t_JNATN);
-    pattern(instr, "EEEE 1011110 01I 000011110 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000011110 SSSSSSSSS");
+    m_token.insert(mask_match, t_JNATN);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if ATN event flag is clear.");
+    m_instr.insert(mask_match, "JNATN   {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4284,10 +5306,16 @@ void P2Doc::doc_jnatn(p2_opdst_e instr)
  */
 void P2Doc::doc_jnqmt(p2_opdst_e instr)
 {
-    m_brief.insert(instr, tr("Jump to S** if QMT event flag is clear."));
-    m_instr.insert(instr, "JNQMT   {#}S");
-    m_token.insert(instr, t_JNQMT);
-    pattern(instr, "EEEE 1011110 01I 000011111 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 01I 000011111 SSSSSSSSS");
+    m_token.insert(mask_match, t_JNQMT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to S** if QMT event flag is clear.");
+    m_instr.insert(mask_match, "JNQMT   {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4301,10 +5329,16 @@ void P2Doc::doc_jnqmt(p2_opdst_e instr)
  */
 void P2Doc::doc_1011110_1(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Undefined instruction <empty> %1011110_1."));
-    m_instr.insert(instr, "<empty> {#}D,{#}S");
-    m_token.insert(instr, t_empty);
-    pattern(instr, "EEEE 1011110 1LI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011110 1LI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_empty);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Undefined instruction <empty> %1011110_1.");
+    m_instr.insert(mask_match, "<empty> {#}D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4318,10 +5352,16 @@ void P2Doc::doc_1011110_1(p2_inst8_e instr)
  */
 void P2Doc::doc_1011111_0(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Undefined instruction <empty> %1011111_0."));
-    m_instr.insert(instr, "<empty> {#}D,{#}S");
-    m_token.insert(instr, t_empty);
-    pattern(instr, "EEEE 1011111 0LI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011111 0LI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_empty);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Undefined instruction <empty> %1011111_0.");
+    m_instr.insert(mask_match, "<empty> {#}D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4336,10 +5376,13 @@ void P2Doc::doc_1011111_0(p2_inst8_e instr)
  */
 void P2Doc::doc_setpat(p2_inst8_e instr)
 {
-    m_instr.insert(instr, "SETPAT  {#}D,{#}S");
-    pattern(instr, "EEEE 1011111 1LI DDDDDDDDD SSSSSSSSS");
-    m_brief.insert(instr, tr("Set pin pattern for PAT event."));
-    m_token.insert(instr, t_SETPAT);
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1011111 1LI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_SETPAT);
+    QList<const char *> descr;
+    m_instr.insert(mask_match, "SETPAT  {#}D,{#}S");
+    m_brief.insert(mask_match, "Set pin pattern for PAT event.");
+    descr += "C selects INA/INB, Z selects =/!=, D provides mask value, S provides match value.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4353,10 +5396,16 @@ void P2Doc::doc_setpat(p2_inst8_e instr)
  */
 void P2Doc::doc_wrpin(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Write D to mode register of smart pin S[5:0], acknowledge smart pin."));
-    m_instr.insert(instr, "WRPIN   {#}D,{#}S");
-    m_token.insert(instr, t_WRPIN);
-    pattern(instr, "EEEE 1100000 0LI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1100000 0LI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_WRPIN);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Write D to mode register of smart pin S[5:0], acknowledge smart pin.");
+    m_instr.insert(mask_match, "WRPIN   {#}D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4370,10 +5419,16 @@ void P2Doc::doc_wrpin(p2_inst8_e instr)
  */
 void P2Doc::doc_akpin(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Acknowledge smart pin S[5:0]."));
-    m_instr.insert(instr, "AKPIN   {#}S");
-    m_token.insert(instr, t_AKPIN);
-    pattern(instr, "EEEE 1100000 01I 000000001 SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1100000 01I 000000001 SSSSSSSSS");
+    m_token.insert(mask_match, t_AKPIN);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Acknowledge smart pin S[5:0].");
+    m_instr.insert(mask_match, "AKPIN   {#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4387,10 +5442,16 @@ void P2Doc::doc_akpin(p2_inst8_e instr)
  */
 void P2Doc::doc_wxpin(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Write D to parameter \"X\" of smart pin S[5:0], acknowledge smart pin."));
-    m_instr.insert(instr, "WXPIN   {#}D,{#}S");
-    m_token.insert(instr, t_WXPIN);
-    pattern(instr, "EEEE 1100000 1LI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1100000 1LI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_WXPIN);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Write D to parameter \"X\" of smart pin S[5:0], acknowledge smart pin.");
+    m_instr.insert(mask_match, "WXPIN   {#}D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4404,10 +5465,16 @@ void P2Doc::doc_wxpin(p2_inst8_e instr)
  */
 void P2Doc::doc_wypin(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Write D to parameter \"Y\" of smart pin S[5:0], acknowledge smart pin."));
-    m_instr.insert(instr, "WYPIN   {#}D,{#}S");
-    m_token.insert(instr, t_WYPIN);
-    pattern(instr, "EEEE 1100001 0LI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1100001 0LI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_WYPIN);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Write D to parameter \"Y\" of smart pin S[5:0], acknowledge smart pin.");
+    m_instr.insert(mask_match, "WYPIN   {#}D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4421,10 +5488,16 @@ void P2Doc::doc_wypin(p2_inst8_e instr)
  */
 void P2Doc::doc_wrlut(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Write D to LUT address S[8:0]."));
-    m_instr.insert(instr, "WRLUT   {#}D,{#}S");
-    m_token.insert(instr, t_WRLUT);
-    pattern(instr, "EEEE 1100001 1LI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1100001 1LI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_WRLUT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Write D to LUT address S[8:0].");
+    m_instr.insert(mask_match, "WRLUT   {#}D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4438,10 +5511,16 @@ void P2Doc::doc_wrlut(p2_inst8_e instr)
  */
 void P2Doc::doc_wrbyte(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Write byte in D[7:0] to hub address {#}S/PTRx."));
-    m_instr.insert(instr, "WRBYTE  {#}D,{#}S/P");
-    m_token.insert(instr, t_WRBYTE);
-    pattern(instr, "EEEE 1100010 0LI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1100010 0LI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_WRBYTE);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Write byte in D[7:0] to hub address {#}S/PTRx.");
+    m_instr.insert(mask_match, "WRBYTE  {#}D,{#}S/P");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4455,10 +5534,16 @@ void P2Doc::doc_wrbyte(p2_inst8_e instr)
  */
 void P2Doc::doc_wrword(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Write word in D[15:0] to hub address {#}S/PTRx."));
-    m_instr.insert(instr, "WRWORD  {#}D,{#}S/P");
-    m_token.insert(instr, t_WRWORD);
-    pattern(instr, "EEEE 1100010 1LI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1100010 1LI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_WRWORD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Write word in D[15:0] to hub address {#}S/PTRx.");
+    m_instr.insert(mask_match, "WRWORD  {#}D,{#}S/P");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4473,10 +5558,13 @@ void P2Doc::doc_wrword(p2_inst8_e instr)
  */
 void P2Doc::doc_wrlong(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Write long in D[31:0] to hub address {#}S/PTRx."));
-    m_instr.insert(instr, "WRLONG  {#}D,{#}S/P");
-    m_token.insert(instr, t_WRLONG);
-    pattern(instr, "EEEE 1100011 0LI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1100011 0LI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_WRLONG);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Write long in D[31:0] to hub address {#}S/PTRx.");
+    m_instr.insert(mask_match, "WRLONG  {#}D,{#}S/P");
+    descr += "Prior SETQ/SETQ2 invokes cog/LUT block transfer.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4490,10 +5578,16 @@ void P2Doc::doc_wrlong(p2_inst8_e instr)
  */
 void P2Doc::doc_pusha(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Write long in D[31:0] to hub address PTRA++."));
-    m_instr.insert(instr, "PUSHA   {#}D");
-    m_token.insert(instr, t_PUSHA);
-    pattern(instr, "EEEE 1100011 0L1 DDDDDDDDD 101100001");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1100011 0L1 DDDDDDDDD 101100001");
+    m_token.insert(mask_match, t_PUSHA);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Write long in D[31:0] to hub address PTRA++.");
+    m_instr.insert(mask_match, "PUSHA   {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4507,10 +5601,16 @@ void P2Doc::doc_pusha(p2_inst8_e instr)
  */
 void P2Doc::doc_pushb(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Write long in D[31:0] to hub address PTRB++."));
-    m_instr.insert(instr, "PUSHB   {#}D");
-    m_token.insert(instr, t_PUSHB);
-    pattern(instr, "EEEE 1100011 0L1 DDDDDDDDD 111100001");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1100011 0L1 DDDDDDDDD 111100001");
+    m_token.insert(mask_match, t_PUSHB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Write long in D[31:0] to hub address PTRB++.");
+    m_instr.insert(mask_match, "PUSHB   {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4525,10 +5625,13 @@ void P2Doc::doc_pushb(p2_inst8_e instr)
  */
 void P2Doc::doc_rdfast(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Begin new fast hub read via FIFO."));
-    m_instr.insert(instr, "RDFAST  {#}D,{#}S");
-    m_token.insert(instr, t_RDFAST);
-    pattern(instr, "EEEE 1100011 1LI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1100011 1LI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_RDFAST);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Begin new fast hub read via FIFO.");
+    m_instr.insert(mask_match, "RDFAST  {#}D,{#}S");
+    descr += "D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4543,10 +5646,13 @@ void P2Doc::doc_rdfast(p2_inst8_e instr)
  */
 void P2Doc::doc_wrfast(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Begin new fast hub write via FIFO."));
-    m_instr.insert(instr, "WRFAST  {#}D,{#}S");
-    m_token.insert(instr, t_WRFAST);
-    pattern(instr, "EEEE 1100100 0LI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1100100 0LI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_WRFAST);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Begin new fast hub write via FIFO.");
+    m_instr.insert(mask_match, "WRFAST  {#}D,{#}S");
+    descr += "D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4561,10 +5667,13 @@ void P2Doc::doc_wrfast(p2_inst8_e instr)
  */
 void P2Doc::doc_fblock(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Set next block for when block wraps."));
-    m_instr.insert(instr, "FBLOCK  {#}D,{#}S");
-    m_token.insert(instr, t_FBLOCK);
-    pattern(instr, "EEEE 1100100 1LI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1100100 1LI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_FBLOCK);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set next block for when block wraps.");
+    m_instr.insert(mask_match, "FBLOCK  {#}D,{#}S");
+    descr += "D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4578,10 +5687,16 @@ void P2Doc::doc_fblock(p2_inst8_e instr)
  */
 void P2Doc::doc_xinit(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Issue streamer command immediately, zeroing phase."));
-    m_instr.insert(instr, "XINIT   {#}D,{#}S");
-    m_token.insert(instr, t_XINIT);
-    pattern(instr, "EEEE 1100101 0LI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1100101 0LI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_XINIT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Issue streamer command immediately, zeroing phase.");
+    m_instr.insert(mask_match, "XINIT   {#}D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4595,10 +5710,16 @@ void P2Doc::doc_xinit(p2_inst8_e instr)
  */
 void P2Doc::doc_xstop(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Stop streamer immediately."));
-    m_instr.insert(instr, "XSTOP");
-    m_token.insert(instr, t_XSTOP);
-    pattern(instr, "EEEE 1100101 011 000000000 000000000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1100101 011 000000000 000000000");
+    m_token.insert(mask_match, t_XSTOP);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Stop streamer immediately.");
+    m_instr.insert(mask_match, "XSTOP");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4612,10 +5733,16 @@ void P2Doc::doc_xstop(p2_inst8_e instr)
  */
 void P2Doc::doc_xzero(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Buffer new streamer command to be issued on final NCO rollover of current command, zeroing phase."));
-    m_instr.insert(instr, "XZERO   {#}D,{#}S");
-    m_token.insert(instr, t_XZERO);
-    pattern(instr, "EEEE 1100101 1LI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1100101 1LI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_XZERO);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Buffer new streamer command to be issued on final NCO rollover of current command, zeroing phase.");
+    m_instr.insert(mask_match, "XZERO   {#}D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4629,10 +5756,16 @@ void P2Doc::doc_xzero(p2_inst8_e instr)
  */
 void P2Doc::doc_xcont(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Buffer new streamer command to be issued on final NCO rollover of current command, continuing phase."));
-    m_instr.insert(instr, "XCONT   {#}D,{#}S");
-    m_token.insert(instr, t_XCONT);
-    pattern(instr, "EEEE 1100110 0LI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1100110 0LI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_XCONT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Buffer new streamer command to be issued on final NCO rollover of current command, continuing phase.");
+    m_instr.insert(mask_match, "XCONT   {#}D,{#}S");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4648,10 +5781,14 @@ void P2Doc::doc_xcont(p2_inst8_e instr)
  */
 void P2Doc::doc_rep(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Execute next D[8:0] instructions S times."));
-    m_instr.insert(instr, "REP     {#}D,{#}S");
-    m_token.insert(instr, t_REP);
-    pattern(instr, "EEEE 1100110 1LI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1100110 1LI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_REP);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Execute next D[8:0] instructions S times.");
+    m_instr.insert(mask_match, "REP     {#}D,{#}S");
+    descr += "If S = 0, repeat infinitely.";
+    descr += "If D[8:0] = 0, nothing repeats.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4667,10 +5804,14 @@ void P2Doc::doc_rep(p2_inst8_e instr)
  */
 void P2Doc::doc_coginit(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Start cog selected by D."));
-    m_instr.insert(instr, "COGINIT {#}D,{#}S       {WC}");
-    m_token.insert(instr, t_COGINIT);
-    pattern(instr, "EEEE 1100111 CLI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1100111 CLI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_COGINIT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Start cog selected by D.");
+    m_instr.insert(mask_match, "COGINIT {#}D,{#}S       {WC}");
+    descr += "S[19:0] sets hub startup address and PTRB of cog.";
+    descr += "Prior SETQ sets PTRA of cog.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4685,10 +5826,13 @@ void P2Doc::doc_coginit(p2_inst7_e instr)
  */
 void P2Doc::doc_qmul(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Begin CORDIC unsigned multiplication of D * S."));
-    m_instr.insert(instr, "QMUL    {#}D,{#}S");
-    m_token.insert(instr, t_QMUL);
-    pattern(instr, "EEEE 1101000 0LI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101000 0LI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_QMUL);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Begin CORDIC unsigned multiplication of D * S.");
+    m_instr.insert(mask_match, "QMUL    {#}D,{#}S");
+    descr += "GETQX/GETQY retrieves lower/upper product.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4703,10 +5847,13 @@ void P2Doc::doc_qmul(p2_inst8_e instr)
  */
 void P2Doc::doc_qdiv(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Begin CORDIC unsigned division of {SETQ value or 32'b0, D} / S."));
-    m_instr.insert(instr, "QDIV    {#}D,{#}S");
-    m_token.insert(instr, t_QDIV);
-    pattern(instr, "EEEE 1101000 1LI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101000 1LI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_QDIV);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Begin CORDIC unsigned division of {SETQ value or 32'b0, D} / S.");
+    m_instr.insert(mask_match, "QDIV    {#}D,{#}S");
+    descr += "GETQX/GETQY retrieves quotient/remainder.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4721,10 +5868,13 @@ void P2Doc::doc_qdiv(p2_inst8_e instr)
  */
 void P2Doc::doc_qfrac(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Begin CORDIC unsigned division of {D, SETQ value or 32'b0} / S."));
-    m_instr.insert(instr, "QFRAC   {#}D,{#}S");
-    m_token.insert(instr, t_QFRAC);
-    pattern(instr, "EEEE 1101001 0LI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101001 0LI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_QFRAC);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Begin CORDIC unsigned division of {D, SETQ value or 32'b0} / S.");
+    m_instr.insert(mask_match, "QFRAC   {#}D,{#}S");
+    descr += "GETQX/GETQY retrieves quotient/remainder.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4739,10 +5889,13 @@ void P2Doc::doc_qfrac(p2_inst8_e instr)
  */
 void P2Doc::doc_qsqrt(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Begin CORDIC square root of {S, D}."));
-    m_instr.insert(instr, "QSQRT   {#}D,{#}S");
-    m_token.insert(instr, t_QSQRT);
-    pattern(instr, "EEEE 1101001 1LI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101001 1LI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_QSQRT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Begin CORDIC square root of {S, D}.");
+    m_instr.insert(mask_match, "QSQRT   {#}D,{#}S");
+    descr += "GETQX retrieves root.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4757,10 +5910,13 @@ void P2Doc::doc_qsqrt(p2_inst8_e instr)
  */
 void P2Doc::doc_qrotate(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Begin CORDIC rotation of point (D, SETQ value or 32'b0) by angle S."));
-    m_instr.insert(instr, "QROTATE {#}D,{#}S");
-    m_token.insert(instr, t_QROTATE);
-    pattern(instr, "EEEE 1101010 0LI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101010 0LI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_QROTATE);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Begin CORDIC rotation of point (D, SETQ value or 32'b0) by angle S.");
+    m_instr.insert(mask_match, "QROTATE {#}D,{#}S");
+    descr += "GETQX/GETQY retrieves X/Y.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4775,10 +5931,13 @@ void P2Doc::doc_qrotate(p2_inst8_e instr)
  */
 void P2Doc::doc_qvector(p2_inst8_e instr)
 {
-    m_brief.insert(instr, tr("Begin CORDIC vectoring of point (D, S)."));
-    m_instr.insert(instr, "QVECTOR {#}D,{#}S");
-    m_token.insert(instr, t_QVECTOR);
-    pattern(instr, "EEEE 1101010 1LI DDDDDDDDD SSSSSSSSS");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101010 1LI DDDDDDDDD SSSSSSSSS");
+    m_token.insert(mask_match, t_QVECTOR);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Begin CORDIC vectoring of point (D, S).");
+    m_instr.insert(mask_match, "QVECTOR {#}D,{#}S");
+    descr += "GETQX/GETQY retrieves length/angle.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4792,10 +5951,16 @@ void P2Doc::doc_qvector(p2_inst8_e instr)
  */
 void P2Doc::doc_hubset(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Set hub configuration to D."));
-    m_instr.insert(instr, "HUBSET  {#}D");
-    m_token.insert(instr, t_HUBSET);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000000000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000000000");
+    m_token.insert(mask_match, t_HUBSET);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set hub configuration to D.");
+    m_instr.insert(mask_match, "HUBSET  {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4810,10 +5975,13 @@ void P2Doc::doc_hubset(p2_opsrc_e instr)
  */
 void P2Doc::doc_cogid(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("If D is register and no WC, get cog ID (0 to 15) into D."));
-    m_instr.insert(instr, "COGID   {#}D            {WC}");
-    m_token.insert(instr, t_COGID);
-    pattern(instr, "EEEE 1101011 C0L DDDDDDDDD 000000001");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 C0L DDDDDDDDD 000000001");
+    m_token.insert(mask_match, t_COGID);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "If D is register and no WC, get cog ID (0 to 15) into D.");
+    m_instr.insert(mask_match, "COGID   {#}D            {WC}");
+    descr += "If WC, check status of cog D[3:0], C = 1 if on.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4827,10 +5995,16 @@ void P2Doc::doc_cogid(p2_opsrc_e instr)
  */
 void P2Doc::doc_cogstop(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Stop cog D[3:0]."));
-    m_instr.insert(instr, "COGSTOP {#}D");
-    m_token.insert(instr, t_COGSTOP);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000000011");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000000011");
+    m_token.insert(mask_match, t_COGSTOP);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Stop cog D[3:0].");
+    m_instr.insert(mask_match, "COGSTOP {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4846,10 +6020,14 @@ void P2Doc::doc_cogstop(p2_opsrc_e instr)
  */
 void P2Doc::doc_locknew(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Request a LOCK."));
-    m_instr.insert(instr, "LOCKNEW D               {WC}");
-    m_token.insert(instr, t_LOCKNEW);
-    pattern(instr, "EEEE 1101011 C00 DDDDDDDDD 000000100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 C00 DDDDDDDDD 000000100");
+    m_token.insert(mask_match, t_LOCKNEW);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Request a LOCK.");
+    m_instr.insert(mask_match, "LOCKNEW D               {WC}");
+    descr += "D will be written with the LOCK number (0 to 15).";
+    descr += "C = 1 if no LOCK available.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4863,10 +6041,16 @@ void P2Doc::doc_locknew(p2_opsrc_e instr)
  */
 void P2Doc::doc_lockret(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Return LOCK D[3:0] for reallocation."));
-    m_instr.insert(instr, "LOCKRET {#}D");
-    m_token.insert(instr, t_LOCKRET);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000000101");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000000101");
+    m_token.insert(mask_match, t_LOCKRET);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Return LOCK D[3:0] for reallocation.");
+    m_instr.insert(mask_match, "LOCKRET {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4883,10 +6067,15 @@ void P2Doc::doc_lockret(p2_opsrc_e instr)
  */
 void P2Doc::doc_locktry(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Try to get LOCK D[3:0]."));
-    m_instr.insert(instr, "LOCKTRY {#}D            {WC}");
-    m_token.insert(instr, t_LOCKTRY);
-    pattern(instr, "EEEE 1101011 C0L DDDDDDDDD 000000110");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 C0L DDDDDDDDD 000000110");
+    m_token.insert(mask_match, t_LOCKTRY);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Try to get LOCK D[3:0].");
+    m_instr.insert(mask_match, "LOCKTRY {#}D            {WC}");
+    descr += "C = 1 if got LOCK.";
+    descr += "LOCKREL releases LOCK.";
+    descr += "LOCK is also released if owner cog stops or restarts.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4901,10 +6090,13 @@ void P2Doc::doc_locktry(p2_opsrc_e instr)
  */
 void P2Doc::doc_lockrel(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Release LOCK D[3:0]."));
-    m_instr.insert(instr, "LOCKREL {#}D            {WC}");
-    m_token.insert(instr, t_LOCKREL);
-    pattern(instr, "EEEE 1101011 C0L DDDDDDDDD 000000111");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 C0L DDDDDDDDD 000000111");
+    m_token.insert(mask_match, t_LOCKREL);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Release LOCK D[3:0].");
+    m_instr.insert(mask_match, "LOCKREL {#}D            {WC}");
+    descr += "If D is a register and WC, get current/last cog id of LOCK owner into D and LOCK status into C.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4919,10 +6111,13 @@ void P2Doc::doc_lockrel(p2_opsrc_e instr)
  */
 void P2Doc::doc_qlog(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Begin CORDIC number-to-logarithm conversion of D."));
-    m_instr.insert(instr, "QLOG    {#}D");
-    m_token.insert(instr, t_QLOG);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000001110");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000001110");
+    m_token.insert(mask_match, t_QLOG);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Begin CORDIC number-to-logarithm conversion of D.");
+    m_instr.insert(mask_match, "QLOG    {#}D");
+    descr += "GETQX retrieves log {5'whole_exponent, 27'fractional_exponent}.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4937,10 +6132,13 @@ void P2Doc::doc_qlog(p2_opsrc_e instr)
  */
 void P2Doc::doc_qexp(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Begin CORDIC logarithm-to-number conversion of D."));
-    m_instr.insert(instr, "QEXP    {#}D");
-    m_token.insert(instr, t_QEXP);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000001111");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000001111");
+    m_token.insert(mask_match, t_QEXP);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Begin CORDIC logarithm-to-number conversion of D.");
+    m_instr.insert(mask_match, "QEXP    {#}D");
+    descr += "GETQX retrieves number.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4956,10 +6154,14 @@ void P2Doc::doc_qexp(p2_opsrc_e instr)
  */
 void P2Doc::doc_rfbyte(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Read zero-extended byte from FIFO into D. Used after RDFAST."));
-    m_instr.insert(instr, "RFBYTE  D        {WC/WZ/WCZ}");
-    m_token.insert(instr, t_RFBYTE);
-    pattern(instr, "EEEE 1101011 CZ0 DDDDDDDDD 000010000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000010000");
+    m_token.insert(mask_match, t_RFBYTE);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Read zero-extended byte from FIFO into D. Used after RDFAST.");
+    m_instr.insert(mask_match, "RFBYTE  D        {WC/WZ/WCZ}");
+    descr += "C = MSB of byte.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4975,10 +6177,14 @@ void P2Doc::doc_rfbyte(p2_opsrc_e instr)
  */
 void P2Doc::doc_rfword(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Read zero-extended word from FIFO into D. Used after RDFAST."));
-    m_instr.insert(instr, "RFWORD  D        {WC/WZ/WCZ}");
-    m_token.insert(instr, t_RFWORD);
-    pattern(instr, "EEEE 1101011 CZ0 DDDDDDDDD 000010001");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000010001");
+    m_token.insert(mask_match, t_RFWORD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Read zero-extended word from FIFO into D. Used after RDFAST.");
+    m_instr.insert(mask_match, "RFWORD  D        {WC/WZ/WCZ}");
+    descr += "C = MSB of word.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -4994,10 +6200,14 @@ void P2Doc::doc_rfword(p2_opsrc_e instr)
  */
 void P2Doc::doc_rflong(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Read long from FIFO into D. Used after RDFAST."));
-    m_instr.insert(instr, "RFLONG  D        {WC/WZ/WCZ}");
-    m_token.insert(instr, t_RFLONG);
-    pattern(instr, "EEEE 1101011 CZ0 DDDDDDDDD 000010010");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000010010");
+    m_token.insert(mask_match, t_RFLONG);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Read long from FIFO into D. Used after RDFAST.");
+    m_instr.insert(mask_match, "RFLONG  D        {WC/WZ/WCZ}");
+    descr += "C = MSB of long.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5013,10 +6223,14 @@ void P2Doc::doc_rflong(p2_opsrc_e instr)
  */
 void P2Doc::doc_rfvar(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Read zero-extended 1..4-byte value from FIFO into D. Used after RDFAST."));
-    m_instr.insert(instr, "RFVAR   D        {WC/WZ/WCZ}");
-    m_token.insert(instr, t_RFVAR);
-    pattern(instr, "EEEE 1101011 CZ0 DDDDDDDDD 000010011");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000010011");
+    m_token.insert(mask_match, t_RFVAR);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Read zero-extended 1..4-byte value from FIFO into D. Used after RDFAST.");
+    m_instr.insert(mask_match, "RFVAR   D        {WC/WZ/WCZ}");
+    descr += "C = 0.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5032,11 +6246,14 @@ void P2Doc::doc_rfvar(p2_opsrc_e instr)
  */
 void P2Doc::doc_rfvars(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Read sign-extended 1..4-byte value from FIFO into D. Used after RDFAST."));
-    m_instr.insert(instr, "RFVARS  D        {WC/WZ/WCZ}");
-
-    pattern(instr, "EEEE 1101011 CZ0 DDDDDDDDD 000010100");
-    m_token.insert(instr, t_RFVARS);
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000010100");
+    m_token.insert(mask_match, t_RFVARS);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Read sign-extended 1..4-byte value from FIFO into D. Used after RDFAST.");
+    m_instr.insert(mask_match, "RFVARS  D        {WC/WZ/WCZ}");
+    descr += "C = MSB of value.";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5050,10 +6267,16 @@ void P2Doc::doc_rfvars(p2_opsrc_e instr)
  */
 void P2Doc::doc_wfbyte(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Write byte in D[7:0] into FIFO. Used after WRFAST."));
-    m_instr.insert(instr, "WFBYTE  {#}D");
-    m_token.insert(instr, t_WFBYTE);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000010101");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000010101");
+    m_token.insert(mask_match, t_WFBYTE);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Write byte in D[7:0] into FIFO. Used after WRFAST.");
+    m_instr.insert(mask_match, "WFBYTE  {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5067,10 +6290,16 @@ void P2Doc::doc_wfbyte(p2_opsrc_e instr)
  */
 void P2Doc::doc_wfword(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Write word in D[15:0] into FIFO. Used after WRFAST."));
-    m_instr.insert(instr, "WFWORD  {#}D");
-    m_token.insert(instr, t_WFWORD);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000010110");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000010110");
+    m_token.insert(mask_match, t_WFWORD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Write word in D[15:0] into FIFO. Used after WRFAST.");
+    m_instr.insert(mask_match, "WFWORD  {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5084,10 +6313,16 @@ void P2Doc::doc_wfword(p2_opsrc_e instr)
  */
 void P2Doc::doc_wflong(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Write long in D[31:0] into FIFO. Used after WRFAST."));
-    m_instr.insert(instr, "WFLONG  {#}D");
-    m_token.insert(instr, t_WFLONG);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000010111");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000010111");
+    m_token.insert(mask_match, t_WFLONG);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Write long in D[31:0] into FIFO. Used after WRFAST.");
+    m_instr.insert(mask_match, "WFLONG  {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5104,10 +6339,15 @@ void P2Doc::doc_wflong(p2_opsrc_e instr)
  */
 void P2Doc::doc_getqx(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Retrieve CORDIC result X into D."));
-    m_instr.insert(instr, "GETQX   D        {WC/WZ/WCZ}");
-    m_token.insert(instr, t_GETQX);
-    pattern(instr, "EEEE 1101011 CZ0 DDDDDDDDD 000011000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000011000");
+    m_token.insert(mask_match, t_GETQX);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Retrieve CORDIC result X into D.");
+    m_instr.insert(mask_match, "GETQX   D        {WC/WZ/WCZ}");
+    descr += "Waits, in case result not ready.";
+    descr += "C = X[31].";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5124,10 +6364,15 @@ void P2Doc::doc_getqx(p2_opsrc_e instr)
  */
 void P2Doc::doc_getqy(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Retrieve CORDIC result Y into D."));
-    m_instr.insert(instr, "GETQY   D        {WC/WZ/WCZ}");
-    m_token.insert(instr, t_GETQY);
-    pattern(instr, "EEEE 1101011 CZ0 DDDDDDDDD 000011001");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000011001");
+    m_token.insert(mask_match, t_GETQY);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Retrieve CORDIC result Y into D.");
+    m_instr.insert(mask_match, "GETQY   D        {WC/WZ/WCZ}");
+    descr += "Waits, in case result no ready.";
+    descr += "C = Y[31].";
+    descr += "Z = (result == 0).";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5142,10 +6387,13 @@ void P2Doc::doc_getqy(p2_opsrc_e instr)
  */
 void P2Doc::doc_getct(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Get CT into D."));
-    m_instr.insert(instr, "GETCT   D");
-    m_token.insert(instr, t_GETCT);
-    pattern(instr, "EEEE 1101011 000 DDDDDDDDD 000011010");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 000011010");
+    m_token.insert(mask_match, t_GETCT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get CT into D.");
+    m_instr.insert(mask_match, "GETCT   D");
+    descr += "CT is the free-running 32-bit system counter that increments on every clock.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5161,10 +6409,14 @@ void P2Doc::doc_getct(p2_opsrc_e instr)
  */
 void P2Doc::doc_getrnd(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Get RND into D/C/Z."));
-    m_instr.insert(instr, "GETRND  D        {WC/WZ/WCZ}");
-    m_token.insert(instr, t_GETRND);
-    pattern(instr, "EEEE 1101011 CZ0 DDDDDDDDD 000011011");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000011011");
+    m_token.insert(mask_match, t_GETRND);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get RND into D/C/Z.");
+    m_instr.insert(mask_match, "GETRND  D        {WC/WZ/WCZ}");
+    descr += "RND is the PRNG that updates on every clock.";
+    descr += "D = RND[31:0], C = RND[31], Z = RND[30], unique per cog.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5179,10 +6431,13 @@ void P2Doc::doc_getrnd(p2_opsrc_e instr)
  */
 void P2Doc::doc_getrnd_cz(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Get RND into C/Z."));
-    m_instr.insert(instr, "GETRND            WC/WZ/WCZ");
-    m_token.insert(instr, t_GETRND);
-    pattern(instr, "EEEE 1101011 CZ1 000000000 000011011");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ1 000000000 000011011");
+    m_token.insert(mask_match, t_GETRND);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get RND into C/Z.");
+    m_instr.insert(mask_match, "GETRND            WC/WZ/WCZ");
+    descr += "C = RND[31], Z = RND[30], unique per cog.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5196,10 +6451,16 @@ void P2Doc::doc_getrnd_cz(p2_opsrc_e instr)
  */
 void P2Doc::doc_setdacs(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("DAC3 = D[31:24], DAC2 = D[23:16], DAC1 = D[15:8], DAC0 = D[7:0]."));
-    m_instr.insert(instr, "SETDACS {#}D");
-    m_token.insert(instr, t_SETDACS);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000011100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000011100");
+    m_token.insert(mask_match, t_SETDACS);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "DAC3 = D[31:24], DAC2 = D[23:16], DAC1 = D[15:8], DAC0 = D[7:0].");
+    m_instr.insert(mask_match, "SETDACS {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5213,10 +6474,16 @@ void P2Doc::doc_setdacs(p2_opsrc_e instr)
  */
 void P2Doc::doc_setxfrq(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Set streamer NCO frequency to D."));
-    m_instr.insert(instr, "SETXFRQ {#}D");
-    m_token.insert(instr, t_SETXFRQ);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000011101");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000011101");
+    m_token.insert(mask_match, t_SETXFRQ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set streamer NCO frequency to D.");
+    m_instr.insert(mask_match, "SETXFRQ {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5230,10 +6497,16 @@ void P2Doc::doc_setxfrq(p2_opsrc_e instr)
  */
 void P2Doc::doc_getxacc(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Get the streamer's Goertzel X accumulator into D and the Y accumulator into the next instruction's S, clear accumulators."));
-    m_instr.insert(instr, "GETXACC D");
-    m_token.insert(instr, t_GETXACC);
-    pattern(instr, "EEEE 1101011 000 DDDDDDDDD 000011110");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 000011110");
+    m_token.insert(mask_match, t_GETXACC);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get the streamer's Goertzel X accumulator into D and the Y accumulator into the next instruction's S, clear accumulators.");
+    m_instr.insert(mask_match, "GETXACC D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5249,10 +6522,14 @@ void P2Doc::doc_getxacc(p2_opsrc_e instr)
  */
 void P2Doc::doc_waitx(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Wait 2 + D clocks if no WC/WZ/WCZ."));
-    m_instr.insert(instr, "WAITX   {#}D     {WC/WZ/WCZ}");
-    m_token.insert(instr, t_WAITX);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000011111");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000011111");
+    m_token.insert(mask_match, t_WAITX);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Wait 2 + D clocks if no WC/WZ/WCZ.");
+    m_instr.insert(mask_match, "WAITX   {#}D     {WC/WZ/WCZ}");
+    descr += "If WC/WZ/WCZ, wait 2 + (D & RND) clocks.";
+    descr += "C/Z = 0.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5266,10 +6543,16 @@ void P2Doc::doc_waitx(p2_opsrc_e instr)
  */
 void P2Doc::doc_setse1(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Set SE1 event configuration to D[8:0]."));
-    m_instr.insert(instr, "SETSE1  {#}D");
-    m_token.insert(instr, t_SETSE1);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000100000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000100000");
+    m_token.insert(mask_match, t_SETSE1);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set SE1 event configuration to D[8:0].");
+    m_instr.insert(mask_match, "SETSE1  {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5283,10 +6566,16 @@ void P2Doc::doc_setse1(p2_opsrc_e instr)
  */
 void P2Doc::doc_setse2(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Set SE2 event configuration to D[8:0]."));
-    m_instr.insert(instr, "SETSE2  {#}D");
-    m_token.insert(instr, t_SETSE2);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000100001");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000100001");
+    m_token.insert(mask_match, t_SETSE2);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set SE2 event configuration to D[8:0].");
+    m_instr.insert(mask_match, "SETSE2  {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5300,10 +6589,16 @@ void P2Doc::doc_setse2(p2_opsrc_e instr)
  */
 void P2Doc::doc_setse3(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Set SE3 event configuration to D[8:0]."));
-    m_instr.insert(instr, "SETSE3  {#}D");
-    m_token.insert(instr, t_SETSE3);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000100010");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000100010");
+    m_token.insert(mask_match, t_SETSE3);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set SE3 event configuration to D[8:0].");
+    m_instr.insert(mask_match, "SETSE3  {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5317,10 +6612,16 @@ void P2Doc::doc_setse3(p2_opsrc_e instr)
  */
 void P2Doc::doc_setse4(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Set SE4 event configuration to D[8:0]."));
-    m_instr.insert(instr, "SETSE4  {#}D");
-    m_token.insert(instr, t_SETSE4);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000100011");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000100011");
+    m_token.insert(mask_match, t_SETSE4);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set SE4 event configuration to D[8:0].");
+    m_instr.insert(mask_match, "SETSE4  {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5334,10 +6635,16 @@ void P2Doc::doc_setse4(p2_opsrc_e instr)
  */
 void P2Doc::doc_pollint(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Get INT event flag into C/Z, then clear it."));
-    m_instr.insert(instr, "POLLINT          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_POLLINT);
-    pattern(instr, "EEEE 1101011 CZ0 000000000 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000000000 000100100");
+    m_token.insert(mask_match, t_POLLINT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get INT event flag into C/Z, then clear it.");
+    m_instr.insert(mask_match, "POLLINT          {WC/WZ/WCZ}");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5351,10 +6658,16 @@ void P2Doc::doc_pollint(p2_opx24_e instr)
  */
 void P2Doc::doc_pollct1(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Get CT1 event flag into C/Z, then clear it."));
-    m_instr.insert(instr, "POLLCT1          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_POLLCT1);
-    pattern(instr, "EEEE 1101011 CZ0 000000001 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000000001 000100100");
+    m_token.insert(mask_match, t_POLLCT1);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get CT1 event flag into C/Z, then clear it.");
+    m_instr.insert(mask_match, "POLLCT1          {WC/WZ/WCZ}");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5368,10 +6681,16 @@ void P2Doc::doc_pollct1(p2_opx24_e instr)
  */
 void P2Doc::doc_pollct2(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Get CT2 event flag into C/Z, then clear it."));
-    m_instr.insert(instr, "POLLCT2          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_POLLCT2);
-    pattern(instr, "EEEE 1101011 CZ0 000000010 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000000010 000100100");
+    m_token.insert(mask_match, t_POLLCT2);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get CT2 event flag into C/Z, then clear it.");
+    m_instr.insert(mask_match, "POLLCT2          {WC/WZ/WCZ}");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5385,10 +6704,16 @@ void P2Doc::doc_pollct2(p2_opx24_e instr)
  */
 void P2Doc::doc_pollct3(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Get CT3 event flag into C/Z, then clear it."));
-    m_instr.insert(instr, "POLLCT3          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_POLLCT3);
-    pattern(instr, "EEEE 1101011 CZ0 000000011 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000000011 000100100");
+    m_token.insert(mask_match, t_POLLCT3);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get CT3 event flag into C/Z, then clear it.");
+    m_instr.insert(mask_match, "POLLCT3          {WC/WZ/WCZ}");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5402,10 +6727,16 @@ void P2Doc::doc_pollct3(p2_opx24_e instr)
  */
 void P2Doc::doc_pollse1(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Get SE1 event flag into C/Z, then clear it."));
-    m_instr.insert(instr, "POLLSE1          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_POLLSE1);
-    pattern(instr, "EEEE 1101011 CZ0 000000100 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000000100 000100100");
+    m_token.insert(mask_match, t_POLLSE1);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get SE1 event flag into C/Z, then clear it.");
+    m_instr.insert(mask_match, "POLLSE1          {WC/WZ/WCZ}");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5419,10 +6750,16 @@ void P2Doc::doc_pollse1(p2_opx24_e instr)
  */
 void P2Doc::doc_pollse2(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Get SE2 event flag into C/Z, then clear it."));
-    m_instr.insert(instr, "POLLSE2          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_POLLSE2);
-    pattern(instr, "EEEE 1101011 CZ0 000000101 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000000101 000100100");
+    m_token.insert(mask_match, t_POLLSE2);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get SE2 event flag into C/Z, then clear it.");
+    m_instr.insert(mask_match, "POLLSE2          {WC/WZ/WCZ}");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5436,10 +6773,16 @@ void P2Doc::doc_pollse2(p2_opx24_e instr)
  */
 void P2Doc::doc_pollse3(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Get SE3 event flag into C/Z, then clear it."));
-    m_instr.insert(instr, "POLLSE3          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_POLLSE3);
-    pattern(instr, "EEEE 1101011 CZ0 000000110 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000000110 000100100");
+    m_token.insert(mask_match, t_POLLSE3);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get SE3 event flag into C/Z, then clear it.");
+    m_instr.insert(mask_match, "POLLSE3          {WC/WZ/WCZ}");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5453,10 +6796,16 @@ void P2Doc::doc_pollse3(p2_opx24_e instr)
  */
 void P2Doc::doc_pollse4(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Get SE4 event flag into C/Z, then clear it."));
-    m_instr.insert(instr, "POLLSE4          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_POLLSE4);
-    pattern(instr, "EEEE 1101011 CZ0 000000111 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000000111 000100100");
+    m_token.insert(mask_match, t_POLLSE4);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get SE4 event flag into C/Z, then clear it.");
+    m_instr.insert(mask_match, "POLLSE4          {WC/WZ/WCZ}");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5470,10 +6819,16 @@ void P2Doc::doc_pollse4(p2_opx24_e instr)
  */
 void P2Doc::doc_pollpat(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Get PAT event flag into C/Z, then clear it."));
-    m_instr.insert(instr, "POLLPAT          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_POLLPAT);
-    pattern(instr, "EEEE 1101011 CZ0 000001000 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000001000 000100100");
+    m_token.insert(mask_match, t_POLLPAT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get PAT event flag into C/Z, then clear it.");
+    m_instr.insert(mask_match, "POLLPAT          {WC/WZ/WCZ}");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5487,10 +6842,16 @@ void P2Doc::doc_pollpat(p2_opx24_e instr)
  */
 void P2Doc::doc_pollfbw(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Get FBW event flag into C/Z, then clear it."));
-    m_instr.insert(instr, "POLLFBW          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_POLLFBW);
-    pattern(instr, "EEEE 1101011 CZ0 000001001 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000001001 000100100");
+    m_token.insert(mask_match, t_POLLFBW);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get FBW event flag into C/Z, then clear it.");
+    m_instr.insert(mask_match, "POLLFBW          {WC/WZ/WCZ}");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5504,10 +6865,16 @@ void P2Doc::doc_pollfbw(p2_opx24_e instr)
  */
 void P2Doc::doc_pollxmt(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Get XMT event flag into C/Z, then clear it."));
-    m_instr.insert(instr, "POLLXMT          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_POLLXMT);
-    pattern(instr, "EEEE 1101011 CZ0 000001010 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000001010 000100100");
+    m_token.insert(mask_match, t_POLLXMT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get XMT event flag into C/Z, then clear it.");
+    m_instr.insert(mask_match, "POLLXMT          {WC/WZ/WCZ}");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5521,10 +6888,16 @@ void P2Doc::doc_pollxmt(p2_opx24_e instr)
  */
 void P2Doc::doc_pollxfi(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Get XFI event flag into C/Z, then clear it."));
-    m_instr.insert(instr, "POLLXFI          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_POLLXFI);
-    pattern(instr, "EEEE 1101011 CZ0 000001011 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000001011 000100100");
+    m_token.insert(mask_match, t_POLLXFI);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get XFI event flag into C/Z, then clear it.");
+    m_instr.insert(mask_match, "POLLXFI          {WC/WZ/WCZ}");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5538,10 +6911,16 @@ void P2Doc::doc_pollxfi(p2_opx24_e instr)
  */
 void P2Doc::doc_pollxro(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Get XRO event flag into C/Z, then clear it."));
-    m_instr.insert(instr, "POLLXRO          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_POLLXRO);
-    pattern(instr, "EEEE 1101011 CZ0 000001100 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000001100 000100100");
+    m_token.insert(mask_match, t_POLLXRO);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get XRO event flag into C/Z, then clear it.");
+    m_instr.insert(mask_match, "POLLXRO          {WC/WZ/WCZ}");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5555,10 +6934,16 @@ void P2Doc::doc_pollxro(p2_opx24_e instr)
  */
 void P2Doc::doc_pollxrl(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Get XRL event flag into C/Z, then clear it."));
-    m_instr.insert(instr, "POLLXRL          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_POLLXRL);
-    pattern(instr, "EEEE 1101011 CZ0 000001101 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000001101 000100100");
+    m_token.insert(mask_match, t_POLLXRL);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get XRL event flag into C/Z, then clear it.");
+    m_instr.insert(mask_match, "POLLXRL          {WC/WZ/WCZ}");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5572,10 +6957,16 @@ void P2Doc::doc_pollxrl(p2_opx24_e instr)
  */
 void P2Doc::doc_pollatn(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Get ATN event flag into C/Z, then clear it."));
-    m_instr.insert(instr, "POLLATN          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_POLLATN);
-    pattern(instr, "EEEE 1101011 CZ0 000001110 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000001110 000100100");
+    m_token.insert(mask_match, t_POLLATN);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get ATN event flag into C/Z, then clear it.");
+    m_instr.insert(mask_match, "POLLATN          {WC/WZ/WCZ}");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5589,10 +6980,16 @@ void P2Doc::doc_pollatn(p2_opx24_e instr)
  */
 void P2Doc::doc_pollqmt(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Get QMT event flag into C/Z, then clear it."));
-    m_instr.insert(instr, "POLLQMT          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_POLLQMT);
-    pattern(instr, "EEEE 1101011 CZ0 000001111 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000001111 000100100");
+    m_token.insert(mask_match, t_POLLQMT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get QMT event flag into C/Z, then clear it.");
+    m_instr.insert(mask_match, "POLLQMT          {WC/WZ/WCZ}");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5608,10 +7005,14 @@ void P2Doc::doc_pollqmt(p2_opx24_e instr)
  */
 void P2Doc::doc_waitint(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Wait for INT event flag, then clear it."));
-    m_instr.insert(instr, "WAITINT          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_WAITINT);
-    pattern(instr, "EEEE 1101011 CZ0 000010000 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000010000 000100100");
+    m_token.insert(mask_match, t_WAITINT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Wait for INT event flag, then clear it.");
+    m_instr.insert(mask_match, "WAITINT          {WC/WZ/WCZ}");
+    descr += "Prior SETQ sets optional CT timeout value.";
+    descr += "C/Z = timeout.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5627,10 +7028,14 @@ void P2Doc::doc_waitint(p2_opx24_e instr)
  */
 void P2Doc::doc_waitct1(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Wait for CT1 event flag, then clear it."));
-    m_instr.insert(instr, "WAITCT1          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_WAITCT1);
-    pattern(instr, "EEEE 1101011 CZ0 000010001 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000010001 000100100");
+    m_token.insert(mask_match, t_WAITCT1);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Wait for CT1 event flag, then clear it.");
+    m_instr.insert(mask_match, "WAITCT1          {WC/WZ/WCZ}");
+    descr += "Prior SETQ sets optional CT timeout value.";
+    descr += "C/Z = timeout.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5646,10 +7051,14 @@ void P2Doc::doc_waitct1(p2_opx24_e instr)
  */
 void P2Doc::doc_waitct2(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Wait for CT2 event flag, then clear it."));
-    m_instr.insert(instr, "WAITCT2          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_WAITCT2);
-    pattern(instr, "EEEE 1101011 CZ0 000010010 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000010010 000100100");
+    m_token.insert(mask_match, t_WAITCT2);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Wait for CT2 event flag, then clear it.");
+    m_instr.insert(mask_match, "WAITCT2          {WC/WZ/WCZ}");
+    descr += "Prior SETQ sets optional CT timeout value.";
+    descr += "C/Z = timeout.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5665,10 +7074,14 @@ void P2Doc::doc_waitct2(p2_opx24_e instr)
  */
 void P2Doc::doc_waitct3(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Wait for CT3 event flag, then clear it."));
-    m_instr.insert(instr, "WAITCT3          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_WAITCT3);
-    pattern(instr, "EEEE 1101011 CZ0 000010011 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000010011 000100100");
+    m_token.insert(mask_match, t_WAITCT3);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Wait for CT3 event flag, then clear it.");
+    m_instr.insert(mask_match, "WAITCT3          {WC/WZ/WCZ}");
+    descr += "Prior SETQ sets optional CT timeout value.";
+    descr += "C/Z = timeout.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5684,10 +7097,14 @@ void P2Doc::doc_waitct3(p2_opx24_e instr)
  */
 void P2Doc::doc_waitse1(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Wait for SE1 event flag, then clear it."));
-    m_instr.insert(instr, "WAITSE1          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_WAITSE1);
-    pattern(instr, "EEEE 1101011 CZ0 000010100 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000010100 000100100");
+    m_token.insert(mask_match, t_WAITSE1);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Wait for SE1 event flag, then clear it.");
+    m_instr.insert(mask_match, "WAITSE1          {WC/WZ/WCZ}");
+    descr += "Prior SETQ sets optional CT timeout value.";
+    descr += "C/Z = timeout.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5703,10 +7120,14 @@ void P2Doc::doc_waitse1(p2_opx24_e instr)
  */
 void P2Doc::doc_waitse2(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Wait for SE2 event flag, then clear it."));
-    m_instr.insert(instr, "WAITSE2          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_WAITSE2);
-    pattern(instr, "EEEE 1101011 CZ0 000010101 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000010101 000100100");
+    m_token.insert(mask_match, t_WAITSE2);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Wait for SE2 event flag, then clear it.");
+    m_instr.insert(mask_match, "WAITSE2          {WC/WZ/WCZ}");
+    descr += "Prior SETQ sets optional CT timeout value.";
+    descr += "C/Z = timeout.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5722,10 +7143,14 @@ void P2Doc::doc_waitse2(p2_opx24_e instr)
  */
 void P2Doc::doc_waitse3(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Wait for SE3 event flag, then clear it."));
-    m_instr.insert(instr, "WAITSE3          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_WAITSE3);
-    pattern(instr, "EEEE 1101011 CZ0 000010110 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000010110 000100100");
+    m_token.insert(mask_match, t_WAITSE3);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Wait for SE3 event flag, then clear it.");
+    m_instr.insert(mask_match, "WAITSE3          {WC/WZ/WCZ}");
+    descr += "Prior SETQ sets optional CT timeout value.";
+    descr += "C/Z = timeout.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5741,10 +7166,14 @@ void P2Doc::doc_waitse3(p2_opx24_e instr)
  */
 void P2Doc::doc_waitse4(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Wait for SE4 event flag, then clear it."));
-    m_instr.insert(instr, "WAITSE4          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_WAITSE4);
-    pattern(instr, "EEEE 1101011 CZ0 000010111 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000010111 000100100");
+    m_token.insert(mask_match, t_WAITSE4);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Wait for SE4 event flag, then clear it.");
+    m_instr.insert(mask_match, "WAITSE4          {WC/WZ/WCZ}");
+    descr += "Prior SETQ sets optional CT timeout value.";
+    descr += "C/Z = timeout.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5760,10 +7189,14 @@ void P2Doc::doc_waitse4(p2_opx24_e instr)
  */
 void P2Doc::doc_waitpat(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Wait for PAT event flag, then clear it."));
-    m_instr.insert(instr, "WAITPAT          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_WAITPAT);
-    pattern(instr, "EEEE 1101011 CZ0 000011000 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000011000 000100100");
+    m_token.insert(mask_match, t_WAITPAT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Wait for PAT event flag, then clear it.");
+    m_instr.insert(mask_match, "WAITPAT          {WC/WZ/WCZ}");
+    descr += "Prior SETQ sets optional CT timeout value.";
+    descr += "C/Z = timeout.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5779,10 +7212,14 @@ void P2Doc::doc_waitpat(p2_opx24_e instr)
  */
 void P2Doc::doc_waitfbw(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Wait for FBW event flag, then clear it."));
-    m_instr.insert(instr, "WAITFBW          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_WAITFBW);
-    pattern(instr, "EEEE 1101011 CZ0 000011001 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000011001 000100100");
+    m_token.insert(mask_match, t_WAITFBW);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Wait for FBW event flag, then clear it.");
+    m_instr.insert(mask_match, "WAITFBW          {WC/WZ/WCZ}");
+    descr += "Prior SETQ sets optional CT timeout value.";
+    descr += "C/Z = timeout.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5798,10 +7235,14 @@ void P2Doc::doc_waitfbw(p2_opx24_e instr)
  */
 void P2Doc::doc_waitxmt(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Wait for XMT event flag, then clear it."));
-    m_instr.insert(instr, "WAITXMT          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_WAITXMT);
-    pattern(instr, "EEEE 1101011 CZ0 000011010 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000011010 000100100");
+    m_token.insert(mask_match, t_WAITXMT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Wait for XMT event flag, then clear it.");
+    m_instr.insert(mask_match, "WAITXMT          {WC/WZ/WCZ}");
+    descr += "Prior SETQ sets optional CT timeout value.";
+    descr += "C/Z = timeout.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5817,10 +7258,14 @@ void P2Doc::doc_waitxmt(p2_opx24_e instr)
  */
 void P2Doc::doc_waitxfi(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Wait for XFI event flag, then clear it."));
-    m_instr.insert(instr, "WAITXFI          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_WAITXFI);
-    pattern(instr, "EEEE 1101011 CZ0 000011011 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000011011 000100100");
+    m_token.insert(mask_match, t_WAITXFI);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Wait for XFI event flag, then clear it.");
+    m_instr.insert(mask_match, "WAITXFI          {WC/WZ/WCZ}");
+    descr += "Prior SETQ sets optional CT timeout value.";
+    descr += "C/Z = timeout.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5836,10 +7281,14 @@ void P2Doc::doc_waitxfi(p2_opx24_e instr)
  */
 void P2Doc::doc_waitxro(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Wait for XRO event flag, then clear it."));
-    m_instr.insert(instr, "WAITXRO          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_WAITXRO);
-    pattern(instr, "EEEE 1101011 CZ0 000011100 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000011100 000100100");
+    m_token.insert(mask_match, t_WAITXRO);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Wait for XRO event flag, then clear it.");
+    m_instr.insert(mask_match, "WAITXRO          {WC/WZ/WCZ}");
+    descr += "Prior SETQ sets optional CT timeout value.";
+    descr += "C/Z = timeout.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5855,10 +7304,14 @@ void P2Doc::doc_waitxro(p2_opx24_e instr)
  */
 void P2Doc::doc_waitxrl(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Wait for XRL event flag, then clear it."));
-    m_instr.insert(instr, "WAITXRL          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_WAITXRL);
-    pattern(instr, "EEEE 1101011 CZ0 000011101 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000011101 000100100");
+    m_token.insert(mask_match, t_WAITXRL);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Wait for XRL event flag, then clear it.");
+    m_instr.insert(mask_match, "WAITXRL          {WC/WZ/WCZ}");
+    descr += "Prior SETQ sets optional CT timeout value.";
+    descr += "C/Z = timeout.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5874,10 +7327,14 @@ void P2Doc::doc_waitxrl(p2_opx24_e instr)
  */
 void P2Doc::doc_waitatn(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Wait for ATN event flag, then clear it."));
-    m_instr.insert(instr, "WAITATN          {WC/WZ/WCZ}");
-    m_token.insert(instr, t_WAITATN);
-    pattern(instr, "EEEE 1101011 CZ0 000011110 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 000011110 000100100");
+    m_token.insert(mask_match, t_WAITATN);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Wait for ATN event flag, then clear it.");
+    m_instr.insert(mask_match, "WAITATN          {WC/WZ/WCZ}");
+    descr += "Prior SETQ sets optional CT timeout value.";
+    descr += "C/Z = timeout.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5891,10 +7348,16 @@ void P2Doc::doc_waitatn(p2_opx24_e instr)
  */
 void P2Doc::doc_allowi(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Allow interrupts (default)."));
-    m_instr.insert(instr, "ALLOWI");
-    m_token.insert(instr, t_ALLOWI);
-    pattern(instr, "EEEE 1101011 000 000100000 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 000100000 000100100");
+    m_token.insert(mask_match, t_ALLOWI);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Allow interrupts (default).");
+    m_instr.insert(mask_match, "ALLOWI");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5908,10 +7371,16 @@ void P2Doc::doc_allowi(p2_opx24_e instr)
  */
 void P2Doc::doc_stalli(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Stall Interrupts."));
-    m_instr.insert(instr, "STALLI");
-    m_token.insert(instr, t_STALLI);
-    pattern(instr, "EEEE 1101011 000 000100001 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 000100001 000100100");
+    m_token.insert(mask_match, t_STALLI);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Stall Interrupts.");
+    m_instr.insert(mask_match, "STALLI");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5925,10 +7394,16 @@ void P2Doc::doc_stalli(p2_opx24_e instr)
  */
 void P2Doc::doc_trgint1(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Trigger INT1, regardless of STALLI mode."));
-    m_instr.insert(instr, "TRGINT1");
-    m_token.insert(instr, t_TRGINT1);
-    pattern(instr, "EEEE 1101011 000 000100010 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 000100010 000100100");
+    m_token.insert(mask_match, t_TRGINT1);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Trigger INT1, regardless of STALLI mode.");
+    m_instr.insert(mask_match, "TRGINT1");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5942,10 +7417,16 @@ void P2Doc::doc_trgint1(p2_opx24_e instr)
  */
 void P2Doc::doc_trgint2(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Trigger INT2, regardless of STALLI mode."));
-    m_instr.insert(instr, "TRGINT2");
-    m_token.insert(instr, t_TRGINT2);
-    pattern(instr, "EEEE 1101011 000 000100011 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 000100011 000100100");
+    m_token.insert(mask_match, t_TRGINT2);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Trigger INT2, regardless of STALLI mode.");
+    m_instr.insert(mask_match, "TRGINT2");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5959,10 +7440,16 @@ void P2Doc::doc_trgint2(p2_opx24_e instr)
  */
 void P2Doc::doc_trgint3(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Trigger INT3, regardless of STALLI mode."));
-    m_instr.insert(instr, "TRGINT3");
-    m_token.insert(instr, t_TRGINT3);
-    pattern(instr, "EEEE 1101011 000 000100100 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 000100100 000100100");
+    m_token.insert(mask_match, t_TRGINT3);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Trigger INT3, regardless of STALLI mode.");
+    m_instr.insert(mask_match, "TRGINT3");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5976,10 +7463,16 @@ void P2Doc::doc_trgint3(p2_opx24_e instr)
  */
 void P2Doc::doc_nixint1(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Cancel INT1."));
-    m_instr.insert(instr, "NIXINT1");
-    m_token.insert(instr, t_NIXINT1);
-    pattern(instr, "EEEE 1101011 000 000100101 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 000100101 000100100");
+    m_token.insert(mask_match, t_NIXINT1);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Cancel INT1.");
+    m_instr.insert(mask_match, "NIXINT1");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -5993,10 +7486,16 @@ void P2Doc::doc_nixint1(p2_opx24_e instr)
  */
 void P2Doc::doc_nixint2(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Cancel INT2."));
-    m_instr.insert(instr, "NIXINT2");
-    m_token.insert(instr, t_NIXINT2);
-    pattern(instr, "EEEE 1101011 000 000100110 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 000100110 000100100");
+    m_token.insert(mask_match, t_NIXINT2);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Cancel INT2.");
+    m_instr.insert(mask_match, "NIXINT2");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6010,10 +7509,16 @@ void P2Doc::doc_nixint2(p2_opx24_e instr)
  */
 void P2Doc::doc_nixint3(p2_opx24_e instr)
 {
-    m_brief.insert(instr, tr("Cancel INT3."));
-    m_instr.insert(instr, "NIXINT3");
-    m_token.insert(instr, t_NIXINT3);
-    pattern(instr, "EEEE 1101011 000 000100111 000100100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 000100111 000100100");
+    m_token.insert(mask_match, t_NIXINT3);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Cancel INT3.");
+    m_instr.insert(mask_match, "NIXINT3");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6027,10 +7532,16 @@ void P2Doc::doc_nixint3(p2_opx24_e instr)
  */
 void P2Doc::doc_setint1(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Set INT1 source to D[3:0]."));
-    m_instr.insert(instr, "SETINT1 {#}D");
-    m_token.insert(instr, t_SETINT1);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000100101");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000100101");
+    m_token.insert(mask_match, t_SETINT1);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set INT1 source to D[3:0].");
+    m_instr.insert(mask_match, "SETINT1 {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6044,10 +7555,16 @@ void P2Doc::doc_setint1(p2_opsrc_e instr)
  */
 void P2Doc::doc_setint2(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Set INT2 source to D[3:0]."));
-    m_instr.insert(instr, "SETINT2 {#}D");
-    m_token.insert(instr, t_SETINT2);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000100110");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000100110");
+    m_token.insert(mask_match, t_SETINT2);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set INT2 source to D[3:0].");
+    m_instr.insert(mask_match, "SETINT2 {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6061,10 +7578,16 @@ void P2Doc::doc_setint2(p2_opsrc_e instr)
  */
 void P2Doc::doc_setint3(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Set INT3 source to D[3:0]."));
-    m_instr.insert(instr, "SETINT3 {#}D");
-    m_token.insert(instr, t_SETINT3);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000100111");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000100111");
+    m_token.insert(mask_match, t_SETINT3);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set INT3 source to D[3:0].");
+    m_instr.insert(mask_match, "SETINT3 {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6080,10 +7603,14 @@ void P2Doc::doc_setint3(p2_opsrc_e instr)
  */
 void P2Doc::doc_setq(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Set Q to D."));
-    m_instr.insert(instr, "SETQ    {#}D");
-    m_token.insert(instr, t_SETQ);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000101000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000101000");
+    m_token.insert(mask_match, t_SETQ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set Q to D.");
+    m_instr.insert(mask_match, "SETQ    {#}D");
+    descr += "Use before RDLONG/WRLONG/WMLONG to set block transfer.";
+    descr += "Also used before MUXQ/COGINIT/QDIV/QFRAC/QROTATE/WAITxxx.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6098,10 +7625,13 @@ void P2Doc::doc_setq(p2_opsrc_e instr)
  */
 void P2Doc::doc_setq2(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Set Q to D."));
-    m_instr.insert(instr, "SETQ2   {#}D");
-    m_token.insert(instr, t_SETQ2);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000101001");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000101001");
+    m_token.insert(mask_match, t_SETQ2);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set Q to D.");
+    m_instr.insert(mask_match, "SETQ2   {#}D");
+    descr += "Use before RDLONG/WRLONG/WMLONG to set LUT block transfer.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6115,10 +7645,16 @@ void P2Doc::doc_setq2(p2_opsrc_e instr)
  */
 void P2Doc::doc_push(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Push D onto stack."));
-    m_instr.insert(instr, "PUSH    {#}D");
-    m_token.insert(instr, t_PUSH);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000101010");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000101010");
+    m_token.insert(mask_match, t_PUSH);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Push D onto stack.");
+    m_instr.insert(mask_match, "PUSH    {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6133,10 +7669,13 @@ void P2Doc::doc_push(p2_opsrc_e instr)
  */
 void P2Doc::doc_pop(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Pop stack (K)."));
-    m_instr.insert(instr, "POP     D        {WC/WZ/WCZ}");
-    m_token.insert(instr, t_POP);
-    pattern(instr, "EEEE 1101011 CZ0 DDDDDDDDD 000101011");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000101011");
+    m_token.insert(mask_match, t_POP);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Pop stack (K).");
+    m_instr.insert(mask_match, "POP     D        {WC/WZ/WCZ}");
+    descr += "C = K[31], Z = K[30], D = K.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6151,10 +7690,13 @@ void P2Doc::doc_pop(p2_opsrc_e instr)
  */
 void P2Doc::doc_jmp(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Jump to D."));
-    m_instr.insert(instr, "JMP     D        {WC/WZ/WCZ}");
-    m_token.insert(instr, t_JMP);
-    pattern(instr, "EEEE 1101011 CZ0 DDDDDDDDD 000101100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000101100");
+    m_token.insert(mask_match, t_JMP);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to D.");
+    m_instr.insert(mask_match, "JMP     D        {WC/WZ/WCZ}");
+    descr += "C = D[31], Z = D[30], PC = D[19:0].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6169,10 +7711,13 @@ void P2Doc::doc_jmp(p2_opsrc_e instr)
  */
 void P2Doc::doc_call(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Call to D by pushing {C, Z, 10'b0, PC[19:0]} onto stack."));
-    m_instr.insert(instr, "CALL    D        {WC/WZ/WCZ}");
-    m_token.insert(instr, t_CALL);
-    pattern(instr, "EEEE 1101011 CZ0 DDDDDDDDD 000101101");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000101101");
+    m_token.insert(mask_match, t_CALL);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Call to D by pushing {C, Z, 10'b0, PC[19:0]} onto stack.");
+    m_instr.insert(mask_match, "CALL    D        {WC/WZ/WCZ}");
+    descr += "C = D[31], Z = D[30], PC = D[19:0].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6187,10 +7732,13 @@ void P2Doc::doc_call(p2_opsrc_e instr)
  */
 void P2Doc::doc_ret(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Return by popping stack (K)."));
-    m_instr.insert(instr, "RET              {WC/WZ/WCZ}");
-    m_token.insert(instr, t_RET);
-    pattern(instr, "EEEE 1101011 CZ1 000000000 000101101");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ1 000000000 000101101");
+    m_token.insert(mask_match, t_RET);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Return by popping stack (K).");
+    m_instr.insert(mask_match, "RET              {WC/WZ/WCZ}");
+    descr += "C = K[31], Z = K[30], PC = K[19:0].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6205,10 +7753,13 @@ void P2Doc::doc_ret(p2_opsrc_e instr)
  */
 void P2Doc::doc_calla(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Call to D by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRA++."));
-    m_instr.insert(instr, "CALLA   D        {WC/WZ/WCZ}");
-    m_token.insert(instr, t_CALLA);
-    pattern(instr, "EEEE 1101011 CZ0 DDDDDDDDD 000101110");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000101110");
+    m_token.insert(mask_match, t_CALLA);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Call to D by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRA++.");
+    m_instr.insert(mask_match, "CALLA   D        {WC/WZ/WCZ}");
+    descr += "C = D[31], Z = D[30], PC = D[19:0].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6223,10 +7774,13 @@ void P2Doc::doc_calla(p2_opsrc_e instr)
  */
 void P2Doc::doc_reta(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Return by reading hub long (L) at --PTRA."));
-    m_instr.insert(instr, "RETA             {WC/WZ/WCZ}");
-    m_token.insert(instr, t_RETA);
-    pattern(instr, "EEEE 1101011 CZ1 000000000 000101110");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ1 000000000 000101110");
+    m_token.insert(mask_match, t_RETA);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Return by reading hub long (L) at --PTRA.");
+    m_instr.insert(mask_match, "RETA             {WC/WZ/WCZ}");
+    descr += "C = L[31], Z = L[30], PC = L[19:0].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6241,10 +7795,13 @@ void P2Doc::doc_reta(p2_opsrc_e instr)
  */
 void P2Doc::doc_callb(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Call to D by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRB++."));
-    m_instr.insert(instr, "CALLB   D        {WC/WZ/WCZ}");
-    m_token.insert(instr, t_CALLB);
-    pattern(instr, "EEEE 1101011 CZ0 DDDDDDDDD 000101111");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000101111");
+    m_token.insert(mask_match, t_CALLB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Call to D by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRB++.");
+    m_instr.insert(mask_match, "CALLB   D        {WC/WZ/WCZ}");
+    descr += "C = D[31], Z = D[30], PC = D[19:0].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6259,10 +7816,13 @@ void P2Doc::doc_callb(p2_opsrc_e instr)
  */
 void P2Doc::doc_retb(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Return by reading hub long (L) at --PTRB."));
-    m_instr.insert(instr, "RETB             {WC/WZ/WCZ}");
-    m_token.insert(instr, t_RETB);
-    pattern(instr, "EEEE 1101011 CZ1 000000000 000101111");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ1 000000000 000101111");
+    m_token.insert(mask_match, t_RETB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Return by reading hub long (L) at --PTRB.");
+    m_instr.insert(mask_match, "RETB             {WC/WZ/WCZ}");
+    descr += "C = L[31], Z = L[30], PC = L[19:0].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6278,10 +7838,14 @@ void P2Doc::doc_retb(p2_opsrc_e instr)
  */
 void P2Doc::doc_jmprel(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Jump ahead/back by D instructions."));
-    m_instr.insert(instr, "JMPREL  {#}D");
-    m_token.insert(instr, t_JMPREL);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000110000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000110000");
+    m_token.insert(mask_match, t_JMPREL);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump ahead/back by D instructions.");
+    m_instr.insert(mask_match, "JMPREL  {#}D");
+    descr += "For cogex, PC += D[19:0].";
+    descr += "For hubex, PC += D[17:0] << 2.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6291,17 +7855,18 @@ void P2Doc::doc_jmprel(p2_opsrc_e instr)
  *
  * SKIP    {#}D
  *
- * Subsequent instructions 0.
- * 31 get cancelled for each '1' bit in D[0].
- * D[31].
+ * Subsequent instructions 0..31 get cancelled for each '1' bit in D[0]..D[31].
  *
  */
 void P2Doc::doc_skip(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Skip instructions per D."));
-    m_instr.insert(instr, "SKIP    {#}D");
-    m_token.insert(instr, t_SKIP);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000110001");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000110001");
+    m_token.insert(mask_match, t_SKIP);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Skip instructions per D.");
+    m_instr.insert(mask_match, "SKIP    {#}D");
+    descr += "Subsequent instructions 0..31 get cancelled for each '1' bit in D[0]..D[31].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6316,10 +7881,13 @@ void P2Doc::doc_skip(p2_opsrc_e instr)
  */
 void P2Doc::doc_skipf(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Skip cog/LUT instructions fast per D."));
-    m_instr.insert(instr, "SKIPF   {#}D");
-    m_token.insert(instr, t_SKIPF);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000110010");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000110010");
+    m_token.insert(mask_match, t_SKIPF);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Skip cog/LUT instructions fast per D.");
+    m_instr.insert(mask_match, "SKIPF   {#}D");
+    descr += "Like SKIP, but instead of cancelling instructions, the PC leaps over them.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6334,10 +7902,13 @@ void P2Doc::doc_skipf(p2_opsrc_e instr)
  */
 void P2Doc::doc_execf(p2_opsrc_e instr)
 {
-    m_instr.insert(instr, "EXECF   {#}D");
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000110011");
-    m_brief.insert(instr, tr("Jump to D[9:0] in cog/LUT and set SKIPF pattern to D[31:10]."));
-    m_token.insert(instr, t_EXECF);
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000110011");
+    m_token.insert(mask_match, t_EXECF);
+    QList<const char *> descr;
+    m_instr.insert(mask_match, "EXECF   {#}D");
+    m_brief.insert(mask_match, "Jump to D[9:0] in cog/LUT and set SKIPF pattern to D[31:10].");
+    descr += "PC = {10'b0, D[9:0]}.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6351,10 +7922,16 @@ void P2Doc::doc_execf(p2_opsrc_e instr)
  */
 void P2Doc::doc_getptr(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Get current FIFO hub pointer into D."));
-    m_instr.insert(instr, "GETPTR  D");
-    m_token.insert(instr, t_GETPTR);
-    pattern(instr, "EEEE 1101011 000 DDDDDDDDD 000110100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 000110100");
+    m_token.insert(mask_match, t_GETPTR);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get current FIFO hub pointer into D.");
+    m_instr.insert(mask_match, "GETPTR  D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6370,10 +7947,14 @@ void P2Doc::doc_getptr(p2_opsrc_e instr)
  */
 void P2Doc::doc_getbrk(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Get breakpoint status into D according to WC/WZ/WCZ."));
-    m_instr.insert(instr, "GETBRK  D          WC/WZ/WCZ");
-    m_token.insert(instr, t_GETBRK);
-    pattern(instr, "EEEE 1101011 CZ0 DDDDDDDDD 000110101");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000110101");
+    m_token.insert(mask_match, t_GETBRK);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get breakpoint status into D according to WC/WZ/WCZ.");
+    m_instr.insert(mask_match, "GETBRK  D          WC/WZ/WCZ");
+    descr += "C = 0.";
+    descr += "Z = 0.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6388,10 +7969,13 @@ void P2Doc::doc_getbrk(p2_opsrc_e instr)
  */
 void P2Doc::doc_cogbrk(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("If in debug ISR, trigger asynchronous breakpoint in cog D[3:0]."));
-    m_instr.insert(instr, "COGBRK  {#}D");
-    m_token.insert(instr, t_COGBRK);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000110101");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000110101");
+    m_token.insert(mask_match, t_COGBRK);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "If in debug ISR, trigger asynchronous breakpoint in cog D[3:0].");
+    m_instr.insert(mask_match, "COGBRK  {#}D");
+    descr += "Cog D[3:0] must have asynchronous breakpoint enabled.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6406,10 +7990,13 @@ void P2Doc::doc_cogbrk(p2_opsrc_e instr)
  */
 void P2Doc::doc_brk(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("If in debug ISR, set next break condition to D."));
-    m_instr.insert(instr, "BRK     {#}D");
-    m_token.insert(instr, t_BRK);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000110110");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000110110");
+    m_token.insert(mask_match, t_BRK);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "If in debug ISR, set next break condition to D.");
+    m_instr.insert(mask_match, "BRK     {#}D");
+    descr += "Else, trigger break if enabled, conditionally write break code to D[7:0].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6423,10 +8010,16 @@ void P2Doc::doc_brk(p2_opsrc_e instr)
  */
 void P2Doc::doc_setluts(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("If D[0] = 1 then enable LUT sharing, where LUT writes within the adjacent odd/even companion cog are copied to this LUT."));
-    m_instr.insert(instr, "SETLUTS {#}D");
-    m_token.insert(instr, t_SETLUTS);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000110111");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000110111");
+    m_token.insert(mask_match, t_SETLUTS);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "If D[0] = 1 then enable LUT sharing, where LUT writes within the adjacent odd/even companion cog are copied to this LUT.");
+    m_instr.insert(mask_match, "SETLUTS {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6440,10 +8033,16 @@ void P2Doc::doc_setluts(p2_opsrc_e instr)
  */
 void P2Doc::doc_setcy(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Set the colorspace converter \"CY\" parameter to D[31:0]."));
-    m_instr.insert(instr, "SETCY   {#}D");
-    m_token.insert(instr, t_SETCY);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000111000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000111000");
+    m_token.insert(mask_match, t_SETCY);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set the colorspace converter \"CY\" parameter to D[31:0].");
+    m_instr.insert(mask_match, "SETCY   {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6457,10 +8056,16 @@ void P2Doc::doc_setcy(p2_opsrc_e instr)
  */
 void P2Doc::doc_setci(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Set the colorspace converter \"CI\" parameter to D[31:0]."));
-    m_instr.insert(instr, "SETCI   {#}D");
-    m_token.insert(instr, t_SETCI);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000111001");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000111001");
+    m_token.insert(mask_match, t_SETCI);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set the colorspace converter \"CI\" parameter to D[31:0].");
+    m_instr.insert(mask_match, "SETCI   {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6474,10 +8079,16 @@ void P2Doc::doc_setci(p2_opsrc_e instr)
  */
 void P2Doc::doc_setcq(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Set the colorspace converter \"CQ\" parameter to D[31:0]."));
-    m_instr.insert(instr, "SETCQ   {#}D");
-    m_token.insert(instr, t_SETCQ);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000111010");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000111010");
+    m_token.insert(mask_match, t_SETCQ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set the colorspace converter \"CQ\" parameter to D[31:0].");
+    m_instr.insert(mask_match, "SETCQ   {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6491,10 +8102,16 @@ void P2Doc::doc_setcq(p2_opsrc_e instr)
  */
 void P2Doc::doc_setcfrq(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Set the colorspace converter \"CFRQ\" parameter to D[31:0]."));
-    m_instr.insert(instr, "SETCFRQ {#}D");
-    m_token.insert(instr, t_SETCFRQ);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000111011");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000111011");
+    m_token.insert(mask_match, t_SETCFRQ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set the colorspace converter \"CFRQ\" parameter to D[31:0].");
+    m_instr.insert(mask_match, "SETCFRQ {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6508,10 +8125,16 @@ void P2Doc::doc_setcfrq(p2_opsrc_e instr)
  */
 void P2Doc::doc_setcmod(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Set the colorspace converter \"CMOD\" parameter to D[6:0]."));
-    m_instr.insert(instr, "SETCMOD {#}D");
-    m_token.insert(instr, t_SETCMOD);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000111100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000111100");
+    m_token.insert(mask_match, t_SETCMOD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set the colorspace converter \"CMOD\" parameter to D[6:0].");
+    m_instr.insert(mask_match, "SETCMOD {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6525,10 +8148,16 @@ void P2Doc::doc_setcmod(p2_opsrc_e instr)
  */
 void P2Doc::doc_setpiv(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Set BLNPIX/MIXPIX blend factor to D[7:0]."));
-    m_instr.insert(instr, "SETPIV  {#}D");
-    m_token.insert(instr, t_SETPIV);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000111101");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000111101");
+    m_token.insert(mask_match, t_SETPIV);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set BLNPIX/MIXPIX blend factor to D[7:0].");
+    m_instr.insert(mask_match, "SETPIV  {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6542,10 +8171,16 @@ void P2Doc::doc_setpiv(p2_opsrc_e instr)
  */
 void P2Doc::doc_setpix(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Set MIXPIX mode to D[5:0]."));
-    m_instr.insert(instr, "SETPIX  {#}D");
-    m_token.insert(instr, t_SETPIX);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000111110");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000111110");
+    m_token.insert(mask_match, t_SETPIX);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set MIXPIX mode to D[5:0].");
+    m_instr.insert(mask_match, "SETPIX  {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6559,10 +8194,16 @@ void P2Doc::doc_setpix(p2_opsrc_e instr)
  */
 void P2Doc::doc_cogatn(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Strobe \"attention\" of all cogs whose corresponging bits are high in D[15:0]."));
-    m_instr.insert(instr, "COGATN  {#}D");
-    m_token.insert(instr, t_COGATN);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 000111111");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000111111");
+    m_token.insert(mask_match, t_COGATN);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Strobe \"attention\" of all cogs whose corresponging bits are high in D[15:0].");
+    m_instr.insert(mask_match, "COGATN  {#}D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6577,10 +8218,13 @@ void P2Doc::doc_cogatn(p2_opsrc_e instr)
  */
 void P2Doc::doc_testp_w(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Test  IN bit of pin D[5:0], write to C/Z."));
-    m_instr.insert(instr, "TESTP   {#}D           WC/WZ");
-    m_token.insert(instr, t_TESTP);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001000000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001000000");
+    m_token.insert(mask_match, t_TESTP);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Test  IN bit of pin D[5:0], write to C/Z.");
+    m_instr.insert(mask_match, "TESTP   {#}D           WC/WZ");
+    descr += "C/Z =          IN[D[5:0]].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6595,10 +8239,13 @@ void P2Doc::doc_testp_w(p2_opsrc_e instr)
  */
 void P2Doc::doc_testpn_w(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Test !IN bit of pin D[5:0], write to C/Z."));
-    m_instr.insert(instr, "TESTPN  {#}D           WC/WZ");
-    m_token.insert(instr, t_TESTPN);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001000001");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001000001");
+    m_token.insert(mask_match, t_TESTPN);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Test !IN bit of pin D[5:0], write to C/Z.");
+    m_instr.insert(mask_match, "TESTPN  {#}D           WC/WZ");
+    descr += "C/Z =         !IN[D[5:0]].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6613,10 +8260,13 @@ void P2Doc::doc_testpn_w(p2_opsrc_e instr)
  */
 void P2Doc::doc_testp_and(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Test  IN bit of pin D[5:0], AND into C/Z."));
-    m_instr.insert(instr, "TESTP   {#}D       ANDC/ANDZ");
-    m_token.insert(instr, t_TESTP);    // t_AND
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001000010");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001000010");
+    m_token.insert(mask_match, t_TESTP);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Test  IN bit of pin D[5:0], AND into C/Z.");
+    m_instr.insert(mask_match, "TESTP   {#}D       ANDC/ANDZ");
+    descr += "C/Z = C/Z AND  IN[D[5:0]].";
+    m_descr.insert(mask_match, descr);    // t_AND
 }
 
 /**
@@ -6631,10 +8281,13 @@ void P2Doc::doc_testp_and(p2_opsrc_e instr)
  */
 void P2Doc::doc_testpn_and(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Test !IN bit of pin D[5:0], AND into C/Z."));
-    m_instr.insert(instr, "TESTPN  {#}D       ANDC/ANDZ");
-    m_token.insert(instr, t_TESTPN);   // t_AND
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001000011");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001000011");
+    m_token.insert(mask_match, t_TESTPN);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Test !IN bit of pin D[5:0], AND into C/Z.");
+    m_instr.insert(mask_match, "TESTPN  {#}D       ANDC/ANDZ");
+    descr += "C/Z = C/Z AND !IN[D[5:0]].";
+    m_descr.insert(mask_match, descr);   // t_AND
 }
 
 /**
@@ -6649,10 +8302,13 @@ void P2Doc::doc_testpn_and(p2_opsrc_e instr)
  */
 void P2Doc::doc_testp_or(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Test  IN bit of pin D[5:0], OR  into C/Z."));
-    m_instr.insert(instr, "TESTP   {#}D         ORC/ORZ");
-    m_token.insert(instr, t_TESTP);    // t_OR
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001000100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001000100");
+    m_token.insert(mask_match, t_TESTP);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Test  IN bit of pin D[5:0], OR  into C/Z.");
+    m_instr.insert(mask_match, "TESTP   {#}D         ORC/ORZ");
+    descr += "C/Z = C/Z OR   IN[D[5:0]].";
+    m_descr.insert(mask_match, descr);    // t_OR
 }
 
 /**
@@ -6667,10 +8323,13 @@ void P2Doc::doc_testp_or(p2_opsrc_e instr)
  */
 void P2Doc::doc_testpn_or(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Test !IN bit of pin D[5:0], OR  into C/Z."));
-    m_instr.insert(instr, "TESTPN  {#}D         ORC/ORZ");
-    m_token.insert(instr, t_TESTPN);   // t_OR
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001000101");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001000101");
+    m_token.insert(mask_match, t_TESTPN);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Test !IN bit of pin D[5:0], OR  into C/Z.");
+    m_instr.insert(mask_match, "TESTPN  {#}D         ORC/ORZ");
+    descr += "C/Z = C/Z OR  !IN[D[5:0]].";
+    m_descr.insert(mask_match, descr);   // t_OR
 }
 
 /**
@@ -6685,10 +8344,13 @@ void P2Doc::doc_testpn_or(p2_opsrc_e instr)
  */
 void P2Doc::doc_testp_xor(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Test  IN bit of pin D[5:0], XOR into C/Z."));
-    m_instr.insert(instr, "TESTP   {#}D       XORC/XORZ");
-    m_token.insert(instr, t_TESTP);    // t_XOR
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001000110");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001000110");
+    m_token.insert(mask_match, t_TESTP);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Test  IN bit of pin D[5:0], XOR into C/Z.");
+    m_instr.insert(mask_match, "TESTP   {#}D       XORC/XORZ");
+    descr += "C/Z = C/Z XOR  IN[D[5:0]].";
+    m_descr.insert(mask_match, descr);    // t_XOR
 }
 
 /**
@@ -6703,10 +8365,13 @@ void P2Doc::doc_testp_xor(p2_opsrc_e instr)
  */
 void P2Doc::doc_testpn_xor(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Test !IN bit of pin D[5:0], XOR into C/Z."));
-    m_instr.insert(instr, "TESTPN  {#}D       XORC/XORZ");
-    m_token.insert(instr, t_TESTPN);   // t_XOR
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001000111");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001000111");
+    m_token.insert(mask_match, t_TESTPN);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Test !IN bit of pin D[5:0], XOR into C/Z.");
+    m_instr.insert(mask_match, "TESTPN  {#}D       XORC/XORZ");
+    descr += "C/Z = C/Z XOR !IN[D[5:0]].";
+    m_descr.insert(mask_match, descr);   // t_XOR
 }
 
 /**
@@ -6721,10 +8386,13 @@ void P2Doc::doc_testpn_xor(p2_opsrc_e instr)
  */
 void P2Doc::doc_dirl(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("DIR bit of pin D[5:0] = 0."));
-    m_instr.insert(instr, "DIRL    {#}D           {WCZ}");
-    m_token.insert(instr, t_DIRL);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001000000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001000000");
+    m_token.insert(mask_match, t_DIRL);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "DIR bit of pin D[5:0] = 0.");
+    m_instr.insert(mask_match, "DIRL    {#}D           {WCZ}");
+    descr += "C,Z = DIR bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6739,10 +8407,13 @@ void P2Doc::doc_dirl(p2_opsrc_e instr)
  */
 void P2Doc::doc_dirh(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("DIR bit of pin D[5:0] = 1."));
-    m_instr.insert(instr, "DIRH    {#}D           {WCZ}");
-    m_token.insert(instr, t_DIRH);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001000001");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001000001");
+    m_token.insert(mask_match, t_DIRH);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "DIR bit of pin D[5:0] = 1.");
+    m_instr.insert(mask_match, "DIRH    {#}D           {WCZ}");
+    descr += "C,Z = DIR bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6757,10 +8428,13 @@ void P2Doc::doc_dirh(p2_opsrc_e instr)
  */
 void P2Doc::doc_dirc(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("DIR bit of pin D[5:0] = C."));
-    m_instr.insert(instr, "DIRC    {#}D           {WCZ}");
-    m_token.insert(instr, t_DIRC);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001000010");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001000010");
+    m_token.insert(mask_match, t_DIRC);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "DIR bit of pin D[5:0] = C.");
+    m_instr.insert(mask_match, "DIRC    {#}D           {WCZ}");
+    descr += "C,Z = DIR bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6775,10 +8449,13 @@ void P2Doc::doc_dirc(p2_opsrc_e instr)
  */
 void P2Doc::doc_dirnc(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("DIR bit of pin D[5:0] = !C."));
-    m_instr.insert(instr, "DIRNC   {#}D           {WCZ}");
-    m_token.insert(instr, t_DIRNC);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001000011");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001000011");
+    m_token.insert(mask_match, t_DIRNC);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "DIR bit of pin D[5:0] = !C.");
+    m_instr.insert(mask_match, "DIRNC   {#}D           {WCZ}");
+    descr += "C,Z = DIR bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6793,10 +8470,13 @@ void P2Doc::doc_dirnc(p2_opsrc_e instr)
  */
 void P2Doc::doc_dirz(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("DIR bit of pin D[5:0] = Z."));
-    m_instr.insert(instr, "DIRZ    {#}D           {WCZ}");
-    m_token.insert(instr, t_DIRZ);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001000100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001000100");
+    m_token.insert(mask_match, t_DIRZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "DIR bit of pin D[5:0] = Z.");
+    m_instr.insert(mask_match, "DIRZ    {#}D           {WCZ}");
+    descr += "C,Z = DIR bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6811,10 +8491,13 @@ void P2Doc::doc_dirz(p2_opsrc_e instr)
  */
 void P2Doc::doc_dirnz(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("DIR bit of pin D[5:0] = !Z."));
-    m_instr.insert(instr, "DIRNZ   {#}D           {WCZ}");
-    m_token.insert(instr, t_DIRNZ);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001000101");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001000101");
+    m_token.insert(mask_match, t_DIRNZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "DIR bit of pin D[5:0] = !Z.");
+    m_instr.insert(mask_match, "DIRNZ   {#}D           {WCZ}");
+    descr += "C,Z = DIR bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6829,10 +8512,13 @@ void P2Doc::doc_dirnz(p2_opsrc_e instr)
  */
 void P2Doc::doc_dirrnd(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("DIR bit of pin D[5:0] = RND."));
-    m_instr.insert(instr, "DIRRND  {#}D           {WCZ}");
-    m_token.insert(instr, t_DIRRND);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001000110");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001000110");
+    m_token.insert(mask_match, t_DIRRND);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "DIR bit of pin D[5:0] = RND.");
+    m_instr.insert(mask_match, "DIRRND  {#}D           {WCZ}");
+    descr += "C,Z = DIR bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6847,10 +8533,13 @@ void P2Doc::doc_dirrnd(p2_opsrc_e instr)
  */
 void P2Doc::doc_dirnot(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("DIR bit of pin D[5:0] = !bit."));
-    m_instr.insert(instr, "DIRNOT  {#}D           {WCZ}");
-    m_token.insert(instr, t_DIRNOT);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001000111");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001000111");
+    m_token.insert(mask_match, t_DIRNOT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "DIR bit of pin D[5:0] = !bit.");
+    m_instr.insert(mask_match, "DIRNOT  {#}D           {WCZ}");
+    descr += "C,Z = DIR bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6865,10 +8554,13 @@ void P2Doc::doc_dirnot(p2_opsrc_e instr)
  */
 void P2Doc::doc_outl(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("OUT bit of pin D[5:0] = 0."));
-    m_instr.insert(instr, "OUTL    {#}D           {WCZ}");
-    m_token.insert(instr, t_OUTL);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001001000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001001000");
+    m_token.insert(mask_match, t_OUTL);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "OUT bit of pin D[5:0] = 0.");
+    m_instr.insert(mask_match, "OUTL    {#}D           {WCZ}");
+    descr += "C,Z = OUT bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6883,10 +8575,13 @@ void P2Doc::doc_outl(p2_opsrc_e instr)
  */
 void P2Doc::doc_outh(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("OUT bit of pin D[5:0] = 1."));
-    m_instr.insert(instr, "OUTH    {#}D           {WCZ}");
-    m_token.insert(instr, t_OUTH);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001001001");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001001001");
+    m_token.insert(mask_match, t_OUTH);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "OUT bit of pin D[5:0] = 1.");
+    m_instr.insert(mask_match, "OUTH    {#}D           {WCZ}");
+    descr += "C,Z = OUT bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6901,10 +8596,13 @@ void P2Doc::doc_outh(p2_opsrc_e instr)
  */
 void P2Doc::doc_outc(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("OUT bit of pin D[5:0] = C."));
-    m_instr.insert(instr, "OUTC    {#}D           {WCZ}");
-    m_token.insert(instr, t_OUTC);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001001010");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001001010");
+    m_token.insert(mask_match, t_OUTC);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "OUT bit of pin D[5:0] = C.");
+    m_instr.insert(mask_match, "OUTC    {#}D           {WCZ}");
+    descr += "C,Z = OUT bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6919,10 +8617,13 @@ void P2Doc::doc_outc(p2_opsrc_e instr)
  */
 void P2Doc::doc_outnc(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("OUT bit of pin D[5:0] = !C."));
-    m_instr.insert(instr, "OUTNC   {#}D           {WCZ}");
-    m_token.insert(instr, t_OUTNC);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001001011");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001001011");
+    m_token.insert(mask_match, t_OUTNC);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "OUT bit of pin D[5:0] = !C.");
+    m_instr.insert(mask_match, "OUTNC   {#}D           {WCZ}");
+    descr += "C,Z = OUT bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6937,10 +8638,13 @@ void P2Doc::doc_outnc(p2_opsrc_e instr)
  */
 void P2Doc::doc_outz(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("OUT bit of pin D[5:0] = Z."));
-    m_instr.insert(instr, "OUTZ    {#}D           {WCZ}");
-    m_token.insert(instr, t_OUTZ);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001001100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001001100");
+    m_token.insert(mask_match, t_OUTZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "OUT bit of pin D[5:0] = Z.");
+    m_instr.insert(mask_match, "OUTZ    {#}D           {WCZ}");
+    descr += "C,Z = OUT bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6955,10 +8659,13 @@ void P2Doc::doc_outz(p2_opsrc_e instr)
  */
 void P2Doc::doc_outnz(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("OUT bit of pin D[5:0] = !Z."));
-    m_instr.insert(instr, "OUTNZ   {#}D           {WCZ}");
-    m_token.insert(instr, t_OUTNZ);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001001101");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001001101");
+    m_token.insert(mask_match, t_OUTNZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "OUT bit of pin D[5:0] = !Z.");
+    m_instr.insert(mask_match, "OUTNZ   {#}D           {WCZ}");
+    descr += "C,Z = OUT bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6973,10 +8680,13 @@ void P2Doc::doc_outnz(p2_opsrc_e instr)
  */
 void P2Doc::doc_outrnd(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("OUT bit of pin D[5:0] = RND."));
-    m_instr.insert(instr, "OUTRND  {#}D           {WCZ}");
-    m_token.insert(instr, t_OUTRND);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001001110");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001001110");
+    m_token.insert(mask_match, t_OUTRND);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "OUT bit of pin D[5:0] = RND.");
+    m_instr.insert(mask_match, "OUTRND  {#}D           {WCZ}");
+    descr += "C,Z = OUT bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -6991,10 +8701,13 @@ void P2Doc::doc_outrnd(p2_opsrc_e instr)
  */
 void P2Doc::doc_outnot(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("OUT bit of pin D[5:0] = !bit."));
-    m_instr.insert(instr, "OUTNOT  {#}D           {WCZ}");
-    m_token.insert(instr, t_OUTNOT);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001001111");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001001111");
+    m_token.insert(mask_match, t_OUTNOT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "OUT bit of pin D[5:0] = !bit.");
+    m_instr.insert(mask_match, "OUTNOT  {#}D           {WCZ}");
+    descr += "C,Z = OUT bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7010,10 +8723,14 @@ void P2Doc::doc_outnot(p2_opsrc_e instr)
  */
 void P2Doc::doc_fltl(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("OUT bit of pin D[5:0] = 0."));
-    m_instr.insert(instr, "FLTL    {#}D           {WCZ}");
-    m_token.insert(instr, t_FLTL);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001010000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001010000");
+    m_token.insert(mask_match, t_FLTL);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "OUT bit of pin D[5:0] = 0.");
+    m_instr.insert(mask_match, "FLTL    {#}D           {WCZ}");
+    descr += "DIR bit = 0.";
+    descr += "C,Z = OUT bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7029,10 +8746,14 @@ void P2Doc::doc_fltl(p2_opsrc_e instr)
  */
 void P2Doc::doc_flth(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("OUT bit of pin D[5:0] = 1."));
-    m_instr.insert(instr, "FLTH    {#}D           {WCZ}");
-    m_token.insert(instr, t_FLTH);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001010001");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001010001");
+    m_token.insert(mask_match, t_FLTH);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "OUT bit of pin D[5:0] = 1.");
+    m_instr.insert(mask_match, "FLTH    {#}D           {WCZ}");
+    descr += "DIR bit = 0.";
+    descr += "C,Z = OUT bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7048,10 +8769,14 @@ void P2Doc::doc_flth(p2_opsrc_e instr)
  */
 void P2Doc::doc_fltc(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("OUT bit of pin D[5:0] = C."));
-    m_instr.insert(instr, "FLTC    {#}D           {WCZ}");
-    m_token.insert(instr, t_FLTC);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001010010");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001010010");
+    m_token.insert(mask_match, t_FLTC);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "OUT bit of pin D[5:0] = C.");
+    m_instr.insert(mask_match, "FLTC    {#}D           {WCZ}");
+    descr += "DIR bit = 0.";
+    descr += "C,Z = OUT bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7067,10 +8792,14 @@ void P2Doc::doc_fltc(p2_opsrc_e instr)
  */
 void P2Doc::doc_fltnc(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("OUT bit of pin D[5:0] = !C."));
-    m_instr.insert(instr, "FLTNC   {#}D           {WCZ}");
-    m_token.insert(instr, t_FLTNC);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001010011");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001010011");
+    m_token.insert(mask_match, t_FLTNC);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "OUT bit of pin D[5:0] = !C.");
+    m_instr.insert(mask_match, "FLTNC   {#}D           {WCZ}");
+    descr += "DIR bit = 0.";
+    descr += "C,Z = OUT bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7086,10 +8815,14 @@ void P2Doc::doc_fltnc(p2_opsrc_e instr)
  */
 void P2Doc::doc_fltz(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("OUT bit of pin D[5:0] = Z."));
-    m_instr.insert(instr, "FLTZ    {#}D           {WCZ}");
-    m_token.insert(instr, t_FLTZ);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001010100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001010100");
+    m_token.insert(mask_match, t_FLTZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "OUT bit of pin D[5:0] = Z.");
+    m_instr.insert(mask_match, "FLTZ    {#}D           {WCZ}");
+    descr += "DIR bit = 0.";
+    descr += "C,Z = OUT bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7105,10 +8838,14 @@ void P2Doc::doc_fltz(p2_opsrc_e instr)
  */
 void P2Doc::doc_fltnz(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("OUT bit of pin D[5:0] = !Z."));
-    m_instr.insert(instr, "FLTNZ   {#}D           {WCZ}");
-    m_token.insert(instr, t_FLTNZ);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001010101");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001010101");
+    m_token.insert(mask_match, t_FLTNZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "OUT bit of pin D[5:0] = !Z.");
+    m_instr.insert(mask_match, "FLTNZ   {#}D           {WCZ}");
+    descr += "DIR bit = 0.";
+    descr += "C,Z = OUT bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7124,10 +8861,14 @@ void P2Doc::doc_fltnz(p2_opsrc_e instr)
  */
 void P2Doc::doc_fltrnd(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("OUT bit of pin D[5:0] = RND."));
-    m_instr.insert(instr, "FLTRND  {#}D           {WCZ}");
-    m_token.insert(instr, t_FLTRND);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001010110");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001010110");
+    m_token.insert(mask_match, t_FLTRND);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "OUT bit of pin D[5:0] = RND.");
+    m_instr.insert(mask_match, "FLTRND  {#}D           {WCZ}");
+    descr += "DIR bit = 0.";
+    descr += "C,Z = OUT bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7143,10 +8884,14 @@ void P2Doc::doc_fltrnd(p2_opsrc_e instr)
  */
 void P2Doc::doc_fltnot(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("OUT bit of pin D[5:0] = !bit."));
-    m_instr.insert(instr, "FLTNOT  {#}D           {WCZ}");
-    m_token.insert(instr, t_FLTNOT);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001010111");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001010111");
+    m_token.insert(mask_match, t_FLTNOT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "OUT bit of pin D[5:0] = !bit.");
+    m_instr.insert(mask_match, "FLTNOT  {#}D           {WCZ}");
+    descr += "DIR bit = 0.";
+    descr += "C,Z = OUT bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7162,10 +8907,14 @@ void P2Doc::doc_fltnot(p2_opsrc_e instr)
  */
 void P2Doc::doc_drvl(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("OUT bit of pin D[5:0] = 0."));
-    m_instr.insert(instr, "DRVL    {#}D           {WCZ}");
-    m_token.insert(instr, t_DRVL);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001011000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001011000");
+    m_token.insert(mask_match, t_DRVL);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "OUT bit of pin D[5:0] = 0.");
+    m_instr.insert(mask_match, "DRVL    {#}D           {WCZ}");
+    descr += "DIR bit = 1.";
+    descr += "C,Z = OUT bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7181,10 +8930,14 @@ void P2Doc::doc_drvl(p2_opsrc_e instr)
  */
 void P2Doc::doc_drvh(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("OUT bit of pin D[5:0] = 1."));
-    m_instr.insert(instr, "DRVH    {#}D           {WCZ}");
-    m_token.insert(instr, t_DRVH);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001011001");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001011001");
+    m_token.insert(mask_match, t_DRVH);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "OUT bit of pin D[5:0] = 1.");
+    m_instr.insert(mask_match, "DRVH    {#}D           {WCZ}");
+    descr += "DIR bit = 1.";
+    descr += "C,Z = OUT bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7200,10 +8953,14 @@ void P2Doc::doc_drvh(p2_opsrc_e instr)
  */
 void P2Doc::doc_drvc(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("OUT bit of pin D[5:0] = C."));
-    m_instr.insert(instr, "DRVC    {#}D           {WCZ}");
-    m_token.insert(instr, t_DRVC);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001011010");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001011010");
+    m_token.insert(mask_match, t_DRVC);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "OUT bit of pin D[5:0] = C.");
+    m_instr.insert(mask_match, "DRVC    {#}D           {WCZ}");
+    descr += "DIR bit = 1.";
+    descr += "C,Z = OUT bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7219,10 +8976,14 @@ void P2Doc::doc_drvc(p2_opsrc_e instr)
  */
 void P2Doc::doc_drvnc(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("OUT bit of pin D[5:0] = !C."));
-    m_instr.insert(instr, "DRVNC   {#}D           {WCZ}");
-    m_token.insert(instr, t_DRVNC);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001011011");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001011011");
+    m_token.insert(mask_match, t_DRVNC);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "OUT bit of pin D[5:0] = !C.");
+    m_instr.insert(mask_match, "DRVNC   {#}D           {WCZ}");
+    descr += "DIR bit = 1.";
+    descr += "C,Z = OUT bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7238,10 +8999,14 @@ void P2Doc::doc_drvnc(p2_opsrc_e instr)
  */
 void P2Doc::doc_drvz(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("OUT bit of pin D[5:0] = Z."));
-    m_instr.insert(instr, "DRVZ    {#}D           {WCZ}");
-    m_token.insert(instr, t_DRVZ);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001011100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001011100");
+    m_token.insert(mask_match, t_DRVZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "OUT bit of pin D[5:0] = Z.");
+    m_instr.insert(mask_match, "DRVZ    {#}D           {WCZ}");
+    descr += "DIR bit = 1.";
+    descr += "C,Z = OUT bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7257,10 +9022,14 @@ void P2Doc::doc_drvz(p2_opsrc_e instr)
  */
 void P2Doc::doc_drvnz(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("OUT bit of pin D[5:0] = !Z."));
-    m_instr.insert(instr, "DRVNZ   {#}D           {WCZ}");
-    m_token.insert(instr, t_DRVNZ);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001011101");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001011101");
+    m_token.insert(mask_match, t_DRVNZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "OUT bit of pin D[5:0] = !Z.");
+    m_instr.insert(mask_match, "DRVNZ   {#}D           {WCZ}");
+    descr += "DIR bit = 1.";
+    descr += "C,Z = OUT bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7276,10 +9045,14 @@ void P2Doc::doc_drvnz(p2_opsrc_e instr)
  */
 void P2Doc::doc_drvrnd(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("OUT bit of pin D[5:0] = RND."));
-    m_instr.insert(instr, "DRVRND  {#}D           {WCZ}");
-    m_token.insert(instr, t_DRVRND);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001011110");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001011110");
+    m_token.insert(mask_match, t_DRVRND);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "OUT bit of pin D[5:0] = RND.");
+    m_instr.insert(mask_match, "DRVRND  {#}D           {WCZ}");
+    descr += "DIR bit = 1.";
+    descr += "C,Z = OUT bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7295,10 +9068,14 @@ void P2Doc::doc_drvrnd(p2_opsrc_e instr)
  */
 void P2Doc::doc_drvnot(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("OUT bit of pin D[5:0] = !bit."));
-    m_instr.insert(instr, "DRVNOT  {#}D           {WCZ}");
-    m_token.insert(instr, t_DRVNOT);
-    pattern(instr, "EEEE 1101011 CZL DDDDDDDDD 001011111");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001011111");
+    m_token.insert(mask_match, t_DRVNOT);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "OUT bit of pin D[5:0] = !bit.");
+    m_instr.insert(mask_match, "DRVNOT  {#}D           {WCZ}");
+    descr += "DIR bit = 1.";
+    descr += "C,Z = OUT bit.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7313,10 +9090,13 @@ void P2Doc::doc_drvnot(p2_opsrc_e instr)
  */
 void P2Doc::doc_splitb(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Split every 4th bit of S into bytes of D."));
-    m_instr.insert(instr, "SPLITB  D");
-    m_token.insert(instr, t_SPLITB);
-    pattern(instr, "EEEE 1101011 000 DDDDDDDDD 001100000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001100000");
+    m_token.insert(mask_match, t_SPLITB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Split every 4th bit of S into bytes of D.");
+    m_instr.insert(mask_match, "SPLITB  D");
+    descr += "D = {S[31], S[27], S[23], S[19], ... S[12], S[8], S[4], S[0]}.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7331,10 +9111,13 @@ void P2Doc::doc_splitb(p2_opsrc_e instr)
  */
 void P2Doc::doc_mergeb(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Merge bits of bytes in S into D."));
-    m_instr.insert(instr, "MERGEB  D");
-    m_token.insert(instr, t_MERGEB);
-    pattern(instr, "EEEE 1101011 000 DDDDDDDDD 001100001");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001100001");
+    m_token.insert(mask_match, t_MERGEB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Merge bits of bytes in S into D.");
+    m_instr.insert(mask_match, "MERGEB  D");
+    descr += "D = {S[31], S[23], S[15], S[7], ... S[24], S[16], S[8], S[0]}.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7349,10 +9132,13 @@ void P2Doc::doc_mergeb(p2_opsrc_e instr)
  */
 void P2Doc::doc_splitw(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Split bits of S into words of D."));
-    m_instr.insert(instr, "SPLITW  D");
-    m_token.insert(instr, t_SPLITW);
-    pattern(instr, "EEEE 1101011 000 DDDDDDDDD 001100010");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001100010");
+    m_token.insert(mask_match, t_SPLITW);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Split bits of S into words of D.");
+    m_instr.insert(mask_match, "SPLITW  D");
+    descr += "D = {S[31], S[29], S[27], S[25], ... S[6], S[4], S[2], S[0]}.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7367,10 +9153,13 @@ void P2Doc::doc_splitw(p2_opsrc_e instr)
  */
 void P2Doc::doc_mergew(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Merge bits of words in S into D."));
-    m_instr.insert(instr, "MERGEW  D");
-    m_token.insert(instr, t_MERGEW);
-    pattern(instr, "EEEE 1101011 000 DDDDDDDDD 001100011");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001100011");
+    m_token.insert(mask_match, t_MERGEW);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Merge bits of words in S into D.");
+    m_instr.insert(mask_match, "MERGEW  D");
+    descr += "D = {S[31], S[15], S[30], S[14], ... S[17], S[1], S[16], S[0]}.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7381,15 +9170,17 @@ void P2Doc::doc_mergew(p2_opsrc_e instr)
  * SEUSSF  D
  *
  * Returns to original value on 32nd iteration.
-    m_instr.insert(instr, QStringLiteral("SEUSSF  D;
- *
  * Forward pattern.
  */
 void P2Doc::doc_seussf(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Relocate and periodically invert bits from S into D."));
-    pattern(instr, "EEEE 1101011 000 DDDDDDDDD 001100100");
-    m_token.insert(instr, t_SEUSSF);
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001100100");
+    m_token.insert(mask_match, t_SEUSSF);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Relocate and periodically invert bits from S into D.");
+    descr += "Returns to original value on 32nd iteration.";
+    descr += "Forward pattern.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7400,15 +9191,17 @@ void P2Doc::doc_seussf(p2_opsrc_e instr)
  * SEUSSR  D
  *
  * Returns to original value on 32nd iteration.
-    m_instr.insert(instr, QStringLiteral("SEUSSR  D;
- *
  * Reverse pattern.
  */
 void P2Doc::doc_seussr(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Relocate and periodically invert bits from S into D."));
-    pattern(instr, "EEEE 1101011 000 DDDDDDDDD 001100101");
-    m_token.insert(instr, t_SEUSSR);
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001100101");
+    m_token.insert(mask_match, t_SEUSSR);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Relocate and periodically invert bits from S into D.");
+    descr += "Returns to original value on 32nd iteration.";
+    descr += "Reverse pattern.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7423,10 +9216,13 @@ void P2Doc::doc_seussr(p2_opsrc_e instr)
  */
 void P2Doc::doc_rgbsqz(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Squeeze 8:8:8 RGB value in S[31:8] into 5:6:5 value in D[15:0]."));
-    m_instr.insert(instr, "RGBSQZ  D");
-    m_token.insert(instr, t_RGBSQZ);
-    pattern(instr, "EEEE 1101011 000 DDDDDDDDD 001100110");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001100110");
+    m_token.insert(mask_match, t_RGBSQZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Squeeze 8:8:8 RGB value in S[31:8] into 5:6:5 value in D[15:0].");
+    m_instr.insert(mask_match, "RGBSQZ  D");
+    descr += "D = {15'b0, S[31:27], S[23:18], S[15:11]}.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7441,10 +9237,13 @@ void P2Doc::doc_rgbsqz(p2_opsrc_e instr)
  */
 void P2Doc::doc_rgbexp(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Expand 5:6:5 RGB value in S[15:0] into 8:8:8 value in D[31:8]."));
-    m_instr.insert(instr, "RGBEXP  D");
-    m_token.insert(instr, t_RGBEXP);
-    pattern(instr, "EEEE 1101011 000 DDDDDDDDD 001100111");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001100111");
+    m_token.insert(mask_match, t_RGBEXP);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Expand 5:6:5 RGB value in S[15:0] into 8:8:8 value in D[31:8].");
+    m_instr.insert(mask_match, "RGBEXP  D");
+    descr += "D = {S[15:11,15:13], S[10:5,10:9], S[4:0,4:2], 8'b0}.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7458,10 +9257,16 @@ void P2Doc::doc_rgbexp(p2_opsrc_e instr)
  */
 void P2Doc::doc_xoro32(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Iterate D with xoroshiro32+ PRNG algorithm and put PRNG result into next instruction's S."));
-    m_instr.insert(instr, "XORO32  D");
-    m_token.insert(instr, t_XORO32);
-    pattern(instr, "EEEE 1101011 000 DDDDDDDDD 001101000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001101000");
+    m_token.insert(mask_match, t_XORO32);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Iterate D with xoroshiro32+ PRNG algorithm and put PRNG result into next instruction's S.");
+    m_instr.insert(mask_match, "XORO32  D");
+    descr += "";
+    descr += "";
+    descr += "";
+    descr += "";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7476,10 +9281,13 @@ void P2Doc::doc_xoro32(p2_opsrc_e instr)
  */
 void P2Doc::doc_rev(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Reverse D bits."));
-    m_instr.insert(instr, "REV     D");
-    m_token.insert(instr, t_REV);
-    pattern(instr, "EEEE 1101011 000 DDDDDDDDD 001101001");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001101001");
+    m_token.insert(mask_match, t_REV);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Reverse D bits.");
+    m_instr.insert(mask_match, "REV     D");
+    descr += "D = D[0:31].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7495,10 +9303,14 @@ void P2Doc::doc_rev(p2_opsrc_e instr)
  */
 void P2Doc::doc_rczr(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Rotate C,Z right through D."));
-    m_instr.insert(instr, "RCZR    D        {WC/WZ/WCZ}");
-    m_token.insert(instr, t_RCZR);
-    pattern(instr, "EEEE 1101011 CZ0 DDDDDDDDD 001101010");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 001101010");
+    m_token.insert(mask_match, t_RCZR);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Rotate C,Z right through D.");
+    m_instr.insert(mask_match, "RCZR    D        {WC/WZ/WCZ}");
+    descr += "D = {C, Z, D[31:2]}.";
+    descr += "C = D[1],  Z = D[0].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7514,10 +9326,14 @@ void P2Doc::doc_rczr(p2_opsrc_e instr)
  */
 void P2Doc::doc_rczl(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Rotate C,Z left through D."));
-    m_instr.insert(instr, "RCZL    D        {WC/WZ/WCZ}");
-    m_token.insert(instr, t_RCZL);
-    pattern(instr, "EEEE 1101011 CZ0 DDDDDDDDD 001101011");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 001101011");
+    m_token.insert(mask_match, t_RCZL);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Rotate C,Z left through D.");
+    m_instr.insert(mask_match, "RCZL    D        {WC/WZ/WCZ}");
+    descr += "D = {D[29:0], C, Z}.";
+    descr += "C = D[31], Z = D[30].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7527,15 +9343,18 @@ void P2Doc::doc_rczl(p2_opsrc_e instr)
  *
  * WRC     D
  *
- * D = {31'b0,  C).
+ * D = {31'b0,  C}.
  *
  */
 void P2Doc::doc_wrc(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Write 0 or 1 to D, according to  C."));
-    m_instr.insert(instr, "WRC     D");
-    m_token.insert(instr, t_WRC);
-    pattern(instr, "EEEE 1101011 000 DDDDDDDDD 001101100");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001101100");
+    m_token.insert(mask_match, t_WRC);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Write 0 or 1 to D, according to  C.");
+    m_instr.insert(mask_match, "WRC     D");
+    descr += "D = {31'b0,  C}.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7545,15 +9364,18 @@ void P2Doc::doc_wrc(p2_opsrc_e instr)
  *
  * WRNC    D
  *
- * D = {31'b0, !C).
+ * D = {31'b0, !C}.
  *
  */
 void P2Doc::doc_wrnc(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Write 0 or 1 to D, according to !C."));
-    m_instr.insert(instr, "WRNC    D");
-    m_token.insert(instr, t_WRNC);
-    pattern(instr, "EEEE 1101011 000 DDDDDDDDD 001101101");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001101101");
+    m_token.insert(mask_match, t_WRNC);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Write 0 or 1 to D, according to !C.");
+    m_instr.insert(mask_match, "WRNC    D");
+    descr += "D = {31'b0, !C}.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7563,15 +9385,18 @@ void P2Doc::doc_wrnc(p2_opsrc_e instr)
  *
  * WRZ     D
  *
- * D = {31'b0,  Z).
+ * D = {31'b0,  Z}.
  *
  */
 void P2Doc::doc_wrz(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Write 0 or 1 to D, according to  Z."));
-    m_instr.insert(instr, "WRZ     D");
-    m_token.insert(instr, t_WRZ);
-    pattern(instr, "EEEE 1101011 000 DDDDDDDDD 001101110");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001101110");
+    m_token.insert(mask_match, t_WRZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Write 0 or 1 to D, according to  Z.");
+    m_instr.insert(mask_match, "WRZ     D");
+    descr += "D = {31'b0,  Z}.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7581,15 +9406,18 @@ void P2Doc::doc_wrz(p2_opsrc_e instr)
  *
  * WRNZ    D
  *
- * D = {31'b0, !Z).
+ * D = {31'b0, !Z}.
  *
  */
 void P2Doc::doc_wrnz(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Write 0 or 1 to D, according to !Z."));
-    m_instr.insert(instr, "WRNZ    D");
-    m_token.insert(instr, t_WRNZ);
-    pattern(instr, "EEEE 1101011 000 DDDDDDDDD 001101111");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001101111");
+    m_token.insert(mask_match, t_WRNZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Write 0 or 1 to D, according to !Z.");
+    m_instr.insert(mask_match, "WRNZ    D");
+    descr += "D = {31'b0, !Z}.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7604,10 +9432,13 @@ void P2Doc::doc_wrnz(p2_opsrc_e instr)
  */
 void P2Doc::doc_modcz(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Modify C and Z according to cccc and zzzz."));
-    m_instr.insert(instr, "MODCZ   c,z      {WC/WZ/WCZ}");
-    m_token.insert(instr, t_MODCZ);
-    pattern(instr, "EEEE 1101011 CZ1 0cccczzzz 001101111");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 CZ1 0cccczzzz 001101111");
+    m_token.insert(mask_match, t_MODCZ);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Modify C and Z according to cccc and zzzz.");
+    m_instr.insert(mask_match, "MODCZ   c,z      {WC/WZ/WCZ}");
+    descr += "C = cccc[{C,Z}], Z = zzzz[{C,Z}].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7625,10 +9456,16 @@ void P2Doc::doc_modcz(p2_opsrc_e instr)
  */
 void P2Doc::doc_setscp(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Set scope mode."));
-    m_instr.insert(instr, "SETSCP  {#}D");
-    m_token.insert(instr, t_SETSCP);
-    pattern(instr, "EEEE 1101011 00L DDDDDDDDD 001110000");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 001110000");
+    m_token.insert(mask_match, t_SETSCP);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Set scope mode.");
+    m_instr.insert(mask_match, "SETSCP  {#}D");
+    descr += "Pins D[5:2], enable D[6].";
+    descr += "";
+    descr += "SETSCP points the scope mux to a set of four pins starting";
+    descr += "at (D[5:0] AND $3C), with D[6]=1 to enable scope operation.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7636,20 +9473,23 @@ void P2Doc::doc_setscp(p2_opsrc_e instr)
  *
  * EEEE 1101011 000 DDDDDDDDD 001110001
  *
- * Any time GETSCP is executed, the lower bytes of those four pins' RDPIN values are returned in D.
- * This feature will mainly be useful on the next silicon, as the FPGAs don't have ADC-capable pins.
- *
  * GETSCP  D
  *
- * C = cccc[{C,Z}], Z = zzzz[{C,Z}].
- *
+ * Any time GETSCP is executed, the lower bytes of those four pins' RDPIN values are returned in D.
+ * This feature will mainly be useful on the next silicon, as the FPGAs don't have ADC-capable pins.
  */
 void P2Doc::doc_getscp(p2_opsrc_e instr)
 {
-    m_brief.insert(instr, tr("Get four scope values into bytes of D."));
-    m_instr.insert(instr, "Any time GETSCP is executed, the lower bytes of those four pins' RDPIN values are returned in D.");
-    m_token.insert(instr, t_GETSCP);
-    pattern(instr, "EEEE 1101011 000 DDDDDDDDD 001110001");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001110001");
+    m_token.insert(mask_match, t_GETSCP);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get four scope values into bytes of D.");
+    m_instr.insert(mask_match, "GETSCP  D");
+    descr += "Any time GETSCP is executed, the lower bytes of those";
+    descr += "four pins' RDPIN values are returned in D.";
+    descr += "";
+    descr += "C = cccc[{C,Z}], Z = zzzz[{C,Z}].";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7664,10 +9504,13 @@ void P2Doc::doc_getscp(p2_opsrc_e instr)
  */
 void P2Doc::doc_jmp_abs(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Jump to A."));
-    m_instr.insert(instr, "JMP     #A");
-    m_token.insert(instr, t_JMP);
-    pattern(instr, "EEEE 1101100 RAA AAAAAAAAA AAAAAAAAA");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101100 RAA AAAAAAAAA AAAAAAAAA");
+    m_token.insert(mask_match, t_JMP);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Jump to A.");
+    m_instr.insert(mask_match, "JMP     #A");
+    descr += "If R = 1, PC += A, else PC = A.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7682,10 +9525,13 @@ void P2Doc::doc_jmp_abs(p2_inst7_e instr)
  */
 void P2Doc::doc_call_abs(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Call to A by pushing {C, Z, 10'b0, PC[19:0]} onto stack."));
-    m_instr.insert(instr, "CALL    #A");
-    m_token.insert(instr, t_CALL);
-    pattern(instr, "EEEE 1101101 RAA AAAAAAAAA AAAAAAAAA");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101101 RAA AAAAAAAAA AAAAAAAAA");
+    m_token.insert(mask_match, t_CALL);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Call to A by pushing {C, Z, 10'b0, PC[19:0]} onto stack.");
+    m_instr.insert(mask_match, "CALL    #A");
+    descr += "If R = 1, PC += A, else PC = A.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7700,10 +9546,13 @@ void P2Doc::doc_call_abs(p2_inst7_e instr)
  */
 void P2Doc::doc_calla_abs(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Call to A by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRA++."));
-    m_instr.insert(instr, "CALLA   #A");
-    m_token.insert(instr, t_CALLA);
-    pattern(instr, "EEEE 1101110 RAA AAAAAAAAA AAAAAAAAA");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101110 RAA AAAAAAAAA AAAAAAAAA");
+    m_token.insert(mask_match, t_CALLA);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Call to A by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRA++.");
+    m_instr.insert(mask_match, "CALLA   #A");
+    descr += "If R = 1, PC += A, else PC = A.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7718,10 +9567,13 @@ void P2Doc::doc_calla_abs(p2_inst7_e instr)
  */
 void P2Doc::doc_callb_abs(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Call to A by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRB++."));
-    m_instr.insert(instr, "CALLB   #A");
-    m_token.insert(instr, t_CALLB);
-    pattern(instr, "EEEE 1101111 RAA AAAAAAAAA AAAAAAAAA");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1101111 RAA AAAAAAAAA AAAAAAAAA");
+    m_token.insert(mask_match, t_CALLB);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Call to A by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRB++.");
+    m_instr.insert(mask_match, "CALLB   #A");
+    descr += "If R = 1, PC += A, else PC = A.";
+    m_descr.insert(mask_match, descr);
 }
 
 /**
@@ -7736,10 +9588,13 @@ void P2Doc::doc_callb_abs(p2_inst7_e instr)
  */
 void P2Doc::doc_calld_pa_abs(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Call to A by writing {C, Z, 10'b0, PC[19:0]} to PA (per W)."));
-    m_instr.insert(instr, "CALLD   PA,#A");
-    m_token.insert(instr, t_CALLD);    // t_PA
-    pattern(instr, "EEEE 1110000 RAA AAAAAAAAA AAAAAAAAA");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1110000 RAA AAAAAAAAA AAAAAAAAA");
+    m_token.insert(mask_match, t_CALLD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Call to A by writing {C, Z, 10'b0, PC[19:0]} to PA (per W).");
+    m_instr.insert(mask_match, "CALLD   PA,#A");
+    descr += "If R = 1, PC += A, else PC = A.";
+    m_descr.insert(mask_match, descr);    // t_PA
 }
 
 /**
@@ -7754,10 +9609,13 @@ void P2Doc::doc_calld_pa_abs(p2_inst7_e instr)
  */
 void P2Doc::doc_calld_pb_abs(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Call to A by writing {C, Z, 10'b0, PC[19:0]} to PB (per W)."));
-    m_instr.insert(instr, "CALLD   PB,#A");
-    m_token.insert(instr, t_CALLD);    // t_PB
-    pattern(instr, "EEEE 1110001 RAA AAAAAAAAA AAAAAAAAA");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1110001 RAA AAAAAAAAA AAAAAAAAA");
+    m_token.insert(mask_match, t_CALLD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Call to A by writing {C, Z, 10'b0, PC[19:0]} to PB (per W).");
+    m_instr.insert(mask_match, "CALLD   PB,#A");
+    descr += "If R = 1, PC += A, else PC = A.";
+    m_descr.insert(mask_match, descr);    // t_PB
 }
 
 /**
@@ -7772,10 +9630,13 @@ void P2Doc::doc_calld_pb_abs(p2_inst7_e instr)
  */
 void P2Doc::doc_calld_ptra_abs(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Call to A by writing {C, Z, 10'b0, PC[19:0]} to PTRA (per W)."));
-    m_instr.insert(instr, "CALLD   PTRA,#A");
-    m_token.insert(instr, t_CALLD);    // t_PTRA
-    pattern(instr, "EEEE 1110010 RAA AAAAAAAAA AAAAAAAAA");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1110010 RAA AAAAAAAAA AAAAAAAAA");
+    m_token.insert(mask_match, t_CALLD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Call to A by writing {C, Z, 10'b0, PC[19:0]} to PTRA (per W).");
+    m_instr.insert(mask_match, "CALLD   PTRA,#A");
+    descr += "If R = 1, PC += A, else PC = A.";
+    m_descr.insert(mask_match, descr);    // t_PTRA
 }
 
 /**
@@ -7790,10 +9651,13 @@ void P2Doc::doc_calld_ptra_abs(p2_inst7_e instr)
  */
 void P2Doc::doc_calld_ptrb_abs(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Call to A by writing {C, Z, 10'b0, PC[19:0]} to PTRB (per W)."));
-    m_instr.insert(instr, "CALLD   PTRB,#A");
-    m_token.insert(instr, t_CALLD);    // t_PTRB
-    pattern(instr, "EEEE 1110011 RAA AAAAAAAAA AAAAAAAAA");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1110011 RAA AAAAAAAAA AAAAAAAAA");
+    m_token.insert(mask_match, t_CALLD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Call to A by writing {C, Z, 10'b0, PC[19:0]} to PTRB (per W).");
+    m_instr.insert(mask_match, "CALLD   PTRB,#A");
+    descr += "If R = 1, PC += A, else PC = A.";
+    m_descr.insert(mask_match, descr);    // t_PTRB
 }
 
 /**
@@ -7808,10 +9672,13 @@ void P2Doc::doc_calld_ptrb_abs(p2_inst7_e instr)
  */
 void P2Doc::doc_loc_pa(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W)."));
-    m_instr.insert(instr, "LOC     PA/PB/PTRA/PTRB,#A");
-    m_token.insert(instr, t_LOC);  // t_PA
-    pattern(instr, "EEEE 1110100 RAA AAAAAAAAA AAAAAAAAA");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1110100 RAA AAAAAAAAA AAAAAAAAA");
+    m_token.insert(mask_match, t_LOC);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).");
+    m_instr.insert(mask_match, "LOC     PA/PB/PTRA/PTRB,#A");
+    descr += "If R = 1, address = PC + A, else address = A.";
+    m_descr.insert(mask_match, descr);  // t_PA
 }
 
 /**
@@ -7826,10 +9693,13 @@ void P2Doc::doc_loc_pa(p2_inst7_e instr)
  */
 void P2Doc::doc_loc_pb(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W)."));
-    m_instr.insert(instr, "LOC     PA/PB/PTRA/PTRB,#A");
-    m_token.insert(instr, t_LOC);  // t_PB
-    pattern(instr, "EEEE 1110101 RAA AAAAAAAAA AAAAAAAAA");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1110101 RAA AAAAAAAAA AAAAAAAAA");
+    m_token.insert(mask_match, t_LOC);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).");
+    m_instr.insert(mask_match, "LOC     PA/PB/PTRA/PTRB,#A");
+    descr += "If R = 1, address = PC + A, else address = A.";
+    m_descr.insert(mask_match, descr);  // t_PB
 }
 
 /**
@@ -7844,10 +9714,13 @@ void P2Doc::doc_loc_pb(p2_inst7_e instr)
  */
 void P2Doc::doc_loc_ptra(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W)."));
-    m_instr.insert(instr, "LOC     PA/PB/PTRA/PTRB,#A");
-    m_token.insert(instr, t_LOC);  // t_PTRA
-    pattern(instr, "EEEE 1110110 RAA AAAAAAAAA AAAAAAAAA");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1110110 RAA AAAAAAAAA AAAAAAAAA");
+    m_token.insert(mask_match, t_LOC);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).");
+    m_instr.insert(mask_match, "LOC     PA/PB/PTRA/PTRB,#A");
+    descr += "If R = 1, address = PC + A, else address = A.";
+    m_descr.insert(mask_match, descr);  // t_PTRA
 }
 
 /**
@@ -7862,10 +9735,13 @@ void P2Doc::doc_loc_ptra(p2_inst7_e instr)
  */
 void P2Doc::doc_loc_ptrb(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W)."));
-    m_instr.insert(instr, "LOC     PA/PB/PTRA/PTRB,#A");
-    m_token.insert(instr, t_LOC);  // t_PTRB
-    pattern(instr, "EEEE 1110111 RAA AAAAAAAAA AAAAAAAAA");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 1110111 RAA AAAAAAAAA AAAAAAAAA");
+    m_token.insert(mask_match, t_LOC);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).");
+    m_instr.insert(mask_match, "LOC     PA/PB/PTRA/PTRB,#A");
+    descr += "If R = 1, address = PC + A, else address = A.";
+    m_descr.insert(mask_match, descr);  // t_PTRB
 }
 
 /**
@@ -7879,10 +9755,11 @@ void P2Doc::doc_loc_ptrb(p2_inst7_e instr)
  */
 void P2Doc::doc_augs(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Queue #N[31:9] to be used as upper 23 bits for next #S occurrence, so that the next 9-bit #S will be augmented to 32 bits."));
-    m_instr.insert(instr, "AUGS    #N");
-    m_token.insert(instr, t_AUGS);
-    pattern(instr, "EEEE 11110NN NNN NNNNNNNNN NNNNNNNNN");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 11110NN NNN NNNNNNNNN NNNNNNNNN");
+    m_token.insert(mask_match, t_AUGS);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Queue #N[31:9] to be used as upper 23 bits for next #S occurrence, so that the next 9-bit #S will be augmented to 32 bits.");
+    m_instr.insert(mask_match, "AUGS    #N");
 }
 
 /**
@@ -7896,8 +9773,9 @@ void P2Doc::doc_augs(p2_inst7_e instr)
  */
 void P2Doc::doc_augd(p2_inst7_e instr)
 {
-    m_brief.insert(instr, tr("Queue #N[31:9] to be used as upper 23 bits for next #D occurrence, so that the next 9-bit #D will be augmented to 32 bits."));
-    m_instr.insert(instr, "AUGD    #N");
-    m_token.insert(instr, t_AUGD);
-    pattern(instr, "EEEE 11111NN NNN NNNNNNNNN NNNNNNNNN");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 11111NN NNN NNNNNNNNN NNNNNNNNN");
+    m_token.insert(mask_match, t_AUGD);
+    QList<const char *> descr;
+    m_brief.insert(mask_match, "Queue #N[31:9] to be used as upper 23 bits for next #D occurrence, so that the next 9-bit #D will be augmented to 32 bits.");
+    m_instr.insert(mask_match, "AUGD    #N");
 }

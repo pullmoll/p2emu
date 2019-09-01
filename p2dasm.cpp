@@ -33,6 +33,7 @@
  ****************************************************************************/
 #include "p2defs.h"
 #include "p2token.h"
+#include "p2doc.h"
 #include "p2cog.h"
 #include "p2dasm.h"
 
@@ -121,131 +122,131 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
     // Dispatch to dasm_xxx() functions
     switch (IR.inst7()) {
     case p2_ROR:
-        dasm_ror(instruction, brief);
+        dasm_ror(instruction);
         break;
 
     case p2_ROL:
-        dasm_rol(instruction, brief);
+        dasm_rol(instruction);
         break;
 
     case p2_SHR:
-        dasm_shr(instruction, brief);
+        dasm_shr(instruction);
         break;
 
     case p2_SHL:
-        dasm_shl(instruction, brief);
+        dasm_shl(instruction);
         break;
 
     case p2_RCR:
-        dasm_rcr(instruction, brief);
+        dasm_rcr(instruction);
         break;
 
     case p2_RCL:
-        dasm_rcl(instruction, brief);
+        dasm_rcl(instruction);
         break;
 
     case p2_SAR:
-        dasm_sar(instruction, brief);
+        dasm_sar(instruction);
         break;
 
     case p2_SAL:
-        dasm_sal(instruction, brief);
+        dasm_sal(instruction);
         break;
 
     case p2_ADD:
-        dasm_add(instruction, brief);
+        dasm_add(instruction);
         break;
 
     case p2_ADDX:
-        dasm_addx(instruction, brief);
+        dasm_addx(instruction);
         break;
 
     case p2_ADDS:
-        dasm_adds(instruction, brief);
+        dasm_adds(instruction);
         break;
 
     case p2_ADDSX:
-        dasm_addsx(instruction, brief);
+        dasm_addsx(instruction);
         break;
 
     case p2_SUB:
-        dasm_sub(instruction, brief);
+        dasm_sub(instruction);
         break;
 
     case p2_SUBX:
-        dasm_subx(instruction, brief);
+        dasm_subx(instruction);
         break;
 
     case p2_SUBS:
-        dasm_subs(instruction, brief);
+        dasm_subs(instruction);
         break;
 
     case p2_SUBSX:
-        dasm_subsx(instruction, brief);
+        dasm_subsx(instruction);
         break;
 
     case p2_CMP:
-        dasm_cmp(instruction, brief);
+        dasm_cmp(instruction);
         break;
 
     case p2_CMPX:
-        dasm_cmpx(instruction, brief);
+        dasm_cmpx(instruction);
         break;
 
     case p2_CMPS:
-        dasm_cmps(instruction, brief);
+        dasm_cmps(instruction);
         break;
 
     case p2_CMPSX:
-        dasm_cmpsx(instruction, brief);
+        dasm_cmpsx(instruction);
         break;
 
     case p2_CMPR:
-        dasm_cmpr(instruction, brief);
+        dasm_cmpr(instruction);
         break;
 
     case p2_CMPM:
-        dasm_cmpm(instruction, brief);
+        dasm_cmpm(instruction);
         break;
 
     case p2_SUBR:
-        dasm_subr(instruction, brief);
+        dasm_subr(instruction);
         break;
 
     case p2_CMPSUB:
-        dasm_cmpsub(instruction, brief);
+        dasm_cmpsub(instruction);
         break;
 
     case p2_FGE:
-        dasm_fge(instruction, brief);
+        dasm_fge(instruction);
         break;
 
     case p2_FLE:
-        dasm_fle(instruction, brief);
+        dasm_fle(instruction);
         break;
 
     case p2_FGES:
-        dasm_fges(instruction, brief);
+        dasm_fges(instruction);
         break;
 
     case p2_FLES:
-        dasm_fles(instruction, brief);
+        dasm_fles(instruction);
         break;
 
     case p2_SUMC:
-        dasm_sumc(instruction, brief);
+        dasm_sumc(instruction);
         break;
 
     case p2_SUMNC:
-        dasm_sumnc(instruction, brief);
+        dasm_sumnc(instruction);
         break;
 
     case p2_SUMZ:
-        dasm_sumz(instruction, brief);
+        dasm_sumz(instruction);
         break;
 
     case p2_SUMNZ:
-        dasm_sumnz(instruction, brief);
+        dasm_sumnz(instruction);
         break;
 
     case p2_TESTB_W_BITL:
@@ -259,67 +260,67 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         switch (IR.inst9()) {
         case p2_TESTB_WC:
         case p2_TESTB_WZ:
-            dasm_testb_w(instruction, brief);
+            dasm_testb_w(instruction);
             break;
         case p2_TESTBN_WZ:
         case p2_TESTBN_WC:
-            dasm_testbn_w(instruction, brief);
+            dasm_testbn_w(instruction);
             break;
         case p2_TESTB_ANDZ:
         case p2_TESTB_ANDC:
-            dasm_testb_and(instruction, brief);
+            dasm_testb_and(instruction);
             break;
         case p2_TESTBN_ANDZ:
         case p2_TESTBN_ANDC:
-            dasm_testbn_and(instruction, brief);
+            dasm_testbn_and(instruction);
             break;
         case p2_TESTB_ORC:
         case p2_TESTB_ORZ:
-            dasm_testb_or(instruction, brief);
+            dasm_testb_or(instruction);
             break;
         case p2_TESTBN_ORC:
         case p2_TESTBN_ORZ:
-            dasm_testbn_or(instruction, brief);
+            dasm_testbn_or(instruction);
             break;
         case p2_TESTB_XORC:
         case p2_TESTB_XORZ:
-            dasm_testb_xor(instruction, brief);
+            dasm_testb_xor(instruction);
             break;
         case p2_TESTBN_XORC:
         case p2_TESTBN_XORZ:
-            dasm_testbn_xor(instruction, brief);
+            dasm_testbn_xor(instruction);
             break;
         case p2_BITL_eol:
         case p2_BITL_WCZ:
-            dasm_bitl(instruction, brief);
+            dasm_bitl(instruction);
             break;
         case p2_BITH_eol:
         case p2_BITH_WCZ:
-            dasm_bith(instruction, brief);
+            dasm_bith(instruction);
             break;
         case p2_BITC_eol:
         case p2_BITC_WCZ:
-            dasm_bitc(instruction, brief);
+            dasm_bitc(instruction);
             break;
         case p2_BITNC_eol:
         case p2_BITNC_WCZ:
-            dasm_bitnc(instruction, brief);
+            dasm_bitnc(instruction);
             break;
         case p2_BITZ_eol:
         case p2_BITZ_WCZ:
-            dasm_bitz(instruction, brief);
+            dasm_bitz(instruction);
             break;
         case p2_BITNZ_eol:
         case p2_BITNZ_WCZ:
-            dasm_bitnz(instruction, brief);
+            dasm_bitnz(instruction);
             break;
         case p2_BITRND_eol:
         case p2_BITRND_WCZ:
-            dasm_bitrnd(instruction, brief);
+            dasm_bitrnd(instruction);
             break;
         case p2_BITNOT_eol:
         case p2_BITNOT_WCZ:
-            dasm_bitnot(instruction, brief);
+            dasm_bitnot(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst9_e", "TEST{B,BN}{WC,WZ} or BIT{L,H,C,NC,Z,NZ,RND,NOT}");
@@ -327,141 +328,141 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         break;
 
     case p2_AND:
-        dasm_and(instruction, brief);
+        dasm_and(instruction);
         break;
 
     case p2_ANDN:
-        dasm_andn(instruction, brief);
+        dasm_andn(instruction);
         break;
 
     case p2_OR:
-        dasm_or(instruction, brief);
+        dasm_or(instruction);
         break;
 
     case p2_XOR:
-        dasm_xor(instruction, brief);
+        dasm_xor(instruction);
         break;
 
     case p2_MUXC:
-        dasm_muxc(instruction, brief);
+        dasm_muxc(instruction);
         break;
 
     case p2_MUXNC:
-        dasm_muxnc(instruction, brief);
+        dasm_muxnc(instruction);
         break;
 
     case p2_MUXZ:
-        dasm_muxz(instruction, brief);
+        dasm_muxz(instruction);
         break;
 
     case p2_MUXNZ:
-        dasm_muxnz(instruction, brief);
+        dasm_muxnz(instruction);
         break;
 
     case p2_MOV:
-        dasm_mov(instruction, brief);
+        dasm_mov(instruction);
         break;
 
     case p2_NOT:
-        dasm_not(instruction, brief);
+        dasm_not(instruction);
         break;
 
     case p2_ABS:
-        dasm_abs(instruction, brief);
+        dasm_abs(instruction);
         break;
 
     case p2_NEG:
-        dasm_neg(instruction, brief);
+        dasm_neg(instruction);
         break;
 
     case p2_NEGC:
-        dasm_negc(instruction, brief);
+        dasm_negc(instruction);
         break;
 
     case p2_NEGNC:
-        dasm_negnc(instruction, brief);
+        dasm_negnc(instruction);
         break;
 
     case p2_NEGZ:
-        dasm_negz(instruction, brief);
+        dasm_negz(instruction);
         break;
 
     case p2_NEGNZ:
-        dasm_negnz(instruction, brief);
+        dasm_negnz(instruction);
         break;
 
     case p2_INCMOD:
-        dasm_incmod(instruction, brief);
+        dasm_incmod(instruction);
         break;
 
     case p2_DECMOD:
-        dasm_decmod(instruction, brief);
+        dasm_decmod(instruction);
         break;
 
     case p2_ZEROX:
-        dasm_zerox(instruction, brief);
+        dasm_zerox(instruction);
         break;
 
     case p2_SIGNX:
-        dasm_signx(instruction, brief);
+        dasm_signx(instruction);
         break;
 
     case p2_ENCOD:
-        dasm_encod(instruction, brief);
+        dasm_encod(instruction);
         break;
 
     case p2_ONES:
-        dasm_ones(instruction, brief);
+        dasm_ones(instruction);
         break;
 
     case p2_TEST:
-        dasm_test(instruction, brief);
+        dasm_test(instruction);
         break;
 
     case p2_TESTN:
-        dasm_testn(instruction, brief);
+        dasm_testn(instruction);
         break;
 
     case p2_SETNIB_0:
     case p2_SETNIB_1:
-        dasm_setnib(instruction, brief);
+        dasm_setnib(instruction);
         break;
 
     case p2_GETNIB_0:
     case p2_GETNIB_1:
-        dasm_getnib(instruction, brief);
+        dasm_getnib(instruction);
         break;
 
     case p2_ROLNIB_0:
     case p2_ROLNIB_1:
-        dasm_rolnib(instruction, brief);
+        dasm_rolnib(instruction);
         break;
 
     case p2_SETBYTE:
-        dasm_setbyte(instruction, brief);
+        dasm_setbyte(instruction);
         break;
 
     case p2_GETBYTE:
-        dasm_getbyte(instruction, brief);
+        dasm_getbyte(instruction);
         break;
 
     case p2_ROLBYTE:
-        dasm_rolbyte(instruction, brief);
+        dasm_rolbyte(instruction);
         break;
 
     case p2_SETWORD_GETWORD:
         switch (IR.inst9()) {
         case p2_SETWORD_ALTSW:
-            dasm_setword_altsw(instruction, brief);
+            dasm_setword_altsw(instruction);
             break;
         case p2_SETWORD:
-            dasm_setword(instruction, brief);
+            dasm_setword(instruction);
             break;
         case p2_GETWORD_ALTGW:
-            dasm_getword_altgw(instruction, brief);
+            dasm_getword_altgw(instruction);
             break;
         case p2_GETWORD:
-            dasm_getword(instruction, brief);
+            dasm_getword(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst9_e", "SETWORD/GETWORD");
@@ -472,27 +473,27 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         switch (IR.inst9()) {
         case p2_ROLWORD_ALTGW:
             if (IR.u.op.src == 0) {
-                dasm_rolword_altgw(instruction, brief);
+                dasm_rolword_altgw(instruction);
                 break;
             }
-            dasm_rolword(instruction, brief);
+            dasm_rolword(instruction);
             break;
         case p2_ROLWORD:
-            dasm_rolword(instruction, brief);
+            dasm_rolword(instruction);
             break;
         case p2_ALTSN:
             if (IR.u.op.src == 0 && IR.im() == 1) {
-                dasm_altsn_d(instruction, brief);
+                dasm_altsn_d(instruction);
                 break;
             }
-            dasm_altsn(instruction, brief);
+            dasm_altsn(instruction);
             break;
         case p2_ALTGN:
             if (IR.u.op.src == 0 && IR.im() == 1) {
-                dasm_altgn_d(instruction, brief);
+                dasm_altgn_d(instruction);
                 break;
             }
-            dasm_altgn(instruction, brief);
+            dasm_altgn(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst9_e", "ROLWORD/ALTSN/ALTGN");
@@ -503,31 +504,31 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         switch (IR.inst9()) {
         case p2_ALTSB:
             if (IR.u.op.src == 0 && IR.im() == 1) {
-                dasm_altsb_d(instruction, brief);
+                dasm_altsb_d(instruction);
                 break;
             }
-            dasm_altsb(instruction, brief);
+            dasm_altsb(instruction);
             break;
         case p2_ALTGB:
             if (IR.u.op.src == 0 && IR.im() == 1) {
-                dasm_altgb_d(instruction, brief);
+                dasm_altgb_d(instruction);
                 break;
             }
-            dasm_altgb(instruction, brief);
+            dasm_altgb(instruction);
             break;
         case p2_ALTSW:
             if (IR.u.op.src == 0 && IR.im() == 1) {
-                dasm_altsw_d(instruction, brief);
+                dasm_altsw_d(instruction);
                 break;
             }
-            dasm_altsw(instruction, brief);
+            dasm_altsw(instruction);
             break;
         case p2_ALTGW:
             if (IR.u.op.src == 0 && IR.im() == 1) {
-                dasm_altgw_d(instruction, brief);
+                dasm_altgw_d(instruction);
                 break;
             }
-            dasm_altgw(instruction, brief);
+            dasm_altgw(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst9_e", "ALTSB/ALTGB/ALTSW/ALTGW");
@@ -538,31 +539,31 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         switch (IR.inst9()) {
         case p2_ALTR:
             if (IR.u.op.src == 0 && IR.im() == 1) {
-                dasm_altr_d(instruction, brief);
+                dasm_altr_d(instruction);
                 break;
             }
-            dasm_altr(instruction, brief);
+            dasm_altr(instruction);
             break;
         case p2_ALTD:
             if (IR.u.op.src == 0 && IR.im() == 1) {
-                dasm_altd_d(instruction, brief);
+                dasm_altd_d(instruction);
                 break;
             }
-            dasm_altd(instruction, brief);
+            dasm_altd(instruction);
             break;
         case p2_ALTS:
             if (IR.u.op.src == 0 && IR.im() == 1) {
-                dasm_alts_d(instruction, brief);
+                dasm_alts_d(instruction);
                 break;
             }
-            dasm_alts(instruction, brief);
+            dasm_alts(instruction);
             break;
         case p2_ALTB:
             if (IR.u.op.src == 0 && IR.im() == 1) {
-                dasm_altb_d(instruction, brief);
+                dasm_altb_d(instruction);
                 break;
             }
-            dasm_altb(instruction, brief);
+            dasm_altb(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst9_e", "ALTR/ALTD/ALTS/ALTB");
@@ -573,19 +574,19 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         switch (IR.inst9()) {
         case p2_ALTI:
             if (IR.im() == 1 && IR.u.op.src == 0x164 /* 101100100 */) {
-                dasm_alti_d(instruction, brief);
+                dasm_alti_d(instruction);
                 break;
             }
-            dasm_alti(instruction, brief);
+            dasm_alti(instruction);
             break;
         case p2_SETR:
-            dasm_setr(instruction, brief);
+            dasm_setr(instruction);
             break;
         case p2_SETD:
-            dasm_setd(instruction, brief);
+            dasm_setd(instruction);
             break;
         case p2_SETS:
-            dasm_sets(instruction, brief);
+            dasm_sets(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst9_e", "ALTI/SETR/SETD/SETS");
@@ -596,23 +597,23 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         switch (IR.inst9()) {
         case p2_DECOD:
             if (IR.im() == 0 && IR.u.op.src == IR.u.op.dst) {
-                dasm_decod_d(instruction, brief);
+                dasm_decod_d(instruction);
                 break;
             }
-            dasm_decod(instruction, brief);
+            dasm_decod(instruction);
             break;
         case p2_BMASK:
             if (IR.im() == 0 && IR.u.op.src == IR.u.op.dst) {
-                dasm_bmask_d(instruction, brief);
+                dasm_bmask_d(instruction);
                 break;
             }
-            dasm_bmask(instruction, brief);
+            dasm_bmask(instruction);
             break;
         case p2_CRCBIT:
-            dasm_crcbit(instruction, brief);
+            dasm_crcbit(instruction);
             break;
         case p2_CRCNIB:
-            dasm_crcnib(instruction, brief);
+            dasm_crcnib(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst9_e", "DECOD/BMASK/CRCBIT/CRCNIB");
@@ -622,16 +623,16 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
     case p2_MUX_NITS_NIBS_Q_MOVBYTS:
         switch (IR.inst9()) {
         case p2_MUXNITS:
-            dasm_muxnits(instruction, brief);
+            dasm_muxnits(instruction);
             break;
         case p2_MUXNIBS:
-            dasm_muxnibs(instruction, brief);
+            dasm_muxnibs(instruction);
             break;
         case p2_MUXQ:
-            dasm_muxq(instruction, brief);
+            dasm_muxq(instruction);
             break;
         case p2_MOVBYTS:
-            dasm_movbyts(instruction, brief);
+            dasm_movbyts(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst9_e", "MUXNITS/MUXNIBS/MUXQ/MOVBYTS");
@@ -641,10 +642,10 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
     case p2_MUL_MULS:
         switch (IR.inst8()) {
         case p2_MUL:
-            dasm_mul(instruction, brief);
+            dasm_mul(instruction);
             break;
         case p2_MULS:
-            dasm_muls(instruction, brief);
+            dasm_muls(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst8_e", "MUL/MULS");
@@ -654,10 +655,10 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
     case p2_SCA_SCAS:
         switch (IR.inst8()) {
         case p2_SCA:
-            dasm_sca(instruction, brief);
+            dasm_sca(instruction);
             break;
         case p2_SCAS:
-            dasm_scas(instruction, brief);
+            dasm_scas(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst8_e", "SCA/SCAS");
@@ -667,16 +668,16 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
     case p2_XXXPIX:
         switch (IR.inst9()) {
         case p2_ADDPIX:
-            dasm_addpix(instruction, brief);
+            dasm_addpix(instruction);
             break;
         case p2_MULPIX:
-            dasm_mulpix(instruction, brief);
+            dasm_mulpix(instruction);
             break;
         case p2_BLNPIX:
-            dasm_blnpix(instruction, brief);
+            dasm_blnpix(instruction);
             break;
         case p2_MIXPIX:
-            dasm_mixpix(instruction, brief);
+            dasm_mixpix(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst9_e", "ADDPIX/MULPIX/BLNPIX/MIXPIX");
@@ -686,16 +687,16 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
     case p2_WMLONG_ADDCTx:
         switch (IR.inst9()) {
         case p2_ADDCT1:
-            dasm_addct1(instruction, brief);
+            dasm_addct1(instruction);
             break;
         case p2_ADDCT2:
-            dasm_addct2(instruction, brief);
+            dasm_addct2(instruction);
             break;
         case p2_ADDCT3:
-            dasm_addct3(instruction, brief);
+            dasm_addct3(instruction);
             break;
         case p2_WMLONG:
-            dasm_wmlong(instruction, brief);
+            dasm_wmlong(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst9_e", "ADDCT1/ADDCT2/ADDCT3/WMLONG");
@@ -705,10 +706,10 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
     case p2_RQPIN_RDPIN:
         switch (IR.inst8()) {
         case p2_RQPIN:
-            dasm_rqpin(instruction, brief);
+            dasm_rqpin(instruction);
             break;
         case p2_RDPIN:
-            dasm_rdpin(instruction, brief);
+            dasm_rdpin(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst8_e", "RQPIN/RDPIN");
@@ -716,32 +717,32 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         break;
 
     case p2_RDLUT:
-        dasm_rdlut(instruction, brief);
+        dasm_rdlut(instruction);
         break;
 
     case p2_RDBYTE:
-        dasm_rdbyte(instruction, brief);
+        dasm_rdbyte(instruction);
         break;
 
     case p2_RDWORD:
-        dasm_rdword(instruction, brief);
+        dasm_rdword(instruction);
         break;
 
     case p2_RDLONG:
-        dasm_rdlong(instruction, brief);
+        dasm_rdlong(instruction);
         break;
 
     case p2_CALLD:
-        dasm_calld(instruction, brief);
+        dasm_calld(instruction);
         break;
 
     case p2_CALLPA_CALLPB:
         switch (IR.inst8()) {
         case p2_CALLPA:
-            dasm_callpa(instruction, brief);
+            dasm_callpa(instruction);
             break;
         case p2_CALLPB:
-            dasm_callpb(instruction, brief);
+            dasm_callpb(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst8_e", "CALLPA/CALLPA");
@@ -751,16 +752,16 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
     case p2_DJZ_DJNZ_DJF_DJNF:
         switch (IR.inst9()) {
         case p2_DJZ:
-            dasm_djz(instruction, brief);
+            dasm_djz(instruction);
             break;
         case p2_DJNZ:
-            dasm_djnz(instruction, brief);
+            dasm_djnz(instruction);
             break;
         case p2_DJF:
-            dasm_djf(instruction, brief);
+            dasm_djf(instruction);
             break;
         case p2_DJNF:
-            dasm_djnf(instruction, brief);
+            dasm_djnf(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst9_e", "DJZ/DJNZ/DJF/DJNF");
@@ -770,16 +771,16 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
     case p2_IJZ_IJNZ_TJZ_TJNZ:
         switch (IR.inst9()) {
         case p2_IJZ:
-            dasm_ijz(instruction, brief);
+            dasm_ijz(instruction);
             break;
         case p2_IJNZ:
-            dasm_ijnz(instruction, brief);
+            dasm_ijnz(instruction);
             break;
         case p2_TJZ:
-            dasm_tjz(instruction, brief);
+            dasm_tjz(instruction);
             break;
         case p2_TJNZ:
-            dasm_tjnz(instruction, brief);
+            dasm_tjnz(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst9_e", "IJZ/IJNZ/TJZ/TJNZ");
@@ -789,16 +790,16 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
     case p2_TJF_TJNF_TJS_TJNS:
         switch (IR.inst9()) {
         case p2_TJF:
-            dasm_tjf(instruction, brief);
+            dasm_tjf(instruction);
             break;
         case p2_TJNF:
-            dasm_tjnf(instruction, brief);
+            dasm_tjnf(instruction);
             break;
         case p2_TJS:
-            dasm_tjs(instruction, brief);
+            dasm_tjs(instruction);
             break;
         case p2_TJNS:
-            dasm_tjns(instruction, brief);
+            dasm_tjns(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst9_e", "TJF/TJNF/TJS/TJNS");
@@ -810,105 +811,105 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_TJV_OPDST:
             switch (IR.inst9()) {
             case p2_TJV:
-                dasm_tjv(instruction, brief);
+                dasm_tjv(instruction);
                 break;
             case p2_OPDST:
                 switch (IR.u.op.dst) {
                 case p2_OPDST_JINT:
-                    dasm_jint(instruction, brief);
+                    dasm_jint(instruction);
                     break;
                 case p2_OPDST_JCT1:
-                    dasm_jct1(instruction, brief);
+                    dasm_jct1(instruction);
                     break;
                 case p2_OPDST_JCT2:
-                    dasm_jct2(instruction, brief);
+                    dasm_jct2(instruction);
                     break;
                 case p2_OPDST_JCT3:
-                    dasm_jct3(instruction, brief);
+                    dasm_jct3(instruction);
                     break;
                 case p2_OPDST_JSE1:
-                    dasm_jse1(instruction, brief);
+                    dasm_jse1(instruction);
                     break;
                 case p2_OPDST_JSE2:
-                    dasm_jse2(instruction, brief);
+                    dasm_jse2(instruction);
                     break;
                 case p2_OPDST_JSE3:
-                    dasm_jse3(instruction, brief);
+                    dasm_jse3(instruction);
                     break;
                 case p2_OPDST_JSE4:
-                    dasm_jse4(instruction, brief);
+                    dasm_jse4(instruction);
                     break;
                 case p2_OPDST_JPAT:
-                    dasm_jpat(instruction, brief);
+                    dasm_jpat(instruction);
                     break;
                 case p2_OPDST_JFBW:
-                    dasm_jfbw(instruction, brief);
+                    dasm_jfbw(instruction);
                     break;
                 case p2_OPDST_JXMT:
-                    dasm_jxmt(instruction, brief);
+                    dasm_jxmt(instruction);
                     break;
                 case p2_OPDST_JXFI:
-                    dasm_jxfi(instruction, brief);
+                    dasm_jxfi(instruction);
                     break;
                 case p2_OPDST_JXRO:
-                    dasm_jxro(instruction, brief);
+                    dasm_jxro(instruction);
                     break;
                 case p2_OPDST_JXRL:
-                    dasm_jxrl(instruction, brief);
+                    dasm_jxrl(instruction);
                     break;
                 case p2_OPDST_JATN:
-                    dasm_jatn(instruction, brief);
+                    dasm_jatn(instruction);
                     break;
                 case p2_OPDST_JQMT:
-                    dasm_jqmt(instruction, brief);
+                    dasm_jqmt(instruction);
                     break;
                 case p2_OPDST_JNINT:
-                    dasm_jnint(instruction, brief);
+                    dasm_jnint(instruction);
                     break;
                 case p2_OPDST_JNCT1:
-                    dasm_jnct1(instruction, brief);
+                    dasm_jnct1(instruction);
                     break;
                 case p2_OPDST_JNCT2:
-                    dasm_jnct2(instruction, brief);
+                    dasm_jnct2(instruction);
                     break;
                 case p2_OPDST_JNCT3:
-                    dasm_jnct3(instruction, brief);
+                    dasm_jnct3(instruction);
                     break;
                 case p2_OPDST_JNSE1:
-                    dasm_jnse1(instruction, brief);
+                    dasm_jnse1(instruction);
                     break;
                 case p2_OPDST_JNSE2:
-                    dasm_jnse2(instruction, brief);
+                    dasm_jnse2(instruction);
                     break;
                 case p2_OPDST_JNSE3:
-                    dasm_jnse3(instruction, brief);
+                    dasm_jnse3(instruction);
                     break;
                 case p2_OPDST_JNSE4:
-                    dasm_jnse4(instruction, brief);
+                    dasm_jnse4(instruction);
                     break;
                 case p2_OPDST_JNPAT:
-                    dasm_jnpat(instruction, brief);
+                    dasm_jnpat(instruction);
                     break;
                 case p2_OPDST_JNFBW:
-                    dasm_jnfbw(instruction, brief);
+                    dasm_jnfbw(instruction);
                     break;
                 case p2_OPDST_JNXMT:
-                    dasm_jnxmt(instruction, brief);
+                    dasm_jnxmt(instruction);
                     break;
                 case p2_OPDST_JNXFI:
-                    dasm_jnxfi(instruction, brief);
+                    dasm_jnxfi(instruction);
                     break;
                 case p2_OPDST_JNXRO:
-                    dasm_jnxro(instruction, brief);
+                    dasm_jnxro(instruction);
                     break;
                 case p2_OPDST_JNXRL:
-                    dasm_jnxrl(instruction, brief);
+                    dasm_jnxrl(instruction);
                     break;
                 case p2_OPDST_JNATN:
-                    dasm_jnatn(instruction, brief);
+                    dasm_jnatn(instruction);
                     break;
                 case p2_OPDST_JNQMT:
-                    dasm_jnqmt(instruction, brief);
+                    dasm_jnqmt(instruction);
                     break;
                 default:
                     // TODO: invalid D value
@@ -923,7 +924,7 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
             switch (IR.inst9()) {
             case p2_1011110_10:
             case p2_1011110_11:
-                dasm_1011110_1(instruction, brief);
+                dasm_1011110_1(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst9_e", "TJV/OPDST/1011110_10/1011110_11");
@@ -937,10 +938,10 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
     case p2_empty_SETPAT:
         switch (IR.inst8()) {
         case p2_1011111_0:
-            dasm_1011111_0(instruction, brief);
+            dasm_1011111_0(instruction);
             break;
         case p2_SETPAT:
-            dasm_setpat(instruction, brief);
+            dasm_setpat(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst8_e", "1011111_0/SETPAT");
@@ -951,13 +952,13 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         switch (IR.inst8()) {
         case p2_WRPIN:
             if (IR.wz() == 1 && IR.u.op.dst == 1) {
-                dasm_akpin(instruction, brief);
+                dasm_akpin(instruction);
                 break;
             }
-            dasm_wrpin(instruction, brief);
+            dasm_wrpin(instruction);
             break;
         case p2_WXPIN:
-            dasm_wxpin(instruction, brief);
+            dasm_wxpin(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst8_e", "WRPIN/AKPIN/WXPIN");
@@ -967,10 +968,10 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
     case p2_WYPIN_WRLUT:
         switch (IR.inst8()) {
         case p2_WYPIN:
-            dasm_wypin(instruction, brief);
+            dasm_wypin(instruction);
             break;
         case p2_WRLUT:
-            dasm_wrlut(instruction, brief);
+            dasm_wrlut(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst8_e", "WYPIN/WRLUT");
@@ -980,10 +981,10 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
     case p2_WRBYTE_WRWORD:
         switch (IR.inst8()) {
         case p2_WRBYTE:
-            dasm_wrbyte(instruction, brief);
+            dasm_wrbyte(instruction);
             break;
         case p2_WRWORD:
-            dasm_wrword(instruction, brief);
+            dasm_wrword(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst8_e", "WRBYTE/WRWORD");
@@ -993,10 +994,10 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
     case p2_WRLONG_RDFAST:
         switch (IR.inst8()) {
         case p2_WRLONG:
-            dasm_wrlong(instruction, brief);
+            dasm_wrlong(instruction);
             break;
         case p2_RDFAST:
-            dasm_rdfast(instruction, brief);
+            dasm_rdfast(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst8_e", "WRLONG/RDFAST");
@@ -1006,10 +1007,10 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
     case p2_WRFAST_FBLOCK:
         switch (IR.inst8()) {
         case p2_WRFAST:
-            dasm_wrfast(instruction, brief);
+            dasm_wrfast(instruction);
             break;
         case p2_FBLOCK:
-            dasm_fblock(instruction, brief);
+            dasm_fblock(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst8_e", "WRFAST/FBLOCK");
@@ -1020,13 +1021,13 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         switch (IR.inst8()) {
         case p2_XINIT:
             if (IR.wz() == 1 && IR.im() == 1 && IR.u.op.src == 0 && IR.u.op.dst == 0) {
-                dasm_xstop(instruction, brief);
+                dasm_xstop(instruction);
                 break;
             }
-            dasm_xinit(instruction, brief);
+            dasm_xinit(instruction);
             break;
         case p2_XZERO:
-            dasm_xzero(instruction, brief);
+            dasm_xzero(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst8_e", "XINIT/XSTOP/XZERO");
@@ -1036,10 +1037,10 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
     case p2_XCONT_REP:
         switch (IR.inst8()) {
         case p2_XCONT:
-            dasm_xcont(instruction, brief);
+            dasm_xcont(instruction);
             break;
         case p2_REP:
-            dasm_rep(instruction, brief);
+            dasm_rep(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst8_e", "XCONT/REP");
@@ -1047,16 +1048,16 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         break;
 
     case p2_COGINIT:
-        dasm_coginit(instruction, brief);
+        dasm_coginit(instruction);
         break;
 
     case p2_QMUL_QDIV:
         switch (IR.inst8()) {
         case p2_QMUL:
-            dasm_qmul(instruction, brief);
+            dasm_qmul(instruction);
             break;
         case p2_QDIV:
-            dasm_qdiv(instruction, brief);
+            dasm_qdiv(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst8_e", "QMUL/QDIV");
@@ -1066,10 +1067,10 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
     case p2_QFRAC_QSQRT:
         switch (IR.inst8()) {
         case p2_QFRAC:
-            dasm_qfrac(instruction, brief);
+            dasm_qfrac(instruction);
             break;
         case p2_QSQRT:
-            dasm_qsqrt(instruction, brief);
+            dasm_qsqrt(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst8_e", "QFRAC/QSQRT");
@@ -1079,10 +1080,10 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
     case p2_QROTATE_QVECTOR:
         switch (IR.inst8()) {
         case p2_QROTATE:
-            dasm_qrotate(instruction, brief);
+            dasm_qrotate(instruction);
             break;
         case p2_QVECTOR:
-            dasm_qvector(instruction, brief);
+            dasm_qvector(instruction);
             break;
         default:
             Q_ASSERT_X(false, "p2_inst8_e", "QROTATE/QVECTOR");
@@ -1092,528 +1093,531 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
     case p2_OPSRC:
         switch (IR.u.op.src) {
         case p2_OPSRC_HUBSET:
-            dasm_hubset(instruction, brief);
+            dasm_hubset(instruction);
             break;
         case p2_OPSRC_COGID:
-            dasm_cogid(instruction, brief);
+            dasm_cogid(instruction);
             break;
         case p2_OPSRC_COGSTOP:
-            dasm_cogstop(instruction, brief);
+            dasm_cogstop(instruction);
             break;
         case p2_OPSRC_LOCKNEW:
-            dasm_locknew(instruction, brief);
+            dasm_locknew(instruction);
             break;
         case p2_OPSRC_LOCKRET:
-            dasm_lockret(instruction, brief);
+            dasm_lockret(instruction);
             break;
         case p2_OPSRC_LOCKTRY:
-            dasm_locktry(instruction, brief);
+            dasm_locktry(instruction);
             break;
         case p2_OPSRC_LOCKREL:
-            dasm_lockrel(instruction, brief);
+            dasm_lockrel(instruction);
             break;
         case p2_OPSRC_QLOG:
-            dasm_qlog(instruction, brief);
+            dasm_qlog(instruction);
             break;
         case p2_OPSRC_QEXP:
-            dasm_qexp(instruction, brief);
+            dasm_qexp(instruction);
             break;
         case p2_OPSRC_RFBYTE:
-            dasm_rfbyte(instruction, brief);
+            dasm_rfbyte(instruction);
             break;
         case p2_OPSRC_RFWORD:
-            dasm_rfword(instruction, brief);
+            dasm_rfword(instruction);
             break;
         case p2_OPSRC_RFLONG:
-            dasm_rflong(instruction, brief);
+            dasm_rflong(instruction);
             break;
         case p2_OPSRC_RFVAR:
-            dasm_rfvar(instruction, brief);
+            dasm_rfvar(instruction);
             break;
         case p2_OPSRC_RFVARS:
-            dasm_rfvars(instruction, brief);
+            dasm_rfvars(instruction);
             break;
         case p2_OPSRC_WFBYTE:
-            dasm_wfbyte(instruction, brief);
+            dasm_wfbyte(instruction);
             break;
         case p2_OPSRC_WFWORD:
-            dasm_wfword(instruction, brief);
+            dasm_wfword(instruction);
             break;
         case p2_OPSRC_WFLONG:
-            dasm_wflong(instruction, brief);
+            dasm_wflong(instruction);
             break;
         case p2_OPSRC_GETQX:
-            dasm_getqx(instruction, brief);
+            dasm_getqx(instruction);
             break;
         case p2_OPSRC_GETQY:
-            dasm_getqy(instruction, brief);
+            dasm_getqy(instruction);
             break;
         case p2_OPSRC_GETCT:
-            dasm_getct(instruction, brief);
+            dasm_getct(instruction);
             break;
         case p2_OPSRC_GETRND:
-            (IR.u.op.dst == 0) ? dasm_getrnd_cz(instruction, brief)
-                               : dasm_getrnd(instruction, brief);
+            (IR.u.op.dst == 0) ? dasm_getrnd_cz(instruction)
+                               : dasm_getrnd(instruction);
             break;
         case p2_OPSRC_SETDACS:
-            dasm_setdacs(instruction, brief);
+            dasm_setdacs(instruction);
             break;
         case p2_OPSRC_SETXFRQ:
-            dasm_setxfrq(instruction, brief);
+            dasm_setxfrq(instruction);
             break;
         case p2_OPSRC_GETXACC:
-            dasm_getxacc(instruction, brief);
+            dasm_getxacc(instruction);
             break;
         case p2_OPSRC_WAITX:
-            dasm_waitx(instruction, brief);
+            dasm_waitx(instruction);
             break;
         case p2_OPSRC_SETSE1:
-            dasm_setse1(instruction, brief);
+            dasm_setse1(instruction);
             break;
         case p2_OPSRC_SETSE2:
-            dasm_setse2(instruction, brief);
+            dasm_setse2(instruction);
             break;
         case p2_OPSRC_SETSE3:
-            dasm_setse3(instruction, brief);
+            dasm_setse3(instruction);
             break;
         case p2_OPSRC_SETSE4:
-            dasm_setse4(instruction, brief);
+            dasm_setse4(instruction);
             break;
         case p2_OPSRC_X24:
             switch (IR.u.op.dst) {
             case p2_OPX24_POLLINT:
-                dasm_pollint(instruction, brief);
+                dasm_pollint(instruction);
                 break;
             case p2_OPX24_POLLCT1:
-                dasm_pollct1(instruction, brief);
+                dasm_pollct1(instruction);
                 break;
             case p2_OPX24_POLLCT2:
-                dasm_pollct2(instruction, brief);
+                dasm_pollct2(instruction);
                 break;
             case p2_OPX24_POLLCT3:
-                dasm_pollct3(instruction, brief);
+                dasm_pollct3(instruction);
                 break;
             case p2_OPX24_POLLSE1:
-                dasm_pollse1(instruction, brief);
+                dasm_pollse1(instruction);
                 break;
             case p2_OPX24_POLLSE2:
-                dasm_pollse2(instruction, brief);
+                dasm_pollse2(instruction);
                 break;
             case p2_OPX24_POLLSE3:
-                dasm_pollse3(instruction, brief);
+                dasm_pollse3(instruction);
                 break;
             case p2_OPX24_POLLSE4:
-                dasm_pollse4(instruction, brief);
+                dasm_pollse4(instruction);
                 break;
             case p2_OPX24_POLLPAT:
-                dasm_pollpat(instruction, brief);
+                dasm_pollpat(instruction);
                 break;
             case p2_OPX24_POLLFBW:
-                dasm_pollfbw(instruction, brief);
+                dasm_pollfbw(instruction);
                 break;
             case p2_OPX24_POLLXMT:
-                dasm_pollxmt(instruction, brief);
+                dasm_pollxmt(instruction);
                 break;
             case p2_OPX24_POLLXFI:
-                dasm_pollxfi(instruction, brief);
+                dasm_pollxfi(instruction);
                 break;
             case p2_OPX24_POLLXRO:
-                dasm_pollxro(instruction, brief);
+                dasm_pollxro(instruction);
                 break;
             case p2_OPX24_POLLXRL:
-                dasm_pollxrl(instruction, brief);
+                dasm_pollxrl(instruction);
                 break;
             case p2_OPX24_POLLATN:
-                dasm_pollatn(instruction, brief);
+                dasm_pollatn(instruction);
                 break;
             case p2_OPX24_POLLQMT:
-                dasm_pollqmt(instruction, brief);
+                dasm_pollqmt(instruction);
                 break;
             case p2_OPX24_WAITINT:
-                dasm_waitint(instruction, brief);
+                dasm_waitint(instruction);
                 break;
             case p2_OPX24_WAITCT1:
-                dasm_waitct1(instruction, brief);
+                dasm_waitct1(instruction);
                 break;
             case p2_OPX24_WAITCT2:
-                dasm_waitct2(instruction, brief);
+                dasm_waitct2(instruction);
                 break;
             case p2_OPX24_WAITCT3:
-                dasm_waitct3(instruction, brief);
+                dasm_waitct3(instruction);
                 break;
             case p2_OPX24_WAITSE1:
-                dasm_waitse1(instruction, brief);
+                dasm_waitse1(instruction);
                 break;
             case p2_OPX24_WAITSE2:
-                dasm_waitse2(instruction, brief);
+                dasm_waitse2(instruction);
                 break;
             case p2_OPX24_WAITSE3:
-                dasm_waitse3(instruction, brief);
+                dasm_waitse3(instruction);
                 break;
             case p2_OPX24_WAITSE4:
-                dasm_waitse4(instruction, brief);
+                dasm_waitse4(instruction);
                 break;
             case p2_OPX24_WAITPAT:
-                dasm_waitpat(instruction, brief);
+                dasm_waitpat(instruction);
                 break;
             case p2_OPX24_WAITFBW:
-                dasm_waitfbw(instruction, brief);
+                dasm_waitfbw(instruction);
                 break;
             case p2_OPX24_WAITXMT:
-                dasm_waitxmt(instruction, brief);
+                dasm_waitxmt(instruction);
                 break;
             case p2_OPX24_WAITXFI:
-                dasm_waitxfi(instruction, brief);
+                dasm_waitxfi(instruction);
                 break;
             case p2_OPX24_WAITXRO:
-                dasm_waitxro(instruction, brief);
+                dasm_waitxro(instruction);
                 break;
             case p2_OPX24_WAITXRL:
-                dasm_waitxrl(instruction, brief);
+                dasm_waitxrl(instruction);
                 break;
             case p2_OPX24_WAITATN:
-                dasm_waitatn(instruction, brief);
+                dasm_waitatn(instruction);
                 break;
             case p2_OPX24_ALLOWI:
-                dasm_allowi(instruction, brief);
+                dasm_allowi(instruction);
                 break;
             case p2_OPX24_STALLI:
-                dasm_stalli(instruction, brief);
+                dasm_stalli(instruction);
                 break;
             case p2_OPX24_TRGINT1:
-                dasm_trgint1(instruction, brief);
+                dasm_trgint1(instruction);
                 break;
             case p2_OPX24_TRGINT2:
-                dasm_trgint2(instruction, brief);
+                dasm_trgint2(instruction);
                 break;
             case p2_OPX24_TRGINT3:
-                dasm_trgint3(instruction, brief);
+                dasm_trgint3(instruction);
                 break;
             case p2_OPX24_NIXINT1:
-                dasm_nixint1(instruction, brief);
+                dasm_nixint1(instruction);
                 break;
             case p2_OPX24_NIXINT2:
-                dasm_nixint2(instruction, brief);
+                dasm_nixint2(instruction);
                 break;
             case p2_OPX24_NIXINT3:
-                dasm_nixint3(instruction, brief);
+                dasm_nixint3(instruction);
                 break;
             }
             break;
         case p2_OPSRC_SETINT1:
-            dasm_setint1(instruction, brief);
+            dasm_setint1(instruction);
             break;
         case p2_OPSRC_SETINT2:
-            dasm_setint2(instruction, brief);
+            dasm_setint2(instruction);
             break;
         case p2_OPSRC_SETINT3:
-            dasm_setint3(instruction, brief);
+            dasm_setint3(instruction);
             break;
         case p2_OPSRC_SETQ:
-            dasm_setq(instruction, brief);
+            dasm_setq(instruction);
             break;
         case p2_OPSRC_SETQ2:
-            dasm_setq2(instruction, brief);
+            dasm_setq2(instruction);
             break;
         case p2_OPSRC_PUSH:
-            dasm_push(instruction, brief);
+            dasm_push(instruction);
             break;
         case p2_OPSRC_POP:
-            dasm_pop(instruction, brief);
+            dasm_pop(instruction);
             break;
         case p2_OPSRC_JMP:
-            dasm_jmp(instruction, brief);
+            dasm_jmp(instruction);
             break;
         case p2_OPSRC_CALL_RET:
-            (IR.im() == 0) ? dasm_call(instruction, brief)
-                           : dasm_ret(instruction, brief);
+            (IR.im() == 0) ? dasm_call(instruction)
+                           : dasm_ret(instruction);
             break;
         case p2_OPSRC_CALLA_RETA:
-            (IR.im() == 0) ? dasm_calla(instruction, brief)
-                           : dasm_reta(instruction, brief);
+            (IR.im() == 0) ? dasm_calla(instruction)
+                           : dasm_reta(instruction);
             break;
         case p2_OPSRC_CALLB_RETB:
-            (IR.im() == 0) ? dasm_callb(instruction, brief)
-                           : dasm_retb(instruction, brief);
+            (IR.im() == 0) ? dasm_callb(instruction)
+                           : dasm_retb(instruction);
             break;
         case p2_OPSRC_JMPREL:
-            dasm_jmprel(instruction, brief);
+            dasm_jmprel(instruction);
             break;
         case p2_OPSRC_SKIP:
-            dasm_skip(instruction, brief);
+            dasm_skip(instruction);
             break;
         case p2_OPSRC_SKIPF:
-            dasm_skipf(instruction, brief);
+            dasm_skipf(instruction);
             break;
         case p2_OPSRC_EXECF:
-            dasm_execf(instruction, brief);
+            dasm_execf(instruction);
             break;
         case p2_OPSRC_GETPTR:
-            dasm_getptr(instruction, brief);
+            dasm_getptr(instruction);
             break;
         case p2_OPSRC_COGBRK:
-            (IR.wc() == 0 && IR.wz() == 0) ? dasm_cogbrk(instruction, brief)
-                                           : dasm_getbrk(instruction, brief);
+            (IR.wc() == 0 && IR.wz() == 0) ? dasm_cogbrk(instruction)
+                                           : dasm_getbrk(instruction);
             break;
         case p2_OPSRC_BRK:
-            dasm_brk(instruction, brief);
+            dasm_brk(instruction);
             break;
         case p2_OPSRC_SETLUTS:
-            dasm_setluts(instruction, brief);
+            dasm_setluts(instruction);
             break;
         case p2_OPSRC_SETCY:
-            dasm_setcy(instruction, brief);
+            dasm_setcy(instruction);
             break;
         case p2_OPSRC_SETCI:
-            dasm_setci(instruction, brief);
+            dasm_setci(instruction);
             break;
         case p2_OPSRC_SETCQ:
-            dasm_setcq(instruction, brief);
+            dasm_setcq(instruction);
             break;
         case p2_OPSRC_SETCFRQ:
-            dasm_setcfrq(instruction, brief);
+            dasm_setcfrq(instruction);
             break;
         case p2_OPSRC_SETCMOD:
-            dasm_setcmod(instruction, brief);
+            dasm_setcmod(instruction);
             break;
         case p2_OPSRC_SETPIV:
-            dasm_setpiv(instruction, brief);
+            dasm_setpiv(instruction);
             break;
         case p2_OPSRC_SETPIX:
-            dasm_setpix(instruction, brief);
+            dasm_setpix(instruction);
             break;
         case p2_OPSRC_COGATN:
-            dasm_cogatn(instruction, brief);
+            dasm_cogatn(instruction);
             break;
         case p2_OPSRC_TESTP_W_DIRL:
-            (IR.wc() != IR.wz()) ? dasm_testp_w(instruction, brief)
-                                 : dasm_dirl(instruction, brief);
+            (IR.wc() != IR.wz()) ? dasm_testp_w(instruction)
+                                 : dasm_dirl(instruction);
             break;
         case p2_OPSRC_TESTPN_W_DIRH:
-            (IR.wc() != IR.wz()) ? dasm_testpn_w(instruction, brief)
-                                 : dasm_dirh(instruction, brief);
+            (IR.wc() != IR.wz()) ? dasm_testpn_w(instruction)
+                                 : dasm_dirh(instruction);
             break;
         case p2_OPSRC_TESTP_AND_DIRC:
-            (IR.wc() != IR.wz()) ? dasm_testp_and(instruction, brief)
-                                 : dasm_dirc(instruction, brief);
+            (IR.wc() != IR.wz()) ? dasm_testp_and(instruction)
+                                 : dasm_dirc(instruction);
             break;
         case p2_OPSRC_TESTPN_AND_DIRNC:
-            (IR.wc() != IR.wz()) ? dasm_testpn_and(instruction, brief)
-                                 : dasm_dirnc(instruction, brief);
+            (IR.wc() != IR.wz()) ? dasm_testpn_and(instruction)
+                                 : dasm_dirnc(instruction);
             break;
         case p2_OPSRC_TESTP_OR_DIRZ:
-            (IR.wc() != IR.wz()) ? dasm_testp_or(instruction, brief)
-                                 : dasm_dirz(instruction, brief);
+            (IR.wc() != IR.wz()) ? dasm_testp_or(instruction)
+                                 : dasm_dirz(instruction);
             break;
         case p2_OPSRC_TESTPN_OR_DIRNZ:
-            (IR.wc() != IR.wz()) ? dasm_testpn_or(instruction, brief)
-                                 : dasm_dirnz(instruction, brief);
+            (IR.wc() != IR.wz()) ? dasm_testpn_or(instruction)
+                                 : dasm_dirnz(instruction);
             break;
         case p2_OPSRC_TESTP_XOR_DIRRND:
-            (IR.wc() != IR.wz()) ? dasm_testp_xor(instruction, brief)
-                                 : dasm_dirrnd(instruction, brief);
+            (IR.wc() != IR.wz()) ? dasm_testp_xor(instruction)
+                                 : dasm_dirrnd(instruction);
             break;
         case p2_OPSRC_TESTPN_XOR_DIRNOT:
-            (IR.wc() != IR.wz()) ? dasm_testpn_xor(instruction, brief)
-                                 : dasm_dirnot(instruction, brief);
+            (IR.wc() != IR.wz()) ? dasm_testpn_xor(instruction)
+                                 : dasm_dirnot(instruction);
             break;
         case p2_OPSRC_OUTL:
-            dasm_outl(instruction, brief);
+            dasm_outl(instruction);
             break;
         case p2_OPSRC_OUTH:
-            dasm_outh(instruction, brief);
+            dasm_outh(instruction);
             break;
         case p2_OPSRC_OUTC:
-            dasm_outc(instruction, brief);
+            dasm_outc(instruction);
             break;
         case p2_OPSRC_OUTNC:
-            dasm_outnc(instruction, brief);
+            dasm_outnc(instruction);
             break;
         case p2_OPSRC_OUTZ:
-            dasm_outz(instruction, brief);
+            dasm_outz(instruction);
             break;
         case p2_OPSRC_OUTNZ:
-            dasm_outnz(instruction, brief);
+            dasm_outnz(instruction);
             break;
         case p2_OPSRC_OUTRND:
-            dasm_outrnd(instruction, brief);
+            dasm_outrnd(instruction);
             break;
         case p2_OPSRC_OUTNOT:
-            dasm_outnot(instruction, brief);
+            dasm_outnot(instruction);
             break;
         case p2_OPSRC_FLTL:
-            dasm_fltl(instruction, brief);
+            dasm_fltl(instruction);
             break;
         case p2_OPSRC_FLTH:
-            dasm_flth(instruction, brief);
+            dasm_flth(instruction);
             break;
         case p2_OPSRC_FLTC:
-            dasm_fltc(instruction, brief);
+            dasm_fltc(instruction);
             break;
         case p2_OPSRC_FLTNC:
-            dasm_fltnc(instruction, brief);
+            dasm_fltnc(instruction);
             break;
         case p2_OPSRC_FLTZ:
-            dasm_fltz(instruction, brief);
+            dasm_fltz(instruction);
             break;
         case p2_OPSRC_FLTNZ:
-            dasm_fltnz(instruction, brief);
+            dasm_fltnz(instruction);
             break;
         case p2_OPSRC_FLTRND:
-            dasm_fltrnd(instruction, brief);
+            dasm_fltrnd(instruction);
             break;
         case p2_OPSRC_FLTNOT:
-            dasm_fltnot(instruction, brief);
+            dasm_fltnot(instruction);
             break;
         case p2_OPSRC_DRVL:
-            dasm_drvl(instruction, brief);
+            dasm_drvl(instruction);
             break;
         case p2_OPSRC_DRVH:
-            dasm_drvh(instruction, brief);
+            dasm_drvh(instruction);
             break;
         case p2_OPSRC_DRVC:
-            dasm_drvc(instruction, brief);
+            dasm_drvc(instruction);
             break;
         case p2_OPSRC_DRVNC:
-            dasm_drvnc(instruction, brief);
+            dasm_drvnc(instruction);
             break;
         case p2_OPSRC_DRVZ:
-            dasm_drvz(instruction, brief);
+            dasm_drvz(instruction);
             break;
         case p2_OPSRC_DRVNZ:
-            dasm_drvnz(instruction, brief);
+            dasm_drvnz(instruction);
             break;
         case p2_OPSRC_DRVRND:
-            dasm_drvrnd(instruction, brief);
+            dasm_drvrnd(instruction);
             break;
         case p2_OPSRC_DRVNOT:
-            dasm_drvnot(instruction, brief);
+            dasm_drvnot(instruction);
             break;
         case p2_OPSRC_SPLITB:
-            dasm_splitb(instruction, brief);
+            dasm_splitb(instruction);
             break;
         case p2_OPSRC_MERGEB:
-            dasm_mergeb(instruction, brief);
+            dasm_mergeb(instruction);
             break;
         case p2_OPSRC_SPLITW:
-            dasm_splitw(instruction, brief);
+            dasm_splitw(instruction);
             break;
         case p2_OPSRC_MERGEW:
-            dasm_mergew(instruction, brief);
+            dasm_mergew(instruction);
             break;
         case p2_OPSRC_SEUSSF:
-            dasm_seussf(instruction, brief);
+            dasm_seussf(instruction);
             break;
         case p2_OPSRC_SEUSSR:
-            dasm_seussr(instruction, brief);
+            dasm_seussr(instruction);
             break;
         case p2_OPSRC_RGBSQZ:
-            dasm_rgbsqz(instruction, brief);
+            dasm_rgbsqz(instruction);
             break;
         case p2_OPSRC_RGBEXP:
-            dasm_rgbexp(instruction, brief);
+            dasm_rgbexp(instruction);
             break;
         case p2_OPSRC_XORO32:
-            dasm_xoro32(instruction, brief);
+            dasm_xoro32(instruction);
             break;
         case p2_OPSRC_REV:
-            dasm_rev(instruction, brief);
+            dasm_rev(instruction);
             break;
         case p2_OPSRC_RCZR:
-            dasm_rczr(instruction, brief);
+            dasm_rczr(instruction);
             break;
         case p2_OPSRC_RCZL:
-            dasm_rczl(instruction, brief);
+            dasm_rczl(instruction);
             break;
         case p2_OPSRC_WRC:
-            dasm_wrc(instruction, brief);
+            dasm_wrc(instruction);
             break;
         case p2_OPSRC_WRNC:
-            dasm_wrnc(instruction, brief);
+            dasm_wrnc(instruction);
             break;
         case p2_OPSRC_WRZ:
-            dasm_wrz(instruction, brief);
+            dasm_wrz(instruction);
             break;
         case p2_OPSRC_WRNZ_MODCZ:
             if (IR.wc() | IR.wz())
-                dasm_modcz(instruction, brief);
+                dasm_modcz(instruction);
             else
-                dasm_wrnz(instruction, brief);
+                dasm_wrnz(instruction);
             break;
         case p2_OPSRC_SETSCP:
-            dasm_setscp(instruction, brief);
+            dasm_setscp(instruction);
             break;
         case p2_OPSRC_GETSCP:
-            dasm_getscp(instruction, brief);
+            dasm_getscp(instruction);
             break;
         }
         break;
 
     case p2_JMP_ABS:
-        dasm_jmp_abs(instruction, brief);
+        dasm_jmp_abs(instruction);
         break;
 
     case p2_CALL_ABS:
-        dasm_call_abs(instruction, brief);
+        dasm_call_abs(instruction);
         break;
 
     case p2_CALLA_ABS:
-        dasm_calla_abs(instruction, brief);
+        dasm_calla_abs(instruction);
         break;
 
     case p2_CALLB_ABS:
-        dasm_callb_abs(instruction, brief);
+        dasm_callb_abs(instruction);
         break;
 
     case p2_CALLD_PA_ABS:
-        dasm_calld_pa_abs(instruction, brief);
+        dasm_calld_pa_abs(instruction);
         break;
 
     case p2_CALLD_PB_ABS:
-        dasm_calld_pb_abs(instruction, brief);
+        dasm_calld_pb_abs(instruction);
         break;
 
     case p2_CALLD_PTRA_ABS:
-        dasm_calld_ptra_abs(instruction, brief);
+        dasm_calld_ptra_abs(instruction);
         break;
 
     case p2_CALLD_PTRB_ABS:
-        dasm_calld_ptrb_abs(instruction, brief);
+        dasm_calld_ptrb_abs(instruction);
         break;
 
     case p2_LOC_PA:
-        dasm_loc_pa(instruction, brief);
+        dasm_loc_pa(instruction);
         break;
 
     case p2_LOC_PB:
-        dasm_loc_pb(instruction, brief);
+        dasm_loc_pb(instruction);
         break;
 
     case p2_LOC_PTRA:
-        dasm_loc_ptra(instruction, brief);
+        dasm_loc_ptra(instruction);
         break;
 
     case p2_LOC_PTRB:
-        dasm_loc_ptrb(instruction, brief);
+        dasm_loc_ptrb(instruction);
         break;
 
     case p2_AUGS:
     case p2_AUGS_01:
     case p2_AUGS_10:
     case p2_AUGS_11:
-        dasm_augs(instruction, brief);
+        dasm_augs(instruction);
         break;
 
     case p2_AUGD:
     case p2_AUGD_01:
     case p2_AUGD_10:
     case p2_AUGD_11:
-        dasm_augd(instruction, brief);
+        dasm_augd(instruction);
         break;
     }
 
     if (instruction)
         instruction->insert(0, cond);
+
+    if (brief)
+        *brief = QString::fromLatin1(Doc.brief(IR.u.opcode));
 
     // FIXME: return false for invalid instructions?
     return true;
@@ -2127,12 +2131,9 @@ void P2Dasm::format_imm23(QString* instruction, p2_token_e inst)
  * NOP
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_nop(QString* instruction, QString* brief)
+void P2Dasm::dasm_nop(QString* instruction)
 {
-    if (brief)
-        *brief = tr("No operation.");
     format_inst(instruction, t_NOP);
 }
 
@@ -2148,15 +2149,12 @@ void P2Dasm::dasm_nop(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_ror(QString* instruction, QString* brief)
+void P2Dasm::dasm_ror(QString* instruction)
 {
     if (0 == IR.u.opcode) {
-        dasm_nop(instruction, brief);
+        dasm_nop(instruction);
     } else {
-        if (brief)
-            *brief = tr("Rotate right.");
         format_D_IM_S_WCZ(instruction, t_ROR);
     }
 }
@@ -2173,12 +2171,9 @@ void P2Dasm::dasm_ror(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rol(QString* instruction, QString* brief)
+void P2Dasm::dasm_rol(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Rotate left.");
     format_D_IM_S_WCZ(instruction, t_ROL);
 }
 
@@ -2194,12 +2189,9 @@ void P2Dasm::dasm_rol(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_shr(QString* instruction, QString* brief)
+void P2Dasm::dasm_shr(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Shift right.");
     format_D_IM_S_WCZ(instruction, t_SHR);
 }
 
@@ -2215,12 +2207,9 @@ void P2Dasm::dasm_shr(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_shl(QString* instruction, QString* brief)
+void P2Dasm::dasm_shl(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Shift left.");
     format_D_IM_S_WCZ(instruction, t_SHL);
 }
 
@@ -2236,12 +2225,9 @@ void P2Dasm::dasm_shl(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rcr(QString* instruction, QString* brief)
+void P2Dasm::dasm_rcr(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Rotate carry right.");
     format_D_IM_S_WCZ(instruction, t_RCR);
 }
 
@@ -2257,12 +2243,9 @@ void P2Dasm::dasm_rcr(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rcl(QString* instruction, QString* brief)
+void P2Dasm::dasm_rcl(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Rotate carry left.");
     format_D_IM_S_WCZ(instruction, t_RCL);
 }
 
@@ -2278,12 +2261,9 @@ void P2Dasm::dasm_rcl(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_sar(QString* instruction, QString* brief)
+void P2Dasm::dasm_sar(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Shift arithmetic right.");
     format_D_IM_S_WCZ(instruction, t_SAR);
 }
 
@@ -2299,12 +2279,9 @@ void P2Dasm::dasm_sar(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_sal(QString* instruction, QString* brief)
+void P2Dasm::dasm_sal(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Shift arithmetic left.");
     format_D_IM_S_WCZ(instruction, t_SAL);
 }
 
@@ -2320,12 +2297,9 @@ void P2Dasm::dasm_sal(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_add(QString* instruction, QString* brief)
+void P2Dasm::dasm_add(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Add S into D.");
     format_D_IM_S_WCZ(instruction, t_ADD);
 }
 
@@ -2341,12 +2315,9 @@ void P2Dasm::dasm_add(QString* instruction, QString* brief)
  * Z = Z AND (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_addx(QString* instruction, QString* brief)
+void P2Dasm::dasm_addx(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Add (S + C) into D, extended.");
     format_D_IM_S_WCZ(instruction, t_ADDX);
 }
 
@@ -2362,12 +2333,9 @@ void P2Dasm::dasm_addx(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_adds(QString* instruction, QString* brief)
+void P2Dasm::dasm_adds(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Add S into D, signed.");
     format_D_IM_S_WCZ(instruction, t_ADDS);
 }
 
@@ -2383,12 +2351,9 @@ void P2Dasm::dasm_adds(QString* instruction, QString* brief)
  * Z = Z AND (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_addsx(QString* instruction, QString* brief)
+void P2Dasm::dasm_addsx(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Add (S + C) into D, signed and extended.");
     format_D_IM_S_WCZ(instruction, t_ADDSX);
 }
 
@@ -2404,12 +2369,9 @@ void P2Dasm::dasm_addsx(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_sub(QString* instruction, QString* brief)
+void P2Dasm::dasm_sub(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Subtract S from D.");
     format_D_IM_S_WCZ(instruction, t_SUB);
 }
 
@@ -2425,12 +2387,9 @@ void P2Dasm::dasm_sub(QString* instruction, QString* brief)
  * Z = Z AND (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_subx(QString* instruction, QString* brief)
+void P2Dasm::dasm_subx(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Subtract (S + C) from D, extended.");
     format_D_IM_S_WCZ(instruction, t_SUBX);
 }
 
@@ -2446,12 +2405,9 @@ void P2Dasm::dasm_subx(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_subs(QString* instruction, QString* brief)
+void P2Dasm::dasm_subs(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Subtract S from D, signed.");
     format_D_IM_S_WCZ(instruction, t_SUBS);
 }
 
@@ -2467,12 +2423,9 @@ void P2Dasm::dasm_subs(QString* instruction, QString* brief)
  * Z = Z AND (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_subsx(QString* instruction, QString* brief)
+void P2Dasm::dasm_subsx(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Subtract (S + C) from D, signed and extended.");
     format_D_IM_S_WCZ(instruction, t_SUBSX);
 }
 
@@ -2487,12 +2440,9 @@ void P2Dasm::dasm_subsx(QString* instruction, QString* brief)
  * Z = (D == S).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_cmp(QString* instruction, QString* brief)
+void P2Dasm::dasm_cmp(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Compare D to S.");
     format_D_IM_S_WCZ(instruction, t_CMP);
 }
 
@@ -2507,12 +2457,9 @@ void P2Dasm::dasm_cmp(QString* instruction, QString* brief)
  * Z = Z AND (D == S + C).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_cmpx(QString* instruction, QString* brief)
+void P2Dasm::dasm_cmpx(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Compare D to (S + C), extended.");
     format_D_IM_S_WCZ(instruction, t_CMPX);
 }
 
@@ -2527,12 +2474,9 @@ void P2Dasm::dasm_cmpx(QString* instruction, QString* brief)
  * Z = (D == S).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_cmps(QString* instruction, QString* brief)
+void P2Dasm::dasm_cmps(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Compare D to S, signed.");
     format_D_IM_S_WCZ(instruction, t_CMPS);
 }
 
@@ -2547,12 +2491,9 @@ void P2Dasm::dasm_cmps(QString* instruction, QString* brief)
  * Z = Z AND (D == S + C).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_cmpsx(QString* instruction, QString* brief)
+void P2Dasm::dasm_cmpsx(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Compare D to (S + C), signed and extended.");
     format_D_IM_S_WCZ(instruction, t_CMPSX);
 }
 
@@ -2567,12 +2508,9 @@ void P2Dasm::dasm_cmpsx(QString* instruction, QString* brief)
  * Z = (D == S).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_cmpr(QString* instruction, QString* brief)
+void P2Dasm::dasm_cmpr(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Compare S to D (reverse).");
     format_D_IM_S_WCZ(instruction, t_CMPR);
 }
 
@@ -2587,12 +2525,9 @@ void P2Dasm::dasm_cmpr(QString* instruction, QString* brief)
  * Z = (D == S).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_cmpm(QString* instruction, QString* brief)
+void P2Dasm::dasm_cmpm(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Compare D to S, get MSB of difference into C.");
     format_D_IM_S_WCZ(instruction, t_CMPM);
 }
 
@@ -2608,12 +2543,9 @@ void P2Dasm::dasm_cmpm(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_subr(QString* instruction, QString* brief)
+void P2Dasm::dasm_subr(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Subtract D from S (reverse).");
     format_D_IM_S_WCZ(instruction, t_SUBR);
 }
 
@@ -2628,12 +2560,9 @@ void P2Dasm::dasm_subr(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_cmpsub(QString* instruction, QString* brief)
+void P2Dasm::dasm_cmpsub(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Compare and subtract S from D if D >= S.");
     format_D_IM_S_WCZ(instruction, t_CMPSUB);
 }
 
@@ -2648,12 +2577,9 @@ void P2Dasm::dasm_cmpsub(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_fge(QString* instruction, QString* brief)
+void P2Dasm::dasm_fge(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Force D >= S.");
     format_D_IM_S_WCZ(instruction, t_FGE);
 }
 
@@ -2668,12 +2594,9 @@ void P2Dasm::dasm_fge(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_fle(QString* instruction, QString* brief)
+void P2Dasm::dasm_fle(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Force D <= S.");
     format_D_IM_S_WCZ(instruction, t_FLE);
 }
 
@@ -2688,12 +2611,9 @@ void P2Dasm::dasm_fle(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_fges(QString* instruction, QString* brief)
+void P2Dasm::dasm_fges(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Force D >= S, signed.");
     format_D_IM_S_WCZ(instruction, t_FGES);
 }
 
@@ -2708,12 +2628,9 @@ void P2Dasm::dasm_fges(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_fles(QString* instruction, QString* brief)
+void P2Dasm::dasm_fles(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Force D <= S, signed.");
     format_D_IM_S_WCZ(instruction, t_FLES);
 }
 
@@ -2729,12 +2646,9 @@ void P2Dasm::dasm_fles(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_sumc(QString* instruction, QString* brief)
+void P2Dasm::dasm_sumc(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Sum +/-S into D by  C.");
     format_D_IM_S_WCZ(instruction, t_SUMC);
 }
 
@@ -2750,12 +2664,9 @@ void P2Dasm::dasm_sumc(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_sumnc(QString* instruction, QString* brief)
+void P2Dasm::dasm_sumnc(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Sum +/-S into D by !C.");
     format_D_IM_S_WCZ(instruction, t_SUMNC);
 }
 
@@ -2771,12 +2682,9 @@ void P2Dasm::dasm_sumnc(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_sumz(QString* instruction, QString* brief)
+void P2Dasm::dasm_sumz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Sum +/-S into D by  Z.");
     format_D_IM_S_WCZ(instruction, t_SUMZ);
 }
 
@@ -2792,12 +2700,9 @@ void P2Dasm::dasm_sumz(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_sumnz(QString* instruction, QString* brief)
+void P2Dasm::dasm_sumnz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Sum +/-S into D by !Z.");
     format_D_IM_S_WCZ(instruction, t_SUMNZ);
 }
 
@@ -2811,12 +2716,9 @@ void P2Dasm::dasm_sumnz(QString* instruction, QString* brief)
  * C/Z =          D[S[4:0]].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_testb_w(QString* instruction, QString* brief)
+void P2Dasm::dasm_testb_w(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Test bit S[4:0] of  D, write to C/Z.");
     format_D_IM_S_WCZ(instruction, t_TESTB);
 }
 
@@ -2830,12 +2732,9 @@ void P2Dasm::dasm_testb_w(QString* instruction, QString* brief)
  * C/Z =         !D[S[4:0]].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_testbn_w(QString* instruction, QString* brief)
+void P2Dasm::dasm_testbn_w(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Test bit S[4:0] of !D, write to C/Z.");
     format_D_IM_S_WCZ(instruction, t_TESTBN);
 }
 
@@ -2849,12 +2748,9 @@ void P2Dasm::dasm_testbn_w(QString* instruction, QString* brief)
  * C/Z = C/Z AND  D[S[4:0]].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_testb_and(QString* instruction, QString* brief)
+void P2Dasm::dasm_testb_and(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Test bit S[4:0] of  D, AND into C/Z.");
     format_D_IM_S_WCZ(instruction, t_TESTB, t_AND);
 }
 
@@ -2868,12 +2764,9 @@ void P2Dasm::dasm_testb_and(QString* instruction, QString* brief)
  * C/Z = C/Z AND !D[S[4:0]].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_testbn_and(QString* instruction, QString* brief)
+void P2Dasm::dasm_testbn_and(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Test bit S[4:0] of !D, AND into C/Z.");
     format_D_IM_S_WCZ(instruction, t_TESTBN, t_AND);
 }
 
@@ -2887,12 +2780,9 @@ void P2Dasm::dasm_testbn_and(QString* instruction, QString* brief)
  * C/Z = C/Z OR   D[S[4:0]].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_testb_or(QString* instruction, QString* brief)
+void P2Dasm::dasm_testb_or(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Test bit S[4:0] of  D, OR  into C/Z.");
     format_D_IM_S_WCZ(instruction, t_TESTB, t_OR);
 }
 
@@ -2906,12 +2796,9 @@ void P2Dasm::dasm_testb_or(QString* instruction, QString* brief)
  * C/Z = C/Z OR  !D[S[4:0]].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_testbn_or(QString* instruction, QString* brief)
+void P2Dasm::dasm_testbn_or(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Test bit S[4:0] of !D, OR  into C/Z.");
     format_D_IM_S_WCZ(instruction, t_TESTBN, t_OR);
 }
 
@@ -2925,12 +2812,9 @@ void P2Dasm::dasm_testbn_or(QString* instruction, QString* brief)
  * C/Z = C/Z XOR  D[S[4:0]].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_testb_xor(QString* instruction, QString* brief)
+void P2Dasm::dasm_testb_xor(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Test bit S[4:0] of  D, XOR into C/Z.");
     format_D_IM_S_WCZ(instruction, t_TESTB, t_XOR);
 }
 
@@ -2944,12 +2828,9 @@ void P2Dasm::dasm_testb_xor(QString* instruction, QString* brief)
  * C/Z = C/Z XOR !D[S[4:0]].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_testbn_xor(QString* instruction, QString* brief)
+void P2Dasm::dasm_testbn_xor(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Test bit S[4:0] of !D, XOR into C/Z.");
     format_D_IM_S_WCZ(instruction, t_TESTBN, t_XOR);
 }
 
@@ -2962,12 +2843,9 @@ void P2Dasm::dasm_testbn_xor(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_bitl(QString* instruction, QString* brief)
+void P2Dasm::dasm_bitl(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Bit S[4:0] of D = 0,    C,Z = D[S[4:0]].");
     format_D_IM_S_WCZ(instruction, t_BITL);
 }
 
@@ -2980,12 +2858,9 @@ void P2Dasm::dasm_bitl(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_bith(QString* instruction, QString* brief)
+void P2Dasm::dasm_bith(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Bit S[4:0] of D = 1,    C,Z = D[S[4:0]].");
     format_D_IM_S_WCZ(instruction, t_BITH);
 }
 
@@ -2998,12 +2873,9 @@ void P2Dasm::dasm_bith(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_bitc(QString* instruction, QString* brief)
+void P2Dasm::dasm_bitc(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Bit S[4:0] of D = C,    C,Z = D[S[4:0]].");
     format_D_IM_S_WCZ(instruction, t_BITC);
 }
 
@@ -3016,12 +2888,9 @@ void P2Dasm::dasm_bitc(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_bitnc(QString* instruction, QString* brief)
+void P2Dasm::dasm_bitnc(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Bit S[4:0] of D = !C,   C,Z = D[S[4:0]].");
     format_D_IM_S_WCZ(instruction, t_BITNC);
 }
 
@@ -3034,12 +2903,9 @@ void P2Dasm::dasm_bitnc(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_bitz(QString* instruction, QString* brief)
+void P2Dasm::dasm_bitz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Bit S[4:0] of D = Z,    C,Z = D[S[4:0]].");
     format_D_IM_S_WCZ(instruction, t_BITZ);
 }
 
@@ -3052,12 +2918,9 @@ void P2Dasm::dasm_bitz(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_bitnz(QString* instruction, QString* brief)
+void P2Dasm::dasm_bitnz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Bit S[4:0] of D = !Z,   C,Z = D[S[4:0]].");
     format_D_IM_S_WCZ(instruction, t_BITNZ);
 }
 
@@ -3070,12 +2933,9 @@ void P2Dasm::dasm_bitnz(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_bitrnd(QString* instruction, QString* brief)
+void P2Dasm::dasm_bitrnd(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Bit S[4:0] of D = RND,  C,Z = D[S[4:0]].");
     format_D_IM_S_WCZ(instruction, t_BITRND);
 }
 
@@ -3088,12 +2948,9 @@ void P2Dasm::dasm_bitrnd(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_bitnot(QString* instruction, QString* brief)
+void P2Dasm::dasm_bitnot(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Bit S[4:0] of D = !bit, C,Z = D[S[4:0]].");
     format_D_IM_S_WCZ(instruction, t_BITNOT);
 }
 
@@ -3109,12 +2966,9 @@ void P2Dasm::dasm_bitnot(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_and(QString* instruction, QString* brief)
+void P2Dasm::dasm_and(QString* instruction)
 {
-    if (brief)
-        *brief = tr("AND S into D.");
     format_D_IM_S_WCZ(instruction, t_AND);
 }
 
@@ -3130,12 +2984,9 @@ void P2Dasm::dasm_and(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_andn(QString* instruction, QString* brief)
+void P2Dasm::dasm_andn(QString* instruction)
 {
-    if (brief)
-        *brief = tr("AND !S into D.");
     format_D_IM_S_WCZ(instruction, t_ANDN);
 }
 
@@ -3151,12 +3002,9 @@ void P2Dasm::dasm_andn(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_or(QString* instruction, QString* brief)
+void P2Dasm::dasm_or(QString* instruction)
 {
-    if (brief)
-        *brief = tr("OR S into D.");
     format_D_IM_S_WCZ(instruction, t_OR);
 }
 
@@ -3172,12 +3020,9 @@ void P2Dasm::dasm_or(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_xor(QString* instruction, QString* brief)
+void P2Dasm::dasm_xor(QString* instruction)
 {
-    if (brief)
-        *brief = tr("XOR S into D.");
     format_D_IM_S_WCZ(instruction, t_XOR);
 }
 
@@ -3193,12 +3038,9 @@ void P2Dasm::dasm_xor(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_muxc(QString* instruction, QString* brief)
+void P2Dasm::dasm_muxc(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Mux C into each D bit that is '1' in S.");
     format_D_IM_S_WCZ(instruction, t_MUXC);
 }
 
@@ -3214,12 +3056,9 @@ void P2Dasm::dasm_muxc(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_muxnc(QString* instruction, QString* brief)
+void P2Dasm::dasm_muxnc(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Mux !C into each D bit that is '1' in S.");
     format_D_IM_S_WCZ(instruction, t_MUXNC);
 }
 
@@ -3235,12 +3074,9 @@ void P2Dasm::dasm_muxnc(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_muxz(QString* instruction, QString* brief)
+void P2Dasm::dasm_muxz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Mux Z into each D bit that is '1' in S.");
     format_D_IM_S_WCZ(instruction, t_MUXZ);
 }
 
@@ -3256,12 +3092,9 @@ void P2Dasm::dasm_muxz(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_muxnz(QString* instruction, QString* brief)
+void P2Dasm::dasm_muxnz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Mux !Z into each D bit that is '1' in S.");
     format_D_IM_S_WCZ(instruction, t_MUXNZ);
 }
 
@@ -3277,12 +3110,9 @@ void P2Dasm::dasm_muxnz(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_mov(QString* instruction, QString* brief)
+void P2Dasm::dasm_mov(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Move S into D.");
     format_D_IM_S_WCZ(instruction, t_MOV);
 }
 
@@ -3298,12 +3128,9 @@ void P2Dasm::dasm_mov(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_not(QString* instruction, QString* brief)
+void P2Dasm::dasm_not(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get !S into D.");
     format_D_IM_S_WCZ(instruction, t_NOT);
 }
 
@@ -3319,12 +3146,9 @@ void P2Dasm::dasm_not(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_abs(QString* instruction, QString* brief)
+void P2Dasm::dasm_abs(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get absolute value of S into D.");
     format_D_IM_S_WCZ(instruction, t_ABS);
 }
 
@@ -3340,12 +3164,9 @@ void P2Dasm::dasm_abs(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_neg(QString* instruction, QString* brief)
+void P2Dasm::dasm_neg(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Negate S into D.");
     format_D_IM_S_WCZ(instruction, t_NEG);
 }
 
@@ -3361,12 +3182,9 @@ void P2Dasm::dasm_neg(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_negc(QString* instruction, QString* brief)
+void P2Dasm::dasm_negc(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Negate S by  C into D.");
     format_D_IM_S_WCZ(instruction, t_NEGC);
 }
 
@@ -3382,12 +3200,9 @@ void P2Dasm::dasm_negc(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_negnc(QString* instruction, QString* brief)
+void P2Dasm::dasm_negnc(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Negate S by !C into D.");
     format_D_IM_S_WCZ(instruction, t_NEGNC);
 }
 
@@ -3403,12 +3218,9 @@ void P2Dasm::dasm_negnc(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_negz(QString* instruction, QString* brief)
+void P2Dasm::dasm_negz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Negate S by  Z into D.");
     format_D_IM_S_WCZ(instruction, t_NEGZ);
 }
 
@@ -3424,12 +3236,9 @@ void P2Dasm::dasm_negz(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_negnz(QString* instruction, QString* brief)
+void P2Dasm::dasm_negnz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Negate S by !Z into D.");
     format_D_IM_S_WCZ(instruction, t_NEGNZ);
 }
 
@@ -3444,12 +3253,9 @@ void P2Dasm::dasm_negnz(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_incmod(QString* instruction, QString* brief)
+void P2Dasm::dasm_incmod(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Increment with modulus.");
     format_D_IM_S_WCZ(instruction, t_INCMOD);
 }
 
@@ -3464,12 +3270,9 @@ void P2Dasm::dasm_incmod(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_decmod(QString* instruction, QString* brief)
+void P2Dasm::dasm_decmod(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Decrement with modulus.");
     format_D_IM_S_WCZ(instruction, t_DECMOD);
 }
 
@@ -3484,12 +3287,9 @@ void P2Dasm::dasm_decmod(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_zerox(QString* instruction, QString* brief)
+void P2Dasm::dasm_zerox(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Zero-extend D above bit S[4:0].");
     format_D_IM_S_WCZ(instruction, t_ZEROX);
 }
 
@@ -3504,12 +3304,9 @@ void P2Dasm::dasm_zerox(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_signx(QString* instruction, QString* brief)
+void P2Dasm::dasm_signx(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Sign-extend D from bit S[4:0].");
     format_D_IM_S_WCZ(instruction, t_SIGNX);
 }
 
@@ -3525,12 +3322,9 @@ void P2Dasm::dasm_signx(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_encod(QString* instruction, QString* brief)
+void P2Dasm::dasm_encod(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get bit position of top-most '1' in S into D.");
     format_D_IM_S_WCZ(instruction, t_ENCOD);
 }
 
@@ -3546,12 +3340,9 @@ void P2Dasm::dasm_encod(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_ones(QString* instruction, QString* brief)
+void P2Dasm::dasm_ones(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get number of '1's in S into D.");
     format_D_IM_S_WCZ(instruction, t_ONES);
 }
 
@@ -3566,12 +3357,9 @@ void P2Dasm::dasm_ones(QString* instruction, QString* brief)
  * Z = ((D & S) == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_test(QString* instruction, QString* brief)
+void P2Dasm::dasm_test(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Test D with S.");
     format_D_IM_S_WCZ(instruction, t_TEST);
 }
 
@@ -3586,12 +3374,9 @@ void P2Dasm::dasm_test(QString* instruction, QString* brief)
  * Z = ((D & !S) == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_testn(QString* instruction, QString* brief)
+void P2Dasm::dasm_testn(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Test D with !S.");
     format_D_IM_S_WCZ(instruction, t_TESTN);
 }
 
@@ -3604,12 +3389,9 @@ void P2Dasm::dasm_testn(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setnib(QString* instruction, QString* brief)
+void P2Dasm::dasm_setnib(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set S[3:0] into nibble N in D, keeping rest of D same.");
     format_d_imm_s_nnn(instruction, t_SETNIB);
 }
 
@@ -3622,12 +3404,9 @@ void P2Dasm::dasm_setnib(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setnib_altsn(QString* instruction, QString* brief)
+void P2Dasm::dasm_setnib_altsn(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set S[3:0] into nibble established by prior ALTSN instruction.");
     format_imm_s(instruction, t_SETNIB);
 }
 
@@ -3641,12 +3420,9 @@ void P2Dasm::dasm_setnib_altsn(QString* instruction, QString* brief)
  * D = {28'b0, S.NIBBLE[N]).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_getnib(QString* instruction, QString* brief)
+void P2Dasm::dasm_getnib(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get nibble N of S into D.");
     format_d_imm_s_nnn(instruction, t_GETNIB);
 }
 
@@ -3659,12 +3435,9 @@ void P2Dasm::dasm_getnib(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_getnib_altgn(QString* instruction, QString* brief)
+void P2Dasm::dasm_getnib_altgn(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get nibble established by prior ALTGN instruction into D.");
     format_imm_s(instruction, t_GETNIB);
 }
 
@@ -3678,12 +3451,9 @@ void P2Dasm::dasm_getnib_altgn(QString* instruction, QString* brief)
  * D = {D[27:0], S.NIBBLE[N]).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rolnib(QString* instruction, QString* brief)
+void P2Dasm::dasm_rolnib(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Rotate-left nibble N of S into D.");
     format_d_imm_s_nnn(instruction, t_ROLNIB);
 }
 
@@ -3696,12 +3466,9 @@ void P2Dasm::dasm_rolnib(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rolnib_altgn(QString* instruction, QString* brief)
+void P2Dasm::dasm_rolnib_altgn(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Rotate-left nibble established by prior ALTGN instruction into D.");
     format_d(instruction, t_ROLNIB);
 }
 
@@ -3714,12 +3481,9 @@ void P2Dasm::dasm_rolnib_altgn(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setbyte(QString* instruction, QString* brief)
+void P2Dasm::dasm_setbyte(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set S[7:0] into byte N in D, keeping rest of D same.");
     format_d_imm_s_nnn(instruction, t_SETBYTE, 3);
 }
 
@@ -3732,12 +3496,9 @@ void P2Dasm::dasm_setbyte(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setbyte_altsb(QString* instruction, QString* brief)
+void P2Dasm::dasm_setbyte_altsb(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set S[7:0] into byte established by prior ALTSB instruction.");
     format_imm_s(instruction, t_SETBYTE);
 }
 
@@ -3751,12 +3512,9 @@ void P2Dasm::dasm_setbyte_altsb(QString* instruction, QString* brief)
  * D = {24'b0, S.BYTE[N]).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_getbyte(QString* instruction, QString* brief)
+void P2Dasm::dasm_getbyte(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get byte N of S into D.");
     format_d_imm_s_nnn(instruction, t_GETBYTE, 3);
 }
 
@@ -3769,12 +3527,9 @@ void P2Dasm::dasm_getbyte(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_getbyte_altgb(QString* instruction, QString* brief)
+void P2Dasm::dasm_getbyte_altgb(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get byte established by prior ALTGB instruction into D.");
     format_d(instruction, t_GETBYTE);
 }
 
@@ -3788,12 +3543,9 @@ void P2Dasm::dasm_getbyte_altgb(QString* instruction, QString* brief)
  * D = {D[23:0], S.BYTE[N]).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rolbyte(QString* instruction, QString* brief)
+void P2Dasm::dasm_rolbyte(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Rotate-left byte N of S into D.");
     format_d_imm_s_nnn(instruction, t_ROLBYTE);
 }
 
@@ -3806,12 +3558,9 @@ void P2Dasm::dasm_rolbyte(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rolbyte_altgb(QString* instruction, QString* brief)
+void P2Dasm::dasm_rolbyte_altgb(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Rotate-left byte established by prior ALTGB instruction into D.");
     format_d(instruction, t_ROLBYTE);
 }
 
@@ -3824,12 +3573,9 @@ void P2Dasm::dasm_rolbyte_altgb(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setword(QString* instruction, QString* brief)
+void P2Dasm::dasm_setword(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set S[15:0] into word N in D, keeping rest of D same.");
     format_d_imm_s_nnn(instruction, t_SETWORD, 1);
 }
 
@@ -3842,12 +3588,9 @@ void P2Dasm::dasm_setword(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setword_altsw(QString* instruction, QString* brief)
+void P2Dasm::dasm_setword_altsw(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set S[15:0] into word established by prior ALTSW instruction.");
     format_imm_s(instruction, t_SETWORD);
 }
 
@@ -3861,12 +3604,9 @@ void P2Dasm::dasm_setword_altsw(QString* instruction, QString* brief)
  * D = {16'b0, S.WORD[N]).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_getword(QString* instruction, QString* brief)
+void P2Dasm::dasm_getword(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get word N of S into D.");
     format_d_imm_s_nnn(instruction, t_GETWORD, 1);
 }
 
@@ -3879,12 +3619,9 @@ void P2Dasm::dasm_getword(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_getword_altgw(QString* instruction, QString* brief)
+void P2Dasm::dasm_getword_altgw(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get word established by prior ALTGW instruction into D.");
     format_imm_s(instruction, t_GETWORD);
 }
 
@@ -3898,12 +3635,9 @@ void P2Dasm::dasm_getword_altgw(QString* instruction, QString* brief)
  * D = {D[15:0], S.WORD[N]).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rolword(QString* instruction, QString* brief)
+void P2Dasm::dasm_rolword(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Rotate-left word N of S into D.");
     format_d_imm_s_nnn(instruction, t_ROLWORD, 1);
 }
 
@@ -3916,12 +3650,9 @@ void P2Dasm::dasm_rolword(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rolword_altgw(QString* instruction, QString* brief)
+void P2Dasm::dasm_rolword_altgw(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Rotate-left word established by prior ALTGW instruction into D.");
     format_d(instruction, t_ROLWORD);
 }
 
@@ -3936,12 +3667,9 @@ void P2Dasm::dasm_rolword_altgw(QString* instruction, QString* brief)
  * D += sign-extended S[17:9].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_altsn(QString* instruction, QString* brief)
+void P2Dasm::dasm_altsn(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Alter subsequent SETNIB instruction.");
     format_d_imm_s(instruction, t_ALTSN);
 }
 
@@ -3955,12 +3683,9 @@ void P2Dasm::dasm_altsn(QString* instruction, QString* brief)
  * Next D field = D[11:3], N field = D[2:0].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_altsn_d(QString* instruction, QString* brief)
+void P2Dasm::dasm_altsn_d(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Alter subsequent SETNIB instruction.");
     format_d(instruction, t_ALTSN);
 }
 
@@ -3975,12 +3700,9 @@ void P2Dasm::dasm_altsn_d(QString* instruction, QString* brief)
  * D += sign-extended S[17:9].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_altgn(QString* instruction, QString* brief)
+void P2Dasm::dasm_altgn(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Alter subsequent GETNIB/ROLNIB instruction.");
     format_d_imm_s(instruction, t_ALTGN);
 }
 
@@ -3994,12 +3716,9 @@ void P2Dasm::dasm_altgn(QString* instruction, QString* brief)
  * Next S field = D[11:3], N field = D[2:0].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_altgn_d(QString* instruction, QString* brief)
+void P2Dasm::dasm_altgn_d(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Alter subsequent GETNIB/ROLNIB instruction.");
     format_d(instruction, t_ALTGN);
 }
 
@@ -4014,12 +3733,9 @@ void P2Dasm::dasm_altgn_d(QString* instruction, QString* brief)
  * D += sign-extended S[17:9].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_altsb(QString* instruction, QString* brief)
+void P2Dasm::dasm_altsb(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Alter subsequent SETBYTE instruction.");
     format_d_imm_s(instruction, t_ALTSB);
 }
 
@@ -4033,12 +3749,9 @@ void P2Dasm::dasm_altsb(QString* instruction, QString* brief)
  * Next D field = D[10:2], N field = D[1:0].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_altsb_d(QString* instruction, QString* brief)
+void P2Dasm::dasm_altsb_d(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Alter subsequent SETBYTE instruction.");
     format_d(instruction, t_ALTSB);
 }
 
@@ -4053,12 +3766,9 @@ void P2Dasm::dasm_altsb_d(QString* instruction, QString* brief)
  * D += sign-extended S[17:9].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_altgb(QString* instruction, QString* brief)
+void P2Dasm::dasm_altgb(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Alter subsequent GETBYTE/ROLBYTE instruction.");
     format_d_imm_s(instruction, t_ALTGB);
 }
 
@@ -4072,12 +3782,9 @@ void P2Dasm::dasm_altgb(QString* instruction, QString* brief)
  * Next S field = D[10:2], N field = D[1:0].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_altgb_d(QString* instruction, QString* brief)
+void P2Dasm::dasm_altgb_d(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Alter subsequent GETBYTE/ROLBYTE instruction.");
     format_d(instruction, t_ALTGB);
 }
 
@@ -4092,12 +3799,9 @@ void P2Dasm::dasm_altgb_d(QString* instruction, QString* brief)
  * D += sign-extended S[17:9].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_altsw(QString* instruction, QString* brief)
+void P2Dasm::dasm_altsw(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Alter subsequent SETWORD instruction.");
     format_d_imm_s(instruction, t_ALTSW);
 }
 
@@ -4111,12 +3815,9 @@ void P2Dasm::dasm_altsw(QString* instruction, QString* brief)
  * Next D field = D[9:1], N field = D[0].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_altsw_d(QString* instruction, QString* brief)
+void P2Dasm::dasm_altsw_d(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Alter subsequent SETWORD instruction.");
     format_d(instruction, t_ALTSW);
 }
 
@@ -4131,12 +3832,9 @@ void P2Dasm::dasm_altsw_d(QString* instruction, QString* brief)
  * D += sign-extended S[17:9].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_altgw(QString* instruction, QString* brief)
+void P2Dasm::dasm_altgw(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Alter subsequent GETWORD/ROLWORD instruction.");
     format_d_imm_s(instruction, t_ALTGW);
 }
 
@@ -4150,12 +3848,9 @@ void P2Dasm::dasm_altgw(QString* instruction, QString* brief)
  * Next S field = D[9:1], N field = D[0].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_altgw_d(QString* instruction, QString* brief)
+void P2Dasm::dasm_altgw_d(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Alter subsequent GETWORD/ROLWORD instruction.");
     format_d(instruction, t_ALTGW);
 }
 
@@ -4169,12 +3864,9 @@ void P2Dasm::dasm_altgw_d(QString* instruction, QString* brief)
  * D += sign-extended S[17:9].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_altr(QString* instruction, QString* brief)
+void P2Dasm::dasm_altr(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Alter result register address (normally D field) of next instruction to (D + S) & $1FF.");
     format_d_imm_s(instruction, t_ALTR);
 }
 
@@ -4187,12 +3879,9 @@ void P2Dasm::dasm_altr(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_altr_d(QString* instruction, QString* brief)
+void P2Dasm::dasm_altr_d(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Alter result register address (normally D field) of next instruction to D[8:0].");
     format_d(instruction, t_ALTD);
 }
 
@@ -4206,12 +3895,9 @@ void P2Dasm::dasm_altr_d(QString* instruction, QString* brief)
  * D += sign-extended S[17:9].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_altd(QString* instruction, QString* brief)
+void P2Dasm::dasm_altd(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Alter D field of next instruction to (D + S) & $1FF.");
     format_d_imm_s(instruction, t_ALTD);
 }
 
@@ -4224,12 +3910,9 @@ void P2Dasm::dasm_altd(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_altd_d(QString* instruction, QString* brief)
+void P2Dasm::dasm_altd_d(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Alter D field of next instruction to D[8:0].");
     format_d(instruction, t_ALTD);
 }
 
@@ -4243,12 +3926,9 @@ void P2Dasm::dasm_altd_d(QString* instruction, QString* brief)
  * D += sign-extended S[17:9].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_alts(QString* instruction, QString* brief)
+void P2Dasm::dasm_alts(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Alter S field of next instruction to (D + S) & $1FF.");
     format_d_imm_s(instruction, t_ALTS);
 }
 
@@ -4261,12 +3941,9 @@ void P2Dasm::dasm_alts(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_alts_d(QString* instruction, QString* brief)
+void P2Dasm::dasm_alts_d(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Alter S field of next instruction to D[8:0].");
     format_d(instruction, t_ALTS);
 }
 
@@ -4280,12 +3957,9 @@ void P2Dasm::dasm_alts_d(QString* instruction, QString* brief)
  * D += sign-extended S[17:9].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_altb(QString* instruction, QString* brief)
+void P2Dasm::dasm_altb(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Alter D field of next instruction to (D[13:5] + S) & $1FF.");
     format_d_imm_s(instruction, t_ALTB);
 }
 
@@ -4298,12 +3972,9 @@ void P2Dasm::dasm_altb(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_altb_d(QString* instruction, QString* brief)
+void P2Dasm::dasm_altb_d(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Alter D field of next instruction to D[13:5].");
     format_d(instruction, t_ALTB);
 }
 
@@ -4317,12 +3988,9 @@ void P2Dasm::dasm_altb_d(QString* instruction, QString* brief)
  * Modify D per S.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_alti(QString* instruction, QString* brief)
+void P2Dasm::dasm_alti(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Substitute next instruction's I/R/D/S fields with fields from D, per S.");
     format_d_imm_s(instruction, t_ALTI);
 }
 
@@ -4336,12 +4004,9 @@ void P2Dasm::dasm_alti(QString* instruction, QString* brief)
  * D stays same.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_alti_d(QString* instruction, QString* brief)
+void P2Dasm::dasm_alti_d(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Execute D in place of next instruction.");
     format_d(instruction, t_ALTI);
 }
 
@@ -4355,12 +4020,9 @@ void P2Dasm::dasm_alti_d(QString* instruction, QString* brief)
  * D = {D[31:28], S[8:0], D[18:0]}.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setr(QString* instruction, QString* brief)
+void P2Dasm::dasm_setr(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set R field of D to S[8:0].");
     format_d_imm_s(instruction, t_SETR);
 }
 
@@ -4374,12 +4036,9 @@ void P2Dasm::dasm_setr(QString* instruction, QString* brief)
  * D = {D[31:18], S[8:0], D[8:0]}.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setd(QString* instruction, QString* brief)
+void P2Dasm::dasm_setd(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set D field of D to S[8:0].");
     format_d_imm_s(instruction, t_SETD);
 }
 
@@ -4393,12 +4052,9 @@ void P2Dasm::dasm_setd(QString* instruction, QString* brief)
  * D = {D[31:9], S[8:0]}.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_sets(QString* instruction, QString* brief)
+void P2Dasm::dasm_sets(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set S field of D to S[8:0].");
     format_d_imm_s(instruction, t_SETS);
 }
 
@@ -4412,12 +4068,9 @@ void P2Dasm::dasm_sets(QString* instruction, QString* brief)
  * D = 1 << S[4:0].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_decod(QString* instruction, QString* brief)
+void P2Dasm::dasm_decod(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Decode S[4:0] into D.");
     format_d_imm_s(instruction, t_DECOD);
 }
 
@@ -4431,12 +4084,9 @@ void P2Dasm::dasm_decod(QString* instruction, QString* brief)
  * D = 1 << D[4:0].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_decod_d(QString* instruction, QString* brief)
+void P2Dasm::dasm_decod_d(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Decode D[4:0] into D.");
     format_d(instruction, t_DECOD);
 }
 
@@ -4450,12 +4100,9 @@ void P2Dasm::dasm_decod_d(QString* instruction, QString* brief)
  * D = ($0000_0002 << S[4:0]) - 1.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_bmask(QString* instruction, QString* brief)
+void P2Dasm::dasm_bmask(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get LSB-justified bit mask of size (S[4:0] + 1) into D.");
     format_d_imm_s(instruction, t_BMASK);
 }
 
@@ -4469,12 +4116,9 @@ void P2Dasm::dasm_bmask(QString* instruction, QString* brief)
  * D = ($0000_0002 << D[4:0]) - 1.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_bmask_d(QString* instruction, QString* brief)
+void P2Dasm::dasm_bmask_d(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get LSB-justified bit mask of size (D[4:0] + 1) into D.");
     format_d(instruction, t_BMASK);
 }
 
@@ -4488,12 +4132,9 @@ void P2Dasm::dasm_bmask_d(QString* instruction, QString* brief)
  * If (C XOR D[0]) then D = (D >> 1) XOR S, else D = (D >> 1).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_crcbit(QString* instruction, QString* brief)
+void P2Dasm::dasm_crcbit(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Iterate CRC value in D using C and polynomial in S.");
     format_d_imm_s(instruction, t_CRCBIT);
 }
 
@@ -4509,12 +4150,9 @@ void P2Dasm::dasm_crcbit(QString* instruction, QString* brief)
  * Use SETQ+CRCNIB+CRCNIB+CRCNIB.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_crcnib(QString* instruction, QString* brief)
+void P2Dasm::dasm_crcnib(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Iterate CRC value in D using Q[31:28] and polynomial in S.");
     format_d_imm_s(instruction, t_CRCNIB);
 }
 
@@ -4527,12 +4165,9 @@ void P2Dasm::dasm_crcnib(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_muxnits(QString* instruction, QString* brief)
+void P2Dasm::dasm_muxnits(QString* instruction)
 {
-    if (brief)
-        *brief = tr("For each non-zero bit pair in S, copy that bit pair into the corresponding D bits, else leave that D bit pair the same.");
     format_d_imm_s(instruction, t_MUXNITS);
 }
 
@@ -4545,12 +4180,9 @@ void P2Dasm::dasm_muxnits(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_muxnibs(QString* instruction, QString* brief)
+void P2Dasm::dasm_muxnibs(QString* instruction)
 {
-    if (brief)
-        *brief = tr("For each non-zero nibble in S, copy that nibble into the corresponding D nibble, else leave that D nibble the same.");
     format_d_imm_s(instruction, t_MUXNIBS);
 }
 
@@ -4565,12 +4197,9 @@ void P2Dasm::dasm_muxnibs(QString* instruction, QString* brief)
  * D = (D & !Q) | (S & Q).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_muxq(QString* instruction, QString* brief)
+void P2Dasm::dasm_muxq(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Used after SETQ.");
     format_d_imm_s(instruction, t_MUXQ);
 }
 
@@ -4584,12 +4213,9 @@ void P2Dasm::dasm_muxq(QString* instruction, QString* brief)
  * D = {D.BYTE[S[7:6]], D.BYTE[S[5:4]], D.BYTE[S[3:2]], D.BYTE[S[1:0]]}.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_movbyts(QString* instruction, QString* brief)
+void P2Dasm::dasm_movbyts(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Move bytes within D, per S.");
     format_d_imm_s(instruction, t_MOVBYTS);
 }
 
@@ -4603,12 +4229,9 @@ void P2Dasm::dasm_movbyts(QString* instruction, QString* brief)
  * Z = (S == 0) | (D == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_mul(QString* instruction, QString* brief)
+void P2Dasm::dasm_mul(QString* instruction)
 {
-    if (brief)
-        *brief = tr("D = unsigned (D[15:0] * S[15:0]).");
     format_D_IM_S_WZ(instruction, t_MUL);
 }
 
@@ -4622,12 +4245,9 @@ void P2Dasm::dasm_mul(QString* instruction, QString* brief)
  * Z = (S == 0) | (D == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_muls(QString* instruction, QString* brief)
+void P2Dasm::dasm_muls(QString* instruction)
 {
-    if (brief)
-        *brief = tr("D = signed (D[15:0] * S[15:0]).");
     format_D_IM_S_WZ(instruction, t_MULS);
 }
 
@@ -4641,12 +4261,9 @@ void P2Dasm::dasm_muls(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_sca(QString* instruction, QString* brief)
+void P2Dasm::dasm_sca(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Next instruction's S value = unsigned (D[15:0] * S[15:0]) >> 16.");
     format_D_IM_S_WZ(instruction, t_SCA);
 }
 
@@ -4661,12 +4278,9 @@ void P2Dasm::dasm_sca(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_scas(QString* instruction, QString* brief)
+void P2Dasm::dasm_scas(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Next instruction's S value = signed (D[15:0] * S[15:0]) >> 14.");
     format_D_IM_S_WZ(instruction, t_SCAS);
 }
 
@@ -4679,12 +4293,9 @@ void P2Dasm::dasm_scas(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_addpix(QString* instruction, QString* brief)
+void P2Dasm::dasm_addpix(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Add bytes of S into bytes of D, with $FF saturation.");
     format_d_imm_s(instruction, t_ADDPIX);
 }
 
@@ -4698,12 +4309,9 @@ void P2Dasm::dasm_addpix(QString* instruction, QString* brief)
  * 0.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_mulpix(QString* instruction, QString* brief)
+void P2Dasm::dasm_mulpix(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Multiply bytes of S into bytes of D, where $FF = 1.");
     format_d_imm_s(instruction, t_MULPIX);
 }
 
@@ -4716,12 +4324,9 @@ void P2Dasm::dasm_mulpix(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_blnpix(QString* instruction, QString* brief)
+void P2Dasm::dasm_blnpix(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Alpha-blend bytes of S into bytes of D, using SETPIV value.");
     format_d_imm_s(instruction, t_BLNPIX);
 }
 
@@ -4734,12 +4339,9 @@ void P2Dasm::dasm_blnpix(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_mixpix(QString* instruction, QString* brief)
+void P2Dasm::dasm_mixpix(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Mix bytes of S into bytes of D, using SETPIX and SETPIV values.");
     format_d_imm_s(instruction, t_MIXPIX);
 }
 
@@ -4753,12 +4355,9 @@ void P2Dasm::dasm_mixpix(QString* instruction, QString* brief)
  * Adds S into D.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_addct1(QString* instruction, QString* brief)
+void P2Dasm::dasm_addct1(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set CT1 event to trigger on CT = D + S.");
     format_d_imm_s(instruction, t_ADDCT1);
 }
 
@@ -4772,12 +4371,9 @@ void P2Dasm::dasm_addct1(QString* instruction, QString* brief)
  * Adds S into D.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_addct2(QString* instruction, QString* brief)
+void P2Dasm::dasm_addct2(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set CT2 event to trigger on CT = D + S.");
     format_d_imm_s(instruction, t_ADDCT2);
 }
 
@@ -4791,12 +4387,9 @@ void P2Dasm::dasm_addct2(QString* instruction, QString* brief)
  * Adds S into D.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_addct3(QString* instruction, QString* brief)
+void P2Dasm::dasm_addct3(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set CT3 event to trigger on CT = D + S.");
     format_d_imm_s(instruction, t_ADDCT3);
 }
 
@@ -4810,12 +4403,9 @@ void P2Dasm::dasm_addct3(QString* instruction, QString* brief)
  * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_wmlong(QString* instruction, QString* brief)
+void P2Dasm::dasm_wmlong(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Write only non-$00 bytes in D[31:0] to hub address {#}S/PTRx.");
     format_d_imm_s(instruction, t_WMLONG);
 }
 
@@ -4829,12 +4419,9 @@ void P2Dasm::dasm_wmlong(QString* instruction, QString* brief)
  * C = modal result.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rqpin(QString* instruction, QString* brief)
+void P2Dasm::dasm_rqpin(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Read smart pin S[5:0] result \"Z\" into D, don't acknowledge smart pin (\"Q\" in RQPIN means \"quiet\").");
     format_D_IM_S_WC(instruction, t_RQPIN);
 }
 
@@ -4848,12 +4435,9 @@ void P2Dasm::dasm_rqpin(QString* instruction, QString* brief)
  * C = modal result.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rdpin(QString* instruction, QString* brief)
+void P2Dasm::dasm_rdpin(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Read smart pin S[5:0] result \"Z\" into D, acknowledge smart pin.");
     format_D_IM_S_WC(instruction, t_RDPIN);
 }
 
@@ -4868,12 +4452,9 @@ void P2Dasm::dasm_rdpin(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rdlut(QString* instruction, QString* brief)
+void P2Dasm::dasm_rdlut(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Read LUT data from address S[8:0] into D.");
     format_D_IM_S_WCZ(instruction, t_RDLUT);
 }
 
@@ -4888,12 +4469,9 @@ void P2Dasm::dasm_rdlut(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rdbyte(QString* instruction, QString* brief)
+void P2Dasm::dasm_rdbyte(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Read zero-extended byte from hub address {#}S/PTRx into D.");
     format_D_IM_S_WCZ(instruction, t_RDBYTE);
 }
 
@@ -4908,12 +4486,9 @@ void P2Dasm::dasm_rdbyte(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rdword(QString* instruction, QString* brief)
+void P2Dasm::dasm_rdword(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Read zero-extended word from hub address {#}S/PTRx into D.");
     format_D_IM_S_WCZ(instruction, t_RDWORD);
 }
 
@@ -4928,12 +4503,9 @@ void P2Dasm::dasm_rdword(QString* instruction, QString* brief)
  * *   Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rdlong(QString* instruction, QString* brief)
+void P2Dasm::dasm_rdlong(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Read long from hub address {#}S/PTRx into D.");
     format_D_IM_S_WCZ(instruction, t_RDLONG);
 }
 
@@ -4948,12 +4520,9 @@ void P2Dasm::dasm_rdlong(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_popa(QString* instruction, QString* brief)
+void P2Dasm::dasm_popa(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Read long from hub address --PTRA into D.");
     format_D_IM_S_WCZ(instruction, t_POPA);
 }
 
@@ -4968,12 +4537,9 @@ void P2Dasm::dasm_popa(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_popb(QString* instruction, QString* brief)
+void P2Dasm::dasm_popb(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Read long from hub address --PTRB into D.");
     format_D_IM_S_WCZ(instruction, t_POPB);
 }
 
@@ -4987,9 +4553,8 @@ void P2Dasm::dasm_popb(QString* instruction, QString* brief)
  * C = S[31], Z = S[30].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_calld(QString* instruction, QString* brief)
+void P2Dasm::dasm_calld(QString* instruction)
 {
     if (IR.wc() && IR.wz()) {
         if (IR.u.op.dst == offs_IJMP3 && IR.u.op.src == offs_IRET3) {
@@ -5025,8 +4590,6 @@ void P2Dasm::dasm_calld(QString* instruction, QString* brief)
             return;
         }
     }
-    if (brief)
-        *brief = tr("Call to S** by writing {C, Z, 10'b0, PC[19:0]} to D.");
     format_D_IM_S_WCZ(instruction, t_CALLD);
 }
 
@@ -5040,12 +4603,9 @@ void P2Dasm::dasm_calld(QString* instruction, QString* brief)
  * (CALLD $1F0,$1F1 WC,WZ).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_resi3(QString* instruction, QString* brief)
+void P2Dasm::dasm_resi3(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Resume from INT3.");
     format_inst(instruction, t_RESI3);
 }
 
@@ -5059,12 +4619,9 @@ void P2Dasm::dasm_resi3(QString* instruction, QString* brief)
  * (CALLD $1F2,$1F3 WC,WZ).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_resi2(QString* instruction, QString* brief)
+void P2Dasm::dasm_resi2(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Resume from INT2.");
     format_inst(instruction, t_RESI2);
 }
 
@@ -5078,12 +4635,9 @@ void P2Dasm::dasm_resi2(QString* instruction, QString* brief)
  * (CALLD $1F4,$1F5 WC,WZ).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_resi1(QString* instruction, QString* brief)
+void P2Dasm::dasm_resi1(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Resume from INT1.");
     format_inst(instruction, t_RESI1);
 }
 
@@ -5097,12 +4651,9 @@ void P2Dasm::dasm_resi1(QString* instruction, QString* brief)
  * (CALLD $1FE,$1FF WC,WZ).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_resi0(QString* instruction, QString* brief)
+void P2Dasm::dasm_resi0(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Resume from INT0.");
     format_inst(instruction, t_RESI0);
 }
 
@@ -5116,12 +4667,9 @@ void P2Dasm::dasm_resi0(QString* instruction, QString* brief)
  * (CALLD $1FF,$1F1 WC,WZ).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_reti3(QString* instruction, QString* brief)
+void P2Dasm::dasm_reti3(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Return from INT3.");
     format_inst(instruction, t_RETI3);
 }
 
@@ -5135,12 +4683,9 @@ void P2Dasm::dasm_reti3(QString* instruction, QString* brief)
  * (CALLD $1FF,$1F3 WC,WZ).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_reti2(QString* instruction, QString* brief)
+void P2Dasm::dasm_reti2(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Return from INT2.");
     format_inst(instruction, t_RETI2);
 }
 
@@ -5154,12 +4699,9 @@ void P2Dasm::dasm_reti2(QString* instruction, QString* brief)
  * (CALLD $1FF,$1F5 WC,WZ).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_reti1(QString* instruction, QString* brief)
+void P2Dasm::dasm_reti1(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Return from INT1.");
     format_inst(instruction, t_RETI1);
 }
 
@@ -5173,12 +4715,9 @@ void P2Dasm::dasm_reti1(QString* instruction, QString* brief)
  * (CALLD $1FF,$1FF WC,WZ).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_reti0(QString* instruction, QString* brief)
+void P2Dasm::dasm_reti0(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Return from INT0.");
     format_inst(instruction, t_RETI0);
 }
 
@@ -5191,12 +4730,9 @@ void P2Dasm::dasm_reti0(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_callpa(QString* instruction, QString* brief)
+void P2Dasm::dasm_callpa(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Call to S** by pushing {C, Z, 10'b0, PC[19:0]} onto stack, copy D to PA.");
     format_WZ_D_IM_S(instruction, t_CALLPA);
 }
 
@@ -5209,12 +4745,9 @@ void P2Dasm::dasm_callpa(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_callpb(QString* instruction, QString* brief)
+void P2Dasm::dasm_callpb(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Call to S** by pushing {C, Z, 10'b0, PC[19:0]} onto stack, copy D to PB.");
     format_WZ_D_IM_S(instruction, t_CALLPB);
 }
 
@@ -5227,12 +4760,9 @@ void P2Dasm::dasm_callpb(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_djz(QString* instruction, QString* brief)
+void P2Dasm::dasm_djz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Decrement D and jump to S** if result is zero.");
     format_d_imm_s(instruction, t_DJZ);
 }
 
@@ -5245,12 +4775,9 @@ void P2Dasm::dasm_djz(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_djnz(QString* instruction, QString* brief)
+void P2Dasm::dasm_djnz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Decrement D and jump to S** if result is not zero.");
     format_d_imm_s(instruction, t_DJNZ);
 }
 
@@ -5263,12 +4790,9 @@ void P2Dasm::dasm_djnz(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_djf(QString* instruction, QString* brief)
+void P2Dasm::dasm_djf(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Decrement D and jump to S** if result is $FFFF_FFFF.");
     format_d_imm_s(instruction, t_DJF);
 }
 
@@ -5281,12 +4805,9 @@ void P2Dasm::dasm_djf(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_djnf(QString* instruction, QString* brief)
+void P2Dasm::dasm_djnf(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Decrement D and jump to S** if result is not $FFFF_FFFF.");
     format_d_imm_s(instruction, t_DJNF);
 }
 
@@ -5299,12 +4820,9 @@ void P2Dasm::dasm_djnf(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_ijz(QString* instruction, QString* brief)
+void P2Dasm::dasm_ijz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Increment D and jump to S** if result is zero.");
     format_d_imm_s(instruction, t_IJZ);
 }
 
@@ -5317,12 +4835,9 @@ void P2Dasm::dasm_ijz(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_ijnz(QString* instruction, QString* brief)
+void P2Dasm::dasm_ijnz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Increment D and jump to S** if result is not zero.");
     format_d_imm_s(instruction, t_IJNZ);
 }
 
@@ -5335,12 +4850,9 @@ void P2Dasm::dasm_ijnz(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_tjz(QString* instruction, QString* brief)
+void P2Dasm::dasm_tjz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Test D and jump to S** if D is zero.");
     format_d_imm_s(instruction, t_TJZ);
 }
 
@@ -5353,12 +4865,9 @@ void P2Dasm::dasm_tjz(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_tjnz(QString* instruction, QString* brief)
+void P2Dasm::dasm_tjnz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Test D and jump to S** if D is not zero.");
     format_d_imm_s(instruction, t_TJNZ);
 }
 
@@ -5371,12 +4880,9 @@ void P2Dasm::dasm_tjnz(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_tjf(QString* instruction, QString* brief)
+void P2Dasm::dasm_tjf(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Test D and jump to S** if D is full (D = $FFFF_FFFF).");
     format_d_imm_s(instruction, t_TJF);
 }
 
@@ -5389,12 +4895,9 @@ void P2Dasm::dasm_tjf(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_tjnf(QString* instruction, QString* brief)
+void P2Dasm::dasm_tjnf(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Test D and jump to S** if D is not full (D != $FFFF_FFFF).");
     format_d_imm_s(instruction, t_TJNF);
 }
 
@@ -5407,12 +4910,9 @@ void P2Dasm::dasm_tjnf(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_tjs(QString* instruction, QString* brief)
+void P2Dasm::dasm_tjs(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Test D and jump to S** if D is signed (D[31] = 1).");
     format_d_imm_s(instruction, t_TJS);
 }
 
@@ -5425,12 +4925,9 @@ void P2Dasm::dasm_tjs(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_tjns(QString* instruction, QString* brief)
+void P2Dasm::dasm_tjns(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Test D and jump to S** if D is not signed (D[31] = 0).");
     format_d_imm_s(instruction, t_TJNS);
 }
 
@@ -5443,12 +4940,9 @@ void P2Dasm::dasm_tjns(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_tjv(QString* instruction, QString* brief)
+void P2Dasm::dasm_tjv(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Test D and jump to S** if D overflowed (D[31] != C, C = 'correct sign' from last addition/subtraction).");
     format_d_imm_s(instruction, t_TJV);
 }
 
@@ -5461,12 +4955,9 @@ void P2Dasm::dasm_tjv(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jint(QString* instruction, QString* brief)
+void P2Dasm::dasm_jint(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if INT event flag is set.");
     format_imm_s(instruction, t_JINT);
 }
 
@@ -5479,12 +4970,9 @@ void P2Dasm::dasm_jint(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jct1(QString* instruction, QString* brief)
+void P2Dasm::dasm_jct1(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if CT1 event flag is set.");
     format_imm_s(instruction, t_JCT1);
 }
 
@@ -5497,12 +4985,9 @@ void P2Dasm::dasm_jct1(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jct2(QString* instruction, QString* brief)
+void P2Dasm::dasm_jct2(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if CT2 event flag is set.");
     format_imm_s(instruction, t_JCT2);
 }
 
@@ -5515,12 +5000,9 @@ void P2Dasm::dasm_jct2(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jct3(QString* instruction, QString* brief)
+void P2Dasm::dasm_jct3(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if CT3 event flag is set.");
     format_imm_s(instruction, t_JCT3);
 }
 
@@ -5533,12 +5015,9 @@ void P2Dasm::dasm_jct3(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jse1(QString* instruction, QString* brief)
+void P2Dasm::dasm_jse1(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if SE1 event flag is set.");
     format_imm_s(instruction, t_JSE1);
 }
 
@@ -5551,12 +5030,9 @@ void P2Dasm::dasm_jse1(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jse2(QString* instruction, QString* brief)
+void P2Dasm::dasm_jse2(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if SE2 event flag is set.");
     format_imm_s(instruction, t_JSE2);
 }
 
@@ -5569,12 +5045,9 @@ void P2Dasm::dasm_jse2(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jse3(QString* instruction, QString* brief)
+void P2Dasm::dasm_jse3(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if SE3 event flag is set.");
     format_imm_s(instruction, t_JSE3);
 }
 
@@ -5587,12 +5060,9 @@ void P2Dasm::dasm_jse3(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jse4(QString* instruction, QString* brief)
+void P2Dasm::dasm_jse4(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if SE4 event flag is set.");
     format_imm_s(instruction, t_JSE4);
 }
 
@@ -5605,12 +5075,9 @@ void P2Dasm::dasm_jse4(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jpat(QString* instruction, QString* brief)
+void P2Dasm::dasm_jpat(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if PAT event flag is set.");
     format_imm_s(instruction, t_JPAT);
 }
 
@@ -5623,12 +5090,9 @@ void P2Dasm::dasm_jpat(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jfbw(QString* instruction, QString* brief)
+void P2Dasm::dasm_jfbw(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if FBW event flag is set.");
     format_imm_s(instruction, t_JFBW);
 }
 
@@ -5641,12 +5105,9 @@ void P2Dasm::dasm_jfbw(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jxmt(QString* instruction, QString* brief)
+void P2Dasm::dasm_jxmt(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if XMT event flag is set.");
     format_imm_s(instruction, t_JXMT);
 }
 
@@ -5659,12 +5120,9 @@ void P2Dasm::dasm_jxmt(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jxfi(QString* instruction, QString* brief)
+void P2Dasm::dasm_jxfi(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if XFI event flag is set.");
     format_imm_s(instruction, t_JXFI);
 }
 
@@ -5677,12 +5135,9 @@ void P2Dasm::dasm_jxfi(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jxro(QString* instruction, QString* brief)
+void P2Dasm::dasm_jxro(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if XRO event flag is set.");
     format_imm_s(instruction, t_JXRO);
 }
 
@@ -5695,12 +5150,9 @@ void P2Dasm::dasm_jxro(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jxrl(QString* instruction, QString* brief)
+void P2Dasm::dasm_jxrl(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if XRL event flag is set.");
     format_imm_s(instruction, t_JXRL);
 }
 
@@ -5713,12 +5165,9 @@ void P2Dasm::dasm_jxrl(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jatn(QString* instruction, QString* brief)
+void P2Dasm::dasm_jatn(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if ATN event flag is set.");
     format_imm_s(instruction, t_JATN);
 }
 
@@ -5731,12 +5180,9 @@ void P2Dasm::dasm_jatn(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jqmt(QString* instruction, QString* brief)
+void P2Dasm::dasm_jqmt(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if QMT event flag is set.");
     format_imm_s(instruction, t_JQMT);
 }
 
@@ -5749,12 +5195,9 @@ void P2Dasm::dasm_jqmt(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jnint(QString* instruction, QString* brief)
+void P2Dasm::dasm_jnint(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if INT event flag is clear.");
     format_imm_s(instruction, t_JNINT);
 }
 
@@ -5767,12 +5210,9 @@ void P2Dasm::dasm_jnint(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jnct1(QString* instruction, QString* brief)
+void P2Dasm::dasm_jnct1(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if CT1 event flag is clear.");
     format_imm_s(instruction, t_JNCT1);
 }
 
@@ -5785,12 +5225,9 @@ void P2Dasm::dasm_jnct1(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jnct2(QString* instruction, QString* brief)
+void P2Dasm::dasm_jnct2(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if CT2 event flag is clear.");
     format_imm_s(instruction, t_JNCT2);
 }
 
@@ -5803,12 +5240,9 @@ void P2Dasm::dasm_jnct2(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jnct3(QString* instruction, QString* brief)
+void P2Dasm::dasm_jnct3(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if CT3 event flag is clear.");
     format_imm_s(instruction, t_JNCT3);
 }
 
@@ -5821,12 +5255,9 @@ void P2Dasm::dasm_jnct3(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jnse1(QString* instruction, QString* brief)
+void P2Dasm::dasm_jnse1(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if SE1 event flag is clear.");
     format_imm_s(instruction, t_JNSE1);
 }
 
@@ -5839,12 +5270,9 @@ void P2Dasm::dasm_jnse1(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jnse2(QString* instruction, QString* brief)
+void P2Dasm::dasm_jnse2(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if SE2 event flag is clear.");
     format_imm_s(instruction, t_JNSE2);
 }
 
@@ -5857,12 +5285,9 @@ void P2Dasm::dasm_jnse2(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jnse3(QString* instruction, QString* brief)
+void P2Dasm::dasm_jnse3(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if SE3 event flag is clear.");
     format_imm_s(instruction, t_JNSE3);
 }
 
@@ -5875,12 +5300,9 @@ void P2Dasm::dasm_jnse3(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jnse4(QString* instruction, QString* brief)
+void P2Dasm::dasm_jnse4(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if SE4 event flag is clear.");
     format_imm_s(instruction, t_JNSE4);
 }
 
@@ -5893,12 +5315,9 @@ void P2Dasm::dasm_jnse4(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jnpat(QString* instruction, QString* brief)
+void P2Dasm::dasm_jnpat(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if PAT event flag is clear.");
     format_imm_s(instruction, t_JNPAT);
 }
 
@@ -5911,12 +5330,9 @@ void P2Dasm::dasm_jnpat(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jnfbw(QString* instruction, QString* brief)
+void P2Dasm::dasm_jnfbw(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if FBW event flag is clear.");
     format_imm_s(instruction, t_JNFBW);
 }
 
@@ -5929,12 +5345,9 @@ void P2Dasm::dasm_jnfbw(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jnxmt(QString* instruction, QString* brief)
+void P2Dasm::dasm_jnxmt(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if XMT event flag is clear.");
     format_imm_s(instruction, t_JNXMT);
 }
 
@@ -5947,12 +5360,9 @@ void P2Dasm::dasm_jnxmt(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jnxfi(QString* instruction, QString* brief)
+void P2Dasm::dasm_jnxfi(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if XFI event flag is clear.");
     format_imm_s(instruction, t_JNXFI);
 }
 
@@ -5965,12 +5375,9 @@ void P2Dasm::dasm_jnxfi(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jnxro(QString* instruction, QString* brief)
+void P2Dasm::dasm_jnxro(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if XRO event flag is clear.");
     format_imm_s(instruction, t_JNXRO);
 }
 
@@ -5983,12 +5390,9 @@ void P2Dasm::dasm_jnxro(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jnxrl(QString* instruction, QString* brief)
+void P2Dasm::dasm_jnxrl(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if XRL event flag is clear.");
     format_imm_s(instruction, t_JNXRL);
 }
 
@@ -6001,12 +5405,9 @@ void P2Dasm::dasm_jnxrl(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jnatn(QString* instruction, QString* brief)
+void P2Dasm::dasm_jnatn(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if ATN event flag is clear.");
     format_imm_s(instruction, t_JNATN);
 }
 
@@ -6019,12 +5420,9 @@ void P2Dasm::dasm_jnatn(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jnqmt(QString* instruction, QString* brief)
+void P2Dasm::dasm_jnqmt(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to S** if QMT event flag is clear.");
     format_imm_s(instruction, t_JNQMT);
 }
 
@@ -6037,12 +5435,9 @@ void P2Dasm::dasm_jnqmt(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_1011110_1(QString* instruction, QString* brief)
+void P2Dasm::dasm_1011110_1(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Undefined instruction <empty> %1011110_1.");
     format_WZ_D_IM_S(instruction, t_empty);
 }
 
@@ -6055,12 +5450,9 @@ void P2Dasm::dasm_1011110_1(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_1011111_0(QString* instruction, QString* brief)
+void P2Dasm::dasm_1011111_0(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Undefined instruction <empty> %1011111_0.");
     format_WZ_D_IM_S(instruction, t_empty);
 }
 
@@ -6074,12 +5466,9 @@ void P2Dasm::dasm_1011111_0(QString* instruction, QString* brief)
  * C selects INA/INB, Z selects =/!=, D provides mask value, S provides match value.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setpat(QString* instruction, QString* brief)
+void P2Dasm::dasm_setpat(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set pin pattern for PAT event.");
     format_WZ_D_IM_S(instruction, t_SETPAT);
 }
 
@@ -6092,12 +5481,9 @@ void P2Dasm::dasm_setpat(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_wrpin(QString* instruction, QString* brief)
+void P2Dasm::dasm_wrpin(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Write D to mode register of smart pin S[5:0], acknowledge smart pin.");
     format_WZ_D_IM_S(instruction, t_WRPIN);
 }
 
@@ -6110,12 +5496,9 @@ void P2Dasm::dasm_wrpin(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_akpin(QString* instruction, QString* brief)
+void P2Dasm::dasm_akpin(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Acknowledge smart pin S[5:0].");
     format_imm_s(instruction, t_AKPIN);
 }
 
@@ -6128,12 +5511,9 @@ void P2Dasm::dasm_akpin(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_wxpin(QString* instruction, QString* brief)
+void P2Dasm::dasm_wxpin(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Write D to parameter \"X\" of smart pin S[5:0], acknowledge smart pin.");
     format_WZ_D_IM_S(instruction, t_WXPIN);
 }
 
@@ -6146,12 +5526,9 @@ void P2Dasm::dasm_wxpin(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_wypin(QString* instruction, QString* brief)
+void P2Dasm::dasm_wypin(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Write D to parameter \"Y\" of smart pin S[5:0], acknowledge smart pin.");
     format_WZ_D_IM_S(instruction, t_WYPIN);
 }
 
@@ -6164,12 +5541,9 @@ void P2Dasm::dasm_wypin(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_wrlut(QString* instruction, QString* brief)
+void P2Dasm::dasm_wrlut(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Write D to LUT address S[8:0].");
     format_WZ_D_IM_S(instruction, t_WRLUT);
 }
 
@@ -6182,12 +5556,9 @@ void P2Dasm::dasm_wrlut(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_wrbyte(QString* instruction, QString* brief)
+void P2Dasm::dasm_wrbyte(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Write byte in D[7:0] to hub address {#}S/PTRx.");
     format_WZ_D_IM_S(instruction, t_WRBYTE);
 }
 
@@ -6200,12 +5571,9 @@ void P2Dasm::dasm_wrbyte(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_wrword(QString* instruction, QString* brief)
+void P2Dasm::dasm_wrword(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Write word in D[15:0] to hub address {#}S/PTRx.");
     format_WZ_D_IM_S(instruction, t_WRWORD);
 }
 
@@ -6219,12 +5587,9 @@ void P2Dasm::dasm_wrword(QString* instruction, QString* brief)
  * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_wrlong(QString* instruction, QString* brief)
+void P2Dasm::dasm_wrlong(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Write long in D[31:0] to hub address {#}S/PTRx.");
     format_WZ_D_IM_S(instruction, t_WRLONG);
 }
 
@@ -6237,12 +5602,9 @@ void P2Dasm::dasm_wrlong(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_pusha(QString* instruction, QString* brief)
+void P2Dasm::dasm_pusha(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Write long in D[31:0] to hub address PTRA++.");
     format_wz_d(instruction, t_PUSHA);
 }
 
@@ -6255,12 +5617,9 @@ void P2Dasm::dasm_pusha(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_pushb(QString* instruction, QString* brief)
+void P2Dasm::dasm_pushb(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Write long in D[31:0] to hub address PTRB++.");
     format_wz_d(instruction, t_PUSHB);
 }
 
@@ -6274,12 +5633,9 @@ void P2Dasm::dasm_pushb(QString* instruction, QString* brief)
  * D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rdfast(QString* instruction, QString* brief)
+void P2Dasm::dasm_rdfast(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Begin new fast hub read via FIFO.");
     format_WZ_D_IM_S(instruction, t_RDFAST);
 }
 
@@ -6293,12 +5649,9 @@ void P2Dasm::dasm_rdfast(QString* instruction, QString* brief)
  * D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_wrfast(QString* instruction, QString* brief)
+void P2Dasm::dasm_wrfast(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Begin new fast hub write via FIFO.");
     format_WZ_D_IM_S(instruction, t_WRFAST);
 }
 
@@ -6312,12 +5665,9 @@ void P2Dasm::dasm_wrfast(QString* instruction, QString* brief)
  * D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_fblock(QString* instruction, QString* brief)
+void P2Dasm::dasm_fblock(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set next block for when block wraps.");
     format_WZ_D_IM_S(instruction, t_FBLOCK);
 }
 
@@ -6330,12 +5680,9 @@ void P2Dasm::dasm_fblock(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_xinit(QString* instruction, QString* brief)
+void P2Dasm::dasm_xinit(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Issue streamer command immediately, zeroing phase.");
     format_WZ_D_IM_S(instruction, t_XINIT);
 }
 
@@ -6348,12 +5695,9 @@ void P2Dasm::dasm_xinit(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_xstop(QString* instruction, QString* brief)
+void P2Dasm::dasm_xstop(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Stop streamer immediately.");
     format_inst(instruction, t_XSTOP);
 }
 
@@ -6366,12 +5710,9 @@ void P2Dasm::dasm_xstop(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_xzero(QString* instruction, QString* brief)
+void P2Dasm::dasm_xzero(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Buffer new streamer command to be issued on final NCO rollover of current command, zeroing phase.");
     format_WZ_D_IM_S(instruction, t_XZERO);
 }
 
@@ -6384,12 +5725,9 @@ void P2Dasm::dasm_xzero(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_xcont(QString* instruction, QString* brief)
+void P2Dasm::dasm_xcont(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Buffer new streamer command to be issued on final NCO rollover of current command, continuing phase.");
     format_WZ_D_IM_S(instruction, t_XCONT);
 }
 
@@ -6404,12 +5742,9 @@ void P2Dasm::dasm_xcont(QString* instruction, QString* brief)
  * If D[8:0] = 0, nothing repeats.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rep(QString* instruction, QString* brief)
+void P2Dasm::dasm_rep(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Execute next D[8:0] instructions S times.");
     format_WZ_D_IM_S(instruction, t_REP);
 }
 
@@ -6424,12 +5759,9 @@ void P2Dasm::dasm_rep(QString* instruction, QString* brief)
  * Prior SETQ sets PTRA of cog.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_coginit(QString* instruction, QString* brief)
+void P2Dasm::dasm_coginit(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Start cog selected by D.");
     format_WZ_D_IM_S(instruction, t_COGINIT);
 }
 
@@ -6443,12 +5775,9 @@ void P2Dasm::dasm_coginit(QString* instruction, QString* brief)
  * GETQX/GETQY retrieves lower/upper product.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_qmul(QString* instruction, QString* brief)
+void P2Dasm::dasm_qmul(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Begin CORDIC unsigned multiplication of D * S.");
     format_WZ_D_IM_S(instruction, t_QMUL);
 }
 
@@ -6462,12 +5791,9 @@ void P2Dasm::dasm_qmul(QString* instruction, QString* brief)
  * GETQX/GETQY retrieves quotient/remainder.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_qdiv(QString* instruction, QString* brief)
+void P2Dasm::dasm_qdiv(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Begin CORDIC unsigned division of {SETQ value or 32'b0, D} / S.");
     format_WZ_D_IM_S(instruction, t_QDIV);
 }
 
@@ -6481,12 +5807,9 @@ void P2Dasm::dasm_qdiv(QString* instruction, QString* brief)
  * GETQX/GETQY retrieves quotient/remainder.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_qfrac(QString* instruction, QString* brief)
+void P2Dasm::dasm_qfrac(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Begin CORDIC unsigned division of {D, SETQ value or 32'b0} / S.");
     format_WZ_D_IM_S(instruction, t_QFRAC);
 }
 
@@ -6500,12 +5823,9 @@ void P2Dasm::dasm_qfrac(QString* instruction, QString* brief)
  * GETQX retrieves root.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_qsqrt(QString* instruction, QString* brief)
+void P2Dasm::dasm_qsqrt(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Begin CORDIC square root of {S, D}.");
     format_WZ_D_IM_S(instruction, t_QSQRT);
 }
 
@@ -6519,12 +5839,9 @@ void P2Dasm::dasm_qsqrt(QString* instruction, QString* brief)
  * GETQX/GETQY retrieves X/Y.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_qrotate(QString* instruction, QString* brief)
+void P2Dasm::dasm_qrotate(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Begin CORDIC rotation of point (D, SETQ value or 32'b0) by angle S.");
     format_WZ_D_IM_S(instruction, t_QROTATE);
 }
 
@@ -6538,12 +5855,9 @@ void P2Dasm::dasm_qrotate(QString* instruction, QString* brief)
  * GETQX/GETQY retrieves length/angle.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_qvector(QString* instruction, QString* brief)
+void P2Dasm::dasm_qvector(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Begin CORDIC vectoring of point (D, S).");
     format_WZ_D_IM_S(instruction, t_QVECTOR);
 }
 
@@ -6556,12 +5870,9 @@ void P2Dasm::dasm_qvector(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_hubset(QString* instruction, QString* brief)
+void P2Dasm::dasm_hubset(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set hub configuration to D.");
     format_imm_d(instruction, t_HUBSET);
 }
 
@@ -6575,12 +5886,9 @@ void P2Dasm::dasm_hubset(QString* instruction, QString* brief)
  * If WC, check status of cog D[3:0], C = 1 if on.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_cogid(QString* instruction, QString* brief)
+void P2Dasm::dasm_cogid(QString* instruction)
 {
-    if (brief)
-        *brief = tr("If D is register and no WC, get cog ID (0 to 15) into D.");
     format_imm_d_c(instruction, t_COGID);
 }
 
@@ -6593,12 +5901,9 @@ void P2Dasm::dasm_cogid(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_cogstop(QString* instruction, QString* brief)
+void P2Dasm::dasm_cogstop(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Stop cog D[3:0].");
     format_imm_d(instruction, t_COGSTOP);
 }
 
@@ -6613,12 +5918,9 @@ void P2Dasm::dasm_cogstop(QString* instruction, QString* brief)
  * C = 1 if no LOCK available.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_locknew(QString* instruction, QString* brief)
+void P2Dasm::dasm_locknew(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Request a LOCK.");
     format_imm_d_c(instruction, t_LOCKNEW);
 }
 
@@ -6631,12 +5933,9 @@ void P2Dasm::dasm_locknew(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_lockret(QString* instruction, QString* brief)
+void P2Dasm::dasm_lockret(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Return LOCK D[3:0] for reallocation.");
     format_imm_d(instruction, t_LOCKRET);
 }
 
@@ -6652,12 +5951,9 @@ void P2Dasm::dasm_lockret(QString* instruction, QString* brief)
  * LOCK is also released if owner cog stops or restarts.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_locktry(QString* instruction, QString* brief)
+void P2Dasm::dasm_locktry(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Try to get LOCK D[3:0].");
     format_imm_d_c(instruction, t_LOCKTRY);
 }
 
@@ -6671,12 +5967,9 @@ void P2Dasm::dasm_locktry(QString* instruction, QString* brief)
  * If D is a register and WC, get current/last cog id of LOCK owner into D and LOCK status into C.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_lockrel(QString* instruction, QString* brief)
+void P2Dasm::dasm_lockrel(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Release LOCK D[3:0].");
     format_imm_d_c(instruction, t_LOCKREL);
 }
 
@@ -6690,12 +5983,9 @@ void P2Dasm::dasm_lockrel(QString* instruction, QString* brief)
  * GETQX retrieves log {5'whole_exponent, 27'fractional_exponent}.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_qlog(QString* instruction, QString* brief)
+void P2Dasm::dasm_qlog(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Begin CORDIC number-to-logarithm conversion of D.");
     format_imm_d(instruction, t_QLOG);
 }
 
@@ -6709,12 +5999,9 @@ void P2Dasm::dasm_qlog(QString* instruction, QString* brief)
  * GETQX retrieves number.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_qexp(QString* instruction, QString* brief)
+void P2Dasm::dasm_qexp(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Begin CORDIC logarithm-to-number conversion of D.");
     format_imm_d(instruction, t_QEXP);
 }
 
@@ -6729,12 +6016,9 @@ void P2Dasm::dasm_qexp(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rfbyte(QString* instruction, QString* brief)
+void P2Dasm::dasm_rfbyte(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Read zero-extended byte from FIFO into D. Used after RDFAST.");
     format_d_cz(instruction, t_RFBYTE);
 }
 
@@ -6749,12 +6033,9 @@ void P2Dasm::dasm_rfbyte(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rfword(QString* instruction, QString* brief)
+void P2Dasm::dasm_rfword(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Read zero-extended word from FIFO into D. Used after RDFAST.");
     format_d_cz(instruction, t_RFWORD);
 }
 
@@ -6769,12 +6050,9 @@ void P2Dasm::dasm_rfword(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rflong(QString* instruction, QString* brief)
+void P2Dasm::dasm_rflong(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Read long from FIFO into D. Used after RDFAST.");
     format_d_cz(instruction, t_RFLONG);
 }
 
@@ -6789,12 +6067,9 @@ void P2Dasm::dasm_rflong(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rfvar(QString* instruction, QString* brief)
+void P2Dasm::dasm_rfvar(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Read zero-extended 1..4-byte value from FIFO into D. Used after RDFAST.");
     format_d_cz(instruction, t_RFVAR);
 }
 
@@ -6809,12 +6084,9 @@ void P2Dasm::dasm_rfvar(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rfvars(QString* instruction, QString* brief)
+void P2Dasm::dasm_rfvars(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Read sign-extended 1..4-byte value from FIFO into D. Used after RDFAST.");
 
     format_d_cz(instruction, t_RFVARS);
 }
@@ -6828,12 +6100,9 @@ void P2Dasm::dasm_rfvars(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_wfbyte(QString* instruction, QString* brief)
+void P2Dasm::dasm_wfbyte(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Write byte in D[7:0] into FIFO. Used after WRFAST.");
     format_imm_d(instruction, t_WFBYTE);
 }
 
@@ -6846,12 +6115,9 @@ void P2Dasm::dasm_wfbyte(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_wfword(QString* instruction, QString* brief)
+void P2Dasm::dasm_wfword(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Write word in D[15:0] into FIFO. Used after WRFAST.");
     format_imm_d(instruction, t_WFWORD);
 }
 
@@ -6864,12 +6130,9 @@ void P2Dasm::dasm_wfword(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_wflong(QString* instruction, QString* brief)
+void P2Dasm::dasm_wflong(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Write long in D[31:0] into FIFO. Used after WRFAST.");
     format_imm_d(instruction, t_WFLONG);
 }
 
@@ -6885,12 +6148,9 @@ void P2Dasm::dasm_wflong(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_getqx(QString* instruction, QString* brief)
+void P2Dasm::dasm_getqx(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Retrieve CORDIC result X into D.");
     format_d_cz(instruction, t_GETQX);
 }
 
@@ -6906,12 +6166,9 @@ void P2Dasm::dasm_getqx(QString* instruction, QString* brief)
  * Z = (result == 0).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_getqy(QString* instruction, QString* brief)
+void P2Dasm::dasm_getqy(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Retrieve CORDIC result Y into D.");
     format_d_cz(instruction, t_GETQY);
 }
 
@@ -6925,12 +6182,9 @@ void P2Dasm::dasm_getqy(QString* instruction, QString* brief)
  * CT is the free-running 32-bit system counter that increments on every clock.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_getct(QString* instruction, QString* brief)
+void P2Dasm::dasm_getct(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get CT into D.");
     format_d(instruction, t_GETCT);
 }
 
@@ -6945,12 +6199,9 @@ void P2Dasm::dasm_getct(QString* instruction, QString* brief)
  * D = RND[31:0], C = RND[31], Z = RND[30], unique per cog.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_getrnd(QString* instruction, QString* brief)
+void P2Dasm::dasm_getrnd(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get RND into D/C/Z.");
     format_d_cz(instruction, t_GETRND);
 }
 
@@ -6964,12 +6215,9 @@ void P2Dasm::dasm_getrnd(QString* instruction, QString* brief)
  * C = RND[31], Z = RND[30], unique per cog.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_getrnd_cz(QString* instruction, QString* brief)
+void P2Dasm::dasm_getrnd_cz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get RND into C/Z.");
     format_cz(instruction, t_GETRND);
 }
 
@@ -6982,12 +6230,9 @@ void P2Dasm::dasm_getrnd_cz(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setdacs(QString* instruction, QString* brief)
+void P2Dasm::dasm_setdacs(QString* instruction)
 {
-    if (brief)
-        *brief = tr("DAC3 = D[31:24], DAC2 = D[23:16], DAC1 = D[15:8], DAC0 = D[7:0].");
     format_imm_d(instruction, t_SETDACS);
 }
 
@@ -7000,12 +6245,9 @@ void P2Dasm::dasm_setdacs(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setxfrq(QString* instruction, QString* brief)
+void P2Dasm::dasm_setxfrq(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set streamer NCO frequency to D.");
     format_imm_d(instruction, t_SETXFRQ);
 }
 
@@ -7018,12 +6260,9 @@ void P2Dasm::dasm_setxfrq(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_getxacc(QString* instruction, QString* brief)
+void P2Dasm::dasm_getxacc(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get the streamer's Goertzel X accumulator into D and the Y accumulator into the next instruction's S, clear accumulators.");
     format_d(instruction, t_GETXACC);
 }
 
@@ -7038,12 +6277,9 @@ void P2Dasm::dasm_getxacc(QString* instruction, QString* brief)
  * C/Z = 0.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_waitx(QString* instruction, QString* brief)
+void P2Dasm::dasm_waitx(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Wait 2 + D clocks if no WC/WZ/WCZ.");
     format_imm_d_cz(instruction, t_WAITX);
 }
 
@@ -7056,12 +6292,9 @@ void P2Dasm::dasm_waitx(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setse1(QString* instruction, QString* brief)
+void P2Dasm::dasm_setse1(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set SE1 event configuration to D[8:0].");
     format_imm_d(instruction, t_SETSE1);
 }
 
@@ -7074,12 +6307,9 @@ void P2Dasm::dasm_setse1(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setse2(QString* instruction, QString* brief)
+void P2Dasm::dasm_setse2(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set SE2 event configuration to D[8:0].");
     format_imm_d(instruction, t_SETSE2);
 }
 
@@ -7092,12 +6322,9 @@ void P2Dasm::dasm_setse2(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setse3(QString* instruction, QString* brief)
+void P2Dasm::dasm_setse3(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set SE3 event configuration to D[8:0].");
     format_imm_d(instruction, t_SETSE3);
 }
 
@@ -7110,12 +6337,9 @@ void P2Dasm::dasm_setse3(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setse4(QString* instruction, QString* brief)
+void P2Dasm::dasm_setse4(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set SE4 event configuration to D[8:0].");
     format_imm_d(instruction, t_SETSE4);
 }
 
@@ -7128,12 +6352,9 @@ void P2Dasm::dasm_setse4(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_pollint(QString* instruction, QString* brief)
+void P2Dasm::dasm_pollint(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get INT event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLINT);
 }
 
@@ -7146,12 +6367,9 @@ void P2Dasm::dasm_pollint(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_pollct1(QString* instruction, QString* brief)
+void P2Dasm::dasm_pollct1(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get CT1 event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLCT1);
 }
 
@@ -7164,12 +6382,9 @@ void P2Dasm::dasm_pollct1(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_pollct2(QString* instruction, QString* brief)
+void P2Dasm::dasm_pollct2(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get CT2 event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLCT2);
 }
 
@@ -7182,12 +6397,9 @@ void P2Dasm::dasm_pollct2(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_pollct3(QString* instruction, QString* brief)
+void P2Dasm::dasm_pollct3(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get CT3 event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLCT3);
 }
 
@@ -7200,12 +6412,9 @@ void P2Dasm::dasm_pollct3(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_pollse1(QString* instruction, QString* brief)
+void P2Dasm::dasm_pollse1(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get SE1 event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLSE1);
 }
 
@@ -7218,12 +6427,9 @@ void P2Dasm::dasm_pollse1(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_pollse2(QString* instruction, QString* brief)
+void P2Dasm::dasm_pollse2(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get SE2 event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLSE2);
 }
 
@@ -7236,12 +6442,9 @@ void P2Dasm::dasm_pollse2(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_pollse3(QString* instruction, QString* brief)
+void P2Dasm::dasm_pollse3(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get SE3 event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLSE3);
 }
 
@@ -7254,12 +6457,9 @@ void P2Dasm::dasm_pollse3(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_pollse4(QString* instruction, QString* brief)
+void P2Dasm::dasm_pollse4(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get SE4 event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLSE4);
 }
 
@@ -7272,12 +6472,9 @@ void P2Dasm::dasm_pollse4(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_pollpat(QString* instruction, QString* brief)
+void P2Dasm::dasm_pollpat(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get PAT event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLPAT);
 }
 
@@ -7290,12 +6487,9 @@ void P2Dasm::dasm_pollpat(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_pollfbw(QString* instruction, QString* brief)
+void P2Dasm::dasm_pollfbw(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get FBW event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLFBW);
 }
 
@@ -7308,12 +6502,9 @@ void P2Dasm::dasm_pollfbw(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_pollxmt(QString* instruction, QString* brief)
+void P2Dasm::dasm_pollxmt(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get XMT event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLXMT);
 }
 
@@ -7326,12 +6517,9 @@ void P2Dasm::dasm_pollxmt(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_pollxfi(QString* instruction, QString* brief)
+void P2Dasm::dasm_pollxfi(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get XFI event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLXFI);
 }
 
@@ -7344,12 +6532,9 @@ void P2Dasm::dasm_pollxfi(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_pollxro(QString* instruction, QString* brief)
+void P2Dasm::dasm_pollxro(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get XRO event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLXRO);
 }
 
@@ -7362,12 +6547,9 @@ void P2Dasm::dasm_pollxro(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_pollxrl(QString* instruction, QString* brief)
+void P2Dasm::dasm_pollxrl(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get XRL event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLXRL);
 }
 
@@ -7380,12 +6562,9 @@ void P2Dasm::dasm_pollxrl(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_pollatn(QString* instruction, QString* brief)
+void P2Dasm::dasm_pollatn(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get ATN event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLATN);
 }
 
@@ -7398,12 +6577,9 @@ void P2Dasm::dasm_pollatn(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_pollqmt(QString* instruction, QString* brief)
+void P2Dasm::dasm_pollqmt(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get QMT event flag into C/Z, then clear it.");
     format_cz(instruction, t_POLLQMT);
 }
 
@@ -7418,12 +6594,9 @@ void P2Dasm::dasm_pollqmt(QString* instruction, QString* brief)
  * C/Z = timeout.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_waitint(QString* instruction, QString* brief)
+void P2Dasm::dasm_waitint(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Wait for INT event flag, then clear it.");
     format_cz(instruction, t_WAITINT);
 }
 
@@ -7438,12 +6611,9 @@ void P2Dasm::dasm_waitint(QString* instruction, QString* brief)
  * C/Z = timeout.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_waitct1(QString* instruction, QString* brief)
+void P2Dasm::dasm_waitct1(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Wait for CT1 event flag, then clear it.");
     format_cz(instruction, t_WAITCT1);
 }
 
@@ -7458,12 +6628,9 @@ void P2Dasm::dasm_waitct1(QString* instruction, QString* brief)
  * C/Z = timeout.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_waitct2(QString* instruction, QString* brief)
+void P2Dasm::dasm_waitct2(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Wait for CT2 event flag, then clear it.");
     format_cz(instruction, t_WAITCT2);
 }
 
@@ -7478,12 +6645,9 @@ void P2Dasm::dasm_waitct2(QString* instruction, QString* brief)
  * C/Z = timeout.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_waitct3(QString* instruction, QString* brief)
+void P2Dasm::dasm_waitct3(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Wait for CT3 event flag, then clear it.");
     format_cz(instruction, t_WAITCT3);
 }
 
@@ -7498,12 +6662,9 @@ void P2Dasm::dasm_waitct3(QString* instruction, QString* brief)
  * C/Z = timeout.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_waitse1(QString* instruction, QString* brief)
+void P2Dasm::dasm_waitse1(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Wait for SE1 event flag, then clear it.");
     format_cz(instruction, t_WAITSE1);
 }
 
@@ -7518,12 +6679,9 @@ void P2Dasm::dasm_waitse1(QString* instruction, QString* brief)
  * C/Z = timeout.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_waitse2(QString* instruction, QString* brief)
+void P2Dasm::dasm_waitse2(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Wait for SE2 event flag, then clear it.");
     format_cz(instruction, t_WAITSE2);
 }
 
@@ -7538,12 +6696,9 @@ void P2Dasm::dasm_waitse2(QString* instruction, QString* brief)
  * C/Z = timeout.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_waitse3(QString* instruction, QString* brief)
+void P2Dasm::dasm_waitse3(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Wait for SE3 event flag, then clear it.");
     format_cz(instruction, t_WAITSE3);
 }
 
@@ -7558,12 +6713,9 @@ void P2Dasm::dasm_waitse3(QString* instruction, QString* brief)
  * C/Z = timeout.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_waitse4(QString* instruction, QString* brief)
+void P2Dasm::dasm_waitse4(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Wait for SE4 event flag, then clear it.");
     format_cz(instruction, t_WAITSE4);
 }
 
@@ -7578,12 +6730,9 @@ void P2Dasm::dasm_waitse4(QString* instruction, QString* brief)
  * C/Z = timeout.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_waitpat(QString* instruction, QString* brief)
+void P2Dasm::dasm_waitpat(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Wait for PAT event flag, then clear it.");
     format_cz(instruction, t_WAITPAT);
 }
 
@@ -7598,12 +6747,9 @@ void P2Dasm::dasm_waitpat(QString* instruction, QString* brief)
  * C/Z = timeout.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_waitfbw(QString* instruction, QString* brief)
+void P2Dasm::dasm_waitfbw(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Wait for FBW event flag, then clear it.");
     format_cz(instruction, t_WAITFBW);
 }
 
@@ -7618,12 +6764,9 @@ void P2Dasm::dasm_waitfbw(QString* instruction, QString* brief)
  * C/Z = timeout.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_waitxmt(QString* instruction, QString* brief)
+void P2Dasm::dasm_waitxmt(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Wait for XMT event flag, then clear it.");
     format_cz(instruction, t_WAITXMT);
 }
 
@@ -7638,12 +6781,9 @@ void P2Dasm::dasm_waitxmt(QString* instruction, QString* brief)
  * C/Z = timeout.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_waitxfi(QString* instruction, QString* brief)
+void P2Dasm::dasm_waitxfi(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Wait for XFI event flag, then clear it.");
     format_cz(instruction, t_WAITXFI);
 }
 
@@ -7658,12 +6798,9 @@ void P2Dasm::dasm_waitxfi(QString* instruction, QString* brief)
  * C/Z = timeout.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_waitxro(QString* instruction, QString* brief)
+void P2Dasm::dasm_waitxro(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Wait for XRO event flag, then clear it.");
     format_cz(instruction, t_WAITXRO);
 }
 
@@ -7678,12 +6815,9 @@ void P2Dasm::dasm_waitxro(QString* instruction, QString* brief)
  * C/Z = timeout.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_waitxrl(QString* instruction, QString* brief)
+void P2Dasm::dasm_waitxrl(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Wait for XRL event flag, then clear it.");
     format_cz(instruction, t_WAITXRL);
 }
 
@@ -7698,12 +6832,9 @@ void P2Dasm::dasm_waitxrl(QString* instruction, QString* brief)
  * C/Z = timeout.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_waitatn(QString* instruction, QString* brief)
+void P2Dasm::dasm_waitatn(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Wait for ATN event flag, then clear it.");
     format_cz(instruction, t_WAITATN);
 }
 
@@ -7716,12 +6847,9 @@ void P2Dasm::dasm_waitatn(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_allowi(QString* instruction, QString* brief)
+void P2Dasm::dasm_allowi(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Allow interrupts (default).");
     format_inst(instruction, t_ALLOWI);
 }
 
@@ -7734,12 +6862,9 @@ void P2Dasm::dasm_allowi(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_stalli(QString* instruction, QString* brief)
+void P2Dasm::dasm_stalli(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Stall Interrupts.");
     format_inst(instruction, t_STALLI);
 }
 
@@ -7752,12 +6877,9 @@ void P2Dasm::dasm_stalli(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_trgint1(QString* instruction, QString* brief)
+void P2Dasm::dasm_trgint1(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Trigger INT1, regardless of STALLI mode.");
     format_inst(instruction, t_TRGINT1);
 }
 
@@ -7770,12 +6892,9 @@ void P2Dasm::dasm_trgint1(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_trgint2(QString* instruction, QString* brief)
+void P2Dasm::dasm_trgint2(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Trigger INT2, regardless of STALLI mode.");
     format_inst(instruction, t_TRGINT2);
 }
 
@@ -7788,12 +6907,9 @@ void P2Dasm::dasm_trgint2(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_trgint3(QString* instruction, QString* brief)
+void P2Dasm::dasm_trgint3(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Trigger INT3, regardless of STALLI mode.");
     format_inst(instruction, t_TRGINT3);
 }
 
@@ -7806,12 +6922,9 @@ void P2Dasm::dasm_trgint3(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_nixint1(QString* instruction, QString* brief)
+void P2Dasm::dasm_nixint1(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Cancel INT1.");
     format_inst(instruction, t_NIXINT1);
 }
 
@@ -7824,12 +6937,9 @@ void P2Dasm::dasm_nixint1(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_nixint2(QString* instruction, QString* brief)
+void P2Dasm::dasm_nixint2(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Cancel INT2.");
     format_inst(instruction, t_NIXINT2);
 }
 
@@ -7842,12 +6952,9 @@ void P2Dasm::dasm_nixint2(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_nixint3(QString* instruction, QString* brief)
+void P2Dasm::dasm_nixint3(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Cancel INT3.");
     format_inst(instruction, t_NIXINT3);
 }
 
@@ -7860,12 +6967,9 @@ void P2Dasm::dasm_nixint3(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setint1(QString* instruction, QString* brief)
+void P2Dasm::dasm_setint1(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set INT1 source to D[3:0].");
     format_imm_d(instruction, t_SETINT1);
 }
 
@@ -7878,12 +6982,9 @@ void P2Dasm::dasm_setint1(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setint2(QString* instruction, QString* brief)
+void P2Dasm::dasm_setint2(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set INT2 source to D[3:0].");
     format_imm_d(instruction, t_SETINT2);
 }
 
@@ -7896,12 +6997,9 @@ void P2Dasm::dasm_setint2(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setint3(QString* instruction, QString* brief)
+void P2Dasm::dasm_setint3(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set INT3 source to D[3:0].");
     format_imm_d(instruction, t_SETINT3);
 }
 
@@ -7916,12 +7014,9 @@ void P2Dasm::dasm_setint3(QString* instruction, QString* brief)
  * Also used before MUXQ/COGINIT/QDIV/QFRAC/QROTATE/WAITxxx.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setq(QString* instruction, QString* brief)
+void P2Dasm::dasm_setq(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set Q to D.");
     format_imm_d(instruction, t_SETQ);
 }
 
@@ -7935,12 +7030,9 @@ void P2Dasm::dasm_setq(QString* instruction, QString* brief)
  * Use before RDLONG/WRLONG/WMLONG to set LUT block transfer.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setq2(QString* instruction, QString* brief)
+void P2Dasm::dasm_setq2(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set Q to D.");
     format_imm_d(instruction, t_SETQ2);
 }
 
@@ -7953,12 +7045,9 @@ void P2Dasm::dasm_setq2(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_push(QString* instruction, QString* brief)
+void P2Dasm::dasm_push(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Push D onto stack.");
     format_imm_d(instruction, t_PUSH);
 }
 
@@ -7972,12 +7061,9 @@ void P2Dasm::dasm_push(QString* instruction, QString* brief)
  * C = K[31], Z = K[30], D = K.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_pop(QString* instruction, QString* brief)
+void P2Dasm::dasm_pop(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Pop stack (K).");
     format_d_cz(instruction, t_POP);
 }
 
@@ -7991,12 +7077,9 @@ void P2Dasm::dasm_pop(QString* instruction, QString* brief)
  * C = D[31], Z = D[30], PC = D[19:0].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jmp(QString* instruction, QString* brief)
+void P2Dasm::dasm_jmp(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to D.");
     format_d_cz(instruction, t_JMP);
 }
 
@@ -8010,12 +7093,9 @@ void P2Dasm::dasm_jmp(QString* instruction, QString* brief)
  * C = D[31], Z = D[30], PC = D[19:0].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_call(QString* instruction, QString* brief)
+void P2Dasm::dasm_call(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Call to D by pushing {C, Z, 10'b0, PC[19:0]} onto stack.");
     format_d_cz(instruction, t_CALL);
 }
 
@@ -8029,12 +7109,9 @@ void P2Dasm::dasm_call(QString* instruction, QString* brief)
  * C = K[31], Z = K[30], PC = K[19:0].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_ret(QString* instruction, QString* brief)
+void P2Dasm::dasm_ret(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Return by popping stack (K).");
     format_cz(instruction, t_RET);
 }
 
@@ -8048,12 +7125,9 @@ void P2Dasm::dasm_ret(QString* instruction, QString* brief)
  * C = D[31], Z = D[30], PC = D[19:0].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_calla(QString* instruction, QString* brief)
+void P2Dasm::dasm_calla(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Call to D by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRA++.");
     format_d_cz(instruction, t_CALLA);
 }
 
@@ -8067,12 +7141,9 @@ void P2Dasm::dasm_calla(QString* instruction, QString* brief)
  * C = L[31], Z = L[30], PC = L[19:0].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_reta(QString* instruction, QString* brief)
+void P2Dasm::dasm_reta(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Return by reading hub long (L) at --PTRA.");
     format_cz(instruction, t_RETA);
 }
 
@@ -8086,12 +7157,9 @@ void P2Dasm::dasm_reta(QString* instruction, QString* brief)
  * C = D[31], Z = D[30], PC = D[19:0].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_callb(QString* instruction, QString* brief)
+void P2Dasm::dasm_callb(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Call to D by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRB++.");
     format_d_cz(instruction, t_CALLB);
 }
 
@@ -8105,12 +7173,9 @@ void P2Dasm::dasm_callb(QString* instruction, QString* brief)
  * C = L[31], Z = L[30], PC = L[19:0].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_retb(QString* instruction, QString* brief)
+void P2Dasm::dasm_retb(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Return by reading hub long (L) at --PTRB.");
     format_cz(instruction, t_RETB);
 }
 
@@ -8125,12 +7190,9 @@ void P2Dasm::dasm_retb(QString* instruction, QString* brief)
  * For hubex, PC += D[17:0] << 2.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jmprel(QString* instruction, QString* brief)
+void P2Dasm::dasm_jmprel(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump ahead/back by D instructions.");
     format_imm_d(instruction, t_JMPREL);
 }
 
@@ -8146,12 +7208,9 @@ void P2Dasm::dasm_jmprel(QString* instruction, QString* brief)
  * D[31].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_skip(QString* instruction, QString* brief)
+void P2Dasm::dasm_skip(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Skip instructions per D.");
     format_imm_d(instruction, t_SKIP);
 }
 
@@ -8165,12 +7224,9 @@ void P2Dasm::dasm_skip(QString* instruction, QString* brief)
  * Like SKIP, but instead of cancelling instructions, the PC leaps over them.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_skipf(QString* instruction, QString* brief)
+void P2Dasm::dasm_skipf(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Skip cog/LUT instructions fast per D.");
     format_imm_d(instruction, t_SKIPF);
 }
 
@@ -8184,12 +7240,9 @@ void P2Dasm::dasm_skipf(QString* instruction, QString* brief)
  * PC = {10'b0, D[9:0]}.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_execf(QString* instruction, QString* brief)
+void P2Dasm::dasm_execf(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to D[9:0] in cog/LUT and set SKIPF pattern to D[31:10].");
     format_imm_d(instruction, t_EXECF);
 }
 
@@ -8202,12 +7255,9 @@ void P2Dasm::dasm_execf(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_getptr(QString* instruction, QString* brief)
+void P2Dasm::dasm_getptr(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get current FIFO hub pointer into D.");
     format_d(instruction, t_GETPTR);
 }
 
@@ -8222,12 +7272,9 @@ void P2Dasm::dasm_getptr(QString* instruction, QString* brief)
  * Z = 0.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_getbrk(QString* instruction, QString* brief)
+void P2Dasm::dasm_getbrk(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get breakpoint status into D according to WC/WZ/WCZ.");
     format_d_cz(instruction, t_GETBRK);
 }
 
@@ -8241,12 +7288,9 @@ void P2Dasm::dasm_getbrk(QString* instruction, QString* brief)
  * Cog D[3:0] must have asynchronous breakpoint enabled.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_cogbrk(QString* instruction, QString* brief)
+void P2Dasm::dasm_cogbrk(QString* instruction)
 {
-    if (brief)
-        *brief = tr("If in debug ISR, trigger asynchronous breakpoint in cog D[3:0].");
     format_imm_d(instruction, t_COGBRK);
 }
 
@@ -8260,12 +7304,9 @@ void P2Dasm::dasm_cogbrk(QString* instruction, QString* brief)
  * Else, trigger break if enabled, conditionally write break code to D[7:0].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_brk(QString* instruction, QString* brief)
+void P2Dasm::dasm_brk(QString* instruction)
 {
-    if (brief)
-        *brief = tr("If in debug ISR, set next break condition to D.");
     format_imm_d(instruction, t_BRK);
 }
 
@@ -8278,12 +7319,9 @@ void P2Dasm::dasm_brk(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setluts(QString* instruction, QString* brief)
+void P2Dasm::dasm_setluts(QString* instruction)
 {
-    if (brief)
-        *brief = tr("If D[0] = 1 then enable LUT sharing, where LUT writes within the adjacent odd/even companion cog are copied to this LUT.");
     format_imm_d(instruction, t_SETLUTS);
 }
 
@@ -8296,12 +7334,9 @@ void P2Dasm::dasm_setluts(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setcy(QString* instruction, QString* brief)
+void P2Dasm::dasm_setcy(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set the colorspace converter \"CY\" parameter to D[31:0].");
     format_imm_d(instruction, t_SETCY);
 }
 
@@ -8314,12 +7349,9 @@ void P2Dasm::dasm_setcy(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setci(QString* instruction, QString* brief)
+void P2Dasm::dasm_setci(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set the colorspace converter \"CI\" parameter to D[31:0].");
     format_imm_d(instruction, t_SETCI);
 }
 
@@ -8332,12 +7364,9 @@ void P2Dasm::dasm_setci(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setcq(QString* instruction, QString* brief)
+void P2Dasm::dasm_setcq(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set the colorspace converter \"CQ\" parameter to D[31:0].");
     format_imm_d(instruction, t_SETCQ);
 }
 
@@ -8350,12 +7379,9 @@ void P2Dasm::dasm_setcq(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setcfrq(QString* instruction, QString* brief)
+void P2Dasm::dasm_setcfrq(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set the colorspace converter \"CFRQ\" parameter to D[31:0].");
     format_imm_d(instruction, t_SETCFRQ);
 }
 
@@ -8368,12 +7394,9 @@ void P2Dasm::dasm_setcfrq(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setcmod(QString* instruction, QString* brief)
+void P2Dasm::dasm_setcmod(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set the colorspace converter \"CMOD\" parameter to D[6:0].");
     format_imm_d(instruction, t_SETCMOD);
 }
 
@@ -8386,12 +7409,9 @@ void P2Dasm::dasm_setcmod(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setpiv(QString* instruction, QString* brief)
+void P2Dasm::dasm_setpiv(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set BLNPIX/MIXPIX blend factor to D[7:0].");
     format_imm_d(instruction, t_SETPIV);
 }
 
@@ -8404,12 +7424,9 @@ void P2Dasm::dasm_setpiv(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setpix(QString* instruction, QString* brief)
+void P2Dasm::dasm_setpix(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set MIXPIX mode to D[5:0].");
     format_imm_d(instruction, t_SETPIX);
 }
 
@@ -8422,12 +7439,9 @@ void P2Dasm::dasm_setpix(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_cogatn(QString* instruction, QString* brief)
+void P2Dasm::dasm_cogatn(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Strobe \"attention\" of all cogs whose corresponging bits are high in D[15:0].");
     format_imm_d(instruction, t_COGATN);
 }
 
@@ -8441,12 +7455,9 @@ void P2Dasm::dasm_cogatn(QString* instruction, QString* brief)
  * C/Z =          IN[D[5:0]].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_testp_w(QString* instruction, QString* brief)
+void P2Dasm::dasm_testp_w(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Test  IN bit of pin D[5:0], write to C/Z.");
     format_imm_d_cz(instruction, t_TESTP);
 }
 
@@ -8460,12 +7471,9 @@ void P2Dasm::dasm_testp_w(QString* instruction, QString* brief)
  * C/Z =         !IN[D[5:0]].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_testpn_w(QString* instruction, QString* brief)
+void P2Dasm::dasm_testpn_w(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Test !IN bit of pin D[5:0], write to C/Z.");
     format_imm_d_cz(instruction, t_TESTPN);
 }
 
@@ -8479,12 +7487,9 @@ void P2Dasm::dasm_testpn_w(QString* instruction, QString* brief)
  * C/Z = C/Z AND  IN[D[5:0]].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_testp_and(QString* instruction, QString* brief)
+void P2Dasm::dasm_testp_and(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Test  IN bit of pin D[5:0], AND into C/Z.");
     format_imm_d_cz(instruction, t_TESTP, t_AND);
 }
 
@@ -8498,12 +7503,9 @@ void P2Dasm::dasm_testp_and(QString* instruction, QString* brief)
  * C/Z = C/Z AND !IN[D[5:0]].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_testpn_and(QString* instruction, QString* brief)
+void P2Dasm::dasm_testpn_and(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Test !IN bit of pin D[5:0], AND into C/Z.");
     format_imm_d_cz(instruction, t_TESTPN, t_AND);
 }
 
@@ -8517,12 +7519,9 @@ void P2Dasm::dasm_testpn_and(QString* instruction, QString* brief)
  * C/Z = C/Z OR   IN[D[5:0]].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_testp_or(QString* instruction, QString* brief)
+void P2Dasm::dasm_testp_or(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Test  IN bit of pin D[5:0], OR  into C/Z.");
     format_imm_d_cz(instruction, t_TESTP, t_OR);
 }
 
@@ -8536,12 +7535,9 @@ void P2Dasm::dasm_testp_or(QString* instruction, QString* brief)
  * C/Z = C/Z OR  !IN[D[5:0]].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_testpn_or(QString* instruction, QString* brief)
+void P2Dasm::dasm_testpn_or(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Test !IN bit of pin D[5:0], OR  into C/Z.");
     format_imm_d_cz(instruction, t_TESTPN, t_OR);
 }
 
@@ -8555,12 +7551,9 @@ void P2Dasm::dasm_testpn_or(QString* instruction, QString* brief)
  * C/Z = C/Z XOR  IN[D[5:0]].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_testp_xor(QString* instruction, QString* brief)
+void P2Dasm::dasm_testp_xor(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Test  IN bit of pin D[5:0], XOR into C/Z.");
     format_imm_d_cz(instruction, t_TESTP, t_XOR);
 }
 
@@ -8574,12 +7567,9 @@ void P2Dasm::dasm_testp_xor(QString* instruction, QString* brief)
  * C/Z = C/Z XOR !IN[D[5:0]].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_testpn_xor(QString* instruction, QString* brief)
+void P2Dasm::dasm_testpn_xor(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Test !IN bit of pin D[5:0], XOR into C/Z.");
     format_imm_d_cz(instruction, t_TESTPN, t_XOR);
 }
 
@@ -8593,12 +7583,9 @@ void P2Dasm::dasm_testpn_xor(QString* instruction, QString* brief)
  * C,Z = DIR bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_dirl(QString* instruction, QString* brief)
+void P2Dasm::dasm_dirl(QString* instruction)
 {
-    if (brief)
-        *brief = tr("DIR bit of pin D[5:0] = 0.");
     format_imm_d_cz(instruction, t_DIRL);
 }
 
@@ -8612,12 +7599,9 @@ void P2Dasm::dasm_dirl(QString* instruction, QString* brief)
  * C,Z = DIR bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_dirh(QString* instruction, QString* brief)
+void P2Dasm::dasm_dirh(QString* instruction)
 {
-    if (brief)
-        *brief = tr("DIR bit of pin D[5:0] = 1.");
     format_imm_d_cz(instruction, t_DIRH);
 }
 
@@ -8631,12 +7615,9 @@ void P2Dasm::dasm_dirh(QString* instruction, QString* brief)
  * C,Z = DIR bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_dirc(QString* instruction, QString* brief)
+void P2Dasm::dasm_dirc(QString* instruction)
 {
-    if (brief)
-        *brief = tr("DIR bit of pin D[5:0] = C.");
     format_imm_d_cz(instruction, t_DIRC);
 }
 
@@ -8650,12 +7631,9 @@ void P2Dasm::dasm_dirc(QString* instruction, QString* brief)
  * C,Z = DIR bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_dirnc(QString* instruction, QString* brief)
+void P2Dasm::dasm_dirnc(QString* instruction)
 {
-    if (brief)
-        *brief = tr("DIR bit of pin D[5:0] = !C.");
     format_imm_d_cz(instruction, t_DIRNC);
 }
 
@@ -8669,12 +7647,9 @@ void P2Dasm::dasm_dirnc(QString* instruction, QString* brief)
  * C,Z = DIR bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_dirz(QString* instruction, QString* brief)
+void P2Dasm::dasm_dirz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("DIR bit of pin D[5:0] = Z.");
     format_imm_d_cz(instruction, t_DIRZ);
 }
 
@@ -8688,12 +7663,9 @@ void P2Dasm::dasm_dirz(QString* instruction, QString* brief)
  * C,Z = DIR bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_dirnz(QString* instruction, QString* brief)
+void P2Dasm::dasm_dirnz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("DIR bit of pin D[5:0] = !Z.");
     format_imm_d_cz(instruction, t_DIRNZ);
 }
 
@@ -8707,12 +7679,9 @@ void P2Dasm::dasm_dirnz(QString* instruction, QString* brief)
  * C,Z = DIR bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_dirrnd(QString* instruction, QString* brief)
+void P2Dasm::dasm_dirrnd(QString* instruction)
 {
-    if (brief)
-        *brief = tr("DIR bit of pin D[5:0] = RND.");
     format_imm_d_cz(instruction, t_DIRRND);
 }
 
@@ -8726,12 +7695,9 @@ void P2Dasm::dasm_dirrnd(QString* instruction, QString* brief)
  * C,Z = DIR bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_dirnot(QString* instruction, QString* brief)
+void P2Dasm::dasm_dirnot(QString* instruction)
 {
-    if (brief)
-        *brief = tr("DIR bit of pin D[5:0] = !bit.");
     format_imm_d_cz(instruction, t_DIRNOT);
 }
 
@@ -8745,12 +7711,9 @@ void P2Dasm::dasm_dirnot(QString* instruction, QString* brief)
  * C,Z = OUT bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_outl(QString* instruction, QString* brief)
+void P2Dasm::dasm_outl(QString* instruction)
 {
-    if (brief)
-        *brief = tr("OUT bit of pin D[5:0] = 0.");
     format_imm_d_cz(instruction, t_OUTL);
 }
 
@@ -8764,12 +7727,9 @@ void P2Dasm::dasm_outl(QString* instruction, QString* brief)
  * C,Z = OUT bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_outh(QString* instruction, QString* brief)
+void P2Dasm::dasm_outh(QString* instruction)
 {
-    if (brief)
-        *brief = tr("OUT bit of pin D[5:0] = 1.");
     format_imm_d_cz(instruction, t_OUTH);
 }
 
@@ -8783,12 +7743,9 @@ void P2Dasm::dasm_outh(QString* instruction, QString* brief)
  * C,Z = OUT bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_outc(QString* instruction, QString* brief)
+void P2Dasm::dasm_outc(QString* instruction)
 {
-    if (brief)
-        *brief = tr("OUT bit of pin D[5:0] = C.");
     format_imm_d_cz(instruction, t_OUTC);
 }
 
@@ -8802,12 +7759,9 @@ void P2Dasm::dasm_outc(QString* instruction, QString* brief)
  * C,Z = OUT bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_outnc(QString* instruction, QString* brief)
+void P2Dasm::dasm_outnc(QString* instruction)
 {
-    if (brief)
-        *brief = tr("OUT bit of pin D[5:0] = !C.");
     format_imm_d_cz(instruction, t_OUTNC);
 }
 
@@ -8821,12 +7775,9 @@ void P2Dasm::dasm_outnc(QString* instruction, QString* brief)
  * C,Z = OUT bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_outz(QString* instruction, QString* brief)
+void P2Dasm::dasm_outz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("OUT bit of pin D[5:0] = Z.");
     format_imm_d_cz(instruction, t_OUTZ);
 }
 
@@ -8840,12 +7791,9 @@ void P2Dasm::dasm_outz(QString* instruction, QString* brief)
  * C,Z = OUT bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_outnz(QString* instruction, QString* brief)
+void P2Dasm::dasm_outnz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("OUT bit of pin D[5:0] = !Z.");
     format_imm_d_cz(instruction, t_OUTNZ);
 }
 
@@ -8859,12 +7807,9 @@ void P2Dasm::dasm_outnz(QString* instruction, QString* brief)
  * C,Z = OUT bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_outrnd(QString* instruction, QString* brief)
+void P2Dasm::dasm_outrnd(QString* instruction)
 {
-    if (brief)
-        *brief = tr("OUT bit of pin D[5:0] = RND.");
     format_imm_d_cz(instruction, t_OUTRND);
 }
 
@@ -8878,12 +7823,9 @@ void P2Dasm::dasm_outrnd(QString* instruction, QString* brief)
  * C,Z = OUT bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_outnot(QString* instruction, QString* brief)
+void P2Dasm::dasm_outnot(QString* instruction)
 {
-    if (brief)
-        *brief = tr("OUT bit of pin D[5:0] = !bit.");
     format_imm_d_cz(instruction, t_OUTNOT);
 }
 
@@ -8898,12 +7840,9 @@ void P2Dasm::dasm_outnot(QString* instruction, QString* brief)
  * C,Z = OUT bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_fltl(QString* instruction, QString* brief)
+void P2Dasm::dasm_fltl(QString* instruction)
 {
-    if (brief)
-        *brief = tr("OUT bit of pin D[5:0] = 0.");
     format_imm_d_cz(instruction, t_FLTL);
 }
 
@@ -8918,12 +7857,9 @@ void P2Dasm::dasm_fltl(QString* instruction, QString* brief)
  * C,Z = OUT bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_flth(QString* instruction, QString* brief)
+void P2Dasm::dasm_flth(QString* instruction)
 {
-    if (brief)
-        *brief = tr("OUT bit of pin D[5:0] = 1.");
     format_imm_d_cz(instruction, t_FLTH);
 }
 
@@ -8938,12 +7874,9 @@ void P2Dasm::dasm_flth(QString* instruction, QString* brief)
  * C,Z = OUT bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_fltc(QString* instruction, QString* brief)
+void P2Dasm::dasm_fltc(QString* instruction)
 {
-    if (brief)
-        *brief = tr("OUT bit of pin D[5:0] = C.");
     format_imm_d_cz(instruction, t_FLTC);
 }
 
@@ -8958,12 +7891,9 @@ void P2Dasm::dasm_fltc(QString* instruction, QString* brief)
  * C,Z = OUT bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_fltnc(QString* instruction, QString* brief)
+void P2Dasm::dasm_fltnc(QString* instruction)
 {
-    if (brief)
-        *brief = tr("OUT bit of pin D[5:0] = !C.");
     format_imm_d_cz(instruction, t_FLTNC);
 }
 
@@ -8978,12 +7908,9 @@ void P2Dasm::dasm_fltnc(QString* instruction, QString* brief)
  * C,Z = OUT bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_fltz(QString* instruction, QString* brief)
+void P2Dasm::dasm_fltz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("OUT bit of pin D[5:0] = Z.");
     format_imm_d_cz(instruction, t_FLTZ);
 }
 
@@ -8998,12 +7925,9 @@ void P2Dasm::dasm_fltz(QString* instruction, QString* brief)
  * C,Z = OUT bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_fltnz(QString* instruction, QString* brief)
+void P2Dasm::dasm_fltnz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("OUT bit of pin D[5:0] = !Z.");
     format_imm_d_cz(instruction, t_FLTNZ);
 }
 
@@ -9018,12 +7942,9 @@ void P2Dasm::dasm_fltnz(QString* instruction, QString* brief)
  * C,Z = OUT bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_fltrnd(QString* instruction, QString* brief)
+void P2Dasm::dasm_fltrnd(QString* instruction)
 {
-    if (brief)
-        *brief = tr("OUT bit of pin D[5:0] = RND.");
     format_imm_d_cz(instruction, t_FLTRND);
 }
 
@@ -9038,12 +7959,9 @@ void P2Dasm::dasm_fltrnd(QString* instruction, QString* brief)
  * C,Z = OUT bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_fltnot(QString* instruction, QString* brief)
+void P2Dasm::dasm_fltnot(QString* instruction)
 {
-    if (brief)
-        *brief = tr("OUT bit of pin D[5:0] = !bit.");
     format_imm_d_cz(instruction, t_FLTNOT);
 }
 
@@ -9058,12 +7976,9 @@ void P2Dasm::dasm_fltnot(QString* instruction, QString* brief)
  * C,Z = OUT bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_drvl(QString* instruction, QString* brief)
+void P2Dasm::dasm_drvl(QString* instruction)
 {
-    if (brief)
-        *brief = tr("OUT bit of pin D[5:0] = 0.");
     format_imm_d_cz(instruction, t_DRVL);
 }
 
@@ -9078,12 +7993,9 @@ void P2Dasm::dasm_drvl(QString* instruction, QString* brief)
  * C,Z = OUT bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_drvh(QString* instruction, QString* brief)
+void P2Dasm::dasm_drvh(QString* instruction)
 {
-    if (brief)
-        *brief = tr("OUT bit of pin D[5:0] = 1.");
     format_imm_d_cz(instruction, t_DRVH);
 }
 
@@ -9098,12 +8010,9 @@ void P2Dasm::dasm_drvh(QString* instruction, QString* brief)
  * C,Z = OUT bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_drvc(QString* instruction, QString* brief)
+void P2Dasm::dasm_drvc(QString* instruction)
 {
-    if (brief)
-        *brief = tr("OUT bit of pin D[5:0] = C.");
     format_imm_d_cz(instruction, t_DRVC);
 }
 
@@ -9118,12 +8027,9 @@ void P2Dasm::dasm_drvc(QString* instruction, QString* brief)
  * C,Z = OUT bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_drvnc(QString* instruction, QString* brief)
+void P2Dasm::dasm_drvnc(QString* instruction)
 {
-    if (brief)
-        *brief = tr("OUT bit of pin D[5:0] = !C.");
     format_imm_d_cz(instruction, t_DRVNC);
 }
 
@@ -9138,12 +8044,9 @@ void P2Dasm::dasm_drvnc(QString* instruction, QString* brief)
  * C,Z = OUT bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_drvz(QString* instruction, QString* brief)
+void P2Dasm::dasm_drvz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("OUT bit of pin D[5:0] = Z.");
     format_imm_d_cz(instruction, t_DRVZ);
 }
 
@@ -9158,12 +8061,9 @@ void P2Dasm::dasm_drvz(QString* instruction, QString* brief)
  * C,Z = OUT bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_drvnz(QString* instruction, QString* brief)
+void P2Dasm::dasm_drvnz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("OUT bit of pin D[5:0] = !Z.");
     format_imm_d_cz(instruction, t_DRVNZ);
 }
 
@@ -9178,12 +8078,9 @@ void P2Dasm::dasm_drvnz(QString* instruction, QString* brief)
  * C,Z = OUT bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_drvrnd(QString* instruction, QString* brief)
+void P2Dasm::dasm_drvrnd(QString* instruction)
 {
-    if (brief)
-        *brief = tr("OUT bit of pin D[5:0] = RND.");
     format_imm_d_cz(instruction, t_DRVRND);
 }
 
@@ -9198,12 +8095,9 @@ void P2Dasm::dasm_drvrnd(QString* instruction, QString* brief)
  * C,Z = OUT bit.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_drvnot(QString* instruction, QString* brief)
+void P2Dasm::dasm_drvnot(QString* instruction)
 {
-    if (brief)
-        *brief = tr("OUT bit of pin D[5:0] = !bit.");
     format_imm_d_cz(instruction, t_DRVNOT);
 }
 
@@ -9217,12 +8111,9 @@ void P2Dasm::dasm_drvnot(QString* instruction, QString* brief)
  * D = {S[31], S[27], S[23], S[19], ... S[12], S[8], S[4], S[0]}.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_splitb(QString* instruction, QString* brief)
+void P2Dasm::dasm_splitb(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Split every 4th bit of S into bytes of D.");
     format_d(instruction, t_SPLITB);
 }
 
@@ -9236,12 +8127,9 @@ void P2Dasm::dasm_splitb(QString* instruction, QString* brief)
  * D = {S[31], S[23], S[15], S[7], ... S[24], S[16], S[8], S[0]}.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_mergeb(QString* instruction, QString* brief)
+void P2Dasm::dasm_mergeb(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Merge bits of bytes in S into D.");
     format_d(instruction, t_MERGEB);
 }
 
@@ -9255,12 +8143,9 @@ void P2Dasm::dasm_mergeb(QString* instruction, QString* brief)
  * D = {S[31], S[29], S[27], S[25], ... S[6], S[4], S[2], S[0]}.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_splitw(QString* instruction, QString* brief)
+void P2Dasm::dasm_splitw(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Split bits of S into words of D.");
     format_d(instruction, t_SPLITW);
 }
 
@@ -9274,12 +8159,9 @@ void P2Dasm::dasm_splitw(QString* instruction, QString* brief)
  * D = {S[31], S[15], S[30], S[14], ... S[17], S[1], S[16], S[0]}.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_mergew(QString* instruction, QString* brief)
+void P2Dasm::dasm_mergew(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Merge bits of words in S into D.");
     format_d(instruction, t_MERGEW);
 }
 
@@ -9294,12 +8176,9 @@ void P2Dasm::dasm_mergew(QString* instruction, QString* brief)
  * Forward pattern.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_seussf(QString* instruction, QString* brief)
+void P2Dasm::dasm_seussf(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Relocate and periodically invert bits from S into D.");
     format_d(instruction, t_SEUSSF);
 }
 
@@ -9314,12 +8193,9 @@ void P2Dasm::dasm_seussf(QString* instruction, QString* brief)
  * Reverse pattern.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_seussr(QString* instruction, QString* brief)
+void P2Dasm::dasm_seussr(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Relocate and periodically invert bits from S into D.");
     format_d(instruction, t_SEUSSR);
 }
 
@@ -9333,12 +8209,9 @@ void P2Dasm::dasm_seussr(QString* instruction, QString* brief)
  * D = {15'b0, S[31:27], S[23:18], S[15:11]}.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rgbsqz(QString* instruction, QString* brief)
+void P2Dasm::dasm_rgbsqz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Squeeze 8:8:8 RGB value in S[31:8] into 5:6:5 value in D[15:0].");
     format_d(instruction, t_RGBSQZ);
 }
 
@@ -9352,12 +8225,9 @@ void P2Dasm::dasm_rgbsqz(QString* instruction, QString* brief)
  * D = {S[15:11,15:13], S[10:5,10:9], S[4:0,4:2], 8'b0}.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rgbexp(QString* instruction, QString* brief)
+void P2Dasm::dasm_rgbexp(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Expand 5:6:5 RGB value in S[15:0] into 8:8:8 value in D[31:8].");
     format_d(instruction, t_RGBEXP);
 }
 
@@ -9370,12 +8240,9 @@ void P2Dasm::dasm_rgbexp(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_xoro32(QString* instruction, QString* brief)
+void P2Dasm::dasm_xoro32(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Iterate D with xoroshiro32+ PRNG algorithm and put PRNG result into next instruction's S.");
     format_d(instruction, t_XORO32);
 }
 
@@ -9389,12 +8256,9 @@ void P2Dasm::dasm_xoro32(QString* instruction, QString* brief)
  * D = D[0:31].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rev(QString* instruction, QString* brief)
+void P2Dasm::dasm_rev(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Reverse D bits.");
     format_d(instruction, t_REV);
 }
 
@@ -9409,12 +8273,9 @@ void P2Dasm::dasm_rev(QString* instruction, QString* brief)
  * C = D[1],  Z = D[0].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rczr(QString* instruction, QString* brief)
+void P2Dasm::dasm_rczr(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Rotate C,Z right through D.");
     format_d_cz(instruction, t_RCZR);
 }
 
@@ -9429,12 +8290,9 @@ void P2Dasm::dasm_rczr(QString* instruction, QString* brief)
  * C = D[31], Z = D[30].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_rczl(QString* instruction, QString* brief)
+void P2Dasm::dasm_rczl(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Rotate C,Z left through D.");
     format_d_cz(instruction, t_RCZL);
 }
 
@@ -9448,12 +8306,9 @@ void P2Dasm::dasm_rczl(QString* instruction, QString* brief)
  * D = {31'b0,  C).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_wrc(QString* instruction, QString* brief)
+void P2Dasm::dasm_wrc(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Write 0 or 1 to D, according to  C.");
     format_d(instruction, t_WRC);
 }
 
@@ -9467,12 +8322,9 @@ void P2Dasm::dasm_wrc(QString* instruction, QString* brief)
  * D = {31'b0, !C).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_wrnc(QString* instruction, QString* brief)
+void P2Dasm::dasm_wrnc(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Write 0 or 1 to D, according to !C.");
     format_d(instruction, t_WRNC);
 }
 
@@ -9486,12 +8338,9 @@ void P2Dasm::dasm_wrnc(QString* instruction, QString* brief)
  * D = {31'b0,  Z).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_wrz(QString* instruction, QString* brief)
+void P2Dasm::dasm_wrz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Write 0 or 1 to D, according to  Z.");
     format_d(instruction, t_WRZ);
 }
 
@@ -9505,12 +8354,9 @@ void P2Dasm::dasm_wrz(QString* instruction, QString* brief)
  * D = {31'b0, !Z).
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_wrnz(QString* instruction, QString* brief)
+void P2Dasm::dasm_wrnz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Write 0 or 1 to D, according to !Z.");
     format_d(instruction, t_WRNZ);
 }
 
@@ -9524,12 +8370,9 @@ void P2Dasm::dasm_wrnz(QString* instruction, QString* brief)
  * C = cccc[{C,Z}], Z = zzzz[{C,Z}].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_modcz(QString* instruction, QString* brief)
+void P2Dasm::dasm_modcz(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Modify C and Z according to cccc and zzzz.");
     format_cz_cz(instruction, t_MODCZ);
 }
 
@@ -9546,12 +8389,9 @@ void P2Dasm::dasm_modcz(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_setscp(QString* instruction, QString* brief)
+void P2Dasm::dasm_setscp(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Set scope mode.");
     format_imm_d(instruction, t_SETSCP);
 }
 
@@ -9568,12 +8408,9 @@ void P2Dasm::dasm_setscp(QString* instruction, QString* brief)
  * C = cccc[{C,Z}], Z = zzzz[{C,Z}].
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_getscp(QString* instruction, QString* brief)
+void P2Dasm::dasm_getscp(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get four scope values into bytes of D.");
     format_d(instruction, t_GETSCP);
 }
 
@@ -9587,12 +8424,9 @@ void P2Dasm::dasm_getscp(QString* instruction, QString* brief)
  * If R = 1, PC += A, else PC = A.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_jmp_abs(QString* instruction, QString* brief)
+void P2Dasm::dasm_jmp_abs(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Jump to A.");
     format_pc_abs(instruction, t_JMP);
 }
 
@@ -9606,12 +8440,9 @@ void P2Dasm::dasm_jmp_abs(QString* instruction, QString* brief)
  * If R = 1, PC += A, else PC = A.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_call_abs(QString* instruction, QString* brief)
+void P2Dasm::dasm_call_abs(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Call to A by pushing {C, Z, 10'b0, PC[19:0]} onto stack.");
     format_pc_abs(instruction, t_CALL);
 }
 
@@ -9625,12 +8456,9 @@ void P2Dasm::dasm_call_abs(QString* instruction, QString* brief)
  * If R = 1, PC += A, else PC = A.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_calla_abs(QString* instruction, QString* brief)
+void P2Dasm::dasm_calla_abs(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Call to A by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRA++.");
     format_pc_abs(instruction, t_CALLA);
 }
 
@@ -9644,12 +8472,9 @@ void P2Dasm::dasm_calla_abs(QString* instruction, QString* brief)
  * If R = 1, PC += A, else PC = A.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_callb_abs(QString* instruction, QString* brief)
+void P2Dasm::dasm_callb_abs(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Call to A by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRB++.");
     format_pc_abs(instruction, t_CALLB);
 }
 
@@ -9663,12 +8488,9 @@ void P2Dasm::dasm_callb_abs(QString* instruction, QString* brief)
  * If R = 1, PC += A, else PC = A.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_calld_pa_abs(QString* instruction, QString* brief)
+void P2Dasm::dasm_calld_pa_abs(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Call to A by writing {C, Z, 10'b0, PC[19:0]} to PA (per W).");
     format_pc_abs(instruction, t_CALLD, t_PA);
 }
 
@@ -9682,12 +8504,9 @@ void P2Dasm::dasm_calld_pa_abs(QString* instruction, QString* brief)
  * If R = 1, PC += A, else PC = A.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_calld_pb_abs(QString* instruction, QString* brief)
+void P2Dasm::dasm_calld_pb_abs(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Call to A by writing {C, Z, 10'b0, PC[19:0]} to PB (per W).");
     format_pc_abs(instruction, t_CALLD, t_PB);
 }
 
@@ -9701,12 +8520,9 @@ void P2Dasm::dasm_calld_pb_abs(QString* instruction, QString* brief)
  * If R = 1, PC += A, else PC = A.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_calld_ptra_abs(QString* instruction, QString* brief)
+void P2Dasm::dasm_calld_ptra_abs(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Call to A by writing {C, Z, 10'b0, PC[19:0]} to PTRA (per W).");
     format_pc_abs(instruction, t_CALLD, t_PTRA);
 }
 
@@ -9720,12 +8536,9 @@ void P2Dasm::dasm_calld_ptra_abs(QString* instruction, QString* brief)
  * If R = 1, PC += A, else PC = A.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_calld_ptrb_abs(QString* instruction, QString* brief)
+void P2Dasm::dasm_calld_ptrb_abs(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Call to A by writing {C, Z, 10'b0, PC[19:0]} to PTRB (per W).");
     format_pc_abs(instruction, t_CALLD, t_PTRB);
 }
 
@@ -9739,12 +8552,9 @@ void P2Dasm::dasm_calld_ptrb_abs(QString* instruction, QString* brief)
  * If R = 1, address = PC + A, else address = A.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_loc_pa(QString* instruction, QString* brief)
+void P2Dasm::dasm_loc_pa(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).");
     format_pc_abs(instruction, t_LOC, t_PA);
 }
 
@@ -9758,12 +8568,9 @@ void P2Dasm::dasm_loc_pa(QString* instruction, QString* brief)
  * If R = 1, address = PC + A, else address = A.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_loc_pb(QString* instruction, QString* brief)
+void P2Dasm::dasm_loc_pb(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).");
     format_pc_abs(instruction, t_LOC, t_PB);
 }
 
@@ -9777,12 +8584,9 @@ void P2Dasm::dasm_loc_pb(QString* instruction, QString* brief)
  * If R = 1, address = PC + A, else address = A.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_loc_ptra(QString* instruction, QString* brief)
+void P2Dasm::dasm_loc_ptra(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).");
     format_pc_abs(instruction, t_LOC, t_PTRA);
 }
 
@@ -9796,12 +8600,9 @@ void P2Dasm::dasm_loc_ptra(QString* instruction, QString* brief)
  * If R = 1, address = PC + A, else address = A.
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_loc_ptrb(QString* instruction, QString* brief)
+void P2Dasm::dasm_loc_ptrb(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).");
     format_pc_abs(instruction, t_LOC, t_PTRB);
 }
 
@@ -9814,12 +8615,9 @@ void P2Dasm::dasm_loc_ptrb(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_augs(QString* instruction, QString* brief)
+void P2Dasm::dasm_augs(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Queue #N[31:9] to be used as upper 23 bits for next #S occurrence, so that the next 9-bit #S will be augmented to 32 bits.");
     format_imm23(instruction, t_AUGS);
 }
 
@@ -9832,11 +8630,8 @@ void P2Dasm::dasm_augs(QString* instruction, QString* brief)
  *
  *
  * @param instruction pointer to string where to store the result
- * @param brief pointer to string where to store the brief
  */
-void P2Dasm::dasm_augd(QString* instruction, QString* brief)
+void P2Dasm::dasm_augd(QString* instruction)
 {
-    if (brief)
-        *brief = tr("Queue #N[31:9] to be used as upper 23 bits for next #D occurrence, so that the next 9-bit #D will be augmented to 32 bits.");
     format_imm23(instruction, t_AUGD);
 }

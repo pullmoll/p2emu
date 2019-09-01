@@ -179,6 +179,24 @@ static constexpr p2_QUAD HMAX = Q_UINT64_C(0xffffffff00000000);
 //! lower word max / mask in a 64 bit unsigned
 static constexpr p2_QUAD LMAX = Q_UINT64_C(0x00000000ffffffff);
 
+static constexpr p2_LONG p2_shift_inst7 = 3 + 9 + 9;
+static constexpr p2_LONG p2_shift_inst8 = 2 + 9 + 9;
+static constexpr p2_LONG p2_shift_inst9 = 1 + 9 + 9;
+static constexpr p2_LONG p2_shift_opdst = 9;
+static constexpr p2_LONG p2_shift_opsrc = 0;
+static constexpr p2_LONG p2_mask7 = (1u << 7) - 1;
+static constexpr p2_LONG p2_mask8 = (1u << 8) - 1;
+static constexpr p2_LONG p2_mask9 = (1u << 9) - 1;
+
+static constexpr p2_LONG p2_mask_inst7 = p2_mask7 << p2_shift_inst7;
+static constexpr p2_LONG p2_mask_inst8 = p2_mask8 << p2_shift_inst8;
+static constexpr p2_LONG p2_mask_inst9 = p2_mask9 << p2_shift_inst9;
+static constexpr p2_LONG p2_mask_9_dst = p2_mask9 << 9;
+static constexpr p2_LONG p2_mask_9_src = p2_mask9 << 0;
+static constexpr p2_LONG p2_mask_opdst = p2_mask_inst7 | p2_mask_9_dst;
+static constexpr p2_LONG p2_mask_opsrc = p2_mask_inst7 | p2_mask_9_src;
+static constexpr p2_LONG p2_mask_opx24 = p2_mask_inst7 | p2_mask_9_dst | p2_mask_9_src;
+
 static constexpr QChar chr_comma(',');
 static constexpr QChar chr_apostrophe('\'');
 static constexpr QChar chr_semicolon(';');

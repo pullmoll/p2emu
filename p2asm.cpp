@@ -437,6 +437,1689 @@ bool P2Asm::define_symbol(const QString& symbol, const P2Atom& atom)
     return false;
 }
 
+bool P2Asm::assemble_con()
+{
+    while (m_idx < m_cnt) {
+        switch (curr_tok()) {
+        case t_comment:
+        case t_comment_eol:
+        case t_comment_lcurly:
+        case t_comment_rcurly:
+            next();
+            continue;
+
+        case t_locsym:
+            // append local name to section::function / section
+            m_symbol = find_locsym(m_section, curr_str());
+            break;
+
+        case t_symbol:
+            // append global name to section::symbol
+            m_symbol = find_symbol(m_section, curr_str());
+            m_function.insert(m_section, curr_str());
+            break;
+
+        default:
+            m_symbol.clear();
+        }
+
+        if (!m_symbol.isEmpty()) {
+            // defining a symbol with the current enumeration value
+            const P2Atom atom(m_enum);
+            define_symbol(m_symbol, atom);
+            // increase enumerator
+            m_enum += 1u;
+        }
+        break;
+    }
+
+    // Return if no more words/tokens were found
+    if (!skip_comments())
+        return true;
+
+    m_advance = 0;      // The instruction does not advance
+    m_IR.clear();       // Clear the opcode
+
+    // Expect a token for an instruction
+    bool success = false;
+    while (skip_comments()) {
+        m_instr = m_words.value(m_idx).tok();
+        switch (m_instr) {
+        case t_comment:
+            next();
+            break;
+
+        case t_DAT:
+            success = asm_dat();
+            success = assemble_dat();
+            break;
+
+        case t_CON: // redundant
+            success = asm_con();
+            break;
+
+        case t_PUB:
+            success = asm_pub();
+            success = assemble_dat();
+            break;
+
+        case t_PRI:
+            success = asm_pri();
+            success = assemble_dat();
+            break;
+
+        case t_VAR:
+            success = asm_var();
+            success = assemble_dat();
+            break;
+
+        case t_ASSIGN:
+            success = asm_assign();
+            break;
+
+        case t_IMMEDIATE:
+            success = asm_enum_initial();
+            break;
+
+        case t_COMMA:
+            success = asm_enum_continue();
+            break;
+
+        default:
+            m_errors += tr("Not an CON section token '%1'.")
+                      .arg(Token.string(m_instr));
+            emit Error(m_pass, m_lineno, m_errors.last());
+            m_idx = m_cnt;
+        }
+    }
+    return success;
+}
+
+bool P2Asm::assemble_dat()
+{
+    while (m_idx < m_cnt) {
+        switch (curr_tok()) {
+        case t_comment:
+        case t_comment_eol:
+        case t_comment_lcurly:
+        case t_comment_rcurly:
+            next();
+            continue;
+
+        case t_locsym:
+            // append local name to section::function / section
+            m_symbol = find_locsym(m_section, curr_str());
+            break;
+
+        case t_symbol:
+            // append global name to section::symbol
+            m_symbol = find_symbol(m_section, curr_str());
+            m_function.insert(m_section, curr_str());
+            break;
+
+        default:
+            m_symbol.clear();
+        }
+
+        if (!m_symbol.isEmpty()) {
+            const p2_LONG PC = m_ORG < HUB_ADDR0 ? m_ORG / 4 : m_ORG;
+            // defining a symbol at the current PC
+            const P2Atom atom(PC, P2Atom::PC);
+            define_symbol(m_symbol, atom);
+        }
+        break;
+    }
+
+    // Return if no more words/tokens were found
+    if (!skip_comments()) {
+        m_IR.as_IR = false;
+        results();
+        return true;
+    }
+
+    m_advance = 4;      // Assume the instruction advances by 4 bytes
+    m_IR.clear();       // Clear the opcode
+    m_IR.as_IR = true;  // Assume the instruction emits IR
+
+    // Conditional execution prefix
+    m_IR.set_cond(conditional());
+
+    // Expect a token for an instruction
+    bool success = false;
+    while (skip_comments()) {
+        m_instr = m_words.value(m_idx).tok();
+        switch (m_instr) {
+        case t_comment:
+            next();
+            break;
+
+        case t_DAT: // redundant
+            success = asm_dat();
+            break;
+
+        case t_CON:
+            success = asm_con();
+            success = assemble_con();
+            break;
+
+        case t_PUB:
+            success = asm_pub();
+            break;
+
+        case t_PRI:
+            success = asm_pri();
+            break;
+
+        case t_VAR:
+            success = asm_var();
+            break;
+
+        case t_ABS:
+            success = asm_abs();
+            break;
+
+        case t_ADD:
+            success = asm_add();
+            break;
+
+        case t_ADDCT1:
+            success = asm_addct1();
+            break;
+
+        case t_ADDCT2:
+            success = asm_addct2();
+            break;
+
+        case t_ADDCT3:
+            success = asm_addct3();
+            break;
+
+        case t_ADDPIX:
+            success = asm_addpix();
+            break;
+
+        case t_ADDS:
+            success = asm_adds();
+            break;
+
+        case t_ADDSX:
+            success = asm_addsx();
+            break;
+
+        case t_ADDX:
+            success = asm_addx();
+            break;
+
+        case t_AKPIN:
+            success = asm_akpin();
+            break;
+
+        case t_ALLOWI:
+            success = asm_allowi();
+            break;
+
+        case t_ALTB:
+            success = asm_altb();
+            break;
+
+        case t_ALTD:
+            success = asm_altd();
+            break;
+
+        case t_ALTGB:
+            success = asm_altgb();
+            break;
+
+        case t_ALTGN:
+            success = asm_altgn();
+            break;
+
+        case t_ALTGW:
+            success = asm_altgw();
+            break;
+
+        case t_ALTI:
+            success = asm_alti();
+            break;
+
+        case t_ALTR:
+            success = asm_altr();
+            break;
+
+        case t_ALTS:
+            success = asm_alts();
+            break;
+
+        case t_ALTSB:
+            success = asm_altsb();
+            break;
+
+        case t_ALTSN:
+            success = asm_altsn();
+            break;
+
+        case t_ALTSW:
+            success = asm_altsw();
+            break;
+
+        case t_AND:
+            success = asm_and();
+            break;
+
+        case t_ANDN:
+            success = asm_andn();
+            break;
+
+        case t_AUGD:
+            success = asm_augd();
+            break;
+
+        case t_AUGS:
+            success = asm_augs();
+            break;
+
+        case t_BITC:
+            success = asm_bitc();
+            break;
+
+        case t_BITH:
+            success = asm_bith();
+            break;
+
+        case t_BITL:
+            success = asm_bitl();
+            break;
+
+        case t_BITNC:
+            success = asm_bitnc();
+            break;
+
+        case t_BITNOT:
+            success = asm_bitnot();
+            break;
+
+        case t_BITNZ:
+            success = asm_bitnz();
+            break;
+
+        case t_BITRND:
+            success = asm_bitrnd();
+            break;
+
+        case t_BITZ:
+            success = asm_bitz();
+            break;
+
+        case t_BLNPIX:
+            success = asm_blnpix();
+            break;
+
+        case t_BMASK:
+            success = asm_bmask();
+            break;
+
+        case t_BRK:
+            success = asm_brk();
+            break;
+
+        case t_CALL:
+            success = asm_call();
+            break;
+
+        case t_CALLA:
+            success = asm_calla();
+            break;
+
+        case t_CALLB:
+            success = asm_callb();
+            break;
+
+        case t_CALLD:
+            success = asm_calld();
+            break;
+
+        case t_CALLPA:
+            success = asm_callpa();
+            break;
+
+        case t_CALLPB:
+            success = asm_callpb();
+            break;
+
+        case t_CMP:
+            success = asm_cmp();
+            break;
+
+        case t_CMPM:
+            success = asm_cmpm();
+            break;
+
+        case t_CMPR:
+            success = asm_cmpr();
+            break;
+
+        case t_CMPS:
+            success = asm_cmps();
+            break;
+
+        case t_CMPSUB:
+            success = asm_cmpsub();
+            break;
+
+        case t_CMPSX:
+            success = asm_cmpsx();
+            break;
+
+        case t_CMPX:
+            success = asm_cmpx();
+            break;
+
+        case t_COGATN:
+            success = asm_cogatn();
+            break;
+
+        case t_COGBRK:
+            success = asm_cogbrk();
+            break;
+
+        case t_COGID:
+            success = asm_cogid();
+            break;
+
+        case t_COGINIT:
+            success = asm_coginit();
+            break;
+
+        case t_COGSTOP:
+            success = asm_cogstop();
+            break;
+
+        case t_CRCBIT:
+            success = asm_crcbit();
+            break;
+
+        case t_CRCNIB:
+            success = asm_crcnib();
+            break;
+
+        case t_DECMOD:
+            success = asm_decmod();
+            break;
+
+        case t_DECOD:
+            success = asm_decod();
+            break;
+
+        case t_DIRC:
+            success = asm_dirc();
+            break;
+
+        case t_DIRH:
+            success = asm_dirh();
+            break;
+
+        case t_DIRL:
+            success = asm_dirl();
+            break;
+
+        case t_DIRNC:
+            success = asm_dirnc();
+            break;
+
+        case t_DIRNOT:
+            success = asm_dirnot();
+            break;
+
+        case t_DIRNZ:
+            success = asm_dirnz();
+            break;
+
+        case t_DIRRND:
+            success = asm_dirrnd();
+            break;
+
+        case t_DIRZ:
+            success = asm_dirz();
+            break;
+
+        case t_DJF:
+            success = asm_djf();
+            break;
+
+        case t_DJNF:
+            success = asm_djnf();
+            break;
+
+        case t_DJNZ:
+            success = asm_djnz();
+            break;
+
+        case t_DJZ:
+            success = asm_djz();
+            break;
+
+        case t_DRVC:
+            success = asm_drvc();
+            break;
+
+        case t_DRVH:
+            success = asm_drvh();
+            break;
+
+        case t_DRVL:
+            success = asm_drvl();
+            break;
+
+        case t_DRVNC:
+            success = asm_drvnc();
+            break;
+
+        case t_DRVNOT:
+            success = asm_drvnot();
+            break;
+
+        case t_DRVNZ:
+            success = asm_drvnz();
+            break;
+
+        case t_DRVRND:
+            success = asm_drvrnd();
+            break;
+
+        case t_DRVZ:
+            success = asm_drvz();
+            break;
+
+        case t_ENCOD:
+            success = asm_encod();
+            break;
+
+        case t_EXECF:
+            success = asm_execf();
+            break;
+
+        case t_FBLOCK:
+            success = asm_fblock();
+            break;
+
+        case t_FGE:
+            success = asm_fge();
+            break;
+
+        case t_FGES:
+            success = asm_fges();
+            break;
+
+        case t_FLE:
+            success = asm_fle();
+            break;
+
+        case t_FLES:
+            success = asm_fles();
+            break;
+
+        case t_FLTC:
+            success = asm_fltc();
+            break;
+
+        case t_FLTH:
+            success = asm_flth();
+            break;
+
+        case t_FLTL:
+            success = asm_fltl();
+            break;
+
+        case t_FLTNC:
+            success = asm_fltnc();
+            break;
+
+        case t_FLTNOT:
+            success = asm_fltnot();
+            break;
+
+        case t_FLTNZ:
+            success = asm_fltnz();
+            break;
+
+        case t_FLTRND:
+            success = asm_fltrnd();
+            break;
+
+        case t_FLTZ:
+            success = asm_fltz();
+            break;
+
+        case t_GETBRK:
+            success = asm_getbrk();
+            break;
+
+        case t_GETBYTE:
+            success = asm_getbyte();
+            break;
+
+        case t_GETCT:
+            success = asm_getct();
+            break;
+
+        case t_GETNIB:
+            success = asm_getnib();
+            break;
+
+        case t_GETPTR:
+            success = asm_getptr();
+            break;
+
+        case t_GETQX:
+            success = asm_getqx();
+            break;
+
+        case t_GETQY:
+            success = asm_getqy();
+            break;
+
+        case t_GETRND:
+            success = asm_getrnd();
+            break;
+
+        case t_GETSCP:
+            success = asm_getscp();
+            break;
+
+        case t_GETWORD:
+            success = asm_getword();
+            break;
+
+        case t_GETXACC:
+            success = asm_getxacc();
+            break;
+
+        case t_HUBSET:
+            success = asm_hubset();
+            break;
+
+        case t_IJNZ:
+            success = asm_ijnz();
+            break;
+
+        case t_IJZ:
+            success = asm_ijz();
+            break;
+
+        case t_INCMOD:
+            success = asm_incmod();
+            break;
+
+        case t_JATN:
+            success = asm_jatn();
+            break;
+
+        case t_JCT1:
+            success = asm_jct1();
+            break;
+
+        case t_JCT2:
+            success = asm_jct2();
+            break;
+
+        case t_JCT3:
+            success = asm_jct3();
+            break;
+
+        case t_JFBW:
+            success = asm_jfbw();
+            break;
+
+        case t_JINT:
+            success = asm_jint();
+            break;
+
+        case t_JMP:
+            success = asm_jmp();
+            break;
+
+        case t_JMPREL:
+            success = asm_jmprel();
+            break;
+
+        case t_JNATN:
+            success = asm_jnatn();
+            break;
+
+        case t_JNCT1:
+            success = asm_jnct1();
+            break;
+
+        case t_JNCT2:
+            success = asm_jnct2();
+            break;
+
+        case t_JNCT3:
+            success = asm_jnct3();
+            break;
+
+        case t_JNFBW:
+            success = asm_jnfbw();
+            break;
+
+        case t_JNINT:
+            success = asm_jnint();
+            break;
+
+        case t_JNPAT:
+            success = asm_jnpat();
+            break;
+
+        case t_JNQMT:
+            success = asm_jnqmt();
+            break;
+
+        case t_JNSE1:
+            success = asm_jnse1();
+            break;
+
+        case t_JNSE2:
+            success = asm_jnse2();
+            break;
+
+        case t_JNSE3:
+            success = asm_jnse3();
+            break;
+
+        case t_JNSE4:
+            success = asm_jnse4();
+            break;
+
+        case t_JNXFI:
+            success = asm_jnxfi();
+            break;
+
+        case t_JNXMT:
+            success = asm_jnxmt();
+            break;
+
+        case t_JNXRL:
+            success = asm_jnxrl();
+            break;
+
+        case t_JNXRO:
+            success = asm_jnxro();
+            break;
+
+        case t_JPAT:
+            success = asm_jpat();
+            break;
+
+        case t_JQMT:
+            success = asm_jqmt();
+            break;
+
+        case t_JSE1:
+            success = asm_jse1();
+            break;
+
+        case t_JSE2:
+            success = asm_jse2();
+            break;
+
+        case t_JSE3:
+            success = asm_jse3();
+            break;
+
+        case t_JSE4:
+            success = asm_jse4();
+            break;
+
+        case t_JXFI:
+            success = asm_jxfi();
+            break;
+
+        case t_JXMT:
+            success = asm_jxmt();
+            break;
+
+        case t_JXRL:
+            success = asm_jxrl();
+            break;
+
+        case t_JXRO:
+            success = asm_jxro();
+            break;
+
+        case t_LOC:
+            success = asm_loc();
+            break;
+
+        case t_LOCKNEW:
+            success = asm_locknew();
+            break;
+
+        case t_LOCKREL:
+            success = asm_lockrel();
+            break;
+
+        case t_LOCKRET:
+            success = asm_lockret();
+            break;
+
+        case t_LOCKTRY:
+            success = asm_locktry();
+            break;
+
+        case t_MERGEB:
+            success = asm_mergeb();
+            break;
+
+        case t_MERGEW:
+            success = asm_mergew();
+            break;
+
+        case t_MIXPIX:
+            success = asm_mixpix();
+            break;
+
+        case t_MODCZ:
+            success = asm_modcz();
+            break;
+
+        case t_MOV:
+            success = asm_mov();
+            break;
+
+        case t_MOVBYTS:
+            success = asm_movbyts();
+            break;
+
+        case t_MUL:
+            success = asm_mul();
+            break;
+
+        case t_MULPIX:
+            success = asm_mulpix();
+            break;
+
+        case t_MULS:
+            success = asm_muls();
+            break;
+
+        case t_MUXC:
+            success = asm_muxc();
+            break;
+
+        case t_MUXNC:
+            success = asm_muxnc();
+            break;
+
+        case t_MUXNIBS:
+            success = asm_muxnibs();
+            break;
+
+        case t_MUXNITS:
+            success = asm_muxnits();
+            break;
+
+        case t_MUXNZ:
+            success = asm_muxnz();
+            break;
+
+        case t_MUXQ:
+            success = asm_muxq();
+            break;
+
+        case t_MUXZ:
+            success = asm_muxz();
+            break;
+
+        case t_NEG:
+            success = asm_neg();
+            break;
+
+        case t_NEGC:
+            success = asm_negc();
+            break;
+
+        case t_NEGNC:
+            success = asm_negnc();
+            break;
+
+        case t_NEGNZ:
+            success = asm_negnz();
+            break;
+
+        case t_NEGZ:
+            success = asm_negz();
+            break;
+
+        case t_NIXINT1:
+            success = asm_nixint1();
+            break;
+
+        case t_NIXINT2:
+            success = asm_nixint2();
+            break;
+
+        case t_NIXINT3:
+            success = asm_nixint3();
+            break;
+
+        case t_NOP:
+            success = asm_nop();
+            break;
+
+        case t_NOT:
+            success = asm_not();
+            break;
+
+        case t_ONES:
+            success = asm_ones();
+            break;
+
+        case t_OR:
+            success = asm_or();
+            break;
+
+        case t_OUTC:
+            success = asm_outc();
+            break;
+
+        case t_OUTH:
+            success = asm_outh();
+            break;
+
+        case t_OUTL:
+            success = asm_outl();
+            break;
+
+        case t_OUTNC:
+            success = asm_outnc();
+            break;
+
+        case t_OUTNOT:
+            success = asm_outnot();
+            break;
+
+        case t_OUTNZ:
+            success = asm_outnz();
+            break;
+
+        case t_OUTRND:
+            success = asm_outrnd();
+            break;
+
+        case t_OUTZ:
+            success = asm_outz();
+            break;
+
+        case t_POLLATN:
+            success = asm_pollatn();
+            break;
+
+        case t_POLLCT1:
+            success = asm_pollct1();
+            break;
+
+        case t_POLLCT2:
+            success = asm_pollct2();
+            break;
+
+        case t_POLLCT3:
+            success = asm_pollct3();
+            break;
+
+        case t_POLLFBW:
+            success = asm_pollfbw();
+            break;
+
+        case t_POLLINT:
+            success = asm_pollint();
+            break;
+
+        case t_POLLPAT:
+            success = asm_pollpat();
+            break;
+
+        case t_POLLQMT:
+            success = asm_pollqmt();
+            break;
+
+        case t_POLLSE1:
+            success = asm_pollse1();
+            break;
+
+        case t_POLLSE2:
+            success = asm_pollse2();
+            break;
+
+        case t_POLLSE3:
+            success = asm_pollse3();
+            break;
+
+        case t_POLLSE4:
+            success = asm_pollse4();
+            break;
+
+        case t_POLLXFI:
+            success = asm_pollxfi();
+            break;
+
+        case t_POLLXMT:
+            success = asm_pollxmt();
+            break;
+
+        case t_POLLXRL:
+            success = asm_pollxrl();
+            break;
+
+        case t_POLLXRO:
+            success = asm_pollxro();
+            break;
+
+        case t_POP:
+            success = asm_pop();
+            break;
+
+        case t_POPA:
+            success = asm_popa();
+            break;
+
+        case t_POPB:
+            success = asm_popb();
+            break;
+
+        case t_PUSH:
+            success = asm_push();
+            break;
+
+        case t_PUSHA:
+            success = asm_pusha();
+            break;
+
+        case t_PUSHB:
+            success = asm_pushb();
+            break;
+
+        case t_QDIV:
+            success = asm_qdiv();
+            break;
+
+        case t_QEXP:
+            success = asm_qexp();
+            break;
+
+        case t_QFRAC:
+            success = asm_qfrac();
+            break;
+
+        case t_QLOG:
+            success = asm_qlog();
+            break;
+
+        case t_QMUL:
+            success = asm_qmul();
+            break;
+
+        case t_QROTATE:
+            success = asm_qrotate();
+            break;
+
+        case t_QSQRT:
+            success = asm_qsqrt();
+            break;
+
+        case t_QVECTOR:
+            success = asm_qvector();
+            break;
+
+        case t_RCL:
+            success = asm_rcl();
+            break;
+
+        case t_RCR:
+            success = asm_rcr();
+            break;
+
+        case t_RCZL:
+            success = asm_rczl();
+            break;
+
+        case t_RCZR:
+            success = asm_rczr();
+            break;
+
+        case t_RDBYTE:
+            success = asm_rdbyte();
+            break;
+
+        case t_RDFAST:
+            success = asm_rdfast();
+            break;
+
+        case t_RDLONG:
+            success = asm_rdlong();
+            break;
+
+        case t_RDLUT:
+            success = asm_rdlut();
+            break;
+
+        case t_RDPIN:
+            success = asm_rdpin();
+            break;
+
+        case t_RDWORD:
+            success = asm_rdword();
+            break;
+
+        case t_REP:
+            success = asm_rep();
+            break;
+
+        case t_RESI0:
+            success = asm_resi0();
+            break;
+
+        case t_RESI1:
+            success = asm_resi1();
+            break;
+
+        case t_RESI2:
+            success = asm_resi2();
+            break;
+
+        case t_RESI3:
+            success = asm_resi3();
+            break;
+
+        case t_RET:
+            success = asm_ret();
+            break;
+
+        case t_RETA:
+            success = asm_reta();
+            break;
+
+        case t_RETB:
+            success = asm_retb();
+            break;
+
+        case t_RETI0:
+            success = asm_reti0();
+            break;
+
+        case t_RETI1:
+            success = asm_reti1();
+            break;
+
+        case t_RETI2:
+            success = asm_reti2();
+            break;
+
+        case t_RETI3:
+            success = asm_reti3();
+            break;
+
+        case t_REV:
+            success = asm_rev();
+            break;
+
+        case t_RFBYTE:
+            success = asm_rfbyte();
+            break;
+
+        case t_RFLONG:
+            success = asm_rflong();
+            break;
+
+        case t_RFVAR:
+            success = asm_rfvar();
+            break;
+
+        case t_RFVARS:
+            success = asm_rfvars();
+            break;
+
+        case t_RFWORD:
+            success = asm_rfword();
+            break;
+
+        case t_RGBEXP:
+            success = asm_rgbexp();
+            break;
+
+        case t_RGBSQZ:
+            success = asm_rgbsqz();
+            break;
+
+        case t_ROL:
+            success = asm_rol();
+            break;
+
+        case t_ROLBYTE:
+            success = asm_rolbyte();
+            break;
+
+        case t_ROLNIB:
+            success = asm_rolnib();
+            break;
+
+        case t_ROLWORD:
+            success = asm_rolword();
+            break;
+
+        case t_ROR:
+            success = asm_ror();
+            break;
+
+        case t_RQPIN:
+            success = asm_rqpin();
+            break;
+
+        case t_SAL:
+            success = asm_sal();
+            break;
+
+        case t_SAR:
+            success = asm_sar();
+            break;
+
+        case t_SCA:
+            success = asm_sca();
+            break;
+
+        case t_SCAS:
+            success = asm_scas();
+            break;
+
+        case t_SETBYTE:
+            success = asm_setbyte();
+            break;
+
+        case t_SETCFRQ:
+            success = asm_setcfrq();
+            break;
+
+        case t_SETCI:
+            success = asm_setci();
+            break;
+
+        case t_SETCMOD:
+            success = asm_setcmod();
+            break;
+
+        case t_SETCQ:
+            success = asm_setcq();
+            break;
+
+        case t_SETCY:
+            success = asm_setcy();
+            break;
+
+        case t_SETD:
+            success = asm_setd();
+            break;
+
+        case t_SETDACS:
+            success = asm_setdacs();
+            break;
+
+        case t_SETINT1:
+            success = asm_setint1();
+            break;
+
+        case t_SETINT2:
+            success = asm_setint2();
+            break;
+
+        case t_SETINT3:
+            success = asm_setint3();
+            break;
+
+        case t_SETLUTS:
+            success = asm_setluts();
+            break;
+
+        case t_SETNIB:
+            success = asm_setnib();
+            break;
+
+        case t_SETPAT:
+            success = asm_setpat();
+            break;
+
+        case t_SETPIV:
+            success = asm_setpiv();
+            break;
+
+        case t_SETPIX:
+            success = asm_setpix();
+            break;
+
+        case t_SETQ:
+            success = asm_setq();
+            break;
+
+        case t_SETQ2:
+            success = asm_setq2();
+            break;
+
+        case t_SETR:
+            success = asm_setr();
+            break;
+
+        case t_SETS:
+            success = asm_sets();
+            break;
+
+        case t_SETSCP:
+            success = asm_setscp();
+            break;
+
+        case t_SETSE1:
+            success = asm_setse1();
+            break;
+
+        case t_SETSE2:
+            success = asm_setse2();
+            break;
+
+        case t_SETSE3:
+            success = asm_setse3();
+            break;
+
+        case t_SETSE4:
+            success = asm_setse4();
+            break;
+
+        case t_SETWORD:
+            success = asm_setword();
+            break;
+
+        case t_SETXFRQ:
+            success = asm_setxfrq();
+            break;
+
+        case t_SEUSSF:
+            success = asm_seussf();
+            break;
+
+        case t_SEUSSR:
+            success = asm_seussr();
+            break;
+
+        case t_SHL:
+            success = asm_shl();
+            break;
+
+        case t_SHR:
+            success = asm_shr();
+            break;
+
+        case t_SIGNX:
+            success = asm_signx();
+            break;
+
+        case t_SKIP:
+            success = asm_skip();
+            break;
+
+        case t_SKIPF:
+            success = asm_skipf();
+            break;
+
+        case t_SPLITB:
+            success = asm_splitb();
+            break;
+
+        case t_SPLITW:
+            success = asm_splitw();
+            break;
+
+        case t_STALLI:
+            success = asm_stalli();
+            break;
+
+        case t_SUB:
+            success = asm_sub();
+            break;
+
+        case t_SUBR:
+            success = asm_subr();
+            break;
+
+        case t_SUBS:
+            success = asm_subs();
+            break;
+
+        case t_SUBSX:
+            success = asm_subsx();
+            break;
+
+        case t_SUBX:
+            success = asm_subx();
+            break;
+
+        case t_SUMC:
+            success = asm_sumc();
+            break;
+
+        case t_SUMNC:
+            success = asm_sumnc();
+            break;
+
+        case t_SUMNZ:
+            success = asm_sumnz();
+            break;
+
+        case t_SUMZ:
+            success = asm_sumz();
+            break;
+
+        case t_TEST:
+            success = asm_test();
+            break;
+
+        case t_TESTB:
+            success = asm_testb_w();
+            break;
+
+        case t_TESTBN:
+            success = asm_testbn_w();
+            break;
+
+        case t_TESTN:
+            success = asm_testn();
+            break;
+
+        case t_TESTP:
+            success = asm_testp_w();
+            break;
+
+        case t_TESTPN:
+            success = asm_testpn_w();
+            break;
+
+        case t_TJF:
+            success = asm_tjf();
+            break;
+
+        case t_TJNF:
+            success = asm_tjnf();
+            break;
+
+        case t_TJNS:
+            success = asm_tjns();
+            break;
+
+        case t_TJNZ:
+            success = asm_tjnz();
+            break;
+
+        case t_TJS:
+            success = asm_tjs();
+            break;
+
+        case t_TJV:
+            success = asm_tjv();
+            break;
+
+        case t_TJZ:
+            success = asm_tjz();
+            break;
+
+        case t_TRGINT1:
+            success = asm_trgint1();
+            break;
+
+        case t_TRGINT2:
+            success = asm_trgint2();
+            break;
+
+        case t_TRGINT3:
+            success = asm_trgint3();
+            break;
+
+        case t_WAITATN:
+            success = asm_waitatn();
+            break;
+
+        case t_WAITCT1:
+            success = asm_waitct1();
+            break;
+
+        case t_WAITCT2:
+            success = asm_waitct2();
+            break;
+
+        case t_WAITCT3:
+            success = asm_waitct3();
+            break;
+
+        case t_WAITFBW:
+            success = asm_waitfbw();
+            break;
+
+        case t_WAITINT:
+            success = asm_waitint();
+            break;
+
+        case t_WAITPAT:
+            success = asm_waitpat();
+            break;
+
+        case t_WAITSE1:
+            success = asm_waitse1();
+            break;
+
+        case t_WAITSE2:
+            success = asm_waitse2();
+            break;
+
+        case t_WAITSE3:
+            success = asm_waitse3();
+            break;
+
+        case t_WAITSE4:
+            success = asm_waitse4();
+            break;
+
+        case t_WAITX:
+            success = asm_waitx();
+            break;
+
+        case t_WAITXFI:
+            success = asm_waitxfi();
+            break;
+
+        case t_WAITXMT:
+            success = asm_waitxmt();
+            break;
+
+        case t_WAITXRL:
+            success = asm_waitxrl();
+            break;
+
+        case t_WAITXRO:
+            success = asm_waitxro();
+            break;
+
+        case t_WFBYTE:
+            success = asm_wfbyte();
+            break;
+
+        case t_WFLONG:
+            success = asm_wflong();
+            break;
+
+        case t_WFWORD:
+            success = asm_wfword();
+            break;
+
+        case t_WMLONG:
+            success = asm_wmlong();
+            break;
+
+        case t_WRBYTE:
+            success = asm_wrbyte();
+            break;
+
+        case t_WRC:
+            success = asm_wrc();
+            break;
+
+        case t_WRFAST:
+            success = asm_wrfast();
+            break;
+
+        case t_WRLONG:
+            success = asm_wrlong();
+            break;
+
+        case t_WRLUT:
+            success = asm_wrlut();
+            break;
+
+        case t_WRNC:
+            success = asm_wrnc();
+            break;
+
+        case t_WRNZ:
+            success = asm_wrnz();
+            break;
+
+        case t_WRPIN:
+            success = asm_wrpin();
+            break;
+
+        case t_WRWORD:
+            success = asm_wrword();
+            break;
+
+        case t_WRZ:
+            success = asm_wrz();
+            break;
+
+        case t_WXPIN:
+            success = asm_wxpin();
+            break;
+
+        case t_WYPIN:
+            success = asm_wypin();
+            break;
+
+        case t_XCONT:
+            success = asm_xcont();
+            break;
+
+        case t_XINIT:
+            success = asm_xinit();
+            break;
+
+        case t_XOR:
+            success = asm_xor();
+            break;
+
+        case t_XORO32:
+            success = asm_xoro32();
+            break;
+
+        case t_XSTOP:
+            success = asm_xstop();
+            break;
+
+        case t_XZERO:
+            success = asm_xzero();
+            break;
+
+        case t_ZEROX:
+            success = asm_zerox();
+            break;
+
+        case t_BYTE:
+            success = asm_byte();
+            break;
+
+        case t_WORD:
+            success = asm_word();
+            break;
+
+        case t_LONG:
+            success = asm_long();
+            break;
+
+        case t_FILE:
+            success = asm_file();
+            break;
+
+        case t_RES:
+            success = asm_res();
+            break;
+
+        case t_ALIGNW:
+            success = asm_alignw();
+            break;
+
+        case t_ALIGNL:
+            success = asm_alignl();
+            break;
+
+        case t_ORG:
+            success = asm_org();
+            break;
+
+        case t_ORGH:
+            success = asm_orgh();
+            break;
+
+        case t_FIT:
+            success = asm_fit();
+            break;
+
+        default:
+            if (Token.is_type(m_instr, tm_mnemonic)) {
+                // Missing handling of an instruction token
+                m_errors += tr("Missing handling of instruction token '%1'.")
+                      .arg(Token.string(m_instr));
+                emit Error(m_pass, m_lineno, m_errors.last());
+                m_idx = m_cnt;
+                break;
+            }
+
+            if (Token.is_type(m_instr, tm_constant)) {
+                // Unexpected constant token
+                m_errors += tr("Constant '%1' used as an instruction.")
+                          .arg(Token.string(m_instr));
+                emit Error(m_pass, m_lineno, m_errors.last());
+                m_idx = m_cnt;
+                break;
+            }
+
+            if (Token.is_type(m_instr, tm_conditional)) {
+                // Unexpected conditional token
+                m_errors += tr("Extraneous conditional '%1'.")
+                          .arg(Token.string(m_instr));
+                emit Error(m_pass, m_lineno, m_errors.last());
+                m_idx = m_cnt;
+                break;
+            }
+
+            if (Token.is_type(m_instr, tm_modcz_param)) {
+                // Unexpected MODCZ parameter token
+                m_errors += tr("Extraneous MODCZ parameter '%1'.")
+                          .arg(Token.string(m_instr));
+                emit Error(m_pass, m_lineno, m_errors.last());
+                m_idx = m_cnt;
+                break;
+            }
+
+            m_errors += tr("Not an instruction token '%1'.")
+                      .arg(Token.string(m_instr));
+            emit Error(m_pass, m_lineno, m_errors.last());
+            m_idx = m_cnt;
+        }
+    }
+    return success;
+}
+
 /**
  * @brief Assemble a QStringList of lines of SPIN2 source code
  * @param source code
@@ -468,1612 +2151,19 @@ bool P2Asm::assemble_pass()
             continue;
         }
 
-        m_symbol.clear();
-        while (m_idx < m_cnt) {
-            switch (curr_tok()) {
-            case t_comment:
-            case t_comment_eol:
-            case t_comment_lcurly:
-            case t_comment_rcurly:
-                next();
-                continue;
-
-            case t_locsym:
-                // append local name to section::function / section
-                m_symbol = find_locsym(m_section, curr_str());
-                break;
-
-            case t_symbol:
-                // append global name to section::symbol
-                m_symbol = find_symbol(m_section, curr_str());
-                m_function.insert(m_section, curr_str());
-                break;
-
-            default:
-                m_symbol.clear();
-            }
-
-            if (!m_symbol.isEmpty()) {
-                const p2_LONG PC = m_ORG < HUB_ADDR0 ? m_ORG / 4 : m_ORG;
-                if (sec_con == m_section) {
-                    // defining a symbol with the current enumeration value
-                    const P2Atom atom(m_enum);
-                    define_symbol(m_symbol, atom);
-                    // increase enumerator
-                    m_enum += 1u;
-                } else {
-                    // defining a symbol at the current PC
-                    const P2Atom atom(PC, P2Atom::PC);
-                    define_symbol(m_symbol, atom);
-                }
-            }
-            break;
-        }
-
-        // Skip if no more words/tokens were found
-        if (!skip_comments()) {
-            m_IR.as_IR = false;
-            results();
-            continue;
-        }
-
-        // Assume the instruction advances by 4 bytes
-        m_advance = 4;
-
-        // Clear the opcode
-        m_IR.clear();
-
-        // Assume the instruction emits IR
-        m_IR.as_IR = true;
-
-        // Conditional execution prefix
-        m_IR.set_cond(conditional());
-
-        // Expect a token for an instruction
         bool success = false;
-        while (skip_comments()) {
-            m_instr = m_words.value(m_idx).tok();
-            switch (m_instr) {
-            case t_comment:
-                next();
-                break;
-
-            case t_DAT:
-                success = asm_dat();
-                break;
-
-            case t_CON:
-                success = asm_con();
-                break;
-
-            case t_PUB:
-                success = asm_pub();
-                break;
-
-            case t_PRI:
-                success = asm_pri();
-                break;
-
-            case t_VAR:
-                success = asm_var();
-                break;
-
-            case t_ABS:
-                success = asm_abs();
-                break;
-
-            case t_ADD:
-                success = asm_add();
-                break;
-
-            case t_ADDCT1:
-                success = asm_addct1();
-                break;
-
-            case t_ADDCT2:
-                success = asm_addct2();
-                break;
-
-            case t_ADDCT3:
-                success = asm_addct3();
-                break;
-
-            case t_ADDPIX:
-                success = asm_addpix();
-                break;
-
-            case t_ADDS:
-                success = asm_adds();
-                break;
-
-            case t_ADDSX:
-                success = asm_addsx();
-                break;
-
-            case t_ADDX:
-                success = asm_addx();
-                break;
-
-            case t_AKPIN:
-                success = asm_akpin();
-                break;
-
-            case t_ALLOWI:
-                success = asm_allowi();
-                break;
-
-            case t_ALTB:
-                success = asm_altb();
-                break;
-
-            case t_ALTD:
-                success = asm_altd();
-                break;
-
-            case t_ALTGB:
-                success = asm_altgb();
-                break;
-
-            case t_ALTGN:
-                success = asm_altgn();
-                break;
-
-            case t_ALTGW:
-                success = asm_altgw();
-                break;
-
-            case t_ALTI:
-                success = asm_alti();
-                break;
-
-            case t_ALTR:
-                success = asm_altr();
-                break;
-
-            case t_ALTS:
-                success = asm_alts();
-                break;
-
-            case t_ALTSB:
-                success = asm_altsb();
-                break;
-
-            case t_ALTSN:
-                success = asm_altsn();
-                break;
-
-            case t_ALTSW:
-                success = asm_altsw();
-                break;
-
-            case t_AND:
-                success = asm_and();
-                break;
-
-            case t_ANDN:
-                success = asm_andn();
-                break;
-
-            case t_AUGD:
-                success = asm_augd();
-                break;
-
-            case t_AUGS:
-                success = asm_augs();
-                break;
-
-            case t_BITC:
-                success = asm_bitc();
-                break;
-
-            case t_BITH:
-                success = asm_bith();
-                break;
-
-            case t_BITL:
-                success = asm_bitl();
-                break;
-
-            case t_BITNC:
-                success = asm_bitnc();
-                break;
-
-            case t_BITNOT:
-                success = asm_bitnot();
-                break;
-
-            case t_BITNZ:
-                success = asm_bitnz();
-                break;
-
-            case t_BITRND:
-                success = asm_bitrnd();
-                break;
-
-            case t_BITZ:
-                success = asm_bitz();
-                break;
-
-            case t_BLNPIX:
-                success = asm_blnpix();
-                break;
-
-            case t_BMASK:
-                success = asm_bmask();
-                break;
-
-            case t_BRK:
-                success = asm_brk();
-                break;
-
-            case t_CALL:
-                success = asm_call();
-                break;
-
-            case t_CALLA:
-                success = asm_calla();
-                break;
-
-            case t_CALLB:
-                success = asm_callb();
-                break;
-
-            case t_CALLD:
-                success = asm_calld();
-                break;
-
-            case t_CALLPA:
-                success = asm_callpa();
-                break;
-
-            case t_CALLPB:
-                success = asm_callpb();
-                break;
-
-            case t_CMP:
-                success = asm_cmp();
-                break;
-
-            case t_CMPM:
-                success = asm_cmpm();
-                break;
-
-            case t_CMPR:
-                success = asm_cmpr();
-                break;
-
-            case t_CMPS:
-                success = asm_cmps();
-                break;
-
-            case t_CMPSUB:
-                success = asm_cmpsub();
-                break;
-
-            case t_CMPSX:
-                success = asm_cmpsx();
-                break;
-
-            case t_CMPX:
-                success = asm_cmpx();
-                break;
-
-            case t_COGATN:
-                success = asm_cogatn();
-                break;
-
-            case t_COGBRK:
-                success = asm_cogbrk();
-                break;
-
-            case t_COGID:
-                success = asm_cogid();
-                break;
-
-            case t_COGINIT:
-                success = asm_coginit();
-                break;
-
-            case t_COGSTOP:
-                success = asm_cogstop();
-                break;
-
-            case t_CRCBIT:
-                success = asm_crcbit();
-                break;
-
-            case t_CRCNIB:
-                success = asm_crcnib();
-                break;
-
-            case t_DECMOD:
-                success = asm_decmod();
-                break;
-
-            case t_DECOD:
-                success = asm_decod();
-                break;
-
-            case t_DIRC:
-                success = asm_dirc();
-                break;
-
-            case t_DIRH:
-                success = asm_dirh();
-                break;
-
-            case t_DIRL:
-                success = asm_dirl();
-                break;
-
-            case t_DIRNC:
-                success = asm_dirnc();
-                break;
-
-            case t_DIRNOT:
-                success = asm_dirnot();
-                break;
-
-            case t_DIRNZ:
-                success = asm_dirnz();
-                break;
-
-            case t_DIRRND:
-                success = asm_dirrnd();
-                break;
-
-            case t_DIRZ:
-                success = asm_dirz();
-                break;
-
-            case t_DJF:
-                success = asm_djf();
-                break;
-
-            case t_DJNF:
-                success = asm_djnf();
-                break;
-
-            case t_DJNZ:
-                success = asm_djnz();
-                break;
-
-            case t_DJZ:
-                success = asm_djz();
-                break;
-
-            case t_DRVC:
-                success = asm_drvc();
-                break;
-
-            case t_DRVH:
-                success = asm_drvh();
-                break;
-
-            case t_DRVL:
-                success = asm_drvl();
-                break;
-
-            case t_DRVNC:
-                success = asm_drvnc();
-                break;
-
-            case t_DRVNOT:
-                success = asm_drvnot();
-                break;
-
-            case t_DRVNZ:
-                success = asm_drvnz();
-                break;
-
-            case t_DRVRND:
-                success = asm_drvrnd();
-                break;
-
-            case t_DRVZ:
-                success = asm_drvz();
-                break;
-
-            case t_ENCOD:
-                success = asm_encod();
-                break;
-
-            case t_EXECF:
-                success = asm_execf();
-                break;
-
-            case t_FBLOCK:
-                success = asm_fblock();
-                break;
-
-            case t_FGE:
-                success = asm_fge();
-                break;
-
-            case t_FGES:
-                success = asm_fges();
-                break;
-
-            case t_FLE:
-                success = asm_fle();
-                break;
-
-            case t_FLES:
-                success = asm_fles();
-                break;
-
-            case t_FLTC:
-                success = asm_fltc();
-                break;
-
-            case t_FLTH:
-                success = asm_flth();
-                break;
-
-            case t_FLTL:
-                success = asm_fltl();
-                break;
-
-            case t_FLTNC:
-                success = asm_fltnc();
-                break;
-
-            case t_FLTNOT:
-                success = asm_fltnot();
-                break;
-
-            case t_FLTNZ:
-                success = asm_fltnz();
-                break;
-
-            case t_FLTRND:
-                success = asm_fltrnd();
-                break;
-
-            case t_FLTZ:
-                success = asm_fltz();
-                break;
-
-            case t_GETBRK:
-                success = asm_getbrk();
-                break;
-
-            case t_GETBYTE:
-                success = asm_getbyte();
-                break;
-
-            case t_GETCT:
-                success = asm_getct();
-                break;
-
-            case t_GETNIB:
-                success = asm_getnib();
-                break;
-
-            case t_GETPTR:
-                success = asm_getptr();
-                break;
-
-            case t_GETQX:
-                success = asm_getqx();
-                break;
-
-            case t_GETQY:
-                success = asm_getqy();
-                break;
-
-            case t_GETRND:
-                success = asm_getrnd();
-                break;
-
-            case t_GETSCP:
-                success = asm_getscp();
-                break;
-
-            case t_GETWORD:
-                success = asm_getword();
-                break;
-
-            case t_GETXACC:
-                success = asm_getxacc();
-                break;
-
-            case t_HUBSET:
-                success = asm_hubset();
-                break;
-
-            case t_IJNZ:
-                success = asm_ijnz();
-                break;
-
-            case t_IJZ:
-                success = asm_ijz();
-                break;
-
-            case t_INCMOD:
-                success = asm_incmod();
-                break;
-
-            case t_JATN:
-                success = asm_jatn();
-                break;
-
-            case t_JCT1:
-                success = asm_jct1();
-                break;
-
-            case t_JCT2:
-                success = asm_jct2();
-                break;
-
-            case t_JCT3:
-                success = asm_jct3();
-                break;
-
-            case t_JFBW:
-                success = asm_jfbw();
-                break;
-
-            case t_JINT:
-                success = asm_jint();
-                break;
-
-            case t_JMP:
-                success = asm_jmp();
-                break;
-
-            case t_JMPREL:
-                success = asm_jmprel();
-                break;
-
-            case t_JNATN:
-                success = asm_jnatn();
-                break;
-
-            case t_JNCT1:
-                success = asm_jnct1();
-                break;
-
-            case t_JNCT2:
-                success = asm_jnct2();
-                break;
-
-            case t_JNCT3:
-                success = asm_jnct3();
-                break;
-
-            case t_JNFBW:
-                success = asm_jnfbw();
-                break;
-
-            case t_JNINT:
-                success = asm_jnint();
-                break;
-
-            case t_JNPAT:
-                success = asm_jnpat();
-                break;
-
-            case t_JNQMT:
-                success = asm_jnqmt();
-                break;
-
-            case t_JNSE1:
-                success = asm_jnse1();
-                break;
-
-            case t_JNSE2:
-                success = asm_jnse2();
-                break;
-
-            case t_JNSE3:
-                success = asm_jnse3();
-                break;
-
-            case t_JNSE4:
-                success = asm_jnse4();
-                break;
-
-            case t_JNXFI:
-                success = asm_jnxfi();
-                break;
-
-            case t_JNXMT:
-                success = asm_jnxmt();
-                break;
-
-            case t_JNXRL:
-                success = asm_jnxrl();
-                break;
-
-            case t_JNXRO:
-                success = asm_jnxro();
-                break;
-
-            case t_JPAT:
-                success = asm_jpat();
-                break;
-
-            case t_JQMT:
-                success = asm_jqmt();
-                break;
-
-            case t_JSE1:
-                success = asm_jse1();
-                break;
-
-            case t_JSE2:
-                success = asm_jse2();
-                break;
-
-            case t_JSE3:
-                success = asm_jse3();
-                break;
-
-            case t_JSE4:
-                success = asm_jse4();
-                break;
-
-            case t_JXFI:
-                success = asm_jxfi();
-                break;
-
-            case t_JXMT:
-                success = asm_jxmt();
-                break;
-
-            case t_JXRL:
-                success = asm_jxrl();
-                break;
-
-            case t_JXRO:
-                success = asm_jxro();
-                break;
-
-            case t_LOC:
-                success = asm_loc();
-                break;
-
-            case t_LOCKNEW:
-                success = asm_locknew();
-                break;
-
-            case t_LOCKREL:
-                success = asm_lockrel();
-                break;
-
-            case t_LOCKRET:
-                success = asm_lockret();
-                break;
-
-            case t_LOCKTRY:
-                success = asm_locktry();
-                break;
-
-            case t_MERGEB:
-                success = asm_mergeb();
-                break;
-
-            case t_MERGEW:
-                success = asm_mergew();
-                break;
-
-            case t_MIXPIX:
-                success = asm_mixpix();
-                break;
-
-            case t_MODCZ:
-                success = asm_modcz();
-                break;
-
-            case t_MOV:
-                success = asm_mov();
-                break;
-
-            case t_MOVBYTS:
-                success = asm_movbyts();
-                break;
-
-            case t_MUL:
-                success = asm_mul();
-                break;
-
-            case t_MULPIX:
-                success = asm_mulpix();
-                break;
-
-            case t_MULS:
-                success = asm_muls();
-                break;
-
-            case t_MUXC:
-                success = asm_muxc();
-                break;
-
-            case t_MUXNC:
-                success = asm_muxnc();
-                break;
-
-            case t_MUXNIBS:
-                success = asm_muxnibs();
-                break;
-
-            case t_MUXNITS:
-                success = asm_muxnits();
-                break;
-
-            case t_MUXNZ:
-                success = asm_muxnz();
-                break;
-
-            case t_MUXQ:
-                success = asm_muxq();
-                break;
-
-            case t_MUXZ:
-                success = asm_muxz();
-                break;
-
-            case t_NEG:
-                success = asm_neg();
-                break;
-
-            case t_NEGC:
-                success = asm_negc();
-                break;
-
-            case t_NEGNC:
-                success = asm_negnc();
-                break;
-
-            case t_NEGNZ:
-                success = asm_negnz();
-                break;
-
-            case t_NEGZ:
-                success = asm_negz();
-                break;
-
-            case t_NIXINT1:
-                success = asm_nixint1();
-                break;
-
-            case t_NIXINT2:
-                success = asm_nixint2();
-                break;
-
-            case t_NIXINT3:
-                success = asm_nixint3();
-                break;
-
-            case t_NOP:
-                success = asm_nop();
-                break;
-
-            case t_NOT:
-                success = asm_not();
-                break;
-
-            case t_ONES:
-                success = asm_ones();
-                break;
-
-            case t_OR:
-                success = asm_or();
-                break;
-
-            case t_OUTC:
-                success = asm_outc();
-                break;
-
-            case t_OUTH:
-                success = asm_outh();
-                break;
-
-            case t_OUTL:
-                success = asm_outl();
-                break;
-
-            case t_OUTNC:
-                success = asm_outnc();
-                break;
-
-            case t_OUTNOT:
-                success = asm_outnot();
-                break;
-
-            case t_OUTNZ:
-                success = asm_outnz();
-                break;
-
-            case t_OUTRND:
-                success = asm_outrnd();
-                break;
-
-            case t_OUTZ:
-                success = asm_outz();
-                break;
-
-            case t_POLLATN:
-                success = asm_pollatn();
-                break;
-
-            case t_POLLCT1:
-                success = asm_pollct1();
-                break;
-
-            case t_POLLCT2:
-                success = asm_pollct2();
-                break;
-
-            case t_POLLCT3:
-                success = asm_pollct3();
-                break;
-
-            case t_POLLFBW:
-                success = asm_pollfbw();
-                break;
-
-            case t_POLLINT:
-                success = asm_pollint();
-                break;
-
-            case t_POLLPAT:
-                success = asm_pollpat();
-                break;
-
-            case t_POLLQMT:
-                success = asm_pollqmt();
-                break;
-
-            case t_POLLSE1:
-                success = asm_pollse1();
-                break;
-
-            case t_POLLSE2:
-                success = asm_pollse2();
-                break;
-
-            case t_POLLSE3:
-                success = asm_pollse3();
-                break;
-
-            case t_POLLSE4:
-                success = asm_pollse4();
-                break;
-
-            case t_POLLXFI:
-                success = asm_pollxfi();
-                break;
-
-            case t_POLLXMT:
-                success = asm_pollxmt();
-                break;
-
-            case t_POLLXRL:
-                success = asm_pollxrl();
-                break;
-
-            case t_POLLXRO:
-                success = asm_pollxro();
-                break;
-
-            case t_POP:
-                success = asm_pop();
-                break;
-
-            case t_POPA:
-                success = asm_popa();
-                break;
-
-            case t_POPB:
-                success = asm_popb();
-                break;
-
-            case t_PUSH:
-                success = asm_push();
-                break;
-
-            case t_PUSHA:
-                success = asm_pusha();
-                break;
-
-            case t_PUSHB:
-                success = asm_pushb();
-                break;
-
-            case t_QDIV:
-                success = asm_qdiv();
-                break;
-
-            case t_QEXP:
-                success = asm_qexp();
-                break;
-
-            case t_QFRAC:
-                success = asm_qfrac();
-                break;
-
-            case t_QLOG:
-                success = asm_qlog();
-                break;
-
-            case t_QMUL:
-                success = asm_qmul();
-                break;
-
-            case t_QROTATE:
-                success = asm_qrotate();
-                break;
-
-            case t_QSQRT:
-                success = asm_qsqrt();
-                break;
-
-            case t_QVECTOR:
-                success = asm_qvector();
-                break;
-
-            case t_RCL:
-                success = asm_rcl();
-                break;
-
-            case t_RCR:
-                success = asm_rcr();
-                break;
-
-            case t_RCZL:
-                success = asm_rczl();
-                break;
-
-            case t_RCZR:
-                success = asm_rczr();
-                break;
-
-            case t_RDBYTE:
-                success = asm_rdbyte();
-                break;
-
-            case t_RDFAST:
-                success = asm_rdfast();
-                break;
-
-            case t_RDLONG:
-                success = asm_rdlong();
-                break;
-
-            case t_RDLUT:
-                success = asm_rdlut();
-                break;
-
-            case t_RDPIN:
-                success = asm_rdpin();
-                break;
-
-            case t_RDWORD:
-                success = asm_rdword();
-                break;
-
-            case t_REP:
-                success = asm_rep();
-                break;
-
-            case t_RESI0:
-                success = asm_resi0();
-                break;
-
-            case t_RESI1:
-                success = asm_resi1();
-                break;
-
-            case t_RESI2:
-                success = asm_resi2();
-                break;
-
-            case t_RESI3:
-                success = asm_resi3();
-                break;
-
-            case t_RET:
-                success = asm_ret();
-                break;
-
-            case t_RETA:
-                success = asm_reta();
-                break;
-
-            case t_RETB:
-                success = asm_retb();
-                break;
-
-            case t_RETI0:
-                success = asm_reti0();
-                break;
-
-            case t_RETI1:
-                success = asm_reti1();
-                break;
-
-            case t_RETI2:
-                success = asm_reti2();
-                break;
-
-            case t_RETI3:
-                success = asm_reti3();
-                break;
-
-            case t_REV:
-                success = asm_rev();
-                break;
-
-            case t_RFBYTE:
-                success = asm_rfbyte();
-                break;
-
-            case t_RFLONG:
-                success = asm_rflong();
-                break;
-
-            case t_RFVAR:
-                success = asm_rfvar();
-                break;
-
-            case t_RFVARS:
-                success = asm_rfvars();
-                break;
-
-            case t_RFWORD:
-                success = asm_rfword();
-                break;
-
-            case t_RGBEXP:
-                success = asm_rgbexp();
-                break;
-
-            case t_RGBSQZ:
-                success = asm_rgbsqz();
-                break;
-
-            case t_ROL:
-                success = asm_rol();
-                break;
-
-            case t_ROLBYTE:
-                success = asm_rolbyte();
-                break;
-
-            case t_ROLNIB:
-                success = asm_rolnib();
-                break;
-
-            case t_ROLWORD:
-                success = asm_rolword();
-                break;
-
-            case t_ROR:
-                success = asm_ror();
-                break;
-
-            case t_RQPIN:
-                success = asm_rqpin();
-                break;
-
-            case t_SAL:
-                success = asm_sal();
-                break;
-
-            case t_SAR:
-                success = asm_sar();
-                break;
-
-            case t_SCA:
-                success = asm_sca();
-                break;
-
-            case t_SCAS:
-                success = asm_scas();
-                break;
-
-            case t_SETBYTE:
-                success = asm_setbyte();
-                break;
-
-            case t_SETCFRQ:
-                success = asm_setcfrq();
-                break;
-
-            case t_SETCI:
-                success = asm_setci();
-                break;
-
-            case t_SETCMOD:
-                success = asm_setcmod();
-                break;
-
-            case t_SETCQ:
-                success = asm_setcq();
-                break;
-
-            case t_SETCY:
-                success = asm_setcy();
-                break;
-
-            case t_SETD:
-                success = asm_setd();
-                break;
-
-            case t_SETDACS:
-                success = asm_setdacs();
-                break;
-
-            case t_SETINT1:
-                success = asm_setint1();
-                break;
-
-            case t_SETINT2:
-                success = asm_setint2();
-                break;
-
-            case t_SETINT3:
-                success = asm_setint3();
-                break;
-
-            case t_SETLUTS:
-                success = asm_setluts();
-                break;
-
-            case t_SETNIB:
-                success = asm_setnib();
-                break;
-
-            case t_SETPAT:
-                success = asm_setpat();
-                break;
-
-            case t_SETPIV:
-                success = asm_setpiv();
-                break;
-
-            case t_SETPIX:
-                success = asm_setpix();
-                break;
-
-            case t_SETQ:
-                success = asm_setq();
-                break;
-
-            case t_SETQ2:
-                success = asm_setq2();
-                break;
-
-            case t_SETR:
-                success = asm_setr();
-                break;
-
-            case t_SETS:
-                success = asm_sets();
-                break;
-
-            case t_SETSCP:
-                success = asm_setscp();
-                break;
-
-            case t_SETSE1:
-                success = asm_setse1();
-                break;
-
-            case t_SETSE2:
-                success = asm_setse2();
-                break;
-
-            case t_SETSE3:
-                success = asm_setse3();
-                break;
-
-            case t_SETSE4:
-                success = asm_setse4();
-                break;
-
-            case t_SETWORD:
-                success = asm_setword();
-                break;
-
-            case t_SETXFRQ:
-                success = asm_setxfrq();
-                break;
-
-            case t_SEUSSF:
-                success = asm_seussf();
-                break;
-
-            case t_SEUSSR:
-                success = asm_seussr();
-                break;
-
-            case t_SHL:
-                success = asm_shl();
-                break;
-
-            case t_SHR:
-                success = asm_shr();
-                break;
-
-            case t_SIGNX:
-                success = asm_signx();
-                break;
-
-            case t_SKIP:
-                success = asm_skip();
-                break;
-
-            case t_SKIPF:
-                success = asm_skipf();
-                break;
-
-            case t_SPLITB:
-                success = asm_splitb();
-                break;
-
-            case t_SPLITW:
-                success = asm_splitw();
-                break;
-
-            case t_STALLI:
-                success = asm_stalli();
-                break;
-
-            case t_SUB:
-                success = asm_sub();
-                break;
-
-            case t_SUBR:
-                success = asm_subr();
-                break;
-
-            case t_SUBS:
-                success = asm_subs();
-                break;
-
-            case t_SUBSX:
-                success = asm_subsx();
-                break;
-
-            case t_SUBX:
-                success = asm_subx();
-                break;
-
-            case t_SUMC:
-                success = asm_sumc();
-                break;
-
-            case t_SUMNC:
-                success = asm_sumnc();
-                break;
-
-            case t_SUMNZ:
-                success = asm_sumnz();
-                break;
-
-            case t_SUMZ:
-                success = asm_sumz();
-                break;
-
-            case t_TEST:
-                success = asm_test();
-                break;
-
-            case t_TESTB:
-                success = asm_testb_w();
-                break;
-
-            case t_TESTBN:
-                success = asm_testbn_w();
-                break;
-
-            case t_TESTN:
-                success = asm_testn();
-                break;
-
-            case t_TESTP:
-                success = asm_testp_w();
-                break;
-
-            case t_TESTPN:
-                success = asm_testpn_w();
-                break;
-
-            case t_TJF:
-                success = asm_tjf();
-                break;
-
-            case t_TJNF:
-                success = asm_tjnf();
-                break;
-
-            case t_TJNS:
-                success = asm_tjns();
-                break;
-
-            case t_TJNZ:
-                success = asm_tjnz();
-                break;
-
-            case t_TJS:
-                success = asm_tjs();
-                break;
-
-            case t_TJV:
-                success = asm_tjv();
-                break;
-
-            case t_TJZ:
-                success = asm_tjz();
-                break;
-
-            case t_TRGINT1:
-                success = asm_trgint1();
-                break;
-
-            case t_TRGINT2:
-                success = asm_trgint2();
-                break;
-
-            case t_TRGINT3:
-                success = asm_trgint3();
-                break;
-
-            case t_WAITATN:
-                success = asm_waitatn();
-                break;
-
-            case t_WAITCT1:
-                success = asm_waitct1();
-                break;
-
-            case t_WAITCT2:
-                success = asm_waitct2();
-                break;
-
-            case t_WAITCT3:
-                success = asm_waitct3();
-                break;
-
-            case t_WAITFBW:
-                success = asm_waitfbw();
-                break;
-
-            case t_WAITINT:
-                success = asm_waitint();
-                break;
-
-            case t_WAITPAT:
-                success = asm_waitpat();
-                break;
-
-            case t_WAITSE1:
-                success = asm_waitse1();
-                break;
-
-            case t_WAITSE2:
-                success = asm_waitse2();
-                break;
-
-            case t_WAITSE3:
-                success = asm_waitse3();
-                break;
-
-            case t_WAITSE4:
-                success = asm_waitse4();
-                break;
-
-            case t_WAITX:
-                success = asm_waitx();
-                break;
-
-            case t_WAITXFI:
-                success = asm_waitxfi();
-                break;
-
-            case t_WAITXMT:
-                success = asm_waitxmt();
-                break;
-
-            case t_WAITXRL:
-                success = asm_waitxrl();
-                break;
-
-            case t_WAITXRO:
-                success = asm_waitxro();
-                break;
-
-            case t_WFBYTE:
-                success = asm_wfbyte();
-                break;
-
-            case t_WFLONG:
-                success = asm_wflong();
-                break;
-
-            case t_WFWORD:
-                success = asm_wfword();
-                break;
-
-            case t_WMLONG:
-                success = asm_wmlong();
-                break;
-
-            case t_WRBYTE:
-                success = asm_wrbyte();
-                break;
-
-            case t_WRC:
-                success = asm_wrc();
-                break;
-
-            case t_WRFAST:
-                success = asm_wrfast();
-                break;
-
-            case t_WRLONG:
-                success = asm_wrlong();
-                break;
-
-            case t_WRLUT:
-                success = asm_wrlut();
-                break;
-
-            case t_WRNC:
-                success = asm_wrnc();
-                break;
-
-            case t_WRNZ:
-                success = asm_wrnz();
-                break;
-
-            case t_WRPIN:
-                success = asm_wrpin();
-                break;
-
-            case t_WRWORD:
-                success = asm_wrword();
-                break;
-
-            case t_WRZ:
-                success = asm_wrz();
-                break;
-
-            case t_WXPIN:
-                success = asm_wxpin();
-                break;
-
-            case t_WYPIN:
-                success = asm_wypin();
-                break;
-
-            case t_XCONT:
-                success = asm_xcont();
-                break;
-
-            case t_XINIT:
-                success = asm_xinit();
-                break;
-
-            case t_XOR:
-                success = asm_xor();
-                break;
-
-            case t_XORO32:
-                success = asm_xoro32();
-                break;
-
-            case t_XSTOP:
-                success = asm_xstop();
-                break;
-
-            case t_XZERO:
-                success = asm_xzero();
-                break;
-
-            case t_ZEROX:
-                success = asm_zerox();
-                break;
-
-            case t_BYTE:
-                success = asm_byte();
-                break;
-
-            case t_WORD:
-                success = asm_word();
-                break;
-
-            case t_LONG:
-                success = asm_long();
-                break;
-
-            case t_FILE:
-                success = asm_file();
-                break;
-
-            case t_RES:
-                success = asm_res();
-                break;
-
-            case t_ALIGNW:
-                success = asm_alignw();
-                break;
-
-            case t_ALIGNL:
-                success = asm_alignl();
-                break;
-
-            case t_ORG:
-                success = asm_org();
-                break;
-
-            case t_ORGH:
-                success = asm_orgh();
-                break;
-
-            case t_FIT:
-                success = asm_fit();
-                break;
-
-            case t_ASSIGN:
-                success = asm_assign();
-                break;
-
-            default:
-                if (t_IMMEDIATE == m_instr && sec_con == m_section) {
-                    success = asm_enum_initial();
-                    break;
-                }
-
-                if (t_COMMA == m_instr && sec_con == m_section) {
-                    success = asm_enum_continue();
-                    break;
-                }
-
-                if (Token.is_type(m_instr, tm_mnemonic)) {
-                    // Missing handling of an instruction token
-                    m_errors += tr("Missing handling of instruction token '%1'.")
-                          .arg(Token.string(m_instr));
-                    emit Error(m_pass, m_lineno, m_errors.last());
-                    m_idx = m_cnt;
-                    break;
-                }
-
-                if (Token.is_type(m_instr, tm_constant)) {
-                    // Unexpected constant token
-                    m_errors += tr("Constant '%1' used as an instruction.")
-                              .arg(Token.string(m_instr));
-                    emit Error(m_pass, m_lineno, m_errors.last());
-                    m_idx = m_cnt;
-                    break;
-                }
-
-                if (Token.is_type(m_instr, tm_conditional)) {
-                    // Unexpected conditional token
-                    m_errors += tr("Extraneous conditional '%1'.")
-                              .arg(Token.string(m_instr));
-                    emit Error(m_pass, m_lineno, m_errors.last());
-                    m_idx = m_cnt;
-                    break;
-                }
-
-                if (Token.is_type(m_instr, tm_modcz_param)) {
-                    // Unexpected MODCZ parameter token
-                    m_errors += tr("Extraneous MODCZ parameter '%1'.")
-                              .arg(Token.string(m_instr));
-                    emit Error(m_pass, m_lineno, m_errors.last());
-                    m_idx = m_cnt;
-                    break;
-                }
-
-                m_errors += tr("Not an instruction token '%1'.")
-                          .arg(Token.string(m_instr));
-                emit Error(m_pass, m_lineno, m_errors.last());
-                m_idx = m_cnt;
-            }
+        switch (m_section) {
+        case sec_dat:
+            success = assemble_dat();
+            break;
+        case sec_con:
+            success = assemble_con();
+            break;
+        case sec_pub:
+        case sec_pri:
+        case sec_var:
+            success = assemble_dat();
+            break;
         }
 
         // store the results, emit listing, etc.

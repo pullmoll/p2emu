@@ -33,28 +33,72 @@
  ****************************************************************************/
 #pragma once
 #include <QObject>
+#include <QMap>
 #include "p2token.h"
 
 class P2Doc : public QObject
 {
     Q_OBJECT
 public:
+    typedef QPair<p2_LONG,p2_LONG> MaskMatch;
+
     P2Doc(QObject* parent = nullptr);
 
+    const char* brief(p2_LONG opcode);
+    const char* brief(p2_inst7_e inst) { return brief(inst7(inst)); }
+    const char* brief(p2_inst8_e inst) { return brief(inst8(inst)); }
+    const char* brief(p2_inst9_e inst) { return brief(inst9(inst)); }
+    const char* brief(p2_opdst_e inst) { return brief(opdst(inst)); }
+    const char* brief(p2_opsrc_e inst) { return brief(opsrc(inst)); }
+    const char* brief(p2_opx24_e inst) { return brief(opx24(inst)); }
+
+    const char* instr(p2_LONG opcode);
+    const char* instr(p2_inst7_e inst) { return instr(inst7(inst)); }
+    const char* instr(p2_inst8_e inst) { return instr(inst8(inst)); }
+    const char* instr(p2_inst9_e inst) { return instr(inst9(inst)); }
+    const char* instr(p2_opdst_e inst) { return instr(opdst(inst)); }
+    const char* instr(p2_opsrc_e inst) { return instr(opsrc(inst)); }
+    const char* instr(p2_opx24_e inst) { return instr(opx24(inst)); }
+
+    QList<const char*> descr(p2_LONG opcode);
+    QList<const char*> descr(p2_inst7_e inst) { return descr(inst7(inst)); }
+    QList<const char*> descr(p2_inst8_e inst) { return descr(inst8(inst)); }
+    QList<const char*> descr(p2_inst9_e inst) { return descr(inst9(inst)); }
+    QList<const char*> descr(p2_opdst_e inst) { return descr(opdst(inst)); }
+    QList<const char*> descr(p2_opsrc_e inst) { return descr(opsrc(inst)); }
+    QList<const char*> descr(p2_opx24_e inst) { return descr(opx24(inst)); }
+
+    p2_token_e token(p2_LONG opcode);
+    p2_token_e token(p2_inst7_e inst) { return token(inst7(inst)); }
+    p2_token_e token(p2_inst8_e inst) { return token(inst8(inst)); }
+    p2_token_e token(p2_inst9_e inst) { return token(inst9(inst)); }
+    p2_token_e token(p2_opdst_e inst) { return token(opdst(inst)); }
+    p2_token_e token(p2_opsrc_e inst) { return token(opsrc(inst)); }
+    p2_token_e token(p2_opx24_e inst) { return token(opx24(inst)); }
+
 private:
-    QHash<quint64,QString> m_pattern;
-    QHash<uint,QString> m_brief;
-    QHash<uint,const char *> m_instr;
-    QHash<uint,p2_token_e> m_token;
+    QList<MaskMatch> m_masks;
+    QHash<MaskMatch,const char *> m_pattern;
+    QHash<MaskMatch,const char *> m_brief;
+    QHash<MaskMatch,const char *> m_instr;
+    QHash<MaskMatch,QList<const char *>> m_descr;
+    QHash<MaskMatch,p2_token_e> m_token;
 
-    quint64 pattern(uint instr, const char* src, const char* source);
+    static uint inst7(const p2_inst7_e instr);
+    static uint inst8(const p2_inst8_e instr);
+    static uint inst9(const p2_inst9_e instr);
+    static uint opdst(const p2_opdst_e instr);
+    static uint opsrc(const p2_opsrc_e instr);
+    static uint opx24(const p2_opx24_e instr);
 
-    quint64 pattern(p2_inst7_e instr, const char* pat);
-    quint64 pattern(p2_inst8_e instr, const char* pat);
-    quint64 pattern(p2_inst9_e instr, const char* pat);
-    quint64 pattern(p2_opdst_e instr, const char* pat);
-    quint64 pattern(p2_opsrc_e instr, const char* pat);
-    quint64 pattern(p2_opx24_e instr, const char* pat);
+    MaskMatch pattern(const char* _func, p2_LONG instr, const char* src);
+
+    MaskMatch pattern(const char* _func, p2_inst7_e instr, const char* pat);
+    MaskMatch pattern(const char* _func, p2_inst8_e instr, const char* pat);
+    MaskMatch pattern(const char* _func, p2_inst9_e instr, const char* pat);
+    MaskMatch pattern(const char* _func, p2_opdst_e instr, const char* pat);
+    MaskMatch pattern(const char* _func, p2_opsrc_e instr, const char* pat);
+    MaskMatch pattern(const char* _func, p2_opx24_e instr, const char* pat);
 
     void doc_nop(p2_inst7_e instr);
     void doc_ror(p2_inst7_e instr);
