@@ -39,6 +39,7 @@
  */
 enum p2_token_e {
     t_invalid = -1,     //!< undefined value
+    t_none,             //!< no string
     t_unknown,          //!< nothing found
 
     t_comment,          //!< token is a comment

@@ -84,7 +84,6 @@ P2Asm::P2Asm(QObject *parent)
     , m_line()
     , m_errors()
     , m_ORG(0)
-    , m_ORG_MAX(0)
     , m_ORGH(0)
     , m_advance(4)
     , m_IR()
@@ -140,7 +139,6 @@ void P2Asm::pass_clear()
     m_line.clear();
     m_errors.clear();
     m_ORG = 0;
-    m_ORG_MAX = 0;
     m_ORGH = 0;
     m_advance = 0;
     m_IR.clear();
@@ -180,12 +178,13 @@ const QString P2Asm::source(int idx) const
  * @brief Set new source code
  * @param source const reference to a QStringList with source lines
  */
-void P2Asm::set_source(const QStringList& source)
+bool P2Asm::set_source(const QStringList& source)
 {
     clear();
     m_source.clear();
     foreach(const QString& line, source)
         m_source += expand_tabs(line);
+    return true;
 }
 
 /**
@@ -2066,6 +2065,10 @@ bool P2Asm::assemble_dat()
             success = asm_org();
             break;
 
+        case t_ORGF:
+            success = asm_orgf();
+            break;
+
         case t_ORGH:
             success = asm_orgh();
             break;
@@ -2207,12 +2210,30 @@ bool P2Asm::assemble(const QString& filename)
     return assemble(list);
 }
 
-bool P2Asm::setPathname(const QString& pathname)
+bool P2Asm::set_pathname(const QString& pathname)
 {
     if (pathname == m_pathname)
         return false;
-    m_pathname = QDir::cleanPath(pathname) + QChar('/');
+    QDir dir(pathname);
+    if (!dir.exists())
+        return false;
+    m_pathname = dir.canonicalPath() + QChar('/');
     return true;
+}
+
+bool P2Asm::load(const QString& filename)
+{
+    QFile file(filename);
+    if (!file.open(QIODevice::ReadOnly))
+        return false;
+
+    QTextStream stream(&file);
+    QStringList source;
+    while (!stream.atEnd()) {
+        QString line = stream.readLine();
+        source += line;
+    }
+    return set_source(source);
 }
 
 /**
@@ -2404,8 +2425,6 @@ void P2Asm::results()
     // Calculate next ORG and PC values by adding m_advance
     m_ORGH += m_advance;
     m_ORG += m_advance;
-    if (m_ORG > m_ORG_MAX)
-        m_ORG_MAX = m_ORG;
 
     if (!m_words.isEmpty())
         m_hash_words.insert(m_lineno, m_words);
@@ -4272,14 +4291,40 @@ bool P2Asm::asm_org()
     m_advance = 0;      // Don't advance PC
     m_IR.as_IR = false;
     P2Atom atom = parse_expression();
-    p2_LONG value = atom.isEmpty() ? m_ORG_MAX : 4 * atom.to_long();
+    p2_LONG value = atom.isEmpty() ? 0 : 4 * atom.to_long();
     if (value >= HUB_ADDR0) {
         m_errors += tr("COG origin exceeds limit ($%1)")
                     .arg(value, 0, 16, QChar('0'));
         emit Error(m_pass, m_lineno, m_errors.last());
-        value = m_ORG_MAX;
+    } else {
+        m_ORG = value;
     }
-    m_ORG = value;
+    m_symbols->set_atom(m_symbol, value);
+    return end_of_line();
+}
+
+/**
+ * @brief Origin with fill operation
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::asm_orgf()
+{
+    next();
+    m_advance = 0;      // Don't advance PC
+    m_IR.as_IR = false;
+    P2Atom atom = parse_expression();
+    p2_LONG value = atom.isEmpty() ? 0 : 4 * atom.to_long();
+    if (value >= HUB_ADDR0) {
+        m_errors += tr("COG origin exceeds limit ($%1)")
+                    .arg(value, 0, 16, QChar('0'));
+        emit Error(m_pass, m_lineno, m_errors.last());
+        value = 0;
+    }
+    for (p2_LONG pc = m_ORG; pc < value; pc += 4) {
+        m_data.append_uint(P2Atom::PC, 0);
+    }
+    m_advance = m_data.usize();
     m_symbols->set_atom(m_symbol, value);
     return end_of_line();
 }

@@ -56,19 +56,19 @@ P2DasmModel::P2DasmModel(P2Dasm* dasm, QObject *parent)
     , m_background()
     , m_alignment()
 {
-    m_header.insert(c_Address,       tr("Address"));
+    m_header.insert(c_Address,          tr("Address"));
     m_alignment.insert(c_Address,       Qt::AlignLeft | Qt::AlignVCenter);
     m_background.insert(c_Address,      qRgb(0xff,0xfc,0xf8));
 
-    m_header.insert(c_Opcode,        tr("Opcode"));
+    m_header.insert(c_Opcode,           tr("Opcode"));
     m_alignment.insert(c_Opcode,        Qt::AlignLeft | Qt::AlignVCenter);
     m_background.insert(c_Opcode,       qRgb(0xf8,0xfc,0xff));
 
-    m_header.insert(c_Instruction,   tr("Instruction"));
-    m_header.insert(c_Description,   tr("Description"));
+    m_header.insert(c_Instruction,      tr("Instruction"));
+    m_alignment.insert(c_Instruction,   Qt::AlignLeft | Qt::AlignVCenter);
     m_background.insert(c_Instruction,  qRgb(0xff,0xff,0xff));
 
-    m_alignment.insert(c_Instruction,   Qt::AlignLeft | Qt::AlignVCenter);
+    m_header.insert(c_Description,      tr("Description"));
     m_alignment.insert(c_Description,   Qt::AlignLeft | Qt::AlignVCenter);
     m_background.insert(c_Description,  qRgb(0xf8,0xff,0xf8));
 }
@@ -77,9 +77,7 @@ QVariant P2DasmModel::headerData(int section, Qt::Orientation orientation, int r
 {
     QVariant result;
     const column_e column = static_cast<column_e>(section);
-    QFont font(m_font);
-    font.setBold(true);
-    QFontMetrics metrics(font);
+    QFontMetrics metrics(m_font);
 
     switch (orientation) {
     case Qt::Horizontal:
@@ -89,11 +87,11 @@ QVariant P2DasmModel::headerData(int section, Qt::Orientation orientation, int r
             break;
 
         case Qt::FontRole:
-            result = font;
+            result = m_font;
             break;
 
         case Qt::SizeHintRole:
-            result = sizeHint(column, true);
+            result = sizeHint(createIndex(0, column));
             break;
 
         case Qt::TextAlignmentRole:
@@ -213,7 +211,7 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
         break;
 
     case Qt::SizeHintRole:
-        result = sizeHint(column, false, data(index).toString());
+        result = sizeHint(index, data(index).toString());
         break;
 
     case Qt::InitialSortOrderRole:
@@ -232,11 +230,10 @@ QList<P2DasmModel::column_e> P2DasmModel::columns()
     return columns;
 }
 
-QSize P2DasmModel::sizeHint(P2DasmModel::column_e column, bool header, const QString& text) const
+QSize P2DasmModel::sizeHint(const QModelIndex& index, const QString& text) const
 {
-    QFont font(m_font);
-    font.setBold(header);
-    QFontMetrics metrics(font);
+    QFontMetrics metrics(m_font);
+    const column_e column = static_cast<column_e>(index.column());
 
     switch (column) {
     case c_Address:

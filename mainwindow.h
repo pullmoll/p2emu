@@ -101,6 +101,8 @@ private slots:
     void symbolsHeaderColums(const QPoint& pos);
 
     void hubSingleStep();
+    void loadObject(const QString& filename = QString());
+    void loadObjectRandom();
 
     void openSource(const QString& filename = QString());
     void loadSource(const QString& filename = QString());

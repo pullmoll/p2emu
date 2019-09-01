@@ -111,9 +111,10 @@ signals:
     void Error(int pass, int lineno, QString message);
 
 public slots:
-    bool setPathname(const QString& pathname);
+    bool set_pathname(const QString& pathname);
+    bool load(const QString& filename);
     bool set_source(int idx, const QString& source);
-    void set_source(const QStringList& source);
+    bool set_source(const QStringList& source);
 
 private:
     int m_pass;                             //!< current pass
@@ -130,7 +131,6 @@ private:
     QString m_line;                         //!< current line of source
     QStringList m_errors;                   //!< error message(s) from parameters parser
     p2_LONG m_ORG;                          //!< current program counter (origin of the instruction)
-    p2_LONG m_ORG_MAX;                      //!< last program counter (maximum of m_ORG)
     p2_LONG m_ORGH;                         //!< current origin, i.e. where the data is stored
     p2_LONG m_advance;                      //!< advance by n longs
     P2Opcode m_IR;                          //!< current opcode with instruction register
@@ -243,6 +243,7 @@ private:
     bool asm_alignw();
     bool asm_alignl();
     bool asm_org();
+    bool asm_orgf();
     bool asm_orgh();
 
     bool asm_dat();

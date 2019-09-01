@@ -157,13 +157,14 @@ void P2CogView::setCog(const P2Cog* cog)
 {
     m_cog = cog;
     m_dasm = new P2Dasm(cog);
-    m_dasm->setLowercase(true);
+    m_dasm->set_lowercase(true);
     m_model = new P2DasmModel(m_dasm);
     m_model->setOpcodeFormat(fmt_hex);
     ui->tvDasm->setModel(m_model);
     // Set column sizes
     for (int column = 0; column < m_model->columnCount(); column++) {
-        QSize size = m_model->sizeHint(static_cast<P2DasmModel::column_e>(column));
+        QModelIndex index = m_model->index(0, column);
+        QSize size = m_model->sizeHint(index);
         ui->tvDasm->setColumnWidth(column, size.width());
     }
     ui->tvDasm->setColumnHidden(P2DasmModel::c_Description, true);

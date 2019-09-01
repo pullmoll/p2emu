@@ -88,10 +88,8 @@ P2AsmModel::P2AsmModel(P2Asm* p2asm, QObject *parent)
 QVariant P2AsmModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     QVariant result;
-    QFont font;
     const column_e column = static_cast<column_e>(section);
-    font.setBold(true);
-    QFontMetrics metrics(font);
+    QFontMetrics metrics(m_font);
     const int row = section;
 
     switch (orientation) {
@@ -102,11 +100,11 @@ QVariant P2AsmModel::headerData(int section, Qt::Orientation orientation, int ro
             break;
 
         case Qt::FontRole:
-            result = font;
+            result = m_font;
             break;
 
         case Qt::SizeHintRole:
-            result = sizeHint(createIndex(0, column), true);
+            result = sizeHint(createIndex(0, column));
             break;
 
         case Qt::TextAlignmentRole:
@@ -169,7 +167,6 @@ int P2AsmModel::columnCount(const QModelIndex &parent) const
 QVariant P2AsmModel::data(const QModelIndex &index, int role) const
 {
     QVariant result;
-    QFont font(m_font);
 
     if (!index.isValid())
         return result;
@@ -337,7 +334,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
         break;
 
     case Qt::FontRole:
-        result = font;
+        result = m_font;
         break;
 
     case Qt::TextAlignmentRole:
@@ -357,8 +354,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
         break;
 
     case Qt::SizeHintRole:
-        if (c_Opcode != column)
-            result = sizeHint(index, false, data(index).toString());
+        result = sizeHint(index, data(index).toString());
         break;
 
     case Qt::InitialSortOrderRole:
@@ -395,12 +391,10 @@ bool P2AsmModel::setData(const QModelIndex& index, const QVariant& value, int ro
     return result;
 }
 
-QSize P2AsmModel::sizeHint(const QModelIndex& index, bool header, const QString& text) const
+QSize P2AsmModel::sizeHint(const QModelIndex& index, const QString& text) const
 {
     const column_e column = static_cast<column_e>(index.column());
-    QFont font(m_font);
-    font.setBold(header);
-    QFontMetrics metrics(font);
+    QFontMetrics metrics(m_font);
     QSize size;
 
     switch (column) {

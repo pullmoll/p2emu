@@ -49,7 +49,7 @@ public:
     bool lowercase() const;
 
 public slots:
-    void setLowercase(bool flag);
+    void set_lowercase(bool flag);
 
 private:
     const P2Cog* COG;
@@ -68,6 +68,7 @@ private:
     static QString format_num(uint num, bool binary = false);
     static QString format_bin(uint num, int digits = 0);
 
+    QString format_imm(bool im = false);
     void format_WCZ(QString* instruction, p2_token_e with = t_WCZ);
     void format_WC(QString* instruction, p2_token_e with = t_WC);
     void format_WZ(QString* instruction, p2_token_e with = t_WZ);
@@ -89,7 +90,7 @@ private:
     void format_imm_d_c(QString* instruction, p2_token_e inst);
     void format_imm_s(QString* instruction, p2_token_e inst);
     void format_imm_s_c(QString* instruction, p2_token_e inst);
-    void format_pc_abs(QString* instruction, p2_token_e inst, p2_token_e dest = t_unknown);
+    void format_pc_abs(QString* instruction, p2_token_e inst, p2_token_e dest = t_none);
     void format_imm23(QString* instruction, p2_token_e inst);
 
     void dasm_nop(QString* instruction = nullptr);

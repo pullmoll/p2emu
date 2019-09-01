@@ -45,7 +45,6 @@ public:
     P2Hub(int ncogs, QObject* parent = nullptr);
 
     int execute(int cycles);
-    bool load(const QString& filename);
 
     P2Cog* cog(int id);
     p2_BYTE* mem();
@@ -92,6 +91,11 @@ public:
     void wr_SCP(p2_LONG n);
 
     bool rd_PIN(p2_LONG n);
+
+public slots:
+    bool load_obj(const QString& filename);
+    bool set_pathname(const QString& pathname);
+
 private:
     p2_QUAD rotl(p2_QUAD val, uchar shift);
     void xoro128();
@@ -103,16 +107,17 @@ private:
     p2_QUAD PIN;            //!< 64 pins (0 … 31 on PA, 32 … 63 on PB)
     p2_QUAD DIR;            //!< 64 direction bits (0 … 31 on PA, 32 … 63 on PB)
     p2_QUAD OUT;            //!< 64 output bits (0 … 31 on PA, 32 … 63 on PB)
-    p2_LONG MUX;             //!< scope input MUX (TODO: how is it defined?)
+    p2_LONG MUX;            //!< scope input MUX (TODO: how is it defined?)
     QVector<P2Cog*> COGS;   //!< vector of available COGs
     int nCOGS;              //!< number of available COGs (1 … 16)
     int mCOGS;              //!< COG mask
-    p2_LONG LOCK;            //!< lock state
+    p2_LONG LOCK;           //!< lock state
     QVector<p2_LONG> pin_mode;
     QVector<p2_LONG> pin_X;
     QVector<p2_LONG> pin_Y;
     p2_LONG scope_pin0;
     p2_LONG scope_enable;
+    QString m_pathname;     //!< path name for object files
     union {
         p2_BYTE B[MEM_SIZE];
         p2_WORD W[MEM_SIZE/2];

@@ -37,9 +37,8 @@
 // Global instance
 P2Doc Doc;
 
-P2Doc::P2Doc(QObject* parent)
-    : QObject(parent)
-    , m_masks()
+P2Doc::P2Doc()
+    : m_masks()
     , m_pattern()
     , m_brief()
     , m_instr()
@@ -1747,7 +1746,6 @@ void P2Doc::doc_bitl(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Bit S[4:0] of D = 0,    C,Z = D[S[4:0]].");
     m_instr.insert(mask_match, "BITL    D,{#}S         {WCZ}");
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -1767,7 +1765,6 @@ void P2Doc::doc_bith(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Bit S[4:0] of D = 1,    C,Z = D[S[4:0]].");
     m_instr.insert(mask_match, "BITH    D,{#}S         {WCZ}");
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -1787,7 +1784,6 @@ void P2Doc::doc_bitc(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Bit S[4:0] of D = C,    C,Z = D[S[4:0]].");
     m_instr.insert(mask_match, "BITC    D,{#}S         {WCZ}");
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -1807,7 +1803,6 @@ void P2Doc::doc_bitnc(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Bit S[4:0] of D = !C,   C,Z = D[S[4:0]].");
     m_instr.insert(mask_match, "BITNC   D,{#}S         {WCZ}");
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -1827,7 +1822,6 @@ void P2Doc::doc_bitz(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Bit S[4:0] of D = Z,    C,Z = D[S[4:0]].");
     m_instr.insert(mask_match, "BITZ    D,{#}S         {WCZ}");
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -1847,7 +1841,6 @@ void P2Doc::doc_bitnz(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Bit S[4:0] of D = !Z,   C,Z = D[S[4:0]].");
     m_instr.insert(mask_match, "BITNZ   D,{#}S         {WCZ}");
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -1867,7 +1860,6 @@ void P2Doc::doc_bitrnd(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Bit S[4:0] of D = RND,  C,Z = D[S[4:0]].");
     m_instr.insert(mask_match, "BITRND  D,{#}S         {WCZ}");
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -1887,7 +1879,6 @@ void P2Doc::doc_bitnot(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Bit S[4:0] of D = !bit, C,Z = D[S[4:0]].");
     m_instr.insert(mask_match, "BITNOT  D,{#}S         {WCZ}");
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -2495,7 +2486,6 @@ void P2Doc::doc_setnib(p2_inst7_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Set S[3:0] into nibble N in D, keeping rest of D same.");
     m_instr.insert(mask_match, "SETNIB  D,{#}S,#N");
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -2515,7 +2505,6 @@ void P2Doc::doc_setnib_altsn(p2_inst7_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Set S[3:0] into nibble established by prior ALTSN instruction.");
     m_instr.insert(mask_match, "SETNIB  {#}S");
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -2556,7 +2545,6 @@ void P2Doc::doc_getnib_altgn(p2_inst7_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Get nibble established by prior ALTGN instruction into D.");
     m_instr.insert(mask_match, "GETNIB  D");
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -2597,7 +2585,6 @@ void P2Doc::doc_rolnib_altgn(p2_inst7_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Rotate-left nibble established by prior ALTGN instruction into D.");
     m_instr.insert(mask_match, "ROLNIB  D");
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -2617,7 +2604,6 @@ void P2Doc::doc_setbyte(p2_inst7_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Set S[7:0] into byte N in D, keeping rest of D same.");
     m_instr.insert(mask_match, "SETBYTE D,{#}S,#N");
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -2637,7 +2623,6 @@ void P2Doc::doc_setbyte_altsb(p2_inst7_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Set S[7:0] into byte established by prior ALTSB instruction.");
     m_instr.insert(mask_match, "SETBYTE {#}S");
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -2678,7 +2663,6 @@ void P2Doc::doc_getbyte_altgb(p2_inst7_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Get byte established by prior ALTGB instruction into D.");
     m_instr.insert(mask_match, "GETBYTE D");
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -2719,7 +2703,6 @@ void P2Doc::doc_rolbyte_altgb(p2_inst7_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Rotate-left byte established by prior ALTGB instruction into D.");
     m_instr.insert(mask_match, "ROLBYTE D");
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -2739,7 +2722,6 @@ void P2Doc::doc_setword(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Set S[15:0] into word N in D, keeping rest of D same.");
     m_instr.insert(mask_match, "SETWORD D,{#}S,#N");
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -2759,7 +2741,6 @@ void P2Doc::doc_setword_altsw(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Set S[15:0] into word established by prior ALTSW instruction.");
     m_instr.insert(mask_match, "SETWORD {#}S");
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -2800,7 +2781,6 @@ void P2Doc::doc_getword_altgw(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Get word established by prior ALTGW instruction into D.");
     m_instr.insert(mask_match, "GETWORD D");
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -2841,7 +2821,6 @@ void P2Doc::doc_rolword_altgw(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Rotate-left word established by prior ALTGW instruction into D.");
     m_instr.insert(mask_match, "ROLWORD D");
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -3146,10 +3125,6 @@ void P2Doc::doc_altr_d(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Alter result register address (normally D field) of next instruction to D[8:0].");
     m_instr.insert(mask_match, "ALTR    D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -3190,10 +3165,6 @@ void P2Doc::doc_altd_d(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Alter D field of next instruction to D[8:0].");
     m_instr.insert(mask_match, "ALTD    D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -3234,10 +3205,6 @@ void P2Doc::doc_alts_d(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Alter S field of next instruction to D[8:0].");
     m_instr.insert(mask_match, "ALTS    D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -3278,10 +3245,6 @@ void P2Doc::doc_altb_d(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Alter D field of next instruction to D[13:5].");
     m_instr.insert(mask_match, "ALTB    D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -3536,10 +3499,6 @@ void P2Doc::doc_muxnits(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "For each non-zero bit pair in S, copy that bit pair into the corresponding D bits, else leave that D bit pair the same.");
     m_instr.insert(mask_match, "MUXNITS D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -3559,10 +3518,6 @@ void P2Doc::doc_muxnibs(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "For each non-zero nibble in S, copy that nibble into the corresponding D nibble, else leave that D nibble the same.");
     m_instr.insert(mask_match, "MUXNIBS D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -3712,10 +3667,6 @@ void P2Doc::doc_addpix(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Add bytes of S into bytes of D, with $FF saturation.");
     m_instr.insert(mask_match, "ADDPIX  D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -3756,10 +3707,6 @@ void P2Doc::doc_blnpix(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Alpha-blend bytes of S into bytes of D, using SETPIV value.");
     m_instr.insert(mask_match, "BLNPIX  D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -3779,10 +3726,6 @@ void P2Doc::doc_mixpix(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Mix bytes of S into bytes of D, using SETPIX and SETPIV values.");
     m_instr.insert(mask_match, "MIXPIX  D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4255,8 +4198,6 @@ void P2Doc::doc_callpa(p2_inst8_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Call to S** by pushing {C, Z, 10'b0, PC[19:0]} onto stack, copy D to PA.");
     m_instr.insert(mask_match, "CALLPA  {#}D,{#}S");
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4276,10 +4217,6 @@ void P2Doc::doc_callpb(p2_inst8_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Call to S** by pushing {C, Z, 10'b0, PC[19:0]} onto stack, copy D to PB.");
     m_instr.insert(mask_match, "CALLPB  {#}D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4299,10 +4236,6 @@ void P2Doc::doc_djz(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Decrement D and jump to S** if result is zero.");
     m_instr.insert(mask_match, "DJZ     D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4322,10 +4255,6 @@ void P2Doc::doc_djnz(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Decrement D and jump to S** if result is not zero.");
     m_instr.insert(mask_match, "DJNZ    D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4345,10 +4274,6 @@ void P2Doc::doc_djf(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Decrement D and jump to S** if result is $FFFF_FFFF.");
     m_instr.insert(mask_match, "DJF     D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4368,10 +4293,6 @@ void P2Doc::doc_djnf(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Decrement D and jump to S** if result is not $FFFF_FFFF.");
     m_instr.insert(mask_match, "DJNF    D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4391,10 +4312,6 @@ void P2Doc::doc_ijz(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Increment D and jump to S** if result is zero.");
     m_instr.insert(mask_match, "IJZ     D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4414,10 +4331,6 @@ void P2Doc::doc_ijnz(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Increment D and jump to S** if result is not zero.");
     m_instr.insert(mask_match, "IJNZ    D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4437,10 +4350,6 @@ void P2Doc::doc_tjz(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Test D and jump to S** if D is zero.");
     m_instr.insert(mask_match, "TJZ     D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4460,10 +4369,6 @@ void P2Doc::doc_tjnz(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Test D and jump to S** if D is not zero.");
     m_instr.insert(mask_match, "TJNZ    D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4483,10 +4388,6 @@ void P2Doc::doc_tjf(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Test D and jump to S** if D is full (D = $FFFF_FFFF).");
     m_instr.insert(mask_match, "TJF     D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4506,10 +4407,6 @@ void P2Doc::doc_tjnf(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Test D and jump to S** if D is not full (D != $FFFF_FFFF).");
     m_instr.insert(mask_match, "TJNF    D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4529,10 +4426,6 @@ void P2Doc::doc_tjs(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Test D and jump to S** if D is signed (D[31] = 1).");
     m_instr.insert(mask_match, "TJS     D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4552,10 +4445,6 @@ void P2Doc::doc_tjns(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Test D and jump to S** if D is not signed (D[31] = 0).");
     m_instr.insert(mask_match, "TJNS    D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4575,10 +4464,6 @@ void P2Doc::doc_tjv(p2_inst9_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Test D and jump to S** if D overflowed (D[31] != C, C = 'correct sign' from last addition/subtraction).");
     m_instr.insert(mask_match, "TJV     D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4598,10 +4483,6 @@ void P2Doc::doc_jint(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if INT event flag is set.");
     m_instr.insert(mask_match, "JINT    {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4621,10 +4502,6 @@ void P2Doc::doc_jct1(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if CT1 event flag is set.");
     m_instr.insert(mask_match, "JCT1    {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4644,10 +4521,6 @@ void P2Doc::doc_jct2(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if CT2 event flag is set.");
     m_instr.insert(mask_match, "JCT2    {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4667,10 +4540,6 @@ void P2Doc::doc_jct3(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if CT3 event flag is set.");
     m_instr.insert(mask_match, "JCT3    {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4690,10 +4559,6 @@ void P2Doc::doc_jse1(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if SE1 event flag is set.");
     m_instr.insert(mask_match, "JSE1    {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4713,10 +4578,6 @@ void P2Doc::doc_jse2(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if SE2 event flag is set.");
     m_instr.insert(mask_match, "JSE2    {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4736,10 +4597,6 @@ void P2Doc::doc_jse3(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if SE3 event flag is set.");
     m_instr.insert(mask_match, "JSE3    {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4759,10 +4616,6 @@ void P2Doc::doc_jse4(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if SE4 event flag is set.");
     m_instr.insert(mask_match, "JSE4    {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4782,10 +4635,6 @@ void P2Doc::doc_jpat(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if PAT event flag is set.");
     m_instr.insert(mask_match, "JPAT    {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4805,10 +4654,6 @@ void P2Doc::doc_jfbw(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if FBW event flag is set.");
     m_instr.insert(mask_match, "JFBW    {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4828,10 +4673,6 @@ void P2Doc::doc_jxmt(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if XMT event flag is set.");
     m_instr.insert(mask_match, "JXMT    {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4851,10 +4692,6 @@ void P2Doc::doc_jxfi(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if XFI event flag is set.");
     m_instr.insert(mask_match, "JXFI    {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4874,10 +4711,6 @@ void P2Doc::doc_jxro(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if XRO event flag is set.");
     m_instr.insert(mask_match, "JXRO    {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4897,10 +4730,6 @@ void P2Doc::doc_jxrl(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if XRL event flag is set.");
     m_instr.insert(mask_match, "JXRL    {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4920,10 +4749,6 @@ void P2Doc::doc_jatn(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if ATN event flag is set.");
     m_instr.insert(mask_match, "JATN    {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4943,10 +4768,6 @@ void P2Doc::doc_jqmt(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if QMT event flag is set.");
     m_instr.insert(mask_match, "JQMT    {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4966,10 +4787,6 @@ void P2Doc::doc_jnint(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if INT event flag is clear.");
     m_instr.insert(mask_match, "JNINT   {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -4989,10 +4806,6 @@ void P2Doc::doc_jnct1(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if CT1 event flag is clear.");
     m_instr.insert(mask_match, "JNCT1   {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5012,10 +4825,6 @@ void P2Doc::doc_jnct2(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if CT2 event flag is clear.");
     m_instr.insert(mask_match, "JNCT2   {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5035,10 +4844,6 @@ void P2Doc::doc_jnct3(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if CT3 event flag is clear.");
     m_instr.insert(mask_match, "JNCT3   {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5058,10 +4863,6 @@ void P2Doc::doc_jnse1(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if SE1 event flag is clear.");
     m_instr.insert(mask_match, "JNSE1   {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5081,10 +4882,6 @@ void P2Doc::doc_jnse2(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if SE2 event flag is clear.");
     m_instr.insert(mask_match, "JNSE2   {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5104,10 +4901,6 @@ void P2Doc::doc_jnse3(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if SE3 event flag is clear.");
     m_instr.insert(mask_match, "JNSE3   {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5127,10 +4920,6 @@ void P2Doc::doc_jnse4(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if SE4 event flag is clear.");
     m_instr.insert(mask_match, "JNSE4   {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5150,10 +4939,6 @@ void P2Doc::doc_jnpat(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if PAT event flag is clear.");
     m_instr.insert(mask_match, "JNPAT   {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5173,10 +4958,6 @@ void P2Doc::doc_jnfbw(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if FBW event flag is clear.");
     m_instr.insert(mask_match, "JNFBW   {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5196,10 +4977,6 @@ void P2Doc::doc_jnxmt(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if XMT event flag is clear.");
     m_instr.insert(mask_match, "JNXMT   {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5219,10 +4996,6 @@ void P2Doc::doc_jnxfi(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if XFI event flag is clear.");
     m_instr.insert(mask_match, "JNXFI   {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5242,10 +5015,6 @@ void P2Doc::doc_jnxro(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if XRO event flag is clear.");
     m_instr.insert(mask_match, "JNXRO   {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5265,10 +5034,6 @@ void P2Doc::doc_jnxrl(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if XRL event flag is clear.");
     m_instr.insert(mask_match, "JNXRL   {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5288,10 +5053,6 @@ void P2Doc::doc_jnatn(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if ATN event flag is clear.");
     m_instr.insert(mask_match, "JNATN   {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5311,10 +5072,6 @@ void P2Doc::doc_jnqmt(p2_opdst_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Jump to S** if QMT event flag is clear.");
     m_instr.insert(mask_match, "JNQMT   {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5334,10 +5091,6 @@ void P2Doc::doc_1011110_1(p2_inst8_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Undefined instruction <empty> %1011110_1.");
     m_instr.insert(mask_match, "<empty> {#}D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5357,10 +5110,6 @@ void P2Doc::doc_1011111_0(p2_inst8_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Undefined instruction <empty> %1011111_0.");
     m_instr.insert(mask_match, "<empty> {#}D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5401,10 +5150,6 @@ void P2Doc::doc_wrpin(p2_inst8_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Write D to mode register of smart pin S[5:0], acknowledge smart pin.");
     m_instr.insert(mask_match, "WRPIN   {#}D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5424,10 +5169,6 @@ void P2Doc::doc_akpin(p2_inst8_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Acknowledge smart pin S[5:0].");
     m_instr.insert(mask_match, "AKPIN   {#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5447,10 +5188,6 @@ void P2Doc::doc_wxpin(p2_inst8_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Write D to parameter \"X\" of smart pin S[5:0], acknowledge smart pin.");
     m_instr.insert(mask_match, "WXPIN   {#}D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5470,10 +5207,6 @@ void P2Doc::doc_wypin(p2_inst8_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Write D to parameter \"Y\" of smart pin S[5:0], acknowledge smart pin.");
     m_instr.insert(mask_match, "WYPIN   {#}D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5493,10 +5226,6 @@ void P2Doc::doc_wrlut(p2_inst8_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Write D to LUT address S[8:0].");
     m_instr.insert(mask_match, "WRLUT   {#}D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5516,10 +5245,6 @@ void P2Doc::doc_wrbyte(p2_inst8_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Write byte in D[7:0] to hub address {#}S/PTRx.");
     m_instr.insert(mask_match, "WRBYTE  {#}D,{#}S/P");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5539,10 +5264,6 @@ void P2Doc::doc_wrword(p2_inst8_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Write word in D[15:0] to hub address {#}S/PTRx.");
     m_instr.insert(mask_match, "WRWORD  {#}D,{#}S/P");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5583,10 +5304,6 @@ void P2Doc::doc_pusha(p2_inst8_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Write long in D[31:0] to hub address PTRA++.");
     m_instr.insert(mask_match, "PUSHA   {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5606,10 +5323,6 @@ void P2Doc::doc_pushb(p2_inst8_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Write long in D[31:0] to hub address PTRB++.");
     m_instr.insert(mask_match, "PUSHB   {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5692,10 +5405,6 @@ void P2Doc::doc_xinit(p2_inst8_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Issue streamer command immediately, zeroing phase.");
     m_instr.insert(mask_match, "XINIT   {#}D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5715,10 +5424,6 @@ void P2Doc::doc_xstop(p2_inst8_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Stop streamer immediately.");
     m_instr.insert(mask_match, "XSTOP");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5738,10 +5443,6 @@ void P2Doc::doc_xzero(p2_inst8_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Buffer new streamer command to be issued on final NCO rollover of current command, zeroing phase.");
     m_instr.insert(mask_match, "XZERO   {#}D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5761,10 +5462,6 @@ void P2Doc::doc_xcont(p2_inst8_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Buffer new streamer command to be issued on final NCO rollover of current command, continuing phase.");
     m_instr.insert(mask_match, "XCONT   {#}D,{#}S");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -5956,10 +5653,6 @@ void P2Doc::doc_hubset(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Set hub configuration to D.");
     m_instr.insert(mask_match, "HUBSET  {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6000,10 +5693,6 @@ void P2Doc::doc_cogstop(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Stop cog D[3:0].");
     m_instr.insert(mask_match, "COGSTOP {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6046,10 +5735,6 @@ void P2Doc::doc_lockret(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Return LOCK D[3:0] for reallocation.");
     m_instr.insert(mask_match, "LOCKRET {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6272,10 +5957,6 @@ void P2Doc::doc_wfbyte(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Write byte in D[7:0] into FIFO. Used after WRFAST.");
     m_instr.insert(mask_match, "WFBYTE  {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6295,10 +5976,6 @@ void P2Doc::doc_wfword(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Write word in D[15:0] into FIFO. Used after WRFAST.");
     m_instr.insert(mask_match, "WFWORD  {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6318,10 +5995,6 @@ void P2Doc::doc_wflong(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Write long in D[31:0] into FIFO. Used after WRFAST.");
     m_instr.insert(mask_match, "WFLONG  {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6456,10 +6129,6 @@ void P2Doc::doc_setdacs(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "DAC3 = D[31:24], DAC2 = D[23:16], DAC1 = D[15:8], DAC0 = D[7:0].");
     m_instr.insert(mask_match, "SETDACS {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6479,10 +6148,6 @@ void P2Doc::doc_setxfrq(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Set streamer NCO frequency to D.");
     m_instr.insert(mask_match, "SETXFRQ {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6502,10 +6167,6 @@ void P2Doc::doc_getxacc(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Get the streamer's Goertzel X accumulator into D and the Y accumulator into the next instruction's S, clear accumulators.");
     m_instr.insert(mask_match, "GETXACC D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6548,10 +6209,6 @@ void P2Doc::doc_setse1(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Set SE1 event configuration to D[8:0].");
     m_instr.insert(mask_match, "SETSE1  {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6571,10 +6228,6 @@ void P2Doc::doc_setse2(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Set SE2 event configuration to D[8:0].");
     m_instr.insert(mask_match, "SETSE2  {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6594,10 +6247,6 @@ void P2Doc::doc_setse3(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Set SE3 event configuration to D[8:0].");
     m_instr.insert(mask_match, "SETSE3  {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6617,10 +6266,6 @@ void P2Doc::doc_setse4(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Set SE4 event configuration to D[8:0].");
     m_instr.insert(mask_match, "SETSE4  {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6640,10 +6285,6 @@ void P2Doc::doc_pollint(p2_opx24_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Get INT event flag into C/Z, then clear it.");
     m_instr.insert(mask_match, "POLLINT          {WC/WZ/WCZ}");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6663,10 +6304,6 @@ void P2Doc::doc_pollct1(p2_opx24_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Get CT1 event flag into C/Z, then clear it.");
     m_instr.insert(mask_match, "POLLCT1          {WC/WZ/WCZ}");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6686,10 +6323,6 @@ void P2Doc::doc_pollct2(p2_opx24_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Get CT2 event flag into C/Z, then clear it.");
     m_instr.insert(mask_match, "POLLCT2          {WC/WZ/WCZ}");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6709,10 +6342,6 @@ void P2Doc::doc_pollct3(p2_opx24_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Get CT3 event flag into C/Z, then clear it.");
     m_instr.insert(mask_match, "POLLCT3          {WC/WZ/WCZ}");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6732,10 +6361,6 @@ void P2Doc::doc_pollse1(p2_opx24_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Get SE1 event flag into C/Z, then clear it.");
     m_instr.insert(mask_match, "POLLSE1          {WC/WZ/WCZ}");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6755,10 +6380,6 @@ void P2Doc::doc_pollse2(p2_opx24_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Get SE2 event flag into C/Z, then clear it.");
     m_instr.insert(mask_match, "POLLSE2          {WC/WZ/WCZ}");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6778,10 +6399,6 @@ void P2Doc::doc_pollse3(p2_opx24_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Get SE3 event flag into C/Z, then clear it.");
     m_instr.insert(mask_match, "POLLSE3          {WC/WZ/WCZ}");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6801,10 +6418,6 @@ void P2Doc::doc_pollse4(p2_opx24_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Get SE4 event flag into C/Z, then clear it.");
     m_instr.insert(mask_match, "POLLSE4          {WC/WZ/WCZ}");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6824,10 +6437,6 @@ void P2Doc::doc_pollpat(p2_opx24_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Get PAT event flag into C/Z, then clear it.");
     m_instr.insert(mask_match, "POLLPAT          {WC/WZ/WCZ}");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6847,10 +6456,6 @@ void P2Doc::doc_pollfbw(p2_opx24_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Get FBW event flag into C/Z, then clear it.");
     m_instr.insert(mask_match, "POLLFBW          {WC/WZ/WCZ}");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6870,10 +6475,6 @@ void P2Doc::doc_pollxmt(p2_opx24_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Get XMT event flag into C/Z, then clear it.");
     m_instr.insert(mask_match, "POLLXMT          {WC/WZ/WCZ}");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6893,10 +6494,6 @@ void P2Doc::doc_pollxfi(p2_opx24_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Get XFI event flag into C/Z, then clear it.");
     m_instr.insert(mask_match, "POLLXFI          {WC/WZ/WCZ}");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6916,10 +6513,6 @@ void P2Doc::doc_pollxro(p2_opx24_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Get XRO event flag into C/Z, then clear it.");
     m_instr.insert(mask_match, "POLLXRO          {WC/WZ/WCZ}");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6939,10 +6532,6 @@ void P2Doc::doc_pollxrl(p2_opx24_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Get XRL event flag into C/Z, then clear it.");
     m_instr.insert(mask_match, "POLLXRL          {WC/WZ/WCZ}");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6962,10 +6551,6 @@ void P2Doc::doc_pollatn(p2_opx24_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Get ATN event flag into C/Z, then clear it.");
     m_instr.insert(mask_match, "POLLATN          {WC/WZ/WCZ}");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -6985,10 +6570,6 @@ void P2Doc::doc_pollqmt(p2_opx24_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Get QMT event flag into C/Z, then clear it.");
     m_instr.insert(mask_match, "POLLQMT          {WC/WZ/WCZ}");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -7353,10 +6934,6 @@ void P2Doc::doc_allowi(p2_opx24_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Allow interrupts (default).");
     m_instr.insert(mask_match, "ALLOWI");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -7376,10 +6953,6 @@ void P2Doc::doc_stalli(p2_opx24_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Stall Interrupts.");
     m_instr.insert(mask_match, "STALLI");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -7399,10 +6972,6 @@ void P2Doc::doc_trgint1(p2_opx24_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Trigger INT1, regardless of STALLI mode.");
     m_instr.insert(mask_match, "TRGINT1");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -7422,10 +6991,6 @@ void P2Doc::doc_trgint2(p2_opx24_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Trigger INT2, regardless of STALLI mode.");
     m_instr.insert(mask_match, "TRGINT2");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -7445,10 +7010,6 @@ void P2Doc::doc_trgint3(p2_opx24_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Trigger INT3, regardless of STALLI mode.");
     m_instr.insert(mask_match, "TRGINT3");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -7468,10 +7029,6 @@ void P2Doc::doc_nixint1(p2_opx24_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Cancel INT1.");
     m_instr.insert(mask_match, "NIXINT1");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -7491,10 +7048,6 @@ void P2Doc::doc_nixint2(p2_opx24_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Cancel INT2.");
     m_instr.insert(mask_match, "NIXINT2");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -7514,10 +7067,6 @@ void P2Doc::doc_nixint3(p2_opx24_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Cancel INT3.");
     m_instr.insert(mask_match, "NIXINT3");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -7537,10 +7086,6 @@ void P2Doc::doc_setint1(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Set INT1 source to D[3:0].");
     m_instr.insert(mask_match, "SETINT1 {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -7560,10 +7105,6 @@ void P2Doc::doc_setint2(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Set INT2 source to D[3:0].");
     m_instr.insert(mask_match, "SETINT2 {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -7583,10 +7124,6 @@ void P2Doc::doc_setint3(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Set INT3 source to D[3:0].");
     m_instr.insert(mask_match, "SETINT3 {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -7650,10 +7187,6 @@ void P2Doc::doc_push(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Push D onto stack.");
     m_instr.insert(mask_match, "PUSH    {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -7927,10 +7460,6 @@ void P2Doc::doc_getptr(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Get current FIFO hub pointer into D.");
     m_instr.insert(mask_match, "GETPTR  D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -8015,10 +7544,6 @@ void P2Doc::doc_setluts(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "If D[0] = 1 then enable LUT sharing, where LUT writes within the adjacent odd/even companion cog are copied to this LUT.");
     m_instr.insert(mask_match, "SETLUTS {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -8038,10 +7563,6 @@ void P2Doc::doc_setcy(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Set the colorspace converter \"CY\" parameter to D[31:0].");
     m_instr.insert(mask_match, "SETCY   {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -8061,10 +7582,6 @@ void P2Doc::doc_setci(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Set the colorspace converter \"CI\" parameter to D[31:0].");
     m_instr.insert(mask_match, "SETCI   {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -8084,10 +7601,6 @@ void P2Doc::doc_setcq(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Set the colorspace converter \"CQ\" parameter to D[31:0].");
     m_instr.insert(mask_match, "SETCQ   {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -8107,10 +7620,6 @@ void P2Doc::doc_setcfrq(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Set the colorspace converter \"CFRQ\" parameter to D[31:0].");
     m_instr.insert(mask_match, "SETCFRQ {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -8130,10 +7639,6 @@ void P2Doc::doc_setcmod(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Set the colorspace converter \"CMOD\" parameter to D[6:0].");
     m_instr.insert(mask_match, "SETCMOD {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -8153,10 +7658,6 @@ void P2Doc::doc_setpiv(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Set BLNPIX/MIXPIX blend factor to D[7:0].");
     m_instr.insert(mask_match, "SETPIV  {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -8176,10 +7677,6 @@ void P2Doc::doc_setpix(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Set MIXPIX mode to D[5:0].");
     m_instr.insert(mask_match, "SETPIX  {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -8199,10 +7696,6 @@ void P2Doc::doc_cogatn(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Strobe \"attention\" of all cogs whose corresponging bits are high in D[15:0].");
     m_instr.insert(mask_match, "COGATN  {#}D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -9262,10 +8755,6 @@ void P2Doc::doc_xoro32(p2_opsrc_e instr)
     QList<const char *> descr;
     m_brief.insert(mask_match, "Iterate D with xoroshiro32+ PRNG algorithm and put PRNG result into next instruction's S.");
     m_instr.insert(mask_match, "XORO32  D");
-    descr += "";
-    descr += "";
-    descr += "";
-    descr += "";
     m_descr.insert(mask_match, descr);
 }
 
@@ -9462,7 +8951,6 @@ void P2Doc::doc_setscp(p2_opsrc_e instr)
     m_brief.insert(mask_match, "Set scope mode.");
     m_instr.insert(mask_match, "SETSCP  {#}D");
     descr += "Pins D[5:2], enable D[6].";
-    descr += "";
     descr += "SETSCP points the scope mux to a set of four pins starting";
     descr += "at (D[5:0] AND $3C), with D[6]=1 to enable scope operation.";
     m_descr.insert(mask_match, descr);
@@ -9487,8 +8975,6 @@ void P2Doc::doc_getscp(p2_opsrc_e instr)
     m_instr.insert(mask_match, "GETSCP  D");
     descr += "Any time GETSCP is executed, the lower bytes of those";
     descr += "four pins' RDPIN values are returned in D.";
-    descr += "";
-    descr += "C = cccc[{C,Z}], Z = zzzz[{C,Z}].";
     m_descr.insert(mask_match, descr);
 }
 
@@ -9755,7 +9241,7 @@ void P2Doc::doc_loc_ptrb(p2_inst7_e instr)
  */
 void P2Doc::doc_augs(p2_inst7_e instr)
 {
-    MaskMatch mask_match = pattern(__func__, instr, "EEEE 11110NN NNN NNNNNNNNN NNNNNNNNN");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 11110NN SSS SSSSSSSSS SSSSSSSSS");
     m_token.insert(mask_match, t_AUGS);
     QList<const char *> descr;
     m_brief.insert(mask_match, "Queue #N[31:9] to be used as upper 23 bits for next #S occurrence, so that the next 9-bit #S will be augmented to 32 bits.");
@@ -9773,7 +9259,7 @@ void P2Doc::doc_augs(p2_inst7_e instr)
  */
 void P2Doc::doc_augd(p2_inst7_e instr)
 {
-    MaskMatch mask_match = pattern(__func__, instr, "EEEE 11111NN NNN NNNNNNNNN NNNNNNNNN");
+    MaskMatch mask_match = pattern(__func__, instr, "EEEE 11111NN DDD DDDDDDDDD DDDDDDDDD");
     m_token.insert(mask_match, t_AUGD);
     QList<const char *> descr;
     m_brief.insert(mask_match, "Queue #N[31:9] to be used as upper 23 bits for next #D occurrence, so that the next 9-bit #D will be augmented to 32 bits.");

@@ -32,6 +32,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 #include <QtEndian>
+#include <QDir>
 #include <QFile>
 #include "p2hub.h"
 #include "p2cog.h"
@@ -82,8 +83,14 @@ int P2Hub::execute(int run_cycles)
  * @param filename name of the file or resource
  * @return true on success, or false on error
  */
-bool P2Hub::load(const QString& filename)
+bool P2Hub::load_obj(const QString& filename)
 {
+    static const QString booter = QStringLiteral(":/bin/ROM_Booter_v33_01j.bin");
+    if (filename != booter) {
+        load_obj(booter);
+        for (p2_LONG addr = 0; addr < HUB_ADDR0; addr += 4)
+            wr_mem(0, addr, 0);
+    }
     QFile file(filename);
     if (!file.open(QIODevice::ReadOnly))
         return false;
@@ -91,10 +98,21 @@ bool P2Hub::load(const QString& filename)
     QByteArray bin = file.read(MEM_SIZE);
     qDebug("%s: file=%s size=0x%06x (%d)", __func__, qPrintable(filename), bin.size(), bin.size());
     p2_BWL* p = reinterpret_cast<p2_BWL *>(bin.data());
-    for (int i = 0; i < bin.size(); i += 4, p++) {
-        wr_mem(0, static_cast<p2_LONG>(i), p->l);
+    for (p2_LONG i = 0; i < static_cast<p2_LONG>(bin.size()); i += 4, p++) {
+        wr_mem(0, i, p->l);
     }
 
+    return true;
+}
+
+bool P2Hub::set_pathname(const QString& pathname)
+{
+    if (pathname == m_pathname)
+        return false;
+    QDir dir(pathname);
+    if (!dir.exists())
+        return false;
+    m_pathname = dir.canonicalPath() + QChar('/');
     return true;
 }
 
@@ -281,7 +299,7 @@ p2_LONG P2Hub::rd_cog(int cog, p2_LONG offs) const
 {
     if (cog >= nCOGS)
         return 0;
-    Q_ASSERT(offs < 0x200);
+    Q_ASSERT(offs < COG_SIZE);
     return COGS[cog]->rd_cog(offs);
 }
 
@@ -295,7 +313,7 @@ void P2Hub::wr_cog(int cog, p2_LONG offs, p2_LONG val)
 {
     if (cog >= nCOGS)
         return;
-    Q_ASSERT(offs < 0x200);
+    Q_ASSERT(offs < COG_SIZE);
     COGS[cog]->wr_cog(offs, val);
 }
 
@@ -309,7 +327,7 @@ p2_LONG P2Hub::rd_lut(int cog, p2_LONG offs) const
 {
     if (cog >= nCOGS)
         return 0;
-    Q_ASSERT(offs < 0x200);
+    Q_ASSERT(offs < LUT_SIZE);
     return COGS[cog]->rd_lut(offs);
 }
 
@@ -323,7 +341,7 @@ void P2Hub::wr_lut(int cog, p2_LONG offs, p2_LONG val)
 {
     if (cog >= nCOGS)
         return;
-    Q_ASSERT(offs < 0x200);
+    Q_ASSERT(offs < LUT_SIZE);
     COGS[cog]->wr_lut(offs, val);
 }
 
@@ -338,12 +356,12 @@ p2_LONG P2Hub::rd_mem(int cog, p2_LONG addr) const
     p2_LONG data = 0;
     if (cog >= nCOGS)
         return 0;
-    Q_ASSERT(addr <= 0xfffffu);
-    if (addr < 0x00800) {
+    if (addr < LUT_ADDR0) {
         data = rd_cog(cog, addr/4);
-    } else if (addr < 0x01000) {
-        data = rd_lut(cog, addr/4 - 0x200);
+    } else if (addr < HUB_ADDR0) {
+        data = rd_lut(cog, (addr - LUT_ADDR0) / 4);
     } else {
+        Q_ASSERT(addr < MEM_SIZE);
         data = MEM.L[addr/4];
     }
     return data;
@@ -359,10 +377,10 @@ void P2Hub::wr_mem(int cog, p2_LONG addr, p2_LONG val)
 {
     if (cog >= nCOGS)
         return;
-    if (addr < 0x00800) {
-        wr_cog(cog, addr/4, val);
-    } else if (addr < 0x01000) {
-        wr_lut(cog, addr/4 - 0x200, val);
+    if (addr < LUT_ADDR0) {
+        wr_cog(cog, addr / 4, val);
+    } else if (addr < HUB_ADDR0) {
+        wr_lut(cog, (addr - LUT_ADDR0) / 4, val);
     } else {
         Q_ASSERT(addr < MEM_SIZE);
         MEM.L[addr/4] = val;

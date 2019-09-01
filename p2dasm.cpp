@@ -84,7 +84,8 @@ p2_token_e P2Dasm::conditional(p2_cond_e cond)
     case cc_c_or_z:       // execute if C = 1 or Z = 1
         return t_IF_C_OR_Z;
     case cc_always:
-        return t_IF_ALWAYS;
+        // return t_IF_ALWAYS;
+        return t_none;
     }
     return t_invalid;
 }
@@ -98,12 +99,14 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
 {
 
     IR.u.opcode = COG->rd_mem(addr*4);
-    PC = addr < 0x400 ? addr : addr * 4;
+    PC = addr * 4 < HUB_ADDR0 ? addr * 4 : addr;
     S = COG->rd_cog(IR.u.op.src);
     D = COG->rd_cog(IR.u.op.dst);
 
     // check for the condition
-    QString cond = Token.string(conditional(IR.u.op.cond), m_lowercase);
+    QString cond;
+    if (IR.u.opcode)
+        cond = Token.string(conditional(IR.u.op.cond), m_lowercase);
     cond.resize(14, QChar::Space);
 
     if (opcode) {
@@ -119,1502 +122,1502 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         opcode->resize(pad_opcode, QChar::Space);
     }
 
-    // Dispatch to dasm_xxx() functions
-    switch (IR.inst7()) {
-    case p2_ROR:
-        dasm_ror(instruction);
-        break;
-
-    case p2_ROL:
-        dasm_rol(instruction);
-        break;
-
-    case p2_SHR:
-        dasm_shr(instruction);
-        break;
-
-    case p2_SHL:
-        dasm_shl(instruction);
-        break;
-
-    case p2_RCR:
-        dasm_rcr(instruction);
-        break;
-
-    case p2_RCL:
-        dasm_rcl(instruction);
-        break;
-
-    case p2_SAR:
-        dasm_sar(instruction);
-        break;
-
-    case p2_SAL:
-        dasm_sal(instruction);
-        break;
-
-    case p2_ADD:
-        dasm_add(instruction);
-        break;
-
-    case p2_ADDX:
-        dasm_addx(instruction);
-        break;
-
-    case p2_ADDS:
-        dasm_adds(instruction);
-        break;
-
-    case p2_ADDSX:
-        dasm_addsx(instruction);
-        break;
-
-    case p2_SUB:
-        dasm_sub(instruction);
-        break;
-
-    case p2_SUBX:
-        dasm_subx(instruction);
-        break;
-
-    case p2_SUBS:
-        dasm_subs(instruction);
-        break;
-
-    case p2_SUBSX:
-        dasm_subsx(instruction);
-        break;
-
-    case p2_CMP:
-        dasm_cmp(instruction);
-        break;
-
-    case p2_CMPX:
-        dasm_cmpx(instruction);
-        break;
-
-    case p2_CMPS:
-        dasm_cmps(instruction);
-        break;
-
-    case p2_CMPSX:
-        dasm_cmpsx(instruction);
-        break;
-
-    case p2_CMPR:
-        dasm_cmpr(instruction);
-        break;
-
-    case p2_CMPM:
-        dasm_cmpm(instruction);
-        break;
-
-    case p2_SUBR:
-        dasm_subr(instruction);
-        break;
-
-    case p2_CMPSUB:
-        dasm_cmpsub(instruction);
-        break;
-
-    case p2_FGE:
-        dasm_fge(instruction);
-        break;
-
-    case p2_FLE:
-        dasm_fle(instruction);
-        break;
-
-    case p2_FGES:
-        dasm_fges(instruction);
-        break;
-
-    case p2_FLES:
-        dasm_fles(instruction);
-        break;
-
-    case p2_SUMC:
-        dasm_sumc(instruction);
-        break;
-
-    case p2_SUMNC:
-        dasm_sumnc(instruction);
-        break;
-
-    case p2_SUMZ:
-        dasm_sumz(instruction);
-        break;
-
-    case p2_SUMNZ:
-        dasm_sumnz(instruction);
-        break;
-
-    case p2_TESTB_W_BITL:
-    case p2_TESTBN_W_BITH:
-    case p2_TESTB_AND_BITC:
-    case p2_TESTBN_AND_BITNC:
-    case p2_TESTB_OR_BITZ:
-    case p2_TESTBN_OR_BITNZ:
-    case p2_TESTB_XOR_BITRND:
-    case p2_TESTBN_XOR_BITNOT:
-        switch (IR.inst9()) {
-        case p2_TESTB_WC:
-        case p2_TESTB_WZ:
-            dasm_testb_w(instruction);
-            break;
-        case p2_TESTBN_WZ:
-        case p2_TESTBN_WC:
-            dasm_testbn_w(instruction);
-            break;
-        case p2_TESTB_ANDZ:
-        case p2_TESTB_ANDC:
-            dasm_testb_and(instruction);
-            break;
-        case p2_TESTBN_ANDZ:
-        case p2_TESTBN_ANDC:
-            dasm_testbn_and(instruction);
-            break;
-        case p2_TESTB_ORC:
-        case p2_TESTB_ORZ:
-            dasm_testb_or(instruction);
-            break;
-        case p2_TESTBN_ORC:
-        case p2_TESTBN_ORZ:
-            dasm_testbn_or(instruction);
-            break;
-        case p2_TESTB_XORC:
-        case p2_TESTB_XORZ:
-            dasm_testb_xor(instruction);
-            break;
-        case p2_TESTBN_XORC:
-        case p2_TESTBN_XORZ:
-            dasm_testbn_xor(instruction);
-            break;
-        case p2_BITL_eol:
-        case p2_BITL_WCZ:
-            dasm_bitl(instruction);
-            break;
-        case p2_BITH_eol:
-        case p2_BITH_WCZ:
-            dasm_bith(instruction);
-            break;
-        case p2_BITC_eol:
-        case p2_BITC_WCZ:
-            dasm_bitc(instruction);
-            break;
-        case p2_BITNC_eol:
-        case p2_BITNC_WCZ:
-            dasm_bitnc(instruction);
-            break;
-        case p2_BITZ_eol:
-        case p2_BITZ_WCZ:
-            dasm_bitz(instruction);
-            break;
-        case p2_BITNZ_eol:
-        case p2_BITNZ_WCZ:
-            dasm_bitnz(instruction);
-            break;
-        case p2_BITRND_eol:
-        case p2_BITRND_WCZ:
-            dasm_bitrnd(instruction);
-            break;
-        case p2_BITNOT_eol:
-        case p2_BITNOT_WCZ:
-            dasm_bitnot(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst9_e", "TEST{B,BN}{WC,WZ} or BIT{L,H,C,NC,Z,NZ,RND,NOT}");
-        }
-        break;
-
-    case p2_AND:
-        dasm_and(instruction);
-        break;
-
-    case p2_ANDN:
-        dasm_andn(instruction);
-        break;
-
-    case p2_OR:
-        dasm_or(instruction);
-        break;
-
-    case p2_XOR:
-        dasm_xor(instruction);
-        break;
-
-    case p2_MUXC:
-        dasm_muxc(instruction);
-        break;
-
-    case p2_MUXNC:
-        dasm_muxnc(instruction);
-        break;
-
-    case p2_MUXZ:
-        dasm_muxz(instruction);
-        break;
-
-    case p2_MUXNZ:
-        dasm_muxnz(instruction);
-        break;
-
-    case p2_MOV:
-        dasm_mov(instruction);
-        break;
-
-    case p2_NOT:
-        dasm_not(instruction);
-        break;
-
-    case p2_ABS:
-        dasm_abs(instruction);
-        break;
-
-    case p2_NEG:
-        dasm_neg(instruction);
-        break;
-
-    case p2_NEGC:
-        dasm_negc(instruction);
-        break;
-
-    case p2_NEGNC:
-        dasm_negnc(instruction);
-        break;
-
-    case p2_NEGZ:
-        dasm_negz(instruction);
-        break;
-
-    case p2_NEGNZ:
-        dasm_negnz(instruction);
-        break;
-
-    case p2_INCMOD:
-        dasm_incmod(instruction);
-        break;
-
-    case p2_DECMOD:
-        dasm_decmod(instruction);
-        break;
-
-    case p2_ZEROX:
-        dasm_zerox(instruction);
-        break;
-
-    case p2_SIGNX:
-        dasm_signx(instruction);
-        break;
-
-    case p2_ENCOD:
-        dasm_encod(instruction);
-        break;
-
-    case p2_ONES:
-        dasm_ones(instruction);
-        break;
-
-    case p2_TEST:
-        dasm_test(instruction);
-        break;
-
-    case p2_TESTN:
-        dasm_testn(instruction);
-        break;
-
-    case p2_SETNIB_0:
-    case p2_SETNIB_1:
-        dasm_setnib(instruction);
-        break;
-
-    case p2_GETNIB_0:
-    case p2_GETNIB_1:
-        dasm_getnib(instruction);
-        break;
-
-    case p2_ROLNIB_0:
-    case p2_ROLNIB_1:
-        dasm_rolnib(instruction);
-        break;
-
-    case p2_SETBYTE:
-        dasm_setbyte(instruction);
-        break;
-
-    case p2_GETBYTE:
-        dasm_getbyte(instruction);
-        break;
-
-    case p2_ROLBYTE:
-        dasm_rolbyte(instruction);
-        break;
-
-    case p2_SETWORD_GETWORD:
-        switch (IR.inst9()) {
-        case p2_SETWORD_ALTSW:
-            dasm_setword_altsw(instruction);
-            break;
-        case p2_SETWORD:
-            dasm_setword(instruction);
-            break;
-        case p2_GETWORD_ALTGW:
-            dasm_getword_altgw(instruction);
-            break;
-        case p2_GETWORD:
-            dasm_getword(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst9_e", "SETWORD/GETWORD");
-        }
-        break;
-
-    case p2_ROLWORD_ALTSN_ALTGN:
-        switch (IR.inst9()) {
-        case p2_ROLWORD_ALTGW:
-            if (IR.u.op.src == 0) {
-                dasm_rolword_altgw(instruction);
-                break;
-            }
-            dasm_rolword(instruction);
-            break;
-        case p2_ROLWORD:
-            dasm_rolword(instruction);
-            break;
-        case p2_ALTSN:
-            if (IR.u.op.src == 0 && IR.im() == 1) {
-                dasm_altsn_d(instruction);
-                break;
-            }
-            dasm_altsn(instruction);
-            break;
-        case p2_ALTGN:
-            if (IR.u.op.src == 0 && IR.im() == 1) {
-                dasm_altgn_d(instruction);
-                break;
-            }
-            dasm_altgn(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst9_e", "ROLWORD/ALTSN/ALTGN");
-        }
-        break;
-
-    case p2_ALTSB_ALTGB_ALTSW_ALTGW:
-        switch (IR.inst9()) {
-        case p2_ALTSB:
-            if (IR.u.op.src == 0 && IR.im() == 1) {
-                dasm_altsb_d(instruction);
-                break;
-            }
-            dasm_altsb(instruction);
-            break;
-        case p2_ALTGB:
-            if (IR.u.op.src == 0 && IR.im() == 1) {
-                dasm_altgb_d(instruction);
-                break;
-            }
-            dasm_altgb(instruction);
-            break;
-        case p2_ALTSW:
-            if (IR.u.op.src == 0 && IR.im() == 1) {
-                dasm_altsw_d(instruction);
-                break;
-            }
-            dasm_altsw(instruction);
-            break;
-        case p2_ALTGW:
-            if (IR.u.op.src == 0 && IR.im() == 1) {
-                dasm_altgw_d(instruction);
-                break;
-            }
-            dasm_altgw(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst9_e", "ALTSB/ALTGB/ALTSW/ALTGW");
-        }
-        break;
-
-    case p2_ALTR_ALTD_ALTS_ALTB:
-        switch (IR.inst9()) {
-        case p2_ALTR:
-            if (IR.u.op.src == 0 && IR.im() == 1) {
-                dasm_altr_d(instruction);
-                break;
-            }
-            dasm_altr(instruction);
-            break;
-        case p2_ALTD:
-            if (IR.u.op.src == 0 && IR.im() == 1) {
-                dasm_altd_d(instruction);
-                break;
-            }
-            dasm_altd(instruction);
-            break;
-        case p2_ALTS:
-            if (IR.u.op.src == 0 && IR.im() == 1) {
-                dasm_alts_d(instruction);
-                break;
-            }
-            dasm_alts(instruction);
-            break;
-        case p2_ALTB:
-            if (IR.u.op.src == 0 && IR.im() == 1) {
-                dasm_altb_d(instruction);
-                break;
-            }
-            dasm_altb(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst9_e", "ALTR/ALTD/ALTS/ALTB");
-        }
-        break;
-
-    case p2_ALTI_SETR_SETD_SETS:
-        switch (IR.inst9()) {
-        case p2_ALTI:
-            if (IR.im() == 1 && IR.u.op.src == 0x164 /* 101100100 */) {
-                dasm_alti_d(instruction);
-                break;
-            }
-            dasm_alti(instruction);
-            break;
-        case p2_SETR:
-            dasm_setr(instruction);
-            break;
-        case p2_SETD:
-            dasm_setd(instruction);
-            break;
-        case p2_SETS:
-            dasm_sets(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst9_e", "ALTI/SETR/SETD/SETS");
-        }
-        break;
-
-    case p2_DECOD_BMASK_CRCBIT_CRCNIB:
-        switch (IR.inst9()) {
-        case p2_DECOD:
-            if (IR.im() == 0 && IR.u.op.src == IR.u.op.dst) {
-                dasm_decod_d(instruction);
-                break;
-            }
-            dasm_decod(instruction);
-            break;
-        case p2_BMASK:
-            if (IR.im() == 0 && IR.u.op.src == IR.u.op.dst) {
-                dasm_bmask_d(instruction);
-                break;
-            }
-            dasm_bmask(instruction);
-            break;
-        case p2_CRCBIT:
-            dasm_crcbit(instruction);
-            break;
-        case p2_CRCNIB:
-            dasm_crcnib(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst9_e", "DECOD/BMASK/CRCBIT/CRCNIB");
-        }
-        break;
-
-    case p2_MUX_NITS_NIBS_Q_MOVBYTS:
-        switch (IR.inst9()) {
-        case p2_MUXNITS:
-            dasm_muxnits(instruction);
-            break;
-        case p2_MUXNIBS:
-            dasm_muxnibs(instruction);
-            break;
-        case p2_MUXQ:
-            dasm_muxq(instruction);
-            break;
-        case p2_MOVBYTS:
-            dasm_movbyts(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst9_e", "MUXNITS/MUXNIBS/MUXQ/MOVBYTS");
-        }
-        break;
-
-    case p2_MUL_MULS:
-        switch (IR.inst8()) {
-        case p2_MUL:
-            dasm_mul(instruction);
-            break;
-        case p2_MULS:
-            dasm_muls(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst8_e", "MUL/MULS");
-        }
-        break;
-
-    case p2_SCA_SCAS:
-        switch (IR.inst8()) {
-        case p2_SCA:
-            dasm_sca(instruction);
-            break;
-        case p2_SCAS:
-            dasm_scas(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst8_e", "SCA/SCAS");
-        }
-        break;
-
-    case p2_XXXPIX:
-        switch (IR.inst9()) {
-        case p2_ADDPIX:
-            dasm_addpix(instruction);
-            break;
-        case p2_MULPIX:
-            dasm_mulpix(instruction);
-            break;
-        case p2_BLNPIX:
-            dasm_blnpix(instruction);
-            break;
-        case p2_MIXPIX:
-            dasm_mixpix(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst9_e", "ADDPIX/MULPIX/BLNPIX/MIXPIX");
-        }
-        break;
-
-    case p2_WMLONG_ADDCTx:
-        switch (IR.inst9()) {
-        case p2_ADDCT1:
-            dasm_addct1(instruction);
-            break;
-        case p2_ADDCT2:
-            dasm_addct2(instruction);
-            break;
-        case p2_ADDCT3:
-            dasm_addct3(instruction);
-            break;
-        case p2_WMLONG:
-            dasm_wmlong(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst9_e", "ADDCT1/ADDCT2/ADDCT3/WMLONG");
-        }
-        break;
-
-    case p2_RQPIN_RDPIN:
-        switch (IR.inst8()) {
-        case p2_RQPIN:
-            dasm_rqpin(instruction);
-            break;
-        case p2_RDPIN:
-            dasm_rdpin(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst8_e", "RQPIN/RDPIN");
-        }
-        break;
-
-    case p2_RDLUT:
-        dasm_rdlut(instruction);
-        break;
-
-    case p2_RDBYTE:
-        dasm_rdbyte(instruction);
-        break;
-
-    case p2_RDWORD:
-        dasm_rdword(instruction);
-        break;
-
-    case p2_RDLONG:
-        dasm_rdlong(instruction);
-        break;
-
-    case p2_CALLD:
-        dasm_calld(instruction);
-        break;
-
-    case p2_CALLPA_CALLPB:
-        switch (IR.inst8()) {
-        case p2_CALLPA:
-            dasm_callpa(instruction);
-            break;
-        case p2_CALLPB:
-            dasm_callpb(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst8_e", "CALLPA/CALLPA");
-        }
-        break;
-
-    case p2_DJZ_DJNZ_DJF_DJNF:
-        switch (IR.inst9()) {
-        case p2_DJZ:
-            dasm_djz(instruction);
-            break;
-        case p2_DJNZ:
-            dasm_djnz(instruction);
-            break;
-        case p2_DJF:
-            dasm_djf(instruction);
-            break;
-        case p2_DJNF:
-            dasm_djnf(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst9_e", "DJZ/DJNZ/DJF/DJNF");
-        }
-        break;
-
-    case p2_IJZ_IJNZ_TJZ_TJNZ:
-        switch (IR.inst9()) {
-        case p2_IJZ:
-            dasm_ijz(instruction);
-            break;
-        case p2_IJNZ:
-            dasm_ijnz(instruction);
-            break;
-        case p2_TJZ:
-            dasm_tjz(instruction);
-            break;
-        case p2_TJNZ:
-            dasm_tjnz(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst9_e", "IJZ/IJNZ/TJZ/TJNZ");
-        }
-        break;
-
-    case p2_TJF_TJNF_TJS_TJNS:
-        switch (IR.inst9()) {
-        case p2_TJF:
-            dasm_tjf(instruction);
-            break;
-        case p2_TJNF:
-            dasm_tjnf(instruction);
-            break;
-        case p2_TJS:
-            dasm_tjs(instruction);
-            break;
-        case p2_TJNS:
-            dasm_tjns(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst9_e", "TJF/TJNF/TJS/TJNS");
-        }
-        break;
-
-    case p2_TJV_OPDST_empty:
-        switch (IR.inst8()) {
-        case p2_TJV_OPDST:
+    if (instruction) {
+        // Dispatch to dasm_xxx() functions
+        switch (IR.inst7()) {
+        case p2_ROR:
+            dasm_ror(instruction);
+            break;
+
+        case p2_ROL:
+            dasm_rol(instruction);
+            break;
+
+        case p2_SHR:
+            dasm_shr(instruction);
+            break;
+
+        case p2_SHL:
+            dasm_shl(instruction);
+            break;
+
+        case p2_RCR:
+            dasm_rcr(instruction);
+            break;
+
+        case p2_RCL:
+            dasm_rcl(instruction);
+            break;
+
+        case p2_SAR:
+            dasm_sar(instruction);
+            break;
+
+        case p2_SAL:
+            dasm_sal(instruction);
+            break;
+
+        case p2_ADD:
+            dasm_add(instruction);
+            break;
+
+        case p2_ADDX:
+            dasm_addx(instruction);
+            break;
+
+        case p2_ADDS:
+            dasm_adds(instruction);
+            break;
+
+        case p2_ADDSX:
+            dasm_addsx(instruction);
+            break;
+
+        case p2_SUB:
+            dasm_sub(instruction);
+            break;
+
+        case p2_SUBX:
+            dasm_subx(instruction);
+            break;
+
+        case p2_SUBS:
+            dasm_subs(instruction);
+            break;
+
+        case p2_SUBSX:
+            dasm_subsx(instruction);
+            break;
+
+        case p2_CMP:
+            dasm_cmp(instruction);
+            break;
+
+        case p2_CMPX:
+            dasm_cmpx(instruction);
+            break;
+
+        case p2_CMPS:
+            dasm_cmps(instruction);
+            break;
+
+        case p2_CMPSX:
+            dasm_cmpsx(instruction);
+            break;
+
+        case p2_CMPR:
+            dasm_cmpr(instruction);
+            break;
+
+        case p2_CMPM:
+            dasm_cmpm(instruction);
+            break;
+
+        case p2_SUBR:
+            dasm_subr(instruction);
+            break;
+
+        case p2_CMPSUB:
+            dasm_cmpsub(instruction);
+            break;
+
+        case p2_FGE:
+            dasm_fge(instruction);
+            break;
+
+        case p2_FLE:
+            dasm_fle(instruction);
+            break;
+
+        case p2_FGES:
+            dasm_fges(instruction);
+            break;
+
+        case p2_FLES:
+            dasm_fles(instruction);
+            break;
+
+        case p2_SUMC:
+            dasm_sumc(instruction);
+            break;
+
+        case p2_SUMNC:
+            dasm_sumnc(instruction);
+            break;
+
+        case p2_SUMZ:
+            dasm_sumz(instruction);
+            break;
+
+        case p2_SUMNZ:
+            dasm_sumnz(instruction);
+            break;
+
+        case p2_TESTB_W_BITL:
+        case p2_TESTBN_W_BITH:
+        case p2_TESTB_AND_BITC:
+        case p2_TESTBN_AND_BITNC:
+        case p2_TESTB_OR_BITZ:
+        case p2_TESTBN_OR_BITNZ:
+        case p2_TESTB_XOR_BITRND:
+        case p2_TESTBN_XOR_BITNOT:
             switch (IR.inst9()) {
-            case p2_TJV:
-                dasm_tjv(instruction);
+            case p2_TESTB_WC:
+            case p2_TESTB_WZ:
+                dasm_testb_w(instruction);
                 break;
-            case p2_OPDST:
-                switch (IR.u.op.dst) {
-                case p2_OPDST_JINT:
-                    dasm_jint(instruction);
+            case p2_TESTBN_WZ:
+            case p2_TESTBN_WC:
+                dasm_testbn_w(instruction);
+                break;
+            case p2_TESTB_ANDZ:
+            case p2_TESTB_ANDC:
+                dasm_testb_and(instruction);
+                break;
+            case p2_TESTBN_ANDZ:
+            case p2_TESTBN_ANDC:
+                dasm_testbn_and(instruction);
+                break;
+            case p2_TESTB_ORC:
+            case p2_TESTB_ORZ:
+                dasm_testb_or(instruction);
+                break;
+            case p2_TESTBN_ORC:
+            case p2_TESTBN_ORZ:
+                dasm_testbn_or(instruction);
+                break;
+            case p2_TESTB_XORC:
+            case p2_TESTB_XORZ:
+                dasm_testb_xor(instruction);
+                break;
+            case p2_TESTBN_XORC:
+            case p2_TESTBN_XORZ:
+                dasm_testbn_xor(instruction);
+                break;
+            case p2_BITL_eol:
+            case p2_BITL_WCZ:
+                dasm_bitl(instruction);
+                break;
+            case p2_BITH_eol:
+            case p2_BITH_WCZ:
+                dasm_bith(instruction);
+                break;
+            case p2_BITC_eol:
+            case p2_BITC_WCZ:
+                dasm_bitc(instruction);
+                break;
+            case p2_BITNC_eol:
+            case p2_BITNC_WCZ:
+                dasm_bitnc(instruction);
+                break;
+            case p2_BITZ_eol:
+            case p2_BITZ_WCZ:
+                dasm_bitz(instruction);
+                break;
+            case p2_BITNZ_eol:
+            case p2_BITNZ_WCZ:
+                dasm_bitnz(instruction);
+                break;
+            case p2_BITRND_eol:
+            case p2_BITRND_WCZ:
+                dasm_bitrnd(instruction);
+                break;
+            case p2_BITNOT_eol:
+            case p2_BITNOT_WCZ:
+                dasm_bitnot(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst9_e", "TEST{B,BN}{WC,WZ} or BIT{L,H,C,NC,Z,NZ,RND,NOT}");
+            }
+            break;
+
+        case p2_AND:
+            dasm_and(instruction);
+            break;
+
+        case p2_ANDN:
+            dasm_andn(instruction);
+            break;
+
+        case p2_OR:
+            dasm_or(instruction);
+            break;
+
+        case p2_XOR:
+            dasm_xor(instruction);
+            break;
+
+        case p2_MUXC:
+            dasm_muxc(instruction);
+            break;
+
+        case p2_MUXNC:
+            dasm_muxnc(instruction);
+            break;
+
+        case p2_MUXZ:
+            dasm_muxz(instruction);
+            break;
+
+        case p2_MUXNZ:
+            dasm_muxnz(instruction);
+            break;
+
+        case p2_MOV:
+            dasm_mov(instruction);
+            break;
+
+        case p2_NOT:
+            dasm_not(instruction);
+            break;
+
+        case p2_ABS:
+            dasm_abs(instruction);
+            break;
+
+        case p2_NEG:
+            dasm_neg(instruction);
+            break;
+
+        case p2_NEGC:
+            dasm_negc(instruction);
+            break;
+
+        case p2_NEGNC:
+            dasm_negnc(instruction);
+            break;
+
+        case p2_NEGZ:
+            dasm_negz(instruction);
+            break;
+
+        case p2_NEGNZ:
+            dasm_negnz(instruction);
+            break;
+
+        case p2_INCMOD:
+            dasm_incmod(instruction);
+            break;
+
+        case p2_DECMOD:
+            dasm_decmod(instruction);
+            break;
+
+        case p2_ZEROX:
+            dasm_zerox(instruction);
+            break;
+
+        case p2_SIGNX:
+            dasm_signx(instruction);
+            break;
+
+        case p2_ENCOD:
+            dasm_encod(instruction);
+            break;
+
+        case p2_ONES:
+            dasm_ones(instruction);
+            break;
+
+        case p2_TEST:
+            dasm_test(instruction);
+            break;
+
+        case p2_TESTN:
+            dasm_testn(instruction);
+            break;
+
+        case p2_SETNIB_0:
+        case p2_SETNIB_1:
+            dasm_setnib(instruction);
+            break;
+
+        case p2_GETNIB_0:
+        case p2_GETNIB_1:
+            dasm_getnib(instruction);
+            break;
+
+        case p2_ROLNIB_0:
+        case p2_ROLNIB_1:
+            dasm_rolnib(instruction);
+            break;
+
+        case p2_SETBYTE:
+            dasm_setbyte(instruction);
+            break;
+
+        case p2_GETBYTE:
+            dasm_getbyte(instruction);
+            break;
+
+        case p2_ROLBYTE:
+            dasm_rolbyte(instruction);
+            break;
+
+        case p2_SETWORD_GETWORD:
+            switch (IR.inst9()) {
+            case p2_SETWORD_ALTSW:
+                dasm_setword_altsw(instruction);
+                break;
+            case p2_SETWORD:
+                dasm_setword(instruction);
+                break;
+            case p2_GETWORD_ALTGW:
+                dasm_getword_altgw(instruction);
+                break;
+            case p2_GETWORD:
+                dasm_getword(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst9_e", "SETWORD/GETWORD");
+            }
+            break;
+
+        case p2_ROLWORD_ALTSN_ALTGN:
+            switch (IR.inst9()) {
+            case p2_ROLWORD_ALTGW:
+                if (IR.u.op.src == 0) {
+                    dasm_rolword_altgw(instruction);
                     break;
-                case p2_OPDST_JCT1:
-                    dasm_jct1(instruction);
+                }
+                dasm_rolword(instruction);
+                break;
+            case p2_ROLWORD:
+                dasm_rolword(instruction);
+                break;
+            case p2_ALTSN:
+                if (IR.u.op.src == 0 && IR.im() == 1) {
+                    dasm_altsn_d(instruction);
                     break;
-                case p2_OPDST_JCT2:
-                    dasm_jct2(instruction);
+                }
+                dasm_altsn(instruction);
+                break;
+            case p2_ALTGN:
+                if (IR.u.op.src == 0 && IR.im() == 1) {
+                    dasm_altgn_d(instruction);
                     break;
-                case p2_OPDST_JCT3:
-                    dasm_jct3(instruction);
+                }
+                dasm_altgn(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst9_e", "ROLWORD/ALTSN/ALTGN");
+            }
+            break;
+
+        case p2_ALTSB_ALTGB_ALTSW_ALTGW:
+            switch (IR.inst9()) {
+            case p2_ALTSB:
+                if (IR.u.op.src == 0 && IR.im() == 1) {
+                    dasm_altsb_d(instruction);
                     break;
-                case p2_OPDST_JSE1:
-                    dasm_jse1(instruction);
+                }
+                dasm_altsb(instruction);
+                break;
+            case p2_ALTGB:
+                if (IR.u.op.src == 0 && IR.im() == 1) {
+                    dasm_altgb_d(instruction);
                     break;
-                case p2_OPDST_JSE2:
-                    dasm_jse2(instruction);
+                }
+                dasm_altgb(instruction);
+                break;
+            case p2_ALTSW:
+                if (IR.u.op.src == 0 && IR.im() == 1) {
+                    dasm_altsw_d(instruction);
                     break;
-                case p2_OPDST_JSE3:
-                    dasm_jse3(instruction);
+                }
+                dasm_altsw(instruction);
+                break;
+            case p2_ALTGW:
+                if (IR.u.op.src == 0 && IR.im() == 1) {
+                    dasm_altgw_d(instruction);
                     break;
-                case p2_OPDST_JSE4:
-                    dasm_jse4(instruction);
+                }
+                dasm_altgw(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst9_e", "ALTSB/ALTGB/ALTSW/ALTGW");
+            }
+            break;
+
+        case p2_ALTR_ALTD_ALTS_ALTB:
+            switch (IR.inst9()) {
+            case p2_ALTR:
+                if (IR.u.op.src == 0 && IR.im() == 1) {
+                    dasm_altr_d(instruction);
                     break;
-                case p2_OPDST_JPAT:
-                    dasm_jpat(instruction);
+                }
+                dasm_altr(instruction);
+                break;
+            case p2_ALTD:
+                if (IR.u.op.src == 0 && IR.im() == 1) {
+                    dasm_altd_d(instruction);
                     break;
-                case p2_OPDST_JFBW:
-                    dasm_jfbw(instruction);
+                }
+                dasm_altd(instruction);
+                break;
+            case p2_ALTS:
+                if (IR.u.op.src == 0 && IR.im() == 1) {
+                    dasm_alts_d(instruction);
                     break;
-                case p2_OPDST_JXMT:
-                    dasm_jxmt(instruction);
+                }
+                dasm_alts(instruction);
+                break;
+            case p2_ALTB:
+                if (IR.u.op.src == 0 && IR.im() == 1) {
+                    dasm_altb_d(instruction);
                     break;
-                case p2_OPDST_JXFI:
-                    dasm_jxfi(instruction);
+                }
+                dasm_altb(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst9_e", "ALTR/ALTD/ALTS/ALTB");
+            }
+            break;
+
+        case p2_ALTI_SETR_SETD_SETS:
+            switch (IR.inst9()) {
+            case p2_ALTI:
+                if (IR.im() == 1 && IR.u.op.src == 0x164 /* 101100100 */) {
+                    dasm_alti_d(instruction);
                     break;
-                case p2_OPDST_JXRO:
-                    dasm_jxro(instruction);
+                }
+                dasm_alti(instruction);
+                break;
+            case p2_SETR:
+                dasm_setr(instruction);
+                break;
+            case p2_SETD:
+                dasm_setd(instruction);
+                break;
+            case p2_SETS:
+                dasm_sets(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst9_e", "ALTI/SETR/SETD/SETS");
+            }
+            break;
+
+        case p2_DECOD_BMASK_CRCBIT_CRCNIB:
+            switch (IR.inst9()) {
+            case p2_DECOD:
+                if (IR.im() == 0 && IR.u.op.src == IR.u.op.dst) {
+                    dasm_decod_d(instruction);
                     break;
-                case p2_OPDST_JXRL:
-                    dasm_jxrl(instruction);
+                }
+                dasm_decod(instruction);
+                break;
+            case p2_BMASK:
+                if (IR.im() == 0 && IR.u.op.src == IR.u.op.dst) {
+                    dasm_bmask_d(instruction);
                     break;
-                case p2_OPDST_JATN:
-                    dasm_jatn(instruction);
+                }
+                dasm_bmask(instruction);
+                break;
+            case p2_CRCBIT:
+                dasm_crcbit(instruction);
+                break;
+            case p2_CRCNIB:
+                dasm_crcnib(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst9_e", "DECOD/BMASK/CRCBIT/CRCNIB");
+            }
+            break;
+
+        case p2_MUX_NITS_NIBS_Q_MOVBYTS:
+            switch (IR.inst9()) {
+            case p2_MUXNITS:
+                dasm_muxnits(instruction);
+                break;
+            case p2_MUXNIBS:
+                dasm_muxnibs(instruction);
+                break;
+            case p2_MUXQ:
+                dasm_muxq(instruction);
+                break;
+            case p2_MOVBYTS:
+                dasm_movbyts(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst9_e", "MUXNITS/MUXNIBS/MUXQ/MOVBYTS");
+            }
+            break;
+
+        case p2_MUL_MULS:
+            switch (IR.inst8()) {
+            case p2_MUL:
+                dasm_mul(instruction);
+                break;
+            case p2_MULS:
+                dasm_muls(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst8_e", "MUL/MULS");
+            }
+            break;
+
+        case p2_SCA_SCAS:
+            switch (IR.inst8()) {
+            case p2_SCA:
+                dasm_sca(instruction);
+                break;
+            case p2_SCAS:
+                dasm_scas(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst8_e", "SCA/SCAS");
+            }
+            break;
+
+        case p2_XXXPIX:
+            switch (IR.inst9()) {
+            case p2_ADDPIX:
+                dasm_addpix(instruction);
+                break;
+            case p2_MULPIX:
+                dasm_mulpix(instruction);
+                break;
+            case p2_BLNPIX:
+                dasm_blnpix(instruction);
+                break;
+            case p2_MIXPIX:
+                dasm_mixpix(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst9_e", "ADDPIX/MULPIX/BLNPIX/MIXPIX");
+            }
+            break;
+
+        case p2_WMLONG_ADDCTx:
+            switch (IR.inst9()) {
+            case p2_ADDCT1:
+                dasm_addct1(instruction);
+                break;
+            case p2_ADDCT2:
+                dasm_addct2(instruction);
+                break;
+            case p2_ADDCT3:
+                dasm_addct3(instruction);
+                break;
+            case p2_WMLONG:
+                dasm_wmlong(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst9_e", "ADDCT1/ADDCT2/ADDCT3/WMLONG");
+            }
+            break;
+
+        case p2_RQPIN_RDPIN:
+            switch (IR.inst8()) {
+            case p2_RQPIN:
+                dasm_rqpin(instruction);
+                break;
+            case p2_RDPIN:
+                dasm_rdpin(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst8_e", "RQPIN/RDPIN");
+            }
+            break;
+
+        case p2_RDLUT:
+            dasm_rdlut(instruction);
+            break;
+
+        case p2_RDBYTE:
+            dasm_rdbyte(instruction);
+            break;
+
+        case p2_RDWORD:
+            dasm_rdword(instruction);
+            break;
+
+        case p2_RDLONG:
+            dasm_rdlong(instruction);
+            break;
+
+        case p2_CALLD:
+            dasm_calld(instruction);
+            break;
+
+        case p2_CALLPA_CALLPB:
+            switch (IR.inst8()) {
+            case p2_CALLPA:
+                dasm_callpa(instruction);
+                break;
+            case p2_CALLPB:
+                dasm_callpb(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst8_e", "CALLPA/CALLPA");
+            }
+            break;
+
+        case p2_DJZ_DJNZ_DJF_DJNF:
+            switch (IR.inst9()) {
+            case p2_DJZ:
+                dasm_djz(instruction);
+                break;
+            case p2_DJNZ:
+                dasm_djnz(instruction);
+                break;
+            case p2_DJF:
+                dasm_djf(instruction);
+                break;
+            case p2_DJNF:
+                dasm_djnf(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst9_e", "DJZ/DJNZ/DJF/DJNF");
+            }
+            break;
+
+        case p2_IJZ_IJNZ_TJZ_TJNZ:
+            switch (IR.inst9()) {
+            case p2_IJZ:
+                dasm_ijz(instruction);
+                break;
+            case p2_IJNZ:
+                dasm_ijnz(instruction);
+                break;
+            case p2_TJZ:
+                dasm_tjz(instruction);
+                break;
+            case p2_TJNZ:
+                dasm_tjnz(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst9_e", "IJZ/IJNZ/TJZ/TJNZ");
+            }
+            break;
+
+        case p2_TJF_TJNF_TJS_TJNS:
+            switch (IR.inst9()) {
+            case p2_TJF:
+                dasm_tjf(instruction);
+                break;
+            case p2_TJNF:
+                dasm_tjnf(instruction);
+                break;
+            case p2_TJS:
+                dasm_tjs(instruction);
+                break;
+            case p2_TJNS:
+                dasm_tjns(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst9_e", "TJF/TJNF/TJS/TJNS");
+            }
+            break;
+
+        case p2_TJV_OPDST_empty:
+            switch (IR.inst8()) {
+            case p2_TJV_OPDST:
+                switch (IR.inst9()) {
+                case p2_TJV:
+                    dasm_tjv(instruction);
                     break;
-                case p2_OPDST_JQMT:
-                    dasm_jqmt(instruction);
-                    break;
-                case p2_OPDST_JNINT:
-                    dasm_jnint(instruction);
-                    break;
-                case p2_OPDST_JNCT1:
-                    dasm_jnct1(instruction);
-                    break;
-                case p2_OPDST_JNCT2:
-                    dasm_jnct2(instruction);
-                    break;
-                case p2_OPDST_JNCT3:
-                    dasm_jnct3(instruction);
-                    break;
-                case p2_OPDST_JNSE1:
-                    dasm_jnse1(instruction);
-                    break;
-                case p2_OPDST_JNSE2:
-                    dasm_jnse2(instruction);
-                    break;
-                case p2_OPDST_JNSE3:
-                    dasm_jnse3(instruction);
-                    break;
-                case p2_OPDST_JNSE4:
-                    dasm_jnse4(instruction);
-                    break;
-                case p2_OPDST_JNPAT:
-                    dasm_jnpat(instruction);
-                    break;
-                case p2_OPDST_JNFBW:
-                    dasm_jnfbw(instruction);
-                    break;
-                case p2_OPDST_JNXMT:
-                    dasm_jnxmt(instruction);
-                    break;
-                case p2_OPDST_JNXFI:
-                    dasm_jnxfi(instruction);
-                    break;
-                case p2_OPDST_JNXRO:
-                    dasm_jnxro(instruction);
-                    break;
-                case p2_OPDST_JNXRL:
-                    dasm_jnxrl(instruction);
-                    break;
-                case p2_OPDST_JNATN:
-                    dasm_jnatn(instruction);
-                    break;
-                case p2_OPDST_JNQMT:
-                    dasm_jnqmt(instruction);
+                case p2_OPDST:
+                    switch (IR.u.op.dst) {
+                    case p2_OPDST_JINT:
+                        dasm_jint(instruction);
+                        break;
+                    case p2_OPDST_JCT1:
+                        dasm_jct1(instruction);
+                        break;
+                    case p2_OPDST_JCT2:
+                        dasm_jct2(instruction);
+                        break;
+                    case p2_OPDST_JCT3:
+                        dasm_jct3(instruction);
+                        break;
+                    case p2_OPDST_JSE1:
+                        dasm_jse1(instruction);
+                        break;
+                    case p2_OPDST_JSE2:
+                        dasm_jse2(instruction);
+                        break;
+                    case p2_OPDST_JSE3:
+                        dasm_jse3(instruction);
+                        break;
+                    case p2_OPDST_JSE4:
+                        dasm_jse4(instruction);
+                        break;
+                    case p2_OPDST_JPAT:
+                        dasm_jpat(instruction);
+                        break;
+                    case p2_OPDST_JFBW:
+                        dasm_jfbw(instruction);
+                        break;
+                    case p2_OPDST_JXMT:
+                        dasm_jxmt(instruction);
+                        break;
+                    case p2_OPDST_JXFI:
+                        dasm_jxfi(instruction);
+                        break;
+                    case p2_OPDST_JXRO:
+                        dasm_jxro(instruction);
+                        break;
+                    case p2_OPDST_JXRL:
+                        dasm_jxrl(instruction);
+                        break;
+                    case p2_OPDST_JATN:
+                        dasm_jatn(instruction);
+                        break;
+                    case p2_OPDST_JQMT:
+                        dasm_jqmt(instruction);
+                        break;
+                    case p2_OPDST_JNINT:
+                        dasm_jnint(instruction);
+                        break;
+                    case p2_OPDST_JNCT1:
+                        dasm_jnct1(instruction);
+                        break;
+                    case p2_OPDST_JNCT2:
+                        dasm_jnct2(instruction);
+                        break;
+                    case p2_OPDST_JNCT3:
+                        dasm_jnct3(instruction);
+                        break;
+                    case p2_OPDST_JNSE1:
+                        dasm_jnse1(instruction);
+                        break;
+                    case p2_OPDST_JNSE2:
+                        dasm_jnse2(instruction);
+                        break;
+                    case p2_OPDST_JNSE3:
+                        dasm_jnse3(instruction);
+                        break;
+                    case p2_OPDST_JNSE4:
+                        dasm_jnse4(instruction);
+                        break;
+                    case p2_OPDST_JNPAT:
+                        dasm_jnpat(instruction);
+                        break;
+                    case p2_OPDST_JNFBW:
+                        dasm_jnfbw(instruction);
+                        break;
+                    case p2_OPDST_JNXMT:
+                        dasm_jnxmt(instruction);
+                        break;
+                    case p2_OPDST_JNXFI:
+                        dasm_jnxfi(instruction);
+                        break;
+                    case p2_OPDST_JNXRO:
+                        dasm_jnxro(instruction);
+                        break;
+                    case p2_OPDST_JNXRL:
+                        dasm_jnxrl(instruction);
+                        break;
+                    case p2_OPDST_JNATN:
+                        dasm_jnatn(instruction);
+                        break;
+                    case p2_OPDST_JNQMT:
+                        dasm_jnqmt(instruction);
+                        break;
+                    default:
+                        // TODO: invalid D value
+                        break;
+                    }
                     break;
                 default:
-                    // TODO: invalid D value
+                    Q_ASSERT_X(false, "p2_inst9_e", "TJV/OPDST/1011110_10/1011110_11");
+                }
+                break;
+            case p2_1011110_1:
+                switch (IR.inst9()) {
+                case p2_1011110_10:
+                case p2_1011110_11:
+                    dasm_1011110_1(instruction);
                     break;
+                default:
+                    Q_ASSERT_X(false, "p2_inst9_e", "TJV/OPDST/1011110_10/1011110_11");
                 }
                 break;
             default:
-                Q_ASSERT_X(false, "p2_inst9_e", "TJV/OPDST/1011110_10/1011110_11");
+                break;
             }
             break;
-        case p2_1011110_1:
-            switch (IR.inst9()) {
-            case p2_1011110_10:
-            case p2_1011110_11:
-                dasm_1011110_1(instruction);
+
+        case p2_empty_SETPAT:
+            switch (IR.inst8()) {
+            case p2_1011111_0:
+                dasm_1011111_0(instruction);
+                break;
+            case p2_SETPAT:
+                dasm_setpat(instruction);
                 break;
             default:
-                Q_ASSERT_X(false, "p2_inst9_e", "TJV/OPDST/1011110_10/1011110_11");
+                Q_ASSERT_X(false, "p2_inst8_e", "1011111_0/SETPAT");
             }
             break;
-        default:
-            break;
-        }
-        break;
 
-    case p2_empty_SETPAT:
-        switch (IR.inst8()) {
-        case p2_1011111_0:
-            dasm_1011111_0(instruction);
-            break;
-        case p2_SETPAT:
-            dasm_setpat(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst8_e", "1011111_0/SETPAT");
-        }
-        break;
-
-    case p2_WRPIN_AKPIN_WXPIN:
-        switch (IR.inst8()) {
-        case p2_WRPIN:
-            if (IR.wz() == 1 && IR.u.op.dst == 1) {
-                dasm_akpin(instruction);
+        case p2_WRPIN_AKPIN_WXPIN:
+            switch (IR.inst8()) {
+            case p2_WRPIN:
+                if (IR.wz() == 1 && IR.u.op.dst == 1) {
+                    dasm_akpin(instruction);
+                    break;
+                }
+                dasm_wrpin(instruction);
                 break;
-            }
-            dasm_wrpin(instruction);
-            break;
-        case p2_WXPIN:
-            dasm_wxpin(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst8_e", "WRPIN/AKPIN/WXPIN");
-        }
-        break;
-
-    case p2_WYPIN_WRLUT:
-        switch (IR.inst8()) {
-        case p2_WYPIN:
-            dasm_wypin(instruction);
-            break;
-        case p2_WRLUT:
-            dasm_wrlut(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst8_e", "WYPIN/WRLUT");
-        }
-        break;
-
-    case p2_WRBYTE_WRWORD:
-        switch (IR.inst8()) {
-        case p2_WRBYTE:
-            dasm_wrbyte(instruction);
-            break;
-        case p2_WRWORD:
-            dasm_wrword(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst8_e", "WRBYTE/WRWORD");
-        }
-        break;
-
-    case p2_WRLONG_RDFAST:
-        switch (IR.inst8()) {
-        case p2_WRLONG:
-            dasm_wrlong(instruction);
-            break;
-        case p2_RDFAST:
-            dasm_rdfast(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst8_e", "WRLONG/RDFAST");
-        }
-        break;
-
-    case p2_WRFAST_FBLOCK:
-        switch (IR.inst8()) {
-        case p2_WRFAST:
-            dasm_wrfast(instruction);
-            break;
-        case p2_FBLOCK:
-            dasm_fblock(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst8_e", "WRFAST/FBLOCK");
-        }
-        break;
-
-    case p2_XINIT_XSTOP_XZERO:
-        switch (IR.inst8()) {
-        case p2_XINIT:
-            if (IR.wz() == 1 && IR.im() == 1 && IR.u.op.src == 0 && IR.u.op.dst == 0) {
-                dasm_xstop(instruction);
+            case p2_WXPIN:
+                dasm_wxpin(instruction);
                 break;
-            }
-            dasm_xinit(instruction);
-            break;
-        case p2_XZERO:
-            dasm_xzero(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst8_e", "XINIT/XSTOP/XZERO");
-        }
-        break;
-
-    case p2_XCONT_REP:
-        switch (IR.inst8()) {
-        case p2_XCONT:
-            dasm_xcont(instruction);
-            break;
-        case p2_REP:
-            dasm_rep(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst8_e", "XCONT/REP");
-        }
-        break;
-
-    case p2_COGINIT:
-        dasm_coginit(instruction);
-        break;
-
-    case p2_QMUL_QDIV:
-        switch (IR.inst8()) {
-        case p2_QMUL:
-            dasm_qmul(instruction);
-            break;
-        case p2_QDIV:
-            dasm_qdiv(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst8_e", "QMUL/QDIV");
-        }
-        break;
-
-    case p2_QFRAC_QSQRT:
-        switch (IR.inst8()) {
-        case p2_QFRAC:
-            dasm_qfrac(instruction);
-            break;
-        case p2_QSQRT:
-            dasm_qsqrt(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst8_e", "QFRAC/QSQRT");
-        }
-        break;
-
-    case p2_QROTATE_QVECTOR:
-        switch (IR.inst8()) {
-        case p2_QROTATE:
-            dasm_qrotate(instruction);
-            break;
-        case p2_QVECTOR:
-            dasm_qvector(instruction);
-            break;
-        default:
-            Q_ASSERT_X(false, "p2_inst8_e", "QROTATE/QVECTOR");
-        }
-        break;
-
-    case p2_OPSRC:
-        switch (IR.u.op.src) {
-        case p2_OPSRC_HUBSET:
-            dasm_hubset(instruction);
-            break;
-        case p2_OPSRC_COGID:
-            dasm_cogid(instruction);
-            break;
-        case p2_OPSRC_COGSTOP:
-            dasm_cogstop(instruction);
-            break;
-        case p2_OPSRC_LOCKNEW:
-            dasm_locknew(instruction);
-            break;
-        case p2_OPSRC_LOCKRET:
-            dasm_lockret(instruction);
-            break;
-        case p2_OPSRC_LOCKTRY:
-            dasm_locktry(instruction);
-            break;
-        case p2_OPSRC_LOCKREL:
-            dasm_lockrel(instruction);
-            break;
-        case p2_OPSRC_QLOG:
-            dasm_qlog(instruction);
-            break;
-        case p2_OPSRC_QEXP:
-            dasm_qexp(instruction);
-            break;
-        case p2_OPSRC_RFBYTE:
-            dasm_rfbyte(instruction);
-            break;
-        case p2_OPSRC_RFWORD:
-            dasm_rfword(instruction);
-            break;
-        case p2_OPSRC_RFLONG:
-            dasm_rflong(instruction);
-            break;
-        case p2_OPSRC_RFVAR:
-            dasm_rfvar(instruction);
-            break;
-        case p2_OPSRC_RFVARS:
-            dasm_rfvars(instruction);
-            break;
-        case p2_OPSRC_WFBYTE:
-            dasm_wfbyte(instruction);
-            break;
-        case p2_OPSRC_WFWORD:
-            dasm_wfword(instruction);
-            break;
-        case p2_OPSRC_WFLONG:
-            dasm_wflong(instruction);
-            break;
-        case p2_OPSRC_GETQX:
-            dasm_getqx(instruction);
-            break;
-        case p2_OPSRC_GETQY:
-            dasm_getqy(instruction);
-            break;
-        case p2_OPSRC_GETCT:
-            dasm_getct(instruction);
-            break;
-        case p2_OPSRC_GETRND:
-            (IR.u.op.dst == 0) ? dasm_getrnd_cz(instruction)
-                               : dasm_getrnd(instruction);
-            break;
-        case p2_OPSRC_SETDACS:
-            dasm_setdacs(instruction);
-            break;
-        case p2_OPSRC_SETXFRQ:
-            dasm_setxfrq(instruction);
-            break;
-        case p2_OPSRC_GETXACC:
-            dasm_getxacc(instruction);
-            break;
-        case p2_OPSRC_WAITX:
-            dasm_waitx(instruction);
-            break;
-        case p2_OPSRC_SETSE1:
-            dasm_setse1(instruction);
-            break;
-        case p2_OPSRC_SETSE2:
-            dasm_setse2(instruction);
-            break;
-        case p2_OPSRC_SETSE3:
-            dasm_setse3(instruction);
-            break;
-        case p2_OPSRC_SETSE4:
-            dasm_setse4(instruction);
-            break;
-        case p2_OPSRC_X24:
-            switch (IR.u.op.dst) {
-            case p2_OPX24_POLLINT:
-                dasm_pollint(instruction);
-                break;
-            case p2_OPX24_POLLCT1:
-                dasm_pollct1(instruction);
-                break;
-            case p2_OPX24_POLLCT2:
-                dasm_pollct2(instruction);
-                break;
-            case p2_OPX24_POLLCT3:
-                dasm_pollct3(instruction);
-                break;
-            case p2_OPX24_POLLSE1:
-                dasm_pollse1(instruction);
-                break;
-            case p2_OPX24_POLLSE2:
-                dasm_pollse2(instruction);
-                break;
-            case p2_OPX24_POLLSE3:
-                dasm_pollse3(instruction);
-                break;
-            case p2_OPX24_POLLSE4:
-                dasm_pollse4(instruction);
-                break;
-            case p2_OPX24_POLLPAT:
-                dasm_pollpat(instruction);
-                break;
-            case p2_OPX24_POLLFBW:
-                dasm_pollfbw(instruction);
-                break;
-            case p2_OPX24_POLLXMT:
-                dasm_pollxmt(instruction);
-                break;
-            case p2_OPX24_POLLXFI:
-                dasm_pollxfi(instruction);
-                break;
-            case p2_OPX24_POLLXRO:
-                dasm_pollxro(instruction);
-                break;
-            case p2_OPX24_POLLXRL:
-                dasm_pollxrl(instruction);
-                break;
-            case p2_OPX24_POLLATN:
-                dasm_pollatn(instruction);
-                break;
-            case p2_OPX24_POLLQMT:
-                dasm_pollqmt(instruction);
-                break;
-            case p2_OPX24_WAITINT:
-                dasm_waitint(instruction);
-                break;
-            case p2_OPX24_WAITCT1:
-                dasm_waitct1(instruction);
-                break;
-            case p2_OPX24_WAITCT2:
-                dasm_waitct2(instruction);
-                break;
-            case p2_OPX24_WAITCT3:
-                dasm_waitct3(instruction);
-                break;
-            case p2_OPX24_WAITSE1:
-                dasm_waitse1(instruction);
-                break;
-            case p2_OPX24_WAITSE2:
-                dasm_waitse2(instruction);
-                break;
-            case p2_OPX24_WAITSE3:
-                dasm_waitse3(instruction);
-                break;
-            case p2_OPX24_WAITSE4:
-                dasm_waitse4(instruction);
-                break;
-            case p2_OPX24_WAITPAT:
-                dasm_waitpat(instruction);
-                break;
-            case p2_OPX24_WAITFBW:
-                dasm_waitfbw(instruction);
-                break;
-            case p2_OPX24_WAITXMT:
-                dasm_waitxmt(instruction);
-                break;
-            case p2_OPX24_WAITXFI:
-                dasm_waitxfi(instruction);
-                break;
-            case p2_OPX24_WAITXRO:
-                dasm_waitxro(instruction);
-                break;
-            case p2_OPX24_WAITXRL:
-                dasm_waitxrl(instruction);
-                break;
-            case p2_OPX24_WAITATN:
-                dasm_waitatn(instruction);
-                break;
-            case p2_OPX24_ALLOWI:
-                dasm_allowi(instruction);
-                break;
-            case p2_OPX24_STALLI:
-                dasm_stalli(instruction);
-                break;
-            case p2_OPX24_TRGINT1:
-                dasm_trgint1(instruction);
-                break;
-            case p2_OPX24_TRGINT2:
-                dasm_trgint2(instruction);
-                break;
-            case p2_OPX24_TRGINT3:
-                dasm_trgint3(instruction);
-                break;
-            case p2_OPX24_NIXINT1:
-                dasm_nixint1(instruction);
-                break;
-            case p2_OPX24_NIXINT2:
-                dasm_nixint2(instruction);
-                break;
-            case p2_OPX24_NIXINT3:
-                dasm_nixint3(instruction);
-                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst8_e", "WRPIN/AKPIN/WXPIN");
             }
             break;
-        case p2_OPSRC_SETINT1:
-            dasm_setint1(instruction);
-            break;
-        case p2_OPSRC_SETINT2:
-            dasm_setint2(instruction);
-            break;
-        case p2_OPSRC_SETINT3:
-            dasm_setint3(instruction);
-            break;
-        case p2_OPSRC_SETQ:
-            dasm_setq(instruction);
-            break;
-        case p2_OPSRC_SETQ2:
-            dasm_setq2(instruction);
-            break;
-        case p2_OPSRC_PUSH:
-            dasm_push(instruction);
-            break;
-        case p2_OPSRC_POP:
-            dasm_pop(instruction);
-            break;
-        case p2_OPSRC_JMP:
-            dasm_jmp(instruction);
-            break;
-        case p2_OPSRC_CALL_RET:
-            (IR.im() == 0) ? dasm_call(instruction)
-                           : dasm_ret(instruction);
-            break;
-        case p2_OPSRC_CALLA_RETA:
-            (IR.im() == 0) ? dasm_calla(instruction)
-                           : dasm_reta(instruction);
-            break;
-        case p2_OPSRC_CALLB_RETB:
-            (IR.im() == 0) ? dasm_callb(instruction)
-                           : dasm_retb(instruction);
-            break;
-        case p2_OPSRC_JMPREL:
-            dasm_jmprel(instruction);
-            break;
-        case p2_OPSRC_SKIP:
-            dasm_skip(instruction);
-            break;
-        case p2_OPSRC_SKIPF:
-            dasm_skipf(instruction);
-            break;
-        case p2_OPSRC_EXECF:
-            dasm_execf(instruction);
-            break;
-        case p2_OPSRC_GETPTR:
-            dasm_getptr(instruction);
-            break;
-        case p2_OPSRC_COGBRK:
-            (IR.wc() == 0 && IR.wz() == 0) ? dasm_cogbrk(instruction)
-                                           : dasm_getbrk(instruction);
-            break;
-        case p2_OPSRC_BRK:
-            dasm_brk(instruction);
-            break;
-        case p2_OPSRC_SETLUTS:
-            dasm_setluts(instruction);
-            break;
-        case p2_OPSRC_SETCY:
-            dasm_setcy(instruction);
-            break;
-        case p2_OPSRC_SETCI:
-            dasm_setci(instruction);
-            break;
-        case p2_OPSRC_SETCQ:
-            dasm_setcq(instruction);
-            break;
-        case p2_OPSRC_SETCFRQ:
-            dasm_setcfrq(instruction);
-            break;
-        case p2_OPSRC_SETCMOD:
-            dasm_setcmod(instruction);
-            break;
-        case p2_OPSRC_SETPIV:
-            dasm_setpiv(instruction);
-            break;
-        case p2_OPSRC_SETPIX:
-            dasm_setpix(instruction);
-            break;
-        case p2_OPSRC_COGATN:
-            dasm_cogatn(instruction);
-            break;
-        case p2_OPSRC_TESTP_W_DIRL:
-            (IR.wc() != IR.wz()) ? dasm_testp_w(instruction)
-                                 : dasm_dirl(instruction);
-            break;
-        case p2_OPSRC_TESTPN_W_DIRH:
-            (IR.wc() != IR.wz()) ? dasm_testpn_w(instruction)
-                                 : dasm_dirh(instruction);
-            break;
-        case p2_OPSRC_TESTP_AND_DIRC:
-            (IR.wc() != IR.wz()) ? dasm_testp_and(instruction)
-                                 : dasm_dirc(instruction);
-            break;
-        case p2_OPSRC_TESTPN_AND_DIRNC:
-            (IR.wc() != IR.wz()) ? dasm_testpn_and(instruction)
-                                 : dasm_dirnc(instruction);
-            break;
-        case p2_OPSRC_TESTP_OR_DIRZ:
-            (IR.wc() != IR.wz()) ? dasm_testp_or(instruction)
-                                 : dasm_dirz(instruction);
-            break;
-        case p2_OPSRC_TESTPN_OR_DIRNZ:
-            (IR.wc() != IR.wz()) ? dasm_testpn_or(instruction)
-                                 : dasm_dirnz(instruction);
-            break;
-        case p2_OPSRC_TESTP_XOR_DIRRND:
-            (IR.wc() != IR.wz()) ? dasm_testp_xor(instruction)
-                                 : dasm_dirrnd(instruction);
-            break;
-        case p2_OPSRC_TESTPN_XOR_DIRNOT:
-            (IR.wc() != IR.wz()) ? dasm_testpn_xor(instruction)
-                                 : dasm_dirnot(instruction);
-            break;
-        case p2_OPSRC_OUTL:
-            dasm_outl(instruction);
-            break;
-        case p2_OPSRC_OUTH:
-            dasm_outh(instruction);
-            break;
-        case p2_OPSRC_OUTC:
-            dasm_outc(instruction);
-            break;
-        case p2_OPSRC_OUTNC:
-            dasm_outnc(instruction);
-            break;
-        case p2_OPSRC_OUTZ:
-            dasm_outz(instruction);
-            break;
-        case p2_OPSRC_OUTNZ:
-            dasm_outnz(instruction);
-            break;
-        case p2_OPSRC_OUTRND:
-            dasm_outrnd(instruction);
-            break;
-        case p2_OPSRC_OUTNOT:
-            dasm_outnot(instruction);
-            break;
-        case p2_OPSRC_FLTL:
-            dasm_fltl(instruction);
-            break;
-        case p2_OPSRC_FLTH:
-            dasm_flth(instruction);
-            break;
-        case p2_OPSRC_FLTC:
-            dasm_fltc(instruction);
-            break;
-        case p2_OPSRC_FLTNC:
-            dasm_fltnc(instruction);
-            break;
-        case p2_OPSRC_FLTZ:
-            dasm_fltz(instruction);
-            break;
-        case p2_OPSRC_FLTNZ:
-            dasm_fltnz(instruction);
-            break;
-        case p2_OPSRC_FLTRND:
-            dasm_fltrnd(instruction);
-            break;
-        case p2_OPSRC_FLTNOT:
-            dasm_fltnot(instruction);
-            break;
-        case p2_OPSRC_DRVL:
-            dasm_drvl(instruction);
-            break;
-        case p2_OPSRC_DRVH:
-            dasm_drvh(instruction);
-            break;
-        case p2_OPSRC_DRVC:
-            dasm_drvc(instruction);
-            break;
-        case p2_OPSRC_DRVNC:
-            dasm_drvnc(instruction);
-            break;
-        case p2_OPSRC_DRVZ:
-            dasm_drvz(instruction);
-            break;
-        case p2_OPSRC_DRVNZ:
-            dasm_drvnz(instruction);
-            break;
-        case p2_OPSRC_DRVRND:
-            dasm_drvrnd(instruction);
-            break;
-        case p2_OPSRC_DRVNOT:
-            dasm_drvnot(instruction);
-            break;
-        case p2_OPSRC_SPLITB:
-            dasm_splitb(instruction);
-            break;
-        case p2_OPSRC_MERGEB:
-            dasm_mergeb(instruction);
-            break;
-        case p2_OPSRC_SPLITW:
-            dasm_splitw(instruction);
-            break;
-        case p2_OPSRC_MERGEW:
-            dasm_mergew(instruction);
-            break;
-        case p2_OPSRC_SEUSSF:
-            dasm_seussf(instruction);
-            break;
-        case p2_OPSRC_SEUSSR:
-            dasm_seussr(instruction);
-            break;
-        case p2_OPSRC_RGBSQZ:
-            dasm_rgbsqz(instruction);
-            break;
-        case p2_OPSRC_RGBEXP:
-            dasm_rgbexp(instruction);
-            break;
-        case p2_OPSRC_XORO32:
-            dasm_xoro32(instruction);
-            break;
-        case p2_OPSRC_REV:
-            dasm_rev(instruction);
-            break;
-        case p2_OPSRC_RCZR:
-            dasm_rczr(instruction);
-            break;
-        case p2_OPSRC_RCZL:
-            dasm_rczl(instruction);
-            break;
-        case p2_OPSRC_WRC:
-            dasm_wrc(instruction);
-            break;
-        case p2_OPSRC_WRNC:
-            dasm_wrnc(instruction);
-            break;
-        case p2_OPSRC_WRZ:
-            dasm_wrz(instruction);
-            break;
-        case p2_OPSRC_WRNZ_MODCZ:
-            if (IR.wc() | IR.wz())
-                dasm_modcz(instruction);
-            else
-                dasm_wrnz(instruction);
-            break;
-        case p2_OPSRC_SETSCP:
-            dasm_setscp(instruction);
-            break;
-        case p2_OPSRC_GETSCP:
-            dasm_getscp(instruction);
+
+        case p2_WYPIN_WRLUT:
+            switch (IR.inst8()) {
+            case p2_WYPIN:
+                dasm_wypin(instruction);
+                break;
+            case p2_WRLUT:
+                dasm_wrlut(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst8_e", "WYPIN/WRLUT");
+            }
+            break;
+
+        case p2_WRBYTE_WRWORD:
+            switch (IR.inst8()) {
+            case p2_WRBYTE:
+                dasm_wrbyte(instruction);
+                break;
+            case p2_WRWORD:
+                dasm_wrword(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst8_e", "WRBYTE/WRWORD");
+            }
+            break;
+
+        case p2_WRLONG_RDFAST:
+            switch (IR.inst8()) {
+            case p2_WRLONG:
+                dasm_wrlong(instruction);
+                break;
+            case p2_RDFAST:
+                dasm_rdfast(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst8_e", "WRLONG/RDFAST");
+            }
+            break;
+
+        case p2_WRFAST_FBLOCK:
+            switch (IR.inst8()) {
+            case p2_WRFAST:
+                dasm_wrfast(instruction);
+                break;
+            case p2_FBLOCK:
+                dasm_fblock(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst8_e", "WRFAST/FBLOCK");
+            }
+            break;
+
+        case p2_XINIT_XSTOP_XZERO:
+            switch (IR.inst8()) {
+            case p2_XINIT:
+                if (IR.wz() == 1 && IR.im() == 1 && IR.u.op.src == 0 && IR.u.op.dst == 0) {
+                    dasm_xstop(instruction);
+                    break;
+                }
+                dasm_xinit(instruction);
+                break;
+            case p2_XZERO:
+                dasm_xzero(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst8_e", "XINIT/XSTOP/XZERO");
+            }
+            break;
+
+        case p2_XCONT_REP:
+            switch (IR.inst8()) {
+            case p2_XCONT:
+                dasm_xcont(instruction);
+                break;
+            case p2_REP:
+                dasm_rep(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst8_e", "XCONT/REP");
+            }
+            break;
+
+        case p2_COGINIT:
+            dasm_coginit(instruction);
+            break;
+
+        case p2_QMUL_QDIV:
+            switch (IR.inst8()) {
+            case p2_QMUL:
+                dasm_qmul(instruction);
+                break;
+            case p2_QDIV:
+                dasm_qdiv(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst8_e", "QMUL/QDIV");
+            }
+            break;
+
+        case p2_QFRAC_QSQRT:
+            switch (IR.inst8()) {
+            case p2_QFRAC:
+                dasm_qfrac(instruction);
+                break;
+            case p2_QSQRT:
+                dasm_qsqrt(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst8_e", "QFRAC/QSQRT");
+            }
+            break;
+
+        case p2_QROTATE_QVECTOR:
+            switch (IR.inst8()) {
+            case p2_QROTATE:
+                dasm_qrotate(instruction);
+                break;
+            case p2_QVECTOR:
+                dasm_qvector(instruction);
+                break;
+            default:
+                Q_ASSERT_X(false, "p2_inst8_e", "QROTATE/QVECTOR");
+            }
+            break;
+
+        case p2_OPSRC:
+            switch (IR.u.op.src) {
+            case p2_OPSRC_HUBSET:
+                dasm_hubset(instruction);
+                break;
+            case p2_OPSRC_COGID:
+                dasm_cogid(instruction);
+                break;
+            case p2_OPSRC_COGSTOP:
+                dasm_cogstop(instruction);
+                break;
+            case p2_OPSRC_LOCKNEW:
+                dasm_locknew(instruction);
+                break;
+            case p2_OPSRC_LOCKRET:
+                dasm_lockret(instruction);
+                break;
+            case p2_OPSRC_LOCKTRY:
+                dasm_locktry(instruction);
+                break;
+            case p2_OPSRC_LOCKREL:
+                dasm_lockrel(instruction);
+                break;
+            case p2_OPSRC_QLOG:
+                dasm_qlog(instruction);
+                break;
+            case p2_OPSRC_QEXP:
+                dasm_qexp(instruction);
+                break;
+            case p2_OPSRC_RFBYTE:
+                dasm_rfbyte(instruction);
+                break;
+            case p2_OPSRC_RFWORD:
+                dasm_rfword(instruction);
+                break;
+            case p2_OPSRC_RFLONG:
+                dasm_rflong(instruction);
+                break;
+            case p2_OPSRC_RFVAR:
+                dasm_rfvar(instruction);
+                break;
+            case p2_OPSRC_RFVARS:
+                dasm_rfvars(instruction);
+                break;
+            case p2_OPSRC_WFBYTE:
+                dasm_wfbyte(instruction);
+                break;
+            case p2_OPSRC_WFWORD:
+                dasm_wfword(instruction);
+                break;
+            case p2_OPSRC_WFLONG:
+                dasm_wflong(instruction);
+                break;
+            case p2_OPSRC_GETQX:
+                dasm_getqx(instruction);
+                break;
+            case p2_OPSRC_GETQY:
+                dasm_getqy(instruction);
+                break;
+            case p2_OPSRC_GETCT:
+                dasm_getct(instruction);
+                break;
+            case p2_OPSRC_GETRND:
+                (IR.u.op.dst == 0) ? dasm_getrnd_cz(instruction)
+                                   : dasm_getrnd(instruction);
+                break;
+            case p2_OPSRC_SETDACS:
+                dasm_setdacs(instruction);
+                break;
+            case p2_OPSRC_SETXFRQ:
+                dasm_setxfrq(instruction);
+                break;
+            case p2_OPSRC_GETXACC:
+                dasm_getxacc(instruction);
+                break;
+            case p2_OPSRC_WAITX:
+                dasm_waitx(instruction);
+                break;
+            case p2_OPSRC_SETSE1:
+                dasm_setse1(instruction);
+                break;
+            case p2_OPSRC_SETSE2:
+                dasm_setse2(instruction);
+                break;
+            case p2_OPSRC_SETSE3:
+                dasm_setse3(instruction);
+                break;
+            case p2_OPSRC_SETSE4:
+                dasm_setse4(instruction);
+                break;
+            case p2_OPSRC_X24:
+                switch (IR.u.op.dst) {
+                case p2_OPX24_POLLINT:
+                    dasm_pollint(instruction);
+                    break;
+                case p2_OPX24_POLLCT1:
+                    dasm_pollct1(instruction);
+                    break;
+                case p2_OPX24_POLLCT2:
+                    dasm_pollct2(instruction);
+                    break;
+                case p2_OPX24_POLLCT3:
+                    dasm_pollct3(instruction);
+                    break;
+                case p2_OPX24_POLLSE1:
+                    dasm_pollse1(instruction);
+                    break;
+                case p2_OPX24_POLLSE2:
+                    dasm_pollse2(instruction);
+                    break;
+                case p2_OPX24_POLLSE3:
+                    dasm_pollse3(instruction);
+                    break;
+                case p2_OPX24_POLLSE4:
+                    dasm_pollse4(instruction);
+                    break;
+                case p2_OPX24_POLLPAT:
+                    dasm_pollpat(instruction);
+                    break;
+                case p2_OPX24_POLLFBW:
+                    dasm_pollfbw(instruction);
+                    break;
+                case p2_OPX24_POLLXMT:
+                    dasm_pollxmt(instruction);
+                    break;
+                case p2_OPX24_POLLXFI:
+                    dasm_pollxfi(instruction);
+                    break;
+                case p2_OPX24_POLLXRO:
+                    dasm_pollxro(instruction);
+                    break;
+                case p2_OPX24_POLLXRL:
+                    dasm_pollxrl(instruction);
+                    break;
+                case p2_OPX24_POLLATN:
+                    dasm_pollatn(instruction);
+                    break;
+                case p2_OPX24_POLLQMT:
+                    dasm_pollqmt(instruction);
+                    break;
+                case p2_OPX24_WAITINT:
+                    dasm_waitint(instruction);
+                    break;
+                case p2_OPX24_WAITCT1:
+                    dasm_waitct1(instruction);
+                    break;
+                case p2_OPX24_WAITCT2:
+                    dasm_waitct2(instruction);
+                    break;
+                case p2_OPX24_WAITCT3:
+                    dasm_waitct3(instruction);
+                    break;
+                case p2_OPX24_WAITSE1:
+                    dasm_waitse1(instruction);
+                    break;
+                case p2_OPX24_WAITSE2:
+                    dasm_waitse2(instruction);
+                    break;
+                case p2_OPX24_WAITSE3:
+                    dasm_waitse3(instruction);
+                    break;
+                case p2_OPX24_WAITSE4:
+                    dasm_waitse4(instruction);
+                    break;
+                case p2_OPX24_WAITPAT:
+                    dasm_waitpat(instruction);
+                    break;
+                case p2_OPX24_WAITFBW:
+                    dasm_waitfbw(instruction);
+                    break;
+                case p2_OPX24_WAITXMT:
+                    dasm_waitxmt(instruction);
+                    break;
+                case p2_OPX24_WAITXFI:
+                    dasm_waitxfi(instruction);
+                    break;
+                case p2_OPX24_WAITXRO:
+                    dasm_waitxro(instruction);
+                    break;
+                case p2_OPX24_WAITXRL:
+                    dasm_waitxrl(instruction);
+                    break;
+                case p2_OPX24_WAITATN:
+                    dasm_waitatn(instruction);
+                    break;
+                case p2_OPX24_ALLOWI:
+                    dasm_allowi(instruction);
+                    break;
+                case p2_OPX24_STALLI:
+                    dasm_stalli(instruction);
+                    break;
+                case p2_OPX24_TRGINT1:
+                    dasm_trgint1(instruction);
+                    break;
+                case p2_OPX24_TRGINT2:
+                    dasm_trgint2(instruction);
+                    break;
+                case p2_OPX24_TRGINT3:
+                    dasm_trgint3(instruction);
+                    break;
+                case p2_OPX24_NIXINT1:
+                    dasm_nixint1(instruction);
+                    break;
+                case p2_OPX24_NIXINT2:
+                    dasm_nixint2(instruction);
+                    break;
+                case p2_OPX24_NIXINT3:
+                    dasm_nixint3(instruction);
+                    break;
+                }
+                break;
+            case p2_OPSRC_SETINT1:
+                dasm_setint1(instruction);
+                break;
+            case p2_OPSRC_SETINT2:
+                dasm_setint2(instruction);
+                break;
+            case p2_OPSRC_SETINT3:
+                dasm_setint3(instruction);
+                break;
+            case p2_OPSRC_SETQ:
+                dasm_setq(instruction);
+                break;
+            case p2_OPSRC_SETQ2:
+                dasm_setq2(instruction);
+                break;
+            case p2_OPSRC_PUSH:
+                dasm_push(instruction);
+                break;
+            case p2_OPSRC_POP:
+                dasm_pop(instruction);
+                break;
+            case p2_OPSRC_JMP:
+                dasm_jmp(instruction);
+                break;
+            case p2_OPSRC_CALL_RET:
+                (IR.im() == 0) ? dasm_call(instruction)
+                               : dasm_ret(instruction);
+                break;
+            case p2_OPSRC_CALLA_RETA:
+                (IR.im() == 0) ? dasm_calla(instruction)
+                               : dasm_reta(instruction);
+                break;
+            case p2_OPSRC_CALLB_RETB:
+                (IR.im() == 0) ? dasm_callb(instruction)
+                               : dasm_retb(instruction);
+                break;
+            case p2_OPSRC_JMPREL:
+                dasm_jmprel(instruction);
+                break;
+            case p2_OPSRC_SKIP:
+                dasm_skip(instruction);
+                break;
+            case p2_OPSRC_SKIPF:
+                dasm_skipf(instruction);
+                break;
+            case p2_OPSRC_EXECF:
+                dasm_execf(instruction);
+                break;
+            case p2_OPSRC_GETPTR:
+                dasm_getptr(instruction);
+                break;
+            case p2_OPSRC_COGBRK:
+                (IR.wc() == 0 && IR.wz() == 0) ? dasm_cogbrk(instruction)
+                                               : dasm_getbrk(instruction);
+                break;
+            case p2_OPSRC_BRK:
+                dasm_brk(instruction);
+                break;
+            case p2_OPSRC_SETLUTS:
+                dasm_setluts(instruction);
+                break;
+            case p2_OPSRC_SETCY:
+                dasm_setcy(instruction);
+                break;
+            case p2_OPSRC_SETCI:
+                dasm_setci(instruction);
+                break;
+            case p2_OPSRC_SETCQ:
+                dasm_setcq(instruction);
+                break;
+            case p2_OPSRC_SETCFRQ:
+                dasm_setcfrq(instruction);
+                break;
+            case p2_OPSRC_SETCMOD:
+                dasm_setcmod(instruction);
+                break;
+            case p2_OPSRC_SETPIV:
+                dasm_setpiv(instruction);
+                break;
+            case p2_OPSRC_SETPIX:
+                dasm_setpix(instruction);
+                break;
+            case p2_OPSRC_COGATN:
+                dasm_cogatn(instruction);
+                break;
+            case p2_OPSRC_TESTP_W_DIRL:
+                (IR.wc() != IR.wz()) ? dasm_testp_w(instruction)
+                                     : dasm_dirl(instruction);
+                break;
+            case p2_OPSRC_TESTPN_W_DIRH:
+                (IR.wc() != IR.wz()) ? dasm_testpn_w(instruction)
+                                     : dasm_dirh(instruction);
+                break;
+            case p2_OPSRC_TESTP_AND_DIRC:
+                (IR.wc() != IR.wz()) ? dasm_testp_and(instruction)
+                                     : dasm_dirc(instruction);
+                break;
+            case p2_OPSRC_TESTPN_AND_DIRNC:
+                (IR.wc() != IR.wz()) ? dasm_testpn_and(instruction)
+                                     : dasm_dirnc(instruction);
+                break;
+            case p2_OPSRC_TESTP_OR_DIRZ:
+                (IR.wc() != IR.wz()) ? dasm_testp_or(instruction)
+                                     : dasm_dirz(instruction);
+                break;
+            case p2_OPSRC_TESTPN_OR_DIRNZ:
+                (IR.wc() != IR.wz()) ? dasm_testpn_or(instruction)
+                                     : dasm_dirnz(instruction);
+                break;
+            case p2_OPSRC_TESTP_XOR_DIRRND:
+                (IR.wc() != IR.wz()) ? dasm_testp_xor(instruction)
+                                     : dasm_dirrnd(instruction);
+                break;
+            case p2_OPSRC_TESTPN_XOR_DIRNOT:
+                (IR.wc() != IR.wz()) ? dasm_testpn_xor(instruction)
+                                     : dasm_dirnot(instruction);
+                break;
+            case p2_OPSRC_OUTL:
+                dasm_outl(instruction);
+                break;
+            case p2_OPSRC_OUTH:
+                dasm_outh(instruction);
+                break;
+            case p2_OPSRC_OUTC:
+                dasm_outc(instruction);
+                break;
+            case p2_OPSRC_OUTNC:
+                dasm_outnc(instruction);
+                break;
+            case p2_OPSRC_OUTZ:
+                dasm_outz(instruction);
+                break;
+            case p2_OPSRC_OUTNZ:
+                dasm_outnz(instruction);
+                break;
+            case p2_OPSRC_OUTRND:
+                dasm_outrnd(instruction);
+                break;
+            case p2_OPSRC_OUTNOT:
+                dasm_outnot(instruction);
+                break;
+            case p2_OPSRC_FLTL:
+                dasm_fltl(instruction);
+                break;
+            case p2_OPSRC_FLTH:
+                dasm_flth(instruction);
+                break;
+            case p2_OPSRC_FLTC:
+                dasm_fltc(instruction);
+                break;
+            case p2_OPSRC_FLTNC:
+                dasm_fltnc(instruction);
+                break;
+            case p2_OPSRC_FLTZ:
+                dasm_fltz(instruction);
+                break;
+            case p2_OPSRC_FLTNZ:
+                dasm_fltnz(instruction);
+                break;
+            case p2_OPSRC_FLTRND:
+                dasm_fltrnd(instruction);
+                break;
+            case p2_OPSRC_FLTNOT:
+                dasm_fltnot(instruction);
+                break;
+            case p2_OPSRC_DRVL:
+                dasm_drvl(instruction);
+                break;
+            case p2_OPSRC_DRVH:
+                dasm_drvh(instruction);
+                break;
+            case p2_OPSRC_DRVC:
+                dasm_drvc(instruction);
+                break;
+            case p2_OPSRC_DRVNC:
+                dasm_drvnc(instruction);
+                break;
+            case p2_OPSRC_DRVZ:
+                dasm_drvz(instruction);
+                break;
+            case p2_OPSRC_DRVNZ:
+                dasm_drvnz(instruction);
+                break;
+            case p2_OPSRC_DRVRND:
+                dasm_drvrnd(instruction);
+                break;
+            case p2_OPSRC_DRVNOT:
+                dasm_drvnot(instruction);
+                break;
+            case p2_OPSRC_SPLITB:
+                dasm_splitb(instruction);
+                break;
+            case p2_OPSRC_MERGEB:
+                dasm_mergeb(instruction);
+                break;
+            case p2_OPSRC_SPLITW:
+                dasm_splitw(instruction);
+                break;
+            case p2_OPSRC_MERGEW:
+                dasm_mergew(instruction);
+                break;
+            case p2_OPSRC_SEUSSF:
+                dasm_seussf(instruction);
+                break;
+            case p2_OPSRC_SEUSSR:
+                dasm_seussr(instruction);
+                break;
+            case p2_OPSRC_RGBSQZ:
+                dasm_rgbsqz(instruction);
+                break;
+            case p2_OPSRC_RGBEXP:
+                dasm_rgbexp(instruction);
+                break;
+            case p2_OPSRC_XORO32:
+                dasm_xoro32(instruction);
+                break;
+            case p2_OPSRC_REV:
+                dasm_rev(instruction);
+                break;
+            case p2_OPSRC_RCZR:
+                dasm_rczr(instruction);
+                break;
+            case p2_OPSRC_RCZL:
+                dasm_rczl(instruction);
+                break;
+            case p2_OPSRC_WRC:
+                dasm_wrc(instruction);
+                break;
+            case p2_OPSRC_WRNC:
+                dasm_wrnc(instruction);
+                break;
+            case p2_OPSRC_WRZ:
+                dasm_wrz(instruction);
+                break;
+            case p2_OPSRC_WRNZ_MODCZ:
+                if (IR.wc() | IR.wz())
+                    dasm_modcz(instruction);
+                else
+                    dasm_wrnz(instruction);
+                break;
+            case p2_OPSRC_SETSCP:
+                dasm_setscp(instruction);
+                break;
+            case p2_OPSRC_GETSCP:
+                dasm_getscp(instruction);
+                break;
+            }
+            break;
+
+        case p2_JMP_ABS:
+            dasm_jmp_abs(instruction);
+            break;
+
+        case p2_CALL_ABS:
+            dasm_call_abs(instruction);
+            break;
+
+        case p2_CALLA_ABS:
+            dasm_calla_abs(instruction);
+            break;
+
+        case p2_CALLB_ABS:
+            dasm_callb_abs(instruction);
+            break;
+
+        case p2_CALLD_PA_ABS:
+            dasm_calld_pa_abs(instruction);
+            break;
+
+        case p2_CALLD_PB_ABS:
+            dasm_calld_pb_abs(instruction);
+            break;
+
+        case p2_CALLD_PTRA_ABS:
+            dasm_calld_ptra_abs(instruction);
+            break;
+
+        case p2_CALLD_PTRB_ABS:
+            dasm_calld_ptrb_abs(instruction);
+            break;
+
+        case p2_LOC_PA:
+            dasm_loc_pa(instruction);
+            break;
+
+        case p2_LOC_PB:
+            dasm_loc_pb(instruction);
+            break;
+
+        case p2_LOC_PTRA:
+            dasm_loc_ptra(instruction);
+            break;
+
+        case p2_LOC_PTRB:
+            dasm_loc_ptrb(instruction);
+            break;
+
+        case p2_AUGS:
+        case p2_AUGS_01:
+        case p2_AUGS_10:
+        case p2_AUGS_11:
+            dasm_augs(instruction);
+            break;
+
+        case p2_AUGD:
+        case p2_AUGD_01:
+        case p2_AUGD_10:
+        case p2_AUGD_11:
+            dasm_augd(instruction);
             break;
         }
-        break;
-
-    case p2_JMP_ABS:
-        dasm_jmp_abs(instruction);
-        break;
-
-    case p2_CALL_ABS:
-        dasm_call_abs(instruction);
-        break;
-
-    case p2_CALLA_ABS:
-        dasm_calla_abs(instruction);
-        break;
-
-    case p2_CALLB_ABS:
-        dasm_callb_abs(instruction);
-        break;
-
-    case p2_CALLD_PA_ABS:
-        dasm_calld_pa_abs(instruction);
-        break;
-
-    case p2_CALLD_PB_ABS:
-        dasm_calld_pb_abs(instruction);
-        break;
-
-    case p2_CALLD_PTRA_ABS:
-        dasm_calld_ptra_abs(instruction);
-        break;
-
-    case p2_CALLD_PTRB_ABS:
-        dasm_calld_ptrb_abs(instruction);
-        break;
-
-    case p2_LOC_PA:
-        dasm_loc_pa(instruction);
-        break;
-
-    case p2_LOC_PB:
-        dasm_loc_pb(instruction);
-        break;
-
-    case p2_LOC_PTRA:
-        dasm_loc_ptra(instruction);
-        break;
-
-    case p2_LOC_PTRB:
-        dasm_loc_ptrb(instruction);
-        break;
-
-    case p2_AUGS:
-    case p2_AUGS_01:
-    case p2_AUGS_10:
-    case p2_AUGS_11:
-        dasm_augs(instruction);
-        break;
-
-    case p2_AUGD:
-    case p2_AUGD_01:
-    case p2_AUGD_10:
-    case p2_AUGD_11:
-        dasm_augd(instruction);
-        break;
-    }
-
-    if (instruction)
         instruction->insert(0, cond);
+    }
 
     if (brief)
         *brief = QString::fromLatin1(Doc.brief(IR.u.opcode));
@@ -1635,14 +1638,27 @@ p2_LONG P2Dasm::memsize() const
     return hub->memsize();
 }
 
+/**
+ * @brief Return the lowercase flag
+ * @return true if lowercase mode, or false otherwise
+ */
 bool P2Dasm::lowercase() const
 {
     return m_lowercase;
 }
 
-void P2Dasm::setLowercase(bool flag)
+/**
+ * @brief Set the lowercase flag
+ * @param flag lowercase if true, uppercase if false
+ */
+void P2Dasm::set_lowercase(bool flag)
 {
     m_lowercase = flag;
+}
+
+QString P2Dasm::format_imm(bool im)
+{
+    return Token.string(im ? t_IMMEDIATE : t_none, m_lowercase);
 }
 
 /**
@@ -1765,7 +1781,7 @@ void P2Dasm::format_D_IM_S_WCZ(QString* instruction, p2_token_e inst, p2_token_e
     *instruction = QString("%1%2,%3%4")
                    .arg(Token.string(inst, m_lowercase), pad_inst)
                    .arg(format_num(IR.u.op.dst))
-                   .arg(IR.im() ? "#" : "")
+                   .arg(format_imm(IR.im()))
                    .arg(format_num(IR.u.op.src));
     format_WCZ(instruction, wcz);
 }
@@ -1786,7 +1802,7 @@ void P2Dasm::format_D_IM_S_WC(QString* instruction, p2_token_e inst)
     *instruction = QString("%1%2,%3%4")
                    .arg(Token.string(inst, m_lowercase), pad_inst)
                    .arg(format_num(IR.u.op.dst))
-                   .arg(IR.im() ? "#" : "")
+                   .arg(format_imm(IR.im()))
                    .arg(format_num(IR.u.op.src));
     format_WC(instruction, t_WC);
 }
@@ -1807,7 +1823,7 @@ void P2Dasm::format_D_IM_S_WZ(QString* instruction, p2_token_e inst, p2_token_e 
     *instruction = QString("%1%2,%3%4")
                    .arg(Token.string(inst, m_lowercase), pad_inst)
                    .arg(format_num(IR.u.op.dst))
-                   .arg(IR.im() ? "#" : "")                // I
+                   .arg(format_imm(IR.im()))                // I
                    .arg(format_num(IR.u.op.src));
     format_WZ(instruction, with);
 }
@@ -1827,9 +1843,9 @@ void P2Dasm::format_WZ_D_IM_S(QString* instruction, p2_token_e inst)
         return;
     *instruction = QString("%1%2%3,%4%5")
                    .arg(Token.string(inst, m_lowercase), pad_inst)
-                   .arg(IR.wz() ? "#" : "")              // L
+                   .arg(format_imm(IR.wz()))              // L
                    .arg(format_num(IR.u.op.dst))
-                   .arg(IR.im() ? "#" : "")              // I
+                   .arg(format_imm(IR.im()))              // I
                    .arg(format_num(IR.u.op.src));
 }
 
@@ -1847,9 +1863,9 @@ void P2Dasm::format_WZ_D_IM_S_WC(QString* instruction, p2_token_e inst)
         return;
     *instruction = QString("%1%2%3,%4%5")
                    .arg(Token.string(inst, m_lowercase), pad_inst)
-                   .arg(IR.wz() ? "#" : "")              // L
+                   .arg(format_imm(IR.wz()))              // L
                    .arg(format_num(IR.u.op.dst))
-                   .arg(IR.im() ? "#" : "")              // I
+                   .arg(format_imm(IR.im()))              // I
                    .arg(format_num(IR.u.op.src));
     format_WC(instruction, t_WC);
 }
@@ -1870,7 +1886,7 @@ void P2Dasm::format_d_imm_s_nnn(QString* instruction, p2_token_e inst, int max)
     *instruction = QString("%1%2,%3%4,#%5")
                    .arg(Token.string(inst, m_lowercase), pad_inst)
                    .arg(format_num(IR.u.op.dst))
-                   .arg(IR.im() ? "#" : "")
+                   .arg(format_imm(IR.im()))
                    .arg(format_num(IR.u.op.src))
                    .arg(nnn);
 }
@@ -1890,7 +1906,7 @@ void P2Dasm::format_d_imm_s(QString* instruction, p2_token_e inst)
     *instruction = QString("%1%2,%3%4")
                    .arg(Token.string(inst, m_lowercase), pad_inst)
                    .arg(format_num(IR.u.op.dst))
-                   .arg(IR.im() ? "#" : "")
+                   .arg(format_imm(IR.im()))
                    .arg(format_num(IR.u.op.src));
 }
 
@@ -1966,7 +1982,7 @@ void P2Dasm::format_d(QString* instruction, p2_token_e inst)
 {
     if (nullptr == instruction)
         return;
-    *instruction = QString("%1%2%3")
+    *instruction = QString("%1%2")
                    .arg(Token.string(inst, m_lowercase), pad_inst)
                    .arg(format_num(IR.u.op.dst));
 }
@@ -1985,7 +2001,7 @@ void P2Dasm::format_wz_d(QString* instruction, p2_token_e inst)
         return;
     *instruction = QString("%1%2%3")
                    .arg(Token.string(inst, m_lowercase), pad_inst)
-                   .arg(IR.wz() ? "#" : "")
+                   .arg(format_imm(IR.wz()))
                    .arg(format_num(IR.u.op.dst));
 }
 
@@ -2003,7 +2019,7 @@ void P2Dasm::format_imm_d(QString* instruction, p2_token_e inst)
         return;
     *instruction = QString("%1%2%3")
                    .arg(Token.string(inst, m_lowercase), pad_inst)
-                   .arg(IR.im() ? "#" : "")
+                   .arg(format_imm(IR.im()))
                    .arg(format_num(IR.u.op.dst));
 }
 
@@ -2022,7 +2038,7 @@ void P2Dasm::format_imm_d_cz(QString* instruction, p2_token_e inst, p2_token_e w
         return;
     *instruction = QString("%1%2%3")
                    .arg(Token.string(inst, m_lowercase), pad_inst)
-                   .arg(IR.im() ? "#" : "")
+                   .arg(format_imm(IR.im()))
                    .arg(format_num(IR.u.op.dst));
     format_WCZ(instruction, with);
 }
@@ -2041,7 +2057,7 @@ void P2Dasm::format_imm_d_c(QString* instruction, p2_token_e inst)
         return;
     *instruction = QString("%1%2%3")
                    .arg(Token.string(inst, m_lowercase), pad_inst)
-                   .arg(IR.im() ? "#" : "")
+                   .arg(format_imm(IR.im()))
                    .arg(format_num(IR.u.op.dst));
     format_WC(instruction, t_WC);
 }
@@ -2060,7 +2076,7 @@ void P2Dasm::format_imm_s(QString* instruction, p2_token_e inst)
         return;
     *instruction = QString("%1%2%3")
                    .arg(inst, pad_inst)
-                   .arg(IR.im() ? "#" : "")
+                   .arg(format_imm(IR.im()))
                    .arg(format_num(IR.u.op.src));
 }
 
@@ -2078,7 +2094,7 @@ void P2Dasm::format_imm_s_c(QString* instruction, p2_token_e inst)
         return;
     *instruction = QString("%1%2%3")
                    .arg(inst, pad_inst)
-                   .arg(IR.im() ? "#" : "")
+                   .arg(format_imm(IR.im()))
                    .arg(format_num(IR.u.op.src));
     format_WC(instruction, t_WC);
 }
@@ -2098,10 +2114,11 @@ void P2Dasm::format_pc_abs(QString* instruction, p2_token_e inst, p2_token_e des
         return;
     const p2_LONG aaaa = IR.u.opcode & A20MASK;
     const p2_LONG addr = IR.wz() ? (PC + aaaa) & A20MASK : aaaa;
-    *instruction = QString("%1%2%3$%4")
+    *instruction = QString("%1%2%3%4$%5")
                    .arg(Token.string(inst, m_lowercase), pad_inst)
                    .arg(Token.string(dest, m_lowercase))
-                   .arg(dest != t_unknown ? "," : "")
+                   .arg(Token.string(dest != t_none ? t_COMMA : t_none, m_lowercase))
+                   .arg(format_imm(IR.im()))
                    .arg(addr, 0, 16);
 }
 
@@ -2118,8 +2135,9 @@ void P2Dasm::format_imm23(QString* instruction, p2_token_e inst)
     if (nullptr == instruction)
         return;
     const p2_LONG nnnn = (IR.u.opcode << 9) & AUG_MASK;
-    *instruction = QString("%1#$%2")
+    *instruction = QString("%1%2$%3")
                    .arg(Token.string(inst, m_lowercase), pad_inst)
+                   .arg(format_imm(IR.im()))
                    .arg(nnnn << 9, 0, 16, QChar('0'));
 }
 
@@ -4306,7 +4324,6 @@ void P2Dasm::dasm_addpix(QString* instruction)
  *
  * MULPIX  D,{#}S
  *
- * 0.
  *
  * @param instruction pointer to string where to store the result
  */
@@ -7203,9 +7220,7 @@ void P2Dasm::dasm_jmprel(QString* instruction)
  *
  * SKIP    {#}D
  *
- * Subsequent instructions 0.
- * 31 get cancelled for each '1' bit in D[0].
- * D[31].
+ * Subsequent instructions 0..31 get cancelled for each '1' bit in D[0]..D[31].
  *
  * @param instruction pointer to string where to store the result
  */

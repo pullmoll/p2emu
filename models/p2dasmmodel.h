@@ -60,7 +60,7 @@ public:
 
     static QList<column_e> columns();
     p2_opcode_format_e opcode_format() const { return m_format; }
-    QSize sizeHint(column_e column, bool header = false, const QString& text = QString()) const;
+    QSize sizeHint(const QModelIndex& index, const QString& text = QString()) const;
 
 public slots:
     void invalidate();

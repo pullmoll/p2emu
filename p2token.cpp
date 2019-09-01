@@ -244,6 +244,7 @@ P2Token::P2Token()
     , rx_real_const(re_real_const, Qt::CaseInsensitive)
 {
     TN_ADD(t_invalid,           tm_lexer, QStringLiteral("·INVALID·"));
+    TN_ADD(t_none,              tm_none, QString());
     TN_ADD(t_unknown,           tm_lexer, QStringLiteral("·unknown·"));
     TN_ADD(t_comment,           tm_comment, QStringLiteral("·comment·"));
     TN_ADD(t_comment_eol,       tm_comment, QStringLiteral("'"));
@@ -1169,10 +1170,10 @@ p2_token_e P2Token::token(const QString& line, int pos, int& len, bool chop) con
     p2_token_e tok = t_unknown;
     QStringRef ref(&line, pos, len);
 
-    for (;;) {
+    while (len > 0) {
 
         tok = m_string_token.value(ref.toString().toUpper());
-        if (t_unknown != tok) {
+        if (t_none != tok && t_unknown != tok) {
             len = m_token_string.value(tok).length();
             break;
         }
@@ -1241,8 +1242,7 @@ p2_token_e P2Token::token(const QString& line, int pos, int& len, bool chop) con
             break;
 
         // chop off one character
-        if (--len <= 0)
-            break;
+        len--;
         ref.chop(1);
     }
 

@@ -66,7 +66,7 @@ public:
 
     static QList<column_e> columns();
     p2_opcode_format_e opcode_format() const;
-    QSize sizeHint(const QModelIndex &parent = QModelIndex(), bool header = false, const QString& text = QString()) const;
+    QSize sizeHint(const QModelIndex &parent = QModelIndex(), const QString& text = QString()) const;
     const P2Word highlight(const QModelIndex& index) const;
 
 public slots:

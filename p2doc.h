@@ -32,17 +32,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 #pragma once
-#include <QObject>
 #include <QMap>
 #include "p2token.h"
 
-class P2Doc : public QObject
+class P2Doc
 {
-    Q_OBJECT
 public:
     typedef QPair<p2_LONG,p2_LONG> MaskMatch;
 
-    P2Doc(QObject* parent = nullptr);
+    P2Doc();
 
     const char* brief(p2_LONG opcode);
     const char* brief(p2_inst7_e inst) { return brief(inst7(inst)); }

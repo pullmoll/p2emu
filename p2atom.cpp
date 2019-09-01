@@ -165,9 +165,9 @@ int P2Atom::size() const
     return m_data.size();
 }
 
-size_t P2Atom::usize() const
+p2_LONG P2Atom::usize() const
 {
-    return static_cast<size_t>(m_data.size());
+    return static_cast<p2_LONG>(m_data.size());
 }
 
 int P2Atom::count() const

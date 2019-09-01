@@ -102,7 +102,7 @@ public:
     bool isZero() const;
     bool isValid() const;
     int size() const;
-    size_t usize() const;
+    p2_LONG usize() const;
     int count() const;
     Type type() const;
     const QString type_name() const;

@@ -114,8 +114,6 @@ MainWindow::MainWindow(QWidget *parent)
     setupToolbars();
     setupStatusbar();
 
-    m_hub->load(":/bin/ROM_Booter_v33_01j.bin");
-
     setupAssembler();
     setupDisassembler();
     setupCogView();
@@ -123,6 +121,7 @@ MainWindow::MainWindow(QWidget *parent)
     restoreSettings();
 
     loadSourceRandom();
+    loadObjectRandom();
 }
 
 MainWindow::~MainWindow()
@@ -451,6 +450,35 @@ void MainWindow::hubSingleStep()
         m_vcog[id]->updateView();
 }
 
+void MainWindow::loadObject(const QString& filename)
+{
+    QFileInfo info(filename);
+    ui->tabWidget->setTabText(1, QString("%1 [%2]").arg(tr("Disassembler")).arg(info.fileName()));
+
+    if (!info.path().startsWith(QChar(':')))
+        m_hub->set_pathname(info.path());
+    m_hub->load_obj(filename);
+    m_dmodel->invalidate();
+    updateDasmColumnSizes();
+    ui->tvDasm->update();
+}
+
+void MainWindow::loadObjectRandom()
+{
+    QDir dir(QStringLiteral(":/bin"));
+    QStringList name_filters =
+            QStringList()
+            << QStringLiteral("*.bin")
+            << QStringLiteral("*.obj");
+    QDir::Filters filters = QDir::Files;
+    QDir::SortFlags sort = QDir::Name;
+    QStringList files = dir.entryList(name_filters, filters, sort);
+    QString objectfile = QString("%1/%2")
+                         .arg(dir.path())
+                         .arg(files[qrand() % files.count()]);
+    loadObject(objectfile);
+}
+
 void MainWindow::openSource(const QString& sourcefile)
 {
     QSettings s;
@@ -503,23 +531,11 @@ void MainWindow::openSource(const QString& sourcefile)
 void MainWindow::loadSource(const QString& filename)
 {
     QFileInfo info(filename);
-
-    QFile file(filename);
-    if (!file.open(QIODevice::ReadOnly))
-        return;
-
-    QTextStream stream(&file);
-    QStringList source;
-    while (!stream.atEnd()) {
-        QString line = stream.readLine();
-        source += line;
-    }
-
     ui->tabWidget->setTabText(0, QString("%1 [%2]").arg(tr("Assembler")).arg(info.fileName()));
 
     if (!info.path().startsWith(QChar(':')))
-        m_asm->setPathname(info.path());
-    m_asm->set_source(source);
+        m_asm->set_pathname(info.path());
+    m_asm->load(filename);
     m_amodel->invalidate();
     updateAsmColumnSizes();
     updateSymbolsColumnSizes();
@@ -527,7 +543,7 @@ void MainWindow::loadSource(const QString& filename)
 
     QLabel* lbl_lines = ui->toolbarAsm->findChild<QLabel*>(key_lines);
     if (lbl_lines)
-        lbl_lines->setText(tr("%1 lines").arg(source.count()));
+        lbl_lines->setText(tr("%1 lines").arg(m_asm->count()));
 
     assemble();
 }
@@ -636,7 +652,7 @@ void MainWindow::resize_source_panel(const int results_min)
 void MainWindow::setDasmLowercase(bool check)
 {
     ui->action_Dasm_Lowercase->setChecked(check);
-    m_dasm->setLowercase(check);
+    m_dasm->set_lowercase(check);
     p2_LONG PC = m_hub->cog(0)->rd_PC();
     int row = static_cast<int>((PC < HUB_ADDR0) ? PC : PC / 4);
     m_dmodel->invalidate();
@@ -698,8 +714,10 @@ void MainWindow::setupTabWidget()
 
 void MainWindow::setupMenu()
 {
-    connect(ui->action_Open, SIGNAL(triggered()), SLOT(openSource()));
-    connect(ui->action_Open_random, SIGNAL(triggered()), SLOT(loadSourceRandom()));
+    connect(ui->action_Open_src, SIGNAL(triggered()), SLOT(openSource()));
+    connect(ui->action_Open_src_random, SIGNAL(triggered()), SLOT(loadSourceRandom()));
+    // connect(ui->action_Open_obj, SIGNAL(triggered()), SLOT(openObject()));
+    connect(ui->action_Open_obj_random, SIGNAL(triggered()), SLOT(loadObjectRandom()));
     connect(ui->action_Go_to_line, SIGNAL(triggered()), SLOT(goto_line_number()));
     connect(ui->action_Assemble, SIGNAL(triggered()), SLOT(assemble()));
     connect(ui->action_SingleStep, SIGNAL(triggered()), SLOT(hubSingleStep()));
@@ -786,8 +804,12 @@ void MainWindow::setupToolbars()
     ui->toolbarDasm->addAction(ui->action_Dasm_IncFontSize);
 
     // Main toolbar
-    ui->toolbar->addAction(ui->action_Open);
-    ui->toolbar->addAction(ui->action_Open_random);
+    ui->toolbar->addAction(ui->action_Open_src);
+    ui->toolbar->addAction(ui->action_Open_src_random);
+
+    ui->toolbar->addSeparator();
+    ui->toolbar->addAction(ui->action_Open_obj);
+    ui->toolbar->addAction(ui->action_Open_obj_random);
 
     ui->toolbar->addSeparator();
     ui->toolbar->addAction(ui->action_Assemble);
@@ -819,7 +841,7 @@ void MainWindow::updateAsmColumnSizes()
 
     for (int i = 0; i < m_amodel->columnCount(); i++) {
         QModelIndex index = m_amodel->index(0, i);
-        QSize size = m_amodel->sizeHint(index, false);
+        QSize size = m_amodel->sizeHint(index);
         if (size.isValid())
             ui->tvAsm->setColumnWidth(i, size.width());
     }
@@ -842,9 +864,10 @@ void MainWindow::updateDasmColumnSizes()
     hh->setStretchLastSection(true);
     connect(hh, SIGNAL(customContextMenuRequested(QPoint)), SLOT(dasmHeaderColums(QPoint)), Qt::UniqueConnection);
 
-    for (int i = 0; i < m_dmodel->columnCount(); i++) {
-        QSize size = m_dmodel->sizeHint(static_cast<P2DasmModel::column_e>(i));
-        ui->tvDasm->setColumnWidth(i, size.width());
+    for (int column = 0; column < m_dmodel->columnCount(); column++) {
+        QModelIndex index = m_dmodel->index(0, column);
+        QSize size = m_dmodel->sizeHint(index);
+        ui->tvDasm->setColumnWidth(column, size.width());
     }
 }
 
