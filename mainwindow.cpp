@@ -40,6 +40,7 @@
 #include <QTimer>
 #include <QSettings>
 #include <QLabel>
+#include <QFontDatabase>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -99,6 +100,8 @@ MainWindow::MainWindow(QWidget *parent)
     , m_dasm(new P2Dasm(m_hub->cog(0)))
     , m_dmodel(new P2DasmModel(m_dasm))
     , m_smodel(new P2SymbolsModel())
+    , m_asm_font_size(11)
+    , m_dasm_font_size(11)
     , m_source_percent(80)
     , m_results_percent(40)
 {
@@ -119,6 +122,7 @@ MainWindow::MainWindow(QWidget *parent)
     setupCogView();
 
     restoreSettings();
+    setupFonts();
 
     loadSourceRandom();
     loadObjectRandom();
@@ -202,7 +206,7 @@ void MainWindow::restoreSettingsAsm(QSettings& s)
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Symbols, s.value(key_column_symbols, false).toBool());
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Errors, s.value(key_column_errors, false).toBool());
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Source, s.value(key_column_source, false).toBool());
-    setAsmFontSize(s.value(key_font_size, 11).toInt());
+    m_asm_font_size = s.value(key_font_size, 11).toInt();
     m_source_percent = s.value(key_splitter_source_percent, m_source_percent).toInt();
     m_results_percent = s.value(key_splitter_results_percent, m_results_percent).toInt();
     s.endGroup();
@@ -219,7 +223,7 @@ void MainWindow::restoreSettingsDasm(QSettings& s)
     ui->tvDasm->setColumnHidden(P2DasmModel::c_Opcode, s.value(key_column_opcode, false).toBool());
     ui->tvDasm->setColumnHidden(P2DasmModel::c_Instruction, s.value(key_column_instruction, false).toBool());
     ui->tvDasm->setColumnHidden(P2DasmModel::c_Description, s.value(key_column_description, false).toBool());
-    setDasmFontSize(s.value(key_font_size, 11).toInt());
+    m_dasm_font_size = s.value(key_font_size, 11).toInt();
     s.endGroup();
 }
 
@@ -317,14 +321,22 @@ void MainWindow::decAsmFontSize()
 
 void MainWindow::setAsmFontSize(int size)
 {
+    ui->tvAsm->setUpdatesEnabled(false);
+    ui->tvSymbols->setUpdatesEnabled(false);
+
     QFont font = ui->tvAsm->font();
     font.setPixelSize(size);
     ui->tvAsm->setFont(font);
     m_amodel->setFont(font);
+
     ui->tvSymbols->setFont(font);
     m_smodel->setFont(font);
+
     updateAsmColumnSizes();
     updateSymbolsColumnSizes();
+
+    ui->tvSymbols->setUpdatesEnabled(true);
+    ui->tvAsm->setUpdatesEnabled(true);
 }
 
 void MainWindow::setDasmOpcodes(int mode)
@@ -367,11 +379,15 @@ void MainWindow::decDasmFontSize()
 
 void MainWindow::setDasmFontSize(int size)
 {
+    ui->tvDasm->setUpdatesEnabled(false);
+
     QFont font = ui->tvDasm->font();
     font.setPixelSize(size);
     ui->tvDasm->setFont(font);
     m_dmodel->setFont(font);
     updateDasmColumnSizes();
+
+    ui->tvDasm->setUpdatesEnabled(true);
 }
 
 void MainWindow::asmHeaderColums(const QPoint& pos)
@@ -701,6 +717,28 @@ void MainWindow::setupDisassembler()
 {
     ui->tvDasm->setModel(m_dmodel);
     updateDasmColumnSizes();
+}
+
+void MainWindow::setupFonts()
+{
+    static const QString preferred_font = QStringLiteral("Source Code Pro");
+    QFont font = QFont(preferred_font);
+
+    if (font.family() != preferred_font)
+        font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    font.setStyleHint(QFont::TypeWriter, QFont::PreferAntialias);
+
+    font.setPointSize(11);
+    ui->tabWidget->setFont(font);
+
+    font.setPixelSize(m_asm_font_size);
+    ui->tvAsm->setFont(font);
+    ui->tvSymbols->setFont(font);
+    font.setPixelSize(8);
+    ui->tbErrors->setFont(font);
+
+    font.setPixelSize(m_dasm_font_size);
+    ui->tvDasm->setFont(font);
 }
 
 void MainWindow::setupTabWidget()

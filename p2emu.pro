@@ -8,7 +8,7 @@ QT += core gui widgets svg
 TARGET = p2
 TEMPLATE = app
 VER_MAJ = 0
-VER_MIN = 1
+VER_MIN = 2
 VER_PAT = 0
 
 # The following define makes your compiler emit warnings if you use
@@ -17,7 +17,7 @@ VER_PAT = 0
 # deprecated API in order to know how to port your code away from it.
 DEFINES += QT_DEPRECATED_WARNINGS
 
-QMAKE_CXXFLAGS += -Wno-signed-enum-bitfield -DVER_MAJ=$$VER_MAJ -DVER_MIN=$$VER_MIN -DVER_PAT=$$VER_PAT
+QMAKE_CXXFLAGS += -DVER_MAJ=$$VER_MAJ -DVER_MIN=$$VER_MIN -DVER_PAT=$$VER_PAT
 
 # You can also make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.

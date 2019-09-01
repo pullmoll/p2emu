@@ -123,11 +123,14 @@ private:
     P2DasmModel* m_dmodel;
     P2SymbolsModel* m_smodel;
 
+    int m_asm_font_size;
+    int m_dasm_font_size;
     int m_source_percent;
     int m_results_percent;
 
     void setupAssembler();
     void setupDisassembler();
+    void setupFonts();
     void setupMenu();
     void setupTabWidget();
     void setupToolbars();
