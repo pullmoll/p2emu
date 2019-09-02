@@ -209,6 +209,8 @@ enum p2_token_e {
     t_MERGEW,
     t_MIXPIX,
     t_MODCZ,
+    t_MODC,
+    t_MODZ,
     t_MOV,
     t_MOVBYTS,
     t_MUL,

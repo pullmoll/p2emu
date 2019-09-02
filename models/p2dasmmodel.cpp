@@ -36,18 +36,6 @@
 #include "p2dasmmodel.h"
 #include "p2doc.h"
 
-static quint32 bin2hex(const QString& str)
-{
-    quint32 result = 0;
-    foreach(QChar ch, str) {
-        if (ch == QChar('0'))
-            result = result << 1;
-        if (ch == QChar('1'))
-            result = result << 1 | 1;
-    }
-    return result;
-}
-
 P2DasmModel::P2DasmModel(P2Dasm* dasm, QObject *parent)
     : QAbstractTableModel(parent)
     , m_dasm(dasm)

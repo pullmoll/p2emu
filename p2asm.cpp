@@ -1221,6 +1221,14 @@ bool P2Asm::assemble_dat()
             success = asm_modcz();
             break;
 
+        case t_MODC:
+            success = asm_modc();
+            break;
+
+        case t_MODZ:
+            success = asm_modz();
+            break;
+
         case t_MOV:
             success = asm_mov();
             break;
@@ -3073,7 +3081,7 @@ P2Atom P2Asm::parse_mulops(int level)
             break;
         }
 
-        rvalue = parse_unary(level);
+        rvalue = parse_expression(level);
         if (!rvalue.isValid()) {
             DEBUG_EXPR(" invalid rvalue: %s", qPrintable(curr_str()));
             m_errors += tr("Invalid character in expression (%1): %2")
@@ -3137,7 +3145,7 @@ P2Atom P2Asm::parse_shiftops(int level)
             break;
         }
 
-        rvalue = parse_mulops(level);
+        rvalue = parse_expression(level);
         if (!rvalue.isValid()) {
             DEBUG_EXPR(" invalid rvalue: %s", qPrintable(curr_str()));
             m_errors += tr("Invalid character in expression (%1): %2")
@@ -3196,7 +3204,7 @@ P2Atom P2Asm::parse_addops(int level)
             break;
         }
 
-        rvalue = parse_shiftops(level);
+        rvalue = parse_expression(level);
         if (!rvalue.isValid()) {
             DEBUG_EXPR(" invalid rvalue %s", qPrintable(curr_str()));
             m_errors += tr("Invalid character in expression (%1): %2")
@@ -3247,6 +3255,7 @@ P2Atom P2Asm::parse_binops(int level)
 
     p2_token_e op = curr_tok();
     while (Token.is_type(op, tm_binop)) {
+
         if (!next()) {
             DEBUG_EXPR(" mssing rvalue (%s)", "binops");
             m_errors += tr("End of line in expression (%1)")
@@ -3255,7 +3264,7 @@ P2Atom P2Asm::parse_binops(int level)
             break;
         }
 
-        P2Atom rvalue = parse_addops(level);
+        rvalue = parse_expression(level);
         if (!rvalue.isValid()) {
             DEBUG_EXPR(" invalid rvalue: %s", qPrintable(curr_str()));
             m_errors += tr("Invalid character in expression (%1): %2")
@@ -3619,20 +3628,20 @@ bool P2Asm::optional_WCZ()
  */
 bool P2Asm::optional_WC()
 {
-    if (skip_comments()) {
-        p2_token_e tok = m_words.value(m_idx).tok();
-        switch (tok) {
-        case t_WC:
-            m_IR.set_wc();
-            next();
-            break;
-        default:
-            m_errors += tr("Unexpected flag update '%1' not %2")
-                      .arg(m_words.value(m_idx).str())
-                      .arg(tr("WC"));
-            emit Error(m_pass, m_lineno, m_errors.last());
-            return false;
-        }
+    if (!skip_comments())
+        return true;
+    p2_token_e tok = m_words.value(m_idx).tok();
+    switch (tok) {
+    case t_WC:
+        m_IR.set_wc();
+        next();
+        break;
+    default:
+        m_errors += tr("Unexpected flag update '%1' not %2")
+                  .arg(m_words.value(m_idx).str())
+                  .arg(tr("WC"));
+        emit Error(m_pass, m_lineno, m_errors.last());
+        return false;
     }
     return true;
 }
@@ -3644,20 +3653,20 @@ bool P2Asm::optional_WC()
  */
 bool P2Asm::optional_WZ()
 {
-    if (skip_comments()) {
-        p2_token_e tok = m_words.value(m_idx).tok();
-        switch (tok) {
-        case t_WZ:
-            m_IR.set_wz();
-            next();
-            break;
-        default:
-            m_errors += tr("Unexpected flag update '%1' not %2")
-                      .arg(m_words.value(m_idx).str())
-                      .arg(tr("WZ"));
-            emit Error(m_pass, m_lineno, m_errors.last());
-            return false;
-        }
+    if (!skip_comments())
+        return true;
+    p2_token_e tok = m_words.value(m_idx).tok();
+    switch (tok) {
+    case t_WZ:
+        m_IR.set_wz();
+        next();
+        break;
+    default:
+        m_errors += tr("Unexpected flag update '%1' not %2")
+                  .arg(m_words.value(m_idx).str())
+                  .arg(tr("WZ"));
+        emit Error(m_pass, m_lineno, m_errors.last());
+        return false;
     }
     return true;
 }
@@ -3766,13 +3775,16 @@ bool P2Asm::parse_INST()
  */
 bool P2Asm::parse_D_IM_S()
 {
-    P2Atom dst = parse_dst();
-
-    if (!parse_comma())
-        return false;
-
-    P2Atom src = parse_src(P2Opcode::imm_to_im);
-
+    if (commata_left() < 1) {
+        P2Atom dst = parse_dst();
+        prev();
+        P2Atom src = parse_src();
+    } else {
+        P2Atom dst = parse_dst();
+        if (!parse_comma())
+            return false;
+        P2Atom src = parse_src(P2Opcode::imm_to_im);
+    }
     return end_of_line();
 }
 
@@ -3899,12 +3911,19 @@ bool P2Asm::parse_IM_D_XORC_XORZ()
  */
 bool P2Asm::parse_D_IM_S_WCZ()
 {
-    P2Atom dst = parse_dst();
+    if (commata_left() < 1) {
+        // if there is no comma, expect D = S and no #S
+        P2Atom dst = parse_dst();
+        prev();
+        P2Atom src = parse_src();
+    } else {
+        P2Atom dst = parse_dst();
 
-    if (!parse_comma())
-        return false;
+        if (!parse_comma())
+            return false;
 
-    P2Atom src = parse_src(P2Opcode::imm_to_im);
+        P2Atom src = parse_src(P2Opcode::imm_to_im);
+    }
 
     optional_WCZ();
     return end_of_line();
@@ -3971,12 +3990,16 @@ bool P2Asm::parse_D_IM_S_XORCZ()
  */
 bool P2Asm::parse_D_IM_S_WC()
 {
-    P2Atom dst = parse_dst();
-
-    if (!parse_comma())
-        return false;
-
-    P2Atom src = parse_src(P2Opcode::imm_to_im);
+    if (commata_left() < 1) {
+        P2Atom dst = parse_dst();
+        prev();
+        P2Atom src = parse_src();
+    } else {
+        P2Atom dst = parse_dst();
+        if (!parse_comma())
+            return false;
+        P2Atom src = parse_src(P2Opcode::imm_to_im);
+    }
 
     optional_WC();
     return end_of_line();
@@ -3989,12 +4012,16 @@ bool P2Asm::parse_D_IM_S_WC()
  */
 bool P2Asm::parse_D_IM_S_WZ()
 {
-    P2Atom dst = parse_dst();
-
-    if (!parse_comma())
-        return false;
-
-    P2Atom src = parse_src(P2Opcode::imm_to_im);
+    if (commata_left() < 1) {
+        P2Atom dst = parse_dst();
+        prev();
+        P2Atom src = parse_src();
+    } else {
+        P2Atom dst = parse_dst();
+        if (!parse_comma())
+            return false;
+        P2Atom src = parse_src(P2Opcode::imm_to_im);
+    }
 
     optional_WZ();
     return end_of_line();
@@ -4007,14 +4034,37 @@ bool P2Asm::parse_D_IM_S_WZ()
  */
 bool P2Asm::parse_WZ_D_IM_S()
 {
-    P2Atom dst = parse_dst(P2Opcode::imm_to_wz);
-
-    if (!parse_comma())
-        return false;
-
-    P2Atom src = parse_src(P2Opcode::imm_to_im);
-
+    if (commata_left() < 1) {
+        P2Atom dst = parse_dst();
+        prev();
+        P2Atom src = parse_src();
+    } else {
+        P2Atom dst = parse_dst(P2Opcode::imm_to_wz);
+        if (!parse_comma())
+            return false;
+        P2Atom src = parse_src(P2Opcode::imm_to_im);
+    }
     return end_of_line();
+}
+
+/**
+ * @brief Expect parameters for {#}D, and {#}S, followed by an optional WC
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_WZ_D_IM_S_WC()
+{
+    if (commata_left() < 1) {
+        P2Atom dst = parse_dst();
+        prev();
+        P2Atom src = parse_src();
+    } else {
+        P2Atom dst = parse_dst(P2Opcode::imm_to_wz);
+        if (!parse_comma())
+            return false;
+        P2Atom src = parse_src(P2Opcode::imm_to_im);
+    }
+    return optional_WC();
 }
 
 /**
@@ -8496,7 +8546,7 @@ bool P2Asm::asm_coginit()
 {
     next();
     m_IR.set_inst7(p2_COGINIT);
-    return parse_WZ_D_IM_S();
+    return parse_WZ_D_IM_S_WC();
 }
 
 /**
@@ -11465,6 +11515,52 @@ bool P2Asm::asm_modcz()
 }
 
 /**
+ * @brief Modify C according to cccc.
+ *<pre>
+ * EEEE 1101011 CZ1 0cccc0000 001101111
+ *
+ * MODC    c        {WC/WZ/WCZ}
+ *
+ * C = cccc[{C,Z}].
+ *</pre>
+ */
+bool P2Asm::asm_modc()
+{
+    next();
+    m_IR.set_inst7(p2_OPSRC);
+    m_IR.u.op.src = p2_OPSRC_WRNZ_MODCZ;
+
+    p2_cond_e cccc = parse_modcz();
+    m_IR.set_dst(static_cast<p2_LONG>(cccc << 4), m_ORG, m_ORGH);
+
+    optional_WCZ();
+    return end_of_line();
+}
+
+/**
+ * @brief Modify Z according to zzzz.
+ *<pre>
+ * EEEE 1101011 CZ1 00000zzzz 001101111
+ *
+ * MODCZ   z        {WC/WZ/WCZ}
+ *
+ * Z = zzzz[{C,Z}].
+ *</pre>
+ */
+bool P2Asm::asm_modz()
+{
+    next();
+    m_IR.set_inst7(p2_OPSRC);
+    m_IR.u.op.src = p2_OPSRC_WRNZ_MODCZ;
+
+    p2_cond_e zzzz = parse_modcz();
+    m_IR.set_dst(static_cast<p2_LONG>(zzzz), m_ORG, m_ORGH);
+
+    optional_WCZ();
+    return end_of_line();
+}
+
+/**
  * @brief Set scope mode.
  *<pre>
  * SETSCP points the scope mux to a set of four pins starting
@@ -11494,8 +11590,6 @@ bool P2Asm::asm_setscp()
  * This feature will mainly be useful on the next silicon, as the FPGAs don't have ADC-capable pins.
  *
  * GETSCP  D
- *
- * C = cccc[{C,Z}], Z = zzzz[{C,Z}].
  *</pre>
  */
 bool P2Asm::asm_getscp()

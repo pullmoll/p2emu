@@ -122,7 +122,7 @@ MainWindow::MainWindow(QWidget *parent)
     restoreSettings();
     setupFonts();
 
-    loadSourceRandom();
+    loadSource(QStringLiteral(":/spin2/spin2_interpreter.spin2"));
     loadObjectRandom();
 }
 

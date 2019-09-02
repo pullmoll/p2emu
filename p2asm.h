@@ -222,6 +222,7 @@ private:
     bool parse_D_IM_S_ORCZ();
     bool parse_D_IM_S_XORCZ();
     bool parse_WZ_D_IM_S();
+    bool parse_WZ_D_IM_S_WC();
     bool parse_D_IM_S_NNN(uint max = 7);
     bool parse_D_IM_S();
     bool parse_D_WCZ();
@@ -696,6 +697,8 @@ private:
     bool asm_wrz();
     bool asm_wrnz();
     bool asm_modcz();
+    bool asm_modc();
+    bool asm_modz();
     bool asm_setscp();
     bool asm_getscp();
 

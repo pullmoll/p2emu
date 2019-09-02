@@ -291,13 +291,14 @@ bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH
 
     switch (atom.trait()) {
     case P2Atom::Relative:
-        value = atom.to_long() - ORG;
+        value = atom.to_long();
         break;
     case P2Atom::AddressHub:
         value = atom.to_long() - ORG + ORGH;
         break;
     default:
         value = atom.to_long();
+        break;
     }
 
     u.op.dst = value & COG_MASK;
@@ -335,7 +336,7 @@ bool P2Opcode::set_src(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH
 
     switch (atom.trait()) {
     case P2Atom::Relative:
-        value = atom.to_long() - ORG;
+        value = atom.to_long();
         break;
     case P2Atom::AddressHub:
         value = atom.to_long() - ORG + ORGH;
