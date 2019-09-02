@@ -1620,7 +1620,7 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
     }
 
     if (brief)
-        *brief = QString::fromLatin1(Doc.brief(IR.u.opcode));
+        *brief = Doc.brief(IR.u.opcode);
 
     // FIXME: return false for invalid instructions?
     return true;

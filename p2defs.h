@@ -39,29 +39,32 @@
 
 #include "p2tokens.h"
 
-//!< Type of the Propeller2 BYTE
+//! Type of the Propeller2 BYTE
 typedef quint8 p2_BYTE;
 
-//!< Type of the Propeller2 WORD
+//! Type of the Propeller2 WORD
 typedef quint16 p2_WORD;
 
-//!< Type of the Propeller2 LONG
+//! Type of the Propeller2 LONG
 typedef quint32 p2_LONG;
 
-//!< Intermediate type (unsigned long long); not a Propeller2 type
+//! Intermediate type (unsigned long long); not a Propeller2 type
 typedef quint64 p2_QUAD;
 
-//!< Intermediate type (unsigned long long); not a Propeller2 type
+//! Intermediate type (unsigned long long); not a Propeller2 type
 typedef qreal p2_REAL;
 
-//!< Type for an array (vector) of BYTEs
+//! Type for an array (vector) of BYTEs
 typedef QVector<p2_BYTE> p2_BYTES;
 
-//!< Type for an array (vector) of WORDs
+//! Type for an array (vector) of WORDs
 typedef QVector<p2_WORD> p2_WORDS;
 
-//!< Type for an array (vector) of LONGs
+//! Type for an array (vector) of LONGs
 typedef QVector<p2_LONG> p2_LONGS;
+
+//! Type for a mask/match pair for P2DocOpcode and P2Doc
+typedef QPair<p2_LONG,p2_LONG> P2MatchMask;
 
 /// Union of bytes, words, and a long in endianess aware ordering
 typedef union {
@@ -179,23 +182,35 @@ static constexpr p2_QUAD HMAX = Q_UINT64_C(0xffffffff00000000);
 //! lower word max / mask in a 64 bit unsigned
 static constexpr p2_QUAD LMAX = Q_UINT64_C(0x00000000ffffffff);
 
+static constexpr p2_LONG p2_mask7 = (1u << 7) - 1;
+static constexpr p2_LONG p2_mask8 = (1u << 8) - 1;
+static constexpr p2_LONG p2_mask9 = (1u << 9) - 1;
+static constexpr p2_LONG p2_shift_CZI = 9 + 9;
+static constexpr p2_LONG p2_shift_NNN = 1 + p2_shift_CZI;
+static constexpr p2_LONG p2_shift_NN = p2_shift_NNN;
+static constexpr p2_LONG p2_shift_N = p2_shift_NNN;
 static constexpr p2_LONG p2_shift_inst7 = 3 + 9 + 9;
 static constexpr p2_LONG p2_shift_inst8 = 2 + 9 + 9;
 static constexpr p2_LONG p2_shift_inst9 = 1 + 9 + 9;
 static constexpr p2_LONG p2_shift_opdst = 9;
 static constexpr p2_LONG p2_shift_opsrc = 0;
-static constexpr p2_LONG p2_mask7 = (1u << 7) - 1;
-static constexpr p2_LONG p2_mask8 = (1u << 8) - 1;
-static constexpr p2_LONG p2_mask9 = (1u << 9) - 1;
 
 static constexpr p2_LONG p2_mask_inst7 = p2_mask7 << p2_shift_inst7;
 static constexpr p2_LONG p2_mask_inst8 = p2_mask8 << p2_shift_inst8;
 static constexpr p2_LONG p2_mask_inst9 = p2_mask9 << p2_shift_inst9;
-static constexpr p2_LONG p2_mask_9_dst = p2_mask9 << 9;
-static constexpr p2_LONG p2_mask_9_src = p2_mask9 << 0;
-static constexpr p2_LONG p2_mask_opdst = p2_mask_inst7 | p2_mask_9_dst;
-static constexpr p2_LONG p2_mask_opsrc = p2_mask_inst7 | p2_mask_9_src;
-static constexpr p2_LONG p2_mask_opx24 = p2_mask_inst7 | p2_mask_9_dst | p2_mask_9_src;
+static constexpr p2_LONG p2_mask_C = 4u << p2_shift_CZI;
+static constexpr p2_LONG p2_mask_Z = 2u << p2_shift_CZI;
+static constexpr p2_LONG p2_mask_I = 1u << p2_shift_CZI;
+static constexpr p2_LONG p2_mask_CZ = p2_mask_C | p2_mask_Z;
+static constexpr p2_LONG p2_mask_CZI = p2_mask_CZ | p2_mask_I;
+static constexpr p2_LONG p2_mask_NNN = 7u << p2_shift_NNN;
+static constexpr p2_LONG p2_mask_NN = 3u << p2_shift_NN;
+static constexpr p2_LONG p2_mask_N = 1u << p2_shift_N;
+static constexpr p2_LONG p2_mask_D = p2_mask9 << p2_shift_opdst;
+static constexpr p2_LONG p2_mask_S = p2_mask9 << p2_shift_opsrc;
+static constexpr p2_LONG p2_mask_opdst = p2_mask_inst9 | p2_mask_D;
+static constexpr p2_LONG p2_mask_opsrc = p2_mask_inst7 | p2_mask_S;
+static constexpr p2_LONG p2_mask_opx24 = p2_mask_inst7 | p2_mask_D | p2_mask_S;
 
 static constexpr QChar chr_comma(',');
 static constexpr QChar chr_apostrophe('\'');

@@ -2774,14 +2774,6 @@ P2Atom P2Asm::parse_atom(int level)
         prev();
         break;
 
-    case t_RELATIVE:
-    case t_ADDRESS_HUB:
-        DEBUG_EXPR(" atom relative: %s", qPrintable(str));
-        next();
-        atom = parse_expression(level+1);
-        prev();
-        break;
-
     case t_locsym:
         symbol = find_locsym(m_section, str);
         if (m_symbols->contains(symbol)) {
@@ -3319,7 +3311,6 @@ P2Atom P2Asm::parse_binops(int level)
 P2Atom P2Asm::parse_expression(int level)
 {
     P2Atom atom = make_atom();
-    P2Atom::Trait trait = P2Atom::None;
 
     DEBUG_EXPR("»»»» %d", level);
 
@@ -3327,37 +3318,37 @@ P2Atom P2Asm::parse_expression(int level)
         return atom;
 
     p2_token_e tok = curr_tok();
-
+    int trait = P2Atom::None;
     while (Token.is_type(tok, tm_traits)) {
         switch (tok) {
         case t_IMMEDIATE:
             DEBUG_EXPR(" expr immediate: %s", qPrintable(curr_str()));
-            trait = P2Atom::Immediate;
+            trait |= P2Atom::Immediate;
             next();
             break;
         case t_AUGMENTED:
             DEBUG_EXPR(" expr force AUGS/AUGD: %s", qPrintable(curr_str()));
-            trait = P2Atom::Augmented;
+            trait |= P2Atom::Augmented;
             next();
             break;
         case t_RELATIVE:
             DEBUG_EXPR(" expr relative: %s", qPrintable(curr_str()));
-            trait = P2Atom::Relative;
+            trait |= P2Atom::Relative;
             next();
             break;
         case t_ABSOLUTE:
             DEBUG_EXPR(" expr absolute: %s", qPrintable(curr_str()));
-            trait = P2Atom::Absolute;
+            trait |= P2Atom::Absolute;
             next();
             break;
         case t_ADDRESS_HUB:
             DEBUG_EXPR(" expr address HUB: %s", qPrintable(curr_str()));
-            trait = P2Atom::AddressHub;
+            trait |= P2Atom::AddressHub;
             next();
             break;
         case t_RELATIVE_HUB:
             DEBUG_EXPR(" expr address HUB: %s", qPrintable(curr_str()));
-            trait = P2Atom::AddressHub;
+            trait |= P2Atom::RelativeHub;
             next();
             break;
         default:
@@ -3371,7 +3362,7 @@ P2Atom P2Asm::parse_expression(int level)
 
     atom = parse_binops(level);
 
-    atom.set_trait(trait);
+    atom.set_trait(static_cast<P2Atom::Trait>(trait));
 
     // Set immediate flag according to traits
     switch (trait) {
