@@ -45,6 +45,7 @@ public:
     P2Dasm(const P2Cog* cog, QObject* parent = nullptr);
 
     bool dasm(p2_LONG addr, QString* opcode = nullptr, QString* instruction = nullptr, QString* description = nullptr);
+    p2_LONG rd_mem(p2_LONG addr);
     p2_LONG memsize() const;
     bool lowercase() const;
 

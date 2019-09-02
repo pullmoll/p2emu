@@ -495,3 +495,18 @@ p2_QUAD P2Util::sqrt(p2_QUAD val, int fract_bits, p2_QUAD* fraction)
     }
     return retval;
 }
+
+
+/**
+ * @brief XML/HTML escape a string
+ * @param src string to escape
+ * @return escaped string
+ */
+const QString P2Util::esc(const QString& src)
+{
+    QString result = src;
+    result.replace(QChar('&'), QStringLiteral("&amp;"));
+    result.replace(QChar('<'), QStringLiteral("&lt;"));
+    result.replace(QChar('>'), QStringLiteral("&gt;"));
+    return result;
+}

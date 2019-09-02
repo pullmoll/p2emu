@@ -27,14 +27,6 @@
        </font>
       </property>
      </widget>
-     <widget class="QTextBrowser" name="tb_symbols">
-      <property name="font">
-       <font>
-        <family>DejaVu Sans Mono</family>
-        <pointsize>8</pointsize>
-       </font>
-      </property>
-     </widget>
     </widget>
    </item>
    <item row="0" column="1">

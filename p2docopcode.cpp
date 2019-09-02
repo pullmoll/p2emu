@@ -1,6 +1,6 @@
 #include "p2docopcode.h"
 
-P2DocOpcode::P2DocOpcode(P2MatchMask mm, const char* pat, const char* func)
+P2DocOpcodeClass::P2DocOpcodeClass(P2MatchMask mm, const char* pat, const char* func)
     : m_matchmask(mm)
     , m_func(func)
     , m_pattern(pat)
@@ -12,37 +12,37 @@ P2DocOpcode::P2DocOpcode(P2MatchMask mm, const char* pat, const char* func)
 
 }
 
-bool P2DocOpcode::isValid() const
+bool P2DocOpcodeClass::isDefined() const
 {
-    return m_matchmask.first != 0;
+    return m_matchmask.second != 0;
 }
 
-P2MatchMask P2DocOpcode::matchmask() const
+P2MatchMask P2DocOpcodeClass::matchmask() const
 {
     return m_matchmask;
 }
 
-const char* P2DocOpcode::func() const
+const char* P2DocOpcodeClass::func() const
 {
     return m_func;
 }
 
-const QString P2DocOpcode::pattern() const
+const QString P2DocOpcodeClass::pattern() const
 {
     return QString::fromLatin1(m_pattern);
 }
 
-const QString P2DocOpcode::brief() const
+const QString P2DocOpcodeClass::brief() const
 {
     return QString::fromLatin1(m_brief);
 }
 
-const QString P2DocOpcode::instr() const
+const QString P2DocOpcodeClass::instr() const
 {
     return QString::fromLatin1(m_instr);
 }
 
-const QStringList P2DocOpcode::descr() const
+const QStringList P2DocOpcodeClass::descr() const
 {
     QStringList descr;
     foreach(const char* line, m_descr)
@@ -50,32 +50,32 @@ const QStringList P2DocOpcode::descr() const
     return descr;
 }
 
-p2_token_e P2DocOpcode::token() const
+p2_token_e P2DocOpcodeClass::token() const
 {
     return m_token;
 }
 
-void P2DocOpcode::set_brief(const char* brief)
+void P2DocOpcodeClass::set_brief(const char* brief)
 {
     m_brief = brief;
 }
 
-void P2DocOpcode::set_instr(const char* instr)
+void P2DocOpcodeClass::set_instr(const char* instr)
 {
     m_instr = instr;
 }
 
-void P2DocOpcode::set_descr(QList<const char*> descr)
+void P2DocOpcodeClass::set_descr(QList<const char*> descr)
 {
     m_descr = descr;
 }
 
-void P2DocOpcode::add_descr(const char* descr)
+void P2DocOpcodeClass::add_descr(const char* descr)
 {
     m_descr += descr;
 }
 
-void P2DocOpcode::set_token(p2_token_e token)
+void P2DocOpcodeClass::set_token(p2_token_e token)
 {
     m_token = token;
 }

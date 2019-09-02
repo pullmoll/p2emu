@@ -76,6 +76,7 @@ private slots:
     void restoreSettings();
     void about();
     void aboutQt5();
+    void help_opcodes();
 
     void goto_hex(const QString& address = QString());
     void goto_cog();

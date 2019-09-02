@@ -32,6 +32,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 #pragma once
+#include <QMap>
+#include <QHash>
 #include "p2docopcode.h"
 
 class P2Doc
@@ -39,6 +41,9 @@ class P2Doc
 public:
 
     P2Doc();
+
+    const QStringList html_opcodes() const;
+    const QStringList html_opcode(const p2_LONG opcode) const;
 
     const QString brief(p2_LONG opcode) const;
     const QString brief(p2_inst7_e inst) { return brief(opcode_inst7(inst)); }
@@ -80,6 +85,7 @@ private:
     static constexpr p2_LONG NN_match    = p2_mask_NN;                  //!< NN byte number in pattern
     static constexpr p2_LONG N_match     = p2_mask_N;                   //!< N word number in pattern
     static constexpr p2_LONG CZI_match   = p2_mask_CZI;                 //!< C,Z,I == match in pattern
+    static constexpr p2_LONG CZ_match    = p2_mask_CZ;                  //!< C,Z == match in pattern
     static constexpr p2_LONG I_match     = p2_mask_I;                   //!< I == match in pattern
     static constexpr p2_LONG S_match     = p2_mask_S;                   //!< S == match in pattern
     static constexpr p2_LONG D_match     = p2_mask_D;                   //!< D == match in pattern
@@ -89,9 +95,16 @@ private:
     static constexpr p2_LONG INST_5      = 3 << p2_shift_inst7;         //!< 5 bit inst in pattern
     static constexpr p2_LONG ALL_match   = FULL;                        //!< NOP
 
-    QHash<P2MatchMask,P2DocOpcode> m_opcodes;       //!< hash of opcodes for P2MatchMask pairts
-    QMap<uint,P2MatchMask> m_masks;                 //!< map of number of 1 bits to match/mask pairs
-    QList<uint> m_ones;                             //!< list of number of 1 bits
+    QHash<P2MatchMask,P2DocOpcode> m_opcodes;                           //!< hash of P2DocOpcodes for P2MatchMask pairs
+    QMultiHash<p2_LONG,P2MatchMask> m_matches;                          //!< multi hash of P2MatchMask pairs for masks
+    QMap<uint,P2MatchMask> m_masks;                                     //!< map of number of 1 bits to match/mask pairs
+    QList<uint> m_ones;                                                 //!< list of number of 1 bits
+
+    static const QString format_pattern(const p2_LONG pattern, const QChar& zero = QChar('0'), const QChar& one = QChar('1'));
+
+    const P2MatchMask opcode_matchmask(const p2_LONG opcode) const;
+    const P2DocOpcode opcode_of(const p2_LONG opcode) const;
+    const QStringList html_opcode(P2DocOpcode op) const;
 
     static p2_LONG opcode_inst7(const p2_inst7_e instr);
     static p2_LONG opcode_inst8(const p2_inst8_e instr);
@@ -100,14 +113,15 @@ private:
     static p2_LONG opcode_opsrc(const p2_opsrc_e instr);
     static p2_LONG opcode_opx24(const p2_opx24_e instr);
 
-    P2DocOpcode& make_pattern(p2_LONG instr, const char* src, const p2_LONG instmask, const char* _func, p2_LONG mode = 0);
+    P2DocOpcode make_pattern(p2_LONG instr, const char* src, const p2_LONG instmask, const char* _func, p2_LONG mode = 0);
 
-    P2DocOpcode& make_pattern(const char* _func, p2_inst7_e instr, const char* pat, p2_LONG mode = 0);
-    P2DocOpcode& make_pattern(const char* _func, p2_inst8_e instr, const char* pat, p2_LONG mode = 0);
-    P2DocOpcode& make_pattern(const char* _func, p2_inst9_e instr, const char* pat, p2_LONG mode = 0);
-    P2DocOpcode& make_pattern(const char* _func, p2_opdst_e instr, const char* pat, p2_LONG mode = 0);
-    P2DocOpcode& make_pattern(const char* _func, p2_opsrc_e instr, const char* pat, p2_LONG mode = 0);
-    P2DocOpcode& make_pattern(const char* _func, p2_opx24_e instr, const char* pat, p2_LONG mode = 0);
+    P2DocOpcode make_pattern(const char* _func, p2_inst7_e instr, const char* pat, p2_LONG mode = 0);
+    P2DocOpcode make_pattern(const char* _func, p2_inst8_e instr, const char* pat, p2_LONG mode = 0);
+    P2DocOpcode make_pattern(const char* _func, p2_inst9_e instr, const char* pat, p2_LONG mode = 0);
+    P2DocOpcode make_pattern(const char* _func, p2_opdst_e instr, const char* pat, p2_LONG mode = 0);
+    P2DocOpcode make_pattern(const char* _func, p2_opsrc_e instr, const char* pat, p2_LONG mode = 0);
+    P2DocOpcode make_pattern(const char* _func, p2_opx24_e instr, const char* pat, p2_LONG mode = 0);
+    P2DocOpcode make_pattern(const char* _func, p2_opsrc_e instr, p2_inst9_e inst9, const char* pat, p2_LONG mode = 0);
 
     void doc_nop(p2_inst7_e instr);
     void doc_ror(p2_inst7_e instr);
@@ -276,10 +290,10 @@ private:
     void doc_popa(p2_inst7_e instr);
     void doc_popb(p2_inst7_e instr);
     void doc_calld(p2_inst7_e instr);
-    void doc_resi3(p2_inst7_e instr);
-    void doc_resi2(p2_inst7_e instr);
-    void doc_resi1(p2_inst7_e instr);
-    void doc_resi0(p2_inst7_e instr);
+    void doc_resi3(p2_inst9_e instr);
+    void doc_resi2(p2_inst9_e instr);
+    void doc_resi1(p2_inst9_e instr);
+    void doc_resi0(p2_inst9_e instr);
     void doc_reti3(p2_inst7_e instr);
     void doc_reti2(p2_inst7_e instr);
     void doc_reti1(p2_inst7_e instr);
@@ -479,23 +493,23 @@ private:
     void doc_setpix(p2_opsrc_e instr);
     void doc_cogatn(p2_opsrc_e instr);
 
-    void doc_testp_w(p2_opsrc_e instr);
-    void doc_testpn_w(p2_opsrc_e instr);
-    void doc_testp_and(p2_opsrc_e instr);
-    void doc_testpn_and(p2_opsrc_e instr);
-    void doc_testp_or(p2_opsrc_e instr);
-    void doc_testpn_or(p2_opsrc_e instr);
-    void doc_testp_xor(p2_opsrc_e instr);
-    void doc_testpn_xor(p2_opsrc_e instr);
+    void doc_testp_w(p2_opsrc_e instr, p2_inst9_e inst9);
+    void doc_testpn_w(p2_opsrc_e instr, p2_inst9_e inst9);
+    void doc_testp_and(p2_opsrc_e instr, p2_inst9_e inst9);
+    void doc_testpn_and(p2_opsrc_e instr, p2_inst9_e inst9);
+    void doc_testp_or(p2_opsrc_e instr, p2_inst9_e inst9);
+    void doc_testpn_or(p2_opsrc_e instr, p2_inst9_e inst9);
+    void doc_testp_xor(p2_opsrc_e instr, p2_inst9_e inst9);
+    void doc_testpn_xor(p2_opsrc_e instr, p2_inst9_e inst9);
 
-    void doc_dirl(p2_opsrc_e instr);
-    void doc_dirh(p2_opsrc_e instr);
-    void doc_dirc(p2_opsrc_e instr);
-    void doc_dirnc(p2_opsrc_e instr);
-    void doc_dirz(p2_opsrc_e instr);
-    void doc_dirnz(p2_opsrc_e instr);
-    void doc_dirrnd(p2_opsrc_e instr);
-    void doc_dirnot(p2_opsrc_e instr);
+    void doc_dirl(p2_opsrc_e instr, p2_inst9_e inst9);
+    void doc_dirh(p2_opsrc_e instr, p2_inst9_e inst9);
+    void doc_dirc(p2_opsrc_e instr, p2_inst9_e inst9);
+    void doc_dirnc(p2_opsrc_e instr, p2_inst9_e inst9);
+    void doc_dirz(p2_opsrc_e instr, p2_inst9_e inst9);
+    void doc_dirnz(p2_opsrc_e instr, p2_inst9_e inst9);
+    void doc_dirrnd(p2_opsrc_e instr, p2_inst9_e inst9);
+    void doc_dirnot(p2_opsrc_e instr, p2_inst9_e inst9);
 
     void doc_outl(p2_opsrc_e instr);
     void doc_outh(p2_opsrc_e instr);

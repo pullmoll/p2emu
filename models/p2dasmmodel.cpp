@@ -34,6 +34,7 @@
 #include <QColor>
 #include "p2dasm.h"
 #include "p2dasmmodel.h"
+#include "p2doc.h"
 
 static quint32 bin2hex(const QString& str)
 {
@@ -134,6 +135,7 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
     const column_e column = static_cast<column_e>(index.column());
     const p2_LONG PC = static_cast<p2_LONG>(index.row());
     const p2_LONG addr = PC * 4;
+    p2_opcode_u IR = {m_dasm->rd_mem(addr)};
     QString opcode;
     QString instruction;
     QString description;
@@ -154,9 +156,7 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
             break;
         case c_Opcode: // Opcode string
             {
-                p2_opcode_u IR;
                 known = m_dasm->dasm(PC, &opcode);
-                IR.opcode = bin2hex(opcode);
                 result = format_opcode(IR, m_format);
             }
             break;
@@ -178,6 +178,13 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
         break;
 
     case Qt::ToolTipRole:
+        switch (column) {
+        case c_Instruction:
+            result = Doc.html_opcode(IR.opcode).join(QChar::LineFeed);
+            break;
+        default:
+            break;
+        }
         break;
 
     case Qt::StatusTipRole:

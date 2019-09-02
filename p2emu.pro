@@ -46,7 +46,7 @@ SOURCES += \
 		dialogs/about.cpp \
 		dialogs/gotoaddress.cpp \
 		dialogs/gotoline.cpp \
-		dialogs/p2asmlisting.cpp \
+		dialogs/textbrowser.cpp \
 		models/p2asmmodel.cpp \
 		models/p2dasmmodel.cpp \
 		models/p2symbolsmodel.cpp \
@@ -76,7 +76,7 @@ HEADERS += \
 		dialogs/about.h \
 		dialogs/gotoaddress.h \
 		dialogs/gotoline.h \
-		dialogs/p2asmlisting.h \
+		dialogs/textbrowser.h \
 		models/p2asmmodel.h \
 		models/p2dasmmodel.h \
 		models/p2symbolsmodel.h \
@@ -89,7 +89,7 @@ FORMS += \
 		dialogs/about.ui \
 		dialogs/gotoaddress.ui \
 		dialogs/gotoline.ui \
-		dialogs/p2asmlisting.ui \
+		dialogs/textbrowser.ui \
 		views/p2cogview.ui \
 		views/p2hubview.ui
 

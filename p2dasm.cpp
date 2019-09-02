@@ -1626,6 +1626,11 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
     return true;
 }
 
+p2_LONG P2Dasm::rd_mem(p2_LONG addr)
+{
+    return COG->rd_mem(addr);
+}
+
 /**
  * @brief Return the memory size in the HUB
  * @return memory size in bytes

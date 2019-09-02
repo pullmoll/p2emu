@@ -45,9 +45,10 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "about.h"
+#include "p2doc.h"
 #include "gotoaddress.h"
 #include "gotoline.h"
-#include "p2asmlisting.h"
+#include "textbrowser.h"
 #include "p2hub.h"
 #include "p2cog.h"
 #include "p2asm.h"
@@ -107,9 +108,6 @@ MainWindow::MainWindow(QWidget *parent)
 {
     qsrand(static_cast<uint>(QDateTime::currentMSecsSinceEpoch()));
     ui->setupUi(this);
-    connect(ui->action_Quit, SIGNAL(triggered(bool)), this, SLOT(close()));
-    connect(ui->action_About, SIGNAL(triggered(bool)), this, SLOT(about()));
-    connect(ui->action_AboutQt5, SIGNAL(triggered(bool)), this, SLOT(aboutQt5()));
 
     setWindowTitle(QString("%1 v%2").arg(qApp->applicationName()).arg(qApp->applicationVersion()));
     setupMenu();
@@ -248,6 +246,14 @@ void MainWindow::about()
 void MainWindow::aboutQt5()
 {
     qApp->aboutQt();
+}
+
+void MainWindow::help_opcodes()
+{
+    QStringList html = Doc.html_opcodes();
+    TextBrowser dlg;
+    dlg.set_html(html);
+    dlg.exec();
 }
 
 void MainWindow::goto_hex(const QString& address)
@@ -753,6 +759,11 @@ void MainWindow::setupTabWidget()
 
 void MainWindow::setupMenu()
 {
+    connect(ui->action_Quit, SIGNAL(triggered(bool)), this, SLOT(close()));
+    connect(ui->action_About, SIGNAL(triggered(bool)), this, SLOT(about()));
+    connect(ui->action_AboutQt5, SIGNAL(triggered(bool)), this, SLOT(aboutQt5()));
+    connect(ui->action_P2_opcodes, SIGNAL(triggered(bool)), this, SLOT(help_opcodes()));
+
     connect(ui->action_Open_src, SIGNAL(triggered()), SLOT(openSource()));
     connect(ui->action_Open_src_random, SIGNAL(triggered()), SLOT(loadSourceRandom()));
     // connect(ui->action_Open_obj, SIGNAL(triggered()), SLOT(openObject()));

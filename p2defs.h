@@ -543,29 +543,29 @@ typedef enum {
     p2_OPSRC_COGATN             = 0x03f,
 
     p2_OPSRC_TESTP_W_DIRL       = 0x040,
-        p2_OPSRC_TESTP_W        = p2_OPSRC_TESTP_W_DIRL,
-        p2_OPSRC_DIRL           = p2_OPSRC_TESTP_W_DIRL,
+        p2_OPSRC_TESTP_W        = p2_OPSRC_TESTP_W_DIRL,        //!< with C != Z
+        p2_OPSRC_DIRL           = p2_OPSRC_TESTP_W_DIRL,        //!< with C == Z
     p2_OPSRC_TESTPN_W_DIRH      = 0x041,
-        p2_OPSRC_TESTPN_W       = p2_OPSRC_TESTPN_W_DIRH,
-        p2_OPSRC_DIRH           = p2_OPSRC_TESTPN_W_DIRH,
+        p2_OPSRC_TESTPN_W       = p2_OPSRC_TESTPN_W_DIRH,       //!< with C != Z
+        p2_OPSRC_DIRH           = p2_OPSRC_TESTPN_W_DIRH,       //!< with C == Z
     p2_OPSRC_TESTP_AND_DIRC     = 0x042,
-        p2_OPSRC_TESTP_AND      = p2_OPSRC_TESTP_AND_DIRC,
-        p2_OPSRC_DIRC           = p2_OPSRC_TESTP_AND_DIRC,
+        p2_OPSRC_TESTP_AND      = p2_OPSRC_TESTP_AND_DIRC,      //!< with C != Z
+        p2_OPSRC_DIRC           = p2_OPSRC_TESTP_AND_DIRC,      //!< with C == Z
     p2_OPSRC_TESTPN_AND_DIRNC   = 0x043,
-        p2_OPSRC_TESTPN_AND     = p2_OPSRC_TESTPN_AND_DIRNC,
-        p2_OPSRC_DIRNC          = p2_OPSRC_TESTPN_AND_DIRNC,
+        p2_OPSRC_TESTPN_AND     = p2_OPSRC_TESTPN_AND_DIRNC,    //!< with C != Z
+        p2_OPSRC_DIRNC          = p2_OPSRC_TESTPN_AND_DIRNC,    //!< with C == Z
     p2_OPSRC_TESTP_OR_DIRZ      = 0x044,
-        p2_OPSRC_TESTP_OR       = p2_OPSRC_TESTP_OR_DIRZ,
-        p2_OPSRC_DIRZ           = p2_OPSRC_TESTP_OR_DIRZ,
+        p2_OPSRC_TESTP_OR       = p2_OPSRC_TESTP_OR_DIRZ,       //!< with C != Z
+        p2_OPSRC_DIRZ           = p2_OPSRC_TESTP_OR_DIRZ,       //!< with C == Z
     p2_OPSRC_TESTPN_OR_DIRNZ    = 0x045,
-        p2_OPSRC_TESTPN_OR      = p2_OPSRC_TESTPN_OR_DIRNZ,
-        p2_OPSRC_DIRNZ          = p2_OPSRC_TESTPN_OR_DIRNZ,
+        p2_OPSRC_TESTPN_OR      = p2_OPSRC_TESTPN_OR_DIRNZ,     //!< with C != Z
+        p2_OPSRC_DIRNZ          = p2_OPSRC_TESTPN_OR_DIRNZ,     //!< with C == Z
     p2_OPSRC_TESTP_XOR_DIRRND   = 0x046,
-        p2_OPSRC_TESTP_XOR      = p2_OPSRC_TESTP_XOR_DIRRND,
-        p2_OPSRC_DIRRND         = p2_OPSRC_TESTP_XOR_DIRRND,
+        p2_OPSRC_TESTP_XOR      = p2_OPSRC_TESTP_XOR_DIRRND,    //!< with C != Z
+        p2_OPSRC_DIRRND         = p2_OPSRC_TESTP_XOR_DIRRND,    //!< with C == Z
     p2_OPSRC_TESTPN_XOR_DIRNOT  = 0x047,
-        p2_OPSRC_TESTPN_XOR     = p2_OPSRC_TESTPN_XOR_DIRNOT,
-        p2_OPSRC_DIRNOT         = p2_OPSRC_TESTPN_XOR_DIRNOT,
+        p2_OPSRC_TESTPN_XOR     = p2_OPSRC_TESTPN_XOR_DIRNOT,   //!< with C != Z
+        p2_OPSRC_DIRNOT         = p2_OPSRC_TESTPN_XOR_DIRNOT,   //!< with C == Z
 
     p2_OPSRC_OUTL               = 0x048,
     p2_OPSRC_OUTH               = 0x049,
@@ -796,6 +796,46 @@ typedef enum {
     p2_TESTBN_XORC              = INST9(p2_TESTBN_XOR_BITNOT,1,0),
     p2_BITNOT_WCZ               = INST9(p2_TESTBN_XOR_BITNOT,1,1),
 
+    p2_DIRL_eol                 = INST9(p2_OPSRC,0,0),
+    p2_TESTP_WZ                 = INST9(p2_OPSRC,0,1),
+    p2_TESTP_WC                 = INST9(p2_OPSRC,1,0),
+    p2_DIRL_WCZ                 = INST9(p2_OPSRC,1,1),
+
+    p2_DIRH_eol                 = INST9(p2_OPSRC,0,0),
+    p2_TESTPN_WZ                = INST9(p2_OPSRC,0,1),
+    p2_TESTPN_WC                = INST9(p2_OPSRC,1,0),
+    p2_DIRH_WCZ                 = INST9(p2_OPSRC,1,1),
+
+    p2_DIRC_eol                 = INST9(p2_OPSRC,0,0),
+    p2_TESTP_ANDZ               = INST9(p2_OPSRC,0,1),
+    p2_TESTP_ANDC               = INST9(p2_OPSRC,1,0),
+    p2_DIRC_WCZ                 = INST9(p2_OPSRC,1,1),
+
+    p2_DIRNC_eol                = INST9(p2_OPSRC,0,0),
+    p2_TESTPN_ANDZ              = INST9(p2_OPSRC,0,1),
+    p2_TESTPN_ANDC              = INST9(p2_OPSRC,1,0),
+    p2_DIRNC_WCZ                = INST9(p2_OPSRC,1,1),
+
+    p2_DIRZ_eol                 = INST9(p2_OPSRC,0,0),
+    p2_TESTP_ORZ                = INST9(p2_OPSRC,0,1),
+    p2_TESTP_ORC                = INST9(p2_OPSRC,1,0),
+    p2_DIRZ_WCZ                 = INST9(p2_OPSRC,1,1),
+
+    p2_DIRNZ_eol                = INST9(p2_OPSRC,0,0),
+    p2_TESTPN_ORZ               = INST9(p2_OPSRC,0,1),
+    p2_TESTPN_ORC               = INST9(p2_OPSRC,1,0),
+    p2_DIRNZ_WCZ                = INST9(p2_OPSRC,1,1),
+
+    p2_DIRRND_eol               = INST9(p2_OPSRC,0,0),
+    p2_TESTP_XORZ               = INST9(p2_OPSRC,0,1),
+    p2_TESTP_XORC               = INST9(p2_OPSRC,1,0),
+    p2_DIRRND_WCZ               = INST9(p2_OPSRC,1,1),
+
+    p2_DIRNOT_eol               = INST9(p2_OPSRC,0,0),
+    p2_TESTPN_XORZ              = INST9(p2_OPSRC,0,1),
+    p2_TESTPN_XORC              = INST9(p2_OPSRC,1,0),
+    p2_DIRNOT_WCZ               = INST9(p2_OPSRC,1,1),
+
     p2_SETWORD_ALTSW            = INST9(p2_SETWORD_GETWORD,0,0),
     p2_SETWORD                  = INST9(p2_SETWORD_GETWORD,0,1),
     p2_GETWORD_ALTGW            = INST9(p2_SETWORD_GETWORD,1,0),
@@ -855,6 +895,16 @@ typedef enum {
     p2_TJNF                     = INST9(p2_TJF_TJNF_TJS_TJNS,0,1),
     p2_TJS                      = INST9(p2_TJF_TJNF_TJS_TJNS,1,0),
     p2_TJNS                     = INST9(p2_TJF_TJNF_TJS_TJNS,1,1),
+
+    p2_RESI0                    = INST9(p2_CALLD,0,0),
+    p2_RESI1                    = INST9(p2_CALLD,0,1),
+    p2_RESI2                    = INST9(p2_CALLD,1,0),
+    p2_RESI3                    = INST9(p2_CALLD,1,1),
+
+    p2_RETI0                    = INST9(p2_CALLD,0,0),
+    p2_RETI1                    = INST9(p2_CALLD,0,1),
+    p2_RETI2                    = INST9(p2_CALLD,1,0),
+    p2_RETI3                    = INST9(p2_CALLD,1,1),
 
     p2_TJV                      = INST9(p2_TJV_OPDST_empty,0,0),
     p2_OPDST                    = INST9(p2_TJV_OPDST_empty,0,1),

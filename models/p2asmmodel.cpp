@@ -32,6 +32,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 #include "p2asmmodel.h"
+#include "p2util.h"
 
 static const QString style_nowrap = QStringLiteral("style='white-space:nowrap;'");
 static const QString style_left = QStringLiteral("style='text-align:left;'");
@@ -566,16 +567,6 @@ static const QString html_td(const QString& text)
             .arg(text);
 }
 
-static const QString esc(const QString& src)
-{
-    QString result = src;
-    result.replace(QChar('&'), QStringLiteral("&amp;"));
-    result.replace(QChar('<'), QStringLiteral("&lt;"));
-    result.replace(QChar('>'), QStringLiteral("&gt;"));
-    return result;
-}
-
-
 QString P2AsmModel::opcodeToolTip(const P2Opcode& IR) const
 {
     QStringList html = html_head();
@@ -627,11 +618,11 @@ QString P2AsmModel::tokenToolTip(const P2Words& words) const
     for (int i = 0; i < words.count(); i++) {
         const P2Word& word = words[i];
         const QString& token_id = QString("%1").arg(word.tok(), 3, 16, QChar('0'));
-        const QString& token_str = esc(Token.enum_name(word.tok()));
+        const QString& token_str = P2Util::esc(Token.enum_name(word.tok()));
         const QString& token_id_str = QString("%1: %2").arg(token_id).arg(token_str);
-        const QString& type_names = esc(Token.type_names(word.tok()).join(QChar::Space));
+        const QString& type_names = P2Util::esc(Token.type_names(word.tok()).join(QChar::Space));
         const QString& pos_len = QString("@%1 +%2").arg(word.pos()).arg(word.len());
-        const QString& source = esc(word.str());
+        const QString& source = P2Util::esc(word.str());
 
         html += html_start_tr();
         html += html_td(token_id_str);

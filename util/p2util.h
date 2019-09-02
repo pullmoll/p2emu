@@ -34,6 +34,8 @@ public:
     static p2_BYTE reverse(p2_BYTE val);
     static p2_QUAD reverse(p2_QUAD val, uint bits);
     static p2_QUAD sqrt(p2_QUAD val, int fract_bits = 64, p2_QUAD* fraction = nullptr);
+
+    static const QString esc(const QString& src);
 };
 
 extern P2Util Util;
