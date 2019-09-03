@@ -205,8 +205,8 @@ private:
     P2Atom parse_dst(P2Opcode::ImmFlag flag = P2Opcode::imm_none);
     P2Atom parse_src(P2Opcode::ImmFlag flag = P2Opcode::imm_none);
     bool end_of_line();
-    bool parse_comma();
-    void optional_comma();
+    bool mandatory_COMMA();
+    void optional_COMMA();
     bool optional_WCZ();
     bool optional_WC();
     bool optional_WZ();
@@ -706,10 +706,10 @@ private:
     bool asm_call_abs();
     bool asm_calla_abs();
     bool asm_callb_abs();
-    bool asm_calld_pa_abs();
-    bool asm_calld_pb_abs();
-    bool asm_calld_ptra_abs();
-    bool asm_calld_ptrb_abs();
+    bool asm_calld_abs_pa();
+    bool asm_calld_abs_pb();
+    bool asm_calld_abs_ptra();
+    bool asm_calld_abs_ptrb();
     bool asm_loc();
     bool asm_loc_pa();
     bool asm_loc_pb();

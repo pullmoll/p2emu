@@ -2405,20 +2405,20 @@ int P2Cog::decode()
         cycles = op_callb_abs();
         break;
 
-    case p2_CALLD_PA_ABS:
-        cycles = op_calld_pa_abs();
+    case p2_CALLD_ABS_PA:
+        cycles = op_calld_abs_pa();
         break;
 
-    case p2_CALLD_PB_ABS:
-        cycles = op_calld_pb_abs();
+    case p2_CALLD_ABS_PB:
+        cycles = op_calld_abs_pb();
         break;
 
-    case p2_CALLD_PTRA_ABS:
-        cycles = op_calld_ptra_abs();
+    case p2_CALLD_ABS_PTRA:
+        cycles = op_calld_abs_ptra();
         break;
 
-    case p2_CALLD_PTRB_ABS:
-        cycles = op_calld_ptrb_abs();
+    case p2_CALLD_ABS_PTRB:
+        cycles = op_calld_abs_ptrb();
         break;
 
     case p2_LOC_PA:
@@ -2437,14 +2437,14 @@ int P2Cog::decode()
         cycles = op_loc_ptrb();
         break;
 
-    case p2_AUGS:
+    case p2_AUGS_00:
     case p2_AUGS_01:
     case p2_AUGS_10:
     case p2_AUGS_11:
         cycles = op_augs();
         break;
 
-    case p2_AUGD:
+    case p2_AUGD_00:
     case p2_AUGD_01:
     case p2_AUGD_10:
     case p2_AUGD_11:
@@ -9673,7 +9673,7 @@ int P2Cog::op_callb_abs()
  * If R = 1, PC += A, else PC = A.
  *</pre>
  */
-int P2Cog::op_calld_pa_abs()
+int P2Cog::op_calld_abs_pa()
 {
     const p2_LONG stack = (C << 31) | (Z << 30) | PC;
     const p2_LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
@@ -9692,7 +9692,7 @@ int P2Cog::op_calld_pa_abs()
  * If R = 1, PC += A, else PC = A.
  *</pre>
  */
-int P2Cog::op_calld_pb_abs()
+int P2Cog::op_calld_abs_pb()
 {
     const p2_LONG stack = (C << 31) | (Z << 30) | PC;
     const p2_LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
@@ -9711,7 +9711,7 @@ int P2Cog::op_calld_pb_abs()
  * If R = 1, PC += A, else PC = A.
  *</pre>
  */
-int P2Cog::op_calld_ptra_abs()
+int P2Cog::op_calld_abs_ptra()
 {
     const p2_LONG stack = (C << 31) | (Z << 30) | PC;
     const p2_LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
@@ -9730,7 +9730,7 @@ int P2Cog::op_calld_ptra_abs()
  * If R = 1, PC += A, else PC = A.
  *</pre>
  */
-int P2Cog::op_calld_ptrb_abs()
+int P2Cog::op_calld_abs_ptrb()
 {
     const p2_LONG stack = (C << 31) | (Z << 30) | PC;
     const p2_LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;

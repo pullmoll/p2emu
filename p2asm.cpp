@@ -2290,7 +2290,7 @@ QStringList P2Asm::results_instruction(bool wr_mem)
     // Do we need to generate an AUGD instruction?
     if (m_IR.AUGD.isValid()) {
         p2_LONG value = m_IR.AUGD.value<p2_LONG>() & AUG_MASK;
-        P2Opcode IR(p2_AUGD, p2_PC_ORGH_t(PC, ORGH));
+        P2Opcode IR(p2_AUGD_00, p2_PC_ORGH_t(PC, ORGH));
         IR.u.opcode |= value >> AUG_SHIFT;
 
         output += QString("%1 %2 [%3] %4")
@@ -2310,7 +2310,7 @@ QStringList P2Asm::results_instruction(bool wr_mem)
     // Do we need to generate an AUGS instruction?
     if (m_IR.AUGS.isValid()) {
         p2_LONG value = m_IR.AUGS.value<p2_LONG>() & AUG_MASK;
-        P2Opcode IR(p2_AUGS, p2_PC_ORGH_t(PC, ORGH));
+        P2Opcode IR(p2_AUGS_00, p2_PC_ORGH_t(PC, ORGH));
         IR.u.opcode |= value >> AUG_SHIFT;
 
         output += QString("%1 %2 [%3] %4")
@@ -3551,7 +3551,7 @@ bool P2Asm::end_of_line()
  *
  * @return true if comma found, false otherwise
  */
-bool P2Asm::parse_comma()
+bool P2Asm::mandatory_COMMA()
 {
     if (!skip_comments()) {
         m_errors += tr("Expected %1 but found %2.")
@@ -3575,7 +3575,7 @@ bool P2Asm::parse_comma()
  * @brief An optioncal comma is skipped
  *
  */
-void P2Asm::optional_comma()
+void P2Asm::optional_COMMA()
 {
     if (!skip_comments())
         return;
@@ -3781,7 +3781,7 @@ bool P2Asm::parse_D_IM_S()
         P2Atom src = parse_src();
     } else {
         P2Atom dst = parse_dst();
-        if (!parse_comma())
+        if (!mandatory_COMMA())
             return false;
         P2Atom src = parse_src(P2Opcode::imm_to_im);
     }
@@ -3919,7 +3919,7 @@ bool P2Asm::parse_D_IM_S_WCZ()
     } else {
         P2Atom dst = parse_dst();
 
-        if (!parse_comma())
+        if (!mandatory_COMMA())
             return false;
 
         P2Atom src = parse_src(P2Opcode::imm_to_im);
@@ -3938,7 +3938,7 @@ bool P2Asm::parse_D_IM_S_ANDCZ()
 {
     P2Atom dst = parse_dst();
 
-    if (!parse_comma())
+    if (!mandatory_COMMA())
         return false;
 
     P2Atom src = parse_src(P2Opcode::imm_to_im);
@@ -3956,7 +3956,7 @@ bool P2Asm::parse_D_IM_S_ORCZ()
 {
     P2Atom dst = parse_dst();
 
-    if (!parse_comma())
+    if (!mandatory_COMMA())
         return false;
 
     P2Atom src = parse_src(P2Opcode::imm_to_im);
@@ -3974,7 +3974,7 @@ bool P2Asm::parse_D_IM_S_XORCZ()
 {
     P2Atom dst = parse_dst();
 
-    if (!parse_comma())
+    if (!mandatory_COMMA())
         return false;
 
     P2Atom src = parse_src(P2Opcode::imm_to_im);
@@ -3996,7 +3996,7 @@ bool P2Asm::parse_D_IM_S_WC()
         P2Atom src = parse_src();
     } else {
         P2Atom dst = parse_dst();
-        if (!parse_comma())
+        if (!mandatory_COMMA())
             return false;
         P2Atom src = parse_src(P2Opcode::imm_to_im);
     }
@@ -4018,7 +4018,7 @@ bool P2Asm::parse_D_IM_S_WZ()
         P2Atom src = parse_src();
     } else {
         P2Atom dst = parse_dst();
-        if (!parse_comma())
+        if (!mandatory_COMMA())
             return false;
         P2Atom src = parse_src(P2Opcode::imm_to_im);
     }
@@ -4040,7 +4040,7 @@ bool P2Asm::parse_WZ_D_IM_S()
         P2Atom src = parse_src();
     } else {
         P2Atom dst = parse_dst(P2Opcode::imm_to_wz);
-        if (!parse_comma())
+        if (!mandatory_COMMA())
             return false;
         P2Atom src = parse_src(P2Opcode::imm_to_im);
     }
@@ -4060,7 +4060,7 @@ bool P2Asm::parse_WZ_D_IM_S_WC()
         P2Atom src = parse_src();
     } else {
         P2Atom dst = parse_dst(P2Opcode::imm_to_wz);
-        if (!parse_comma())
+        if (!mandatory_COMMA())
             return false;
         P2Atom src = parse_src(P2Opcode::imm_to_im);
     }
@@ -4076,12 +4076,12 @@ bool P2Asm::parse_D_IM_S_NNN(uint max)
 {
     P2Atom dst = parse_dst();
 
-    if (!parse_comma())
+    if (!mandatory_COMMA())
         return false;
 
     P2Atom src = parse_src(P2Opcode::imm_to_im);
 
-    if (!parse_comma())
+    if (!mandatory_COMMA())
         return false;
 
     if (m_idx < m_cnt) {
@@ -4158,7 +4158,7 @@ bool P2Asm::parse_PTRx_PC_ABS()
         emit Error(m_pass, m_lineno, m_errors.last());
         return false;
     }
-    if (!parse_comma())
+    if (!mandatory_COMMA())
         return false;
 
     P2Atom atom = parse_expression();
@@ -4245,7 +4245,7 @@ bool P2Asm::asm_enum_initial()
     if (sec_con == m_section) {
         if (!skip_comments())
             return false;
-        if (!parse_comma())
+        if (!mandatory_COMMA())
             return false;
         while (m_idx < m_cnt) {
             if (!skip_comments())
@@ -4285,7 +4285,7 @@ bool P2Asm::asm_enum_continue()
     P2Atom atom = m_enum;
     m_IR.set_equ(atom);
     if (sec_con == m_section) {
-        if (!parse_comma())
+        if (!mandatory_COMMA())
             return false;
         while (m_idx < m_cnt) {
             if (!skip_comments())
@@ -4528,7 +4528,7 @@ bool P2Asm::asm_byte()
             bytes = atom.to_array();
             m_data.append(bytes);
         }
-        optional_comma();
+        optional_COMMA();
     }
     if (m_data.size() > 0) {
         if (m_data.size() > 1)
@@ -4553,7 +4553,7 @@ bool P2Asm::asm_word()
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
         m_data.append(atom);
-        optional_comma();
+        optional_COMMA();
     }
     if (m_data.size() > 0)
         m_data.set_type(P2Atom::Word);
@@ -4585,7 +4585,7 @@ bool P2Asm::asm_long()
             p2_LONG l = atom.to_long();
             m_data.append_uint(P2Atom::Long, l);
         }
-        optional_comma();
+        optional_COMMA();
     }
     if (m_data.size() > 0)
         m_data.set_type(P2Atom::Long);
@@ -4608,7 +4608,7 @@ bool P2Asm::asm_res()
         P2Atom atom = parse_expression();
         p2_LONG count = atom.to_long();
         m_data.append(QByteArray(4 * static_cast<int>(count), '\0'));
-        optional_comma();
+        optional_COMMA();
     }
     m_data.set_type(P2Atom::Long);
 
@@ -4642,7 +4642,7 @@ bool P2Asm::asm_file()
             emit Error(m_pass, m_lineno, m_errors.last());
             return false;
         }
-        optional_comma();
+        optional_COMMA();
     }
     return end_of_line();
 
@@ -11504,7 +11504,7 @@ bool P2Asm::asm_modcz()
     m_IR.u.op.src = p2_OPSRC_WRNZ_MODCZ;
 
     p2_cond_e cccc = parse_modcz();
-    if (!parse_comma())
+    if (!mandatory_COMMA())
         return false;
 
     p2_cond_e zzzz = parse_modcz();
@@ -11682,10 +11682,10 @@ bool P2Asm::asm_callb_abs()
  * If R = 1, PC += A, else PC = A.
  *</pre>
  */
-bool P2Asm::asm_calld_pa_abs()
+bool P2Asm::asm_calld_abs_pa()
 {
     next();
-    m_IR.set_inst7(p2_CALLD_PA_ABS);
+    m_IR.set_inst7(p2_CALLD_ABS_PA);
     return parse_PC_ABS();
 }
 
@@ -11699,10 +11699,10 @@ bool P2Asm::asm_calld_pa_abs()
  * If R = 1, PC += A, else PC = A.
  *</pre>
  */
-bool P2Asm::asm_calld_pb_abs()
+bool P2Asm::asm_calld_abs_pb()
 {
     next();
-    m_IR.set_inst7(p2_CALLD_PB_ABS);
+    m_IR.set_inst7(p2_CALLD_ABS_PB);
     return parse_PC_ABS();
 }
 
@@ -11716,10 +11716,10 @@ bool P2Asm::asm_calld_pb_abs()
  * If R = 1, PC += A, else PC = A.
  *</pre>
  */
-bool P2Asm::asm_calld_ptra_abs()
+bool P2Asm::asm_calld_abs_ptra()
 {
     next();
-    m_IR.set_inst7(p2_CALLD_PTRA_ABS);
+    m_IR.set_inst7(p2_CALLD_ABS_PTRA);
     return parse_PC_ABS();
 }
 
@@ -11733,10 +11733,10 @@ bool P2Asm::asm_calld_ptra_abs()
  * If R = 1, PC += A, else PC = A.
  *</pre>
  */
-bool P2Asm::asm_calld_ptrb_abs()
+bool P2Asm::asm_calld_abs_ptrb()
 {
     next();
-    m_IR.set_inst7(p2_CALLD_PTRB_ABS);
+    m_IR.set_inst7(p2_CALLD_ABS_PTRB);
     return parse_PC_ABS();
 }
 
@@ -11755,7 +11755,7 @@ bool P2Asm::asm_loc()
     next();
     P2Atom ptr = parse_dst();
     bool success = false;
-    if (!parse_comma())
+    if (!mandatory_COMMA())
         return false;
     switch (ptr.to_long()) {
     case offs_PA:
@@ -11856,7 +11856,7 @@ bool P2Asm::asm_loc_ptrb()
 bool P2Asm::asm_augs()
 {
     next();
-    m_IR.set_inst7(p2_AUGS);
+    m_IR.set_inst7(p2_AUGS_00);
     return parse_IMM23();
 }
 
@@ -11871,6 +11871,6 @@ bool P2Asm::asm_augs()
 bool P2Asm::asm_augd()
 {
     next();
-    m_IR.set_inst7(p2_AUGD);
+    m_IR.set_inst7(p2_AUGD_00);
     return parse_IMM23();
 }

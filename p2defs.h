@@ -182,6 +182,7 @@ static constexpr p2_QUAD HMAX = Q_UINT64_C(0xffffffff00000000);
 //! lower word max / mask in a 64 bit unsigned
 static constexpr p2_QUAD LMAX = Q_UINT64_C(0x00000000ffffffff);
 
+static constexpr p2_LONG p2_mask5 = (1u << 5) - 1;
 static constexpr p2_LONG p2_mask7 = (1u << 7) - 1;
 static constexpr p2_LONG p2_mask8 = (1u << 8) - 1;
 static constexpr p2_LONG p2_mask9 = (1u << 9) - 1;
@@ -189,12 +190,14 @@ static constexpr p2_LONG p2_shift_CZI = 9 + 9;
 static constexpr p2_LONG p2_shift_NNN = 1 + p2_shift_CZI;
 static constexpr p2_LONG p2_shift_NN = p2_shift_NNN;
 static constexpr p2_LONG p2_shift_N = p2_shift_NNN;
-static constexpr p2_LONG p2_shift_inst7 = 3 + 9 + 9;
-static constexpr p2_LONG p2_shift_inst8 = 2 + 9 + 9;
-static constexpr p2_LONG p2_shift_inst9 = 1 + 9 + 9;
+static constexpr p2_LONG p2_shift_inst5 = 32 - 4 - 5;
+static constexpr p2_LONG p2_shift_inst7 = 32 - 4 - 7;
+static constexpr p2_LONG p2_shift_inst8 = 32 - 4 - 8;
+static constexpr p2_LONG p2_shift_inst9 = 32 - 4 - 9;
 static constexpr p2_LONG p2_shift_opdst = 9;
 static constexpr p2_LONG p2_shift_opsrc = 0;
 
+static constexpr p2_LONG p2_mask_inst5 = p2_mask5 << p2_shift_inst5;
 static constexpr p2_LONG p2_mask_inst7 = p2_mask7 << p2_shift_inst7;
 static constexpr p2_LONG p2_mask_inst8 = p2_mask8 << p2_shift_inst8;
 static constexpr p2_LONG p2_mask_inst9 = p2_mask9 << p2_shift_inst9;
@@ -260,6 +263,9 @@ typedef enum {
     cc_always                   //!< always (default)
 }   p2_cond_e;
 
+//! define an instruction with 5 bits
+#define INST5(b4,b3,b2,b1,b0) ((b4<<4)|(b3<<3)|(b2<<2)|(b1<<1)|(b0<<0))
+
 //! define an instruction with 7 bits
 #define INST7(b6,b5,b4,b3,b2,b1,b0) ((b6<<6)|(b5<<5)|(b4<<4)|(b3<<3)|(b2<<2)|(b1<<1)|(b0))
 
@@ -268,6 +274,16 @@ typedef enum {
 
 //! extend an instruction to 9 bits using wc and wz
 #define INST9(inst,b1,b0)           ((inst<<2)|(b1<<1)|(b0))
+
+/**
+ * @brief Enumeration of the 3 instruction types using the more significant 5 of 7 bits
+ */
+typedef enum {
+    p2_CALLD_ABS                = INST5(1,1,1,0,0),
+    p2_LOC                      = INST5(1,1,1,0,1),
+    p2_AUGS                     = INST5(1,1,1,1,0),
+    p2_AUGD                     = INST5(1,1,1,1,1),
+}   p2_inst5_e;
 
 /**
  * @brief Enumeration of the 128 possible instruction types
@@ -416,22 +432,22 @@ typedef enum {
     p2_CALLA_ABS                = INST7(1,1,0,1,1,1,0),
     p2_CALLB_ABS                = INST7(1,1,0,1,1,1,1),
 
-    p2_CALLD_PA_ABS             = INST7(1,1,1,0,0,0,0),
-    p2_CALLD_PB_ABS             = INST7(1,1,1,0,0,0,1),
-    p2_CALLD_PTRA_ABS           = INST7(1,1,1,0,0,1,0),
-    p2_CALLD_PTRB_ABS           = INST7(1,1,1,0,0,1,1),
+    p2_CALLD_ABS_PA             = INST7(1,1,1,0,0,0,0),
+    p2_CALLD_ABS_PB             = INST7(1,1,1,0,0,0,1),
+    p2_CALLD_ABS_PTRA           = INST7(1,1,1,0,0,1,0),
+    p2_CALLD_ABS_PTRB           = INST7(1,1,1,0,0,1,1),
 
     p2_LOC_PA                   = INST7(1,1,1,0,1,0,0),
     p2_LOC_PB                   = INST7(1,1,1,0,1,0,1),
     p2_LOC_PTRA                 = INST7(1,1,1,0,1,1,0),
     p2_LOC_PTRB                 = INST7(1,1,1,0,1,1,1),
 
-    p2_AUGS                     = INST7(1,1,1,1,0,0,0),
+    p2_AUGS_00                  = INST7(1,1,1,1,0,0,0),
     p2_AUGS_01                  = INST7(1,1,1,1,0,0,1),
     p2_AUGS_10                  = INST7(1,1,1,1,0,1,0),
     p2_AUGS_11                  = INST7(1,1,1,1,0,1,1),
 
-    p2_AUGD                     = INST7(1,1,1,1,1,0,0),
+    p2_AUGD_00                  = INST7(1,1,1,1,1,0,0),
     p2_AUGD_01                  = INST7(1,1,1,1,1,0,1),
     p2_AUGD_10                  = INST7(1,1,1,1,1,1,0),
     p2_AUGD_11                  = INST7(1,1,1,1,1,1,1),
@@ -1234,23 +1250,23 @@ extern const QString template_str_description;
 extern const QString key_tv_asm;
 
 typedef enum {
-    color_source,
-    color_comment,
-    color_comma,
-    color_str_const,
-    color_bin_const,
-    color_byt_const,
-    color_dec_const,
-    color_hex_const,
-    color_real_const,
-    color_locsym,
-    color_symbol,
-    color_expression,
-    color_section,
-    color_conditional,
-    color_modzc_param,
-    color_instruction,
-    color_wcz_suffix,
+    p2_color_source,
+    p2_color_comment,
+    p2_color_comma,
+    p2_color_str_const,
+    p2_color_bin_const,
+    p2_color_byt_const,
+    p2_color_dec_const,
+    p2_color_hex_const,
+    p2_color_real_const,
+    p2_color_locsym,
+    p2_color_symbol,
+    p2_color_expression,
+    p2_color_section,
+    p2_color_conditional,
+    p2_color_modzc_param,
+    p2_color_instruction,
+    p2_color_wcz_suffix,
 }   p2_palette_e;
 
 extern QColor p2_palette(p2_palette_e pal, bool highlight = false);

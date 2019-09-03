@@ -69,19 +69,16 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
 
     // fill the background
     painter->setBackgroundMode(Qt::OpaqueMode);
+    QBrush brush = opt.backgroundBrush;
     if (highlight) {
-        int size = painter->pen().width();
-        QBrush brush = opt.backgroundBrush;
-        brush.setColor(brush.color().darker(105));
-        painter->fillRect(opt.rect.adjusted(0,0,-size,-size), brush);
-        painter->drawRect(opt.rect);
-    } else {
-        painter->fillRect(opt.rect, opt.backgroundBrush);
+        QColor color(0x7f,0xef,0xff,0x7f);
+        brush.setColor(color.lighter(115));
     }
+    painter->fillRect(opt.rect, brush);
 
     painter->setBackgroundMode(Qt::TransparentMode);
     painter->setFont(opt.font);
-    painter->setPen(p2_palette(color_source, highlight));
+    painter->setPen(p2_palette(p2_color_source, highlight));
 
     // paint all text character wise to collect the bounding rects
     int pos = 0;
@@ -95,70 +92,11 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     foreach(const P2Word& word, words) {
         const int len = word.len();
         int pos = word.pos();
-        const QString text = line.mid(pos, len);
+        const QStringRef text(&line, pos, len);
 
         QPalette pal;
-        QColor color = p2_palette(color_source, highlight);
-
         p2_token_e tok = word.tok();
-        switch (tok) {
-        case t_comment:
-        case t_comment_eol:
-        case t_comment_lcurly:
-        case t_comment_rcurly:
-            color = p2_palette(color_comment, highlight);
-            break;
-
-        case t_COMMA:
-            color = p2_palette(color_comma, highlight);
-            break;
-
-        case t_str_const:
-            color = p2_palette(color_str_const, highlight);
-            break;
-
-        case t_bin_const:
-            color = p2_palette(color_bin_const, highlight);
-            break;
-
-        case t_byt_const:
-            color = p2_palette(color_byt_const, highlight);
-            break;
-
-        case t_dec_const:
-            color = p2_palette(color_dec_const, highlight);
-            break;
-
-        case t_hex_const:
-            color = p2_palette(color_hex_const, highlight);
-            break;
-
-        case t_real_const:
-            color = p2_palette(color_real_const, highlight);
-            break;
-
-        case t_locsym:
-            color = p2_palette(color_locsym, highlight);
-            break;
-
-        case t_symbol:
-            color = p2_palette(color_symbol, highlight);
-            break;
-
-        default:
-            if (Token.is_type(tok, tm_section))
-                color = p2_palette(color_section, highlight);
-            if (Token.is_type(tok, tm_conditional))
-                color = p2_palette(color_conditional, highlight);
-            if (Token.is_type(tok, tm_mnemonic))
-                color = p2_palette(color_instruction, highlight);
-            if (Token.is_type(tok, tm_wcz_suffix))
-                color = p2_palette(color_wcz_suffix, highlight);
-            if (Token.is_type(tok, tm_expression))
-                color = p2_palette(color_expression, highlight);
-            break;
-        }
-        painter->setPen(color);
+        painter->setPen(p2_palette(tok, highlight));
 
         // draw the character
         QRect box;
@@ -172,6 +110,17 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
             painter->setPen(QColor(0x00,0x00,0xff));
             painter->drawRect(box);
         }
+    }
+
+    if (highlight) {
+        QColor tl = opt.backgroundBrush.color().darker(120);
+        QColor br = opt.backgroundBrush.color().darker(110);
+        painter->setPen(tl);
+        painter->drawLine(opt.rect.bottomLeft(), opt.rect.topLeft());
+        painter->drawLine(opt.rect.topLeft(), opt.rect.topRight());
+        painter->setPen(br);
+        painter->drawLine(opt.rect.bottomLeft(), opt.rect.bottomRight());
+        painter->drawLine(opt.rect.bottomRight(), opt.rect.topRight());
     }
 
     painter->restore();

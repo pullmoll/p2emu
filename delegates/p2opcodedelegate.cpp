@@ -98,7 +98,7 @@ void P2OpcodeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
 
     painter->setBackgroundMode(Qt::TransparentMode);
     painter->setFont(opt.font);
-    painter->setPen(p2_palette(color_source, highlight));
+    painter->setPen(p2_palette(p2_color_source, highlight));
 
     painter->drawText(rect, flags, text);
 

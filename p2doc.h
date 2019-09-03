@@ -92,7 +92,7 @@ private:
     static constexpr p2_LONG I_D_match   = p2_mask_I | p2_mask_D;       //!< I == match and D == match in pattern
     static constexpr p2_LONG D_S_match   = p2_mask_D | p2_mask_S;       //!< D == match and S == match in pattern
     static constexpr p2_LONG D_equ_S     = p2_mask_D | p2_mask_S;       //!< D == S in pattern
-    static constexpr p2_LONG INST_5      = 3 << p2_shift_inst7;         //!< 5 bit inst in pattern
+    static constexpr p2_LONG INST_5      = p2_mask_inst5;               //!< 5 bit inst in pattern
     static constexpr p2_LONG ALL_match   = FULL;                        //!< NOP
 
     QHash<P2MatchMask,P2DocOpcode> m_opcodes;                           //!< hash of P2DocOpcodes for P2MatchMask pairs
@@ -106,6 +106,7 @@ private:
     const P2DocOpcode opcode_of(const p2_LONG opcode) const;
     const QStringList html_opcode(P2DocOpcode op) const;
 
+    static p2_LONG opcode_inst5(const p2_inst5_e instr);
     static p2_LONG opcode_inst7(const p2_inst7_e instr);
     static p2_LONG opcode_inst8(const p2_inst8_e instr);
     static p2_LONG opcode_inst9(const p2_inst9_e instr);
@@ -113,8 +114,9 @@ private:
     static p2_LONG opcode_opsrc(const p2_opsrc_e instr);
     static p2_LONG opcode_opx24(const p2_opx24_e instr);
 
-    P2DocOpcode make_pattern(p2_LONG instr, const char* src, const p2_LONG instmask, const char* _func, p2_LONG mode = 0);
+    P2DocOpcode make_pattern(const char* _func, p2_LONG instr, const char* src, const p2_LONG instmask, p2_LONG mode = 0);
 
+    P2DocOpcode make_pattern(const char* _func, p2_inst5_e instr, const char* pat, p2_LONG mode = 0);
     P2DocOpcode make_pattern(const char* _func, p2_inst7_e instr, const char* pat, p2_LONG mode = 0);
     P2DocOpcode make_pattern(const char* _func, p2_inst8_e instr, const char* pat, p2_LONG mode = 0);
     P2DocOpcode make_pattern(const char* _func, p2_inst9_e instr, const char* pat, p2_LONG mode = 0);
@@ -563,18 +565,11 @@ private:
     void doc_call_abs(p2_inst7_e instr);
     void doc_calla_abs(p2_inst7_e instr);
     void doc_callb_abs(p2_inst7_e instr);
-    void doc_calld_pa_abs(p2_inst7_e instr);
-    void doc_calld_pb_abs(p2_inst7_e instr);
-    void doc_calld_ptra_abs(p2_inst7_e instr);
-    void doc_calld_ptrb_abs(p2_inst7_e instr);
-    void doc_loc(p2_inst7_e instr);
-    void doc_loc_pa(p2_inst7_e instr);
-    void doc_loc_pb(p2_inst7_e instr);
-    void doc_loc_ptra(p2_inst7_e instr);
-    void doc_loc_ptrb(p2_inst7_e instr);
 
-    void doc_augs(p2_inst7_e instr);
-    void doc_augd(p2_inst7_e instr);
+    void doc_calld_abs(p2_inst5_e instr);
+    void doc_loc(p2_inst5_e instr);
+    void doc_augs(p2_inst5_e instr);
+    void doc_augd(p2_inst5_e instr);
 };
 
 extern P2Doc Doc;

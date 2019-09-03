@@ -498,25 +498,11 @@ P2Doc::P2Doc()
     doc_call_abs(p2_CALL_ABS);
     doc_calla_abs(p2_CALLA_ABS);
     doc_callb_abs(p2_CALLB_ABS);
-    doc_calld_pa_abs(p2_CALLD_PA_ABS);
-    doc_calld_pb_abs(p2_CALLD_PB_ABS);
-    doc_calld_ptra_abs(p2_CALLD_PTRA_ABS);
-    doc_calld_ptrb_abs(p2_CALLD_PTRB_ABS);
 
-    doc_loc_pa(p2_LOC_PA);
-    doc_loc_pb(p2_LOC_PB);
-    doc_loc_ptra(p2_LOC_PTRA);
-    doc_loc_ptrb(p2_LOC_PTRB);
-
+    doc_calld_abs(p2_CALLD_ABS);
+    doc_loc(p2_LOC);
     doc_augs(p2_AUGS);
-    doc_augs(p2_AUGS_01);
-    doc_augs(p2_AUGS_10);
-    doc_augs(p2_AUGS_11);
-
     doc_augd(p2_AUGD);
-    doc_augd(p2_AUGD_01);
-    doc_augd(p2_AUGD_10);
-    doc_augd(p2_AUGD_11);
 
     foreach(P2DocOpcode op, m_opcodes) {
         P2MatchMask matchmask = op->matchmask();
@@ -602,12 +588,14 @@ const QStringList P2Doc::html_opcode(P2DocOpcode op) const
     html += QString("</table>");
 
     html += QString("<strong><pre>");
-    html += QString("         %1").arg(P2Util::esc(op->instr()));
+    html += QString("    %1").arg(P2Util::esc(op->instr()));
     html += QString("</pre></strong>");
-    html += QString("<pre>");
-    foreach(const QString& line, op->descr())
-        html += P2Util::esc(line);
-    html += QString("</pre>");
+    if (!op->descr().isEmpty()) {
+        html += QString("<pre>");
+        foreach(const QString& line, op->descr())
+            html += P2Util::esc(line);
+        html += QString("</pre>");
+    }
 
     return html;
 }
@@ -715,6 +703,17 @@ p2_token_e P2Doc::token(p2_LONG opcode)
 }
 
 /**
+ * @brief Build the opcode for a p2_inst5_e enumeration value
+ * @param instr instruction's enumeration value
+ * @return adjusted opcode
+ */
+p2_LONG P2Doc::opcode_inst5(const p2_inst5_e instr)
+{
+    p2_LONG inst5 = static_cast<p2_LONG>(instr) << p2_shift_inst5;
+    return inst5;
+}
+
+/**
  * @brief Build the opcode for a p2_inst7_e enumeration value
  * @param instr instruction's enumeration value
  * @return adjusted opcode
@@ -803,14 +802,15 @@ p2_LONG P2Doc::opcode_opx24(const p2_opx24_e instr)
  * h    for WC + WZ bits which have to be either 00 or 11 (equal)
  * x    for WC + WZ bits which have to be either 10 or 01 (unequal)
  *
- * @param instr instruction's opcode
- * @param pat pattern
+ * @param _func calling function's name
+ * @param opcode instruction's opcode
+ * @param pat instruction's pattern string
  * @return mask / match value in 64 bits
  */
-P2DocOpcode P2Doc::make_pattern(p2_LONG instr, const char* pat, const p2_LONG instmask, const char* _func, p2_LONG mode)
+P2DocOpcode P2Doc::make_pattern(const char* _func, p2_LONG opcode, const char* pat, const p2_LONG instmask, p2_LONG mode)
 {
     p2_LONG mask = instmask | mode;
-    P2MatchMask matchmask(FULL,instr);
+    P2MatchMask matchmask(FULL,opcode);
     QString pack = QString::fromLatin1(pat);
 
     // pattern without spaces
@@ -835,11 +835,11 @@ P2DocOpcode P2Doc::make_pattern(p2_LONG instr, const char* pat, const p2_LONG in
                qPrintable(pack), _func);
     }
 
-    matchmask.first = (instr & mask) | (instr & ~match);
+    matchmask.first = (opcode & mask) | (opcode & ~match);
     matchmask.second = mask;
 
-    if (instr & ~mask) {
-        QString dbg_instr = QString("%1").arg(instr | mask, 32, 2, QChar('0'));
+    if (opcode & ~mask) {
+        QString dbg_instr = QString("%1").arg(opcode | mask, 32, 2, QChar('0'));
         QString dbg_mask = QString("%1").arg(mask, 32, 2, QChar('0'));
         dbg_instr.replace(QChar('0'), QChar('_'));
         dbg_mask.replace(QChar('0'), QChar('_'));
@@ -866,6 +866,18 @@ P2DocOpcode P2Doc::make_pattern(p2_LONG instr, const char* pat, const p2_LONG in
 }
 
 /**
+ * @brief Make pattern for 5 bit instruction
+ * @param _func calling function's name
+ * @param instr instruction enum value
+ * @param pat pattern string
+ * @return mask / match value pair
+ */
+P2DocOpcode P2Doc::make_pattern(const char* _func, p2_inst5_e instr, const char* pat, p2_LONG mode)
+{
+    return make_pattern(_func, opcode_inst5(instr), pat, p2_mask_inst5, mode);
+}
+
+/**
  * @brief Make pattern for 7 bit instruction
  * @param _func calling function's name
  * @param instr instruction enum value
@@ -874,7 +886,7 @@ P2DocOpcode P2Doc::make_pattern(p2_LONG instr, const char* pat, const p2_LONG in
  */
 P2DocOpcode P2Doc::make_pattern(const char* _func, p2_inst7_e instr, const char* pat, p2_LONG mode)
 {
-    return make_pattern(opcode_inst7(instr), pat, p2_mask_inst7, _func, mode);
+    return make_pattern(_func, opcode_inst7(instr), pat, p2_mask_inst7, mode);
 }
 
 /**
@@ -886,7 +898,7 @@ P2DocOpcode P2Doc::make_pattern(const char* _func, p2_inst7_e instr, const char*
  */
 P2DocOpcode P2Doc::make_pattern(const char* _func, p2_inst8_e instr, const char* pat, p2_LONG mode)
 {
-    return make_pattern(opcode_inst8(instr), pat, p2_mask_inst8, _func, mode);
+    return make_pattern(_func, opcode_inst8(instr), pat, p2_mask_inst8, mode);
 }
 
 /**
@@ -898,7 +910,7 @@ P2DocOpcode P2Doc::make_pattern(const char* _func, p2_inst8_e instr, const char*
  */
 P2DocOpcode P2Doc::make_pattern(const char* _func, p2_inst9_e instr, const char* pat, p2_LONG mode)
 {
-    return make_pattern(opcode_inst9(instr), pat, p2_mask_inst9, _func, mode);
+    return make_pattern(_func, opcode_inst9(instr), pat, p2_mask_inst9, mode);
 }
 
 /**
@@ -910,7 +922,7 @@ P2DocOpcode P2Doc::make_pattern(const char* _func, p2_inst9_e instr, const char*
  */
 P2DocOpcode P2Doc::make_pattern(const char* _func, p2_opdst_e instr, const char* pat, p2_LONG mode)
 {
-    return make_pattern(opcode_opdst(instr), pat, p2_mask_opdst, _func, mode);
+    return make_pattern(_func, opcode_opdst(instr), pat, p2_mask_opdst, mode);
 }
 
 /**
@@ -922,7 +934,7 @@ P2DocOpcode P2Doc::make_pattern(const char* _func, p2_opdst_e instr, const char*
  */
 P2DocOpcode P2Doc::make_pattern(const char* _func, p2_opsrc_e instr, const char* pat, p2_LONG mode)
 {
-    return make_pattern(opcode_opsrc(instr), pat, p2_mask_opsrc, _func, mode);
+    return make_pattern(_func, opcode_opsrc(instr), pat, p2_mask_opsrc, mode);
 }
 
 /**
@@ -934,7 +946,7 @@ P2DocOpcode P2Doc::make_pattern(const char* _func, p2_opsrc_e instr, const char*
  */
 P2DocOpcode P2Doc::make_pattern(const char* _func, p2_opx24_e instr, const char* pat, p2_LONG mode)
 {
-    return make_pattern(opcode_opx24(instr), pat, p2_mask_opx24, _func, mode);
+    return make_pattern(_func, opcode_opx24(instr), pat, p2_mask_opx24, mode);
 }
 
 /**
@@ -947,7 +959,7 @@ P2DocOpcode P2Doc::make_pattern(const char* _func, p2_opx24_e instr, const char*
  */
 P2DocOpcode P2Doc::make_pattern(const char* _func, p2_opsrc_e instr, p2_inst9_e inst9, const char* pat, p2_LONG mode)
 {
-    return make_pattern((opcode_inst9(inst9) & p2_mask_CZ) | opcode_opsrc(instr), pat, p2_mask_opsrc, _func, mode);
+    return make_pattern(_func, opcode_inst9(inst9) | opcode_opsrc(instr), pat, p2_mask_opsrc, mode);
 }
 
 /**
@@ -8856,80 +8868,20 @@ void P2Doc::doc_callb_abs(p2_inst7_e instr)
 /**
  * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to PA/PB/PTRA/PTRB (per W).
  *
- * EEEE 1110000 RAA AAAAAAAAA AAAAAAAAA
+ * EEEE 11100WW RAA AAAAAAAAA AAAAAAAAA
  *
  * CALLD   PA,#A
  *
  * If R = 1, PC += A, else PC = A.
  *
  */
-void P2Doc::doc_calld_pa_abs(p2_inst7_e instr)
+void P2Doc::doc_calld_abs(p2_inst5_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 11100WW RAA AAAAAAAAA AAAAAAAAA", INST_5);
 
     op->set_token(t_CALLD);
     op->set_brief("Call to A by writing {C, Z, 10'b0, PC[19:0]} to PA (per W).");
-    op->set_instr("CALLD   PA,#A");
-    op->add_descr("If R = 1, PC += A, else PC = A.");
-}
-
-/**
- * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to PA/PB/PTRA/PTRB (per W).
- *
- * EEEE 1110001 RAA AAAAAAAAA AAAAAAAAA
- *
- * CALLD   PB,#A
- *
- * If R = 1, PC += A, else PC = A.
- *
- */
-void P2Doc::doc_calld_pb_abs(p2_inst7_e instr)
-{
-    P2DocOpcode op = make_pattern(__func__, instr, "EEEE 11100WW RAA AAAAAAAAA AAAAAAAAA", INST_5);
-
-    op->set_token(t_CALLD);
-    op->set_brief("Call to A by writing {C, Z, 10'b0, PC[19:0]} to PB (per W).");
-    op->set_instr("CALLD   PB,#A");
-    op->add_descr("If R = 1, PC += A, else PC = A.");
-}
-
-/**
- * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to PTRA (per W).
- *
- * EEEE 1110010 RAA AAAAAAAAA AAAAAAAAA
- *
- * CALLD   PTRA,#A
- *
- * If R = 1, PC += A, else PC = A.
- *
- */
-void P2Doc::doc_calld_ptra_abs(p2_inst7_e instr)
-{
-    P2DocOpcode op = make_pattern(__func__, instr, "EEEE 11100WW RAA AAAAAAAAA AAAAAAAAA", INST_5);
-
-    op->set_token(t_CALLD);
-    op->set_brief("Call to A by writing {C, Z, 10'b0, PC[19:0]} to PTRA (per W).");
-    op->set_instr("CALLD   PTRA,#A");
-    op->add_descr("If R = 1, PC += A, else PC = A.");
-}
-
-/**
- * @brief Call to A by writing {C, Z, 10'b0, PC[19:0]} to PTRB (per W).
- *
- * EEEE 1110011 RAA AAAAAAAAA AAAAAAAAA
- *
- * CALLD   PTRB,#A
- *
- * If R = 1, PC += A, else PC = A.
- *
- */
-void P2Doc::doc_calld_ptrb_abs(p2_inst7_e instr)
-{
-    P2DocOpcode op = make_pattern(__func__, instr, "EEEE 11100WW RAA AAAAAAAAA AAAAAAAAA", INST_5);
-
-    op->set_token(t_CALLD);
-    op->set_brief("Call to A by writing {C, Z, 10'b0, PC[19:0]} to PTRB (per W).");
-    op->set_instr("CALLD   PTRB,#A");
+    op->set_instr("CALLD   PA/PB/PTRA/PTRB,#A");
     op->add_descr("If R = 1, PC += A, else PC = A.");
 }
 
@@ -8943,67 +8895,7 @@ void P2Doc::doc_calld_ptrb_abs(p2_inst7_e instr)
  * If R = 1, address = PC + A, else address = A.
  *
  */
-void P2Doc::doc_loc_pa(p2_inst7_e instr)
-{
-    P2DocOpcode op = make_pattern(__func__, instr, "EEEE 11101WW RAA AAAAAAAAA AAAAAAAAA", INST_5);
-
-    op->set_token(t_LOC);
-    op->set_brief("Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).");
-    op->set_instr("LOC     PA/PB/PTRA/PTRB,#A");
-    op->add_descr("If R = 1, address = PC + A, else address = A.");
-}
-
-/**
- * @brief Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).
- *
- * EEEE 11101WW RAA AAAAAAAAA AAAAAAAAA
- *
- * LOC     PA/PB/PTRA/PTRB,#A
- *
- * If R = 1, address = PC + A, else address = A.
- *
- */
-void P2Doc::doc_loc_pb(p2_inst7_e instr)
-{
-    P2DocOpcode op = make_pattern(__func__, instr, "EEEE 11101WW RAA AAAAAAAAA AAAAAAAAA", INST_5);
-
-    op->set_token(t_LOC);
-    op->set_brief("Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).");
-    op->set_instr("LOC     PA/PB/PTRA/PTRB,#A");
-    op->add_descr("If R = 1, address = PC + A, else address = A.");
-}
-
-/**
- * @brief Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).
- *
- * EEEE 11101WW RAA AAAAAAAAA AAAAAAAAA
- *
- * LOC     PA/PB/PTRA/PTRB,#A
- *
- * If R = 1, address = PC + A, else address = A.
- *
- */
-void P2Doc::doc_loc_ptra(p2_inst7_e instr)
-{
-    P2DocOpcode op = make_pattern(__func__, instr, "EEEE 11101WW RAA AAAAAAAAA AAAAAAAAA", INST_5);
-
-    op->set_token(t_LOC);
-    op->set_brief("Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).");
-    op->set_instr("LOC     PA/PB/PTRA/PTRB,#A");
-    op->add_descr("If R = 1, address = PC + A, else address = A.");
-}
-
-/**
- * @brief Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).
- *
- * EEEE 11101WW RAA AAAAAAAAA AAAAAAAAA
- *
- * LOC     PA/PB/PTRA/PTRB,#A
- *
- * If R = 1, address = PC + A, else address = A.
- *
- */
-void P2Doc::doc_loc_ptrb(p2_inst7_e instr)
+void P2Doc::doc_loc(p2_inst5_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 11101WW RAA AAAAAAAAA AAAAAAAAA", INST_5);
 
@@ -9022,13 +8914,15 @@ void P2Doc::doc_loc_ptrb(p2_inst7_e instr)
  *
  *
  */
-void P2Doc::doc_augs(p2_inst7_e instr)
+void P2Doc::doc_augs(p2_inst5_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 11110NN NNN NNNNNNNNN NNNNNNNNN", INST_5);
 
     op->set_token(t_AUGS);
-    op->set_brief("Queue #N[31:9] to be used as upper 23 bits for next #S occurrence, so that the next 9-bit #S will be augmented to 32 bits.");
+    op->set_brief("Augment next #S occurrence with 23 bits #N[31:9].");
     op->set_instr("AUGS    #N");
+    op->add_descr("Queue #N[31:9] to be used as upper 23 bits for next #S occurrence,");
+    op->add_descr("so that the next 9-bit #S will be augmented to 32 bits.");
 }
 
 /**
@@ -9040,11 +8934,13 @@ void P2Doc::doc_augs(p2_inst7_e instr)
  *
  *
  */
-void P2Doc::doc_augd(p2_inst7_e instr)
+void P2Doc::doc_augd(p2_inst5_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 11111NN NNN NNNNNNNNN NNNNNNNNN", INST_5);
 
     op->set_token(t_AUGD);
-    op->set_brief("Queue #N[31:9] to be used as upper 23 bits for next #D occurrence, so that the next 9-bit #D will be augmented to 32 bits.");
+    op->set_brief("Augment next #D occurrence with 23 bits #N[31:9].");
     op->set_instr("AUGD    #N");
+    op->add_descr("Queue #N[31:9] to be used as upper 23 bits for next D occurrence,");
+    op->add_descr("so that the next 9-bit #D will be augmented to 32 bits.");
 }

@@ -646,10 +646,10 @@ private:
     int op_calla_abs();
     int op_callb_abs();
 
-    int op_calld_pa_abs();
-    int op_calld_pb_abs();
-    int op_calld_ptra_abs();
-    int op_calld_ptrb_abs();
+    int op_calld_abs_pa();
+    int op_calld_abs_pb();
+    int op_calld_abs_ptra();
+    int op_calld_abs_ptrb();
 
     int op_loc_pa();
     int op_loc_pb();
