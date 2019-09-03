@@ -3295,9 +3295,13 @@ P2Atom P2Asm::parse_binops(int level)
             DEBUG_EXPR(" binop or: %u %s %u", lvalue.to_long(), qPrintable(curr_str()), rvalue.to_long());
             lvalue.reverse(rvalue);
             break;
+        case t__ENCOD:
+            DEBUG_EXPR(" binop or: %u %s %u", lvalue.to_long(), qPrintable(curr_str()), rvalue.to_long());
+            lvalue.encode(rvalue);
+            break;
         case t__DECOD:
             DEBUG_EXPR(" binop or: %u %s %u", lvalue.to_long(), qPrintable(curr_str()), rvalue.to_long());
-            // lvalue.reverse(rvalue);
+            lvalue.decode(rvalue);
             break;
         default:
             Q_ASSERT_X(false, "binops", "Invalid op");
@@ -3437,6 +3441,7 @@ bool P2Asm::encode_ptr_index(const P2Atom& index)
         return true;
     // TODO: encode ...
     p2_LONG value = index.to_long();
+    Q_UNUSED(value)
     return false;
 }
 

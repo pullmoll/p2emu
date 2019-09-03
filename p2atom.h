@@ -169,6 +169,8 @@ public:
     void binary_or(const P2Atom& val);
     void binary_rev();
     void reverse(const P2Atom& val);
+    void encode(const P2Atom& val);
+    void decode(const P2Atom& val);
 
     P2Atom& operator = (const P2Atom& other);
     bool operator==(const P2Atom& other);

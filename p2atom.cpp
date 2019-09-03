@@ -1336,6 +1336,68 @@ void P2Atom::reverse(const P2Atom& val)
     }
 }
 
+void P2Atom::encode(const P2Atom& val)
+{
+    switch (m_type) {
+    case Invalid:
+        break;
+    case Bool:
+        break;
+    case Byte:
+        set_uint(m_type, P2Util::encode(val.to_byte()));
+        break;
+    case Word:
+        set_uint(m_type, P2Util::encode(val.to_word()));
+        break;
+    case PC:
+        set_uint(m_type, P2Util::encode(val.to_long()));
+        break;
+    case Long:
+        set_uint(m_type, P2Util::encode(val.to_long()));
+        break;
+    case Quad:
+        set_uint(m_type, P2Util::encode(val.to_quad()));
+        break;
+    case Real:
+        set_real(m_type, static_cast<p2_REAL>(P2Util::encode(val.to_quad())));
+        break;
+    case String:
+        // TODO: implement
+        Q_ASSERT(m_type);
+    }
+}
+
+void P2Atom::decode(const P2Atom& val)
+{
+    switch (m_type) {
+    case Invalid:
+        break;
+    case Bool:
+        break;
+    case Byte:
+        set_uint(m_type, P2Util::lzc(val.to_byte()));
+        break;
+    case Word:
+        set_uint(m_type, P2Util::lzc(val.to_word()));
+        break;
+    case PC:
+        set_uint(m_type, P2Util::lzc(val.to_long()));
+        break;
+    case Long:
+        set_uint(m_type, P2Util::lzc(val.to_long()));
+        break;
+    case Quad:
+        set_uint(m_type, P2Util::lzc(val.to_quad()));
+        break;
+    case Real:
+        set_real(m_type, static_cast<p2_REAL>(P2Util::lzc(val.to_quad())));
+        break;
+    case String:
+        // TODO: implement
+        Q_ASSERT(m_type);
+    }
+}
+
 /**
  * @brief Return data as a single byte
  * @param ok optional pointer to a bool set to true if data is available

@@ -48,6 +48,7 @@
 #include "p2doc.h"
 #include "gotoaddress.h"
 #include "gotoline.h"
+#include "palettesetup.h"
 #include "textbrowser.h"
 #include "p2hub.h"
 #include "p2cog.h"
@@ -101,6 +102,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_dasm(new P2Dasm(m_hub->cog(0)))
     , m_dmodel(new P2DasmModel(m_dasm))
     , m_smodel(new P2SymbolsModel())
+    , m_font(QLatin1String("Source Code Pro"), 9)
     , m_asm_font_size(11)
     , m_dasm_font_size(11)
     , m_source_percent(80)
@@ -606,6 +608,13 @@ void MainWindow::assemble()
     ui->splResults->setVisible(true);
 }
 
+void MainWindow::palette_setup()
+{
+    PaletteSetup dlg(this);
+    dlg.setFont(m_font);
+    dlg.exec();
+}
+
 void MainWindow::print_error(int pass, int line, const QString& message)
 {
     QString str_pass = QString("%1 #%2 - ")
@@ -733,6 +742,8 @@ void MainWindow::setupFonts()
     if (font.family() != preferred_font)
         font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
     font.setStyleHint(QFont::TypeWriter, QFont::PreferAntialias);
+    font.setPointSize(9);
+    m_font = font;
 
     font.setPointSize(11);
     ui->tabWidget->setFont(font);
@@ -759,11 +770,6 @@ void MainWindow::setupTabWidget()
 
 void MainWindow::setupMenu()
 {
-    connect(ui->action_Quit, SIGNAL(triggered(bool)), this, SLOT(close()));
-    connect(ui->action_About, SIGNAL(triggered(bool)), this, SLOT(about()));
-    connect(ui->action_AboutQt5, SIGNAL(triggered(bool)), this, SLOT(aboutQt5()));
-    connect(ui->action_P2_opcodes, SIGNAL(triggered(bool)), this, SLOT(help_opcodes()));
-
     connect(ui->action_Open_src, SIGNAL(triggered()), SLOT(openSource()));
     connect(ui->action_Open_src_random, SIGNAL(triggered()), SLOT(loadSourceRandom()));
     // connect(ui->action_Open_obj, SIGNAL(triggered()), SLOT(openObject()));
@@ -771,6 +777,8 @@ void MainWindow::setupMenu()
     connect(ui->action_Go_to_line, SIGNAL(triggered()), SLOT(goto_line_number()));
     connect(ui->action_Assemble, SIGNAL(triggered()), SLOT(assemble()));
     connect(ui->action_SingleStep, SIGNAL(triggered()), SLOT(hubSingleStep()));
+
+    connect(ui->action_Palette_setup, SIGNAL(triggered()), SLOT(palette_setup()));
 
     connect(ui->action_Asm_Opcodes_bin, SIGNAL(triggered(bool)), SLOT(setAsmOpcodes()));
     connect(ui->action_Asm_Opcodes_byt, SIGNAL(triggered(bool)), SLOT(setAsmOpcodes()));
@@ -785,14 +793,21 @@ void MainWindow::setupMenu()
     connect(ui->action_Dasm_Opcodes_dec, SIGNAL(triggered(bool)), SLOT(setDasmOpcodes()));
     connect(ui->action_Dasm_Opcodes_hex, SIGNAL(triggered(bool)), SLOT(setDasmOpcodes()));
 
-    connect(ui->action_Dasm_Lowercase, SIGNAL(triggered(bool)), SLOT(setDasmLowercase(bool)));
     connect(ui->action_Dasm_DecFontSize, SIGNAL(triggered(bool)), SLOT(decDasmFontSize()));
     connect(ui->action_Dasm_IncFontSize, SIGNAL(triggered(bool)), SLOT(incDasmFontSize()));
+    connect(ui->action_Dasm_Lowercase, SIGNAL(triggered(bool)), SLOT(setDasmLowercase(bool)));
 
     connect(ui->action_Go_to_COG, SIGNAL(triggered()), SLOT(goto_cog()));
     connect(ui->action_Go_to_LUT, SIGNAL(triggered()), SLOT(goto_lut()));
     connect(ui->action_Go_to_ROM, SIGNAL(triggered()), SLOT(goto_rom()));
     connect(ui->action_Go_to_address, SIGNAL(triggered()), SLOT(goto_address()));
+
+    // help
+    connect(ui->action_Quit, SIGNAL(triggered(bool)), this, SLOT(close()));
+    connect(ui->action_About, SIGNAL(triggered(bool)), this, SLOT(about()));
+    connect(ui->action_AboutQt5, SIGNAL(triggered(bool)), this, SLOT(aboutQt5()));
+    connect(ui->action_P2_opcodes, SIGNAL(triggered(bool)), this, SLOT(help_opcodes()));
+
 }
 
 void MainWindow::setupToolbars()

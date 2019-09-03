@@ -25,6 +25,8 @@ QMAKE_CXXFLAGS += -DVER_MAJ=$$VER_MAJ -DVER_MIN=$$VER_MIN -DVER_PAT=$$VER_PAT
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+		delegates/p2paletteselector.cpp \
+		dialogs/palettesetup.cpp \
 		main.cpp \
 		mainwindow.cpp \
 		p2asm.cpp \
@@ -50,11 +52,14 @@ SOURCES += \
 		models/p2asmmodel.cpp \
 		models/p2dasmmodel.cpp \
 		models/p2symbolsmodel.cpp \
+		util/p2colors.cpp \
 		util/p2util.cpp \
 		views/p2cogview.cpp \
 		views/p2hubview.cpp
 
 HEADERS += \
+		delegates/p2paletteselector.h \
+		dialogs/palettesetup.h \
 		mainwindow.h \
 		p2asm.h \
 		p2atom.h \
@@ -80,11 +85,13 @@ HEADERS += \
 		models/p2asmmodel.h \
 		models/p2dasmmodel.h \
 		models/p2symbolsmodel.h \
+		util/p2colors.h \
 		util/p2util.h \
 		views/p2cogview.h \
 		views/p2hubview.h
 
 FORMS += \
+		dialogs/palettesetup.ui \
 		mainwindow.ui \
 		dialogs/about.ui \
 		dialogs/gotoaddress.ui \

@@ -1249,29 +1249,6 @@ extern const QString template_str_instruction;
 extern const QString template_str_description;
 extern const QString key_tv_asm;
 
-typedef enum {
-    p2_color_source,
-    p2_color_comment,
-    p2_color_comma,
-    p2_color_str_const,
-    p2_color_bin_const,
-    p2_color_byt_const,
-    p2_color_dec_const,
-    p2_color_hex_const,
-    p2_color_real_const,
-    p2_color_locsym,
-    p2_color_symbol,
-    p2_color_expression,
-    p2_color_section,
-    p2_color_conditional,
-    p2_color_modzc_param,
-    p2_color_instruction,
-    p2_color_wcz_suffix,
-}   p2_palette_e;
-
-extern QColor p2_palette(p2_palette_e pal, bool highlight = false);
-extern QColor p2_palette(p2_token_e tok, bool highlight = false);
-
 extern QString format_opcode_bin(const p2_opcode_u& IR);
 extern QString format_opcode_byt(const p2_opcode_u& IR);
 extern QString format_opcode_oct(const p2_opcode_u& IR);

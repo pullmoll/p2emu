@@ -33,6 +33,7 @@
  ****************************************************************************/
 #include <QPainter>
 #include <QComboBox>
+#include "p2colors.h"
 #include "p2opcodedelegate.h"
 #include "p2asmmodel.h"
 
@@ -98,7 +99,7 @@ void P2OpcodeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
 
     painter->setBackgroundMode(Qt::TransparentMode);
     painter->setFont(opt.font);
-    painter->setPen(p2_palette(p2_color_source, highlight));
+    painter->setPen(P2Colors.palette(P2Colors::p2_pal_source, highlight));
 
     painter->drawText(rect, flags, text);
 

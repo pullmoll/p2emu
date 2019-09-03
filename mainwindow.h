@@ -110,6 +110,8 @@ private slots:
     void loadSourceRandom();
     void assemble();
 
+    void palette_setup();
+
     void print_error(int pass, int lineno, const QString& message);
     void goto_line(const QUrl& url);
     void goto_line_number();
@@ -124,6 +126,7 @@ private:
     P2DasmModel* m_dmodel;
     P2SymbolsModel* m_smodel;
 
+    QFont m_font;
     int m_asm_font_size;
     int m_dasm_font_size;
     int m_source_percent;

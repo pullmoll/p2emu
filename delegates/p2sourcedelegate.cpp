@@ -33,6 +33,7 @@
  ****************************************************************************/
 #include "p2sourcedelegate.h"
 #include "p2asmmodel.h"
+#include "p2colors.h"
 #include <QPainter>
 
 P2SourceDelegate::P2SourceDelegate(QObject* parent)
@@ -78,7 +79,7 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
 
     painter->setBackgroundMode(Qt::TransparentMode);
     painter->setFont(opt.font);
-    painter->setPen(p2_palette(p2_color_source, highlight));
+    painter->setPen(P2Colors.palette(P2Colors::p2_pal_source, highlight));
 
     // paint all text character wise to collect the bounding rects
     int pos = 0;
@@ -96,7 +97,7 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
 
         QPalette pal;
         p2_token_e tok = word.tok();
-        painter->setPen(p2_palette(tok, highlight));
+        painter->setPen(P2Colors.palette(tok, highlight));
 
         // draw the character
         QRect box;
