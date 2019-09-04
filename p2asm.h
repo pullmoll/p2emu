@@ -43,8 +43,8 @@
 #include "p2symboltable.h"
 
 
-//! A QHash of PC and ORGH per line number
-typedef QHash<int, p2_ORG_ORGH_t> p2_pc_orgh_hash_t;
+//! A QHash of ORG and ORGH per line number
+typedef QHash<int, p2_ORG_ORGH_t> p2_org_orgh_hash_t;
 
 //! A QHash of P2Opcode per line number
 typedef QHash<int, P2Opcode> p2_opcode_hash_t;
@@ -64,17 +64,16 @@ class P2Asm : public QObject
 
 public:
     enum Section {
-        sec_dat,
-        sec_con,
-        sec_pub,
-        sec_pri,
-        sec_var
+        dat_section,
+        con_section,
+        pub_section,
+        pri_section,
+        var_section
     };
     Q_ENUM(Section)
 
     explicit P2Asm(QObject *parent = nullptr);
     ~P2Asm();
-
 
     void clear();
     void pass_clear();
@@ -87,7 +86,7 @@ public:
     const QString source(int idx) const;
 
     int count() const;
-    const p2_pc_orgh_hash_t& PC_ORGH_hash() const;
+    const p2_org_orgh_hash_t& PC_ORGH_hash() const;
     p2_ORG_ORGH_t get_PC_ORGH(int lineno) const;
     bool has_PC_ORGH(int lineno) const;
 
@@ -122,7 +121,7 @@ private:
     QString m_pathname;                     //!< current path name for FILE "filename.ext"
     QStringList m_source;                   //!< source code as QStringList
     QStringList m_listing;                  //!< listing as QStringList
-    p2_pc_orgh_hash_t m_hash_PC;            //!< optional program counters per line
+    p2_org_orgh_hash_t m_hash_PC;            //!< optional program counters per line
     p2_opcode_hash_t m_hash_IR;             //!< optional P2Opcode per line
     p2_words_hash_t m_hash_words;           //!< optional words per line
     p2_error_hash_t m_hash_error;           //!< optional (multiple) error messages per line
@@ -181,8 +180,8 @@ private:
     P2Atom real_const(const QString& str);
     P2Atom str_const(const QString& str);
 
-    QString find_symbol(Section sect = sec_con, const QString& func = QString(), bool all_sections = false);
-    QString find_locsym(Section sect = sec_con, const QString& local = QString());
+    QString find_symbol(Section sect = con_section, const QString& func = QString(), bool all_sections = false);
+    QString find_locsym(Section sect = con_section, const QString& local = QString());
     bool define_symbol(const QString& symbol, const P2Atom& atom);
     void add_const_symbol(const QString& pfx, const P2Word& word = P2Word(), const P2Atom& atom = P2Atom());
 

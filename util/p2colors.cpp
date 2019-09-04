@@ -177,7 +177,7 @@ P2Colors::P2Colors()
     m_palette_names.insert(p2_pal_conditional,  QStringLiteral("Conditional"));
     m_palette_names.insert(p2_pal_wcz_suffix,   QStringLiteral("WCZ_suffix"));
     m_palette_names.insert(p2_pal_section,      QStringLiteral("Section"));
-    m_palette_names.insert(p2_pal_modzc_param,  QStringLiteral("MODCZ_parameter"));
+    m_palette_names.insert(p2_pal_modcz_param,  QStringLiteral("MODCZ_parameter"));
     m_palette_names.insert(p2_pal_symbol,       QStringLiteral("Symbol"));
     m_palette_names.insert(p2_pal_locsym,       QStringLiteral("Local_symbol"));
     m_palette_names.insert(p2_pal_expression,   QStringLiteral("Expression"));
@@ -428,6 +428,9 @@ QColor P2Colors::palette_color(p2_token_e tok, bool darker) const
         if (Token.is_type(tok, tm_mnemonic))
             pal = p2_pal_instruction;
 
+        if (Token.is_type(tok, tm_modcz_param))
+            pal = p2_pal_modcz_param;
+
         if (Token.is_type(tok, tm_wcz_suffix))
             pal = p2_pal_wcz_suffix;
 
@@ -475,7 +478,7 @@ void P2Colors::reset_palette()
     m_default_colors.insert(p2_pal_section,       m_named_colors.value("Cyan"));
     m_default_colors.insert(p2_pal_conditional,   m_named_colors.value("Violet"));
     m_default_colors.insert(p2_pal_instruction,   m_named_colors.value("Dark Cyan"));
-    m_default_colors.insert(p2_pal_modzc_param,   m_named_colors.value("Medium Violet Red"));
+    m_default_colors.insert(p2_pal_modcz_param,   m_named_colors.value("Medium Violet Red"));
     m_default_colors.insert(p2_pal_wcz_suffix,    m_named_colors.value("Pale Violet Red"));
 
     foreach(p2_palette_e pal, m_default_colors.keys())

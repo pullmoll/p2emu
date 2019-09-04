@@ -95,21 +95,21 @@ P2Doc::P2Doc()
     doc_testbn_xor(p2_TESTBN_XORC);
     doc_testbn_xor(p2_TESTBN_XORZ);
 
-    doc_bitl(p2_BITL_eol);
+    doc_bitl(p2_BITL);
     doc_bitl(p2_BITL_WCZ);
-    doc_bith(p2_BITH_eol);
+    doc_bith(p2_BITH);
     doc_bith(p2_BITH_WCZ);
-    doc_bitc(p2_BITC_eol);
+    doc_bitc(p2_BITC);
     doc_bitc(p2_BITC_WCZ);
-    doc_bitnc(p2_BITNC_eol);
+    doc_bitnc(p2_BITNC);
     doc_bitnc(p2_BITNC_WCZ);
-    doc_bitz(p2_BITZ_eol);
+    doc_bitz(p2_BITZ);
     doc_bitz(p2_BITZ_WCZ);
-    doc_bitnz(p2_BITNZ_eol);
+    doc_bitnz(p2_BITNZ);
     doc_bitnz(p2_BITNZ_WCZ);
-    doc_bitrnd(p2_BITRND_eol);
+    doc_bitrnd(p2_BITRND);
     doc_bitrnd(p2_BITRND_WCZ);
-    doc_bitnot(p2_BITNOT_eol);
+    doc_bitnot(p2_BITNOT);
     doc_bitnot(p2_BITNOT_WCZ);
 
     doc_and(p2_AND);
@@ -412,21 +412,21 @@ P2Doc::P2Doc()
     doc_setpix(p2_OPSRC_SETPIX);
     doc_cogatn(p2_OPSRC_COGATN);
 
-    doc_dirl(p2_OPSRC_DIRL, p2_DIRL_eol);
+    doc_dirl(p2_OPSRC_DIRL, p2_DIRL);
     doc_dirl(p2_OPSRC_DIRL, p2_DIRL_WCZ);
-    doc_dirh(p2_OPSRC_DIRH, p2_DIRH_eol);
+    doc_dirh(p2_OPSRC_DIRH, p2_DIRH);
     doc_dirh(p2_OPSRC_DIRH, p2_DIRH_WCZ);
-    doc_dirc(p2_OPSRC_DIRC, p2_DIRC_eol);
+    doc_dirc(p2_OPSRC_DIRC, p2_DIRC);
     doc_dirc(p2_OPSRC_DIRC, p2_DIRC_WCZ);
-    doc_dirnc(p2_OPSRC_DIRNC, p2_DIRNC_eol);
+    doc_dirnc(p2_OPSRC_DIRNC, p2_DIRNC);
     doc_dirnc(p2_OPSRC_DIRNC, p2_DIRNC_WCZ);
-    doc_dirz(p2_OPSRC_DIRZ, p2_DIRZ_eol);
+    doc_dirz(p2_OPSRC_DIRZ, p2_DIRZ);
     doc_dirz(p2_OPSRC_DIRZ, p2_DIRZ_WCZ);
-    doc_dirnz(p2_OPSRC_DIRNZ, p2_DIRNZ_eol);
+    doc_dirnz(p2_OPSRC_DIRNZ, p2_DIRNZ);
     doc_dirnz(p2_OPSRC_DIRNZ, p2_DIRNZ_WCZ);
-    doc_dirrnd(p2_OPSRC_DIRRND, p2_DIRRND_eol);
+    doc_dirrnd(p2_OPSRC_DIRRND, p2_DIRRND);
     doc_dirrnd(p2_OPSRC_DIRRND, p2_DIRRND_WCZ);
-    doc_dirnot(p2_OPSRC_DIRNOT, p2_DIRNOT_eol);
+    doc_dirnot(p2_OPSRC_DIRNOT, p2_DIRNOT);
     doc_dirnot(p2_OPSRC_DIRNOT, p2_DIRNOT_WCZ);
 
     doc_testp_w(p2_OPSRC_TESTP_W, p2_TESTP_WZ);
@@ -995,6 +995,10 @@ void P2Doc::doc_ror(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0000000 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_ROR);
+    op->add_param(t_D);
+    op->add_param(t_COMMA);
+    op->add_param(t_IMMEDIATE, true);
+    op->add_param(t_S);
     op->set_brief("Rotate right.");
     op->set_instr("ROR     D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = [31:0]  of ({D[31:0], D[31:0]}     >> S[4:0]).");
@@ -3608,10 +3612,10 @@ void P2Doc::doc_muxq(p2_inst9_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001111 10I DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_MUXQ);
-    op->set_brief("Used after SETQ.");
+    op->set_brief("For each '1' bit in Q, copy the corresponding bit in S into D.");
     op->set_instr("MUXQ    D,{#}S");
-    op->add_descr("For each '1' bit in Q, copy the corresponding bit in S into D.");
     op->add_descr("D = (D & !Q) | (S & Q).");
+    op->add_descr("Used after SETQ.");
 }
 
 /**

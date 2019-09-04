@@ -46,15 +46,18 @@ enum p2_token_e {
     t_comment_eol,      //!< token is a comment until end of line (')
     t_comment_lcurly,   //!< token is a comment ({)
     t_comment_rcurly,   //!< token is a comment (})
-    t_str_const,           //!< token is a string starting with doublequote (")
+    t_str_const,        //!< token is a string starting with doublequote (")
     t_bin_const,        //!< token is a binary value (%)
     t_byt_const,        //!< token is a byte index (i.e. base 4) value (%%)
     t_dec_const,        //!< token is a decimal value (starts with 1…9)
     t_hex_const,        //!< token is a hexadecimal value ($)
-    t_real_const,        //!< token is a floating point value (x.y)
+    t_real_const,       //!< token is a floating point value (x.y)
     t_locsym,           //!< token is a local symbol (starts with .)
     t_symbol,           //!< token is a symbol (alphanumeric)
     t_empty,            //!< token is empty
+
+    t_D,                //!< D (register or 9 bit immediate)
+    t_S,                //!< S (register or 9 bit immediate)
 
     // instructions
     t_ABS,

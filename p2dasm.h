@@ -79,7 +79,7 @@ private:
     void format_D_IM_S_WZ(QString* instruction, p2_token_e inst, p2_token_e with = t_WZ);
     void format_WZ_D_IM_S(QString* instruction, p2_token_e inst);
     void format_WZ_D_IM_S_WC(QString* instruction, p2_token_e inst);
-    void format_D_IM_S_NNN(QString* instruction, p2_token_e inst, int max = 7);
+    void format_D_IM_S_NNN(QString* instruction, p2_token_e inst, uint max = 7);
     void format_D_IMM_S(QString* instruction, p2_token_e inst);
     void format_D_CZ(QString* instruction, p2_token_e inst, p2_token_e with = t_WCZ);
     void format_CZ(QString* instruction, p2_token_e inst, p2_token_e with = t_WCZ);

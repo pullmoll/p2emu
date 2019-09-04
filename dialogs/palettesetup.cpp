@@ -127,7 +127,7 @@ void PaletteSetup::setup_combo_boxes()
         {P2Colors::p2_pal_conditional,   tr("Conditional")},
         {P2Colors::p2_pal_wcz_suffix,    tr("WCZ suffix")},
         {P2Colors::p2_pal_section,       tr("Section")},
-        {P2Colors::p2_pal_modzc_param,   tr("MODCZ parameter")},
+        {P2Colors::p2_pal_modcz_param,   tr("MODCZ parameter")},
         {P2Colors::p2_pal_symbol,        tr("Symbol")},
         {P2Colors::p2_pal_locsym,        tr("Local symbol")},
         {P2Colors::p2_pal_expression,    tr("Expression")},

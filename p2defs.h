@@ -327,28 +327,28 @@ typedef enum {
 
     p2_TESTB_W_BITL             = INST7(0,1,0,0,0,0,0),
         p2_TESTB_W              = p2_TESTB_W_BITL,
-        p2_BITL                 = p2_TESTB_W_BITL,
+        p2_BITL_W               = p2_TESTB_W_BITL,
     p2_TESTBN_W_BITH            = INST7(0,1,0,0,0,0,1),
         p2_TESTBN_W             = p2_TESTBN_W_BITH,
-        p2_BITH                 = p2_TESTBN_W_BITH,
+        p2_BITH_W               = p2_TESTBN_W_BITH,
     p2_TESTB_AND_BITC           = INST7(0,1,0,0,0,1,0),
         p2_TESTB_AND            = p2_TESTB_AND_BITC,
-        p2_BITC                 = p2_TESTB_AND_BITC,
+        p2_BITC_W               = p2_TESTB_AND_BITC,
     p2_TESTBN_AND_BITNC         = INST7(0,1,0,0,0,1,1),
         p2_TESTBN_AND           = p2_TESTBN_AND_BITNC,
-        p2_BITNC                = p2_TESTBN_AND_BITNC,
+        p2_BITNC_W              = p2_TESTBN_AND_BITNC,
     p2_TESTB_OR_BITZ            = INST7(0,1,0,0,1,0,0),
         p2_TESTB_OR             = p2_TESTB_OR_BITZ,
-        p2_BITZ                 = p2_TESTB_OR_BITZ,
+        p2_BITZ_W               = p2_TESTB_OR_BITZ,
     p2_TESTBN_OR_BITNZ          = INST7(0,1,0,0,1,0,1),
         p2_TESTBN_OR            = p2_TESTBN_OR_BITNZ,
-        p2_BITNZ                = p2_TESTBN_OR_BITNZ,
+        p2_BITNZ_W              = p2_TESTBN_OR_BITNZ,
     p2_TESTB_XOR_BITRND         = INST7(0,1,0,0,1,1,0),
         p2_TESTB_XOR            = p2_TESTB_XOR_BITRND,
-        p2_BITRND               = p2_TESTB_XOR_BITRND,
+        p2_BITRND_W             = p2_TESTB_XOR_BITRND,
     p2_TESTBN_XOR_BITNOT        = INST7(0,1,0,0,1,1,1),
         p2_TESTBN_XOR           = p2_TESTBN_XOR_BITNOT,
-        p2_BITNOT               = p2_TESTBN_XOR_BITNOT,
+        p2_BITNOT_W             = p2_TESTBN_XOR_BITNOT,
 
     p2_AND                      = INST7(0,1,0,1,0,0,0),
     p2_ANDN                     = INST7(0,1,0,1,0,0,1),
@@ -630,6 +630,7 @@ typedef enum {
 
     p2_OPSRC_SETSCP             = 0x070,
     p2_OPSRC_GETSCP             = 0x071,
+    p2_OPSRC_INVALID            = 0x200
 }   p2_opsrc_e;
 
 typedef enum {
@@ -674,6 +675,8 @@ typedef enum {
     p2_OPX24_NIXINT1            = 0x025,
     p2_OPX24_NIXINT2            = 0x026,
     p2_OPX24_NIXINT3            = 0x027,
+
+    p2_OPX24_INVALID            = 0x200,
 }   p2_opx24_e;
 
 typedef enum {
@@ -772,82 +775,82 @@ typedef enum {
  * This is the 7 bit instruction with appended WC and WZ
  */
 typedef enum {
-    p2_BITL_eol                 = INST9(p2_TESTB_W_BITL,0,0),
+    p2_BITL                     = INST9(p2_TESTB_W_BITL,0,0),
     p2_TESTB_WZ                 = INST9(p2_TESTB_W_BITL,0,1),
     p2_TESTB_WC                 = INST9(p2_TESTB_W_BITL,1,0),
     p2_BITL_WCZ                 = INST9(p2_TESTB_W_BITL,1,1),
 
-    p2_BITH_eol                 = INST9(p2_TESTBN_W_BITH,0,0),
+    p2_BITH                     = INST9(p2_TESTBN_W_BITH,0,0),
     p2_TESTBN_WZ                = INST9(p2_TESTBN_W_BITH,0,1),
     p2_TESTBN_WC                = INST9(p2_TESTBN_W_BITH,1,0),
     p2_BITH_WCZ                 = INST9(p2_TESTBN_W_BITH,1,1),
 
-    p2_BITC_eol                 = INST9(p2_TESTB_AND_BITC,0,0),
+    p2_BITC                     = INST9(p2_TESTB_AND_BITC,0,0),
     p2_TESTB_ANDZ               = INST9(p2_TESTB_AND_BITC,0,1),
     p2_TESTB_ANDC               = INST9(p2_TESTB_AND_BITC,1,0),
     p2_BITC_WCZ                 = INST9(p2_TESTB_AND_BITC,1,1),
 
-    p2_BITNC_eol                = INST9(p2_TESTBN_AND_BITNC,0,0),
+    p2_BITNC                    = INST9(p2_TESTBN_AND_BITNC,0,0),
     p2_TESTBN_ANDZ              = INST9(p2_TESTBN_AND_BITNC,0,1),
     p2_TESTBN_ANDC              = INST9(p2_TESTBN_AND_BITNC,1,0),
     p2_BITNC_WCZ                = INST9(p2_TESTBN_AND_BITNC,1,1),
 
-    p2_BITZ_eol                 = INST9(p2_TESTB_OR_BITZ,0,0),
+    p2_BITZ                     = INST9(p2_TESTB_OR_BITZ,0,0),
     p2_TESTB_ORZ                = INST9(p2_TESTB_OR_BITZ,0,1),
     p2_TESTB_ORC                = INST9(p2_TESTB_OR_BITZ,1,0),
     p2_BITZ_WCZ                 = INST9(p2_TESTB_OR_BITZ,1,1),
 
-    p2_BITNZ_eol                = INST9(p2_TESTBN_OR_BITNZ,0,0),
+    p2_BITNZ                    = INST9(p2_TESTBN_OR_BITNZ,0,0),
     p2_TESTBN_ORZ               = INST9(p2_TESTBN_OR_BITNZ,0,1),
     p2_TESTBN_ORC               = INST9(p2_TESTBN_OR_BITNZ,1,0),
     p2_BITNZ_WCZ                = INST9(p2_TESTBN_OR_BITNZ,1,1),
 
-    p2_BITRND_eol               = INST9(p2_TESTB_XOR_BITRND,0,0),
+    p2_BITRND                   = INST9(p2_TESTB_XOR_BITRND,0,0),
     p2_TESTB_XORZ               = INST9(p2_TESTB_XOR_BITRND,0,1),
     p2_TESTB_XORC               = INST9(p2_TESTB_XOR_BITRND,1,0),
     p2_BITRND_WCZ               = INST9(p2_TESTB_XOR_BITRND,1,1),
 
-    p2_BITNOT_eol               = INST9(p2_TESTBN_XOR_BITNOT,0,0),
+    p2_BITNOT                   = INST9(p2_TESTBN_XOR_BITNOT,0,0),
     p2_TESTBN_XORZ              = INST9(p2_TESTBN_XOR_BITNOT,0,1),
     p2_TESTBN_XORC              = INST9(p2_TESTBN_XOR_BITNOT,1,0),
     p2_BITNOT_WCZ               = INST9(p2_TESTBN_XOR_BITNOT,1,1),
 
-    p2_DIRL_eol                 = INST9(p2_OPSRC,0,0),
+    p2_DIRL                     = INST9(p2_OPSRC,0,0),
     p2_TESTP_WZ                 = INST9(p2_OPSRC,0,1),
     p2_TESTP_WC                 = INST9(p2_OPSRC,1,0),
     p2_DIRL_WCZ                 = INST9(p2_OPSRC,1,1),
 
-    p2_DIRH_eol                 = INST9(p2_OPSRC,0,0),
+    p2_DIRH                     = INST9(p2_OPSRC,0,0),
     p2_TESTPN_WZ                = INST9(p2_OPSRC,0,1),
     p2_TESTPN_WC                = INST9(p2_OPSRC,1,0),
     p2_DIRH_WCZ                 = INST9(p2_OPSRC,1,1),
 
-    p2_DIRC_eol                 = INST9(p2_OPSRC,0,0),
+    p2_DIRC                     = INST9(p2_OPSRC,0,0),
     p2_TESTP_ANDZ               = INST9(p2_OPSRC,0,1),
     p2_TESTP_ANDC               = INST9(p2_OPSRC,1,0),
     p2_DIRC_WCZ                 = INST9(p2_OPSRC,1,1),
 
-    p2_DIRNC_eol                = INST9(p2_OPSRC,0,0),
+    p2_DIRNC                    = INST9(p2_OPSRC,0,0),
     p2_TESTPN_ANDZ              = INST9(p2_OPSRC,0,1),
     p2_TESTPN_ANDC              = INST9(p2_OPSRC,1,0),
     p2_DIRNC_WCZ                = INST9(p2_OPSRC,1,1),
 
-    p2_DIRZ_eol                 = INST9(p2_OPSRC,0,0),
+    p2_DIRZ                     = INST9(p2_OPSRC,0,0),
     p2_TESTP_ORZ                = INST9(p2_OPSRC,0,1),
     p2_TESTP_ORC                = INST9(p2_OPSRC,1,0),
     p2_DIRZ_WCZ                 = INST9(p2_OPSRC,1,1),
 
-    p2_DIRNZ_eol                = INST9(p2_OPSRC,0,0),
+    p2_DIRNZ                    = INST9(p2_OPSRC,0,0),
     p2_TESTPN_ORZ               = INST9(p2_OPSRC,0,1),
     p2_TESTPN_ORC               = INST9(p2_OPSRC,1,0),
     p2_DIRNZ_WCZ                = INST9(p2_OPSRC,1,1),
 
-    p2_DIRRND_eol               = INST9(p2_OPSRC,0,0),
+    p2_DIRRND                   = INST9(p2_OPSRC,0,0),
     p2_TESTP_XORZ               = INST9(p2_OPSRC,0,1),
     p2_TESTP_XORC               = INST9(p2_OPSRC,1,0),
     p2_DIRRND_WCZ               = INST9(p2_OPSRC,1,1),
 
-    p2_DIRNOT_eol               = INST9(p2_OPSRC,0,0),
+    p2_DIRNOT                   = INST9(p2_OPSRC,0,0),
     p2_TESTPN_XORZ              = INST9(p2_OPSRC,0,1),
     p2_TESTPN_XORC              = INST9(p2_OPSRC,1,0),
     p2_DIRNOT_WCZ               = INST9(p2_OPSRC,1,1),

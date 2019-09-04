@@ -23,7 +23,7 @@ public:
         p2_pal_expression,
         p2_pal_section,
         p2_pal_conditional,
-        p2_pal_modzc_param,
+        p2_pal_modcz_param,
         p2_pal_instruction,
         p2_pal_wcz_suffix,
     };

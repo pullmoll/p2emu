@@ -69,43 +69,82 @@ public:
     void clear(const p2_LONG opcode = 0, const p2_ORG_ORGH_t& pc_orgh = p2_ORG_ORGH_t(0,0));
 
     const P2Atom& equ() const;
+    const p2_ORG_ORGH_t org_orgh() const;
 
+    void set_dst_imm(ImmFlag flag);
+    const QVariant& augd() const;
+    void augd_clear();
+    bool augd_valid() const;
+    template <typename T> T augd_value() const { return qvariant_cast<T>(m_augd) & AUG_MASK; }
+
+    void set_src_imm(ImmFlag flag);
+    const QVariant& augs() const;
+    void augs_clear();
+    bool augs_valid() const;
+    template <typename T> T augs_value() const { return qvariant_cast<T>(m_augs) & AUG_MASK; }
+
+    Error aug_error() const;
+
+    bool as_ir() const;
+    bool as_equ() const;
+
+    p2_opcode_u ir() const;
+    p2_LONG opcode() const;
     p2_cond_e cond() const;
     p2_inst7_e inst7() const;
     p2_inst8_e inst8() const;
     p2_inst9_e inst9() const;
+    p2_opsrc_e opsrc() const;
+    p2_opx24_e opx24() const;
     bool wc() const;
     bool wz() const;
     bool im() const;
     p2_LONG dst() const;
     p2_LONG src() const;
 
+    const P2Atom& data() const;
+
+    bool set_as_IR(bool on = true);
+    bool set_org_orgh(p2_ORG_ORGH_t org_orgh);
+    bool set_data(const P2Atom& data);
     bool set_equ(const P2Atom& value);
 
+    void set_opcode(const p2_LONG opcode);
     void set_cond(const p2_cond_e cond);
     void set_inst7(const p2_inst7_e inst);
     void set_inst8(const p2_inst8_e inst);
     void set_inst9(const p2_inst9_e inst);
+    void set_opdst(const p2_opdst_e inst);
+    void set_opsrc(const p2_opsrc_e inst);
+    void set_opx24(const p2_opx24_e inst);
+    void set_dst(const p2_LONG dst);
+    void set_src(const p2_LONG src);
+    void set_dst_src(const p2_LONG dst, const p2_LONG src);
+    void set_a20(const p2_LONG addr);
     void set_imm23(const p2_LONG addr);
     void set_wcz(bool on = true);
     void set_wc(bool on = true);
     void set_wz(bool on = true);
     void set_im(bool on = true);
     void set_to(bool on = true);
+    void set_nnn(const p2_LONG nnn);
+    void set_nn(const p2_LONG nn);
+    void set_n(const p2_LONG n);
     bool set_dst(const P2Atom& value, const p2_LONG ORG, const p2_LONG ORGH);
     bool set_src(const P2Atom& value, const p2_LONG ORG, const p2_LONG ORGH);
 
-    p2_opcode_u u;                  //!< instruction opcode or assignment value
-    p2_ORG_ORGH_t ORG_ORGH;         //!< QPair of the instruction's ORG and ORGH values
-    ImmFlag dst_imm_flag;           //!< where to store destination (D) immediate flag
-    ImmFlag src_imm_flag;           //!< where to store source (S) immediate flag
-    bool as_IR;                     //!< if true, the p2_opcode_u contains an instruction
-    bool as_EQU;                    //!< if true, the p2_opcode_u contains an assignment
-    QVariant AUGD;                  //!< optional value in case an AUGD is required
-    QVariant AUGS;                  //!< optional value in case an AUGS is required
-    P2Atom DATA;                    //!< optional data generated from BYTE, WORD, LONG, FILE, etc.
-    P2Atom EQU;                     //!< optional atom from an assignment (=)
-    Error error;                    //!< error set when set_dst() or set_src() return false
+private:
+    p2_opcode_u m_u;                //!< instruction opcode or assignment value
+    p2_ORG_ORGH_t m_org_orgh;       //!< QPair of the instruction's ORG and ORGH values
+    ImmFlag m_dst_imm_flag;         //!< where to store destination (D) immediate flag
+    ImmFlag m_src_imm_flag;         //!< where to store source (S) immediate flag
+    bool m_as_ir;                   //!< if true, the p2_opcode_u contains an instruction
+    bool m_as_equ;                  //!< if true, the p2_opcode_u contains an assignment
+    QVariant m_augd;                //!< optional value in case an AUGD is required
+    QVariant m_augs;                //!< optional value in case an AUGS is required
+    P2Atom m_data;                  //!< optional data generated from BYTE, WORD, LONG, FILE, etc.
+    P2Atom m_equ;                   //!< optional atom from an assignment (=)
+    Error m_error;                  //!< error set when set_dst() or set_src() return false
 };
 
 Q_DECLARE_METATYPE(P2Opcode);

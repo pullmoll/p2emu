@@ -8,6 +8,7 @@ P2DocOpcodeClass::P2DocOpcodeClass(P2MatchMask mm, const char* pat, const char* 
     , m_instr(nullptr)
     , m_descr()
     , m_token(t_invalid)
+    , m_params()
 {
 
 }
@@ -55,6 +56,11 @@ p2_token_e P2DocOpcodeClass::token() const
     return m_token;
 }
 
+const P2DocParams& P2DocOpcodeClass::params() const
+{
+    return m_params;
+}
+
 void P2DocOpcodeClass::set_brief(const char* brief)
 {
     m_brief = brief;
@@ -78,4 +84,14 @@ void P2DocOpcodeClass::add_descr(const char* descr)
 void P2DocOpcodeClass::set_token(p2_token_e token)
 {
     m_token = token;
+}
+
+void P2DocOpcodeClass::set_params(p2_token_e token, bool mandatory)
+{
+    m_params = P2DocParams() = {P2DocParam(token,mandatory)};
+}
+
+void P2DocOpcodeClass::add_param(p2_token_e token, bool mandatory)
+{
+    m_params += P2DocParam(token, mandatory);
 }

@@ -93,16 +93,16 @@ P2Asm::P2Asm(QObject *parent)
     , m_instr()
     , m_symbol()
     , m_function()
-    , m_section(sec_dat)
+    , m_section(dat_section)
     , m_cnt(0)
     , m_idx(0)
     , MEM()
 {
-    m_sections.insert(sec_dat, p2_section_dat);
-    m_sections.insert(sec_con, p2_section_con);
-    m_sections.insert(sec_pub, p2_section_pub);
-    m_sections.insert(sec_pri, p2_section_pri);
-    m_sections.insert(sec_var, p2_section_var);
+    m_sections.insert(dat_section, p2_section_dat);
+    m_sections.insert(con_section, p2_section_con);
+    m_sections.insert(pub_section, p2_section_pub);
+    m_sections.insert(pri_section, p2_section_pri);
+    m_sections.insert(var_section, p2_section_var);
 }
 
 /**
@@ -148,7 +148,7 @@ void P2Asm::pass_clear()
     m_instr = t_invalid;
     m_symbol.clear();
     m_function.clear();
-    m_section = sec_dat;
+    m_section = dat_section;
     m_cnt = 0;
     m_idx = 0;
     memset(MEM.BYTES, 0, sizeof(MEM.BYTES));
@@ -167,11 +167,7 @@ void P2Asm::line_clear()
     m_words.clear();
     m_data.clear();
     m_advance = 0;
-    m_IR.as_IR = false;
-    m_IR.as_EQU = false;
-    m_IR.ORG_ORGH = p2_ORG_ORGH_t(m_ORG, m_ORGH);
-    m_IR.DATA.clear();
-    m_IR.EQU.clear();
+    m_IR.clear(0, p2_ORG_ORGH_t(m_ORG, m_ORGH));
 }
 
 /**
@@ -265,7 +261,7 @@ int P2Asm::count() const
  * @brief Return a const reference to the has of ORG and ORGH values per line
  * @return const reference to the hash
  */
-const p2_pc_orgh_hash_t& P2Asm::PC_ORGH_hash() const
+const p2_org_orgh_hash_t& P2Asm::PC_ORGH_hash() const
 {
     return m_hash_PC;
 }
@@ -647,14 +643,14 @@ bool P2Asm::assemble_dat()
 
     // Return if no more words/tokens were found
     if (!skip_comments()) {
-        m_IR.as_IR = false;
+        m_IR.set_as_IR(false);
         results();
         return true;
     }
 
     m_advance = 4;      // Assume the instruction advances by 4 bytes
     m_IR.clear();       // Clear the opcode
-    m_IR.as_IR = true;  // Assume the instruction emits IR
+    m_IR.set_as_IR(true);  // Assume the instruction emits IR
 
     // Conditional execution prefix
     m_IR.set_cond(conditional());
@@ -2231,15 +2227,15 @@ bool P2Asm::assemble_pass()
 
         bool success = false;
         switch (m_section) {
-        case sec_dat:
+        case dat_section:
             success = assemble_dat();
             break;
-        case sec_con:
+        case con_section:
             success = assemble_con();
             break;
-        case sec_pub:
-        case sec_pri:
-        case sec_var:
+        case pub_section:
+        case pri_section:
+        case var_section:
             success = assemble_dat();
             break;
         }
@@ -2350,57 +2346,57 @@ QStringList P2Asm::results_instruction(bool wr_mem)
     QString line = m_line;
     Q_ASSERT(m_advance == 4);
 
-    m_IR.ORG_ORGH = p2_ORG_ORGH_t(m_ORG, m_ORGH);
-    m_hash_PC.insert(m_lineno, m_IR.ORG_ORGH);
+    m_IR.set_org_orgh(p2_ORG_ORGH_t(m_ORG, m_ORGH));
+    m_hash_PC.insert(m_lineno, p2_ORG_ORGH_t(m_ORG, m_ORGH));
     m_hash_IR.insert(m_lineno, m_IR);
 
     // Do we need to generate an AUGD instruction?
-    if (m_IR.AUGD.isValid()) {
-        p2_LONG value = m_IR.AUGD.value<p2_LONG>() & AUG_MASK;
-        P2Opcode IR(p2_AUGD_00, p2_ORG_ORGH_t(PC, ORGH));
-        IR.u.opcode |= value >> AUG_SHIFT;
+    if (m_IR.augd_valid()) {
+        p2_LONG value = m_IR.augd_value<p2_LONG>();
+        P2Opcode IR(p2_AUGD, p2_ORG_ORGH_t(PC, ORGH));
+        IR.set_imm23(value);
 
         output += QString("%1 %2 [%3] %4")
                  .arg(m_lineno, -6)
                  .arg(PC, 6, 16, QChar('0'))
-                 .arg(IR.u.opcode, 8, 16, QChar('0'))
+                 .arg(IR.opcode(), 8, 16, QChar('0'))
                  .arg(line);
 
         PC += 4;
         ORGH += 4;
-        m_IR.ORG_ORGH = IR.ORG_ORGH;
+        m_IR.set_org_orgh(IR.org_orgh());
         m_advance += 4;
-        m_IR.AUGD.clear();
+        m_IR.augd_clear();
         line.clear();
     }
 
     // Do we need to generate an AUGS instruction?
-    if (m_IR.AUGS.isValid()) {
-        p2_LONG value = m_IR.AUGS.value<p2_LONG>() & AUG_MASK;
-        P2Opcode IR(p2_AUGS_00, p2_ORG_ORGH_t(PC, ORGH));
-        IR.u.opcode |= value >> AUG_SHIFT;
+    if (m_IR.augs_valid()) {
+        p2_LONG value = m_IR.augs_value<p2_LONG>();
+        P2Opcode IR(p2_AUGS, p2_ORG_ORGH_t(PC, ORGH));
+        IR.set_imm23(value);
 
         output += QString("%1 %2 [%3] %4")
                  .arg(m_lineno, -6)
                  .arg(PC, 6, 16, QChar('0'))
-                 .arg(IR.u.opcode, 8, 16, QChar('0'))
+                 .arg(IR.opcode(), 8, 16, QChar('0'))
                  .arg(line);
         PC += 4;
         ORGH += 4;
-        m_IR.ORG_ORGH = IR.ORG_ORGH;
+        m_IR.set_org_orgh(IR.org_orgh());
         m_advance += 4;
-        m_IR.AUGS.clear();
+        m_IR.augs_clear();
         line.clear();
     }
 
     output += QString("%1 %2 [%3] %4")
              .arg(m_lineno, -6)
              .arg(PC, 6, 16, QChar('0'))
-             .arg(m_IR.u.opcode, 8, 16, QChar('0'))
+             .arg(m_IR.opcode(), 8, 16, QChar('0'))
              .arg(line);
 
     if (wr_mem && m_ORGH < MEM_SIZE) {
-        MEM.LONGS[m_ORGH/4] = m_IR.u.opcode;
+        MEM.LONGS[m_ORGH/4] = m_IR.opcode();
     }
     return output;
 }
@@ -2412,12 +2408,12 @@ QStringList P2Asm::results_instruction(bool wr_mem)
 QString P2Asm::results_assignment()
 {
     QString output;
-    m_IR.as_IR = false;
+    m_IR.set_as_IR(false);
     m_hash_IR.insert(m_lineno, m_IR);
     output = QString("%1 %2 <%3> %4")
              .arg(m_lineno, -6)
              .arg(m_ORG, 6, 16, QChar('0'))
-             .arg(m_IR.u.opcode, 8, 16, QChar('0'))
+             .arg(m_IR.opcode(), 8, 16, QChar('0'))
              .arg(m_line);
     return output;
 }
@@ -2451,7 +2447,7 @@ QStringList P2Asm::results_data(bool wr_mem)
     p2_LONG data = 0;
     p2_LONG mask = 0;
 
-    m_IR.DATA = m_data;
+    m_IR.set_data(m_data);
     m_hash_PC.insert(m_lineno, p2_ORG_ORGH_t(m_ORG, m_ORGH));
     m_hash_IR.insert(m_lineno, m_IR);
 
@@ -2497,7 +2493,7 @@ void P2Asm::results()
 {
     const bool binary = true;
 
-    if (m_IR.as_IR) {
+    if (m_IR.as_ir()) {
         m_listing += results_instruction(binary);
     } else if (m_data.isEmpty()) {
         if (m_words.isEmpty() || Token.is_type(m_words[0].tok(), tm_comment)) {
@@ -3519,10 +3515,10 @@ bool P2Asm::encode_ptr_index(const P2Atom& index)
 bool P2Asm::error_dst_or_src()
 {
     // No error in pass 1
-    if (m_pass < 2 || P2Opcode::none == m_IR.error)
+    if (m_pass < 2 || P2Opcode::none == m_IR.aug_error())
         return true;
 
-    switch (m_IR.error) {
+    switch (m_IR.aug_error()) {
     case P2Opcode::dst_augd_none:
         m_errors += tr("%1 constant larger than $1ff but %2.")
                     .arg(QStringLiteral("DST"))
@@ -3582,7 +3578,7 @@ bool P2Asm::error_dst_or_src()
  */
 P2Atom P2Asm::parse_dst(P2Opcode::ImmFlag flag)
 {
-    m_IR.dst_imm_flag = flag;
+    m_IR.set_dst_imm(flag);
     P2Atom dst = parse_expression();
     if (!m_IR.set_dst(dst, m_ORG, m_ORGH))
             error_dst_or_src();
@@ -3595,7 +3591,7 @@ P2Atom P2Asm::parse_dst(P2Opcode::ImmFlag flag)
  */
 P2Atom P2Asm::parse_src(P2Opcode::ImmFlag flag)
 {
-    m_IR.src_imm_flag = flag;
+    m_IR.set_src_imm(flag);
     P2Atom src = parse_expression();
     if (!m_IR.set_src(src, m_ORG, m_ORGH))
         error_dst_or_src();
@@ -4170,8 +4166,7 @@ bool P2Asm::parse_D_IM_S_NNN(uint max)
             emit Error(m_pass, m_lineno, m_errors.last());
             return false;
         }
-        p2_LONG opcode = static_cast<p2_LONG>(n.to_long() & max) << 18;
-        m_IR.u.opcode |= opcode;
+        m_IR.set_nnn(n.to_long());
     } else {
         m_errors += tr("Missing immediate #n");
         emit Error(m_pass, m_lineno, m_errors.last());
@@ -4235,7 +4230,7 @@ bool P2Asm::parse_PTRx_PC_ABS()
 
     P2Atom atom = parse_expression();
     p2_LONG addr = atom.to_long();
-    m_IR.u.opcode |= addr & A20MASK;
+    m_IR.set_a20(addr);
 
     return end_of_line();
 }
@@ -4249,7 +4244,7 @@ bool P2Asm::parse_PC_ABS()
 {
     P2Atom atom = parse_expression();
     p2_LONG addr = atom.to_long();
-    m_IR.u.opcode |= addr & A20MASK;
+    m_IR.set_a20(addr);
 
     return end_of_line();
 }
@@ -4284,7 +4279,7 @@ bool P2Asm::asm_assign()
 #endif
     m_symbols->set_atom(m_symbol, atom);
     m_IR.set_equ(atom);
-    if (sec_con != m_section) {
+    if (con_section != m_section) {
         m_errors += tr("Not in constant section (CON) but found %1.")
                     .arg(tr("assignment"));
         emit Error(m_pass, m_lineno, m_errors.last());
@@ -4314,7 +4309,7 @@ bool P2Asm::asm_enum_initial()
     m_advance = 0;      // Don't advance PC
     P2Atom atom = parse_expression();
     m_IR.set_equ(atom);
-    if (sec_con == m_section) {
+    if (con_section == m_section) {
         if (!skip_comments())
             return false;
         if (!mandatory_COMMA())
@@ -4353,10 +4348,10 @@ bool P2Asm::asm_enum_continue()
 {
     // first symbol was already taken and defined
     m_advance = 0;      // Don't advance PC
-    m_IR.as_IR = false;
+    m_IR.set_as_IR(false);
     P2Atom atom = m_enum;
     m_IR.set_equ(atom);
-    if (sec_con == m_section) {
+    if (con_section == m_section) {
         if (!mandatory_COMMA())
             return false;
         while (m_idx < m_cnt) {
@@ -4397,7 +4392,7 @@ bool P2Asm::asm_enum_continue()
 bool P2Asm::asm_alignw()
 {
     next();
-    m_IR.as_IR = false;
+    m_IR.set_as_IR(false);
     m_advance = (m_ORG & ~1u) + 2u - m_ORG;
     return end_of_line();
 }
@@ -4410,7 +4405,7 @@ bool P2Asm::asm_alignw()
 bool P2Asm::asm_alignl()
 {
     next();
-    m_IR.as_IR = false;
+    m_IR.set_as_IR(false);
     m_advance = (m_ORG & ~3u) + 4u - m_ORG;
     return end_of_line();
 }
@@ -4447,7 +4442,7 @@ bool P2Asm::asm_orgf()
 {
     next();
     m_advance = 0;      // Don't advance PC
-    m_IR.as_IR = false;
+    m_IR.set_as_IR(false);
     P2Atom atom = parse_expression();
     p2_LONG value = atom.isEmpty() ? 0 : 4 * atom.to_long();
     if (value >= HUB_ADDR0) {
@@ -4473,7 +4468,7 @@ bool P2Asm::asm_orgh()
 {
     next();
     m_advance = 0;      // Don't advance PC
-    m_IR.as_IR = false;
+    m_IR.set_as_IR(false);
     P2Atom atom = parse_expression();
     p2_LONG value = atom.isEmpty() ? HUB_ADDR0 : atom.to_long();
     if (value <= HUB_ADDR0)
@@ -4498,7 +4493,7 @@ bool P2Asm::asm_fit()
 {
     next();
     m_advance = 0;
-    m_IR.as_IR = false;
+    m_IR.set_as_IR(false);
     P2Atom atom = parse_expression();
     const p2_LONG fit = atom.isNull() ? HUB_ADDR0 : atom.to_long();
     const p2_LONG PC = m_ORG / 4;
@@ -4519,8 +4514,8 @@ bool P2Asm::asm_dat()
 {
     next();
     m_advance = 0;
-    m_IR.as_IR = false;
-    m_section = sec_dat;
+    m_IR.set_as_IR(false);
+    m_section = dat_section;
     return true;
 }
 
@@ -4532,8 +4527,8 @@ bool P2Asm::asm_con()
 {
     next();
     m_advance = 0;
-    m_IR.as_IR = false;
-    m_section = sec_con;
+    m_IR.set_as_IR(false);
+    m_section = con_section;
     return true;
 }
 
@@ -4545,8 +4540,8 @@ bool P2Asm::asm_pub()
 {
     next();
     m_advance = 0;
-    m_IR.as_IR = false;
-    m_section = sec_pub;
+    m_IR.set_as_IR(false);
+    m_section = pub_section;
     return true;
 }
 
@@ -4558,8 +4553,8 @@ bool P2Asm::asm_pri()
 {
     next();
     m_advance = 0;
-    m_IR.as_IR = false;
-    m_section = sec_pri;
+    m_IR.set_as_IR(false);
+    m_section = pri_section;
     return true;
 }
 
@@ -4571,8 +4566,8 @@ bool P2Asm::asm_var()
 {
     next();
     m_advance = 0;
-    m_IR.as_IR = false;
-    m_section = sec_var;
+    m_IR.set_as_IR(false);
+    m_section = var_section;
     return true;
 }
 
@@ -4587,7 +4582,7 @@ bool P2Asm::asm_byte()
     QByteArray bytes;
     next();
     m_advance = 0;      // Don't advance PC, as it's done based on m_data
-    m_IR.as_IR = false;
+    m_IR.set_as_IR(false);
 
     while (m_idx < m_cnt) {
         if (t__LBRACKET == m_words.value(m_idx).tok()) {
@@ -4620,7 +4615,7 @@ bool P2Asm::asm_word()
 {
     next();
     m_advance = 0;      // Don't advance PC, as it's done based on m_data
-    m_IR.as_IR = false;
+    m_IR.set_as_IR(false);
 
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
@@ -4643,7 +4638,7 @@ bool P2Asm::asm_long()
     P2Atom atom;
     next();
     m_advance = 0;      // Don't advance PC, as it's done based on m_data
-    m_IR.as_IR = false;
+    m_IR.set_as_IR(false);
 
     while (m_idx < m_cnt) {
         if (t__LBRACKET == m_words.value(m_idx).tok()) {
@@ -4666,7 +4661,7 @@ bool P2Asm::asm_long()
 }
 
 /**
- * @brief Reserver a number of longs of data
+ * @brief Reserve a number of bytes of data
  *
  * @return true on success, or false on error
  */
@@ -4674,13 +4669,12 @@ bool P2Asm::asm_res()
 {
     next();
     m_advance = 0;      // Don't advance PC if no value is specified
-    m_IR.as_IR = false;
+    m_IR.set_as_IR(false);
 
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
         p2_LONG count = atom.to_long();
-        while (count-- > 0)
-            m_data.append_uint(P2Atom::Byte, 0);
+        m_data.append(QByteArray(static_cast<int>(count), 0));
         optional_COMMA();
     }
     m_data.set_type(P2Atom::Long);
@@ -4697,7 +4691,7 @@ bool P2Asm::asm_file()
 {
     next();
     m_advance = 0;      // Don't advance PC, as it's done based on m_data
-    m_IR.as_IR = false;
+    m_IR.set_as_IR(false);
 
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
@@ -4732,7 +4726,7 @@ bool P2Asm::asm_file()
 bool P2Asm::asm_nop()
 {
     next();
-    m_IR.u.opcode = 0;
+    m_IR.set_opcode(0);
     return parse_INST();
 }
 
@@ -5514,7 +5508,7 @@ bool P2Asm::asm_testbn()
 bool P2Asm::asm_bitl()
 {
     next();
-    m_IR.set_inst7(p2_BITL);
+    m_IR.set_inst7(p2_BITL_W);
     return parse_D_IM_S_WCZ();
 }
 
@@ -5529,7 +5523,7 @@ bool P2Asm::asm_bitl()
 bool P2Asm::asm_bith()
 {
     next();
-    m_IR.set_inst7(p2_BITH);
+    m_IR.set_inst7(p2_BITH_W);
     return parse_D_IM_S_WCZ();
 }
 
@@ -5544,7 +5538,7 @@ bool P2Asm::asm_bith()
 bool P2Asm::asm_bitc()
 {
     next();
-    m_IR.set_inst7(p2_BITC);
+    m_IR.set_inst7(p2_BITC_W);
     return parse_D_IM_S_WCZ();
 }
 
@@ -5559,7 +5553,7 @@ bool P2Asm::asm_bitc()
 bool P2Asm::asm_bitnc()
 {
     next();
-    m_IR.set_inst7(p2_BITNC);
+    m_IR.set_inst7(p2_BITNC_W);
     return parse_D_IM_S_WCZ();
 }
 
@@ -5574,7 +5568,7 @@ bool P2Asm::asm_bitnc()
 bool P2Asm::asm_bitz()
 {
     next();
-    m_IR.set_inst7(p2_BITZ);
+    m_IR.set_inst7(p2_BITZ_W);
     return parse_D_IM_S_WCZ();
 }
 
@@ -5589,7 +5583,7 @@ bool P2Asm::asm_bitz()
 bool P2Asm::asm_bitnz()
 {
     next();
-    m_IR.set_inst7(p2_BITNZ);
+    m_IR.set_inst7(p2_BITNZ_W);
     return parse_D_IM_S_WCZ();
 }
 
@@ -5604,7 +5598,7 @@ bool P2Asm::asm_bitnz()
 bool P2Asm::asm_bitrnd()
 {
     next();
-    m_IR.set_inst7(p2_BITRND);
+    m_IR.set_inst7(p2_BITRND_W);
     return parse_D_IM_S_WCZ();
 }
 
@@ -5619,7 +5613,7 @@ bool P2Asm::asm_bitrnd()
 bool P2Asm::asm_bitnot()
 {
     next();
-    m_IR.set_inst7(p2_BITNOT);
+    m_IR.set_inst7(p2_BITNOT_W);
     return parse_D_IM_S_WCZ();
 }
 
@@ -7328,7 +7322,7 @@ bool P2Asm::asm_popa()
     next();
     m_IR.set_inst7(p2_RDLONG);
     m_IR.set_im(true);
-    m_IR.u.op.src = 0x15f;
+    m_IR.set_src(0x15f);
     return parse_D_WCZ();
 }
 
@@ -7348,7 +7342,7 @@ bool P2Asm::asm_popb()
     next();
     m_IR.set_inst7(p2_RDLONG);
     m_IR.set_im(true);
-    m_IR.u.op.src = 0x1df;
+    m_IR.set_src(0x1df);
     return parse_D_WCZ();
 }
 
@@ -7385,8 +7379,7 @@ bool P2Asm::asm_resi3()
     m_IR.set_inst7(p2_CALLD);
     m_IR.set_wc();
     m_IR.set_wz();
-    m_IR.u.op.dst = offs_IJMP3;
-    m_IR.u.op.src = offs_IRET3;
+    m_IR.set_dst_src(offs_IJMP3, offs_IRET3);
     return parse_INST();
 }
 
@@ -7405,8 +7398,7 @@ bool P2Asm::asm_resi2()
     next();
     m_IR.set_inst7(p2_CALLD);
     m_IR.set_wcz(true);
-    m_IR.u.op.dst = offs_IJMP2;
-    m_IR.u.op.src = offs_IRET2;
+    m_IR.set_dst_src(offs_IJMP2, offs_IRET2);
     return parse_INST();
 }
 
@@ -7425,8 +7417,7 @@ bool P2Asm::asm_resi1()
     next();
     m_IR.set_inst7(p2_CALLD);
     m_IR.set_wcz(true);
-    m_IR.u.op.dst = offs_IJMP1;
-    m_IR.u.op.src = offs_IRET1;
+    m_IR.set_dst_src(offs_IJMP1, offs_IRET1);
     return parse_INST();
 }
 
@@ -7445,8 +7436,7 @@ bool P2Asm::asm_resi0()
     next();
     m_IR.set_inst7(p2_CALLD);
     m_IR.set_wcz(true);
-    m_IR.u.op.dst = offs_INA;
-    m_IR.u.op.src = offs_INB;
+    m_IR.set_dst_src(offs_INA, offs_INB);
     return parse_INST();
 }
 
@@ -7465,8 +7455,7 @@ bool P2Asm::asm_reti3()
     next();
     m_IR.set_inst7(p2_CALLD);
     m_IR.set_wcz(true);
-    m_IR.u.op.dst = offs_INB;
-    m_IR.u.op.src = offs_IRET3;
+    m_IR.set_dst_src(offs_INB, offs_IRET3);
     return parse_INST();
 }
 
@@ -7485,8 +7474,7 @@ bool P2Asm::asm_reti2()
     next();
     m_IR.set_inst7(p2_CALLD);
     m_IR.set_wcz(true);
-    m_IR.u.op.dst = offs_INB;
-    m_IR.u.op.src = offs_IRET2;
+    m_IR.set_dst_src(offs_INB, offs_IRET2);
     return parse_INST();
 }
 
@@ -7505,8 +7493,7 @@ bool P2Asm::asm_reti1()
     next();
     m_IR.set_inst7(p2_CALLD);
     m_IR.set_wcz(true);
-    m_IR.u.op.dst = offs_INB;
-    m_IR.u.op.src = offs_IRET1;
+    m_IR.set_dst_src(offs_INB, offs_IRET1);
     return parse_INST();
 }
 
@@ -7525,8 +7512,7 @@ bool P2Asm::asm_reti0()
     next();
     m_IR.set_inst7(p2_CALLD);
     m_IR.set_wcz(true);
-    m_IR.u.op.dst = offs_INB;
-    m_IR.u.op.src = offs_INB;
+    m_IR.set_dst_src(offs_INB, offs_INB);
     return parse_INST();
 }
 
@@ -7766,8 +7752,7 @@ bool P2Asm::asm_tjv()
 bool P2Asm::asm_jint()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JINT;
+    m_IR.set_opdst(p2_OPDST_JINT);
     return parse_IM_S();
 }
 
@@ -7782,8 +7767,7 @@ bool P2Asm::asm_jint()
 bool P2Asm::asm_jct1()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JCT1;
+    m_IR.set_opdst(p2_OPDST_JCT1);
     return parse_IM_S();
 }
 
@@ -7798,8 +7782,7 @@ bool P2Asm::asm_jct1()
 bool P2Asm::asm_jct2()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JCT2;
+    m_IR.set_opdst(p2_OPDST_JCT2);
     return parse_IM_S();
 }
 
@@ -7814,8 +7797,7 @@ bool P2Asm::asm_jct2()
 bool P2Asm::asm_jct3()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JCT3;
+    m_IR.set_opdst(p2_OPDST_JCT3);
     return parse_IM_S();
 }
 
@@ -7830,8 +7812,7 @@ bool P2Asm::asm_jct3()
 bool P2Asm::asm_jse1()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JSE1;
+    m_IR.set_opdst(p2_OPDST_JSE1);
     return parse_IM_S();
 }
 
@@ -7846,8 +7827,7 @@ bool P2Asm::asm_jse1()
 bool P2Asm::asm_jse2()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JSE2;
+    m_IR.set_opdst(p2_OPDST_JSE2);
     return parse_IM_S();
 }
 
@@ -7862,8 +7842,7 @@ bool P2Asm::asm_jse2()
 bool P2Asm::asm_jse3()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JSE3;
+    m_IR.set_opdst(p2_OPDST_JSE3);
     return parse_IM_S();
 }
 
@@ -7878,8 +7857,7 @@ bool P2Asm::asm_jse3()
 bool P2Asm::asm_jse4()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JSE4;
+    m_IR.set_opdst(p2_OPDST_JSE4);
     return parse_IM_S();
 }
 
@@ -7894,8 +7872,7 @@ bool P2Asm::asm_jse4()
 bool P2Asm::asm_jpat()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JPAT;
+    m_IR.set_opdst(p2_OPDST_JPAT);
     return parse_IM_S();
 }
 
@@ -7910,8 +7887,7 @@ bool P2Asm::asm_jpat()
 bool P2Asm::asm_jfbw()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JFBW;
+    m_IR.set_opdst(p2_OPDST_JFBW);
     return parse_IM_S();
 }
 
@@ -7926,8 +7902,7 @@ bool P2Asm::asm_jfbw()
 bool P2Asm::asm_jxmt()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JXMT;
+    m_IR.set_opdst(p2_OPDST_JXMT);
     return parse_IM_S();
 }
 
@@ -7942,8 +7917,7 @@ bool P2Asm::asm_jxmt()
 bool P2Asm::asm_jxfi()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JXFI;
+    m_IR.set_opdst(p2_OPDST_JXFI);
     return parse_IM_S();
 }
 
@@ -7958,8 +7932,7 @@ bool P2Asm::asm_jxfi()
 bool P2Asm::asm_jxro()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JXRO;
+    m_IR.set_opdst(p2_OPDST_JXRO);
     return parse_IM_S();
 }
 
@@ -7974,8 +7947,7 @@ bool P2Asm::asm_jxro()
 bool P2Asm::asm_jxrl()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JXRL;
+    m_IR.set_opdst(p2_OPDST_JXRL);
     return parse_IM_S();
 }
 
@@ -7990,8 +7962,7 @@ bool P2Asm::asm_jxrl()
 bool P2Asm::asm_jatn()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JATN;
+    m_IR.set_opdst(p2_OPDST_JATN);
     return parse_IM_S();
 }
 
@@ -8006,8 +7977,7 @@ bool P2Asm::asm_jatn()
 bool P2Asm::asm_jqmt()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JQMT;
+    m_IR.set_opdst(p2_OPDST_JQMT);
     return parse_IM_S();
 }
 
@@ -8022,8 +7992,7 @@ bool P2Asm::asm_jqmt()
 bool P2Asm::asm_jnint()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JNINT;
+    m_IR.set_opdst(p2_OPDST_JNINT);
     return parse_IM_S();
 }
 
@@ -8038,8 +8007,7 @@ bool P2Asm::asm_jnint()
 bool P2Asm::asm_jnct1()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JNCT1;
+    m_IR.set_opdst(p2_OPDST_JNCT1);
     return parse_IM_S();
 }
 
@@ -8054,8 +8022,7 @@ bool P2Asm::asm_jnct1()
 bool P2Asm::asm_jnct2()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JNCT2;
+    m_IR.set_opdst(p2_OPDST_JNCT2);
     return parse_IM_S();
 }
 
@@ -8070,8 +8037,7 @@ bool P2Asm::asm_jnct2()
 bool P2Asm::asm_jnct3()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JNCT3;
+    m_IR.set_opdst(p2_OPDST_JNCT3);
     return parse_IM_S();
 }
 
@@ -8086,8 +8052,7 @@ bool P2Asm::asm_jnct3()
 bool P2Asm::asm_jnse1()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JNSE1;
+    m_IR.set_opdst(p2_OPDST_JNSE1);
     return parse_IM_S();
 }
 
@@ -8102,8 +8067,7 @@ bool P2Asm::asm_jnse1()
 bool P2Asm::asm_jnse2()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JNSE2;
+    m_IR.set_opdst(p2_OPDST_JNSE2);
     return parse_IM_S();
 }
 
@@ -8118,8 +8082,7 @@ bool P2Asm::asm_jnse2()
 bool P2Asm::asm_jnse3()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JNSE3;
+    m_IR.set_opdst(p2_OPDST_JNSE3);
     return parse_IM_S();
 }
 
@@ -8134,8 +8097,7 @@ bool P2Asm::asm_jnse3()
 bool P2Asm::asm_jnse4()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JNSE4;
+    m_IR.set_opdst(p2_OPDST_JNSE4);
     return parse_IM_S();
 }
 
@@ -8150,8 +8112,7 @@ bool P2Asm::asm_jnse4()
 bool P2Asm::asm_jnpat()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JNPAT;
+    m_IR.set_opdst(p2_OPDST_JNPAT);
     return parse_IM_S();
 }
 
@@ -8166,8 +8127,7 @@ bool P2Asm::asm_jnpat()
 bool P2Asm::asm_jnfbw()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JNFBW;
+    m_IR.set_opdst(p2_OPDST_JNFBW);
     return parse_IM_S();
 }
 
@@ -8182,8 +8142,7 @@ bool P2Asm::asm_jnfbw()
 bool P2Asm::asm_jnxmt()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JNXMT;
+    m_IR.set_opdst(p2_OPDST_JNXMT);
     return parse_IM_S();
 }
 
@@ -8198,8 +8157,7 @@ bool P2Asm::asm_jnxmt()
 bool P2Asm::asm_jnxfi()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JNXFI;
+    m_IR.set_opdst(p2_OPDST_JNXFI);
     return parse_IM_S();
 }
 
@@ -8214,8 +8172,7 @@ bool P2Asm::asm_jnxfi()
 bool P2Asm::asm_jnxro()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JNXRO;
+    m_IR.set_opdst(p2_OPDST_JNXRO);
     return parse_IM_S();
 }
 
@@ -8230,8 +8187,7 @@ bool P2Asm::asm_jnxro()
 bool P2Asm::asm_jnxrl()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JNXRL;
+    m_IR.set_opdst(p2_OPDST_JNXRL);
     return parse_IM_S();
 }
 
@@ -8246,8 +8202,7 @@ bool P2Asm::asm_jnxrl()
 bool P2Asm::asm_jnatn()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JNATN;
+    m_IR.set_opdst(p2_OPDST_JNATN);
     return parse_IM_S();
 }
 
@@ -8262,8 +8217,7 @@ bool P2Asm::asm_jnatn()
 bool P2Asm::asm_jnqmt()
 {
     next();
-    m_IR.set_inst9(p2_OPDST);
-    m_IR.u.op.dst = p2_OPDST_JNQMT;
+    m_IR.set_opdst(p2_OPDST_JNQMT);
     return parse_IM_S();
 }
 
@@ -8341,8 +8295,8 @@ bool P2Asm::asm_akpin()
 {
     next();
     m_IR.set_inst8(p2_WRPIN);
-    m_IR.u.op8.wz = true;
-    m_IR.u.op.dst = 1;
+    m_IR.set_wz(true);
+    m_IR.set_dst(0x001);
     return parse_IM_S();
 }
 
@@ -8449,8 +8403,8 @@ bool P2Asm::asm_pusha()
 {
     next();
     m_IR.set_inst8(p2_WRLONG);
-    m_IR.u.op8.im = true;
-    m_IR.u.op8.src = 0x161;
+    m_IR.set_im(true);
+    m_IR.set_src(0x161);
     return parse_WZ_D();
 }
 
@@ -8466,8 +8420,8 @@ bool P2Asm::asm_pushb()
 {
     next();
     m_IR.set_inst8(p2_WRLONG);
-    m_IR.u.op8.im = true;
-    m_IR.u.op8.src = 0x1e1;
+    m_IR.set_im(true);
+    m_IR.set_src(0x1e1);
     return parse_WZ_D();
 }
 
@@ -8549,10 +8503,9 @@ bool P2Asm::asm_xstop()
 {
     next();
     m_IR.set_inst8(p2_XINIT);
-    m_IR.u.op8.wz = true;
-    m_IR.u.op8.im = true;
-    m_IR.u.op8.dst = 0x000;
-    m_IR.u.op8.src = 0x000;
+    m_IR.set_wz(true);
+    m_IR.set_im(true);
+    m_IR.set_dst_src(0x000,0x000);
     return parse_INST();
 }
 
@@ -8735,8 +8688,7 @@ bool P2Asm::asm_qvector()
 bool P2Asm::asm_hubset()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_HUBSET;
+    m_IR.set_opsrc(p2_OPSRC_HUBSET);
     return parse_IM_D();
 }
 
@@ -8753,8 +8705,7 @@ bool P2Asm::asm_hubset()
 bool P2Asm::asm_cogid()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_COGID;
+    m_IR.set_opsrc(p2_OPSRC_COGID);
     return parse_IM_D_WC();
 }
 
@@ -8769,8 +8720,7 @@ bool P2Asm::asm_cogid()
 bool P2Asm::asm_cogstop()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_COGSTOP;
+    m_IR.set_opsrc(p2_OPSRC_COGSTOP);
     return parse_IM_D();
 }
 
@@ -8788,8 +8738,7 @@ bool P2Asm::asm_cogstop()
 bool P2Asm::asm_locknew()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_LOCKNEW;
+    m_IR.set_opsrc(p2_OPSRC_LOCKNEW);
     return parse_IM_D_WC();
 }
 
@@ -8804,8 +8753,7 @@ bool P2Asm::asm_locknew()
 bool P2Asm::asm_lockret()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_LOCKRET;
+    m_IR.set_opsrc(p2_OPSRC_LOCKRET);
     return parse_IM_D();
 }
 
@@ -8824,8 +8772,7 @@ bool P2Asm::asm_lockret()
 bool P2Asm::asm_locktry()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_LOCKTRY;
+    m_IR.set_opsrc(p2_OPSRC_LOCKTRY);
     return parse_IM_D_WC();
 }
 
@@ -8842,8 +8789,7 @@ bool P2Asm::asm_locktry()
 bool P2Asm::asm_lockrel()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_LOCKREL;
+    m_IR.set_opsrc(p2_OPSRC_LOCKREL);
     return parse_IM_D_WC();
 }
 
@@ -8860,8 +8806,7 @@ bool P2Asm::asm_lockrel()
 bool P2Asm::asm_qlog()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_QLOG;
+    m_IR.set_opsrc(p2_OPSRC_QLOG);
     return parse_IM_D();
 }
 
@@ -8878,8 +8823,7 @@ bool P2Asm::asm_qlog()
 bool P2Asm::asm_qexp()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_QEXP;
+    m_IR.set_opsrc(p2_OPSRC_QEXP);
     return parse_IM_D();
 }
 
@@ -8897,8 +8841,7 @@ bool P2Asm::asm_qexp()
 bool P2Asm::asm_rfbyte()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_RFBYTE;
+    m_IR.set_opsrc(p2_OPSRC_RFBYTE);
     return parse_D_WCZ();
 }
 
@@ -8916,8 +8859,7 @@ bool P2Asm::asm_rfbyte()
 bool P2Asm::asm_rfword()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_RFWORD;
+    m_IR.set_opsrc(p2_OPSRC_RFWORD);
     return parse_D_WCZ();
 }
 
@@ -8935,8 +8877,7 @@ bool P2Asm::asm_rfword()
 bool P2Asm::asm_rflong()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_RFLONG;
+    m_IR.set_opsrc(p2_OPSRC_RFLONG);
     return parse_D_WCZ();
 }
 
@@ -8954,8 +8895,7 @@ bool P2Asm::asm_rflong()
 bool P2Asm::asm_rfvar()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_RFVAR;
+    m_IR.set_opsrc(p2_OPSRC_RFVAR);
     return parse_D_WCZ();
 }
 
@@ -8973,8 +8913,7 @@ bool P2Asm::asm_rfvar()
 bool P2Asm::asm_rfvars()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_RFVARS;
+    m_IR.set_opsrc(p2_OPSRC_RFVARS);
     return parse_D_WCZ();
 }
 
@@ -8989,8 +8928,7 @@ bool P2Asm::asm_rfvars()
 bool P2Asm::asm_wfbyte()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_WFBYTE;
+    m_IR.set_opsrc(p2_OPSRC_WFBYTE);
     return parse_IM_D();
 }
 
@@ -9005,8 +8943,7 @@ bool P2Asm::asm_wfbyte()
 bool P2Asm::asm_wfword()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_WFWORD;
+    m_IR.set_opsrc(p2_OPSRC_WFWORD);
     return parse_IM_D();
 }
 
@@ -9021,8 +8958,7 @@ bool P2Asm::asm_wfword()
 bool P2Asm::asm_wflong()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_WFLONG;
+    m_IR.set_opsrc(p2_OPSRC_WFLONG);
     return parse_IM_D();
 }
 
@@ -9041,8 +8977,7 @@ bool P2Asm::asm_wflong()
 bool P2Asm::asm_getqx()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_GETQX;
+    m_IR.set_opsrc(p2_OPSRC_GETQX);
     return parse_D_WCZ();
 }
 
@@ -9061,8 +8996,7 @@ bool P2Asm::asm_getqx()
 bool P2Asm::asm_getqy()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_GETQY;
+    m_IR.set_opsrc(p2_OPSRC_GETQY);
     return parse_D_WCZ();
 }
 
@@ -9079,8 +9013,7 @@ bool P2Asm::asm_getqy()
 bool P2Asm::asm_getct()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_GETCT;
+    m_IR.set_opsrc(p2_OPSRC_GETCT);
     return parse_D();
 }
 
@@ -9098,8 +9031,7 @@ bool P2Asm::asm_getct()
 bool P2Asm::asm_getrnd()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_GETRND;
+    m_IR.set_opsrc(p2_OPSRC_GETRND);
     return parse_D_WCZ();
 }
 
@@ -9116,8 +9048,7 @@ bool P2Asm::asm_getrnd()
 bool P2Asm::asm_getrnd_cz()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_GETRND;
+    m_IR.set_opsrc(p2_OPSRC_GETRND);
     return parse_WCZ();
 }
 
@@ -9132,8 +9063,7 @@ bool P2Asm::asm_getrnd_cz()
 bool P2Asm::asm_setdacs()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SETDACS;
+    m_IR.set_opsrc(p2_OPSRC_SETDACS);
     return parse_IM_D();
 }
 
@@ -9148,8 +9078,7 @@ bool P2Asm::asm_setdacs()
 bool P2Asm::asm_setxfrq()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SETXFRQ;
+    m_IR.set_opsrc(p2_OPSRC_SETXFRQ);
     return parse_IM_D();
 }
 
@@ -9164,8 +9093,7 @@ bool P2Asm::asm_setxfrq()
 bool P2Asm::asm_getxacc()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_GETXACC;
+    m_IR.set_opsrc(p2_OPSRC_GETXACC);
     return parse_D();
 }
 
@@ -9183,8 +9111,7 @@ bool P2Asm::asm_getxacc()
 bool P2Asm::asm_waitx()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_WAITX;
+    m_IR.set_opsrc(p2_OPSRC_WAITX);
     return parse_IM_D_WCZ();
 }
 
@@ -9199,8 +9126,7 @@ bool P2Asm::asm_waitx()
 bool P2Asm::asm_setse1()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SETSE1;
+    m_IR.set_opsrc(p2_OPSRC_SETSE1);
     return parse_IM_D();
 }
 
@@ -9215,8 +9141,7 @@ bool P2Asm::asm_setse1()
 bool P2Asm::asm_setse2()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SETSE2;
+    m_IR.set_opsrc(p2_OPSRC_SETSE2);
     return parse_IM_D();
 }
 
@@ -9231,8 +9156,7 @@ bool P2Asm::asm_setse2()
 bool P2Asm::asm_setse3()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SETSE3;
+    m_IR.set_opsrc(p2_OPSRC_SETSE3);
     return parse_IM_D();
 }
 
@@ -9247,8 +9171,7 @@ bool P2Asm::asm_setse3()
 bool P2Asm::asm_setse4()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SETSE4;
+    m_IR.set_opsrc(p2_OPSRC_SETSE4);
     return parse_IM_D();
 }
 
@@ -9263,9 +9186,7 @@ bool P2Asm::asm_setse4()
 bool P2Asm::asm_pollint()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_POLLINT;
+    m_IR.set_opx24(p2_OPX24_POLLINT);
     return parse_WCZ();
 }
 
@@ -9280,9 +9201,7 @@ bool P2Asm::asm_pollint()
 bool P2Asm::asm_pollct1()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_POLLCT1;
+    m_IR.set_opx24(p2_OPX24_POLLCT1);
     return parse_WCZ();
 }
 
@@ -9297,9 +9216,7 @@ bool P2Asm::asm_pollct1()
 bool P2Asm::asm_pollct2()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_POLLCT2;
+    m_IR.set_opx24(p2_OPX24_POLLCT2);
     return parse_WCZ();
 }
 
@@ -9314,9 +9231,7 @@ bool P2Asm::asm_pollct2()
 bool P2Asm::asm_pollct3()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_POLLCT3;
+    m_IR.set_opx24(p2_OPX24_POLLCT3);
     return parse_WCZ();
 }
 
@@ -9331,9 +9246,7 @@ bool P2Asm::asm_pollct3()
 bool P2Asm::asm_pollse1()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_POLLSE1;
+    m_IR.set_opx24(p2_OPX24_POLLSE1);
     return parse_WCZ();
 }
 
@@ -9348,9 +9261,7 @@ bool P2Asm::asm_pollse1()
 bool P2Asm::asm_pollse2()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_POLLSE2;
+    m_IR.set_opx24(p2_OPX24_POLLSE2);
     return parse_WCZ();
 }
 
@@ -9365,9 +9276,7 @@ bool P2Asm::asm_pollse2()
 bool P2Asm::asm_pollse3()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_POLLSE3;
+    m_IR.set_opx24(p2_OPX24_POLLSE3);
     return parse_WCZ();
 }
 
@@ -9382,9 +9291,7 @@ bool P2Asm::asm_pollse3()
 bool P2Asm::asm_pollse4()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_POLLSE4;
+    m_IR.set_opx24(p2_OPX24_POLLSE4);
     return parse_WCZ();
 }
 
@@ -9399,9 +9306,7 @@ bool P2Asm::asm_pollse4()
 bool P2Asm::asm_pollpat()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_POLLPAT;
+    m_IR.set_opx24(p2_OPX24_POLLPAT);
     return parse_WCZ();
 }
 
@@ -9416,9 +9321,7 @@ bool P2Asm::asm_pollpat()
 bool P2Asm::asm_pollfbw()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_POLLFBW;
+    m_IR.set_opx24(p2_OPX24_POLLFBW);
     return parse_WCZ();
 }
 
@@ -9433,9 +9336,7 @@ bool P2Asm::asm_pollfbw()
 bool P2Asm::asm_pollxmt()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_POLLXMT;
+    m_IR.set_opx24(p2_OPX24_POLLXMT);
     return parse_WCZ();
 }
 
@@ -9450,9 +9351,7 @@ bool P2Asm::asm_pollxmt()
 bool P2Asm::asm_pollxfi()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_POLLXFI;
+    m_IR.set_opx24(p2_OPX24_POLLXFI);
     return parse_WCZ();
 }
 
@@ -9467,9 +9366,7 @@ bool P2Asm::asm_pollxfi()
 bool P2Asm::asm_pollxro()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_POLLXRO;
+    m_IR.set_opx24(p2_OPX24_POLLXRO);
     return parse_WCZ();
 }
 
@@ -9484,9 +9381,7 @@ bool P2Asm::asm_pollxro()
 bool P2Asm::asm_pollxrl()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_POLLXRL;
+    m_IR.set_opx24(p2_OPX24_POLLXRL);
     return parse_WCZ();
 }
 
@@ -9501,9 +9396,7 @@ bool P2Asm::asm_pollxrl()
 bool P2Asm::asm_pollatn()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_POLLATN;
+    m_IR.set_opx24(p2_OPX24_POLLATN);
     return parse_WCZ();
 }
 
@@ -9518,9 +9411,7 @@ bool P2Asm::asm_pollatn()
 bool P2Asm::asm_pollqmt()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_POLLQMT;
+    m_IR.set_opx24(p2_OPX24_POLLQMT);
     return parse_WCZ();
 }
 
@@ -9538,9 +9429,7 @@ bool P2Asm::asm_pollqmt()
 bool P2Asm::asm_waitint()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_WAITINT;
+    m_IR.set_opx24(p2_OPX24_WAITINT);
     return parse_WCZ();
 }
 
@@ -9558,9 +9447,7 @@ bool P2Asm::asm_waitint()
 bool P2Asm::asm_waitct1()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_WAITCT1;
+    m_IR.set_opx24(p2_OPX24_WAITCT1);
     return parse_WCZ();
 }
 
@@ -9578,9 +9465,7 @@ bool P2Asm::asm_waitct1()
 bool P2Asm::asm_waitct2()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_WAITCT2;
+    m_IR.set_opx24(p2_OPX24_WAITCT2);
     return parse_WCZ();
 }
 
@@ -9598,9 +9483,7 @@ bool P2Asm::asm_waitct2()
 bool P2Asm::asm_waitct3()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_WAITCT3;
+    m_IR.set_opx24(p2_OPX24_WAITCT3);
     return parse_WCZ();
 }
 
@@ -9618,9 +9501,7 @@ bool P2Asm::asm_waitct3()
 bool P2Asm::asm_waitse1()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_WAITSE1;
+    m_IR.set_opx24(p2_OPX24_WAITSE1);
     return parse_WCZ();
 }
 
@@ -9638,9 +9519,7 @@ bool P2Asm::asm_waitse1()
 bool P2Asm::asm_waitse2()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_WAITSE2;
+    m_IR.set_opx24(p2_OPX24_WAITSE2);
     return parse_WCZ();
 }
 
@@ -9658,9 +9537,7 @@ bool P2Asm::asm_waitse2()
 bool P2Asm::asm_waitse3()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_WAITSE3;
+    m_IR.set_opx24(p2_OPX24_WAITSE3);
     return parse_WCZ();
 }
 
@@ -9678,9 +9555,7 @@ bool P2Asm::asm_waitse3()
 bool P2Asm::asm_waitse4()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_WAITSE4;
+    m_IR.set_opx24(p2_OPX24_WAITSE4);
     return parse_WCZ();
 }
 
@@ -9698,9 +9573,7 @@ bool P2Asm::asm_waitse4()
 bool P2Asm::asm_waitpat()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_WAITPAT;
+    m_IR.set_opx24(p2_OPX24_WAITPAT);
     return parse_WCZ();
 }
 
@@ -9718,9 +9591,7 @@ bool P2Asm::asm_waitpat()
 bool P2Asm::asm_waitfbw()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_WAITFBW;
+    m_IR.set_opx24(p2_OPX24_WAITFBW);
     return parse_WCZ();
 }
 
@@ -9738,9 +9609,7 @@ bool P2Asm::asm_waitfbw()
 bool P2Asm::asm_waitxmt()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_WAITXMT;
+    m_IR.set_opx24(p2_OPX24_WAITXMT);
     return parse_WCZ();
 }
 
@@ -9758,9 +9627,7 @@ bool P2Asm::asm_waitxmt()
 bool P2Asm::asm_waitxfi()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_WAITXFI;
+    m_IR.set_opx24(p2_OPX24_WAITXFI);
     return parse_WCZ();
 }
 
@@ -9778,9 +9645,7 @@ bool P2Asm::asm_waitxfi()
 bool P2Asm::asm_waitxro()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_WAITXRO;
+    m_IR.set_opx24(p2_OPX24_WAITXRO);
     return parse_WCZ();
 }
 
@@ -9798,9 +9663,7 @@ bool P2Asm::asm_waitxro()
 bool P2Asm::asm_waitxrl()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_WAITXRL;
+    m_IR.set_opx24(p2_OPX24_WAITXRL);
     return parse_WCZ();
 }
 
@@ -9818,9 +9681,7 @@ bool P2Asm::asm_waitxrl()
 bool P2Asm::asm_waitatn()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_WAITATN;
+    m_IR.set_opx24(p2_OPX24_WAITATN);
     return parse_WCZ();
 }
 
@@ -9835,9 +9696,7 @@ bool P2Asm::asm_waitatn()
 bool P2Asm::asm_allowi()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_ALLOWI;
+    m_IR.set_opx24(p2_OPX24_ALLOWI);
     return parse_INST();
 }
 
@@ -9852,9 +9711,7 @@ bool P2Asm::asm_allowi()
 bool P2Asm::asm_stalli()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_STALLI;
+    m_IR.set_opx24(p2_OPX24_STALLI);
     return parse_INST();
 }
 
@@ -9869,9 +9726,7 @@ bool P2Asm::asm_stalli()
 bool P2Asm::asm_trgint1()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_TRGINT1;
+    m_IR.set_opx24(p2_OPX24_TRGINT1);
     return parse_INST();
 }
 
@@ -9886,9 +9741,7 @@ bool P2Asm::asm_trgint1()
 bool P2Asm::asm_trgint2()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_TRGINT2;
+    m_IR.set_opx24(p2_OPX24_TRGINT2);
     return parse_INST();
 }
 
@@ -9903,9 +9756,7 @@ bool P2Asm::asm_trgint2()
 bool P2Asm::asm_trgint3()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_TRGINT3;
+    m_IR.set_opx24(p2_OPX24_TRGINT3);
     return parse_INST();
 }
 
@@ -9920,9 +9771,7 @@ bool P2Asm::asm_trgint3()
 bool P2Asm::asm_nixint1()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_NIXINT1;
+    m_IR.set_opx24(p2_OPX24_NIXINT1);
     return parse_INST();
 }
 
@@ -9937,9 +9786,7 @@ bool P2Asm::asm_nixint1()
 bool P2Asm::asm_nixint2()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_NIXINT2;
+    m_IR.set_opx24(p2_OPX24_NIXINT2);
     return parse_INST();
 }
 
@@ -9954,9 +9801,7 @@ bool P2Asm::asm_nixint2()
 bool P2Asm::asm_nixint3()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_X24;
-    m_IR.u.op.dst = p2_OPX24_NIXINT3;
+    m_IR.set_opx24(p2_OPX24_NIXINT3);
     return parse_INST();
 }
 
@@ -9971,8 +9816,7 @@ bool P2Asm::asm_nixint3()
 bool P2Asm::asm_setint1()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SETINT1;
+    m_IR.set_opsrc(p2_OPSRC_SETINT1);
     return parse_IM_D();
 }
 
@@ -9987,8 +9831,7 @@ bool P2Asm::asm_setint1()
 bool P2Asm::asm_setint2()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SETINT2;
+    m_IR.set_opsrc(p2_OPSRC_SETINT2);
     return parse_IM_D();
 }
 
@@ -10003,8 +9846,7 @@ bool P2Asm::asm_setint2()
 bool P2Asm::asm_setint3()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SETINT3;
+    m_IR.set_opsrc(p2_OPSRC_SETINT3);
     return parse_IM_D();
 }
 
@@ -10022,8 +9864,7 @@ bool P2Asm::asm_setint3()
 bool P2Asm::asm_setq()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SETQ;
+    m_IR.set_opsrc(p2_OPSRC_SETQ);
     return parse_IM_D();
 }
 
@@ -10040,8 +9881,7 @@ bool P2Asm::asm_setq()
 bool P2Asm::asm_setq2()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SETQ2;
+    m_IR.set_opsrc(p2_OPSRC_SETQ2);
     return parse_IM_D();
 }
 
@@ -10056,8 +9896,7 @@ bool P2Asm::asm_setq2()
 bool P2Asm::asm_push()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_PUSH;
+    m_IR.set_opsrc(p2_OPSRC_PUSH);
     return parse_IM_D();
 }
 
@@ -10074,8 +9913,7 @@ bool P2Asm::asm_push()
 bool P2Asm::asm_pop()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_POP;
+    m_IR.set_opsrc(p2_OPSRC_POP);
     return parse_D_WCZ();
 }
 
@@ -10092,8 +9930,7 @@ bool P2Asm::asm_pop()
 bool P2Asm::asm_jmp()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_JMP;
+    m_IR.set_opsrc(p2_OPSRC_JMP);
     return parse_IM_D_WCZ();
 }
 
@@ -10110,8 +9947,7 @@ bool P2Asm::asm_jmp()
 bool P2Asm::asm_call()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_CALL_RET;
+    m_IR.set_opsrc(p2_OPSRC_CALL_RET);
     return parse_IM_D_WCZ();
 }
 
@@ -10128,10 +9964,9 @@ bool P2Asm::asm_call()
 bool P2Asm::asm_ret()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
     m_IR.set_im(true);
-    m_IR.u.op.dst = 0x000;
-    m_IR.u.op.src = p2_OPSRC_CALL_RET;
+    m_IR.set_dst(0x000);
+    m_IR.set_opsrc(p2_OPSRC_CALL_RET);
     return parse_WCZ();
 }
 
@@ -10148,8 +9983,7 @@ bool P2Asm::asm_ret()
 bool P2Asm::asm_calla()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_CALLA_RETA;
+    m_IR.set_opsrc(p2_OPSRC_CALLA_RETA);
     return parse_D_WCZ();
 }
 
@@ -10166,10 +10000,9 @@ bool P2Asm::asm_calla()
 bool P2Asm::asm_reta()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
     m_IR.set_im(true);
-    m_IR.u.op.dst = 0x000;
-    m_IR.u.op.src = p2_OPSRC_CALLA_RETA;
+    m_IR.set_dst(0x000);
+    m_IR.set_opsrc(p2_OPSRC_CALLA_RETA);
     return parse_WCZ();
 }
 
@@ -10186,8 +10019,7 @@ bool P2Asm::asm_reta()
 bool P2Asm::asm_callb()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_CALLB_RETB;
+    m_IR.set_opsrc(p2_OPSRC_CALLB_RETB);
     return parse_D_WCZ();
 }
 
@@ -10204,10 +10036,9 @@ bool P2Asm::asm_callb()
 bool P2Asm::asm_retb()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
     m_IR.set_im(true);
-    m_IR.u.op.dst = 0x000;
-    m_IR.u.op.src = p2_OPSRC_CALLB_RETB;
+    m_IR.set_dst(0x000);
+    m_IR.set_opsrc(p2_OPSRC_CALLB_RETB);
     return parse_WCZ();
 }
 
@@ -10225,8 +10056,7 @@ bool P2Asm::asm_retb()
 bool P2Asm::asm_jmprel()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_JMPREL;
+    m_IR.set_opsrc(p2_OPSRC_JMPREL);
     return parse_IM_D();
 }
 
@@ -10243,8 +10073,7 @@ bool P2Asm::asm_jmprel()
 bool P2Asm::asm_skip()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SKIP;
+    m_IR.set_opsrc(p2_OPSRC_SKIP);
     return parse_IM_D();
 }
 
@@ -10261,8 +10090,7 @@ bool P2Asm::asm_skip()
 bool P2Asm::asm_skipf()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SKIPF;
+    m_IR.set_opsrc(p2_OPSRC_SKIPF);
     return parse_IM_D();
 }
 
@@ -10279,8 +10107,7 @@ bool P2Asm::asm_skipf()
 bool P2Asm::asm_execf()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_EXECF;
+    m_IR.set_opsrc(p2_OPSRC_EXECF);
     return parse_IM_D();
 }
 
@@ -10295,8 +10122,7 @@ bool P2Asm::asm_execf()
 bool P2Asm::asm_getptr()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_GETPTR;
+    m_IR.set_opsrc(p2_OPSRC_GETPTR);
     return parse_D();
 }
 
@@ -10314,9 +10140,8 @@ bool P2Asm::asm_getptr()
 bool P2Asm::asm_getbrk()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
     m_IR.set_im(false);
-    m_IR.u.op.src = p2_OPSRC_COGBRK;
+    m_IR.set_opsrc(p2_OPSRC_COGBRK);
     return parse_D_WCZ();
 }
 
@@ -10333,8 +10158,7 @@ bool P2Asm::asm_getbrk()
 bool P2Asm::asm_cogbrk()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_COGBRK;
+    m_IR.set_opsrc(p2_OPSRC_COGBRK);
     return parse_IM_D();
 }
 
@@ -10351,8 +10175,7 @@ bool P2Asm::asm_cogbrk()
 bool P2Asm::asm_brk()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_BRK;
+    m_IR.set_opsrc(p2_OPSRC_BRK);
     return parse_IM_D();
 }
 
@@ -10367,8 +10190,7 @@ bool P2Asm::asm_brk()
 bool P2Asm::asm_setluts()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SETLUTS;
+    m_IR.set_opsrc(p2_OPSRC_SETLUTS);
     return parse_IM_D();
 }
 
@@ -10383,8 +10205,7 @@ bool P2Asm::asm_setluts()
 bool P2Asm::asm_setcy()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SETCY;
+    m_IR.set_opsrc(p2_OPSRC_SETCY);
     return parse_IM_D();
 }
 
@@ -10399,8 +10220,7 @@ bool P2Asm::asm_setcy()
 bool P2Asm::asm_setci()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SETCI;
+    m_IR.set_opsrc(p2_OPSRC_SETCI);
     return parse_IM_D();
 }
 
@@ -10415,8 +10235,7 @@ bool P2Asm::asm_setci()
 bool P2Asm::asm_setcq()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SETCQ;
+    m_IR.set_opsrc(p2_OPSRC_SETCQ);
     return parse_IM_D();
 }
 
@@ -10431,8 +10250,7 @@ bool P2Asm::asm_setcq()
 bool P2Asm::asm_setcfrq()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SETCFRQ;
+    m_IR.set_opsrc(p2_OPSRC_SETCFRQ);
     return parse_IM_D();
 }
 
@@ -10447,8 +10265,7 @@ bool P2Asm::asm_setcfrq()
 bool P2Asm::asm_setcmod()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SETCMOD;
+    m_IR.set_opsrc(p2_OPSRC_SETCMOD);
     return parse_IM_D();
 }
 
@@ -10463,8 +10280,7 @@ bool P2Asm::asm_setcmod()
 bool P2Asm::asm_setpiv()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SETPIV;
+    m_IR.set_opsrc(p2_OPSRC_SETPIV);
     return parse_IM_D();
 }
 
@@ -10479,8 +10295,7 @@ bool P2Asm::asm_setpiv()
 bool P2Asm::asm_setpix()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SETPIX;
+    m_IR.set_opsrc(p2_OPSRC_SETPIX);
     return parse_IM_D();
 }
 
@@ -10495,8 +10310,7 @@ bool P2Asm::asm_setpix()
 bool P2Asm::asm_cogatn()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_COGATN;
+    m_IR.set_opsrc(p2_OPSRC_COGATN);
     return parse_IM_D();
 }
 
@@ -10513,8 +10327,7 @@ bool P2Asm::asm_cogatn()
 bool P2Asm::asm_testp_w()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_TESTP_W_DIRL;
+    m_IR.set_opsrc(p2_OPSRC_TESTP_W_DIRL);
     return parse_IM_D_WCZ();
 }
 
@@ -10531,8 +10344,7 @@ bool P2Asm::asm_testp_w()
 bool P2Asm::asm_testpn_w()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_TESTPN_W;
+    m_IR.set_opsrc(p2_OPSRC_TESTPN_W);
     return parse_IM_D_WCZ();
 }
 
@@ -10549,8 +10361,7 @@ bool P2Asm::asm_testpn_w()
 bool P2Asm::asm_testp_and()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_TESTP_AND;
+    m_IR.set_opsrc(p2_OPSRC_TESTP_AND);
     return parse_IM_D_ANDC_ANDZ();
 }
 
@@ -10567,8 +10378,7 @@ bool P2Asm::asm_testp_and()
 bool P2Asm::asm_testpn_and()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_TESTPN_AND;
+    m_IR.set_opsrc(p2_OPSRC_TESTPN_AND);
     return parse_IM_D_ANDC_ANDZ();
 }
 
@@ -10585,8 +10395,7 @@ bool P2Asm::asm_testpn_and()
 bool P2Asm::asm_testp_or()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_TESTP_OR;
+    m_IR.set_opsrc(p2_OPSRC_TESTP_OR);
     return parse_IM_D_ORC_ORZ();
 }
 
@@ -10603,8 +10412,7 @@ bool P2Asm::asm_testp_or()
 bool P2Asm::asm_testpn_or()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_TESTPN_OR;
+    m_IR.set_opsrc(p2_OPSRC_TESTPN_OR);
     return parse_IM_D_ORC_ORZ();
 }
 
@@ -10621,8 +10429,7 @@ bool P2Asm::asm_testpn_or()
 bool P2Asm::asm_testp_xor()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_TESTP_XOR;
+    m_IR.set_opsrc(p2_OPSRC_TESTP_XOR);
     return parse_IM_D_XORC_XORZ();
 }
 
@@ -10639,8 +10446,7 @@ bool P2Asm::asm_testp_xor()
 bool P2Asm::asm_testpn_xor()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_TESTPN_XOR;
+    m_IR.set_opsrc(p2_OPSRC_TESTPN_XOR);
     return parse_IM_D_XORC_XORZ();
 }
 
@@ -10691,8 +10497,7 @@ bool P2Asm::asm_testpn()
 bool P2Asm::asm_dirl()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_DIRL;
+    m_IR.set_opsrc(p2_OPSRC_DIRL);
     return parse_IM_D_WCZ();
 }
 
@@ -10709,8 +10514,7 @@ bool P2Asm::asm_dirl()
 bool P2Asm::asm_dirh()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_DIRH;
+    m_IR.set_opsrc(p2_OPSRC_DIRH);
     return parse_IM_D_WCZ();
 }
 
@@ -10727,8 +10531,7 @@ bool P2Asm::asm_dirh()
 bool P2Asm::asm_dirc()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_DIRC;
+    m_IR.set_opsrc(p2_OPSRC_DIRC);
     return parse_IM_D_WCZ();
 }
 
@@ -10745,8 +10548,7 @@ bool P2Asm::asm_dirc()
 bool P2Asm::asm_dirnc()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_DIRNC;
+    m_IR.set_opsrc(p2_OPSRC_DIRNC);
     return parse_IM_D_WCZ();
 }
 
@@ -10763,8 +10565,7 @@ bool P2Asm::asm_dirnc()
 bool P2Asm::asm_dirz()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_DIRZ;
+    m_IR.set_opsrc(p2_OPSRC_DIRZ);
     return parse_IM_D_WCZ();
 }
 
@@ -10781,8 +10582,7 @@ bool P2Asm::asm_dirz()
 bool P2Asm::asm_dirnz()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_DIRNZ;
+    m_IR.set_opsrc(p2_OPSRC_DIRNZ);
     return parse_IM_D_WCZ();
 }
 
@@ -10799,8 +10599,7 @@ bool P2Asm::asm_dirnz()
 bool P2Asm::asm_dirrnd()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_DIRRND;
+    m_IR.set_opsrc(p2_OPSRC_DIRRND);
     return parse_IM_D_WCZ();
 }
 
@@ -10817,8 +10616,7 @@ bool P2Asm::asm_dirrnd()
 bool P2Asm::asm_dirnot()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_DIRNOT;
+    m_IR.set_opsrc(p2_OPSRC_DIRNOT);
     return parse_IM_D_WCZ();
 }
 
@@ -10835,8 +10633,7 @@ bool P2Asm::asm_dirnot()
 bool P2Asm::asm_outl()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_OUTL;
+    m_IR.set_opsrc(p2_OPSRC_OUTL);
     return parse_IM_D_WCZ();
 }
 
@@ -10853,8 +10650,7 @@ bool P2Asm::asm_outl()
 bool P2Asm::asm_outh()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_OUTH;
+    m_IR.set_opsrc(p2_OPSRC_OUTH);
     return parse_IM_D_WCZ();
 }
 
@@ -10871,8 +10667,7 @@ bool P2Asm::asm_outh()
 bool P2Asm::asm_outc()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_OUTC;
+    m_IR.set_opsrc(p2_OPSRC_OUTC);
     return parse_IM_D_WCZ();
 }
 
@@ -10889,8 +10684,7 @@ bool P2Asm::asm_outc()
 bool P2Asm::asm_outnc()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_OUTNC;
+    m_IR.set_opsrc(p2_OPSRC_OUTNC);
     return parse_IM_D_WCZ();
 }
 
@@ -10907,8 +10701,7 @@ bool P2Asm::asm_outnc()
 bool P2Asm::asm_outz()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_OUTZ;
+    m_IR.set_opsrc(p2_OPSRC_OUTZ);
     return parse_IM_D_WCZ();
 }
 
@@ -10925,8 +10718,7 @@ bool P2Asm::asm_outz()
 bool P2Asm::asm_outnz()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_OUTNZ;
+    m_IR.set_opsrc(p2_OPSRC_OUTNZ);
     return parse_IM_D_WCZ();
 }
 
@@ -10943,8 +10735,7 @@ bool P2Asm::asm_outnz()
 bool P2Asm::asm_outrnd()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_OUTRND;
+    m_IR.set_opsrc(p2_OPSRC_OUTRND);
     return parse_IM_D_WCZ();
 }
 
@@ -10961,8 +10752,7 @@ bool P2Asm::asm_outrnd()
 bool P2Asm::asm_outnot()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_OUTNOT;
+    m_IR.set_opsrc(p2_OPSRC_OUTNOT);
     return parse_IM_D_WCZ();
 }
 
@@ -10980,8 +10770,7 @@ bool P2Asm::asm_outnot()
 bool P2Asm::asm_fltl()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_FLTL;
+    m_IR.set_opsrc(p2_OPSRC_FLTL);
     return parse_IM_D_WCZ();
 }
 
@@ -10999,8 +10788,7 @@ bool P2Asm::asm_fltl()
 bool P2Asm::asm_flth()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_FLTH;
+    m_IR.set_opsrc(p2_OPSRC_FLTH);
     return parse_IM_D_WCZ();
 }
 
@@ -11018,8 +10806,7 @@ bool P2Asm::asm_flth()
 bool P2Asm::asm_fltc()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_FLTC;
+    m_IR.set_opsrc(p2_OPSRC_FLTC);
     return parse_IM_D_WCZ();
 }
 
@@ -11037,8 +10824,7 @@ bool P2Asm::asm_fltc()
 bool P2Asm::asm_fltnc()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_FLTNC;
+    m_IR.set_opsrc(p2_OPSRC_FLTNC);
     return parse_IM_D_WCZ();
 }
 
@@ -11056,8 +10842,7 @@ bool P2Asm::asm_fltnc()
 bool P2Asm::asm_fltz()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_FLTZ;
+    m_IR.set_opsrc(p2_OPSRC_FLTZ);
     return parse_IM_D_WCZ();
 }
 
@@ -11075,8 +10860,7 @@ bool P2Asm::asm_fltz()
 bool P2Asm::asm_fltnz()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_FLTNZ;
+    m_IR.set_opsrc(p2_OPSRC_FLTNZ);
     return parse_IM_D_WCZ();
 }
 
@@ -11094,8 +10878,7 @@ bool P2Asm::asm_fltnz()
 bool P2Asm::asm_fltrnd()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_FLTRND;
+    m_IR.set_opsrc(p2_OPSRC_FLTRND);
     return parse_IM_D_WCZ();
 }
 
@@ -11113,8 +10896,7 @@ bool P2Asm::asm_fltrnd()
 bool P2Asm::asm_fltnot()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_FLTNOT;
+    m_IR.set_opsrc(p2_OPSRC_FLTNOT);
     return parse_IM_D_WCZ();
 }
 
@@ -11132,8 +10914,7 @@ bool P2Asm::asm_fltnot()
 bool P2Asm::asm_drvl()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_DRVL;
+    m_IR.set_opsrc(p2_OPSRC_DRVL);
     return parse_IM_D_WCZ();
 }
 
@@ -11151,8 +10932,7 @@ bool P2Asm::asm_drvl()
 bool P2Asm::asm_drvh()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_DRVH;
+    m_IR.set_opsrc(p2_OPSRC_DRVH);
     return parse_IM_D_WCZ();
 }
 
@@ -11170,8 +10950,7 @@ bool P2Asm::asm_drvh()
 bool P2Asm::asm_drvc()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_DRVC;
+    m_IR.set_opsrc(p2_OPSRC_DRVC);
     return parse_IM_D_WCZ();
 }
 
@@ -11189,8 +10968,7 @@ bool P2Asm::asm_drvc()
 bool P2Asm::asm_drvnc()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_DRVNC;
+    m_IR.set_opsrc(p2_OPSRC_DRVNC);
     return parse_IM_D_WCZ();
 }
 
@@ -11208,8 +10986,7 @@ bool P2Asm::asm_drvnc()
 bool P2Asm::asm_drvz()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_DRVZ;
+    m_IR.set_opsrc(p2_OPSRC_DRVZ);
     return parse_IM_D_WCZ();
 }
 
@@ -11227,8 +11004,7 @@ bool P2Asm::asm_drvz()
 bool P2Asm::asm_drvnz()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_DRVNZ;
+    m_IR.set_opsrc(p2_OPSRC_DRVNZ);
     return parse_IM_D_WCZ();
 }
 
@@ -11246,8 +11022,7 @@ bool P2Asm::asm_drvnz()
 bool P2Asm::asm_drvrnd()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_DRVRND;
+    m_IR.set_opsrc(p2_OPSRC_DRVRND);
     return parse_IM_D_WCZ();
 }
 
@@ -11265,8 +11040,7 @@ bool P2Asm::asm_drvrnd()
 bool P2Asm::asm_drvnot()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_DRVNOT;
+    m_IR.set_opsrc(p2_OPSRC_DRVNOT);
     return parse_IM_D_WCZ();
 }
 
@@ -11283,8 +11057,7 @@ bool P2Asm::asm_drvnot()
 bool P2Asm::asm_splitb()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SPLITB;
+    m_IR.set_opsrc(p2_OPSRC_SPLITB);
     return parse_D();
 }
 
@@ -11301,8 +11074,7 @@ bool P2Asm::asm_splitb()
 bool P2Asm::asm_mergeb()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_MERGEB;
+    m_IR.set_opsrc(p2_OPSRC_MERGEB);
     return parse_D();
 }
 
@@ -11319,8 +11091,7 @@ bool P2Asm::asm_mergeb()
 bool P2Asm::asm_splitw()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SPLITW;
+    m_IR.set_opsrc(p2_OPSRC_SPLITW);
     return parse_D();
 }
 
@@ -11337,8 +11108,7 @@ bool P2Asm::asm_splitw()
 bool P2Asm::asm_mergew()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_MERGEW;
+    m_IR.set_opsrc(p2_OPSRC_MERGEW);
     return parse_D();
 }
 
@@ -11356,8 +11126,7 @@ bool P2Asm::asm_mergew()
 bool P2Asm::asm_seussf()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SEUSSF;
+    m_IR.set_opsrc(p2_OPSRC_SEUSSF);
     return parse_D();
 }
 
@@ -11375,8 +11144,7 @@ bool P2Asm::asm_seussf()
 bool P2Asm::asm_seussr()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SEUSSR;
+    m_IR.set_opsrc(p2_OPSRC_SEUSSR);
     return parse_D();
 }
 
@@ -11393,8 +11161,7 @@ bool P2Asm::asm_seussr()
 bool P2Asm::asm_rgbsqz()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_RGBSQZ;
+    m_IR.set_opsrc(p2_OPSRC_RGBSQZ);
     return parse_D();
 }
 
@@ -11411,8 +11178,7 @@ bool P2Asm::asm_rgbsqz()
 bool P2Asm::asm_rgbexp()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_RGBEXP;
+    m_IR.set_opsrc(p2_OPSRC_RGBEXP);
     return parse_D();
 }
 
@@ -11427,8 +11193,7 @@ bool P2Asm::asm_rgbexp()
 bool P2Asm::asm_xoro32()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_XORO32;
+    m_IR.set_opsrc(p2_OPSRC_XORO32);
     return parse_D();
 }
 
@@ -11445,8 +11210,7 @@ bool P2Asm::asm_xoro32()
 bool P2Asm::asm_rev()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_REV;
+    m_IR.set_opsrc(p2_OPSRC_REV);
     return parse_D();
 }
 
@@ -11464,8 +11228,7 @@ bool P2Asm::asm_rev()
 bool P2Asm::asm_rczr()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_RCZR;
+    m_IR.set_opsrc(p2_OPSRC_RCZR);
     return parse_D_WCZ();
 }
 
@@ -11483,8 +11246,7 @@ bool P2Asm::asm_rczr()
 bool P2Asm::asm_rczl()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_RCZL;
+    m_IR.set_opsrc(p2_OPSRC_RCZL);
     return parse_D_WCZ();
 }
 
@@ -11501,8 +11263,7 @@ bool P2Asm::asm_rczl()
 bool P2Asm::asm_wrc()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_WRC;
+    m_IR.set_opsrc(p2_OPSRC_WRC);
     return parse_D();
 }
 
@@ -11519,8 +11280,7 @@ bool P2Asm::asm_wrc()
 bool P2Asm::asm_wrnc()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_WRNC;
+    m_IR.set_opsrc(p2_OPSRC_WRNC);
     return parse_D();
 }
 
@@ -11537,8 +11297,7 @@ bool P2Asm::asm_wrnc()
 bool P2Asm::asm_wrz()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_WRZ;
+    m_IR.set_opsrc(p2_OPSRC_WRZ);
     return parse_D();
 }
 
@@ -11555,8 +11314,7 @@ bool P2Asm::asm_wrz()
 bool P2Asm::asm_wrnz()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_WRNZ_MODCZ;
+    m_IR.set_opsrc(p2_OPSRC_WRNZ_MODCZ);
     return parse_D();
 }
 
@@ -11573,8 +11331,7 @@ bool P2Asm::asm_wrnz()
 bool P2Asm::asm_modcz()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_WRNZ_MODCZ;
+    m_IR.set_opsrc(p2_OPSRC_WRNZ_MODCZ);
 
     p2_cond_e cccc = parse_modcz();
     if (!mandatory_COMMA())
@@ -11600,8 +11357,7 @@ bool P2Asm::asm_modcz()
 bool P2Asm::asm_modc()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_WRNZ_MODCZ;
+    m_IR.set_opsrc(p2_OPSRC_WRNZ_MODCZ);
 
     p2_cond_e cccc = parse_modcz();
     m_IR.set_dst(static_cast<p2_LONG>(cccc << 4), m_ORG, m_ORGH);
@@ -11623,8 +11379,7 @@ bool P2Asm::asm_modc()
 bool P2Asm::asm_modz()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_WRNZ_MODCZ;
+    m_IR.set_opsrc(p2_OPSRC_WRNZ_MODCZ);
 
     p2_cond_e zzzz = parse_modcz();
     m_IR.set_dst(static_cast<p2_LONG>(zzzz), m_ORG, m_ORGH);
@@ -11649,8 +11404,7 @@ bool P2Asm::asm_modz()
 bool P2Asm::asm_setscp()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_SETSCP;
+    m_IR.set_opsrc(p2_OPSRC_SETSCP);
     return parse_IM_D();
 }
 
@@ -11668,8 +11422,7 @@ bool P2Asm::asm_setscp()
 bool P2Asm::asm_getscp()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_GETSCP;
+    m_IR.set_opsrc(p2_OPSRC_GETSCP);
     return parse_D();
 }
 
@@ -11686,8 +11439,7 @@ bool P2Asm::asm_getscp()
 bool P2Asm::asm_jmp_abs()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_JMP;
+    m_IR.set_opsrc(p2_OPSRC_JMP);
     return parse_PC_ABS();
 }
 
@@ -11704,8 +11456,7 @@ bool P2Asm::asm_jmp_abs()
 bool P2Asm::asm_call_abs()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_CALL_RET;
+    m_IR.set_opsrc(p2_OPSRC_CALL_RET);
     return parse_PC_ABS();
 }
 
@@ -11722,8 +11473,7 @@ bool P2Asm::asm_call_abs()
 bool P2Asm::asm_calla_abs()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_CALLA_RETA;
+    m_IR.set_opsrc(p2_OPSRC_CALLA_RETA);
     return parse_PC_ABS();
 }
 
@@ -11740,8 +11490,7 @@ bool P2Asm::asm_calla_abs()
 bool P2Asm::asm_callb_abs()
 {
     next();
-    m_IR.set_inst7(p2_OPSRC);
-    m_IR.u.op.src = p2_OPSRC_CALLB_RETB;
+    m_IR.set_opsrc(p2_OPSRC_CALLB_RETB);
     return parse_PC_ABS();
 }
 

@@ -1122,35 +1122,35 @@ int P2Cog::decode()
         case p2_TESTBN_XORZ:
             cycles = op_testbn_xor();
             break;
-        case p2_BITL_eol:
+        case p2_BITL:
         case p2_BITL_WCZ:
             cycles = op_bitl();
             break;
-        case p2_BITH_eol:
+        case p2_BITH:
         case p2_BITH_WCZ:
             cycles = op_bith();
             break;
-        case p2_BITC_eol:
+        case p2_BITC:
         case p2_BITC_WCZ:
             cycles = op_bitc();
             break;
-        case p2_BITNC_eol:
+        case p2_BITNC:
         case p2_BITNC_WCZ:
             cycles = op_bitnc();
             break;
-        case p2_BITZ_eol:
+        case p2_BITZ:
         case p2_BITZ_WCZ:
             cycles = op_bitz();
             break;
-        case p2_BITNZ_eol:
+        case p2_BITNZ:
         case p2_BITNZ_WCZ:
             cycles = op_bitnz();
             break;
-        case p2_BITRND_eol:
+        case p2_BITRND:
         case p2_BITRND_WCZ:
             cycles = op_bitrnd();
             break;
-        case p2_BITNOT_eol:
+        case p2_BITNOT:
         case p2_BITNOT_WCZ:
             cycles = op_bitnot();
             break;

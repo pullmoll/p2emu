@@ -259,6 +259,9 @@ P2Token::P2Token()
     TN_ADD(t_locsym,            tm_lexer, QStringLiteral("·locsym·"));
     TN_ADD(t_symbol,            tm_lexer, QStringLiteral("·symbol·"));
 
+    TN_ADD(t_D,                 tm_none, QStringLiteral("»D«"));
+    TN_ADD(t_S,                 tm_none, QStringLiteral("»S«"));
+
     TN_ADD(t_ABS,               tm_mnemonic, QStringLiteral("ABS"));
     TN_ADD(t_ADD,               tm_mnemonic, QStringLiteral("ADD"));
     TN_ADD(t_ADDCT1,            tm_mnemonic, QStringLiteral("ADDCT1"));
