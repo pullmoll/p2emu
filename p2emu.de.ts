@@ -85,7 +85,7 @@
     <message>
         <location filename="mainwindow.ui" line="37"/>
         <location filename="mainwindow.ui" line="314"/>
-        <location filename="mainwindow.cpp" line="590"/>
+        <location filename="mainwindow.cpp" line="591"/>
         <source>Assembler</source>
         <translation>Assembler</translation>
     </message>
@@ -96,7 +96,7 @@
     </message>
     <message>
         <location filename="mainwindow.ui" line="121"/>
-        <location filename="mainwindow.cpp" line="512"/>
+        <location filename="mainwindow.cpp" line="513"/>
         <source>Disassembler</source>
         <translation>Disassembler</translation>
     </message>
@@ -138,7 +138,7 @@
     <message>
         <location filename="mainwindow.ui" line="326"/>
         <source>&amp;COG</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;COG</translation>
     </message>
     <message>
         <location filename="mainwindow.ui" line="342"/>
@@ -168,7 +168,7 @@
     <message>
         <location filename="mainwindow.ui" line="385"/>
         <source>&amp;Open …</source>
-        <translation>&amp;Öffnen</translation>
+        <translation>&amp;Öffnen …</translation>
     </message>
     <message>
         <location filename="mainwindow.ui" line="388"/>
@@ -178,12 +178,12 @@
     <message>
         <location filename="mainwindow.ui" line="397"/>
         <source>Open &amp;random resource file</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Zufällige Quelldatei öffnen</translation>
     </message>
     <message>
         <location filename="mainwindow.ui" line="400"/>
         <source>Ctrl+R</source>
-        <translation type="unfinished"></translation>
+        <translation>Strg+R</translation>
     </message>
     <message>
         <location filename="mainwindow.ui" line="409"/>
@@ -228,42 +228,42 @@
     <message>
         <location filename="mainwindow.ui" line="457"/>
         <source>F10</source>
-        <translation type="unfinished"></translation>
+        <translation>F10</translation>
     </message>
     <message>
         <location filename="mainwindow.ui" line="624"/>
         <source>Go to line …</source>
-        <translation type="unfinished"></translation>
+        <translation>Gehe zu Zeile …</translation>
     </message>
     <message>
         <location filename="mainwindow.ui" line="636"/>
         <source>Open &amp;binary object …</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Binäres Objekt öffnen …</translation>
     </message>
     <message>
         <location filename="mainwindow.ui" line="645"/>
         <source>Open random binary object file</source>
-        <translation type="unfinished"></translation>
+        <translation>Zufälliges binäres object öffnen</translation>
     </message>
     <message>
         <location filename="mainwindow.ui" line="650"/>
         <source>&amp;Propeller2 opcodes</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Propeller2 Opcodes</translation>
     </message>
     <message>
         <location filename="mainwindow.ui" line="653"/>
         <source>Shift+F1</source>
-        <translation type="unfinished"></translation>
+        <translation>Umsch+F1</translation>
     </message>
     <message>
         <location filename="mainwindow.ui" line="658"/>
         <source>xxx</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="mainwindow.ui" line="663"/>
         <source>Palette &amp;setup …</source>
-        <translation type="unfinished"></translation>
+        <translation>Palette &amp;konfigurieren …</translation>
     </message>
     <message>
         <source>Ctrl+Return</source>
@@ -348,25 +348,30 @@
         <translation>Ctrl+L</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="437"/>
-        <location filename="mainwindow.cpp" line="460"/>
-        <location filename="mainwindow.cpp" line="483"/>
+        <location filename="mainwindow.cpp" line="289"/>
+        <source>Propeller2 Opcode Table</source>
+        <translation>Propeller2 Opcode-Tabelle</translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="438"/>
+        <location filename="mainwindow.cpp" line="461"/>
+        <location filename="mainwindow.cpp" line="484"/>
         <source>Select columns</source>
         <translation>Wähle Spalten aus</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="555"/>
+        <location filename="mainwindow.cpp" line="556"/>
         <source>Spin2 source files (*.spin2)</source>
         <translation>Spin2 Quelldateien (*.spin2)</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="602"/>
-        <location filename="mainwindow.cpp" line="871"/>
+        <location filename="mainwindow.cpp" line="603"/>
+        <location filename="mainwindow.cpp" line="870"/>
         <source>%1 lines</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 Zeilen</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="631"/>
+        <location filename="mainwindow.cpp" line="632"/>
         <source>Assembly took %1 ms.</source>
         <translation>Assemblierung benötigte %1 ms.</translation>
     </message>
@@ -381,7 +386,7 @@
         <translation>Zeile</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="921"/>
+        <location filename="mainwindow.cpp" line="920"/>
         <source>Status</source>
         <translation>Status</translation>
     </message>
@@ -419,7 +424,7 @@ Wert: %3 ($%4, %%5).</translation>
 %2</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="2223"/>
+        <location filename="p2asm.cpp" line="2272"/>
         <source>Can not open &apos;%1&apos; for reading.</source>
         <translation>Kann &apos;%1&apos; nicht zum Lesen öffnen.</translation>
     </message>
@@ -472,254 +477,254 @@ Wert: %3 ($%4, %%5).</translation>
         <translation type="vanished">SRC Konstant größer als $1ff aber wc ist nicht gesetzt für I</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="3562"/>
+        <location filename="p2asm.cpp" line="3611"/>
         <source>Found extra parameters: %1</source>
         <translation>Zusätzliche Parameter gefunden: %1</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="3576"/>
-        <location filename="p2asm.cpp" line="3583"/>
+        <location filename="p2asm.cpp" line="3625"/>
+        <location filename="p2asm.cpp" line="3632"/>
         <source>Expected %1 but found %2.</source>
-        <translation>Erwartet wird %1, aber gefunden %2</translation>
+        <translation>Erwartet wird %1 gefunden jedoch %2.</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="3578"/>
+        <location filename="p2asm.cpp" line="3627"/>
         <source>end of line</source>
         <translation>Ende-der-Zeile</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="3633"/>
-        <location filename="p2asm.cpp" line="3659"/>
-        <location filename="p2asm.cpp" line="3684"/>
-        <location filename="p2asm.cpp" line="3713"/>
-        <location filename="p2asm.cpp" line="3742"/>
-        <location filename="p2asm.cpp" line="3771"/>
+        <location filename="p2asm.cpp" line="3682"/>
+        <location filename="p2asm.cpp" line="3708"/>
+        <location filename="p2asm.cpp" line="3733"/>
+        <location filename="p2asm.cpp" line="3762"/>
+        <location filename="p2asm.cpp" line="3791"/>
+        <location filename="p2asm.cpp" line="3820"/>
         <source>Unexpected flag update &apos;%1&apos; not %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Unerwartetes Flag Update &apos;%1&apos; nicht %2</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="3635"/>
+        <location filename="p2asm.cpp" line="3684"/>
         <source>WC, WZ, or WCZ</source>
-        <translation type="unfinished"></translation>
+        <translation>WC, WZ oder WCZ</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="3661"/>
+        <location filename="p2asm.cpp" line="3710"/>
         <source>WC</source>
-        <translation type="unfinished"></translation>
+        <translation>WC</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="3686"/>
+        <location filename="p2asm.cpp" line="3735"/>
         <source>WZ</source>
-        <translation type="unfinished"></translation>
+        <translation>WZ</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="4377"/>
-        <location filename="p2asm.cpp" line="4401"/>
-        <source>COG origin exceeds limit ($%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="p2asm.cpp" line="4429"/>
-        <source>HUB address exceeds limit ($%1)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="p2asm.cpp" line="4453"/>
-        <source>Code does not fit below $%1 (origin == $%2)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="p2asm.cpp" line="4109"/>
+        <location filename="p2asm.cpp" line="4158"/>
         <source>Expected immediate #n</source>
-        <translation type="unfinished"></translation>
+        <translation>Immediat erwartet #n</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="329"/>
+        <location filename="p2asm.cpp" line="378"/>
         <source>Expected MODCZ param or immediate.</source>
-        <translation type="unfinished"></translation>
+        <translation>MODCZ-Parameter oder Immediate erwartet.</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="335"/>
+        <location filename="p2asm.cpp" line="384"/>
         <source>Expected MODCZ immediate in range 0…15.</source>
-        <translation type="unfinished"></translation>
+        <translation>MODCZ Immediate im Bereicht 0…15 erwartet.</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="446"/>
+        <location filename="p2asm.cpp" line="495"/>
         <source>Symbol &apos;%1&apos; already defined in line #%2 (Value: %3).</source>
-        <translation type="unfinished"></translation>
+        <translation>Symbol &apos;%1&apos; ist bereits definiert in Zeile #%2 (Wert: %3).</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="452"/>
+        <location filename="p2asm.cpp" line="501"/>
         <source>Symbol &apos;%1&apos; already defined in line #%2 (Value: %3, $%4, %%5).</source>
-        <translation type="unfinished"></translation>
+        <translation>Symbol &apos;%1&apos; ist bereits definiert in Zeile #%2 (Wert: %3, $%4, %%5).</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="551"/>
+        <location filename="p2asm.cpp" line="600"/>
         <source>Not an CON section token &apos;%1&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kein Token der CON-Sektion &apos;%1&apos;.</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="2114"/>
+        <location filename="p2asm.cpp" line="2163"/>
         <source>Missing handling of instruction token &apos;%1&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehlende Behandlung des Instruktionstoek &apos;%1&apos;.</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="2123"/>
+        <location filename="p2asm.cpp" line="2172"/>
         <source>Constant &apos;%1&apos; used as an instruction.</source>
-        <translation type="unfinished"></translation>
+        <translation>Konstante &apos;%1&apos; als Instruktion verwendet.</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="2132"/>
+        <location filename="p2asm.cpp" line="2181"/>
         <source>Extraneous conditional &apos;%1&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Überzählige Bedingung &apos;%1&apos;.</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="2141"/>
+        <location filename="p2asm.cpp" line="2190"/>
         <source>Extraneous MODCZ parameter &apos;%1&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Überzähliger MODCZ-Parameter &apos;%1&apos;.</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="2148"/>
+        <location filename="p2asm.cpp" line="2197"/>
         <source>Not an instruction token &apos;%1&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kein Instruktions-Token &apos;%1&apos;.</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="3092"/>
-        <location filename="p2asm.cpp" line="3156"/>
-        <location filename="p2asm.cpp" line="3215"/>
-        <location filename="p2asm.cpp" line="3275"/>
+        <location filename="p2asm.cpp" line="3141"/>
+        <location filename="p2asm.cpp" line="3205"/>
+        <location filename="p2asm.cpp" line="3264"/>
+        <location filename="p2asm.cpp" line="3324"/>
         <source>End of line in expression (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Ende der Zeile im Ausdruck (%1)</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="3093"/>
-        <location filename="p2asm.cpp" line="3102"/>
+        <location filename="p2asm.cpp" line="3142"/>
+        <location filename="p2asm.cpp" line="3151"/>
         <source>mulops</source>
-        <translation type="unfinished"></translation>
+        <translation>mulops</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="3101"/>
-        <location filename="p2asm.cpp" line="3165"/>
-        <location filename="p2asm.cpp" line="3224"/>
-        <location filename="p2asm.cpp" line="3284"/>
+        <location filename="p2asm.cpp" line="3150"/>
+        <location filename="p2asm.cpp" line="3214"/>
+        <location filename="p2asm.cpp" line="3273"/>
+        <location filename="p2asm.cpp" line="3333"/>
         <source>Invalid character in expression (%1): %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Ungültiges Zeichen im Ausdruck (%1): %2</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="3157"/>
-        <location filename="p2asm.cpp" line="3166"/>
+        <location filename="p2asm.cpp" line="3206"/>
+        <location filename="p2asm.cpp" line="3215"/>
         <source>shiftops</source>
-        <translation type="unfinished"></translation>
+        <translation>shiftops</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="3216"/>
-        <location filename="p2asm.cpp" line="3225"/>
+        <location filename="p2asm.cpp" line="3265"/>
+        <location filename="p2asm.cpp" line="3274"/>
         <source>addops</source>
-        <translation type="unfinished"></translation>
+        <translation>addops</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="3276"/>
-        <location filename="p2asm.cpp" line="3285"/>
+        <location filename="p2asm.cpp" line="3325"/>
+        <location filename="p2asm.cpp" line="3334"/>
         <source>binops</source>
-        <translation type="unfinished"></translation>
+        <translation>binops</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="3474"/>
-        <location filename="p2asm.cpp" line="3480"/>
-        <location filename="p2asm.cpp" line="3488"/>
-        <location filename="p2asm.cpp" line="3497"/>
-        <location filename="p2asm.cpp" line="3503"/>
-        <location filename="p2asm.cpp" line="3511"/>
+        <location filename="p2asm.cpp" line="3523"/>
+        <location filename="p2asm.cpp" line="3529"/>
+        <location filename="p2asm.cpp" line="3537"/>
+        <location filename="p2asm.cpp" line="3546"/>
+        <location filename="p2asm.cpp" line="3552"/>
+        <location filename="p2asm.cpp" line="3560"/>
         <source>%1 constant larger than $1ff but %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Konstante %1 ist größer als $1ff aber %2.</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="3476"/>
-        <location filename="p2asm.cpp" line="3499"/>
+        <location filename="p2asm.cpp" line="3525"/>
+        <location filename="p2asm.cpp" line="3548"/>
         <source>no imediate mode</source>
-        <translation type="unfinished"></translation>
+        <translation>kein Immediate-Modus</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="3482"/>
-        <location filename="p2asm.cpp" line="3490"/>
-        <location filename="p2asm.cpp" line="3505"/>
-        <location filename="p2asm.cpp" line="3513"/>
+        <location filename="p2asm.cpp" line="3531"/>
+        <location filename="p2asm.cpp" line="3539"/>
+        <location filename="p2asm.cpp" line="3554"/>
+        <location filename="p2asm.cpp" line="3562"/>
         <source>%1 is not set for %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ist nicht gesetzt für %2</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="3519"/>
+        <location filename="p2asm.cpp" line="3568"/>
         <source>Missing handling for P2Opcode enum value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehlende Behandlung für P2Opcode Enumerationswert.</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="3715"/>
+        <location filename="p2asm.cpp" line="3764"/>
         <source>ANDC/ANDZ</source>
-        <translation type="unfinished"></translation>
+        <translation>ANDC/ANDZ</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="3744"/>
+        <location filename="p2asm.cpp" line="3793"/>
         <source>ORC/ORZ</source>
-        <translation type="unfinished"></translation>
+        <translation>ORC/ORZ</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="3773"/>
+        <location filename="p2asm.cpp" line="3822"/>
         <source>XORC/XORZ</source>
-        <translation type="unfinished"></translation>
+        <translation>XORC/XORZ</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="4114"/>
+        <location filename="p2asm.cpp" line="4163"/>
         <source>Immediate #n not in 0-%1 (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>Immediate #n ist nicht im Bereich 0-%1 (%2)</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="4123"/>
+        <location filename="p2asm.cpp" line="4171"/>
         <source>Missing immediate #n</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehlendes Immediate #n</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="4175"/>
+        <location filename="p2asm.cpp" line="4223"/>
         <source>Invalid pointer parameter: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ungültiger Pointer-Parameter: %1</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="4235"/>
-        <location filename="p2asm.cpp" line="4292"/>
-        <location filename="p2asm.cpp" line="4332"/>
+        <location filename="p2asm.cpp" line="4283"/>
+        <location filename="p2asm.cpp" line="4340"/>
+        <location filename="p2asm.cpp" line="4380"/>
         <source>Not in constant section (CON) but found %1.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="p2asm.cpp" line="4236"/>
-        <source>assignment</source>
-        <translation type="unfinished"></translation>
+        <translation>Nicht in der Konstanten-Sektion (CON) aber %1 wurde gefunden.</translation>
     </message>
     <message>
         <location filename="p2asm.cpp" line="4284"/>
-        <location filename="p2asm.cpp" line="4324"/>
+        <source>assignment</source>
+        <translation>Zuweisung</translation>
+    </message>
+    <message>
+        <location filename="p2asm.cpp" line="4332"/>
+        <location filename="p2asm.cpp" line="4372"/>
         <source>Unexpected token in enumeration: %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Unerwartetes Token in einer Enumeration: %1.</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="4293"/>
-        <location filename="p2asm.cpp" line="4333"/>
+        <location filename="p2asm.cpp" line="4341"/>
+        <location filename="p2asm.cpp" line="4381"/>
         <source>enumeration start</source>
-        <translation type="unfinished"></translation>
+        <translation>Start einer Enumeration</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="4659"/>
-        <source>Could not open file %1 for reading.</source>
-        <translation type="unfinished"></translation>
+        <location filename="p2asm.cpp" line="4425"/>
+        <location filename="p2asm.cpp" line="4450"/>
+        <source>COG origin ($%1) exceeds limit %2.</source>
+        <translation>COG Origin ($%1) ist größer als das Limit %2.</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="11795"/>
+        <location filename="p2asm.cpp" line="4479"/>
+        <source>HUB address exceeds limit $%1.</source>
+        <translation>HUB-Adresse ist größer als das Limit $%1.</translation>
+    </message>
+    <message>
+        <location filename="p2asm.cpp" line="4503"/>
+        <source>Code does not fit below $%1 (ORG is $%2)</source>
+        <translation>Code passt nicht in $%1 (ORG ist $%2)</translation>
+    </message>
+    <message>
+        <location filename="p2asm.cpp" line="4709"/>
+        <source>Could not open file &quot;%1/%2&quot; for reading.</source>
+        <translation>Die Datei &quot;%1/%2&quot; konnte nicht zum Lesen göffnet werden.</translation>
+    </message>
+    <message>
+        <location filename="p2asm.cpp" line="11601"/>
         <source>Invalid pointer &apos;%1&apos;; expected one of %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ungültiger Pointer &apos;%1&apos;; erwartet wurde eins von %2.</translation>
     </message>
     <message>
-        <location filename="p2asm.cpp" line="11797"/>
+        <location filename="p2asm.cpp" line="11603"/>
         <source>PA, PB, PTRA, or PTRB</source>
-        <translation type="unfinished"></translation>
+        <translation>PA, PB, PTRA oder PTRB</translation>
     </message>
 </context>
 <context>
@@ -727,7 +732,7 @@ Wert: %3 ($%4, %%5).</translation>
     <message>
         <location filename="dialogs/textbrowser.ui" line="14"/>
         <source>Dialog</source>
-        <translation type="unfinished">Dialog</translation>
+        <translation>Dialog</translation>
     </message>
 </context>
 <context>
@@ -735,149 +740,149 @@ Wert: %3 ($%4, %%5).</translation>
     <message>
         <location filename="models/p2asmmodel.cpp" line="68"/>
         <source>Errors</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="73"/>
         <source>Tokens</source>
-        <translation type="unfinished"></translation>
+        <translation>Token</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="63"/>
         <location filename="models/p2asmmodel.cpp" line="577"/>
         <source>Opcode</source>
-        <translation type="unfinished"></translation>
+        <translation>Opcode</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="53"/>
         <source>OrgH</source>
-        <translation type="unfinished"></translation>
+        <translation>OrgH</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="58"/>
         <source>Org</source>
-        <translation type="unfinished"></translation>
+        <translation>Org</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="78"/>
         <source>Symbols</source>
-        <translation type="unfinished"></translation>
+        <translation>Symbole</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="83"/>
         <source>Source</source>
-        <translation type="unfinished"></translation>
+        <translation>Quelltext</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="118"/>
         <source>Origin of the current instruction.</source>
-        <translation type="unfinished"></translation>
+        <translation>Origin der aktuellen Instruktion.</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="121"/>
         <source>Program counter address of the current instruction.</source>
-        <translation type="unfinished"></translation>
+        <translation>Programmzähler-Adresse der aktuellen Instruktion.</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="124"/>
         <source>Errors while assembling the current line.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler in der aktuellen Zeile.</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="127"/>
         <source>Tokens found when parsing the current line.</source>
-        <translation type="unfinished"></translation>
+        <translation>Erkannte Tokens der aktuellen Zeile.</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="130"/>
         <source>Opcode of the current instruction, or value of assignment.</source>
-        <translation type="unfinished"></translation>
+        <translation>Opcode der aktuellen Instruktion, oder Wert einer Zuweisung.</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="133"/>
         <source>Number of defined / referenced symbols.</source>
-        <translation type="unfinished"></translation>
+        <translation>Anzahl der definierten / referenzierten Symbole.</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="136"/>
         <source>Source code line.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quellcode Zeile.</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="295"/>
         <source>This column shows the address where code/data is emitted to.</source>
-        <translation type="unfinished"></translation>
+        <translation>Diese Spalte zeigt die Adress an der Code oder Daten gespeichert werden.</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="299"/>
         <source>This column shows the address of the program counter (PC).</source>
-        <translation type="unfinished"></translation>
+        <translation>Diese Spalte zeigt die Adress des Programmzählers (PC).</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="614"/>
         <source>Position, Length</source>
-        <translation type="unfinished"></translation>
+        <translation>Position, Länge</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="612"/>
         <source>Token</source>
-        <translation type="unfinished"></translation>
+        <translation>Token</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="326"/>
         <source>This column shows the source code.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dies Spalte zeigen den Quelltext.</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="582"/>
         <source>Assigment</source>
-        <translation type="unfinished"></translation>
+        <translation>Zuweisung</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="587"/>
         <source>Data</source>
-        <translation type="unfinished"></translation>
+        <translation>Daten</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="613"/>
         <location filename="models/p2asmmodel.cpp" line="648"/>
         <source>Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Typ</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="615"/>
         <source>Source code</source>
-        <translation type="unfinished"></translation>
+        <translation>Quellcode</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="646"/>
         <source>Line #</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeile #</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="647"/>
         <source>Section::name</source>
-        <translation type="unfinished"></translation>
+        <translation>Sektion::name</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="649"/>
         <source>Value (dec)</source>
-        <translation type="unfinished"></translation>
+        <translation>Wert (dez)</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="650"/>
         <source>Value (hex)</source>
-        <translation type="unfinished"></translation>
+        <translation>Wert (hex)</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="651"/>
         <source>Value (bin)</source>
-        <translation type="unfinished"></translation>
+        <translation>Wert (bin)</translation>
     </message>
     <message>
         <location filename="models/p2asmmodel.cpp" line="676"/>
         <source>Error message</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehlermeldung</translation>
     </message>
 </context>
 <context>
@@ -885,213 +890,213 @@ Wert: %3 ($%4, %%5).</translation>
     <message>
         <location filename="views/p2cogview.ui" line="20"/>
         <source>COG view</source>
-        <translation type="unfinished"></translation>
+        <translation>COG-Ansicht</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="41"/>
         <source>Count match values for CT1, CT2, and CT3</source>
-        <translation type="unfinished"></translation>
+        <translation>Zählerstand Werte für CT1, CT2 und CT3</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="68"/>
         <source>CT1:</source>
-        <translation type="unfinished"></translation>
+        <translation>CT1:</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="78"/>
         <source>CT2:</source>
-        <translation type="unfinished"></translation>
+        <translation>CT2:</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="88"/>
         <source>CT3:</source>
-        <translation type="unfinished"></translation>
+        <translation>CT3:</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="101"/>
         <source>Program counter (PC), intruction register, D value, S value, C flag, Z flag</source>
-        <translation type="unfinished"></translation>
+        <translation>Programmzähler (PC), Instruktionsregister, D-Wert, S-Wert, C-Flag, Z-Flag</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="104"/>
         <source>COG ID #0</source>
-        <translation type="unfinished"></translation>
+        <translation>COG ID #0</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="131"/>
         <source>Z</source>
-        <translation type="unfinished"></translation>
+        <translation>Z</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="154"/>
         <source>C</source>
-        <translation type="unfinished"></translation>
+        <translation>C</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="170"/>
         <source>PC:</source>
-        <translation type="unfinished"></translation>
+        <translation>PC:</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="193"/>
         <source>LOCK mode / edge / number values</source>
-        <translation type="unfinished"></translation>
+        <translation>Werte für LOCK Modus / Flanke / Anzahl</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="220"/>
         <source>LOCK:</source>
-        <translation type="unfinished"></translation>
+        <translation>LOCK:</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="239"/>
         <source>COG status flags</source>
-        <translation type="unfinished"></translation>
+        <translation>COG Status-Flags</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="266"/>
         <source>CT2</source>
-        <translation type="unfinished"></translation>
+        <translation>CT2</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="273"/>
         <source>CT1</source>
-        <translation type="unfinished"></translation>
+        <translation>CT1</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="280"/>
         <source>SE2</source>
-        <translation type="unfinished"></translation>
+        <translation>SE2</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="287"/>
         <source>XFI</source>
-        <translation type="unfinished"></translation>
+        <translation>XFI</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="294"/>
         <source>PAT</source>
-        <translation type="unfinished"></translation>
+        <translation>PAT</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="301"/>
         <source>XRL</source>
-        <translation type="unfinished"></translation>
+        <translation>XRL</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="308"/>
         <source>SE4</source>
-        <translation type="unfinished"></translation>
+        <translation>SE4</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="315"/>
         <source>XMT</source>
-        <translation type="unfinished"></translation>
+        <translation>XMT</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="322"/>
         <source>XRO</source>
-        <translation type="unfinished"></translation>
+        <translation>XRO</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="329"/>
         <source>ATN</source>
-        <translation type="unfinished"></translation>
+        <translation>ATN</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="336"/>
         <source>SE1</source>
-        <translation type="unfinished"></translation>
+        <translation>SE1</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="343"/>
         <source>QMT</source>
-        <translation type="unfinished"></translation>
+        <translation>QMT</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="350"/>
         <source>SE3</source>
-        <translation type="unfinished"></translation>
+        <translation>SE3</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="357"/>
         <source>CT3</source>
-        <translation type="unfinished"></translation>
+        <translation>CT3</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="364"/>
         <source>INT</source>
-        <translation type="unfinished"></translation>
+        <translation>INT</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="371"/>
         <source>FBW</source>
-        <translation type="unfinished"></translation>
+        <translation>FBW</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="381"/>
         <source>PAT mode, mask, match values</source>
-        <translation type="unfinished"></translation>
+        <translation>Werte für PAT Modus, Maske, Treffer</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="408"/>
         <source>PAT:</source>
-        <translation type="unfinished"></translation>
+        <translation>PAT:</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="427"/>
         <source>PIN mode, edge, and number values</source>
-        <translation type="unfinished"></translation>
+        <translation>Werte für PIN Modus, Flanke, Wert</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="454"/>
         <source>PIN:</source>
-        <translation type="unfinished"></translation>
+        <translation>PIN:</translation>
     </message>
     <message>
         <location filename="views/p2cogview.ui" line="473"/>
         <source>Disassembled instruction</source>
-        <translation type="unfinished"></translation>
+        <translation>Disassemblierter Befehl</translation>
     </message>
     <message>
         <location filename="views/p2cogview.cpp" line="115"/>
         <location filename="views/p2cogview.cpp" line="136"/>
         <source>OFF</source>
-        <translation type="unfinished"></translation>
+        <translation>AUS</translation>
     </message>
     <message>
         <location filename="views/p2cogview.cpp" line="118"/>
         <source>PA == match</source>
-        <translation type="unfinished"></translation>
+        <translation>PA == Treffer</translation>
     </message>
     <message>
         <location filename="views/p2cogview.cpp" line="121"/>
         <source>PA != match</source>
-        <translation type="unfinished"></translation>
+        <translation>PA != Treffer</translation>
     </message>
     <message>
         <location filename="views/p2cogview.cpp" line="124"/>
         <source>PB == match</source>
-        <translation type="unfinished"></translation>
+        <translation>PB == Treffer</translation>
     </message>
     <message>
         <location filename="views/p2cogview.cpp" line="127"/>
         <source>PB != match</source>
-        <translation type="unfinished"></translation>
+        <translation>PB != Treffer</translation>
     </message>
     <message>
         <location filename="views/p2cogview.cpp" line="139"/>
         <source>Falling edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Fallende Flanke</translation>
     </message>
     <message>
         <location filename="views/p2cogview.cpp" line="142"/>
         <source>Rising edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Steigende Flanke</translation>
     </message>
     <message>
         <location filename="views/p2cogview.cpp" line="145"/>
         <source>Any edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Jede Flanke</translation>
     </message>
 </context>
 <context>
@@ -1099,22 +1104,22 @@ Wert: %3 ($%4, %%5).</translation>
     <message>
         <location filename="models/p2dasmmodel.cpp" line="48"/>
         <source>Address</source>
-        <translation type="unfinished"></translation>
+        <translation>Adresse</translation>
     </message>
     <message>
         <location filename="models/p2dasmmodel.cpp" line="52"/>
         <source>Opcode</source>
-        <translation type="unfinished"></translation>
+        <translation>Opcode</translation>
     </message>
     <message>
         <location filename="models/p2dasmmodel.cpp" line="56"/>
         <source>Instruction</source>
-        <translation type="unfinished"></translation>
+        <translation>Instruktion</translation>
     </message>
     <message>
         <location filename="models/p2dasmmodel.cpp" line="60"/>
         <source>Description</source>
-        <translation type="unfinished"></translation>
+        <translation>Beschreibung</translation>
     </message>
 </context>
 <context>
@@ -1133,17 +1138,17 @@ Wert: %3 ($%4, %%5).</translation>
         <location filename="delegates/p2referencesdelegate.cpp" line="141"/>
         <location filename="delegates/p2referencesdelegate.cpp" line="143"/>
         <source>%1 refs</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 Refs</translation>
     </message>
     <message>
         <location filename="delegates/p2referencesdelegate.cpp" line="102"/>
         <source>Line #%1</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeile #%1</translation>
     </message>
     <message>
         <location filename="delegates/p2referencesdelegate.cpp" line="141"/>
         <source>no</source>
-        <translation type="unfinished"></translation>
+        <translation>keine</translation>
     </message>
 </context>
 <context>
@@ -1151,52 +1156,52 @@ Wert: %3 ($%4, %%5).</translation>
     <message>
         <location filename="models/p2symbolsmodel.cpp" line="48"/>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Name</translation>
     </message>
     <message>
         <location filename="models/p2symbolsmodel.cpp" line="49"/>
         <source>Name of this symbol.</source>
-        <translation type="unfinished"></translation>
+        <translation>Name dieses Symbols.</translation>
     </message>
     <message>
         <location filename="models/p2symbolsmodel.cpp" line="54"/>
         <source>Line #</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeile #</translation>
     </message>
     <message>
         <location filename="models/p2symbolsmodel.cpp" line="55"/>
         <source>Definition is in source line number.</source>
-        <translation type="unfinished"></translation>
+        <translation>Definition ist in Quellcode Zeile Nr.</translation>
     </message>
     <message>
         <location filename="models/p2symbolsmodel.cpp" line="60"/>
         <source>Ref(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>Ref(s)</translation>
     </message>
     <message>
         <location filename="models/p2symbolsmodel.cpp" line="61"/>
         <source>Referenced in source line number(s).</source>
-        <translation type="unfinished"></translation>
+        <translation>Referenziert in Quellcode Zeile(n).</translation>
     </message>
     <message>
         <location filename="models/p2symbolsmodel.cpp" line="66"/>
         <source>Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Typ</translation>
     </message>
     <message>
         <location filename="models/p2symbolsmodel.cpp" line="67"/>
         <source>Type of the symbol&apos;s data.</source>
-        <translation type="unfinished"></translation>
+        <translation>Typ der Daten des Symbols.</translation>
     </message>
     <message>
         <location filename="models/p2symbolsmodel.cpp" line="72"/>
         <source>Value</source>
-        <translation type="unfinished"></translation>
+        <translation>Wert</translation>
     </message>
     <message>
         <location filename="models/p2symbolsmodel.cpp" line="73"/>
         <source>Value of the symbol&apos;s data.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wert der Daten dieses Symbols.</translation>
     </message>
     <message>
         <location filename="models/p2symbolsmodel.cpp" line="264"/>
@@ -1205,32 +1210,32 @@ Wert: %3 ($%4, %%5).</translation>
         <location filename="models/p2symbolsmodel.cpp" line="276"/>
         <location filename="models/p2symbolsmodel.cpp" line="280"/>
         <source>This column shows the %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Diese Spalte zeigt %1</translation>
     </message>
     <message>
         <location filename="models/p2symbolsmodel.cpp" line="264"/>
         <source>name of the symbol.</source>
-        <translation type="unfinished"></translation>
+        <translation>den Namen des Symbols.</translation>
     </message>
     <message>
         <location filename="models/p2symbolsmodel.cpp" line="268"/>
         <source>source line where the symbol is defined.</source>
-        <translation type="unfinished"></translation>
+        <translation>die Quellzeile, in der das Symbol definiert wurde.</translation>
     </message>
     <message>
         <location filename="models/p2symbolsmodel.cpp" line="272"/>
         <source>source line numbers where the symbol is referenced.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quellzeilen, in denen das Symbol referenziert wird.</translation>
     </message>
     <message>
         <location filename="models/p2symbolsmodel.cpp" line="276"/>
         <source>type of the symbol&apos;s value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Typ des Symbolwerts.</translation>
     </message>
     <message>
         <location filename="models/p2symbolsmodel.cpp" line="280"/>
         <source>symbol&apos;s value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Symbolwert.</translation>
     </message>
 </context>
 <context>
@@ -1238,103 +1243,103 @@ Wert: %3 ($%4, %%5).</translation>
     <message>
         <location filename="dialogs/palettesetup.ui" line="14"/>
         <source>Palette setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Palette einstellen</translation>
     </message>
     <message>
         <location filename="dialogs/palettesetup.ui" line="20"/>
-        <location filename="dialogs/palettesetup.cpp" line="156"/>
+        <location filename="dialogs/palettesetup.cpp" line="161"/>
         <source>Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Farbe</translation>
     </message>
     <message>
         <location filename="dialogs/palettesetup.ui" line="62"/>
         <source>Syntax element</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/palettesetup.cpp" line="120"/>
-        <source>Comment</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/palettesetup.cpp" line="121"/>
-        <source>Instruction</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/palettesetup.cpp" line="122"/>
-        <source>Conditional</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/palettesetup.cpp" line="123"/>
-        <source>WCZ suffix</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/palettesetup.cpp" line="124"/>
-        <source>Section</source>
-        <translation type="unfinished"></translation>
+        <translation>Syntax-Element</translation>
     </message>
     <message>
         <location filename="dialogs/palettesetup.cpp" line="125"/>
-        <source>MODCZ parameter</source>
-        <translation type="unfinished"></translation>
+        <source>Comment</source>
+        <translation>Kommentar</translation>
     </message>
     <message>
         <location filename="dialogs/palettesetup.cpp" line="126"/>
-        <source>Symbol</source>
-        <translation type="unfinished"></translation>
+        <source>Instruction</source>
+        <translation>Instruktion</translation>
     </message>
     <message>
         <location filename="dialogs/palettesetup.cpp" line="127"/>
-        <source>Local symbol</source>
-        <translation type="unfinished"></translation>
+        <source>Conditional</source>
+        <translation>Bedingung</translation>
     </message>
     <message>
         <location filename="dialogs/palettesetup.cpp" line="128"/>
-        <source>Expression</source>
-        <translation type="unfinished"></translation>
+        <source>WCZ suffix</source>
+        <translation>WCZ Zusatz</translation>
     </message>
     <message>
         <location filename="dialogs/palettesetup.cpp" line="129"/>
-        <source>String constant</source>
-        <translation type="unfinished"></translation>
+        <source>Section</source>
+        <translation>Sektion</translation>
     </message>
     <message>
         <location filename="dialogs/palettesetup.cpp" line="130"/>
-        <source>Binary constant</source>
-        <translation type="unfinished"></translation>
+        <source>MODCZ parameter</source>
+        <translation>MODCZ-Parameter</translation>
     </message>
     <message>
         <location filename="dialogs/palettesetup.cpp" line="131"/>
-        <source>Byte constant</source>
-        <translation type="unfinished"></translation>
+        <source>Symbol</source>
+        <translation>Symbol</translation>
     </message>
     <message>
         <location filename="dialogs/palettesetup.cpp" line="132"/>
-        <source>Decimal constant</source>
-        <translation type="unfinished"></translation>
+        <source>Local symbol</source>
+        <translation>Lokales Symbol</translation>
     </message>
     <message>
         <location filename="dialogs/palettesetup.cpp" line="133"/>
-        <source>Hexadecimal constant</source>
-        <translation type="unfinished"></translation>
+        <source>Expression</source>
+        <translation>Ausdruck</translation>
     </message>
     <message>
         <location filename="dialogs/palettesetup.cpp" line="134"/>
-        <source>Real constant</source>
-        <translation type="unfinished"></translation>
+        <source>String constant</source>
+        <translation>Zeichenkette</translation>
     </message>
     <message>
         <location filename="dialogs/palettesetup.cpp" line="135"/>
-        <source>Source</source>
-        <translation type="unfinished"></translation>
+        <source>Binary constant</source>
+        <translation>Binäre Konstante</translation>
     </message>
     <message>
-        <location filename="dialogs/palettesetup.cpp" line="156"/>
+        <location filename="dialogs/palettesetup.cpp" line="136"/>
+        <source>Byte constant</source>
+        <translation>Byte Konstante</translation>
+    </message>
+    <message>
+        <location filename="dialogs/palettesetup.cpp" line="137"/>
+        <source>Decimal constant</source>
+        <translation>Dezimal-Konstante</translation>
+    </message>
+    <message>
+        <location filename="dialogs/palettesetup.cpp" line="138"/>
+        <source>Hexadecimal constant</source>
+        <translation>Hexadezimal-Konstante</translation>
+    </message>
+    <message>
+        <location filename="dialogs/palettesetup.cpp" line="139"/>
+        <source>Real constant</source>
+        <translation>Realzahl-Konstante</translation>
+    </message>
+    <message>
+        <location filename="dialogs/palettesetup.cpp" line="140"/>
+        <source>Source</source>
+        <translation>Quellcode</translation>
+    </message>
+    <message>
+        <location filename="dialogs/palettesetup.cpp" line="161"/>
         <source>#RRGGBB</source>
-        <translation type="unfinished"></translation>
+        <translation>#RRGGBB</translation>
     </message>
 </context>
 </TS>
