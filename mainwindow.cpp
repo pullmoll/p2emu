@@ -286,6 +286,7 @@ void MainWindow::help_opcodes()
 {
     QStringList html = Doc.html_opcodes();
     TextBrowser dlg;
+    dlg.set_title(tr("Propeller2 Opcode Table"));
     dlg.set_html(html);
     dlg.exec();
 }

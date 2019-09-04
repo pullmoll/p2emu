@@ -13,6 +13,11 @@ TextBrowser::~TextBrowser()
     delete ui;
 }
 
+void TextBrowser::set_title(const QString& title)
+{
+    setWindowTitle(title);
+}
+
 void TextBrowser::set_list(const QStringList& list)
 {
     ui->tb_listing->setText(list.join(QChar::LineFeed));
