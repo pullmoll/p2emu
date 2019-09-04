@@ -203,7 +203,7 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
             case P2Atom::Word:
                 result = QString("$%1").arg(atom.to_word(), 0, 16, QChar('0'));
                 break;
-            case P2Atom::PC:
+            case P2Atom::Addr:
                 result = QString("$%1").arg(atom.to_word(), 0, 16, QChar('0'));
                 break;
             case P2Atom::Long:

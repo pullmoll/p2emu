@@ -35,21 +35,6 @@
 #include "p2defs.h"
 #include "p2token.h"
 
-//! digits of binary numbers
-const QString bin_digits = QStringLiteral("01_");
-
-//! digits of byte indices
-const QString byt_digits = QStringLiteral("0123_");
-
-//! digits of decimal numbers
-const QString dec_digits = QStringLiteral("0123456789_");
-
-//! digits of hexadecimal numbers
-const QString hex_digits = QStringLiteral("0123456789ABCDEF_");
-
-//! digits of real numbers
-const QString real_digits = QStringLiteral("0123456789._");
-
 const QString template_str_origin = QStringLiteral("FFFFFF ");
 const QString template_str_address = QStringLiteral("COG:1FF ");
 

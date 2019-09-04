@@ -472,15 +472,14 @@ void P2Colors::reset_palette()
     m_default_colors.insert(p2_pal_dec_const,     m_named_colors.value("Sky Blue"));
     m_default_colors.insert(p2_pal_hex_const,     m_named_colors.value("Blue"));
     m_default_colors.insert(p2_pal_real_const,    m_named_colors.value("Powder Blue"));
-    m_default_colors.insert(p2_pal_locsym,        m_named_colors.value("Hot Pink"));
-    m_default_colors.insert(p2_pal_symbol,        m_named_colors.value("Orange"));
-    m_default_colors.insert(p2_pal_expression,    m_named_colors.value("Orange Red"));
+    m_default_colors.insert(p2_pal_locsym,        m_named_colors.value("Orange Red"));
+    m_default_colors.insert(p2_pal_symbol,        m_named_colors.value("Dark Orange"));
+    m_default_colors.insert(p2_pal_expression,    m_named_colors.value("Orange"));
     m_default_colors.insert(p2_pal_section,       m_named_colors.value("Cyan"));
     m_default_colors.insert(p2_pal_conditional,   m_named_colors.value("Violet"));
     m_default_colors.insert(p2_pal_instruction,   m_named_colors.value("Dark Cyan"));
     m_default_colors.insert(p2_pal_modcz_param,   m_named_colors.value("Medium Violet Red"));
     m_default_colors.insert(p2_pal_wcz_suffix,    m_named_colors.value("Pale Violet Red"));
 
-    foreach(p2_palette_e pal, m_default_colors.keys())
-        m_palette.insert(pal, m_default_colors[pal]);
+    m_palette = m_default_colors;
 }

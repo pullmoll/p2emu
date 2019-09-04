@@ -32,6 +32,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 #pragma once
+#include <QVariant>
 #include "p2defs.h"
 #include "p2atom.h"
 
@@ -44,10 +45,17 @@ typedef QPair<p2_LONG,p2_LONG> p2_ORG_ORGH_t;
 class P2Opcode
 {
 public:
-    explicit P2Opcode(const p2_LONG opcode = 0, const p2_ORG_ORGH_t& org_orgh = p2_ORG_ORGH_t(0,0));
-    P2Opcode(const p2_inst7_e inst7, const p2_ORG_ORGH_t& org_orgh = p2_ORG_ORGH_t(0,0));
-    P2Opcode(const p2_inst8_e inst8, const p2_ORG_ORGH_t& org_orgh = p2_ORG_ORGH_t(0,0));
-    P2Opcode(const p2_inst9_e inst9, const p2_ORG_ORGH_t& org_orgh = p2_ORG_ORGH_t(0,0));
+    explicit P2Opcode(const p2_LONG opcode = 0, p2_ORG_ORGH_t org_orgh = p2_ORG_ORGH_t(0,0));
+    P2Opcode(const p2_inst7_e inst7, p2_ORG_ORGH_t org_orgh = p2_ORG_ORGH_t(0,0));
+    P2Opcode(const p2_inst8_e inst8, p2_ORG_ORGH_t org_orgh = p2_ORG_ORGH_t(0,0));
+    P2Opcode(const p2_inst9_e inst9, p2_ORG_ORGH_t org_orgh = p2_ORG_ORGH_t(0,0));
+
+    enum Type {
+        type_none,
+        type_ir,
+        type_equ,
+        type_data
+    };
 
     //! enumeration of possible targets for the immediate (#) prefix(es)
     enum ImmFlag {
@@ -56,8 +64,9 @@ public:
         imm_to_wz       //!< if immediate mode, set the with-zero (wz) flag in IR
     };
 
+    //! enumeration of possible results from setting the AUGD and/or AUGS flags
     enum Error {
-        none,
+        err_none,
         dst_augd_none,  //!< DST constant larger than $1ff but no imediate mode
         dst_augd_im,    //!< DST constant larger than $1ff but im is not set for L
         dst_augd_wz,    //!< DST constant larger than $1ff but wz is not set for L
@@ -66,7 +75,7 @@ public:
         src_augs_wz,    //!< SRC constant larger than $1ff but wz is not set for I
     };
 
-    void clear(const p2_LONG opcode = 0, const p2_ORG_ORGH_t& pc_orgh = p2_ORG_ORGH_t(0,0));
+    void clear(const p2_LONG opcode = 0, p2_ORG_ORGH_t pc_orgh = p2_ORG_ORGH_t(0,0));
 
     const P2Atom& equ() const;
     const p2_ORG_ORGH_t org_orgh() const;
@@ -87,8 +96,8 @@ public:
 
     Error aug_error() const;
 
-    bool as_ir() const;
-    bool as_equ() const;
+    bool is_ir() const;
+    bool is_equ() const;
 
     p2_opcode_u ir() const;
     p2_LONG opcode() const;
@@ -108,9 +117,9 @@ public:
 
     const P2Atom& data() const;
 
-    bool set_as_IR(bool on = true);
-    bool set_org_orgh(p2_ORG_ORGH_t org_orgh);
-    bool set_data(const P2Atom& data);
+    void set_as_IR(bool on = true);
+    void set_org_orgh(p2_ORG_ORGH_t org_orgh);
+    void set_data(const P2Atom& data);
     bool set_equ(const P2Atom& value);
 
     void set_opcode(const p2_LONG opcode);
@@ -140,10 +149,9 @@ public:
 private:
     p2_opcode_u m_u;                //!< instruction opcode or assignment value
     p2_ORG_ORGH_t m_org_orgh;       //!< QPair of the instruction's ORG and ORGH values
-    ImmFlag m_dst_imm_flag;         //!< where to store destination (D) immediate flag
-    ImmFlag m_src_imm_flag;         //!< where to store source (S) immediate flag
-    bool m_as_ir;                   //!< if true, the p2_opcode_u contains an instruction
-    bool m_as_equ;                  //!< if true, the p2_opcode_u contains an assignment
+    Type m_type;                    //!< What type of information is stored in the opcode
+    ImmFlag m_imm_dst;              //!< where to store destination (D) immediate flag
+    ImmFlag m_imm_src;              //!< where to store source (S) immediate flag
     QVariant m_augd;                //!< optional value in case an AUGD is required
     QVariant m_augs;                //!< optional value in case an AUGS is required
     P2Atom m_data;                  //!< optional data generated from BYTE, WORD, LONG, FILE, etc.

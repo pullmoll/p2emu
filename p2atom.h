@@ -32,7 +32,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 #pragma once
-#include <QVariant>
 #include "p2defs.h"
 
 /**
@@ -74,7 +73,7 @@ public:
         Bool,                       //!< Value is bool
         Byte,                       //!< Value is BYTE sized
         Word,                       //!< Value is WORD sized
-        PC,                         //!< Value is an address (Program Counter)
+        Addr,                       //!< Value is an address (Program Counter)
         Long,                       //!< Value is LONG sized
         Quad,                       //!< Value is QUAD sized
         Real,                       //!< Value is REAL sized (qreal can be float or double)
@@ -119,10 +118,10 @@ public:
     const QString type_name() const;
     void set_type(Type type);
 
-    p2_QUAD value(bool *ok = nullptr) const;
+    template <typename T> T value(bool *ok = nullptr) const { return private_val<T>(ok); }
 
     bool set_trait(Trait trait);
-    bool add_trait(Trait add);
+    bool add_trait(Trait trait);
 
     bool append_uint(Type type, p2_QUAD value);
     bool append_real(Type type, p2_REAL value);
@@ -146,32 +145,32 @@ public:
     p2_QUAD to_quad(bool *ok = nullptr) const;
     p2_REAL to_real(bool *ok = nullptr) const;
     QString to_string(bool *ok = nullptr) const;
-    QByteArray to_array() const;
-    p2_BYTES to_bytes() const;
-    p2_WORDS to_words() const;
-    p2_LONGS to_longs() const;
+    QByteArray to_array(bool* ok = nullptr) const;
+    p2_BYTES to_bytes(bool* ok = nullptr) const;
+    p2_WORDS to_words(bool* ok = nullptr) const;
+    p2_LONGS to_longs(bool* ok = nullptr) const;
 
     void make_real();
     void complement1(bool flag);
     void complement2(bool flag);
     void logical_not(bool flag);
     void make_bool(bool flag);
-    void unary_dec(const P2Atom& val);
-    void unary_inc(const P2Atom& val);
-    void arith_mul(const P2Atom& val);
-    void arith_div(const P2Atom& val);
-    void arith_mod(const P2Atom& val);
-    void arith_add(const P2Atom& val);
-    void arith_sub(const P2Atom& val);
-    void binary_shl(const P2Atom& val);
-    void binary_shr(const P2Atom& val);
-    void binary_and(const P2Atom& val);
-    void binary_xor(const P2Atom& val);
-    void binary_or(const P2Atom& val);
+    void unary_dec(const P2Atom& private_val);
+    void unary_inc(const P2Atom& private_val);
+    void arith_mul(const P2Atom& private_val);
+    void arith_div(const P2Atom& private_val);
+    void arith_mod(const P2Atom& private_val);
+    void arith_add(const P2Atom& private_val);
+    void arith_sub(const P2Atom& private_val);
+    void binary_shl(const P2Atom& private_val);
+    void binary_shr(const P2Atom& private_val);
+    void binary_and(const P2Atom& private_val);
+    void binary_xor(const P2Atom& private_val);
+    void binary_or(const P2Atom& private_val);
     void binary_rev();
-    void reverse(const P2Atom& val);
-    void encode(const P2Atom& val);
-    void decode(const P2Atom& val);
+    void reverse(const P2Atom& private_val);
+    void encode(const P2Atom& private_val);
+    void decode(const P2Atom& private_val);
 
     P2Atom& operator=(const P2Atom& other);
     bool operator==(const P2Atom& other);
@@ -202,5 +201,94 @@ public:
 private:
     Type m_type;
     Trait m_trait;
-    QVector<p2_BYTE> m_data;
+    p2_BYTES m_data;
+
+    /**
+     * Return the data bytes cast to a type T
+     *
+     * No worries: the many template "if (typeid(T) == typeid(p2_XXX) .." are not
+     * evaluated at runtime, but at compile time.
+     */
+    template <typename T> T private_val(bool* ok) const
+    {
+        if (m_data.isEmpty()) {
+            // default constructed type T
+            if (nullptr != ok)
+                *ok = false;
+            return T();
+        }
+
+        if (typeid(T) == typeid(p2_BYTE)) {
+            // return the first byte
+            if (nullptr != ok)
+                *ok = true;
+            return m_data[0];
+        }
+
+        if (typeid(T) == typeid(p2_WORD)) {
+            // reassemble BYTEs into a WORD (little endian)
+            constexpr int sz = sz_WORD;
+            const int size = m_data.size();
+            p2_WORD result = 0;
+            int filled = 0;
+
+            for (int i = 0; i < size; i++) {
+                result |= static_cast<p2_WORD>(m_data[i]) << (8 * filled);
+                if (++filled == sz)
+                    break;
+            }
+            if (nullptr != ok)
+                *ok = true;
+            return static_cast<T>(result);
+        }
+
+        if (typeid(T) == typeid(p2_LONG)) {
+            // reassemble BYTEs into a LONG (little endian)
+            constexpr int sz = sz_LONG;
+            const int size = m_data.size();
+            p2_LONG result = 0;
+            int filled = 0;
+
+            for (int i = 0; i < size; i++) {
+                result |= static_cast<p2_LONG>(m_data[i]) << (8 * filled);
+                if (++filled == sz)
+                    break;
+            }
+            if (nullptr != ok)
+                *ok = true;
+            return static_cast<T>(result);
+        }
+
+        if (typeid(T) == typeid(p2_QUAD)) {
+            // reassemble BYTEs into a QUAD (little endian)
+            constexpr int sz = sz_QUAD;
+            const int size = m_data.size();
+            p2_QUAD result = 0;
+            int filled = 0;
+
+            for (int i = 0; i < size; i++) {
+                result |= static_cast<p2_QUAD>(m_data[i]) << (8 * filled);
+                if (++filled == sz)
+                    break;
+            }
+            if (nullptr != ok)
+                *ok = true;
+            return static_cast<T>(result);
+        }
+
+        if (typeid(T) == typeid(p2_REAL)) {
+            // return p2_REAL if the size is sufficient
+            const int size = m_data.size();
+            if (size >= sz_REAL) {
+                if (nullptr != ok)
+                    *ok = true;
+                return *reinterpret_cast<const T *>(m_data.constData());
+            }
+            if (nullptr != ok)
+                *ok = false;
+            return T();
+        }
+
+        return T();
+    }
 };

@@ -33,66 +33,62 @@
  ****************************************************************************/
 #include "p2opcode.h"
 
-P2Opcode::P2Opcode(const p2_LONG opcode, const p2_ORG_ORGH_t& org_orgh)
+P2Opcode::P2Opcode(const p2_LONG opcode, p2_ORG_ORGH_t org_orgh)
     : m_u()
     , m_org_orgh(org_orgh)
-    , m_dst_imm_flag(imm_none)
-    , m_src_imm_flag(imm_none)
-    , m_as_ir(false)
-    , m_as_equ(false)
+    , m_type(type_none)
+    , m_imm_dst(imm_none)
+    , m_imm_src(imm_none)
     , m_augd()
     , m_augs()
     , m_data()
     , m_equ()
-    , m_error(none)
+    , m_error(err_none)
 {
     m_u.opcode = opcode;
 }
 
-P2Opcode::P2Opcode(const p2_inst7_e inst7, const p2_ORG_ORGH_t& org_orgh)
+P2Opcode::P2Opcode(const p2_inst7_e inst7, p2_ORG_ORGH_t org_orgh)
     : m_u()
     , m_org_orgh(org_orgh)
-    , m_dst_imm_flag(imm_none)
-    , m_src_imm_flag(imm_none)
-    , m_as_ir(false)
-    , m_as_equ(false)
+    , m_type(type_none)
+    , m_imm_dst(imm_none)
+    , m_imm_src(imm_none)
     , m_augd()
     , m_augs()
     , m_data()
     , m_equ()
-    , m_error(none)
+    , m_error(err_none)
 {
     set_inst7(inst7);
 }
 
-P2Opcode::P2Opcode(const p2_inst8_e inst8, const p2_ORG_ORGH_t& pc_orgh)
+P2Opcode::P2Opcode(const p2_inst8_e inst8, p2_ORG_ORGH_t org_orgh)
     : m_u()
-    , m_org_orgh(pc_orgh)
-    , m_dst_imm_flag(imm_none)
-    , m_src_imm_flag(imm_none)
-    , m_as_ir(false)
-    , m_as_equ(false)
+    , m_org_orgh(org_orgh)
+    , m_type(type_none)
+    , m_imm_dst(imm_none)
+    , m_imm_src(imm_none)
     , m_augd()
     , m_augs()
     , m_data()
     , m_equ()
-    , m_error(none)
+    , m_error(err_none)
 {
     set_inst8(inst8);
 }
 
-P2Opcode::P2Opcode(const p2_inst9_e inst9, const p2_ORG_ORGH_t& pc_orgh)
+P2Opcode::P2Opcode(const p2_inst9_e inst9, p2_ORG_ORGH_t org_orgh)
     : m_u()
-    , m_org_orgh(pc_orgh)
-    , m_dst_imm_flag(imm_none)
-    , m_src_imm_flag(imm_none)
-    , m_as_ir(false)
-    , m_as_equ(false)
+    , m_org_orgh(org_orgh)
+    , m_type(type_none)
+    , m_imm_dst(imm_none)
+    , m_imm_src(imm_none)
     , m_augd()
     , m_augs()
     , m_data()
     , m_equ()
-    , m_error(none)
+    , m_error(err_none)
 {
     set_inst9(inst9);
 }
@@ -101,18 +97,18 @@ P2Opcode::P2Opcode(const p2_inst9_e inst9, const p2_ORG_ORGH_t& pc_orgh)
  * @brief clear the members to their initial state
  * @param opcode optional opcode
  */
-void P2Opcode::clear(const p2_LONG opcode, const p2_ORG_ORGH_t& pc_orgh)
+void P2Opcode::clear(const p2_LONG opcode, p2_ORG_ORGH_t pc_orgh)
 {
-    m_dst_imm_flag = imm_none;
-    m_src_imm_flag = imm_none;
-    m_as_ir = false;
-    m_as_equ = false;
+    m_u.opcode = opcode;
+    m_org_orgh = pc_orgh;
+    m_type = type_none;
+    m_imm_dst = imm_none;
+    m_imm_src = imm_none;
     m_augd.clear();
     m_augs.clear();
-    m_org_orgh = pc_orgh;
-    m_u.opcode = opcode;
     m_data.clear();
     m_equ.clear();
+    m_error = err_none;
 }
 
 /**
@@ -122,7 +118,7 @@ void P2Opcode::clear(const p2_LONG opcode, const p2_ORG_ORGH_t& pc_orgh)
 const P2Atom& P2Opcode::equ() const
 {
     static P2Atom empty;
-    if (!m_as_equ)
+    if (type_equ != m_type)
         return empty;
     return m_equ;
 }
@@ -160,7 +156,7 @@ p2_LONG P2Opcode::orgh() const
  */
 void P2Opcode::set_dst_imm(P2Opcode::ImmFlag flag)
 {
-    m_dst_imm_flag = flag;
+    m_imm_dst = flag;
 }
 
 /**
@@ -195,7 +191,7 @@ bool P2Opcode::augd_valid() const
  */
 void P2Opcode::set_src_imm(P2Opcode::ImmFlag flag)
 {
-    m_src_imm_flag = flag;
+    m_imm_src = flag;
 }
 
 /**
@@ -228,18 +224,18 @@ bool P2Opcode::augs_valid() const
  * @brief Return true, if the current P2Opcode is to be interpreted as instruction (opcode)
  * @return true if instruction, or false otherwise
  */
-bool P2Opcode::as_ir() const
+bool P2Opcode::is_ir() const
 {
-    return m_as_ir;
+    return type_ir == m_type;
 }
 
 /**
  * @brief Return true, if the current P2Opcode is to be interpreted as assignment (equals)
  * @return true if assignment, or false otherwise
  */
-bool P2Opcode::as_equ() const
+bool P2Opcode::is_equ() const
 {
-    return m_as_equ;
+    return type_equ == m_type;
 }
 
 /**
@@ -403,25 +399,19 @@ P2Opcode::Error P2Opcode::aug_error() const
  * @brief Set whether the current opcode is to be interpreted as instruction
  * Also sets EQU mode to false, if on is true.
  * @param on if true, this is an instruction
- * @return true on success (currently always)
  */
-bool P2Opcode::set_as_IR(bool on)
+void P2Opcode::set_as_IR(bool on)
 {
-    m_as_ir = on;
-    if (on)
-        m_as_equ = false;
-    return true;
+    m_type = on ? type_ir : type_none;
 }
 
 /**
  * @brief Set the current ORG/ORGH pair
  * @param org_orgh pair of p2_LONG with ORG (first) and ORGH (second) values
- * @return true on success (currently always)
  */
-bool P2Opcode::set_org_orgh(p2_ORG_ORGH_t org_orgh)
+void P2Opcode::set_org_orgh(p2_ORG_ORGH_t org_orgh)
 {
     m_org_orgh = org_orgh;
-    return true;
 }
 
 /**
@@ -430,12 +420,10 @@ bool P2Opcode::set_org_orgh(p2_ORG_ORGH_t org_orgh)
  * @param data const reference to the P2Atom to set as data
  * @return true on success (currently always)
  */
-bool P2Opcode::set_data(const P2Atom& data)
+void P2Opcode::set_data(const P2Atom& data)
 {
-    m_as_ir = false;
-    m_as_equ = false;
+    m_type = type_data;
     m_data = data;
-    return true;
 }
 
 /**
@@ -446,8 +434,7 @@ bool P2Opcode::set_data(const P2Atom& data)
  */
 bool P2Opcode::set_equ(const P2Atom& value)
 {
-    m_as_ir = false;
-    m_as_equ = true;
+    m_type = type_equ;
     m_equ = value;
     return true;
 }
@@ -555,8 +542,9 @@ void P2Opcode::set_src(const p2_LONG src)
  */
 void P2Opcode::set_dst_src(const p2_LONG dst, const p2_LONG src)
 {
-    set_dst(dst);
-    set_src(src);
+    Q_ASSERT(0 == (dst & ~p2_mask9));
+    m_u.op.dst = static_cast<uint>(dst);
+    m_u.op.src = static_cast<uint>(src);
 }
 
 /**
@@ -622,7 +610,7 @@ void P2Opcode::set_im(bool on)
  */
 void P2Opcode::set_im_flags(bool on)
 {
-    switch (m_src_imm_flag) {
+    switch (m_imm_src) {
     case imm_none:
         break;
     case imm_to_im:
@@ -633,7 +621,7 @@ void P2Opcode::set_im_flags(bool on)
         set_wz(on);
         break;
     }
-    switch (m_dst_imm_flag) {
+    switch (m_imm_dst) {
     case imm_none:
         break;
     case imm_to_im:
@@ -699,7 +687,7 @@ bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH
 
     m_u.op.dst = value & COG_MASK;
     if (value > COG_MASK || atom.trait() == P2Atom::Augmented) {
-        switch (m_dst_imm_flag) {
+        switch (m_imm_dst) {
         case imm_none:
             return true;
         case imm_to_im:
@@ -743,7 +731,7 @@ bool P2Opcode::set_src(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH
 
     m_u.op.src = value & COG_MASK;
     if (value > COG_MASK || atom.trait() == P2Atom::Augmented) {
-        switch (m_src_imm_flag) {
+        switch (m_imm_src) {
         case imm_none:
             return true;
         case imm_to_im:

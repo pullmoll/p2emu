@@ -596,12 +596,12 @@ void MainWindow::loadSource(const QString& filename)
     m_amodel->invalidate();
     updateAsmColumnSizes();
     updateSymbolsColumnSizes();
+    ui->tvAsm->setCurrentIndex(m_amodel->index(0, P2AsmModel::c_Source));
     ui->tvAsm->update();
 
     QLabel* lbl_lines = ui->toolbarAsm->findChild<QLabel*>(key_lines);
     if (lbl_lines)
         lbl_lines->setText(tr("%1 lines").arg(m_asm->count()));
-
     assemble();
 }
 

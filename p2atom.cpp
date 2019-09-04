@@ -142,7 +142,7 @@ bool P2Atom::isZero() const
         return 0 == to_byte();
     case Word:
         return 0 == to_word();
-    case PC:
+    case Addr:
         return 0 == to_long();
     case Long:
         return 0 == to_long();
@@ -202,7 +202,7 @@ int P2Atom::count() const
     case Word:
         count = (m_data.size() + sz_WORD - 1) / sz_WORD;
         break;
-    case PC:
+    case Addr:
         count = (m_data.size() + sz_LONG - 1) / sz_LONG;
         break;
     case Long:
@@ -230,23 +230,23 @@ P2Atom::Type P2Atom::type() const
 const QString P2Atom::type_name() const
 {
     switch (m_type) {
-    case P2Atom::Invalid:
+    case Invalid:
         return QStringLiteral("Invalid");
-    case P2Atom::Bool:
+    case Bool:
         return QStringLiteral("Bool");
-    case P2Atom::Byte:
+    case Byte:
         return QStringLiteral("Byte");
-    case P2Atom::Word:
+    case Word:
         return QStringLiteral("Word");
-    case P2Atom::PC:
+    case Addr:
         return QStringLiteral("PC");
-    case P2Atom::Long:
+    case Long:
         return QStringLiteral("Long");
-    case P2Atom::Quad:
+    case Quad:
         return QStringLiteral("Quad");
-    case P2Atom::Real:
+    case Real:
         return QStringLiteral("Real");
-    case P2Atom::String:
+    case String:
         return QStringLiteral("String");
     }
     return QStringLiteral("<invalid>");
@@ -259,35 +259,6 @@ const QString P2Atom::type_name() const
 void P2Atom::set_type(Type type)
 {
     m_type = type;
-}
-
-p2_QUAD P2Atom::value(bool* ok) const
-{
-    p2_QUAD result = 0;
-    if (ok)
-        *ok = isValid();
-    if (Real == m_type) {
-        const p2_REAL* data = reinterpret_cast<const p2_REAL*>(m_data.constData());
-        result = static_cast<p2_QUAD>(qRound64(*data));
-    } else if (size() > 0) {
-        const int bytes = size();
-        result = m_data[0];
-        if (bytes > 1)
-            result |= static_cast<p2_QUAD>(m_data[1]) <<  8;
-        if (bytes > 2)
-            result |= static_cast<p2_QUAD>(m_data[2]) << 16;
-        if (bytes > 3)
-            result |= static_cast<p2_QUAD>(m_data[3]) << 24;
-        if (bytes > 4)
-            result |= static_cast<p2_QUAD>(m_data[4]) << 32;
-        if (bytes > 5)
-            result |= static_cast<p2_QUAD>(m_data[5]) << 40;
-        if (bytes > 6)
-            result |= static_cast<p2_QUAD>(m_data[6]) << 48;
-        if (bytes > 7)
-            result |= static_cast<p2_QUAD>(m_data[7]) << 56;
-    }
-    return result;
 }
 
 /**
@@ -308,12 +279,11 @@ bool P2Atom::set_trait(P2Atom::Trait trait)
  * @param trait trait to add
  * @return true if added, false if not changed
  */
-bool P2Atom::add_trait(P2Atom::Trait add)
+bool P2Atom::add_trait(P2Atom::Trait trait)
 {
-    Trait trait = static_cast<Trait>(m_trait | add);
-    if (trait == m_trait)
+    if (m_trait & trait)
         return false;
-    m_trait = trait;
+    m_trait = static_cast<Trait>(m_trait | trait);
     return true;
 }
 
@@ -342,7 +312,7 @@ bool P2Atom::append_uint(Type type, p2_QUAD value)
         m_data[pos+0] = static_cast<p2_BYTE>(value >>  0);
         m_data[pos+1] = static_cast<p2_BYTE>(value >>  8);
         break;
-    case PC:
+    case Addr:
         m_data.resize(pos+4);
         m_data[pos+0] = static_cast<p2_BYTE>(value >>  0);
         m_data[pos+1] = static_cast<p2_BYTE>(value >>  8);
@@ -392,7 +362,7 @@ bool P2Atom::append_real(Type type, p2_REAL value)
     switch (type) {
     case Invalid:
         return false;
-    case Bool: case Byte: case Word: case PC:
+    case Bool: case Byte: case Word: case Addr:
     case Long: case Quad: case String:
         return append_uint(type, quad);
     case Real:
@@ -495,7 +465,7 @@ bool P2Atom::set_uint(Type type, p2_QUAD value)
         m_data[0] = static_cast<p2_BYTE>(value >> 0);
         m_data[1] = static_cast<p2_BYTE>(value >> 8);
         break;
-    case PC:
+    case Addr:
         m_type = type;
         m_data.resize(4);
         m_data[0] = static_cast<p2_BYTE>(value >>  0);
@@ -545,7 +515,7 @@ bool P2Atom::set_real(P2Atom::Type type, p2_REAL value)
     switch (type) {
     case Invalid:
         return false;
-    case Bool: case Byte: case Word: case PC:
+    case Bool: case Byte: case Word: case Addr:
     case Long: case Quad: case String:
         return set_uint(type, quad);
     case Real:
@@ -652,7 +622,7 @@ QString P2Atom::str(p2_format_e fmt) const
                      .arg(to_word(), 4, 16, QChar('0'));
         }
         break;
-    case PC:
+    case Addr:
     case Long:
         switch (fmt) {
         case fmt_dec:
@@ -752,7 +722,7 @@ void P2Atom::complement1(bool flag)
     case Word:
         set_uint(m_type, ~to_word());
         break;
-    case PC:
+    case Addr:
         set_uint(m_type, ~to_long());
         break;
     case Long:
@@ -791,7 +761,7 @@ void P2Atom::complement2(bool flag)
     case Word:
         set_uint(m_type, ~to_word() + 1);
         break;
-    case PC:
+    case Addr:
         set_uint(m_type, ~to_long() + 1);
         break;
     case Long:
@@ -833,7 +803,7 @@ void P2Atom::logical_not(bool flag)
     case Word:
         set_uint(m_type, 0 == to_word() ? 1 : 0);
         break;
-    case PC:
+    case Addr:
         set_uint(m_type, 0 == to_long() ? 1 : 0);
         break;
     case Long:
@@ -879,7 +849,7 @@ void P2Atom::make_bool(bool flag)
     case Word:
         set(Bool, 0 != to_word() ? 1 : 0);
         break;
-    case PC:
+    case Addr:
         set(Bool, 0 != to_long() ? 1 : 0);
         break;
     case Long:
@@ -918,7 +888,7 @@ void P2Atom::unary_dec(const P2Atom& val)
     case Word:
         set_uint(m_type, to_word() - val.to_word());
         break;
-    case PC:
+    case Addr:
         set_uint(m_type, to_long() - val.to_long());
         break;
     case Long:
@@ -968,7 +938,7 @@ void P2Atom::unary_inc(const P2Atom& val)
     case Word:
         set_uint(m_type, to_word() + val.to_word());
         break;
-    case PC:
+    case Addr:
         set_uint(m_type, to_long() + val.to_long());
         break;
     case Long:
@@ -1018,7 +988,7 @@ void P2Atom::arith_mul(const P2Atom& val)
     case Word:
         set_uint(m_type, to_word() * val.to_word());
         break;
-    case PC:
+    case Addr:
         set_uint(m_type, to_long() * val.to_long());
         break;
     case Long:
@@ -1063,7 +1033,7 @@ void P2Atom::arith_div(const P2Atom& val)
     case Word:
         set_uint(m_type, to_word() / val.to_word());
         break;
-    case PC:
+    case Addr:
         set_uint(m_type, to_long() / val.to_long());
         break;
     case Long:
@@ -1108,7 +1078,7 @@ void P2Atom::arith_mod(const P2Atom& val)
     case Word:
         set_uint(m_type, to_word() % val.to_word());
         break;
-    case PC:
+    case Addr:
         set_uint(m_type, to_long() % val.to_long());
         break;
     case Long:
@@ -1148,7 +1118,7 @@ void P2Atom::arith_add(const P2Atom& val)
     case Word:
         set_uint(m_type, to_word() + val.to_word());
         break;
-    case PC:
+    case Addr:
         set_uint(m_type, to_long() + val.to_long());
         break;
     case Long:
@@ -1198,7 +1168,7 @@ void P2Atom::arith_sub(const P2Atom& val)
     case Word:
         set_uint(m_type, to_word() - val.to_word());
         break;
-    case PC:
+    case Addr:
         set_uint(m_type, to_long() - val.to_long());
         break;
     case Long:
@@ -1247,7 +1217,7 @@ void P2Atom::binary_shl(const P2Atom& val)
     case Word:
         set_uint(m_type, to_long() << val.to_byte());
         break;
-    case PC:
+    case Addr:
         set_uint(m_type, to_long() << val.to_byte());
         break;
     case Long:
@@ -1285,7 +1255,7 @@ void P2Atom::binary_shr(const P2Atom& val)
     case Word:
         set_uint(m_type, to_word() >> val.to_byte());
         break;
-    case PC:
+    case Addr:
         set_uint(m_type, to_long() >> val.to_byte());
         break;
     case Long:
@@ -1321,7 +1291,7 @@ void P2Atom::binary_and(const P2Atom& val)
     case Word:
         set_uint(m_type, to_word() & val.to_word());
         break;
-    case PC:
+    case Addr:
         set_uint(m_type, to_long() & val.to_word());
         break;
     case Long:
@@ -1357,7 +1327,7 @@ void P2Atom::binary_xor(const P2Atom& val)
     case Word:
         set_uint(m_type, to_word() ^ val.to_word());
         break;
-    case PC:
+    case Addr:
         set_uint(m_type, to_long() ^ val.to_long());
         break;
     case Long:
@@ -1393,7 +1363,7 @@ void P2Atom::binary_or(const P2Atom& val)
     case Word:
         set_uint(m_type, to_word() | val.to_word());
         break;
-    case PC:
+    case Addr:
         set_uint(m_type, to_long() | val.to_long());
         break;
     case Long:
@@ -1424,7 +1394,7 @@ void P2Atom::binary_rev()
     case Word:
         set_uint(m_type, P2Util::reverse(to_word()));
         break;
-    case PC:
+    case Addr:
         set_uint(m_type, P2Util::reverse(to_long()));
         break;
     case Long:
@@ -1455,17 +1425,17 @@ void P2Atom::reverse(const P2Atom& val)
     case Word:
         set_uint(m_type, P2Util::reverse(to_word(), val.to_word()));
         break;
-    case PC:
+    case Addr:
         set_uint(m_type, P2Util::reverse(to_long(), val.to_long()));
         break;
     case Long:
         set_uint(m_type, P2Util::reverse(to_long(), val.to_long()));
         break;
     case Quad:
-        set_uint(m_type, P2Util::reverse(to_quad(), val.to_quad()));
+        set_uint(m_type, P2Util::reverse(to_quad(), val.to_long()));
         break;
     case Real:
-        set_real(m_type, static_cast<p2_REAL>(P2Util::reverse(to_quad(), val.to_quad())));
+        set_real(m_type, static_cast<p2_REAL>(P2Util::reverse(to_quad(), val.to_long())));
         break;
     case String:
         // TODO: implement
@@ -1486,7 +1456,7 @@ void P2Atom::encode(const P2Atom& val)
     case Word:
         set_uint(m_type, P2Util::encode(val.to_word()));
         break;
-    case PC:
+    case Addr:
         set_uint(m_type, P2Util::encode(val.to_long()));
         break;
     case Long:
@@ -1517,7 +1487,7 @@ void P2Atom::decode(const P2Atom& val)
     case Word:
         set_uint(m_type, P2Util::lzc(val.to_word()));
         break;
-    case PC:
+    case Addr:
         set_uint(m_type, P2Util::lzc(val.to_long()));
         break;
     case Long:
@@ -1543,12 +1513,8 @@ void P2Atom::decode(const P2Atom& val)
 bool P2Atom::to_bool(bool* ok) const
 {
     if (ok)
-        *ok = false;
-    if (Invalid == m_type)
-        return false;
-    if (ok)
-        *ok = true;
-    return m_data.count('\0') != m_data.size();
+        *ok = m_data.size() > 0;
+    return m_data.count(0x00u) > 0;
 }
 
 /**
@@ -1558,7 +1524,7 @@ bool P2Atom::to_bool(bool* ok) const
  */
 p2_BYTE P2Atom::to_byte(bool* ok) const
 {
-    return static_cast<p2_BYTE>(value(ok));
+    return private_val<p2_BYTE>(ok);
 }
 
 /**
@@ -1568,7 +1534,7 @@ p2_BYTE P2Atom::to_byte(bool* ok) const
  */
 p2_WORD P2Atom::to_word(bool* ok) const
 {
-    return static_cast<p2_WORD>(value(ok));
+    return private_val<p2_WORD>(ok);
 }
 
 /**
@@ -1578,7 +1544,7 @@ p2_WORD P2Atom::to_word(bool* ok) const
  */
 p2_LONG P2Atom::to_long(bool* ok) const
 {
-    return static_cast<p2_LONG>(value(ok));
+    return private_val<p2_LONG>(ok);
 }
 
 /**
@@ -1588,7 +1554,7 @@ p2_LONG P2Atom::to_long(bool* ok) const
  */
 p2_QUAD P2Atom::to_quad(bool* ok) const
 {
-    return static_cast<p2_QUAD>(value(ok));
+    return private_val<p2_QUAD>(ok);
 }
 
 /**
@@ -1598,12 +1564,7 @@ p2_QUAD P2Atom::to_quad(bool* ok) const
  */
 p2_REAL P2Atom::to_real(bool* ok) const
 {
-    if (Real != m_type)
-        return static_cast<p2_REAL>(value(ok));
-    if (m_data.size() < sz_REAL)
-        return 0.0;
-    const p2_REAL* data = reinterpret_cast<const p2_REAL*>(m_data.constData());
-    return *data;
+    return private_val<p2_REAL>(ok);
 }
 
 /**
@@ -1613,44 +1574,62 @@ p2_REAL P2Atom::to_real(bool* ok) const
  */
 QString P2Atom::to_string(bool* ok) const
 {
-    QString data = QString::fromUtf8(reinterpret_cast<const char *>(m_data.constData()), m_data.size());
     if (ok)
-        *ok = !data.isEmpty();
-    return data;
+        *ok = m_data.size() > 0;
+    return QString::fromUtf8(reinterpret_cast<const char *>(m_data.constData()), m_data.size());
 }
 
-QByteArray P2Atom::to_array() const
+/**
+ * @brief Return data as a QByteArray
+ * @param ok optional pointer to a bool set to true if data is available
+ * @return QString with the data
+ */
+QByteArray P2Atom::to_array(bool* ok) const
 {
-    const int size = m_data.size();
-    QByteArray result(size, '\0');
-    if (size > 0)
-        memcpy(result.data(), m_data.constData(), static_cast<size_t>(size));
-    return result;
+    if (ok)
+        *ok = m_data.size() > 0;
+    QByteArray ba = QByteArray::fromRawData(reinterpret_cast<const char *>(m_data.constData()), m_data.size());
+    return ba;
 }
 
 /**
  * @brief Return data as a vector of bytes
  * @return p2_BYTEs of all data
  */
-p2_BYTES P2Atom::to_bytes() const
+p2_BYTES P2Atom::to_bytes(bool* ok) const
 {
-    return m_data;
+    if (ok)
+        *ok = m_data.size() > 0;
+    return p2_BYTES(m_data);
 }
 
 /**
  * @brief Return data as a vector of words
  * @return p2_WORDs of all data
  */
-p2_WORDS P2Atom::to_words() const
+p2_WORDS P2Atom::to_words(bool* ok) const
 {
+    // reassemble BYTEs into WORDs (little endian)
+    constexpr int sz = sz_WORD;
     const int size = m_data.size();
-    p2_WORDS result((size + 1) / 2);
-    for (int i = 0; i < size; i += 2) {
-        result[i/2] =
-                  static_cast<p2_WORD>(m_data[i+0] << 0)
-                | static_cast<p2_WORD>(m_data[i+1] << 8)
-                ;
+    p2_WORDS result;
+    p2_WORD value = 0;
+    int filled = 0;
+
+    for (int i = 0; i < size; i++) {
+        value |= static_cast<p2_WORD>(m_data[i]) << (8 * filled);
+        if (++filled == sz) {
+            result += value;
+            filled = 0;
+            value = 0;
+        }
     }
+
+    if (filled)
+        result += value;
+
+    if (nullptr != ok)
+        *ok = true;
     return result;
 }
 
@@ -1658,67 +1637,55 @@ p2_WORDS P2Atom::to_words() const
  * @brief Return data as a vector of longs
  * @return p2_LONGs of all data
  */
-p2_LONGS P2Atom::to_longs() const
+p2_LONGS P2Atom::to_longs(bool* ok) const
 {
+    // reassemble BYTEs into WORDs (little endian)
+    constexpr int sz = sz_LONG;
     const int size = m_data.size();
-    p2_LONGS result((size + 3) / 4);
-    for (int i = 0; i < size; i += 4) {
-        result[i/4] =
-                  static_cast<p2_LONG>(m_data[i+0] <<  0)
-                | static_cast<p2_LONG>(m_data[i+1] <<  8)
-                | static_cast<p2_LONG>(m_data[i+2] << 16)
-                | static_cast<p2_LONG>(m_data[i+3] << 24)
-                ;
+    p2_LONGS result;
+    p2_LONG value = 0;
+    int filled = 0;
+
+    for (int i = 0; i < size; i++) {
+        value |= static_cast<p2_LONG>(m_data[i]) << (8 * filled);
+        if (++filled == sz) {
+            result += value;
+            filled = 0;
+            value = 0;
+        }
     }
+
+    if (filled)
+        result += value;
+
+    if (nullptr != ok)
+        *ok = true;
+
     return result;
 }
 
 void P2Atom::make_real()
 {
-    switch (m_type) {
-    case Invalid:
-        set_real(Real, 0.0);
-        break;
-    case Bool:
-        set_real(Real, to_bool() ? 1.0 : 0.0);
-        break;
-    case Byte:
-        set_real(Real, trunc(1.0 * to_byte()));
-        break;
-    case Word:
-        set_real(Real, trunc(1.0 * to_word()));
-        break;
-    case PC:
-        set_real(Real, trunc(1.0 * to_long()));
-        break;
-    case Long:
-        set_real(Real, trunc(1.0 * to_long()));
-        break;
-    case Quad:
-        set_real(Real, trunc(1.0 * to_quad()));
-        break;
-    case Real:
-        break;
-    case String:
-        break;
-    }
+    p2_REAL real = private_val<p2_REAL>(nullptr);
+    set_real(Real, real);
 }
 
 P2Atom& P2Atom::operator = (const P2Atom& other)
 {
     m_type = other.m_type;
+    m_trait = other.m_trait;
     m_data = other.m_data;
     return *this;
 }
 
 bool P2Atom::operator==(const P2Atom& other)
 {
-    return m_type == other.m_type || m_data == other.m_data;
+    return m_type == other.m_type && m_trait == other.m_trait && m_data == other.m_data;
 }
 
 bool P2Atom::operator!=(const P2Atom& other)
 {
-    return m_type != other.m_type || m_data != other.m_data;
+    return m_type != other.m_type || m_trait != other.m_trait || m_data != other.m_data;
 }
 
 bool P2Atom::operator<(const P2Atom& other)

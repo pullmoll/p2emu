@@ -157,7 +157,7 @@ void P2Cog::wr_PC(p2_LONG addr)
  */
 void P2Cog::wr_PTRA(p2_LONG addr)
 {
-    LUT.REG.PTRA = addr & A20MASK;
+    COG.REG.PTRA = addr & A20MASK;
 }
 
 /**
@@ -166,7 +166,7 @@ void P2Cog::wr_PTRA(p2_LONG addr)
  */
 void P2Cog::wr_PTRB(p2_LONG addr)
 {
-    LUT.REG.PTRB = addr & A20MASK;
+    COG.REG.PTRB = addr & A20MASK;
 }
 
 /**
@@ -263,7 +263,7 @@ p2_LONG P2Cog::popK()
  */
 void P2Cog::pushPA(p2_LONG val)
 {
-    LUT.REG.PA = val;
+    COG.REG.PA = val;
 }
 
 /**
@@ -272,7 +272,7 @@ void P2Cog::pushPA(p2_LONG val)
  */
 void P2Cog::pushPB(p2_LONG val)
 {
-    LUT.REG.PB = val;
+    COG.REG.PB = val;
 }
 
 /**
@@ -281,8 +281,8 @@ void P2Cog::pushPB(p2_LONG val)
  */
 void P2Cog::pushPTRA(p2_LONG val)
 {
-    HUB->wr_LONG(LUT.REG.PTRA, val);
-    LUT.REG.PTRA = (LUT.REG.PTRA + 4) & A20MASK;
+    HUB->wr_LONG(COG.REG.PTRA, val);
+    COG.REG.PTRA = (COG.REG.PTRA + 4) & A20MASK;
 }
 
 /**
@@ -291,8 +291,8 @@ void P2Cog::pushPTRA(p2_LONG val)
  */
 p2_LONG P2Cog::popPTRA()
 {
-    LUT.REG.PTRA = (LUT.REG.PTRA - 4) & A20MASK;
-    p2_LONG val = HUB->rd_LONG(LUT.REG.PTRA);
+    COG.REG.PTRA = (COG.REG.PTRA - 4) & A20MASK;
+    p2_LONG val = HUB->rd_LONG(COG.REG.PTRA);
     return val;
 }
 
@@ -302,8 +302,8 @@ p2_LONG P2Cog::popPTRA()
  */
 void P2Cog::pushPTRB(p2_LONG val)
 {
-    HUB->wr_LONG(LUT.REG.PTRB, val);
-    LUT.REG.PTRB = (LUT.REG.PTRB + 4) & A20MASK;
+    HUB->wr_LONG(COG.REG.PTRB, val);
+    COG.REG.PTRB = (COG.REG.PTRB + 4) & A20MASK;
 }
 
 /**
@@ -312,8 +312,8 @@ void P2Cog::pushPTRB(p2_LONG val)
  */
 p2_LONG P2Cog::popPTRB()
 {
-    LUT.REG.PTRA = (LUT.REG.PTRB - 4) & A20MASK;
-    p2_LONG val = HUB->rd_LONG(LUT.REG.PTRB);
+    COG.REG.PTRA = (COG.REG.PTRB - 4) & A20MASK;
+    p2_LONG val = HUB->rd_LONG(COG.REG.PTRB);
     return val;
 }
 
@@ -361,8 +361,8 @@ void P2Cog::augmentD(bool f)
 void P2Cog::updatePA(p2_LONG d)
 {
     Q_ASSERT(HUB);
-    LUT.REG.PA = d;
-    HUB->wr_PA(LUT.REG.PA);
+    COG.REG.PA = d;
+    HUB->wr_PA(COG.REG.PA);
 }
 
 /**
@@ -372,8 +372,8 @@ void P2Cog::updatePA(p2_LONG d)
 void P2Cog::updatePB(p2_LONG d)
 {
     Q_ASSERT(HUB);
-    LUT.REG.PB = d;
-    HUB->wr_PB(LUT.REG.PB);
+    COG.REG.PB = d;
+    HUB->wr_PB(COG.REG.PB);
 }
 
 /**
@@ -382,7 +382,7 @@ void P2Cog::updatePB(p2_LONG d)
  */
 void P2Cog::updatePTRA(p2_LONG d)
 {
-    LUT.REG.PTRA = d;
+    COG.REG.PTRA = d;
 }
 
 /**
@@ -391,7 +391,7 @@ void P2Cog::updatePTRA(p2_LONG d)
  */
 void P2Cog::updatePTRB(p2_LONG d)
 {
-    LUT.REG.PTRB = d;
+    COG.REG.PTRB = d;
 }
 
 /**
@@ -859,32 +859,32 @@ p2_LONG P2Cog::get_pointer(p2_LONG inst, p2_LONG size)
 
     switch ((inst >> 5) & 7) {
     case 0: // PTRA[offset]
-        address = LUT.REG.PTRA + offset;
+        address = COG.REG.PTRA + offset;
         break;
     case 1: // PTRA
-        address = LUT.REG.PTRA;
+        address = COG.REG.PTRA;
         break;
     case 2: // PTRA[++offset]
-        address = LUT.REG.PTRA + offset;
+        address = COG.REG.PTRA + offset;
         PTRA0 = address;
         break;
     case 3: // PTRA[offset++]
-        address = LUT.REG.PTRA;
-        PTRA0 = LUT.REG.PTRA + offset;
+        address = COG.REG.PTRA;
+        PTRA0 = COG.REG.PTRA + offset;
         break;
     case 4: // PTRB[offset]
-        address = LUT.REG.PTRB + offset;
+        address = COG.REG.PTRB + offset;
         break;
     case 5: // PTRB
-        address = LUT.REG.PTRB;
+        address = COG.REG.PTRB;
         break;
     case 6: // PTRB[++offset]
-        address = LUT.REG.PTRB + offset;
+        address = COG.REG.PTRB + offset;
         PTRB0 = address;
         break;
     case 7: // PTRB[offset++]
-        address = LUT.REG.PTRB;
-        PTRB0 = LUT.REG.PTRB + offset;
+        address = COG.REG.PTRB;
+        PTRB0 = COG.REG.PTRB + offset;
         break;
     }
     return address & A20MASK;
@@ -895,8 +895,8 @@ p2_LONG P2Cog::get_pointer(p2_LONG inst, p2_LONG size)
  */
 void P2Cog::save_regs()
 {
-    PTRA0 = LUT.REG.PTRA;
-    PTRB0 = LUT.REG.PTRB;
+    PTRA0 = COG.REG.PTRA;
+    PTRB0 = COG.REG.PTRB;
 }
 
 /**
@@ -904,8 +904,8 @@ void P2Cog::save_regs()
  */
 void P2Cog::update_regs()
 {
-    LUT.REG.PTRA = PTRA0;
-    LUT.REG.PTRB = PTRB0;
+    COG.REG.PTRA = PTRA0;
+    COG.REG.PTRB = PTRB0;
 }
 
 /**
@@ -5201,9 +5201,9 @@ int P2Cog::op_rdlut()
     augmentS(IR.op.im);
     p2_LONG result;
     if (S == offs_PTRA) {
-        result = HUB->rd_LONG(LUT.REG.PTRA);
+        result = HUB->rd_LONG(COG.REG.PTRA);
     } else if (S == offs_PTRB) {
-        result = HUB->rd_LONG(LUT.REG.PTRB);
+        result = HUB->rd_LONG(COG.REG.PTRB);
     } else {
         result = LUT.RAM[S & 0x1ff];
     }
@@ -5229,9 +5229,9 @@ int P2Cog::op_rdbyte()
     augmentS(IR.op.im);
     p2_BYTE result;
     if (S == offs_PTRA) {
-        result = HUB->rd_BYTE(LUT.REG.PTRA);
+        result = HUB->rd_BYTE(COG.REG.PTRA);
     } else if (S == offs_PTRB) {
-        result = HUB->rd_BYTE(LUT.REG.PTRB);
+        result = HUB->rd_BYTE(COG.REG.PTRB);
     } else {
         result = HUB->rd_BYTE(S);
     }
@@ -5257,9 +5257,9 @@ int P2Cog::op_rdword()
     augmentS(IR.op.im);
     p2_WORD result;
     if (S == offs_PTRA) {
-        result = HUB->rd_WORD(LUT.REG.PTRA);
+        result = HUB->rd_WORD(COG.REG.PTRA);
     } else if (S == offs_PTRB) {
-        result = HUB->rd_WORD(LUT.REG.PTRB);
+        result = HUB->rd_WORD(COG.REG.PTRB);
     } else {
         result = HUB->rd_WORD(S);
     }
@@ -5285,9 +5285,9 @@ int P2Cog::op_rdlong()
     augmentS(IR.op.im);
     p2_LONG result;
     if (S == offs_PTRA) {
-        result = HUB->rd_LONG(LUT.REG.PTRA);
+        result = HUB->rd_LONG(COG.REG.PTRA);
     } else if (S == offs_PTRB) {
-        result = HUB->rd_LONG(LUT.REG.PTRB);
+        result = HUB->rd_LONG(COG.REG.PTRB);
     } else {
         result = HUB->rd_LONG(S);
     }

@@ -103,7 +103,7 @@ private:
     QRegExp rx_hex_const;                               //!< regular expression for a hexadecimal constant
     QRegExp rx_dec_const;                               //!< regular expression for a decimal constant
     QRegExp rx_str_const;                               //!< regular expression for a string constant
-    QRegExp rx_real_const;                              //!< regular expression for a qreal constant
+    QRegExp rx_real_const;                              //!< regular expression for a real constant (double)
 
     void tt_set(p2_token_e tok, p2_t_mask_t typemask);
     void tt_clr(p2_token_e tok, p2_t_mask_t typemask);

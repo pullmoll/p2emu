@@ -32,10 +32,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 #pragma once
-#include <QtEndian>
 #include <QChar>
 #include <QColor>
 #include <QHash>
+#include <QtEndian>
 
 #include "p2tokens.h"
 
@@ -1039,7 +1039,7 @@ typedef struct {
     p2_LONG OUTB;               //!< output states for P63 ... P32
     p2_LONG INA;                //!< input states for P31 ... P0
     p2_LONG INB;                //!< input states for P63 ... P32
-}   p2_lutregs_t;
+}   p2_cogregs_t;
 
 /**
  * @brief Offsets of the LUT shadow registers
@@ -1061,23 +1061,23 @@ typedef enum {
     offs_OUTB,                  //!< offset of output states for P63 ... P32
     offs_INA,                   //!< offset of input states for P31 ... P0
     offs_INB,                   //!< offset of input states for P63 ... P32
-}   p2_lutregs_e;
+}   p2_cogregs_e;
 
 Q_STATIC_ASSERT(offs_INB == 0x1ff);
 
 /**
- * @brief Structure of the COG memory
+ * @brief Union of the COG memory and shadow registers
  */
 typedef union {
     p2_LONG RAM[512];
+    p2_cogregs_t REG;
 }   p2_cog_t;
 
 /**
- * @brief Union of the LUT memory and shadow registers
+ * @brief Structure of the LUT memory
  */
-typedef union {
+typedef struct {
     p2_LONG RAM[512];
-    p2_lutregs_t REG;
 }   p2_lut_t;
 
 /**

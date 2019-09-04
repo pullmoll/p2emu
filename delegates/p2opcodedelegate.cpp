@@ -53,14 +53,14 @@ QStringList P2OpcodeDelegate::opcodeLines(const QModelIndex& index) const
     p2_format_e format = model->opcode_format();
     QStringList text;
 
-    if (IR.as_ir())
+    if (IR.is_ir())
         text += format_opcode(IR.ir(), format);
 
-    if (IR.as_equ())
+    if (IR.is_equ())
         text += format_data(IR.equ().to_long(), format);
 
     if (text.isEmpty() && !IR.data().isEmpty())
-        text = P2Atom::format_data(IR.data(), IR.org_orgh().first);
+        text = P2Atom::format_data(IR.data(), IR.orgh());
     return text;
 }
 

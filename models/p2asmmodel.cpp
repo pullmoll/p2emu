@@ -573,19 +573,19 @@ QString P2AsmModel::opcodeToolTip(const P2Opcode& IR) const
     QString title;
     QStringList lines;
 
-    if (IR.as_ir()) {
+    if (IR.is_ir()) {
         title = tr("Opcode");
         lines += format_opcode(IR.ir(), m_format);
     }
 
-    if (IR.as_equ()) {
+    if (IR.is_equ()) {
         title = tr("Assigment");
         lines += format_data(IR.equ().to_long(), m_format);
     }
 
     if (lines.isEmpty() && !IR.data().isEmpty()) {
         title = tr("Data");
-        lines = P2Atom::format_data(IR.data(), IR.org_orgh().first);
+        lines = P2Atom::format_data(IR.data(), IR.orgh());
     }
 
     // heading

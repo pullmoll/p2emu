@@ -53,7 +53,7 @@ private:
     mutable QVector<QColor> m_color_values;
     mutable QVector<QColor> m_colors_hue_sat_lum;
     QMap<p2_palette_e,QString> m_palette_names;
-    QMap<p2_palette_e,QColor> m_default_colors;
+    QHash<p2_palette_e,QColor> m_default_colors;
     void setup_tables() const;
     void reset_palette();
 };
