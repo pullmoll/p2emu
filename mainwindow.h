@@ -67,13 +67,16 @@ public:
 
 private slots:
     void saveSettings();
-
-    void saveSettingsAsm(QSettings& s);
-    void saveSettingsDasm(QSettings& s);
-
-    void restoreSettingsAsm(QSettings& s);
-    void restoreSettingsDasm(QSettings& s);
     void restoreSettings();
+
+    void saveSettingsPalette();
+    void saveSettingsAsm();
+    void saveSettingsDasm();
+
+    void restoreSettingsPalette();
+    void restoreSettingsAsm();
+    void restoreSettingsDasm();
+
     void about();
     void aboutQt5();
     void help_opcodes();
@@ -97,9 +100,9 @@ private slots:
     void setDasmFontSize(int size);
 
     void setDasmLowercase(bool check);
-    void asmHeaderColums(const QPoint& pos);
-    void dasmHeaderColums(const QPoint& pos);
-    void symbolsHeaderColums(const QPoint& pos);
+    void setAsmHeaderColums(const QPoint& pos);
+    void setDasmHeaderColums(const QPoint& pos);
+    void setSymbolsHeaderColums(const QPoint& pos);
 
     void hubSingleStep();
     void loadObject(const QString& filename = QString());
@@ -115,7 +118,7 @@ private slots:
     void print_error(int pass, int lineno, const QString& message);
     void goto_line(const QUrl& url);
     void goto_line_number();
-    void resize_source_panel(const int results_min = 10);
+    void resize_source_results(const int results_min = 10);
 private:
     Ui::MainWindow *ui;
     QVector<P2CogView*> m_vcog;

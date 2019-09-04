@@ -60,7 +60,7 @@ QStringList P2OpcodeDelegate::opcodeLines(const QModelIndex& index) const
         text += format_data(IR.EQU.to_long(), format);
 
     if (text.isEmpty() && !IR.DATA.isEmpty())
-        text = P2Atom::format_data(IR.DATA, IR.PC_ORGH.first);
+        text = P2Atom::format_data(IR.DATA, IR.ORG_ORGH.first);
     return text;
 }
 
@@ -80,14 +80,14 @@ void P2OpcodeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     QRect rect = option.rect;
     const int flags = static_cast<int>(opt.displayAlignment) |
                       Qt::TextDontClip | Qt::TextExpandTabs | Qt::TextForceLeftToRight;
-    const bool highlight = opt.state & QStyle::State_HasFocus ? true : false;
+    const bool focus = opt.state.testFlag(QStyle::State_HasFocus);
 
     painter->save();
     painter->setClipRect(rect);
 
     // fill the background
     painter->setBackgroundMode(Qt::OpaqueMode);
-    if (highlight) {
+    if (focus) {
         int size = painter->pen().width();
         QBrush brush = opt.backgroundBrush;
         brush.setColor(brush.color().darker(105));
@@ -99,7 +99,7 @@ void P2OpcodeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
 
     painter->setBackgroundMode(Qt::TransparentMode);
     painter->setFont(opt.font);
-    painter->setPen(P2Colors.palette(P2Colors::p2_pal_source, highlight));
+    painter->setPen(Colors.palette_color(P2Colors::p2_pal_source, focus));
 
     painter->drawText(rect, flags, text);
 

@@ -292,7 +292,7 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
 
         case p2_TESTBN_XOR_BITNOT:
             switch (IR.inst9()) {
-            case p2_BITRND_eol:
+            case p2_BITNOT_eol:
                 dasm_bitnot(instruction);
                 break;
             case p2_TESTB_XORZ:
@@ -301,7 +301,7 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
             case p2_TESTB_XORC:
                 dasm_testbn_xor(instruction);
                 break;
-            case p2_BITRND_WCZ:
+            case p2_BITNOT_WCZ:
                 dasm_bitnot(instruction);
                 break;
             default:

@@ -33,57 +33,65 @@
  ****************************************************************************/
 #include "p2opcode.h"
 
-P2Opcode::P2Opcode(const p2_LONG opcode, const p2_PC_ORGH_t& pc_orgh)
+P2Opcode::P2Opcode(const p2_LONG opcode, const p2_ORG_ORGH_t& org_orgh)
     : u()
-    , PC_ORGH(pc_orgh)
+    , ORG_ORGH(org_orgh)
+    , dst_imm_flag(imm_none)
     , src_imm_flag(imm_none)
     , as_IR(false)
     , as_EQU(false)
     , AUGD()
     , AUGS()
     , DATA()
+    , EQU()
     , error(none)
 {
     u.opcode = opcode;
 }
 
-P2Opcode::P2Opcode(const p2_inst7_e inst7, const p2_PC_ORGH_t& pc_orgh)
+P2Opcode::P2Opcode(const p2_inst7_e inst7, const p2_ORG_ORGH_t& org_orgh)
     : u()
-    , PC_ORGH(pc_orgh)
+    , ORG_ORGH(org_orgh)
+    , dst_imm_flag(imm_none)
     , src_imm_flag(imm_none)
     , as_IR(false)
     , as_EQU(false)
     , AUGD()
     , AUGS()
     , DATA()
+    , EQU()
     , error(none)
 {
     set_inst7(inst7);
 }
 
-P2Opcode::P2Opcode(const p2_inst8_e inst8, const p2_PC_ORGH_t& pc_orgh)
+P2Opcode::P2Opcode(const p2_inst8_e inst8, const p2_ORG_ORGH_t& pc_orgh)
     : u()
-    , PC_ORGH(pc_orgh)
+    , ORG_ORGH(pc_orgh)
+    , dst_imm_flag(imm_none)
     , src_imm_flag(imm_none)
     , as_IR(false)
     , as_EQU(false)
     , AUGD()
     , AUGS()
     , DATA()
+    , EQU()
     , error(none)
 {
     set_inst8(inst8);
 }
 
-P2Opcode::P2Opcode(const p2_inst9_e inst9, const p2_PC_ORGH_t& pc_orgh)
+P2Opcode::P2Opcode(const p2_inst9_e inst9, const p2_ORG_ORGH_t& pc_orgh)
     : u()
-    , PC_ORGH(pc_orgh)
+    , ORG_ORGH(pc_orgh)
+    , dst_imm_flag(imm_none)
     , src_imm_flag(imm_none)
     , as_IR(false)
     , as_EQU(false)
     , AUGD()
     , AUGS()
     , DATA()
+    , EQU()
     , error(none)
 {
     set_inst9(inst9);
@@ -93,14 +101,15 @@ P2Opcode::P2Opcode(const p2_inst9_e inst9, const p2_PC_ORGH_t& pc_orgh)
  * @brief clear the members to their initial state
  * @param opcode optional opcode
  */
-void P2Opcode::clear(const p2_LONG opcode, const p2_PC_ORGH_t& pc_orgh)
+void P2Opcode::clear(const p2_LONG opcode, const p2_ORG_ORGH_t& pc_orgh)
 {
+    dst_imm_flag = imm_none;
     src_imm_flag = imm_none;
     as_IR = false;
     as_EQU = false;
     AUGD.clear();
     AUGS.clear();
-    PC_ORGH = pc_orgh;
+    ORG_ORGH = pc_orgh;
     u.opcode = opcode;
     DATA.clear();
     EQU.clear();

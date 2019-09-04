@@ -1,101 +1,191 @@
 #include <QtWidgets>
-#include "p2colors.h"
-#include "p2paletteselector.h"
+#include <QTableWidget>
 #include "palettesetup.h"
 #include "ui_palettesetup.h"
 
 PaletteSetup::PaletteSetup(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::PaletteSetup)
-    , m_columns()
-    , m_rows()
+    , m_original_palette(Colors.palette())
+    , m_modified_palette(m_original_palette)
 {
     ui->setupUi(this);
-
-    m_columns = {
-        tr("Syntax element"),    tr("Color"),               tr("Example")
-    };
-
-    m_rows = {
-        {P2Colors::p2_pal_source,        tr("Source"),                  QLatin1String("Default color")},
-        {P2Colors::p2_pal_comment,       tr("Comment"),                 QLatin1String("' get COG identifier")},
-        {P2Colors::p2_pal_str_const,     tr("String constant"),         QLatin1String("\"Hello world\"")},
-        {P2Colors::p2_pal_bin_const,     tr("Binary constant"),         QLatin1String("%1010_0111")},
-        {P2Colors::p2_pal_byt_const,     tr("Byte constant"),           QLatin1String("%%2")},
-        {P2Colors::p2_pal_dec_const,     tr("Decimal constant"),        QLatin1String("5336")},
-        {P2Colors::p2_pal_hex_const,     tr("Hexadecimal constant"),    QLatin1String("$7cf8")},
-        {P2Colors::p2_pal_real_const,    tr("Real constant"),           QLatin1String("80_000_000.5")},
-        {P2Colors::p2_pal_locsym,        tr("Local symbol"),            QLatin1String(".loop")},
-        {P2Colors::p2_pal_symbol,        tr("Symbol"),                  QLatin1String("SendText")},
-        {P2Colors::p2_pal_expression,    tr("Expression"),              QLatin1String("(val + 17)/4")},
-        {P2Colors::p2_pal_section,       tr("Section"),                 QLatin1String("DAT")},
-        {P2Colors::p2_pal_conditional,   tr("Conditional"),             QLatin1String("if_c_or_z")},
-        {P2Colors::p2_pal_modzc_param,   tr("MODCZ parameter"),         QLatin1String("_c_and_z")},
-        {P2Colors::p2_pal_instruction,   tr("Instruction"),             QLatin1String("COGID")},
-        {P2Colors::p2_pal_wcz_suffix,    tr("WCZ suffix"),              QLatin1String("WCZ")}
-    };
-
-    setup_table();
+    setup_combo_boxes();
+    syntax_changed(0);
 }
 
 PaletteSetup::~PaletteSetup()
 {
+    if (result() == QDialog::Rejected)
+        original_palette();
     delete ui;
 }
 
 void PaletteSetup::setFont(const QFont& font)
 {
-    for (int i = 0; i < ui->twPalette->rowCount(); i++) {
-        for (int column = 0; column < ui->twPalette->columnCount(); column++) {
-            QTableWidgetItem* it = ui->twPalette->item(i, column);
-            it->setData(Qt::FontRole, font);
-        }
+    Q_UNUSED(font)
+}
+
+void PaletteSetup::reject()
+{
+    // Ignore
+}
+
+void PaletteSetup::syntax_changed(int row)
+{
+    QVariant var = ui->cb_syntax->itemData(row, Qt::UserRole);
+    P2Colors::p2_palette_e pal = qvariant_cast<P2Colors::p2_palette_e>(var);
+    QColor color(Colors.palette_color(pal, false));
+
+    const int idx = ui->cb_colors->findData(color, Qt::DecorationRole);
+    ui->cb_colors->setCurrentIndex(idx);
+    color_changed(idx);
+}
+
+void PaletteSetup::color_changed(int row)
+{
+    QVariant v_color = ui->cb_colors->itemData(row, Qt::DecorationRole);
+    QColor color = qvariant_cast<QColor>(v_color);
+
+    const int w = 12, h = 12;
+
+    // Create a small image to be drawn in the lbl_color
+    QImage img(w,h,QImage::Format_ARGB32);
+    img.fill(Qt::white);
+    for (int y = 1; y < h-1; y++)
+        for (int x = 1; x < w-1; x++)
+            img.setPixel(x,y,color.rgba());
+    for (int x = 1; x < w; x++)
+        img.setPixel(x,h-1,Qt::gray);
+    for (int y = 1; y < h; y++)
+        img.setPixel(w-1,y,Qt::darkGray);
+
+    ui->lbl_color->setPixmap(QPixmap::fromImage(img));
+    Q_UNUSED(row)
+
+    const int idx = ui->cb_syntax->currentIndex();
+    QVariant v_pal = ui->cb_syntax->itemData(idx, Qt::UserRole);
+    P2Colors::p2_palette_e pal = qvariant_cast<P2Colors::p2_palette_e>(v_pal);
+    m_modified_palette.insert(pal, color);
+    Colors.set_palette_color(pal, color);
+    emit changedPalette();
+}
+
+void PaletteSetup::clicked(QAbstractButton* button)
+{
+    QDialogButtonBox::StandardButton sb = ui->buttonBox->standardButton(button);
+    switch (sb) {
+    case QDialogButtonBox::Ok:
+        apply_palette();
+        QDialog::accept();
+        break;
+    case QDialogButtonBox::Cancel:
+        original_palette();
+        QDialog::reject();
+        break;
+    case QDialogButtonBox::Discard:
+        reset_palette();
+        break;
+    case QDialogButtonBox::Reset:
+        original_palette();
+        break;
+    default:
+        break;
     }
 }
 
-void PaletteSetup::cellChanged(int row, int column)
+void PaletteSetup::apply_palette()
 {
-    if (column != 1)
-        return;
-    QTableWidgetItem* it = ui->twPalette->item(row, column);
-    QColor color = QColor(it->data(Qt::DisplayRole).toString());
-    ui->twPalette->item(row, 2)->setData(Qt::ForegroundRole, color);
+    Colors.set_palette(m_modified_palette);
+    reinit_combo_boxes();
+    emit changedPalette();
 }
 
-void PaletteSetup::setup_table()
+void PaletteSetup::original_palette()
 {
-    QItemEditorFactory *factory = new QItemEditorFactory;
-    QItemEditorCreatorBase *paletteEditorCreator = new QStandardItemEditorCreator<P2PaletteSelector>();
-    factory->registerEditor(QVariant::Color, paletteEditorCreator);
-    QItemEditorFactory::setDefaultFactory(factory);
+    m_modified_palette = m_original_palette;
+    Colors.set_palette(m_modified_palette);
+    emit changedPalette();
+    reinit_combo_boxes();
+}
 
-    QTableWidget *table = ui->twPalette;
-    table->setColumnCount(m_columns.count());
-    table->setRowCount(m_rows.count());
-    table->setHorizontalHeaderLabels(m_columns.toList());
+void PaletteSetup::reset_palette()
+{
+    m_modified_palette = m_original_palette = Colors.palette(true);
+    emit changedPalette();
+    reinit_combo_boxes();
+}
+
+void PaletteSetup::setup_combo_boxes()
+{
+    connect(ui->buttonBox, SIGNAL(clicked(QAbstractButton*)), SLOT(clicked(QAbstractButton*)));
+
+    // setup syntax names combo box
+    QMap<P2Colors::p2_palette_e,QString> map = {
+        {P2Colors::p2_pal_comment,       tr("Comment")},
+        {P2Colors::p2_pal_instruction,   tr("Instruction")},
+        {P2Colors::p2_pal_conditional,   tr("Conditional")},
+        {P2Colors::p2_pal_wcz_suffix,    tr("WCZ suffix")},
+        {P2Colors::p2_pal_section,       tr("Section")},
+        {P2Colors::p2_pal_modzc_param,   tr("MODCZ parameter")},
+        {P2Colors::p2_pal_symbol,        tr("Symbol")},
+        {P2Colors::p2_pal_locsym,        tr("Local symbol")},
+        {P2Colors::p2_pal_expression,    tr("Expression")},
+        {P2Colors::p2_pal_str_const,     tr("String constant")},
+        {P2Colors::p2_pal_bin_const,     tr("Binary constant")},
+        {P2Colors::p2_pal_byt_const,     tr("Byte constant")},
+        {P2Colors::p2_pal_dec_const,     tr("Decimal constant")},
+        {P2Colors::p2_pal_hex_const,     tr("Hexadecimal constant")},
+        {P2Colors::p2_pal_real_const,    tr("Real constant")},
+        {P2Colors::p2_pal_source,        tr("Source")},
+    };
+
+    ui->cb_syntax->setUpdatesEnabled(false);
+    ui->cb_syntax->clear();
+    foreach(P2Colors::p2_palette_e pal, map.keys()) {
+        QString key = Colors.palette_name(pal);
+        QString name = map.value(pal);
+        int idx = ui->cb_syntax->count();
+
+        ui->cb_syntax->addItem(name);
+        ui->cb_syntax->setItemData(idx, key, Qt::ToolTipRole);
+        ui->cb_syntax->setItemData(idx, pal, Qt::UserRole);
+    }
+    connect(ui->cb_syntax, SIGNAL(currentIndexChanged(int)), SLOT(syntax_changed(int)));
+    ui->cb_syntax->updateGeometry();
+    ui->cb_syntax->setUpdatesEnabled(true);
+
+    // create a new QTableWidget for the color names combo box
+    QStringList colors = Colors.color_names(true);
+    QTableWidget *table = new QTableWidget(colors.count(), 2);
+    table->setHorizontalHeaderLabels({tr("Color"), tr("#RRGGBB")});
     table->verticalHeader()->setVisible(false);
+    table->horizontalHeader()->setStretchLastSection(true);
+    table->resize(150, 50);
 
-    for (int i = 0; i < m_rows.count(); ++i) {
-        const QVariantList &row = m_rows.at(i);
-
-        QColor color = P2Colors.palette(qvariant_cast<P2Colors::p2_palette_e>(row[0]), false);
-        QTableWidgetItem *nameItem = new QTableWidgetItem(row[1].toString());
-        QTableWidgetItem *colorItem = new QTableWidgetItem;
-        QTableWidgetItem *fgcolorItem = new QTableWidgetItem(row[2].toString());
-        colorItem->setData(Qt::DisplayRole, color);
-        fgcolorItem->setData(Qt::ForegroundRole, color);
-
-        table->setItem(i, 0, nameItem);
-        table->setItem(i, 1, colorItem);
-        table->setItem(i, 2, fgcolorItem);
+    for (int i = 0; i < colors.count(); ++i) {
+        QString name = colors[i];
+        QColor color = Colors.color(name);
+        QTableWidgetItem *it_name = new QTableWidgetItem(name);
+        it_name->setData(Qt::DecorationRole, color);
+        table->setItem(i, 0, it_name);
+        QTableWidgetItem *it_color = new QTableWidgetItem(color.name());
+        table->setItem(i, 1, it_color);
     }
     table->resizeColumnToContents(0);
-    table->resizeColumnToContents(1);
-    table->resizeColumnToContents(2);
-    table->horizontalHeader()->setStretchLastSection(true);
 
-    setWindowTitle(tr("Propeller2 syntax palette editor"));
+    // set the new QTableWidget
+    ui->cb_colors->setModel(table->model());
+    ui->cb_colors->setView(table);
+    connect(ui->cb_colors, SIGNAL(currentIndexChanged(int)), SLOT(color_changed(int)));
 
-    connect(table, SIGNAL(cellChanged(int,int)), SLOT(cellChanged(int,int)));
-    setMinimumSize(400, 400);
+    // Not used as dialog, but QWidget in a layout
+    // setWindowTitle(tr("Propeller2 Syntax Palette Editor"));
+}
+
+void PaletteSetup::reinit_combo_boxes()
+{
+    const int idx = ui->cb_syntax->currentIndex();
+    setup_combo_boxes();
+    ui->cb_syntax->setCurrentIndex(idx);
 }

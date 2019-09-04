@@ -184,8 +184,8 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     const P2Words& words = m_asm->words(lineno);
 
     const bool has_PC = m_asm->has_PC_ORGH(lineno);
-    const p2_PC_ORGH_t PC_orgh = has_PC ? m_asm->get_PC_ORGH(lineno)
-                                        : p2_PC_ORGH_t();
+    const p2_ORG_ORGH_t PC_orgh = has_PC ? m_asm->get_PC_ORGH(lineno)
+                                        : p2_ORG_ORGH_t();
     const p2_LONG PC = PC_orgh.first;
     const p2_LONG ORGH = PC_orgh.second;
 
@@ -585,7 +585,7 @@ QString P2AsmModel::opcodeToolTip(const P2Opcode& IR) const
 
     if (lines.isEmpty() && !IR.DATA.isEmpty()) {
         title = tr("Data");
-        lines = P2Atom::format_data(IR.DATA, IR.PC_ORGH.first);
+        lines = P2Atom::format_data(IR.DATA, IR.ORG_ORGH.first);
     }
 
     // heading

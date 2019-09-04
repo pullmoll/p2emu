@@ -36,7 +36,7 @@
 #include "p2atom.h"
 
 //! A pair of p2_LONG where the first is the PC, the second the ORGH address
-typedef QPair<p2_LONG,p2_LONG> p2_PC_ORGH_t;
+typedef QPair<p2_LONG,p2_LONG> p2_ORG_ORGH_t;
 
 /**
  * @brief The class P2Opcode is used to keep the data generated per line together.
@@ -44,10 +44,10 @@ typedef QPair<p2_LONG,p2_LONG> p2_PC_ORGH_t;
 class P2Opcode
 {
 public:
-    explicit P2Opcode(const p2_LONG opcode = 0, const p2_PC_ORGH_t& pc_orgh = p2_PC_ORGH_t(0,0));
-    P2Opcode(const p2_inst7_e inst7, const p2_PC_ORGH_t& pc_orgh = p2_PC_ORGH_t(0,0));
-    P2Opcode(const p2_inst8_e inst8, const p2_PC_ORGH_t& pc_orgh = p2_PC_ORGH_t(0,0));
-    P2Opcode(const p2_inst9_e inst9, const p2_PC_ORGH_t& pc_orgh = p2_PC_ORGH_t(0,0));
+    explicit P2Opcode(const p2_LONG opcode = 0, const p2_ORG_ORGH_t& org_orgh = p2_ORG_ORGH_t(0,0));
+    P2Opcode(const p2_inst7_e inst7, const p2_ORG_ORGH_t& org_orgh = p2_ORG_ORGH_t(0,0));
+    P2Opcode(const p2_inst8_e inst8, const p2_ORG_ORGH_t& org_orgh = p2_ORG_ORGH_t(0,0));
+    P2Opcode(const p2_inst9_e inst9, const p2_ORG_ORGH_t& org_orgh = p2_ORG_ORGH_t(0,0));
 
     //! enumeration of possible targets for the immediate (#) prefix(es)
     enum ImmFlag {
@@ -66,7 +66,7 @@ public:
         src_augs_wz,    //!< SRC constant larger than $1ff but wz is not set for I
     };
 
-    void clear(const p2_LONG opcode = 0, const p2_PC_ORGH_t& pc_orgh = p2_PC_ORGH_t(0,0));
+    void clear(const p2_LONG opcode = 0, const p2_ORG_ORGH_t& pc_orgh = p2_ORG_ORGH_t(0,0));
 
     const P2Atom& equ() const;
 
@@ -96,7 +96,7 @@ public:
     bool set_src(const P2Atom& value, const p2_LONG ORG, const p2_LONG ORGH);
 
     p2_opcode_u u;                  //!< instruction opcode or assignment value
-    p2_PC_ORGH_t PC_ORGH;           //!< QPair of the instruction's PC and ORGH values
+    p2_ORG_ORGH_t ORG_ORGH;         //!< QPair of the instruction's ORG and ORGH values
     ImmFlag dst_imm_flag;           //!< where to store destination (D) immediate flag
     ImmFlag src_imm_flag;           //!< where to store source (S) immediate flag
     bool as_IR;                     //!< if true, the p2_opcode_u contains an instruction

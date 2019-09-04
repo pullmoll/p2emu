@@ -53,7 +53,7 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     initStyleOption(&opt, index);
     opt.showDecorationSelected = true;
 
-    const bool highlight = opt.state & QStyle::State_HasFocus ? true : false;
+    const bool focus = opt.state.testFlag(QStyle::State_HasFocus);
     const QString line = model->data(index).toString();
     const int ll = line.length() ? line.length() : 1;
 
@@ -71,15 +71,16 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     // fill the background
     painter->setBackgroundMode(Qt::OpaqueMode);
     QBrush brush = opt.backgroundBrush;
-    if (highlight) {
-        QColor color(0x7f,0xef,0xff,0x7f);
-        brush.setColor(color.lighter(115));
+    if (focus) {
+        QColor color = Colors.color(QStringLiteral("Light Blue"));
+        color.setAlpha(80);
+        brush.setColor(color.lighter(110));
     }
     painter->fillRect(opt.rect, brush);
 
     painter->setBackgroundMode(Qt::TransparentMode);
     painter->setFont(opt.font);
-    painter->setPen(P2Colors.palette(P2Colors::p2_pal_source, highlight));
+    painter->setPen(Qt::transparent);
 
     // paint all text character wise to collect the bounding rects
     int pos = 0;
@@ -89,19 +90,19 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
         pos++;
     }
 
-    // re-draw tokenized words
+    // redraw tokenized words
     foreach(const P2Word& word, words) {
         const int len = word.len();
         int pos = word.pos();
-        const QStringRef text(&line, pos, len);
+        const QStringRef ref(&line, pos, len);
 
         QPalette pal;
         p2_token_e tok = word.tok();
-        painter->setPen(P2Colors.palette(tok, highlight));
+        painter->setPen(Colors.palette_color(tok, focus));
 
         // draw the character
         QRect box;
-        foreach(const QChar ch, text) {
+        foreach(const QChar ch, ref) {
             QRect br = bounding[pos++];
             painter->drawText(br, flags, ch);
             box = box.united(br);
@@ -113,7 +114,7 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
         }
     }
 
-    if (highlight) {
+    if (focus) {
         QColor tl = opt.backgroundBrush.color().darker(120);
         QColor br = opt.backgroundBrush.color().darker(110);
         painter->setPen(tl);

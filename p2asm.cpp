@@ -75,7 +75,7 @@ P2Asm::P2Asm(QObject *parent)
     , m_source()
     , m_listing()
     , m_hash_PC()
-    , m_hash_OPC()
+    , m_hash_IR()
     , m_hash_words()
     , m_hash_error()
     , m_symbols(P2SymbolTable(new P2SymbolTableClass()))
@@ -119,6 +119,7 @@ void P2Asm::clear()
 {
     m_pass = -1;
     m_symbols->clear();
+    m_hash_words.clear();
     pass_clear();
 }
 
@@ -131,8 +132,7 @@ void P2Asm::pass_clear()
     m_pass++;
     m_listing.clear();
     m_hash_PC.clear();
-    m_hash_OPC.clear();
-    m_hash_words.clear();
+    m_hash_IR.clear();
     m_hash_error.clear();
     m_lineno = 0;
     m_in_curly = 0;
@@ -154,21 +154,58 @@ void P2Asm::pass_clear()
     memset(MEM.BYTES, 0, sizeof(MEM.BYTES));
 }
 
+/**
+ * @brief Clear the results of the last line
+ */
+void P2Asm::line_clear()
+{
+    // Parse the next line
+    m_lineno += 1;
+
+    // Reset some state
+    m_errors.clear();
+    m_words.clear();
+    m_data.clear();
+    m_advance = 0;
+    m_IR.as_IR = false;
+    m_IR.as_EQU = false;
+    m_IR.ORG_ORGH = p2_ORG_ORGH_t(m_ORG, m_ORGH);
+    m_IR.DATA.clear();
+    m_IR.EQU.clear();
+}
+
+/**
+ * @brief Return the current assembler pass
+ * @return value between 0 … 2
+ */
 int P2Asm::pass() const
 {
     return m_pass;
 }
 
+/**
+ * @brief Return the current path name for FILE includes
+ * @return QString with the path
+ */
 const QString& P2Asm::pathname() const
 {
     return m_pathname;
 }
 
+/**
+ * @brief Return a const reference to the source lines
+ * @return QStringList of source lnes
+ */
 const QStringList& P2Asm::source() const
 {
     return m_source;
 }
 
+/**
+ * @brief Return a specific source line
+ * @param idx line index (0 … count() - 1)
+ * @return QString with the source line
+ */
 const QString P2Asm::source(int idx) const
 {
     return m_source.value(idx);
@@ -215,41 +252,77 @@ bool P2Asm::set_source(int idx, const QString& line)
     return true;
 }
 
+/**
+ * @brief Return the number of source lines
+ * @return line count
+ */
 int P2Asm::count() const
 {
     return m_source.count();
 }
 
+/**
+ * @brief Return a const reference to the has of ORG and ORGH values per line
+ * @return const reference to the hash
+ */
 const p2_pc_orgh_hash_t& P2Asm::PC_ORGH_hash() const
 {
     return m_hash_PC;
 }
 
-p2_PC_ORGH_t P2Asm::get_PC_ORGH(int lineno) const
+/**
+ * @brief Return a pair of values for ORG and ORGH for the line
+ * @param lineno line number
+ * @return pair of values
+ */
+p2_ORG_ORGH_t P2Asm::get_PC_ORGH(int lineno) const
 {
     return m_hash_PC.value(lineno);
 }
 
+/**
+ * @brief Return true, if a line number has ORG and ORGH values
+ * @param lineno line number
+ * @return true if available, or false otherwise
+ */
 bool P2Asm::has_PC_ORGH(int lineno) const
 {
     return m_hash_PC.contains(lineno);
 }
 
+/**
+ * @brief Return a const reference to the P2Opcode (opcode, data, equates) hash
+ * @return const reference to the instruction register
+ */
 const p2_opcode_hash_t& P2Asm::IR_hash() const
 {
-    return m_hash_OPC;
+    return m_hash_IR;
 }
 
+/**
+ * @brief Return the P2Opcode for the line %lineno
+ * @param lineno line number
+ * @return P2Opcode for that line
+ */
 P2Opcode P2Asm::get_IR(int lineno) const
 {
-    return m_hash_OPC.value(lineno);
+    return m_hash_IR.value(lineno);
 }
 
+/**
+ * @brief Return true, if the line number %lineno has a P2Opcode
+ * @param lineno line number
+ * @return true if available, or false otherwise
+ */
 bool P2Asm::has_IR(int lineno) const
 {
-    return m_hash_OPC.contains(lineno);
+    return m_hash_IR.contains(lineno);
 }
 
+/**
+ * @brief P2Asm::words_hash
+ * @return
+ */
 const p2_words_hash_t& P2Asm::words_hash() const
 {
     return m_hash_words;
@@ -328,8 +401,11 @@ bool P2Asm::tokenize(const QString& line)
 {
     // FIXME: curly braces counter below 0!
     Q_ASSERT(m_in_curly >= 0);
-    const P2Words words = Token.tokenize(line, m_lineno, m_in_curly);
-    m_words = words;
+    if (m_pass < 2) {
+        m_words = Token.tokenize(line, m_lineno, m_in_curly);
+    } else {
+        m_words = m_hash_words.value(m_lineno);
+    }
     m_cnt = m_words.count();
     m_idx = 0;
 
@@ -2141,17 +2217,8 @@ bool P2Asm::assemble_pass()
     pass_clear();
 
     foreach(m_line, m_source) {
-        // Parse the next line
-        m_lineno += 1;
 
-        // Reset some state
-        m_errors.clear();
-        m_words.clear();
-        m_data.clear();
-        m_advance = 0;
-        m_IR.as_IR = false;
-        m_IR.PC_ORGH = p2_PC_ORGH_t(m_ORG, m_ORGH);
-        m_IR.DATA.clear();
+        line_clear();
 
         // Split line into words and tokenize it
         tokenize(m_line);
@@ -2283,14 +2350,14 @@ QStringList P2Asm::results_instruction(bool wr_mem)
     QString line = m_line;
     Q_ASSERT(m_advance == 4);
 
-    m_IR.PC_ORGH = p2_PC_ORGH_t(m_ORG, m_ORGH);
-    m_hash_PC.insert(m_lineno, m_IR.PC_ORGH);
-    m_hash_OPC.insert(m_lineno, m_IR);
+    m_IR.ORG_ORGH = p2_ORG_ORGH_t(m_ORG, m_ORGH);
+    m_hash_PC.insert(m_lineno, m_IR.ORG_ORGH);
+    m_hash_IR.insert(m_lineno, m_IR);
 
     // Do we need to generate an AUGD instruction?
     if (m_IR.AUGD.isValid()) {
         p2_LONG value = m_IR.AUGD.value<p2_LONG>() & AUG_MASK;
-        P2Opcode IR(p2_AUGD_00, p2_PC_ORGH_t(PC, ORGH));
+        P2Opcode IR(p2_AUGD_00, p2_ORG_ORGH_t(PC, ORGH));
         IR.u.opcode |= value >> AUG_SHIFT;
 
         output += QString("%1 %2 [%3] %4")
@@ -2301,7 +2368,7 @@ QStringList P2Asm::results_instruction(bool wr_mem)
 
         PC += 4;
         ORGH += 4;
-        m_IR.PC_ORGH = IR.PC_ORGH;
+        m_IR.ORG_ORGH = IR.ORG_ORGH;
         m_advance += 4;
         m_IR.AUGD.clear();
         line.clear();
@@ -2310,7 +2377,7 @@ QStringList P2Asm::results_instruction(bool wr_mem)
     // Do we need to generate an AUGS instruction?
     if (m_IR.AUGS.isValid()) {
         p2_LONG value = m_IR.AUGS.value<p2_LONG>() & AUG_MASK;
-        P2Opcode IR(p2_AUGS_00, p2_PC_ORGH_t(PC, ORGH));
+        P2Opcode IR(p2_AUGS_00, p2_ORG_ORGH_t(PC, ORGH));
         IR.u.opcode |= value >> AUG_SHIFT;
 
         output += QString("%1 %2 [%3] %4")
@@ -2320,7 +2387,7 @@ QStringList P2Asm::results_instruction(bool wr_mem)
                  .arg(line);
         PC += 4;
         ORGH += 4;
-        m_IR.PC_ORGH = IR.PC_ORGH;
+        m_IR.ORG_ORGH = IR.ORG_ORGH;
         m_advance += 4;
         m_IR.AUGS.clear();
         line.clear();
@@ -2346,7 +2413,7 @@ QString P2Asm::results_assignment()
 {
     QString output;
     m_IR.as_IR = false;
-    m_hash_OPC.insert(m_lineno, m_IR);
+    m_hash_IR.insert(m_lineno, m_IR);
     output = QString("%1 %2 <%3> %4")
              .arg(m_lineno, -6)
              .arg(m_ORG, 6, 16, QChar('0'))
@@ -2385,8 +2452,8 @@ QStringList P2Asm::results_data(bool wr_mem)
     p2_LONG mask = 0;
 
     m_IR.DATA = m_data;
-    m_hash_PC.insert(m_lineno, p2_PC_ORGH_t(m_ORG, m_ORGH));
-    m_hash_OPC.insert(m_lineno, m_IR);
+    m_hash_PC.insert(m_lineno, p2_ORG_ORGH_t(m_ORG, m_ORGH));
+    m_hash_IR.insert(m_lineno, m_IR);
 
     for (int i = 0; i < bytes.count(); i++) {
         const int shift = 8 * (offset & 3);
@@ -4612,7 +4679,8 @@ bool P2Asm::asm_res()
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
         p2_LONG count = atom.to_long();
-        m_data.append(QByteArray(4 * static_cast<int>(count), '\0'));
+        while (count-- > 0)
+            m_data.append_uint(P2Atom::Byte, 0);
         optional_COMMA();
     }
     m_data.set_type(P2Atom::Long);
