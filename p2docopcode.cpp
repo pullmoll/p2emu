@@ -86,12 +86,12 @@ void P2DocOpcodeClass::set_token(p2_token_e token)
     m_token = token;
 }
 
-void P2DocOpcodeClass::set_params(p2_token_e token, bool mandatory)
+void P2DocOpcodeClass::set_params(p2_token_e token, p2_mandatory_e mandatory)
 {
     m_params = P2DocParams() = {P2DocParam(token,mandatory)};
 }
 
-void P2DocOpcodeClass::add_param(p2_token_e token, bool mandatory)
+void P2DocOpcodeClass::add_param(p2_token_e token, p2_mandatory_e mandatory)
 {
     m_params += P2DocParam(token, mandatory);
 }

@@ -633,9 +633,9 @@ bool P2Asm::assemble_dat()
         }
 
         if (!m_symbol.isEmpty()) {
-            const p2_LONG PC = m_ORG < HUB_ADDR0 ? m_ORG / 4 : m_ORG;
+            const p2_LONG org = m_ORG < HUB_ADDR0 ? m_ORG / 4 : m_ORG;
             // defining a symbol at the current PC
-            const P2Atom atom(PC, P2Atom::PC);
+            const P2Atom atom(org, P2Atom::PC);
             define_symbol(m_symbol, atom);
         }
         break;
@@ -664,7 +664,7 @@ bool P2Asm::assemble_dat()
             next();
             break;
 
-        case t_DAT: // redundant
+        case t_DAT:
             success = asm_dat();
             break;
 
@@ -2288,7 +2288,7 @@ bool P2Asm::set_pathname(const QString& pathname)
     QDir dir(pathname);
     if (!dir.exists())
         return false;
-    m_pathname = dir.canonicalPath() + QChar('/');
+    m_pathname = dir.canonicalPath();
     return true;
 }
 
@@ -3640,7 +3640,7 @@ bool P2Asm::mandatory_COMMA()
 }
 
 /**
- * @brief An optioncal comma is skipped
+ * @brief An optional comma is skipped
  *
  */
 void P2Asm::optional_COMMA()
@@ -4200,11 +4200,11 @@ bool P2Asm::parse_IM_S_WC()
 
 
 /**
- * @brief Expect parameters for #AAAAAAAAAAAA (19 bit address for CALL/CALLA/CALLB/LOC)
+ * @brief Expect parameters for #AAAAAAAAAAAA (20 bit address for CALL/CALLA/CALLB/LOC)
  *
  * @return true on success, or false on error
  */
-bool P2Asm::parse_PTRx_PC_ABS()
+bool P2Asm::parse_PTRx_PC_A20()
 {
     P2Atom dst = parse_expression();
     switch (dst.to_long()) {
@@ -4236,11 +4236,11 @@ bool P2Asm::parse_PTRx_PC_ABS()
 }
 
 /**
- * @brief Expect parameters for #AAAAAAAAAAAA (19 bit address for CALL/CALLA/CALLB)
+ * @brief Expect parameters for #AAAAAAAAAAAA (20 bit address for CALL/CALLA/CALLB)
  *
  * @return true on success, or false on error
  */
-bool P2Asm::parse_PC_ABS()
+bool P2Asm::parse_PC_A20()
 {
     P2Atom atom = parse_expression();
     p2_LONG addr = atom.to_long();
@@ -4422,8 +4422,9 @@ bool P2Asm::asm_org()
     P2Atom atom = parse_expression();
     p2_LONG value = atom.isEmpty() ? 0 : 4 * atom.to_long();
     if (value >= HUB_ADDR0) {
-        m_errors += tr("COG origin exceeds limit ($%1)")
-                    .arg(value, 0, 16, QChar('0'));
+        m_errors += tr("COG origin ($%1) exceeds limit %2.")
+                    .arg(value, 0, 16, QChar('0'))
+                    .arg(QLatin1String("$1ff"));
         emit Error(m_pass, m_lineno, m_errors.last());
     } else {
         m_ORG = value;
@@ -4446,8 +4447,9 @@ bool P2Asm::asm_orgf()
     P2Atom atom = parse_expression();
     p2_LONG value = atom.isEmpty() ? 0 : 4 * atom.to_long();
     if (value >= HUB_ADDR0) {
-        m_errors += tr("COG origin exceeds limit ($%1)")
-                    .arg(value, 0, 16, QChar('0'));
+        m_errors += tr("COG origin ($%1) exceeds limit %2.")
+                    .arg(value, 0, 16, QChar('0'))
+                    .arg(QLatin1String("$1ff"));
         emit Error(m_pass, m_lineno, m_errors.last());
         value = 0;
     }
@@ -4474,7 +4476,7 @@ bool P2Asm::asm_orgh()
     if (value <= HUB_ADDR0)
         value *= 4;
     if (value >= MEM_SIZE) {
-        m_errors += tr("HUB address exceeds limit ($%1)")
+        m_errors += tr("HUB address exceeds limit $%1.")
                     .arg(value, 0, 16, QChar('0'));
         emit Error(m_pass, m_lineno, m_errors.last());
         value = MEM_SIZE;
@@ -4496,11 +4498,11 @@ bool P2Asm::asm_fit()
     m_IR.set_as_IR(false);
     P2Atom atom = parse_expression();
     const p2_LONG fit = atom.isNull() ? HUB_ADDR0 : atom.to_long();
-    const p2_LONG PC = m_ORG / 4;
-    if (fit < PC) {
-        m_errors += tr("Code does not fit below $%1 (origin == $%2)")
+    const p2_LONG org = m_ORG / 4;
+    if (fit < org) {
+        m_errors += tr("Code does not fit below $%1 (ORG is $%2)")
                   .arg(fit, 0, 16)
-                  .arg(PC, 0, 16);
+                  .arg(org, 0, 16);
         emit Error(m_pass, m_lineno, m_errors.last());
     }
     return end_of_line();
@@ -4695,7 +4697,7 @@ bool P2Asm::asm_file()
 
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
-        QString filename = QString("%1%2")
+        QString filename = QString("%1/%2")
                            .arg(m_pathname)
                            .arg(atom.to_string());
         QFile data(filename);
@@ -4704,8 +4706,9 @@ bool P2Asm::asm_file()
             m_data.set_type(P2Atom::String);
             data.close();
         } else {
-            m_errors += tr("Could not open file %1 for reading.")
-                       .arg(filename);
+            m_errors += tr("Could not open file \"%1/%2\" for reading.")
+                        .arg(m_pathname)
+                        .arg(filename);
             emit Error(m_pass, m_lineno, m_errors.last());
             return false;
         }
@@ -11440,7 +11443,7 @@ bool P2Asm::asm_jmp_abs()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_JMP);
-    return parse_PC_ABS();
+    return parse_PC_A20();
 }
 
 /**
@@ -11457,7 +11460,7 @@ bool P2Asm::asm_call_abs()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_CALL_RET);
-    return parse_PC_ABS();
+    return parse_PC_A20();
 }
 
 /**
@@ -11474,7 +11477,7 @@ bool P2Asm::asm_calla_abs()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_CALLA_RETA);
-    return parse_PC_ABS();
+    return parse_PC_A20();
 }
 
 /**
@@ -11491,7 +11494,7 @@ bool P2Asm::asm_callb_abs()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_CALLB_RETB);
-    return parse_PC_ABS();
+    return parse_PC_A20();
 }
 
 /**
@@ -11508,7 +11511,7 @@ bool P2Asm::asm_calld_abs_pa()
 {
     next();
     m_IR.set_inst7(p2_CALLD_ABS_PA);
-    return parse_PC_ABS();
+    return parse_PC_A20();
 }
 
 /**
@@ -11525,7 +11528,7 @@ bool P2Asm::asm_calld_abs_pb()
 {
     next();
     m_IR.set_inst7(p2_CALLD_ABS_PB);
-    return parse_PC_ABS();
+    return parse_PC_A20();
 }
 
 /**
@@ -11542,7 +11545,7 @@ bool P2Asm::asm_calld_abs_ptra()
 {
     next();
     m_IR.set_inst7(p2_CALLD_ABS_PTRA);
-    return parse_PC_ABS();
+    return parse_PC_A20();
 }
 
 /**
@@ -11559,7 +11562,7 @@ bool P2Asm::asm_calld_abs_ptrb()
 {
     next();
     m_IR.set_inst7(p2_CALLD_ABS_PTRB);
-    return parse_PC_ABS();
+    return parse_PC_A20();
 }
 
 /**
@@ -11616,7 +11619,7 @@ bool P2Asm::asm_loc()
 bool P2Asm::asm_loc_pa()
 {
     m_IR.set_inst7(p2_LOC_PA);
-    return parse_PC_ABS();
+    return parse_PC_A20();
 }
 
 /**
@@ -11632,7 +11635,7 @@ bool P2Asm::asm_loc_pa()
 bool P2Asm::asm_loc_pb()
 {
     m_IR.set_inst7(p2_LOC_PB);
-    return parse_PC_ABS();
+    return parse_PC_A20();
 }
 
 /**
@@ -11648,7 +11651,7 @@ bool P2Asm::asm_loc_pb()
 bool P2Asm::asm_loc_ptra()
 {
     m_IR.set_inst7(p2_LOC_PTRA);
-    return parse_PC_ABS();
+    return parse_PC_A20();
 }
 
 /**
@@ -11664,7 +11667,7 @@ bool P2Asm::asm_loc_ptra()
 bool P2Asm::asm_loc_ptrb()
 {
     m_IR.set_inst7(p2_LOC_PTRB);
-    return parse_PC_ABS();
+    return parse_PC_A20();
 }
 
 /**

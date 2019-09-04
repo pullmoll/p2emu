@@ -2124,7 +2124,7 @@ void P2Dasm::format_IM_S_WC(QString* instruction, p2_token_e inst)
  * @param inst instruction token (mnemonic)
  * @param dest destination token (PA, PB, PTRA, PTRB)
  */
-void P2Dasm::format_PC_ABS(QString* instruction, p2_token_e inst, p2_token_e dest)
+void P2Dasm::format_PC_A20(QString* instruction, p2_token_e inst, p2_token_e dest)
 {
     Q_ASSERT(nullptr != instruction);
     const p2_LONG aaaa = IR.opcode() & A20MASK;
@@ -8456,7 +8456,7 @@ void P2Dasm::dasm_getscp(QString* instruction)
  */
 void P2Dasm::dasm_jmp_abs(QString* instruction)
 {
-    format_PC_ABS(instruction, t_JMP);
+    format_PC_A20(instruction, t_JMP);
 }
 
 /**
@@ -8472,7 +8472,7 @@ void P2Dasm::dasm_jmp_abs(QString* instruction)
  */
 void P2Dasm::dasm_call_abs(QString* instruction)
 {
-    format_PC_ABS(instruction, t_CALL);
+    format_PC_A20(instruction, t_CALL);
 }
 
 /**
@@ -8488,7 +8488,7 @@ void P2Dasm::dasm_call_abs(QString* instruction)
  */
 void P2Dasm::dasm_calla_abs(QString* instruction)
 {
-    format_PC_ABS(instruction, t_CALLA);
+    format_PC_A20(instruction, t_CALLA);
 }
 
 /**
@@ -8504,7 +8504,7 @@ void P2Dasm::dasm_calla_abs(QString* instruction)
  */
 void P2Dasm::dasm_callb_abs(QString* instruction)
 {
-    format_PC_ABS(instruction, t_CALLB);
+    format_PC_A20(instruction, t_CALLB);
 }
 
 /**
@@ -8520,7 +8520,7 @@ void P2Dasm::dasm_callb_abs(QString* instruction)
  */
 void P2Dasm::dasm_calld_abs_pa(QString* instruction)
 {
-    format_PC_ABS(instruction, t_CALLD, t_PA);
+    format_PC_A20(instruction, t_CALLD, t_PA);
 }
 
 /**
@@ -8536,7 +8536,7 @@ void P2Dasm::dasm_calld_abs_pa(QString* instruction)
  */
 void P2Dasm::dasm_calld_abs_pb(QString* instruction)
 {
-    format_PC_ABS(instruction, t_CALLD, t_PB);
+    format_PC_A20(instruction, t_CALLD, t_PB);
 }
 
 /**
@@ -8552,7 +8552,7 @@ void P2Dasm::dasm_calld_abs_pb(QString* instruction)
  */
 void P2Dasm::dasm_calld_abs_ptra(QString* instruction)
 {
-    format_PC_ABS(instruction, t_CALLD, t_PTRA);
+    format_PC_A20(instruction, t_CALLD, t_PTRA);
 }
 
 /**
@@ -8568,7 +8568,7 @@ void P2Dasm::dasm_calld_abs_ptra(QString* instruction)
  */
 void P2Dasm::dasm_calld_abs_ptrb(QString* instruction)
 {
-    format_PC_ABS(instruction, t_CALLD, t_PTRB);
+    format_PC_A20(instruction, t_CALLD, t_PTRB);
 }
 
 /**
@@ -8584,7 +8584,7 @@ void P2Dasm::dasm_calld_abs_ptrb(QString* instruction)
  */
 void P2Dasm::dasm_loc_pa(QString* instruction)
 {
-    format_PC_ABS(instruction, t_LOC, t_PA);
+    format_PC_A20(instruction, t_LOC, t_PA);
 }
 
 /**
@@ -8600,7 +8600,7 @@ void P2Dasm::dasm_loc_pa(QString* instruction)
  */
 void P2Dasm::dasm_loc_pb(QString* instruction)
 {
-    format_PC_ABS(instruction, t_LOC, t_PB);
+    format_PC_A20(instruction, t_LOC, t_PB);
 }
 
 /**
@@ -8616,7 +8616,7 @@ void P2Dasm::dasm_loc_pb(QString* instruction)
  */
 void P2Dasm::dasm_loc_ptra(QString* instruction)
 {
-    format_PC_ABS(instruction, t_LOC, t_PTRA);
+    format_PC_A20(instruction, t_LOC, t_PTRA);
 }
 
 /**
@@ -8632,7 +8632,7 @@ void P2Dasm::dasm_loc_ptra(QString* instruction)
  */
 void P2Dasm::dasm_loc_ptrb(QString* instruction)
 {
-    format_PC_ABS(instruction, t_LOC, t_PTRB);
+    format_PC_A20(instruction, t_LOC, t_PTRB);
 }
 
 /**

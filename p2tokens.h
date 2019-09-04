@@ -458,70 +458,102 @@ enum p2_token_e {
     t_IF_NZ_AND_NC,     //!< alias for cond_nc_and_nz
     t_IF_A,             //!< alias for cond_nc_and_nz
     t_IF_GT,            //!< alias for cond_nc_and_nz
+    t_IF_00,            //!< alias for cond_nc_and_nz
     t_IF_NC_AND_Z,      //!< cond_nc_and_z
     t_IF_Z_AND_NC,      //!< alias for cond_nc_and_z
+    t_IF_01,            //!< alias for cond_nc_and_z
     t_IF_NC,            //!< cond_nc
     t_IF_AE,            //!< alias for cond_nc
     t_IF_GE,            //!< alias for cond_nc
+    t_IF_0X,            //!< alias for cond_nc
     t_IF_C_AND_NZ,      //!< cond_c_and_nz
     t_IF_NZ_AND_C,      //!< alias for cond_c_and_nz
+    t_IF_10,            //!< alias for cond_c_and_nz
     t_IF_NZ,            //!< cond_nz
     t_IF_NE,            //!< alias for cond_nz
+    t_IF_X0,            //!< alias for cond_nz
     t_IF_C_NE_Z,        //!< cond_c_ne_z
     t_IF_Z_NE_C,        //!< alias for cond_c_ne_z
+    t_IF_DIFF,          //!< alias for cond_c_ne_z
     t_IF_NC_OR_NZ,      //!< cond_nc_or_nz
     t_IF_NZ_OR_NC,      //!< alias for cond_nc_or_nz
+    t_IF_NOT_11,        //!< alias for cond_nc_or_nz
     t_IF_C_AND_Z,       //!< cond_c_and_z
     t_IF_Z_AND_C,       //!< alias for cond_c_and_z
+    t_IF_11,            //!< alias for cond_c_and_z
     t_IF_C_EQ_Z,        //!< cond_c_eq_z
     t_IF_Z_EQ_C,        //!< alias for cond_c_eq_z
+    t_IF_SAME,          //!< alias for cond_c_eq_z
     t_IF_Z,             //!< cond_z
     t_IF_E,             //!< alias for cond_z
+    t_IF_X1,            //!< alias for cond_z
     t_IF_NC_OR_Z,       //!< cond_nc_or_z
     t_IF_Z_OR_NC,       //!< alias for cond_nc_or_z
     t_IF_BE,            //!< alias for cond_nc_or_z
+    t_IF_NOT_10,        //!< alias for cond_nc_or_z
     t_IF_C,             //!< cond_c
     t_IF_B,             //!< alias for cond_c
     t_IF_LT,            //!< alias for cond_c
+    t_IF_1X,            //!< alias for cond_c
     t_IF_C_OR_NZ,       //!< cond_c_or_nz
     t_IF_NZ_OR_C,       //!< alias for cond_c_or_nz
+    t_IF_NOT_01,        //!< alias for cond_c_or_nz
     t_IF_C_OR_Z,        //!< cond_c_or_z
     t_IF_Z_OR_C,        //!< alias for cond_c_or_z
     t_IF_LE,            //!< alias for cond_c_or_z
+    t_IF_NOT_00,        //!< alias for cond_c_or_z
     t_IF_ALWAYS,        //!< cond_always
 
     // MODCZ parameters
     t_MODCZ__CLR,       //!< cond_never
     t_MODCZ__NC_AND_NZ, //!< cond_nc_and_nz
     t_MODCZ__NZ_AND_NC, //!< alias for cond_nc_and_nz
+    t_MODCZ__A,         //!< alias for cond_nc_and_nz
     t_MODCZ__GT,        //!< alias for cond_nc_and_nz
+    t_MODCZ__00,        //!< alias for cond_nc_and_nz
     t_MODCZ__NC_AND_Z,  //!< cond_nc_and_z
     t_MODCZ__Z_AND_NC,  //!< alias for cond_nc_and_z
+    t_MODCZ__01,        //!< alias for cond_nc_and_z
     t_MODCZ__NC,        //!< cond_nc
+    t_MODCZ__AE,        //!< alias for cond_nc
     t_MODCZ__GE,        //!< alias for cond_nc
+    t_MODCZ__0X,        //!< alias for cond_nc
     t_MODCZ__C_AND_NZ,  //!< cond_c_and_nz
     t_MODCZ__NZ_AND_C,  //!< alias for cond_c_and_nz
+    t_MODCZ__10,        //!< alias for cond_c_and_nz
     t_MODCZ__NZ,        //!< cond_nz
     t_MODCZ__NE,        //!< alias for cond_nz
+    t_MODCZ__X0,        //!< alias for cond_nz
     t_MODCZ__C_NE_Z,    //!< cond_c_ne_z
     t_MODCZ__Z_NE_C,    //!< alias for cond_c_ne_z
+    t_MODCZ__DIFF,      //!< alias for cond_c_ne_z
     t_MODCZ__NC_OR_NZ,  //!< cond_nc_or_nz
     t_MODCZ__NZ_OR_NC,  //!< alias for cond_nc_or_nz
+    t_MODCZ__NOT_11,    //!< alias for cond_nc_or_nz
     t_MODCZ__C_AND_Z,   //!< cond_c_and_z
     t_MODCZ__Z_AND_C,   //!< alias for cond_c_and_z
+    t_MODCZ__11,        //!< alias for cond_c_and_z
     t_MODCZ__C_EQ_Z,    //!< cond_c_eq_z
     t_MODCZ__Z_EQ_C,    //!< alias for cond_c_eq_z
+    t_MODCZ__SAME,      //!< alias for cond_c_eq_z
     t_MODCZ__Z,         //!< cond_z
     t_MODCZ__E,         //!< alias for cond_z
+    t_MODCZ__X1,        //!< alias for cond_z
     t_MODCZ__NC_OR_Z,   //!< cond_nc_or_z
     t_MODCZ__Z_OR_NC,   //!< alias for cond_nc_or_z
+    t_MODCZ__BE,        //!< alias for cond_nc_or_z
+    t_MODCZ__NOT_10,    //!< alias for cond_nc_or_z
     t_MODCZ__C,         //!< cond_c
+    t_MODCZ__B,         //!< alias for cond_c
     t_MODCZ__LT,        //!< alias for cond_c
+    t_MODCZ__1X,        //!< alias for cond_c
     t_MODCZ__C_OR_NZ,   //!< cond_c_or_nz
     t_MODCZ__NZ_OR_C,   //!< alias for cond_c_or_nz
+    t_MODCZ__NOT_01,    //!< alias for cond_c_or_nz
     t_MODCZ__C_OR_Z,    //!< cond_c_or_z
     t_MODCZ__Z_OR_C,    //!< alias for cond_c_or_z
     t_MODCZ__LE,        //!< alias for cond_c_or_z
+    t_MODCZ__NOT_00,    //!< alias for cond_c_or_z
     t_MODCZ__SET,       //!< cond_always
 
     // assignment

@@ -620,7 +620,7 @@ void MainWindow::loadSourceRandom()
 void MainWindow::assemble()
 {
     QStringList source = m_asm->source();
-    ui->splResults->setHidden(true);
+    ui->splResults->setVisible(false);
     ui->tbErrors->clear();
 
     qint64 t0 = QDateTime::currentMSecsSinceEpoch();
@@ -664,7 +664,7 @@ void MainWindow::print_error(int pass, int line, const QString& message)
     QString error = str_pass + str_line + message;
     ui->tbErrors->append(error);
 
-    if (ui->splResults->isVisible())
+    if (!ui->splResults->isVisible())
         resize_source_results();
 }
 
@@ -701,7 +701,6 @@ void MainWindow::goto_line_number()
 void MainWindow::resize_source_results(const int results_min)
 {
     ui->splResults->setVisible(true);
-    ui->splSource->setVisible(true);
     QList<int> sizes = ui->splSource->sizes();
     if (sizes.count() > 1 && sizes[1] < results_min) {
         sizes.clear();
@@ -757,7 +756,7 @@ void MainWindow::setupAssembler()
     ui->tvAsm->setModel(m_amodel);
 
     ui->tvSymbols->setModel(m_smodel);
-    ui->splResults->setHidden(true);
+    ui->splResults->setVisible(true);
 }
 
 void MainWindow::setupDisassembler()

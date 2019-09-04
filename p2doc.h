@@ -35,6 +35,7 @@
 #include <QMap>
 #include <QHash>
 #include "p2docopcode.h"
+#include "p2opcode.h"
 
 class P2Doc
 {
@@ -495,8 +496,8 @@ private:
     void doc_setpix(p2_opsrc_e instr);
     void doc_cogatn(p2_opsrc_e instr);
 
-    void doc_testp_w(p2_opsrc_e instr, p2_inst9_e inst9);
-    void doc_testpn_w(p2_opsrc_e instr, p2_inst9_e inst9);
+    void doc_testp_wc_wz(p2_opsrc_e instr, p2_inst9_e inst9);
+    void doc_testpn_wc_wz(p2_opsrc_e instr, p2_inst9_e inst9);
     void doc_testp_and(p2_opsrc_e instr, p2_inst9_e inst9);
     void doc_testpn_and(p2_opsrc_e instr, p2_inst9_e inst9);
     void doc_testp_or(p2_opsrc_e instr, p2_inst9_e inst9);
@@ -570,6 +571,41 @@ private:
     void doc_loc(p2_inst5_e instr);
     void doc_augs(p2_inst5_e instr);
     void doc_augd(p2_inst5_e instr);
+    void params_dst(P2DocOpcode& op, P2Opcode::ImmFlag flag);
+    void params_src(P2DocOpcode& op, P2Opcode::ImmFlag flag);
+    void mandatory_COMMA(P2DocOpcode& op);
+    void optional_COMMA(P2DocOpcode& op);
+    void optional_WCZ(P2DocOpcode& op);
+    void optional_WC(P2DocOpcode& op);
+    void optional_WZ(P2DocOpcode& op);
+    void mandatory_ANDC_ANDZ(P2DocOpcode& op);
+    void mandatory_ORC_ORZ(P2DocOpcode& op);
+    void mandatory_XORC_XORZ(P2DocOpcode& op);
+    void params_D_IM_S(P2DocOpcode& op);
+    void params_D_WCZ(P2DocOpcode& op);
+    void params_WCZ(P2DocOpcode& op);
+    void params_D(P2DocOpcode& op);
+    void params_WZ_D(P2DocOpcode& op);
+    void params_IM_D(P2DocOpcode& op);
+    void params_IM_D_WCZ(P2DocOpcode& op);
+    void params_IM_D_WC(P2DocOpcode& op);
+    void params_IM_D_ANDC_ANDZ(P2DocOpcode& op);
+    void params_IM_D_ORC_ORZ(P2DocOpcode& op);
+    void params_IM_D_XORC_XORZ(P2DocOpcode& op);
+    void params_D_IM_S_WCZ(P2DocOpcode& op);
+    void params_D_IM_S_ANDCZ(P2DocOpcode& op);
+    void params_D_IM_S_ORCZ(P2DocOpcode& op);
+    void params_D_IM_S_XORCZ(P2DocOpcode& op);
+    void params_D_IM_S_WC(P2DocOpcode& op);
+    void params_D_IM_S_WZ(P2DocOpcode& op);
+    void params_WZ_D_IM_S(P2DocOpcode& op);
+    void params_WZ_D_IM_S_WC(P2DocOpcode& op);
+    void params_D_IM_S_NNN(P2DocOpcode& op, uint max);
+    void params_IM_S(P2DocOpcode& op);
+    void params_IM_S_WC(P2DocOpcode& op);
+    void params_PTRx_PC_A20(P2DocOpcode& op);
+    void params_PC_A20(P2DocOpcode& op);
+    void params_IMM23(P2DocOpcode& op);
 };
 
 extern P2Doc Doc;

@@ -34,6 +34,7 @@
 #include "p2doc.h"
 #include "p2tokens.h"
 #include "p2util.h"
+#include "p2doc.h"
 
 // Global instance
 P2Doc Doc;
@@ -429,10 +430,10 @@ P2Doc::P2Doc()
     doc_dirnot(p2_OPSRC_DIRNOT, p2_DIRNOT);
     doc_dirnot(p2_OPSRC_DIRNOT, p2_DIRNOT_WCZ);
 
-    doc_testp_w(p2_OPSRC_TESTP_W, p2_TESTP_WZ);
-    doc_testp_w(p2_OPSRC_TESTP_W, p2_TESTP_WC);
-    doc_testpn_w(p2_OPSRC_TESTPN_W, p2_TESTPN_WZ);
-    doc_testpn_w(p2_OPSRC_TESTPN_W, p2_TESTPN_WC);
+    doc_testp_wc_wz(p2_OPSRC_TESTP_W, p2_TESTP_WZ);
+    doc_testp_wc_wz(p2_OPSRC_TESTP_W, p2_TESTP_WC);
+    doc_testpn_wc_wz(p2_OPSRC_TESTPN_W, p2_TESTPN_WZ);
+    doc_testpn_wc_wz(p2_OPSRC_TESTPN_W, p2_TESTPN_WC);
     doc_testp_and(p2_OPSRC_TESTP_AND, p2_TESTP_ANDC);
     doc_testp_and(p2_OPSRC_TESTP_AND, p2_TESTP_ANDZ);
     doc_testpn_and(p2_OPSRC_TESTPN_AND, p2_TESTPN_ANDC);
@@ -962,6 +963,323 @@ P2DocOpcode P2Doc::make_pattern(const char* _func, p2_opsrc_e instr, p2_inst9_e 
     return make_pattern(_func, opcode_inst9(inst9) | opcode_opsrc(instr), pat, p2_mask_opsrc, mode);
 }
 
+
+/**
+ * @brief Set the destination %dst in the opcode and check for errors
+ */
+void P2Doc::params_dst(P2DocOpcode& op, P2Opcode::ImmFlag flag)
+{
+    op->add_param(t_D);
+    Q_UNUSED(flag)
+}
+
+/**
+ * @brief Set the source %src in the opcode and check for errors
+ */
+void P2Doc::params_src(P2DocOpcode& op, P2Opcode::ImmFlag flag)
+{
+    op->add_param(t_S);
+    Q_UNUSED(flag)
+}
+
+/**
+ * @brief A comma is expected
+ */
+void P2Doc::mandatory_COMMA(P2DocOpcode& op)
+{
+    op->add_param(t_COMMA);
+}
+
+/**
+ * @brief Expect an optional comma
+ */
+void P2Doc::optional_COMMA(P2DocOpcode& op)
+{
+    op->add_param(t_COMMA, p2_optional);
+}
+
+/**
+ * @brief Expect optional WC, WZ, or WCZ
+ */
+void P2Doc::optional_WCZ(P2DocOpcode& op)
+{
+    op->add_param(t_WC, p2_optional);
+    op->add_param(t_WZ, p2_optional);
+    op->add_param(t_WCZ, p2_optional);
+}
+
+/**
+ * @brief Expect optional WC
+ */
+void P2Doc::optional_WC(P2DocOpcode& op)
+{
+    op->add_param(t_WC, p2_optional);
+}
+
+/**
+ * @brief Expect optional WZ
+ */
+void P2Doc::optional_WZ(P2DocOpcode& op)
+{
+    op->add_param(t_WZ, p2_optional);
+}
+
+/**
+ * @brief Mandatory ANDC or ANDZ
+ */
+void P2Doc::mandatory_ANDC_ANDZ(P2DocOpcode& op)
+{
+    op->add_param(t_ANDC, p2_alternative_1);
+    op->add_param(t_ANDZ, p2_alternative_2);
+}
+
+/**
+ * @brief Mandatory ORC or ORZ
+ */
+void P2Doc::mandatory_ORC_ORZ(P2DocOpcode& op)
+{
+    op->add_param(t_ORC, p2_alternative_1);
+    op->add_param(t_ORZ, p2_alternative_2);
+}
+
+/**
+ * @brief Mandatory XORC or XORZ
+ */
+void P2Doc::mandatory_XORC_XORZ(P2DocOpcode& op)
+{
+    op->add_param(t_XORC, p2_alternative_1);
+    op->add_param(t_XORZ, p2_alternative_2);
+}
+
+/**
+ * @brief Expect parameters for D and {#}S
+ */
+void P2Doc::params_D_IM_S(P2DocOpcode& op)
+{
+    op->add_param(t_D);
+    mandatory_COMMA(op);
+    op->add_param(t_IMMEDIATE, p2_optional);
+    op->add_param(t_S);
+}
+
+/**
+ * @brief Expect parameters for D and optional WC, WZ, or WCZ
+ */
+void P2Doc::params_D_WCZ(P2DocOpcode& op)
+{
+    op->add_param(t_D);
+    optional_WCZ(op);
+}
+
+/**
+ * @brief Expect optional WC, WZ, or WCZ
+ */
+void P2Doc::params_WCZ(P2DocOpcode& op)
+{
+    optional_WCZ(op);
+}
+
+/**
+ * @brief Expect parameters for D
+ */
+void P2Doc::params_D(P2DocOpcode& op)
+{
+    op->add_param(t_D);
+}
+
+/**
+ * @brief Expect parameters for {#}D setting WZ for immediate
+ */
+void P2Doc::params_WZ_D(P2DocOpcode& op)
+{
+    op->add_param(t_IMMEDIATE, p2_optional);
+    op->add_param(t_D);
+}
+
+/**
+ * @brief Expect parameters for {#}D
+ */
+void P2Doc::params_IM_D(P2DocOpcode& op)
+{
+    op->add_param(t_IMMEDIATE, p2_optional);
+    op->add_param(t_D);
+}
+
+/**
+ * @brief Expect parameters for {#}D, and optional WC, WZ, or WCZ
+ */
+void P2Doc::params_IM_D_WCZ(P2DocOpcode& op)
+{
+    params_IM_D(op);
+    optional_WCZ(op);
+}
+
+/**
+ * @brief Expect parameters for {#}D, and optional WC
+ */
+void P2Doc::params_IM_D_WC(P2DocOpcode& op)
+{
+    params_IM_D(op);
+    optional_WC(op);
+}
+
+/**
+ * @brief Expect parameters for {#}D, and mandatory ANDC or ANDZ
+ */
+void P2Doc::params_IM_D_ANDC_ANDZ(P2DocOpcode& op)
+{
+    params_IM_D(op);
+    mandatory_ANDC_ANDZ(op);
+}
+
+/**
+ * @brief Expect parameters for {#}D, and mandatory ORC or ORZ
+ */
+void P2Doc::params_IM_D_ORC_ORZ(P2DocOpcode& op)
+{
+    params_IM_D(op);
+    mandatory_ORC_ORZ(op);
+}
+
+/**
+ * @brief Expect parameters for {#}D, and mandatory XORC or XORZ
+ */
+void P2Doc::params_IM_D_XORC_XORZ(P2DocOpcode& op)
+{
+    params_IM_D(op);
+    mandatory_XORC_XORZ(op);
+}
+
+/**
+ * @brief Expect parameters for D, and {#}S, and optional WC, WZ, or WCZ
+ */
+void P2Doc::params_D_IM_S_WCZ(P2DocOpcode& op)
+{
+    params_D_IM_S(op);
+    optional_WCZ(op);
+}
+
+/**
+ * @brief Expect parameters for D, and {#}S, and mandatory ANDC or ANDZ
+ */
+void P2Doc::params_D_IM_S_ANDCZ(P2DocOpcode& op)
+{
+    params_D_IM_S(op);
+    mandatory_ANDC_ANDZ(op);
+}
+
+/**
+ * @brief Expect parameters for D, and {#}S, and mandatory ORC or ORZ
+ */
+void P2Doc::params_D_IM_S_ORCZ(P2DocOpcode& op)
+{
+    params_D_IM_S(op);
+    mandatory_ORC_ORZ(op);
+}
+
+/**
+ * @brief Expect parameters for D, and {#}S, and mandatory XORC or XORZ
+ */
+void P2Doc::params_D_IM_S_XORCZ(P2DocOpcode& op)
+{
+    params_D_IM_S(op);
+    mandatory_XORC_XORZ(op);
+}
+
+/**
+ * @brief Expect parameters for D, and {#}S, and optional WC
+ */
+void P2Doc::params_D_IM_S_WC(P2DocOpcode& op)
+{
+    params_D_IM_S(op);
+    optional_WC(op);
+}
+
+/**
+ * @brief Expect parameters for D, and {#}S, and optional WZ
+ */
+void P2Doc::params_D_IM_S_WZ(P2DocOpcode& op)
+{
+    params_D_IM_S(op);
+    optional_WZ(op);
+}
+
+/**
+ * @brief Expect parameters for {#}D, and {#}S
+ */
+void P2Doc::params_WZ_D_IM_S(P2DocOpcode& op)
+{
+    op->add_param(t_IMMEDIATE, p2_optional);
+    params_D_IM_S(op);
+}
+
+/**
+ * @brief Expect parameters for {#}D, and {#}S, followed by an optional WC
+ */
+void P2Doc::params_WZ_D_IM_S_WC(P2DocOpcode& op)
+{
+    params_WZ_D_IM_S(op);
+    optional_WC(op);
+}
+
+/**
+ * @brief Expect parameters for D, and {#}S, and #N (0 … 7)
+ */
+void P2Doc::params_D_IM_S_NNN(P2DocOpcode& op, uint max)
+{
+    params_D_IM_S(op);
+    mandatory_COMMA(op);
+    op->add_param(t_IMMEDIATE);
+    // TODO: t_NNN, t_NN, t_N
+    Q_UNUSED(max)
+}
+
+/**
+ * @brief Expect parameters for {#}S
+ */
+void P2Doc::params_IM_S(P2DocOpcode& op)
+{
+    op->add_param(t_IMMEDIATE, p2_optional);
+    op->add_param(t_S);
+}
+
+/**
+ * @brief Expect parameters for {#}S, and optional WC
+ */
+void P2Doc::params_IM_S_WC(P2DocOpcode& op)
+{
+    params_IM_S(op);
+    optional_WC(op);
+}
+
+
+/**
+ * @brief Expect parameters for #AAAAAAAAAAAA (20 bit address for CALL/CALLA/CALLB/LOC)
+ */
+void P2Doc::params_PTRx_PC_A20(P2DocOpcode& op)
+{
+    // TODO: t_ADDR20
+    Q_UNUSED(op)
+}
+
+/**
+ * @brief Expect parameters for #AAAAAAAAAAAA (20 bit address for CALL/CALLA/CALLB)
+ */
+void P2Doc::params_PC_A20(P2DocOpcode& op)
+{
+    // TODO: t_ADDR20
+    Q_UNUSED(op)
+}
+
+/**
+ * @brief Expect parameters for #AAAAAAAAAAAA (23 bit address for AUGD/AUGS)
+ */
+void P2Doc::params_IMM23(P2DocOpcode& op)
+{
+    // TODO: t_IMM23
+    Q_UNUSED(op)
+}
+
 /**
  * @brief No operation.
  *
@@ -995,10 +1313,7 @@ void P2Doc::doc_ror(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0000000 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_ROR);
-    op->add_param(t_D);
-    op->add_param(t_COMMA);
-    op->add_param(t_IMMEDIATE, true);
-    op->add_param(t_S);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Rotate right.");
     op->set_instr("ROR     D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = [31:0]  of ({D[31:0], D[31:0]}     >> S[4:0]).");
@@ -1023,6 +1338,7 @@ void P2Doc::doc_rol(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0000001 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_ROL);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Rotate left.");
     op->set_instr("ROL     D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = [63:32] of ({D[31:0], D[31:0]}     << S[4:0]).");
@@ -1047,6 +1363,7 @@ void P2Doc::doc_shr(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0000010 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_SHR);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Shift right.");
     op->set_instr("SHR     D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = [31:0]  of ({32'b0, D[31:0]}       >> S[4:0]).");
@@ -1071,6 +1388,7 @@ void P2Doc::doc_shl(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0000011 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_SHL);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Shift left.");
     op->set_instr("SHL     D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = [63:32] of ({D[31:0], 32'b0}       << S[4:0]).");
@@ -1095,6 +1413,7 @@ void P2Doc::doc_rcr(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0000100 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_RCR);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Rotate carry right.");
     op->set_instr("RCR     D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = [31:0]  of ({{32{C}}, D[31:0]}     >> S[4:0]).");
@@ -1119,6 +1438,7 @@ void P2Doc::doc_rcl(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0000101 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_RCL);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Rotate carry left.");
     op->set_instr("RCL     D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = [63:32] of ({D[31:0], {32{C}}}     << S[4:0]).");
@@ -1143,6 +1463,7 @@ void P2Doc::doc_sar(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0000110 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_SAR);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Shift arithmetic right.");
     op->set_instr("SAR     D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = [31:0]  of ({{32{D[31]}}, D[31:0]} >> S[4:0]).");
@@ -1167,6 +1488,7 @@ void P2Doc::doc_sal(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0000111 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_SAL);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Shift arithmetic left.");
     op->set_instr("SAL     D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = [63:32] of ({D[31:0], {32{D[0]}}}  << S[4:0]).");
@@ -1191,6 +1513,7 @@ void P2Doc::doc_add(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0001000 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_ADD);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Add S into D.");
     op->set_instr("ADD     D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = D + S.");
@@ -1215,6 +1538,7 @@ void P2Doc::doc_addx(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0001001 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_ADDX);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Add (S + C) into D, extended.");
     op->set_instr("ADDX    D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = D + S + C.");
@@ -1239,6 +1563,7 @@ void P2Doc::doc_adds(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0001010 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_ADDS);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Add S into D, signed.");
     op->set_instr("ADDS    D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = D + S.");
@@ -1263,6 +1588,7 @@ void P2Doc::doc_addsx(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0001011 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_ADDSX);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Add (S + C) into D, signed and extended.");
     op->set_instr("ADDSX   D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = D + S + C.");
@@ -1287,6 +1613,7 @@ void P2Doc::doc_sub(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0001100 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_SUB);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Subtract S from D.");
     op->set_instr("SUB     D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = D - S.");
@@ -1311,6 +1638,7 @@ void P2Doc::doc_subx(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0001101 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_SUBX);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Subtract (S + C) from D, extended.");
     op->set_instr("SUBX    D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = D - (S + C).");
@@ -1335,6 +1663,7 @@ void P2Doc::doc_subs(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0001110 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_SUBS);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Subtract S from D, signed.");
     op->set_instr("SUBS    D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = D - S.");
@@ -1359,6 +1688,7 @@ void P2Doc::doc_subsx(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0001111 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_SUBSX);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Subtract (S + C) from D, signed and extended.");
     op->set_instr("SUBSX   D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = D - (S + C).");
@@ -1382,6 +1712,7 @@ void P2Doc::doc_cmp(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0010000 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_CMP);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Compare D to S.");
     op->set_instr("CMP     D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("C = borrow of (D - S).");
@@ -1404,6 +1735,7 @@ void P2Doc::doc_cmpx(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0010001 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_CMPX);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Compare D to (S + C), extended.");
     op->set_instr("CMPX    D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("C = borrow of (D - (S + C)).");
@@ -1426,6 +1758,7 @@ void P2Doc::doc_cmps(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0010010 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_CMPS);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Compare D to S, signed.");
     op->set_instr("CMPS    D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("C = correct sign of (D - S).");
@@ -1448,6 +1781,7 @@ void P2Doc::doc_cmpsx(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0010011 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_CMPSX);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Compare D to (S + C), signed and extended.");
     op->set_instr("CMPSX   D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("C = correct sign of (D - (S + C)).");
@@ -1470,6 +1804,7 @@ void P2Doc::doc_cmpr(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0010100 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_CMPR);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Compare S to D (reverse).");
     op->set_instr("CMPR    D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("C = borrow of (S - D).");
@@ -1492,6 +1827,7 @@ void P2Doc::doc_cmpm(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0010101 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_CMPM);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Compare D to S, get MSB of difference into C.");
     op->set_instr("CMPM    D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("C = MSB of (D - S).");
@@ -1515,6 +1851,7 @@ void P2Doc::doc_subr(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0010110 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_SUBR);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Subtract D from S (reverse).");
     op->set_instr("SUBR    D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = S - D.");
@@ -1538,6 +1875,7 @@ void P2Doc::doc_cmpsub(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0010111 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_CMPSUB);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Compare and subtract S from D if D >= S.");
     op->set_instr("CMPSUB  D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("If D => S then D = D - S and C = 1, else D same and C = 0.");
@@ -1560,6 +1898,7 @@ void P2Doc::doc_fge(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0011000 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_FGE);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Force D >= S.");
     op->set_instr("FGE     D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("If D < S then D = S and C = 1, else D same and C = 0.");
@@ -1582,6 +1921,7 @@ void P2Doc::doc_fle(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0011001 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_FLE);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Force D <= S.");
     op->set_instr("FLE     D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("If D > S then D = S and C = 1, else D same and C = 0.");
@@ -1604,6 +1944,7 @@ void P2Doc::doc_fges(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0011010 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_FGES);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Force D >= S, signed.");
     op->set_instr("FGES    D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("If D < S then D = S and C = 1, else D same and C = 0.");
@@ -1626,6 +1967,7 @@ void P2Doc::doc_fles(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0011011 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_FLES);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Force D <= S, signed.");
     op->set_instr("FLES    D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("If D > S then D = S and C = 1, else D same and C = 0.");
@@ -1649,6 +1991,7 @@ void P2Doc::doc_sumc(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0011100 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_SUMC);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Sum +/-S into D by  C.");
     op->set_instr("SUMC    D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("If C = 1 then D = D - S, else D = D + S.");
@@ -1673,6 +2016,7 @@ void P2Doc::doc_sumnc(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0011101 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_SUMNC);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Sum +/-S into D by !C.");
     op->set_instr("SUMNC   D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("If C = 0 then D = D - S, else D = D + S.");
@@ -1697,6 +2041,7 @@ void P2Doc::doc_sumz(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0011110 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_SUMZ);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Sum +/-S into D by  Z.");
     op->set_instr("SUMZ    D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("If Z = 1 then D = D - S, else D = D + S.");
@@ -1721,6 +2066,7 @@ void P2Doc::doc_sumnz(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0011111 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_SUMNZ);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Sum +/-S into D by !Z.");
     op->set_instr("SUMNZ   D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("If Z = 0 then D = D - S, else D = D + S.");
@@ -2049,6 +2395,7 @@ void P2Doc::doc_and(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0101000 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_AND);
+    params_D_IM_S_WCZ(op);
     op->set_brief("AND S into D.");
     op->set_instr("AND     D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = D & S.");
@@ -2073,6 +2420,7 @@ void P2Doc::doc_andn(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0101001 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_ANDN);
+    params_D_IM_S_WCZ(op);
     op->set_brief("AND !S into D.");
     op->set_instr("ANDN    D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = D & !S.");
@@ -2097,6 +2445,7 @@ void P2Doc::doc_or(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0101010 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_OR);
+    params_D_IM_S_WCZ(op);
     op->set_brief("OR S into D.");
     op->set_instr("OR      D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = D | S.");
@@ -2121,6 +2470,7 @@ void P2Doc::doc_xor(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0101011 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_XOR);
+    params_D_IM_S_WCZ(op);
     op->set_brief("XOR S into D.");
     op->set_instr("XOR     D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = D ^ S.");
@@ -2145,6 +2495,7 @@ void P2Doc::doc_muxc(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0101100 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_MUXC);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Mux C into each D bit that is '1' in S.");
     op->set_instr("MUXC    D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = (!S & D ) | (S & {32{ C}}).");
@@ -2169,6 +2520,7 @@ void P2Doc::doc_muxnc(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0101101 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_MUXNC);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Mux !C into each D bit that is '1' in S.");
     op->set_instr("MUXNC   D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = (!S & D ) | (S & {32{!C}}).");
@@ -2193,6 +2545,7 @@ void P2Doc::doc_muxz(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0101110 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_MUXZ);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Mux Z into each D bit that is '1' in S.");
     op->set_instr("MUXZ    D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = (!S & D ) | (S & {32{ Z}}).");
@@ -2217,6 +2570,7 @@ void P2Doc::doc_muxnz(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0101111 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_MUXNZ);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Mux !Z into each D bit that is '1' in S.");
     op->set_instr("MUXNZ   D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = (!S & D ) | (S & {32{!Z}}).");
@@ -2241,6 +2595,7 @@ void P2Doc::doc_mov(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0110000 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_MOV);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Move S into D.");
     op->set_instr("MOV     D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = S.");
@@ -2265,6 +2620,7 @@ void P2Doc::doc_not(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0110001 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_NOT);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Get !S into D.");
     op->set_instr("NOT     D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = !S.");
@@ -2289,6 +2645,7 @@ void P2Doc::doc_abs(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0110010 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_ABS);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Get absolute value of S into D.");
     op->set_instr("ABS     D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = ABS(S).");
@@ -2313,6 +2670,7 @@ void P2Doc::doc_neg(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0110011 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_NEG);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Negate S into D.");
     op->set_instr("NEG     D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = -S.");
@@ -2337,6 +2695,7 @@ void P2Doc::doc_negc(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0110100 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_NEGC);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Negate S by  C into D.");
     op->set_instr("NEGC    D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("If C = 1 then D = -S, else D = S.");
@@ -2361,6 +2720,7 @@ void P2Doc::doc_negnc(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0110101 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_NEGNC);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Negate S by !C into D.");
     op->set_instr("NEGNC   D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("If C = 0 then D = -S, else D = S.");
@@ -2385,6 +2745,7 @@ void P2Doc::doc_negz(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0110110 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_NEGZ);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Negate S by  Z into D.");
     op->set_instr("NEGZ    D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("If Z = 1 then D = -S, else D = S.");
@@ -2409,6 +2770,7 @@ void P2Doc::doc_negnz(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0110111 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_NEGNZ);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Negate S by !Z into D.");
     op->set_instr("NEGNZ   D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("If Z = 0 then D = -S, else D = S.");
@@ -2432,6 +2794,7 @@ void P2Doc::doc_incmod(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0111000 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_INCMOD);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Increment with modulus.");
     op->set_instr("INCMOD  D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("If D = S then D = 0 and C = 1, else D = D + 1 and C = 0.");
@@ -2454,6 +2817,7 @@ void P2Doc::doc_decmod(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0111001 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_DECMOD);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Decrement with modulus.");
     op->set_instr("DECMOD  D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("If D = 0 then D = S and C = 1, else D = D - 1 and C = 0.");
@@ -2476,6 +2840,7 @@ void P2Doc::doc_zerox(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0111010 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_ZEROX);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Zero-extend D above bit S[4:0].");
     op->set_instr("ZEROX   D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("C = MSB of result.");
@@ -2498,6 +2863,7 @@ void P2Doc::doc_signx(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0111011 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_SIGNX);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Sign-extend D from bit S[4:0].");
     op->set_instr("SIGNX   D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("C = MSB of result.");
@@ -2521,6 +2887,7 @@ void P2Doc::doc_encod(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0111100 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_ENCOD);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Get bit position of top-most '1' in S into D.");
     op->set_instr("ENCOD   D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = position of top '1' in S (0..31).");
@@ -2545,6 +2912,7 @@ void P2Doc::doc_ones(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0111101 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_ONES);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Get number of '1's in S into D.");
     op->set_instr("ONES    D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("D = number of '1's in S (0..32).");
@@ -2568,6 +2936,7 @@ void P2Doc::doc_test(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0111110 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_TEST);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Test D with S.");
     op->set_instr("TEST    D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("C = parity of (D & S).");
@@ -2590,6 +2959,7 @@ void P2Doc::doc_testn(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0111111 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_TESTN);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Test D with !S.");
     op->set_instr("TESTN   D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("C = parity of (D & !S).");
@@ -3930,6 +4300,7 @@ void P2Doc::doc_rdlut(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1010101 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_RDLUT);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Read LUT data from address S[8:0] into D.");
     op->set_instr("RDLUT   D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("C = MSB of data.");
@@ -4061,6 +4432,7 @@ void P2Doc::doc_calld(p2_inst7_e instr)
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011001 CZI DDDDDDDDD SSSSSSSSS");
 
     op->set_token(t_CALLD);
+    params_D_IM_S_WCZ(op);
     op->set_brief("Call to S** by writing {C, Z, 10'b0, PC[19:0]} to D.");
     op->set_instr("CALLD   D,{#}S   {WC/WZ/WCZ}");
     op->add_descr("C = S[31], Z = S[30].");
@@ -7578,7 +7950,7 @@ void P2Doc::doc_cogatn(p2_opsrc_e instr)
  * C/Z =          IN[D[5:0]].
  *
  */
-void P2Doc::doc_testp_w(p2_opsrc_e instr, p2_inst9_e inst9)
+void P2Doc::doc_testp_wc_wz(p2_opsrc_e instr, p2_inst9_e inst9)
 {
     P2DocOpcode op = make_pattern(__func__, instr, inst9, "EEEE 1101011 CZL DDDDDDDDD 001000000", C_neq_Z);
 
@@ -7599,7 +7971,7 @@ void P2Doc::doc_testp_w(p2_opsrc_e instr, p2_inst9_e inst9)
  * C/Z =         !IN[D[5:0]].
  *
  */
-void P2Doc::doc_testpn_w(p2_opsrc_e instr, p2_inst9_e inst9)
+void P2Doc::doc_testpn_wc_wz(p2_opsrc_e instr, p2_inst9_e inst9)
 {
     P2DocOpcode op = make_pattern(__func__, instr, inst9, "EEEE 1101011 CZL DDDDDDDDD 001000001", C_neq_Z);
 

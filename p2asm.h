@@ -237,8 +237,8 @@ private:
     bool parse_IM_D_XORC_XORZ();
     bool parse_IM_S();
     bool parse_IM_S_WC();
-    bool parse_PC_ABS();
-    bool parse_PTRx_PC_ABS();
+    bool parse_PC_A20();
+    bool parse_PTRx_PC_A20();
     bool parse_IMM23();
 
     bool asm_assign();

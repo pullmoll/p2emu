@@ -2,6 +2,13 @@
 #include <QSharedPointer>
 #include "p2token.h"
 
+typedef enum {
+    p2_optional,
+    p2_mandatory,
+    p2_alternative_1,
+    p2_alternative_2
+}   p2_mandatory_e;
+
 typedef QPair<p2_token_e,bool> P2DocParam;
 typedef QList<P2DocParam> P2DocParams;
 
@@ -25,8 +32,8 @@ public:
     void set_descr(QList<const char*> descr = QList<const char*>());
     void add_descr(const char* descr = nullptr);
     void set_token(p2_token_e token);
-    void set_params(p2_token_e token, bool mandatory = true);
-    void add_param(p2_token_e token, bool mandatory = true);
+    void set_params(p2_token_e token, p2_mandatory_e mandatory = p2_mandatory);
+    void add_param(p2_token_e token, p2_mandatory_e mandatory = p2_mandatory);
 
 private:
     P2MatchMask m_matchmask;            //!< mask and match pair

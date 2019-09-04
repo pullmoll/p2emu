@@ -91,7 +91,7 @@ private:
     void format_IM_D_WC(QString* instruction, p2_token_e inst);
     void format_IM_S(QString* instruction, p2_token_e inst);
     void format_IM_S_WC(QString* instruction, p2_token_e inst);
-    void format_PC_ABS(QString* instruction, p2_token_e inst, p2_token_e dest = t_none);
+    void format_PC_A20(QString* instruction, p2_token_e inst, p2_token_e dest = t_none);
     void format_IMM23(QString* instruction, p2_token_e inst);
 
     void dasm_nop(QString* instruction = nullptr);

@@ -653,74 +653,135 @@ P2Token::P2Token()
 
     // Conditionals
     TN_ADD(t__RET_,             tm_conditional, QStringLiteral("_RET_"));
+
     TN_ADD(t_IF_NZ_AND_NC,      tm_conditional, QStringLiteral("IF_NZ_AND_NC"));
     TN_ADD(t_IF_NC_AND_NZ,      tm_conditional, QStringLiteral("IF_NC_AND_NZ"));
     TN_ADD(t_IF_A,              tm_conditional, QStringLiteral("IF_A"));
     TN_ADD(t_IF_GT,             tm_conditional, QStringLiteral("IF_GT"));
+    TN_ADD(t_IF_00,             tm_conditional, QStringLiteral("IF_00"));
+
     TN_ADD(t_IF_Z_AND_NC,       tm_conditional, QStringLiteral("IF_Z_AND_NC"));
     TN_ADD(t_IF_NC_AND_Z,       tm_conditional, QStringLiteral("IF_NC_AND_Z"));
+    TN_ADD(t_IF_01,             tm_conditional, QStringLiteral("IF_01"));
+
     TN_ADD(t_IF_NC,             tm_conditional, QStringLiteral("IF_NC"));
     TN_ADD(t_IF_AE,             tm_conditional, QStringLiteral("IF_AE"));
     TN_ADD(t_IF_GE,             tm_conditional, QStringLiteral("IF_GE"));
+    TN_ADD(t_IF_0X,             tm_conditional, QStringLiteral("IF_0X"));
+
     TN_ADD(t_IF_NZ_AND_C,       tm_conditional, QStringLiteral("IF_NZ_AND_C"));
     TN_ADD(t_IF_C_AND_NZ,       tm_conditional, QStringLiteral("IF_C_AND_NZ"));
+    TN_ADD(t_IF_10,             tm_conditional, QStringLiteral("IF_10"));
+
     TN_ADD(t_IF_NZ,             tm_conditional, QStringLiteral("IF_NZ"));
     TN_ADD(t_IF_NE,             tm_conditional, QStringLiteral("IF_NE"));
+    TN_ADD(t_IF_X0,             tm_conditional, QStringLiteral("IF_X0"));
+
     TN_ADD(t_IF_Z_NE_C,         tm_conditional, QStringLiteral("IF_Z_NE_C"));
     TN_ADD(t_IF_C_NE_Z,         tm_conditional, QStringLiteral("IF_C_NE_Z"));
+    TN_ADD(t_IF_DIFF,           tm_conditional, QStringLiteral("IF_DIFF"));
+
     TN_ADD(t_IF_NZ_OR_NC,       tm_conditional, QStringLiteral("IF_NZ_OR_NC"));
     TN_ADD(t_IF_NC_OR_NZ,       tm_conditional, QStringLiteral("IF_NC_OR_NZ"));
+    TN_ADD(t_IF_NOT_11,         tm_conditional, QStringLiteral("IF_NOT_11"));
+
     TN_ADD(t_IF_Z_AND_C,        tm_conditional, QStringLiteral("IF_Z_AND_C"));
     TN_ADD(t_IF_C_AND_Z,        tm_conditional, QStringLiteral("IF_C_AND_Z"));
+    TN_ADD(t_IF_11,             tm_conditional, QStringLiteral("IF_11"));
+
     TN_ADD(t_IF_Z_EQ_C,         tm_conditional, QStringLiteral("IF_Z_EQ_C"));
     TN_ADD(t_IF_C_EQ_Z,         tm_conditional, QStringLiteral("IF_C_EQ_Z"));
+    TN_ADD(t_IF_SAME,           tm_conditional, QStringLiteral("IF_SAME"));
+
     TN_ADD(t_IF_Z,              tm_conditional, QStringLiteral("IF_Z"));
     TN_ADD(t_IF_E,              tm_conditional, QStringLiteral("IF_E"));
+    TN_ADD(t_IF_X1,             tm_conditional, QStringLiteral("IF_X1"));
+
     TN_ADD(t_IF_Z_OR_NC,        tm_conditional, QStringLiteral("IF_Z_OR_NC"));
     TN_ADD(t_IF_NC_OR_Z,        tm_conditional, QStringLiteral("IF_NC_OR_Z"));
+    TN_ADD(t_IF_NOT_10,         tm_conditional, QStringLiteral("IF_NOT_10"));
+
     TN_ADD(t_IF_C,              tm_conditional, QStringLiteral("IF_C"));
     TN_ADD(t_IF_B,              tm_conditional, QStringLiteral("IF_B"));
     TN_ADD(t_IF_LT,             tm_conditional, QStringLiteral("IF_LT"));
+    TN_ADD(t_IF_1X,             tm_conditional, QStringLiteral("IF_1X"));
+
     TN_ADD(t_IF_NZ_OR_C,        tm_conditional, QStringLiteral("IF_NZ_OR_C"));
     TN_ADD(t_IF_C_OR_NZ,        tm_conditional, QStringLiteral("IF_C_OR_NZ"));
+    TN_ADD(t_IF_NOT_01,         tm_conditional, QStringLiteral("IF_NOT_01"));
+
     TN_ADD(t_IF_Z_OR_C,         tm_conditional, QStringLiteral("IF_Z_OR_C"));
     TN_ADD(t_IF_C_OR_Z,         tm_conditional, QStringLiteral("IF_C_OR_Z"));
     TN_ADD(t_IF_BE,             tm_conditional, QStringLiteral("IF_BE"));
     TN_ADD(t_IF_LE,             tm_conditional, QStringLiteral("IF_LE"));
+    TN_ADD(t_IF_NOT_00,         tm_conditional, QStringLiteral("IF_NOT_00"));
+
     TN_ADD(t_IF_ALWAYS,         tm_conditional, QStringLiteral("IF_ALWAYS"));
 
     // MODCZ parameters
     TN_ADD(t_MODCZ__CLR,        tm_modcz_param, QStringLiteral("_CLR"));
+
     TN_ADD(t_MODCZ__NC_AND_NZ,  tm_modcz_param, QStringLiteral("_NC_AND_NZ"));
     TN_ADD(t_MODCZ__NZ_AND_NC,  tm_modcz_param, QStringLiteral("_NZ_AND_NC"));
+    TN_ADD(t_MODCZ__A,          tm_modcz_param, QStringLiteral("_A"));
     TN_ADD(t_MODCZ__GT,         tm_modcz_param, QStringLiteral("_GT"));
+    TN_ADD(t_MODCZ__00,         tm_modcz_param, QStringLiteral("_00"));
+
     TN_ADD(t_MODCZ__NC_AND_Z,   tm_modcz_param, QStringLiteral("_NC_AND_Z"));
     TN_ADD(t_MODCZ__Z_AND_NC,   tm_modcz_param, QStringLiteral("_Z_AND_NC"));
+    TN_ADD(t_MODCZ__10,         tm_modcz_param, QStringLiteral("_10"));
+
     TN_ADD(t_MODCZ__NC,         tm_modcz_param, QStringLiteral("_NC"));
+    TN_ADD(t_MODCZ__AE,         tm_modcz_param, QStringLiteral("_AE"));
     TN_ADD(t_MODCZ__GE,         tm_modcz_param, QStringLiteral("_GE"));
+    TN_ADD(t_MODCZ__0X,         tm_modcz_param, QStringLiteral("_0X"));
+
     TN_ADD(t_MODCZ__C_AND_NZ,   tm_modcz_param, QStringLiteral("_C_AND_NZ"));
     TN_ADD(t_MODCZ__NZ_AND_C,   tm_modcz_param, QStringLiteral("_NZ_AND_C"));
+    TN_ADD(t_MODCZ__10,         tm_modcz_param, QStringLiteral("_10"));
+
     TN_ADD(t_MODCZ__NZ,         tm_modcz_param, QStringLiteral("_NZ"));
     TN_ADD(t_MODCZ__NE,         tm_modcz_param, QStringLiteral("_NE"));
+    TN_ADD(t_MODCZ__X0,         tm_modcz_param, QStringLiteral("_X0"));
+
     TN_ADD(t_MODCZ__C_NE_Z,     tm_modcz_param, QStringLiteral("_C_NE_Z"));
     TN_ADD(t_MODCZ__Z_NE_C,     tm_modcz_param, QStringLiteral("_Z_NE_C"));
+    TN_ADD(t_MODCZ__DIFF,       tm_modcz_param, QStringLiteral("_DIFF"));
+
     TN_ADD(t_MODCZ__NC_OR_NZ,   tm_modcz_param, QStringLiteral("_NC_OR_NZ"));
     TN_ADD(t_MODCZ__NZ_OR_NC,   tm_modcz_param, QStringLiteral("_NZ_OR_NC"));
+    TN_ADD(t_MODCZ__NOT_11,     tm_modcz_param, QStringLiteral("_NZ_OR_NC"));
+
     TN_ADD(t_MODCZ__C_AND_Z,    tm_modcz_param, QStringLiteral("_C_AND_Z"));
     TN_ADD(t_MODCZ__Z_AND_C,    tm_modcz_param, QStringLiteral("_Z_AND_C"));
+    TN_ADD(t_MODCZ__11,         tm_modcz_param, QStringLiteral("_11"));
+
     TN_ADD(t_MODCZ__C_EQ_Z,     tm_modcz_param, QStringLiteral("_C_EQ_Z"));
     TN_ADD(t_MODCZ__Z_EQ_C,     tm_modcz_param, QStringLiteral("_Z_EQ_C"));
+    TN_ADD(t_MODCZ__SAME,       tm_modcz_param, QStringLiteral("_SAME"));
+
     TN_ADD(t_MODCZ__Z,          tm_modcz_param, QStringLiteral("_Z"));
     TN_ADD(t_MODCZ__E,          tm_modcz_param, QStringLiteral("_E"));
+    TN_ADD(t_MODCZ__X1,         tm_modcz_param, QStringLiteral("_X1"));
+
     TN_ADD(t_MODCZ__NC_OR_Z,    tm_modcz_param, QStringLiteral("_NC_OR_Z"));
     TN_ADD(t_MODCZ__Z_OR_NC,    tm_modcz_param, QStringLiteral("_Z_OR_NC"));
+    TN_ADD(t_MODCZ__NOT_10,     tm_modcz_param, QStringLiteral("_NOT_10"));
+
     TN_ADD(t_MODCZ__C,          tm_modcz_param, QStringLiteral("_C"));
+    TN_ADD(t_MODCZ__B,          tm_modcz_param, QStringLiteral("_B"));
     TN_ADD(t_MODCZ__LT,         tm_modcz_param, QStringLiteral("_LT"));
+    TN_ADD(t_MODCZ__1X,         tm_modcz_param, QStringLiteral("_1X"));
+
     TN_ADD(t_MODCZ__C_OR_NZ,    tm_modcz_param, QStringLiteral("_C_OR_NZ"));
     TN_ADD(t_MODCZ__NZ_OR_C,    tm_modcz_param, QStringLiteral("_NZ_OR_C"));
+    TN_ADD(t_MODCZ__NOT_10,     tm_modcz_param, QStringLiteral("_NOT_10"));
+
     TN_ADD(t_MODCZ__C_OR_Z,     tm_modcz_param, QStringLiteral("_C_OR_Z"));
     TN_ADD(t_MODCZ__Z_OR_C,     tm_modcz_param, QStringLiteral("_Z_OR_C"));
     TN_ADD(t_MODCZ__LE,         tm_modcz_param, QStringLiteral("_LE"));
+    TN_ADD(t_MODCZ__Z_OR_C,     tm_modcz_param, QStringLiteral("_NOT_00"));
+
     TN_ADD(t_MODCZ__SET,        tm_modcz_param, QStringLiteral("_SET"));
 
     // Assignment
@@ -818,74 +879,135 @@ P2Token::P2Token()
 
     // Set the conditionals lookup table
     m_lookup_cond.insert(t__RET_,               cc__ret_);
-    m_lookup_cond.insert(t_IF_NZ_AND_NC,        cc_nc_and_nz);
     m_lookup_cond.insert(t_IF_NC_AND_NZ,        cc_nc_and_nz);
+    m_lookup_cond.insert(t_IF_NZ_AND_NC,        cc_nc_and_nz);
     m_lookup_cond.insert(t_IF_A,                cc_nc_and_nz);
     m_lookup_cond.insert(t_IF_GT,               cc_nc_and_nz);
-    m_lookup_cond.insert(t_IF_Z_AND_NC,         cc_nc_and_z);
+    m_lookup_cond.insert(t_IF_00,               cc_nc_and_nz);
+
     m_lookup_cond.insert(t_IF_NC_AND_Z,         cc_nc_and_z);
+    m_lookup_cond.insert(t_IF_Z_AND_NC,         cc_nc_and_z);
+    m_lookup_cond.insert(t_IF_01,               cc_nc_and_z);
+
     m_lookup_cond.insert(t_IF_NC,               cc_nc);
     m_lookup_cond.insert(t_IF_AE,               cc_nc);
     m_lookup_cond.insert(t_IF_GE,               cc_nc);
-    m_lookup_cond.insert(t_IF_NZ_AND_C,         cc_c_and_nz);
+    m_lookup_cond.insert(t_IF_0X,               cc_nc);
+
     m_lookup_cond.insert(t_IF_C_AND_NZ,         cc_c_and_nz);
+    m_lookup_cond.insert(t_IF_NZ_AND_C,         cc_c_and_nz);
+    m_lookup_cond.insert(t_IF_10,               cc_c_and_nz);
+
     m_lookup_cond.insert(t_IF_NZ,               cc_nz);
     m_lookup_cond.insert(t_IF_NE,               cc_nz);
-    m_lookup_cond.insert(t_IF_Z_NE_C,           cc_c_ne_z);
+    m_lookup_cond.insert(t_IF_X0,               cc_nz);
+
     m_lookup_cond.insert(t_IF_C_NE_Z,           cc_c_ne_z);
-    m_lookup_cond.insert(t_IF_NZ_OR_NC,         cc_nc_or_nz);
+    m_lookup_cond.insert(t_IF_Z_NE_C,           cc_c_ne_z);
+    m_lookup_cond.insert(t_IF_DIFF,             cc_c_ne_z);
+
     m_lookup_cond.insert(t_IF_NC_OR_NZ,         cc_nc_or_nz);
-    m_lookup_cond.insert(t_IF_Z_AND_C,          cc_c_and_z);
+    m_lookup_cond.insert(t_IF_NZ_OR_NC,         cc_nc_or_nz);
+    m_lookup_cond.insert(t_IF_NOT_11,           cc_nc_or_nz);
+
     m_lookup_cond.insert(t_IF_C_AND_Z,          cc_c_and_z);
-    m_lookup_cond.insert(t_IF_Z_EQ_C,           cc_c_eq_z);
+    m_lookup_cond.insert(t_IF_Z_AND_C,          cc_c_and_z);
+    m_lookup_cond.insert(t_IF_11,               cc_c_and_z);
+
     m_lookup_cond.insert(t_IF_C_EQ_Z,           cc_c_eq_z);
+    m_lookup_cond.insert(t_IF_Z_EQ_C,           cc_c_eq_z);
+    m_lookup_cond.insert(t_IF_SAME,             cc_c_eq_z);
+
     m_lookup_cond.insert(t_IF_Z,                cc_z);
     m_lookup_cond.insert(t_IF_E,                cc_z);
-    m_lookup_cond.insert(t_IF_Z_OR_NC,          cc_nc_or_z);
+    m_lookup_cond.insert(t_IF_X1,               cc_z);
+
     m_lookup_cond.insert(t_IF_NC_OR_Z,          cc_nc_or_z);
+    m_lookup_cond.insert(t_IF_Z_OR_NC,          cc_nc_or_z);
+    m_lookup_cond.insert(t_IF_BE,               cc_nc_or_z);
+    m_lookup_cond.insert(t_IF_X1,               cc_nc_or_z);
+
     m_lookup_cond.insert(t_IF_C,                cc_c);
     m_lookup_cond.insert(t_IF_B,                cc_c);
-    m_lookup_cond.insert(t_IF_BE,               cc_c);
     m_lookup_cond.insert(t_IF_LT,               cc_c);
-    m_lookup_cond.insert(t_IF_NZ_OR_C,          cc_c_or_nz);
+    m_lookup_cond.insert(t_IF_1X,               cc_c);
+
     m_lookup_cond.insert(t_IF_C_OR_NZ,          cc_c_or_nz);
-    m_lookup_cond.insert(t_IF_Z_OR_C,           cc_c_or_z);
+    m_lookup_cond.insert(t_IF_NZ_OR_C,          cc_c_or_nz);
+    m_lookup_cond.insert(t_IF_NOT_01,           cc_c_or_nz);
+
     m_lookup_cond.insert(t_IF_C_OR_Z,           cc_c_or_z);
+    m_lookup_cond.insert(t_IF_Z_OR_C,           cc_c_or_z);
     m_lookup_cond.insert(t_IF_LE,               cc_c_or_z);
+    m_lookup_cond.insert(t_IF_NOT_00,           cc_c_or_z);
+
     m_lookup_cond.insert(t_IF_ALWAYS,           cc_always);
 
     // Set the MODCZ lookup table
     m_lookup_modcz.insert(t_MODCZ__CLR,         cc_clr);
+
     m_lookup_modcz.insert(t_MODCZ__NC_AND_NZ,   cc_nc_and_nz);
     m_lookup_modcz.insert(t_MODCZ__NZ_AND_NC,   cc_nc_and_nz);
+    m_lookup_modcz.insert(t_MODCZ__A,           cc_nc_and_nz);
     m_lookup_modcz.insert(t_MODCZ__GT,          cc_nc_and_nz);
+    m_lookup_modcz.insert(t_MODCZ__00,          cc_nc_and_nz);
+
     m_lookup_modcz.insert(t_MODCZ__NC_AND_Z,    cc_nc_and_z);
     m_lookup_modcz.insert(t_MODCZ__Z_AND_NC,    cc_nc_and_z);
+    m_lookup_modcz.insert(t_MODCZ__01,          cc_nc_and_z);
+
     m_lookup_modcz.insert(t_MODCZ__NC,          cc_nc);
+    m_lookup_modcz.insert(t_MODCZ__AE,          cc_nc);
     m_lookup_modcz.insert(t_MODCZ__GE,          cc_nc);
+    m_lookup_modcz.insert(t_MODCZ__0X,          cc_nc);
+
     m_lookup_modcz.insert(t_MODCZ__C_AND_NZ,    cc_c_and_nz);
     m_lookup_modcz.insert(t_MODCZ__NZ_AND_C,    cc_c_and_nz);
+    m_lookup_modcz.insert(t_MODCZ__10,          cc_c_and_nz);
+
     m_lookup_modcz.insert(t_MODCZ__NZ,          cc_nz);
     m_lookup_modcz.insert(t_MODCZ__NE,          cc_nz);
+    m_lookup_modcz.insert(t_MODCZ__X0,          cc_nz);
+
     m_lookup_modcz.insert(t_MODCZ__C_NE_Z,      cc_c_ne_z);
     m_lookup_modcz.insert(t_MODCZ__Z_NE_C,      cc_c_ne_z);
+    m_lookup_modcz.insert(t_MODCZ__DIFF,        cc_c_ne_z);
+
     m_lookup_modcz.insert(t_MODCZ__NC_OR_NZ,    cc_nc_or_nz);
     m_lookup_modcz.insert(t_MODCZ__NZ_OR_NC,    cc_nc_or_nz);
+    m_lookup_modcz.insert(t_MODCZ__NOT_11,      cc_nc_or_nz);
+
     m_lookup_modcz.insert(t_MODCZ__C_AND_Z,     cc_c_and_z);
     m_lookup_modcz.insert(t_MODCZ__Z_AND_C,     cc_c_and_z);
+    m_lookup_modcz.insert(t_MODCZ__11,          cc_c_and_z);
+
     m_lookup_modcz.insert(t_MODCZ__C_EQ_Z,      cc_c_eq_z);
     m_lookup_modcz.insert(t_MODCZ__Z_EQ_C,      cc_c_eq_z);
+    m_lookup_modcz.insert(t_MODCZ__SAME,        cc_c_eq_z);
+
     m_lookup_modcz.insert(t_MODCZ__Z,           cc_z);
     m_lookup_modcz.insert(t_MODCZ__E,           cc_z);
+    m_lookup_modcz.insert(t_MODCZ__X1,          cc_z);
+
     m_lookup_modcz.insert(t_MODCZ__NC_OR_Z,     cc_nc_or_z);
     m_lookup_modcz.insert(t_MODCZ__Z_OR_NC,     cc_nc_or_z);
+    m_lookup_modcz.insert(t_MODCZ__BE,          cc_nc_or_z);
+    m_lookup_modcz.insert(t_MODCZ__X1,          cc_nc_or_z);
+
     m_lookup_modcz.insert(t_MODCZ__C,           cc_c);
+    m_lookup_modcz.insert(t_MODCZ__B,           cc_c);
     m_lookup_modcz.insert(t_MODCZ__LT,          cc_c);
-    m_lookup_modcz.insert(t_MODCZ__C_OR_NZ,     cc_c_or_nz);
+    m_lookup_modcz.insert(t_MODCZ__1X,          cc_c);
+
     m_lookup_modcz.insert(t_MODCZ__NZ_OR_C,     cc_c_or_nz);
-    m_lookup_modcz.insert(t_MODCZ__C_OR_Z,      cc_c_or_z);
+    m_lookup_modcz.insert(t_MODCZ__C_OR_NZ,     cc_c_or_nz);
+    m_lookup_modcz.insert(t_MODCZ__NOT_01,      cc_c_or_nz);
+
     m_lookup_modcz.insert(t_MODCZ__Z_OR_C,      cc_c_or_z);
+    m_lookup_modcz.insert(t_MODCZ__C_OR_Z,      cc_c_or_z);
     m_lookup_modcz.insert(t_MODCZ__LE,          cc_c_or_z);
+    m_lookup_modcz.insert(t_MODCZ__NOT_00,      cc_c_or_z);
+
     m_lookup_modcz.insert(t_MODCZ__SET,         cc_always);
 
     // Build the reverse QHash for string lookup
