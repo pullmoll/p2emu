@@ -106,7 +106,7 @@ P2Word P2Symbol::definition() const
  */
 bool P2Symbol::set_atom(const P2Atom& value)
 {
-    if (m_atom == value)
+    if (m_atom.type() == value.type() && m_atom == value)
         return false;
     m_atom = value;
     return true;

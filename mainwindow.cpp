@@ -324,7 +324,7 @@ void MainWindow::goto_address()
 
 void MainWindow::setAsmOpcodes(int mode)
 {
-    p2_opcode_format_e format = static_cast<p2_opcode_format_e>(mode);
+    p2_format_e format = static_cast<p2_format_e>(mode);
     ui->action_Asm_Opcodes_bin->setChecked(format == fmt_bin);
     ui->action_Asm_Opcodes_byt->setChecked(format == fmt_byt);
     ui->action_Asm_Opcodes_dec->setChecked(format == fmt_dec);
@@ -382,7 +382,7 @@ void MainWindow::setAsmFontSize(int size)
 
 void MainWindow::setDasmOpcodes(int mode)
 {
-    p2_opcode_format_e format = static_cast<p2_opcode_format_e>(mode);
+    p2_format_e format = static_cast<p2_format_e>(mode);
     ui->action_Dasm_Opcodes_bin->setChecked(format == fmt_bin);
     ui->action_Dasm_Opcodes_byt->setChecked(format == fmt_byt);
     ui->action_Dasm_Opcodes_dec->setChecked(format == fmt_dec);

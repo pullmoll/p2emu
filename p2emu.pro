@@ -8,7 +8,7 @@ QT += core gui widgets svg
 TARGET = p2
 TEMPLATE = app
 VER_MAJ = 0
-VER_MIN = 2
+VER_MIN = 3
 VER_PAT = 0
 
 # The following define makes your compiler emit warnings if you use

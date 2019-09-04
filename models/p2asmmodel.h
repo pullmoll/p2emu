@@ -65,19 +65,19 @@ public:
     Qt::ItemFlags flags(const QModelIndex& index) const override;
 
     static QList<column_e> columns();
-    p2_opcode_format_e opcode_format() const;
+    p2_format_e opcode_format() const;
     QSize sizeHint(const QModelIndex &parent = QModelIndex(), const QString& text = QString()) const;
     const P2Word highlight(const QModelIndex& index) const;
 
 public slots:
     void invalidate();
-    void setOpcodeFormat(p2_opcode_format_e format);
+    void setOpcodeFormat(p2_format_e format);
     void setFont(const QFont& font);
     void setHighlight(const QModelIndex& index, const P2Word& word);
 
 private:
     P2Asm* m_asm;
-    p2_opcode_format_e m_format;
+    p2_format_e m_format;
     QFont m_font;
     QPixmap m_error_pixmap;
     QIcon m_error;

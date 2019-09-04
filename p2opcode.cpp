@@ -115,6 +115,10 @@ void P2Opcode::clear(const p2_LONG opcode, const p2_ORG_ORGH_t& pc_orgh)
     m_equ.clear();
 }
 
+/**
+ * @brief Return the current assignment (equals), if any
+ * @return const reference to the P2Atom with the value, or invalid P2Atom
+ */
 const P2Atom& P2Opcode::equ() const
 {
     static P2Atom empty;
@@ -123,91 +127,179 @@ const P2Atom& P2Opcode::equ() const
     return m_equ;
 }
 
+/**
+ * @brief Return the current ORG/ORGH pair
+ * @return QPair<p2_LONG,p2_LONG> with ORG in first, ORGH in second
+ */
 const p2_ORG_ORGH_t P2Opcode::org_orgh() const
 {
     return m_org_orgh;
 }
 
+/**
+ * @brief Return the current ORG
+ * @return p2_LONG with ORG
+ */
+p2_LONG P2Opcode::org() const
+{
+    return m_org_orgh.first;
+}
+
+/**
+ * @brief Return the current ORGH
+ * @return p2_LONG with ORGH
+ */
+p2_LONG P2Opcode::orgh() const
+{
+    return m_org_orgh.second;
+}
+
+/**
+ * @brief Set where to store the destination immediate flag
+ * @param flag where-to-store info
+ */
 void P2Opcode::set_dst_imm(P2Opcode::ImmFlag flag)
 {
     m_dst_imm_flag = flag;
 }
 
+/**
+ * @brief Return a const reference to the current AUGD value
+ * @return const reference to a QVariant; invalid if no AUGD generated
+ */
 const QVariant& P2Opcode::augd() const
 {
     return m_augd;
 }
 
+/**
+ * @brief Clear (reset to invalid) the current AUGD value
+ */
 void P2Opcode::augd_clear()
 {
     m_augd.clear();
 }
 
+/**
+ * @brief Return true, if the AUGD value is valid
+ * @return true if valid, or false otherwise
+ */
 bool P2Opcode::augd_valid() const
 {
     return m_augd.isValid();
 }
 
+/**
+ * @brief Set where to store the source immediate flag
+ * @param flag where-to-store info
+ */
 void P2Opcode::set_src_imm(P2Opcode::ImmFlag flag)
 {
     m_src_imm_flag = flag;
 }
 
+/**
+ * @brief Return a const reference to the current AUGS value
+ * @return const reference to a QVariant; invalid if no AUGS generated
+ */
 const QVariant& P2Opcode::augs() const
 {
     return m_augs;
 }
 
+/**
+ * @brief Clear (reset to invalid) the current AUGS value
+ */
 void P2Opcode::augs_clear()
 {
     m_augs.clear();
 }
 
+/**
+ * @brief Return true, if the AUGS value is valid
+ * @return true if valid, or false otherwise
+ */
 bool P2Opcode::augs_valid() const
 {
     return m_augs.isValid();
 }
 
+/**
+ * @brief Return true, if the current P2Opcode is to be interpreted as instruction (opcode)
+ * @return true if instruction, or false otherwise
+ */
 bool P2Opcode::as_ir() const
 {
     return m_as_ir;
 }
 
+/**
+ * @brief Return true, if the current P2Opcode is to be interpreted as assignment (equals)
+ * @return true if assignment, or false otherwise
+ */
 bool P2Opcode::as_equ() const
 {
     return m_as_equ;
 }
 
+/**
+ * @brief Return the current instruction as union of formats
+ * @return p2_opcode_u with the instruction
+ */
 p2_opcode_u P2Opcode::ir() const
 {
     return m_u;
 }
 
+/**
+ * @brief Return the current opcode as p2_LONG
+ * @return p2_LONG with the opcode value
+ */
 p2_LONG P2Opcode::opcode() const
 {
     return m_u.opcode;
 }
 
+/**
+ * @brief Return the current condition (IF_...)
+ * @return
+ */
 p2_cond_e P2Opcode::cond() const
 {
     return static_cast<p2_cond_e>(m_u.op.cond);
 }
 
+/**
+ * @brief Return the current instruction's 7 bit inst value
+ * @return p2_inst7_e enumeration value
+ */
 p2_inst7_e P2Opcode::inst7() const
 {
     return static_cast<p2_inst7_e>(m_u.op.inst);
 }
 
+/**
+ * @brief Return the current instruction's 8 bit inst value
+ * @return p2_inst8_e enumeration value
+ */
 p2_inst8_e P2Opcode::inst8() const
 {
     return static_cast<p2_inst8_e>(m_u.op8.inst);
 }
 
+/**
+ * @brief Return the current instruction's 9 bit inst value
+ * @return p2_inst9_e enumeration value
+ */
 p2_inst9_e P2Opcode::inst9() const
 {
     return static_cast<p2_inst9_e>(m_u.op9.inst);
 }
 
+/**
+ * @brief Return the current instruction's opsrc value
+ * @return p2_opsrc_e enumeration value; p2_OPSRC_INVALID if not a p2_OPSRC instruction
+ */
 p2_opsrc_e P2Opcode::opsrc() const
 {
     if (p2_OPSRC == inst7())
@@ -215,6 +307,10 @@ p2_opsrc_e P2Opcode::opsrc() const
     return p2_OPSRC_INVALID;
 }
 
+/**
+ * @brief Return the current instruction's opx24 value
+ * @return p2_opx24_e enumeration value; p2_OPX24_INVALID if not a p2_OPSRC / p2_OPSRC_X24 instruction
+ */
 p2_opx24_e P2Opcode::opx24() const
 {
     if (p2_OPSRC_X24 == opsrc())
@@ -222,53 +318,118 @@ p2_opx24_e P2Opcode::opx24() const
     return p2_OPX24_INVALID;
 }
 
+/**
+ * @brief Return the current opcodes's WC flag
+ * @return true if WC is set, or false otherwise
+ */
 bool P2Opcode::wc() const
 {
     return m_u.op.wc;
 }
 
+/**
+ * @brief Return the current opcodes's WZ flag
+ * @return true if WZ is set, or false otherwise
+ */
 bool P2Opcode::wz() const
 {
     return m_u.op.wz;
 }
 
+/**
+ * @brief Return the current opcodes's IM flag
+ * @return true if IM is set, or false otherwise
+ */
 bool P2Opcode::im() const
 {
     return m_u.op.im;
 }
 
+/**
+ * @brief Return the current opcodes's destination field
+ * @return 9 bit destination value
+ */
 p2_LONG P2Opcode::dst() const
 {
     return m_u.op.dst;
 }
 
+/**
+ * @brief Return the current opcodes's source field
+ * @return 9 bit source value
+ */
 p2_LONG P2Opcode::src() const
 {
     return m_u.op.src;
 }
 
+/**
+ * @brief Return the current opcodes's 20 bit address from the opcode field
+ * @return 20 bit address value
+ */
+p2_LONG P2Opcode::a20() const
+{
+    return m_u.opcode & A20MASK;
+}
+
+/**
+ * @brief Return the current opcodes's 23 bit augment value from the opcode field
+ * @return 23 bit augment value
+ */
+p2_LONG P2Opcode::imm23() const
+{
+    return (m_u.opcode << AUG_SHIFT) & AUG_MASK;
+}
+
+/**
+ * @brief Return a const reference to the P2Atom keeping the current data
+ * @return const reference to a P2Atom (invalid if no data)
+ */
 const P2Atom& P2Opcode::data() const
 {
     return m_data;
 }
 
+/**
+ * @brief Return the most recent error when generating the AUGS/AUGD instructions
+ * @return Error code indicating the type of error
+ */
 P2Opcode::Error P2Opcode::aug_error() const
 {
     return m_error;
 }
 
+/**
+ * @brief Set whether the current opcode is to be interpreted as instruction
+ * Also sets EQU mode to false, if on is true.
+ * @param on if true, this is an instruction
+ * @return true on success (currently always)
+ */
 bool P2Opcode::set_as_IR(bool on)
 {
     m_as_ir = on;
+    if (on)
+        m_as_equ = false;
     return true;
 }
 
+/**
+ * @brief Set the current ORG/ORGH pair
+ * @param org_orgh pair of p2_LONG with ORG (first) and ORGH (second) values
+ * @return true on success (currently always)
+ */
 bool P2Opcode::set_org_orgh(p2_ORG_ORGH_t org_orgh)
 {
     m_org_orgh = org_orgh;
     return true;
 }
 
+/**
+ * @brief Set the opcode's data to the P2Atom %data
+ * Also sets IR / EQU modes to false.
+ * @param data const reference to the P2Atom to set as data
+ * @return true on success (currently always)
+ */
 bool P2Opcode::set_data(const P2Atom& data)
 {
     m_as_ir = false;
@@ -277,6 +438,12 @@ bool P2Opcode::set_data(const P2Atom& data)
     return true;
 }
 
+/**
+ * @brief Set the opcode's assignment (equals) value
+ * Also sets IR mode to false, EQU mode to true.
+ * @param value const reference to the P2Atom keeping the value
+ * @return true on success (currently always)
+ */
 bool P2Opcode::set_equ(const P2Atom& value)
 {
     m_as_ir = false;
@@ -286,7 +453,7 @@ bool P2Opcode::set_equ(const P2Atom& value)
 }
 
 /**
- * @brief Set the opcode field
+ * @brief Set the entire opcode field
  * @param opcode new value for the opcode field
  */
 void P2Opcode::set_opcode(const p2_LONG opcode)
@@ -296,7 +463,7 @@ void P2Opcode::set_opcode(const p2_LONG opcode)
 
 /**
  * @brief Set the opcode's cond field to %cond
- * @param cond enumeration value
+ * @param cond p2_cond_e enumeration value
  */
 void P2Opcode::set_cond(const p2_cond_e cond)
 {
@@ -305,7 +472,7 @@ void P2Opcode::set_cond(const p2_cond_e cond)
 
 /**
  * @brief Set the opcode's instruction field to a 7 bit enumeration value
- * @param inst instruction to set
+ * @param inst p2_inst7_e instruction to set
  */
 void P2Opcode::set_inst7(const p2_inst7_e inst)
 {
@@ -314,7 +481,7 @@ void P2Opcode::set_inst7(const p2_inst7_e inst)
 
 /**
  * @brief Set the opcode's instruction field to a 8 bit enumeration value
- * @param inst instruction to set
+ * @param inst p2_inst8_e instruction to set
  */
 void P2Opcode::set_inst8(const p2_inst8_e inst)
 {
@@ -323,7 +490,7 @@ void P2Opcode::set_inst8(const p2_inst8_e inst)
 
 /**
  * @brief Set the opcode's instruction field to a 9 bit enumeration value
- * @param inst instruction to set
+ * @param inst p2_inst9_e instruction to set
  */
 void P2Opcode::set_inst9(const p2_inst9_e inst)
 {
@@ -332,7 +499,7 @@ void P2Opcode::set_inst9(const p2_inst9_e inst)
 
 /**
  * @brief Set the opcode's destination field to a 9 bit enumeration value
- * Also set the instruction 9 bit field to p2_OPDST
+ * Also set the instruction's 9 bit field to p2_OPDST
  * @param inst instruction to set
  */
 void P2Opcode::set_opdst(const p2_opdst_e inst)
@@ -343,7 +510,7 @@ void P2Opcode::set_opdst(const p2_opdst_e inst)
 
 /**
  * @brief Set the opcode's source field to a 9 bit enumeration value
- * Also set the instruction 7 bit field to p2_OPSRC
+ * Also set the instruction's 7 bit field to p2_OPSRC
  * @param inst instruction to set
  */
 void P2Opcode::set_opsrc(const p2_opsrc_e inst)
@@ -354,6 +521,7 @@ void P2Opcode::set_opsrc(const p2_opsrc_e inst)
 
 /**
  * @brief Set the opcode's destination field to a 9 bit enumeration value
+ * Also set the instruction's 7 bit field to p2_OPDST, and source to p2_OPSRC_X24.
  * @param inst instruction to set
  */
 void P2Opcode::set_opx24(const p2_opx24_e inst)
@@ -363,7 +531,7 @@ void P2Opcode::set_opx24(const p2_opx24_e inst)
 }
 
 /**
- * @brief Set the opcode's destination field to 9 bit offset
+ * @brief Set the opcode's destination field to 9 bit offset or immediate
  * @param src offset to put into destination
  */
 void P2Opcode::set_dst(const p2_LONG dst)
@@ -372,7 +540,7 @@ void P2Opcode::set_dst(const p2_LONG dst)
 }
 
 /**
- * @brief Set the opcode's source field to 9 bit offset
+ * @brief Set the opcode's source field to 9 bit offset or immediate
  * @param src offset to put into source
  */
 void P2Opcode::set_src(const p2_LONG src)
@@ -387,10 +555,14 @@ void P2Opcode::set_src(const p2_LONG src)
  */
 void P2Opcode::set_dst_src(const p2_LONG dst, const p2_LONG src)
 {
-    m_u.op.dst = static_cast<uint>(dst);
-    m_u.op.src = static_cast<uint>(src);
+    set_dst(dst);
+    set_src(src);
 }
 
+/**
+ * @brief Set the opcode's 20 bit address field (AAAAAAAAAAAAAAAAAAAA) to addr
+ * @param addr
+ */
 void P2Opcode::set_a20(const p2_LONG addr)
 {
     Q_ASSERT(0 == (addr & ~A20MASK));
@@ -398,7 +570,7 @@ void P2Opcode::set_a20(const p2_LONG addr)
 }
 
 /**
- * @brief Set the opcode's bits [23:0] from AUGS/AUGD [31:9]
+ * @brief Set the opcode's bits [22:0] from AUGS/AUGD [31:9]
  * @param addr augment address to set
  */
 void P2Opcode::set_imm23(const p2_LONG addr)
@@ -448,7 +620,7 @@ void P2Opcode::set_im(bool on)
  * @brief Set the immediate flag specified in imm_to to %on
  * @param on true to set, false to clear the flag
  */
-void P2Opcode::set_to(bool on)
+void P2Opcode::set_im_flags(bool on)
 {
     switch (m_src_imm_flag) {
     case imm_none:

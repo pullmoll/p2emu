@@ -163,7 +163,7 @@ QString format_data_hex(const p2_LONG data, bool prefix)
     return format_data_hex(IR, prefix);
 }
 
-QString format_opcode(const p2_opcode_u& IR, const p2_opcode_format_e fmt)
+QString format_opcode(const p2_opcode_u& IR, const p2_format_e fmt)
 {
     switch (fmt) {
     case fmt_bin: return format_opcode_bin(IR);
@@ -174,7 +174,7 @@ QString format_opcode(const p2_opcode_u& IR, const p2_opcode_format_e fmt)
     return QStringLiteral("<invalid format>");
 }
 
-QString format_data(const p2_opcode_u& IR, const p2_opcode_format_e fmt, bool prefix)
+QString format_data(const p2_opcode_u& IR, const p2_format_e fmt, bool prefix)
 {
     switch (fmt) {
     case fmt_bin: return format_data_bin(IR, prefix);
@@ -185,7 +185,7 @@ QString format_data(const p2_opcode_u& IR, const p2_opcode_format_e fmt, bool pr
     return QStringLiteral("<invalid format>");
 }
 
-QString format_data(const p2_LONG data, const p2_opcode_format_e fmt, bool prefix)
+QString format_data(const p2_LONG data, const p2_format_e fmt, bool prefix)
 {
     p2_opcode_u IR = {data};
     return format_data(IR, fmt, prefix);

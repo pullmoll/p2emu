@@ -70,6 +70,8 @@ public:
 
     const P2Atom& equ() const;
     const p2_ORG_ORGH_t org_orgh() const;
+    p2_LONG org() const;
+    p2_LONG orgh() const;
 
     void set_dst_imm(ImmFlag flag);
     const QVariant& augd() const;
@@ -101,6 +103,8 @@ public:
     bool im() const;
     p2_LONG dst() const;
     p2_LONG src() const;
+    p2_LONG a20() const;
+    p2_LONG imm23() const;
 
     const P2Atom& data() const;
 
@@ -126,7 +130,7 @@ public:
     void set_wc(bool on = true);
     void set_wz(bool on = true);
     void set_im(bool on = true);
-    void set_to(bool on = true);
+    void set_im_flags(bool on = true);
     void set_nnn(const p2_LONG nnn);
     void set_nn(const p2_LONG nn);
     void set_n(const p2_LONG n);

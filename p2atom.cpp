@@ -593,6 +593,143 @@ bool P2Atom::set(p2_REAL value)
 }
 
 /**
+ * @brief Format the atom's value as a string respecting the type
+ * @return QString with value
+ */
+QString P2Atom::str(p2_format_e fmt) const
+{
+    QString result;
+    switch (m_type) {
+    case Invalid:
+        result = QLatin1String("<invalid>");
+        break;
+    case Bool:
+        result = QString("<%1> %1")
+                 .arg(type_name())
+                 .arg(to_bool() ? "true" : "false");
+        break;
+    case Byte:
+        switch (fmt) {
+        case fmt_dec:
+            result = QString("<%1> %2")
+                     .arg(type_name())
+                     .arg(to_byte());
+            break;
+        case fmt_bin:
+            result = QString("<%1> %%2")
+                     .arg(type_name())
+                     .arg(to_byte(), 8, 2, QChar('0'));
+            break;
+        case fmt_byt:
+        case fmt_hex:
+            result = QString("<%1> $%2")
+                     .arg(type_name())
+                     .arg(to_byte(), 2, 16, QChar('0'));
+        }
+        break;
+    case Word:
+        switch (fmt) {
+        case fmt_dec:
+            result = QString("<%1> %2")
+                     .arg(type_name())
+                     .arg(to_word());
+            break;
+        case fmt_bin:
+            result = QString("<%1> %%2_%3")
+                     .arg(type_name())
+                     .arg(to_word() >> 8, 8, 2, QChar('0'))
+                     .arg(to_word() & 0xff, 8, 2, QChar('0'));
+            break;
+        case fmt_byt:
+            result = QString("<%1> $%2 $%3")
+                     .arg(type_name())
+                     .arg(to_word() >> 8, 2, 16, QChar('0'))
+                     .arg(to_word() & 0xff, 2, 16, QChar('0'));
+            break;
+        case fmt_hex:
+            result = QString("<%1> $%2")
+                     .arg(type_name())
+                     .arg(to_word(), 4, 16, QChar('0'));
+        }
+        break;
+    case PC:
+    case Long:
+        switch (fmt) {
+        case fmt_dec:
+            result = QString("<%1> %2")
+                     .arg(type_name())
+                     .arg(to_long());
+            break;
+        case fmt_bin:
+            result = QString("<%1> %%2_%3_%4_%5")
+                     .arg(type_name())
+                     .arg((to_long() >> 24) & 0xff, 8, 2, QChar('0'))
+                     .arg((to_long() >> 16) & 0xff, 8, 2, QChar('0'))
+                     .arg((to_long() >>  8) & 0xff, 8, 2, QChar('0'))
+                     .arg((to_long() >>  0) & 0xff, 8, 2, QChar('0'));
+            break;
+        case fmt_byt:
+            result = QString("<%1> $%2 $%3 $%4 $%5")
+                     .arg(type_name())
+                     .arg((to_long() >> 24) & 0xff, 2, 16, QChar('0'))
+                     .arg((to_long() >> 16) & 0xff, 2, 16, QChar('0'))
+                     .arg((to_long() >>  8) & 0xff, 2, 16, QChar('0'))
+                     .arg((to_long() >>  0) & 0xff, 2, 16, QChar('0'));
+            break;
+        case fmt_hex:
+            result = QString("<%1> $%2")
+                     .arg(type_name())
+                     .arg(to_long(), 8, 16, QChar('0'));
+        }
+        break;
+    case Quad:
+        switch (fmt) {
+        case fmt_dec:
+            result = QString("<%1> %2")
+                     .arg(type_name())
+                     .arg(to_quad());
+            break;
+        case fmt_bin:
+            result = QString("<%1> %%2_%3_%4_%5_%7_%8_%9_%10")
+                     .arg(type_name())
+                     .arg((to_quad() >> 56) & 0xff, 8, 2, QChar('0'))
+                     .arg((to_quad() >> 48) & 0xff, 8, 2, QChar('0'))
+                     .arg((to_quad() >> 40) & 0xff, 8, 2, QChar('0'))
+                     .arg((to_quad() >> 32) & 0xff, 8, 2, QChar('0'))
+                     .arg((to_quad() >> 24) & 0xff, 8, 2, QChar('0'))
+                     .arg((to_quad() >> 16) & 0xff, 8, 2, QChar('0'))
+                     .arg((to_quad() >>  8) & 0xff, 8, 2, QChar('0'))
+                     .arg((to_quad() >>  0) & 0xff, 8, 2, QChar('0'));
+            break;
+        case fmt_byt:
+            result = QString("<%1> $%2 $%3 $%4 $%5 $%7 $%8 $%9 $%10")
+                     .arg(type_name())
+                     .arg((to_quad() >> 56) & 0xff, 2, 16, QChar('0'))
+                     .arg((to_quad() >> 48) & 0xff, 2, 16, QChar('0'))
+                     .arg((to_quad() >> 40) & 0xff, 2, 16, QChar('0'))
+                     .arg((to_quad() >> 32) & 0xff, 2, 16, QChar('0'))
+                     .arg((to_quad() >> 24) & 0xff, 2, 16, QChar('0'))
+                     .arg((to_quad() >> 16) & 0xff, 2, 16, QChar('0'))
+                     .arg((to_quad() >>  8) & 0xff, 2, 16, QChar('0'))
+                     .arg((to_quad() >>  0) & 0xff, 2, 16, QChar('0'));
+            break;
+        case fmt_hex:
+            result = QString("<%1> $%2")
+                     .arg(type_name())
+                     .arg(to_quad(), 16, 16, QChar('0'));
+        }
+        break;
+    case Real:
+        result = QString("<Real> %1").arg(to_real(), 0, 'f');
+        break;
+    case String:
+        result = QString("<String> %1").arg(to_string());
+        break;
+    }
+    return result;
+}
+
+/**
  * @brief Set atom to its one's complement (~) if flag is true
  * @param flag one's complement if true, leave unchanged otherwise
  */
@@ -1546,19 +1683,19 @@ void P2Atom::make_real()
         set_real(Real, to_bool() ? 1.0 : 0.0);
         break;
     case Byte:
-        set_real(Real, 1.0 * to_byte());
+        set_real(Real, trunc(1.0 * to_byte()));
         break;
     case Word:
-        set_real(Real, 1.0 * to_word());
+        set_real(Real, trunc(1.0 * to_word()));
         break;
     case PC:
-        set_real(Real, 1.0 * to_long());
+        set_real(Real, trunc(1.0 * to_long()));
         break;
     case Long:
-        set_real(Real, 1.0 * to_long());
+        set_real(Real, trunc(1.0 * to_long()));
         break;
     case Quad:
-        set_real(Real, 1.0 * to_quad());
+        set_real(Real, trunc(1.0 * to_quad()));
         break;
     case Real:
         break;
@@ -1574,73 +1711,73 @@ P2Atom& P2Atom::operator = (const P2Atom& other)
     return *this;
 }
 
-bool P2Atom::operator == (const P2Atom& other)
+bool P2Atom::operator==(const P2Atom& other)
 {
-    return m_data == other.m_data;
+    return m_type == other.m_type || m_data == other.m_data;
 }
 
-bool P2Atom::operator != (const P2Atom& other)
+bool P2Atom::operator!=(const P2Atom& other)
 {
-    return m_data != other.m_data;
+    return m_type != other.m_type || m_data != other.m_data;
 }
 
-bool P2Atom::operator < (const P2Atom& other)
+bool P2Atom::operator<(const P2Atom& other)
 {
     return m_data < other.m_data;
 }
 
-bool P2Atom::operator <= (const P2Atom& other)
+bool P2Atom::operator<=(const P2Atom& other)
 {
     return m_data <= other.m_data;
 }
 
-bool P2Atom::operator > (const P2Atom& other)
+bool P2Atom::operator>(const P2Atom& other)
 {
     return m_data > other.m_data;
 }
 
-bool P2Atom::operator >= (const P2Atom& other)
+bool P2Atom::operator>=(const P2Atom& other)
 {
     return m_data >= other.m_data;
 }
 
-P2Atom& P2Atom::operator ~ ()
+P2Atom& P2Atom::operator~()
 {
     complement1(true);
     return *this;
 }
 
-P2Atom& P2Atom::operator - () {
+P2Atom& P2Atom::operator-() {
     complement2(true);
     return *this;
 }
 
-P2Atom& P2Atom::operator ! () {
+P2Atom& P2Atom::operator!() {
     logical_not(true);
     return *this;
 }
 
-P2Atom& P2Atom::operator ++ () {
+P2Atom& P2Atom::operator++() {
     unary_inc(true);
     return *this;
 }
 
-P2Atom& P2Atom::operator -- () {
+P2Atom& P2Atom::operator--() {
     unary_dec(true);
     return *this;
 }
 
-P2Atom& P2Atom::operator += (const P2Atom& other) {
+P2Atom& P2Atom::operator+=(const P2Atom& other) {
     arith_add(other);
     return *this;
 }
 
-P2Atom& P2Atom::operator -= (const P2Atom& other) {
+P2Atom& P2Atom::operator-=(const P2Atom& other) {
     arith_sub(other);
     return *this;
 }
 
-P2Atom& P2Atom::operator *= (const P2Atom& other) {
+P2Atom& P2Atom::operator*=(const P2Atom& other) {
     arith_mul(other);
     return *this;
 }

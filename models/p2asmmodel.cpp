@@ -474,7 +474,7 @@ QList<P2AsmModel::column_e> P2AsmModel::columns()
     return columns;
 }
 
-p2_opcode_format_e P2AsmModel::opcode_format() const
+p2_format_e P2AsmModel::opcode_format() const
 {
     return m_format;
 }
@@ -485,7 +485,7 @@ void P2AsmModel::invalidate()
     endResetModel();
 }
 
-void P2AsmModel::setOpcodeFormat(p2_opcode_format_e format)
+void P2AsmModel::setOpcodeFormat(p2_format_e format)
 {
     if (format == m_format)
         return;

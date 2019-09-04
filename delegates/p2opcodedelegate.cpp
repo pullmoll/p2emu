@@ -50,7 +50,7 @@ QStringList P2OpcodeDelegate::opcodeLines(const QModelIndex& index) const
     QVariant var = model->data(index, Qt::EditRole);
 
     const P2Opcode IR = qvariant_cast<P2Opcode>(var);
-    p2_opcode_format_e format = model->opcode_format();
+    p2_format_e format = model->opcode_format();
     QStringList text;
 
     if (IR.as_ir())

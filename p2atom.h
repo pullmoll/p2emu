@@ -138,6 +138,7 @@ public:
     bool set(p2_QUAD value);
     bool set(p2_REAL value);
 
+    QString str(p2_format_e fmt = fmt_hex) const;
     bool to_bool(bool *ok = nullptr) const;
     p2_BYTE to_byte(bool *ok = nullptr) const;
     p2_WORD to_word(bool *ok = nullptr) const;
@@ -172,7 +173,7 @@ public:
     void encode(const P2Atom& val);
     void decode(const P2Atom& val);
 
-    P2Atom& operator = (const P2Atom& other);
+    P2Atom& operator=(const P2Atom& other);
     bool operator==(const P2Atom& other);
     bool operator!=(const P2Atom& other);
     bool operator<(const P2Atom& other);

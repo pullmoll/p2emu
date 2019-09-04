@@ -59,17 +59,17 @@ public:
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 
     static QList<column_e> columns();
-    p2_opcode_format_e opcode_format() const { return m_format; }
+    p2_format_e opcode_format() const { return m_format; }
     QSize sizeHint(const QModelIndex& index, const QString& text = QString()) const;
 
 public slots:
     void invalidate();
-    void setOpcodeFormat(p2_opcode_format_e format);
+    void setOpcodeFormat(p2_format_e format);
     void setFont(const QFont& font);
 
 private:
     P2Dasm* m_dasm;
-    p2_opcode_format_e m_format;
+    p2_format_e m_format;
     QFont m_font;
     QHash<column_e,QString> m_header;
     QHash<column_e,QRgb> m_background;

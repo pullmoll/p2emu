@@ -1236,7 +1236,7 @@ typedef enum {
     fmt_byt,
     fmt_dec,
     fmt_hex,
-}   p2_opcode_format_e;
+}   p2_format_e;
 
 extern const QString template_str_origin;
 extern const QString template_str_address;
@@ -1270,9 +1270,9 @@ extern QString format_data_oct(const p2_LONG data, bool prefix = false);
 extern QString format_data_dec(const p2_LONG data);
 extern QString format_data_hex(const p2_LONG data, bool prefix = false);
 
-extern QString format_opcode(const p2_opcode_u& IR, const p2_opcode_format_e fmt = fmt_bin);
-extern QString format_data(const p2_opcode_u& IR, const p2_opcode_format_e fmt = fmt_bin, bool prefix = false);
-extern QString format_data(const p2_LONG data, const p2_opcode_format_e fmt = fmt_bin, bool prefix = false);
+extern QString format_opcode(const p2_opcode_u& IR, const p2_format_e fmt = fmt_bin);
+extern QString format_data(const p2_opcode_u& IR, const p2_format_e fmt = fmt_bin, bool prefix = false);
+extern QString format_data(const p2_LONG data, const p2_format_e fmt = fmt_bin, bool prefix = false);
 
 /**
  * @brief enumeration of token types

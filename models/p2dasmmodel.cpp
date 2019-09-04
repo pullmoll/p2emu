@@ -262,7 +262,7 @@ void P2DasmModel::invalidate()
     endResetModel();
 }
 
-void P2DasmModel::setOpcodeFormat(p2_opcode_format_e format)
+void P2DasmModel::setOpcodeFormat(p2_format_e format)
 {
     if (format == m_format)
         return;
