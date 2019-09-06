@@ -118,7 +118,7 @@ P2Symbol P2SymbolTableClass::symbol(const QString& name) const
     return m_symbols.value(name);
 }
 
-P2Atom::Type P2SymbolTableClass::type(const QString& name) const
+p2_union_e P2SymbolTableClass::type(const QString& name) const
 {
     return m_symbols.value(name).type();
 }

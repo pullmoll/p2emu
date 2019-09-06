@@ -123,7 +123,7 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
     const column_e column = static_cast<column_e>(index.column());
     const p2_LONG PC = static_cast<p2_LONG>(index.row());
     const p2_LONG addr = PC * 4;
-    p2_opcode_u IR = {m_dasm->rd_mem(addr)};
+    P2Opcode IR(m_dasm->rd_mem(addr), p2_ORG_ORGH_t(PC, addr));
     QString opcode;
     QString instruction;
     QString description;
@@ -145,7 +145,7 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
         case c_Opcode: // Opcode string
             {
                 known = m_dasm->dasm(PC, &opcode);
-                result = format_opcode(IR, m_format);
+                result = P2Opcode::format_opcode(IR, m_format);
             }
             break;
         case c_Instruction: // Disassembled instruction string
@@ -168,7 +168,7 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
     case Qt::ToolTipRole:
         switch (column) {
         case c_Instruction:
-            result = Doc.html_opcode(IR.opcode).join(QChar::LineFeed);
+            result = Doc.html_opcode(IR.opcode()).join(QChar::LineFeed);
             break;
         default:
             break;
@@ -244,6 +244,8 @@ QSize P2DasmModel::sizeHint(const QModelIndex& index, const QString& text) const
             return metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_dec : text);
         case fmt_hex:
             return metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_hex : text);
+        case fmt_doc:
+            return metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_doc : text);
         }
         break;
 

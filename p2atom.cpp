@@ -35,76 +35,63 @@
 #include "p2atom.h"
 #include "p2util.h"
 
-P2Atom::P2Atom(P2Atom::Type type)
-    : m_type(type)
-    , m_trait(None)
-    , m_data()
+P2Atom::P2Atom(p2_union_e type)
+    : m_trait(None)
+    , m_value()
 {
+    m_value.set_type(type);
 }
 
 P2Atom::P2Atom(const P2Atom& other)
-    : m_type(other.m_type)
-    , m_trait(None)
-    , m_data(other.m_data)
+    : m_trait(None)
+    , m_value(other.value())
 {
 }
 
-P2Atom::P2Atom(bool value, Type type)
-    : m_type(type)
-    , m_trait(None)
-    , m_data()
+P2Atom::P2Atom(bool value)
+    : m_trait(None)
+    , m_value(value)
 {
-    set_uint(m_type, value & 1);
 }
 
-P2Atom::P2Atom(p2_BYTE value, Type type)
-    : m_type(type)
-    , m_trait(None)
-    , m_data()
+P2Atom::P2Atom(p2_BYTE value)
+    : m_trait(None)
+    , m_value(value)
 {
-    set_uint(m_type, value);
 }
 
-P2Atom::P2Atom(p2_WORD value, Type type)
-    : m_type(type)
-    , m_trait(None)
-    , m_data()
+P2Atom::P2Atom(p2_WORD value)
+    : m_trait(None)
+    , m_value(value)
 {
-    set_uint(m_type, value);
 }
 
-P2Atom::P2Atom(p2_LONG value, Type type)
-    : m_type(type)
-    , m_trait(None)
-    , m_data()
+P2Atom::P2Atom(p2_LONG value)
+    : m_trait(None)
+    , m_value(value)
 {
-    set_uint(m_type, value);
 }
 
-P2Atom::P2Atom(p2_QUAD value, Type type)
-    : m_type(type)
-    , m_trait(None)
-    , m_data()
+P2Atom::P2Atom(p2_QUAD value)
+    : m_trait(None)
+    , m_value(value)
 {
-    set_uint(m_type, value);
 }
 
-P2Atom::P2Atom(p2_REAL value, P2Atom::Type type)
-    : m_type(type)
-    , m_trait(None)
-    , m_data()
+P2Atom::P2Atom(p2_REAL value)
+    : m_trait(None)
+    , m_value(value)
 {
-    set_real(m_type, value);
 }
 
 /**
  * @brief Clear the atom
  */
-void P2Atom::clear(Type type)
+void P2Atom::clear(p2_union_e type)
 {
-    m_data.clear();
-    m_type = type;
     m_trait = None;
+    m_value.clear();
+    m_value.set_type(type);
 }
 
 /**
@@ -113,7 +100,7 @@ void P2Atom::clear(Type type)
  */
 bool P2Atom::isNull() const
 {
-    return m_type == Invalid;
+    return ut_Invalid == m_value.type();
 }
 
 /**
@@ -122,7 +109,23 @@ bool P2Atom::isNull() const
  */
 bool P2Atom::isEmpty() const
 {
-    return m_data.isEmpty();
+    bool result = false;
+    switch (m_value.type()) {
+    case ut_Invalid:
+        result = true;
+        break;
+    case ut_Bool:
+    case ut_Byte:
+    case ut_Word:
+    case ut_Addr:
+    case ut_Long:
+    case ut_Quad:
+    case ut_Real:
+        break;
+    case ut_String:
+        result = m_value.isEmpty();
+    }
+    return result;
 }
 
 /**
@@ -131,29 +134,7 @@ bool P2Atom::isEmpty() const
  */
 bool P2Atom::isZero() const
 {
-    if (isNull() || isEmpty())
-        return true;
-    switch (m_type) {
-    case Invalid:
-        return true;
-    case Bool:
-        return false == to_bool();
-    case Byte:
-        return 0 == to_byte();
-    case Word:
-        return 0 == to_word();
-    case Addr:
-        return 0 == to_long();
-    case Long:
-        return 0 == to_long();
-    case Quad:
-        return 0 == to_quad();
-    case Real:
-        return qFuzzyIsNull(to_real());
-    case String:
-        break;
-    }
-    return false;
+    return m_value.is_zero();
 }
 
 /**
@@ -162,14 +143,14 @@ bool P2Atom::isZero() const
  */
 bool P2Atom::isValid() const
 {
-    return m_type != Invalid;
+    return ut_Invalid != m_value.type();
 }
 
 /**
  * @brief Return the trait of the atom
  * @return Enumeration value from Trait
  */
-P2Atom::Trait P2Atom::trait() const
+P2Atom::Traits P2Atom::trait() const
 {
     return m_trait;
 }
@@ -180,85 +161,40 @@ P2Atom::Trait P2Atom::trait() const
  */
 int P2Atom::size() const
 {
-    return m_data.size();
+    return m_value.size();
 }
 
 p2_LONG P2Atom::usize() const
 {
-    return static_cast<p2_LONG>(m_data.size());
+    return static_cast<p2_LONG>(m_value.size());
 }
 
 int P2Atom::count() const
 {
-    int count = 0;
-    switch (m_type) {
-    case Invalid:
-        break;
-    case Bool:
-    case Byte:
-    case String:
-        count = (m_data.size() + sz_BYTE - 1) / sz_BYTE;
-        break;
-    case Word:
-        count = (m_data.size() + sz_WORD - 1) / sz_WORD;
-        break;
-    case Addr:
-        count = (m_data.size() + sz_LONG - 1) / sz_LONG;
-        break;
-    case Long:
-        count = (m_data.size() + sz_LONG - 1) / sz_LONG;
-        break;
-    case Quad:
-        count = (m_data.size() + sz_QUAD - 1) / sz_QUAD;
-        break;
-    case Real:
-        count = (m_data.size() + sz_REAL - 1) / sz_REAL;
-        break;
-    }
-    return static_cast<int>(count);
+    return m_value.size() / m_value.unit();
 }
 
 /**
  * @brief Return the type of the atom, i.e. max size inserted
  * @return One of the %Type enumeration values
  */
-P2Atom::Type P2Atom::type() const
+p2_union_e P2Atom::type() const
 {
-    return m_type;
+    return m_value.type();
 }
 
 const QString P2Atom::type_name() const
 {
-    switch (m_type) {
-    case Invalid:
-        return QStringLiteral("Invalid");
-    case Bool:
-        return QStringLiteral("Bool");
-    case Byte:
-        return QStringLiteral("Byte");
-    case Word:
-        return QStringLiteral("Word");
-    case Addr:
-        return QStringLiteral("PC");
-    case Long:
-        return QStringLiteral("Long");
-    case Quad:
-        return QStringLiteral("Quad");
-    case Real:
-        return QStringLiteral("Real");
-    case String:
-        return QStringLiteral("String");
-    }
-    return QStringLiteral("<invalid>");
+    return m_value.type_name();
 }
 
 /**
  * @brief Set the type of the atom
  * @brie type one of the %Type enumeration values
  */
-void P2Atom::set_type(Type type)
+void P2Atom::set_type(p2_union_e type)
 {
-    m_type = type;
+    m_value.set_type(type);
 }
 
 /**
@@ -266,7 +202,7 @@ void P2Atom::set_type(Type type)
  * @param trait new trait to set
  * @return true if set, false if not changed
  */
-bool P2Atom::set_trait(P2Atom::Trait trait)
+bool P2Atom::set_trait(P2Atom::Traits trait)
 {
     if (trait == m_trait)
         return false;
@@ -279,147 +215,65 @@ bool P2Atom::set_trait(P2Atom::Trait trait)
  * @param trait trait to add
  * @return true if added, false if not changed
  */
-bool P2Atom::add_trait(P2Atom::Trait trait)
+bool P2Atom::add_trait(P2Atom::Traits trait)
 {
     if (m_trait & trait)
         return false;
-    m_trait = static_cast<Trait>(m_trait | trait);
+    m_trait = static_cast<Traits>(m_trait | trait);
     return true;
 }
 
-/**
- * @brief Append a number of bytes to the data
- * @param type new type of the atom
- * @param value with lower %nbits valid
- * @return truen on success, or false on error
- */
-bool P2Atom::append_uint(Type type, p2_QUAD value)
+const P2Union& P2Atom::value() const
 {
-    const int pos = m_data.size();
-    switch (type) {
-    case Invalid:
-        return false;
-    case Bool:
-        m_data.resize(pos+1);
-        m_data[pos] = static_cast<p2_BYTE>(value & 1);
-        break;
-    case Byte:
-        m_data.resize(pos+1);
-        m_data[pos] = static_cast<p2_BYTE>(value);
-        break;
-    case Word:
-        m_data.resize(pos+2);
-        m_data[pos+0] = static_cast<p2_BYTE>(value >>  0);
-        m_data[pos+1] = static_cast<p2_BYTE>(value >>  8);
-        break;
-    case Addr:
-        m_data.resize(pos+4);
-        m_data[pos+0] = static_cast<p2_BYTE>(value >>  0);
-        m_data[pos+1] = static_cast<p2_BYTE>(value >>  8);
-        m_data[pos+2] = static_cast<p2_BYTE>(value >> 16);
-        m_data[pos+3] = static_cast<p2_BYTE>(value >> 24);
-        break;
-    case Long:
-        m_data.resize(pos+4);
-        m_data[pos+0] = static_cast<p2_BYTE>(value >>  0);
-        m_data[pos+1] = static_cast<p2_BYTE>(value >>  8);
-        m_data[pos+2] = static_cast<p2_BYTE>(value >> 16);
-        m_data[pos+3] = static_cast<p2_BYTE>(value >> 24);
-        break;
-    case Quad:
-        m_data.resize(pos+8);
-        m_data[pos+0] = static_cast<p2_BYTE>(value >>  0);
-        m_data[pos+1] = static_cast<p2_BYTE>(value >>  8);
-        m_data[pos+2] = static_cast<p2_BYTE>(value >> 16);
-        m_data[pos+3] = static_cast<p2_BYTE>(value >> 24);
-        m_data[pos+4] = static_cast<p2_BYTE>(value >> 32);
-        m_data[pos+5] = static_cast<p2_BYTE>(value >> 40);
-        m_data[pos+6] = static_cast<p2_BYTE>(value >> 48);
-        m_data[pos+7] = static_cast<p2_BYTE>(value >> 56);
-        break;
-    case Real:
-        return append_real(Real, static_cast<p2_REAL>(value));
-    case String:
-        m_data += static_cast<p2_BYTE>(value);
-        value >>= 8;
-        for (int i = 1; i < 8 && value != 0; i++, value >>= 8)
-            m_data += static_cast<p2_BYTE>(value);
-        break;
-    }
-    return true;
-}
-
-/**
- * @brief Append a number of bytes to the data
- * @param type new type of the atom
- * @param value with lower %nbits valid
- * @return truen on success, or false on error
- */
-bool P2Atom::append_real(Type type, p2_REAL value)
-{
-    const int pos = m_data.size();
-    p2_QUAD quad = static_cast<p2_QUAD>(value);
-    switch (type) {
-    case Invalid:
-        return false;
-    case Bool: case Byte: case Word: case Addr:
-    case Long: case Quad: case String:
-        return append_uint(type, quad);
-    case Real:
-        {
-            const p2_BYTE* data = reinterpret_cast<const p2_BYTE*>(&value);
-            m_data.resize(pos + sz_REAL);
-            for (int i = 0; i < sz_REAL; i++)
-                m_data[pos+i] = data[i];
-        }
-        break;
-    }
-    return true;
-}
-
-bool P2Atom::append_bits(int nbits, p2_QUAD value)
-{
-    if (nbits <= 0)
-        return false;
-    if (nbits <= 8)
-        return append_uint(Byte, value);
-    if (nbits <= 16)
-        return append_uint(Word, value);
-    if (nbits <= 32)
-        return append_uint(Long, value);
-    if (nbits <= 64)
-        return append_uint(Quad, value);
-    return false;
-}
-
-/**
- * @brief Append a value using the current m_type
- * @param value value to append
- * @return true on success, or false on error
- */
-bool P2Atom::append(p2_QUAD value)
-{
-    return append_uint(m_type, value);
-}
-
-/**
- * @brief Append a value using the current m_type
- * @param value value to append
- * @return true on success, or false on error
- */
-bool P2Atom::append(p2_REAL value)
-{
-    return append_real(m_type, value);
+    return m_value;
 }
 
 /**
  * @brief Append another P2Atom to this atom
- * @param atom atom to append
+ * @param atom to append
  * @return true on success, or false on error
  */
-bool P2Atom::append(const P2Atom& atom)
+bool P2Atom::add_atom(const P2Atom& atom)
 {
-    m_data += atom.m_data;
+    const p2_union_e type = atom.type();
+    m_value.add(atom.value());
+    m_value.set_type(type);
+    return true;
+}
+
+/**
+ * @brief Append a QVector<p2_BYTE> to this atom
+ * @param bytes to append
+ * @return true on success, or false on error
+ */
+bool P2Atom::add_bytes(const p2_BYTES& bytes)
+{
+    m_value.add_bytes(QVariant::fromValue(bytes));
+    m_value.set_type(ut_String);
+    return true;
+}
+
+/**
+ * @brief Append a QVector<p2_WORD> to this atom
+ * @param words to append
+ * @return true on success, or false on error
+ */
+bool P2Atom::add_words(const p2_WORDS& words)
+{
+    m_value.add_words(QVariant::fromValue(words));
+    m_value.set_type(ut_String);
+    return true;
+}
+
+/**
+ * @brief Append a QVector<p2_LONG> to this atom
+ * @param longs to append
+ * @return true on success, or false on error
+ */
+bool P2Atom::add_longs(const p2_LONGS& longs)
+{
+    m_value.add_longs(QVariant::fromValue(longs));
+    m_value.set_type(ut_String);
     return true;
 }
 
@@ -428,138 +282,12 @@ bool P2Atom::append(const P2Atom& atom)
  * @param data QByteArray to append
  * @return true on success, or false on error
  */
-bool P2Atom::append(const QByteArray& value)
+bool P2Atom::add_array(const QByteArray& value)
 {
-    const int pos = m_data.size();
-    const int size = value.size();
-    m_data.resize(pos+size);
-    if (size > 0)
-        memcpy(m_data.data(), value.constData(), static_cast<size_t>(size));
+    p2_BYTES bytes(value.size());
+    memcpy(bytes.data(), value.constData(), static_cast<size_t>(value.size()));
+    m_value.set_bytes(QVariant::fromValue(bytes));
     return true;
-}
-
-/**
- * @brief Set the m_data to a new value
- * @param type Type of the data to set
- * @param value with lower bits depending on type
- * @return true on success, or false on error
- */
-bool P2Atom::set_uint(Type type, p2_QUAD value)
-{
-    switch (type) {
-    case Invalid:
-        return false;
-    case Bool:
-        m_type = type;
-        m_data.resize(1);
-        m_data[0] = static_cast<p2_BYTE>(value & 1);
-        break;
-    case Byte:
-        m_type = type;
-        m_data.resize(1);
-        m_data[0] = static_cast<p2_BYTE>(value);
-        break;
-    case Word:
-        m_type = type;
-        m_data.resize(2);
-        m_data[0] = static_cast<p2_BYTE>(value >> 0);
-        m_data[1] = static_cast<p2_BYTE>(value >> 8);
-        break;
-    case Addr:
-        m_type = type;
-        m_data.resize(4);
-        m_data[0] = static_cast<p2_BYTE>(value >>  0);
-        m_data[1] = static_cast<p2_BYTE>(value >>  8);
-        m_data[2] = static_cast<p2_BYTE>(value >> 16);
-        m_data[3] = static_cast<p2_BYTE>(value >> 24);
-        break;
-    case Long:
-        m_type = type;
-        m_data.resize(4);
-        m_data[0] = static_cast<p2_BYTE>(value >>  0);
-        m_data[1] = static_cast<p2_BYTE>(value >>  8);
-        m_data[2] = static_cast<p2_BYTE>(value >> 16);
-        m_data[3] = static_cast<p2_BYTE>(value >> 24);
-        break;
-    case Quad:
-        m_type = type;
-        m_data.resize(8);
-        m_data[0] = static_cast<p2_BYTE>(value >>  0);
-        m_data[1] = static_cast<p2_BYTE>(value >>  8);
-        m_data[2] = static_cast<p2_BYTE>(value >> 16);
-        m_data[3] = static_cast<p2_BYTE>(value >> 24);
-        m_data[4] = static_cast<p2_BYTE>(value >> 32);
-        m_data[5] = static_cast<p2_BYTE>(value >> 40);
-        m_data[6] = static_cast<p2_BYTE>(value >> 48);
-        m_data[7] = static_cast<p2_BYTE>(value >> 56);
-        break;
-    case Real:
-        return set_real(Real, static_cast<p2_REAL>(value));
-    case String:
-        m_type = type;
-        m_data.resize(1);
-        m_data[0] = static_cast<p2_BYTE>(value);
-        value >>= 8;
-        for (int i = 1; i < 8 && value != 0; i++, value >>= 8) {
-            m_data.resize(i+1);
-            m_data[i] = static_cast<p2_BYTE>(value);
-        }
-        break;
-    }
-    return true;
-}
-
-bool P2Atom::set_real(P2Atom::Type type, p2_REAL value)
-{
-    p2_QUAD quad = static_cast<p2_QUAD>(value);
-    switch (type) {
-    case Invalid:
-        return false;
-    case Bool: case Byte: case Word: case Addr:
-    case Long: case Quad: case String:
-        return set_uint(type, quad);
-    case Real:
-        // FIXME: endianness independent float values?
-        m_type = Real;
-        m_data.resize(sz_REAL);
-        memcpy(m_data.data(), reinterpret_cast<p2_BYTE*>(&value), sz_REAL);
-        break;
-    }
-    return true;
-}
-
-/**
- * @brief Set the data to a new value
- * @param nbits number of bits to set
- * @param value with lower %nbits valid
- * @return true on success, or false on error
- */
-bool P2Atom::set(int nbits, p2_QUAD value)
-{
-    m_data.clear();
-    return append_bits(nbits, value);
-}
-
-/**
- * @brief Set the data to a new value keeping the %m_type
- * @param value new value
- * @return true on success, or false on error
- */
-bool P2Atom::set(p2_QUAD value)
-{
-    m_data.clear();
-    return append_uint(m_type, value);
-}
-
-/**
- * @brief Set the data to a new value keeping the %m_type
- * @param value new value
- * @return true on success, or false on error
- */
-bool P2Atom::set(p2_REAL value)
-{
-    m_data.clear();
-    return append_real(m_type, value);
 }
 
 /**
@@ -569,130 +297,130 @@ bool P2Atom::set(p2_REAL value)
 QString P2Atom::str(p2_format_e fmt) const
 {
     QString result;
-    switch (m_type) {
-    case Invalid:
+    switch (m_value.type()) {
+    case ut_Invalid:
         result = QLatin1String("<invalid>");
         break;
-    case Bool:
-        result = QString("<%1> %1")
+    case ut_Bool:
+        result = QString("<%1> %2")
                  .arg(type_name())
-                 .arg(to_bool() ? "true" : "false");
+                 .arg(get<bool>() ? "true" : "false");
         break;
-    case Byte:
+    case ut_Byte:
         switch (fmt) {
         case fmt_dec:
             result = QString("<%1> %2")
                      .arg(type_name())
-                     .arg(to_byte());
+                     .arg(get<p2_BYTE>());
             break;
         case fmt_bin:
             result = QString("<%1> %%2")
                      .arg(type_name())
-                     .arg(to_byte(), 8, 2, QChar('0'));
+                     .arg(get<p2_BYTE>(), 8, 2, QChar('0'));
             break;
         case fmt_byt:
         case fmt_hex:
             result = QString("<%1> $%2")
                      .arg(type_name())
-                     .arg(to_byte(), 2, 16, QChar('0'));
+                     .arg(get<p2_BYTE>(), 2, 16, QChar('0'));
         }
         break;
-    case Word:
+    case ut_Word:
         switch (fmt) {
         case fmt_dec:
             result = QString("<%1> %2")
                      .arg(type_name())
-                     .arg(to_word());
+                     .arg(get<p2_WORD>());
             break;
         case fmt_bin:
             result = QString("<%1> %%2_%3")
                      .arg(type_name())
-                     .arg(to_word() >> 8, 8, 2, QChar('0'))
-                     .arg(to_word() & 0xff, 8, 2, QChar('0'));
+                     .arg(get<p2_WORD>() >> 8, 8, 2, QChar('0'))
+                     .arg(get<p2_WORD>() & 0xff, 8, 2, QChar('0'));
             break;
         case fmt_byt:
             result = QString("<%1> $%2 $%3")
                      .arg(type_name())
-                     .arg(to_word() >> 8, 2, 16, QChar('0'))
-                     .arg(to_word() & 0xff, 2, 16, QChar('0'));
+                     .arg(get<p2_WORD>() >> 8, 2, 16, QChar('0'))
+                     .arg(get<p2_WORD>() & 0xff, 2, 16, QChar('0'));
             break;
         case fmt_hex:
             result = QString("<%1> $%2")
                      .arg(type_name())
-                     .arg(to_word(), 4, 16, QChar('0'));
+                     .arg(get<p2_WORD>(), 4, 16, QChar('0'));
         }
         break;
-    case Addr:
-    case Long:
+    case ut_Addr:
+    case ut_Long:
         switch (fmt) {
         case fmt_dec:
             result = QString("<%1> %2")
                      .arg(type_name())
-                     .arg(to_long());
+                     .arg(get<p2_LONG>());
             break;
         case fmt_bin:
             result = QString("<%1> %%2_%3_%4_%5")
                      .arg(type_name())
-                     .arg((to_long() >> 24) & 0xff, 8, 2, QChar('0'))
-                     .arg((to_long() >> 16) & 0xff, 8, 2, QChar('0'))
-                     .arg((to_long() >>  8) & 0xff, 8, 2, QChar('0'))
-                     .arg((to_long() >>  0) & 0xff, 8, 2, QChar('0'));
+                     .arg((get<p2_LONG>() >> 24) & 0xff, 8, 2, QChar('0'))
+                     .arg((get<p2_LONG>() >> 16) & 0xff, 8, 2, QChar('0'))
+                     .arg((get<p2_LONG>() >>  8) & 0xff, 8, 2, QChar('0'))
+                     .arg((get<p2_LONG>() >>  0) & 0xff, 8, 2, QChar('0'));
             break;
         case fmt_byt:
             result = QString("<%1> $%2 $%3 $%4 $%5")
                      .arg(type_name())
-                     .arg((to_long() >> 24) & 0xff, 2, 16, QChar('0'))
-                     .arg((to_long() >> 16) & 0xff, 2, 16, QChar('0'))
-                     .arg((to_long() >>  8) & 0xff, 2, 16, QChar('0'))
-                     .arg((to_long() >>  0) & 0xff, 2, 16, QChar('0'));
+                     .arg((get<p2_LONG>() >> 24) & 0xff, 2, 16, QChar('0'))
+                     .arg((get<p2_LONG>() >> 16) & 0xff, 2, 16, QChar('0'))
+                     .arg((get<p2_LONG>() >>  8) & 0xff, 2, 16, QChar('0'))
+                     .arg((get<p2_LONG>() >>  0) & 0xff, 2, 16, QChar('0'));
             break;
         case fmt_hex:
             result = QString("<%1> $%2")
                      .arg(type_name())
-                     .arg(to_long(), 8, 16, QChar('0'));
+                     .arg(get<p2_LONG>(), 8, 16, QChar('0'));
         }
         break;
-    case Quad:
+    case ut_Quad:
         switch (fmt) {
         case fmt_dec:
             result = QString("<%1> %2")
                      .arg(type_name())
-                     .arg(to_quad());
+                     .arg(get<p2_QUAD>());
             break;
         case fmt_bin:
             result = QString("<%1> %%2_%3_%4_%5_%7_%8_%9_%10")
                      .arg(type_name())
-                     .arg((to_quad() >> 56) & 0xff, 8, 2, QChar('0'))
-                     .arg((to_quad() >> 48) & 0xff, 8, 2, QChar('0'))
-                     .arg((to_quad() >> 40) & 0xff, 8, 2, QChar('0'))
-                     .arg((to_quad() >> 32) & 0xff, 8, 2, QChar('0'))
-                     .arg((to_quad() >> 24) & 0xff, 8, 2, QChar('0'))
-                     .arg((to_quad() >> 16) & 0xff, 8, 2, QChar('0'))
-                     .arg((to_quad() >>  8) & 0xff, 8, 2, QChar('0'))
-                     .arg((to_quad() >>  0) & 0xff, 8, 2, QChar('0'));
+                     .arg((get<p2_QUAD>() >> 56) & 0xff, 8, 2, QChar('0'))
+                     .arg((get<p2_QUAD>() >> 48) & 0xff, 8, 2, QChar('0'))
+                     .arg((get<p2_QUAD>() >> 40) & 0xff, 8, 2, QChar('0'))
+                     .arg((get<p2_QUAD>() >> 32) & 0xff, 8, 2, QChar('0'))
+                     .arg((get<p2_QUAD>() >> 24) & 0xff, 8, 2, QChar('0'))
+                     .arg((get<p2_QUAD>() >> 16) & 0xff, 8, 2, QChar('0'))
+                     .arg((get<p2_QUAD>() >>  8) & 0xff, 8, 2, QChar('0'))
+                     .arg((get<p2_QUAD>() >>  0) & 0xff, 8, 2, QChar('0'));
             break;
         case fmt_byt:
             result = QString("<%1> $%2 $%3 $%4 $%5 $%7 $%8 $%9 $%10")
                      .arg(type_name())
-                     .arg((to_quad() >> 56) & 0xff, 2, 16, QChar('0'))
-                     .arg((to_quad() >> 48) & 0xff, 2, 16, QChar('0'))
-                     .arg((to_quad() >> 40) & 0xff, 2, 16, QChar('0'))
-                     .arg((to_quad() >> 32) & 0xff, 2, 16, QChar('0'))
-                     .arg((to_quad() >> 24) & 0xff, 2, 16, QChar('0'))
-                     .arg((to_quad() >> 16) & 0xff, 2, 16, QChar('0'))
-                     .arg((to_quad() >>  8) & 0xff, 2, 16, QChar('0'))
-                     .arg((to_quad() >>  0) & 0xff, 2, 16, QChar('0'));
+                     .arg((get<p2_QUAD>() >> 56) & 0xff, 2, 16, QChar('0'))
+                     .arg((get<p2_QUAD>() >> 48) & 0xff, 2, 16, QChar('0'))
+                     .arg((get<p2_QUAD>() >> 40) & 0xff, 2, 16, QChar('0'))
+                     .arg((get<p2_QUAD>() >> 32) & 0xff, 2, 16, QChar('0'))
+                     .arg((get<p2_QUAD>() >> 24) & 0xff, 2, 16, QChar('0'))
+                     .arg((get<p2_QUAD>() >> 16) & 0xff, 2, 16, QChar('0'))
+                     .arg((get<p2_QUAD>() >>  8) & 0xff, 2, 16, QChar('0'))
+                     .arg((get<p2_QUAD>() >>  0) & 0xff, 2, 16, QChar('0'));
             break;
         case fmt_hex:
             result = QString("<%1> $%2")
                      .arg(type_name())
-                     .arg(to_quad(), 16, 16, QChar('0'));
+                     .arg(get<p2_QUAD>(), 16, 16, QChar('0'));
         }
         break;
-    case Real:
-        result = QString("<Real> %1").arg(to_real(), 0, 'f');
+    case ut_Real:
+        result = QString("<Real> %1").arg(to_real(), 4, 'f');
         break;
-    case String:
+    case ut_String:
         result = QString("<String> %1").arg(to_string());
         break;
     }
@@ -708,34 +436,30 @@ void P2Atom::complement1(bool flag)
     if (!flag)
         return;
 
-    uchar* data = reinterpret_cast<uchar *>(m_data.data());
-
-    switch (m_type) {
-    case Invalid:
+    switch (m_value.type()) {
+    case ut_Invalid:
         break;
-    case Bool:
-        set_uint(m_type, !to_bool());
+    case ut_Bool:
+        m_value.set_bool(!m_value.get<bool>());
         break;
-    case Byte:
-        set_uint(m_type, ~to_byte());
+    case ut_Byte:
+        m_value.set_byte(~m_value.get<p2_BYTE>());
         break;
-    case Word:
-        set_uint(m_type, ~to_word());
+    case ut_Word:
+        m_value.set_word(~m_value.get<p2_WORD>());
         break;
-    case Addr:
-        set_uint(m_type, ~to_long());
+    case ut_Addr:
+        m_value.set_addr(~m_value.get<p2_LONG>());
         break;
-    case Long:
-        set_uint(m_type, ~to_long());
+    case ut_Long:
+        m_value.set_long(~m_value.get<p2_LONG>());
         break;
-    case Quad:
-        set_uint(m_type, ~to_quad());
+    case ut_Quad:
+        m_value.set_quad(~m_value.get<p2_QUAD>());
         break;
-    case Real:
-        break;
-    case String:
-        for (int i = 0; i < m_data.size(); i++)
-            data[i] ^= 0xff;
+    case ut_Real:
+    case ut_String:
+        Q_ASSERT(m_value.type() != ut_Invalid);
         break;
     }
 }
@@ -749,35 +473,33 @@ void P2Atom::complement2(bool flag)
     if (!flag)
         return;
 
-    switch (m_type) {
-    case Invalid:
+    switch (m_value.type()) {
+    case ut_Invalid:
         break;
-    case Bool:
-        set_uint(m_type, !to_bool());
+    case ut_Bool:
+        m_value.set_bool(!m_value.get<bool>());
         break;
-    case Byte:
-        set_uint(m_type, ~to_byte() + 1);
+    case ut_Byte:
+        m_value.set_byte(-m_value.get<p2_BYTE>());
         break;
-    case Word:
-        set_uint(m_type, ~to_word() + 1);
+    case ut_Word:
+        m_value.set_word(-m_value.get<p2_WORD>());
         break;
-    case Addr:
-        set_uint(m_type, ~to_long() + 1);
+    case ut_Addr:
+        m_value.set_addr(-m_value.get<p2_LONG>());
         break;
-    case Long:
-        set_uint(m_type, ~to_long() + 1);
+    case ut_Long:
+        m_value.set_long(-m_value.get<p2_LONG>());
         break;
-    case Quad:
-        set_uint(m_type, ~to_quad() + 1);
+    case ut_Quad:
+        m_value.set_quad(-m_value.get<p2_QUAD>());
         break;
-    case Real:
-        set_real(m_type, -to_real());
+    case ut_Real:
+        m_value.set_real(-m_value.get<p2_REAL>());
         break;
-    case String:
-        // 1's complement
+    case ut_String:
         complement1(true);
-        // add 1
-        arith_add(P2Atom(1u, m_type));
+        unary_inc(1);
         break;
     }
 }
@@ -791,39 +513,32 @@ void P2Atom::logical_not(bool flag)
     if (!flag)
         return;
 
-    switch (m_type) {
-    case Invalid:
+    switch (m_value.type()) {
+    case ut_Invalid:
         break;
-    case Bool:
-        set_uint(m_type, !to_bool());
+    case ut_Bool:
+        m_value.set_bool(!m_value.get<bool>());
         break;
-    case Byte:
-        set_uint(m_type, 0 == to_byte() ? 1 : 0);
+    case ut_Byte:
+        m_value.set_byte(!m_value.get<p2_BYTE>());
         break;
-    case Word:
-        set_uint(m_type, 0 == to_word() ? 1 : 0);
+    case ut_Word:
+        m_value.set_word(!m_value.get<p2_WORD>());
         break;
-    case Addr:
-        set_uint(m_type, 0 == to_long() ? 1 : 0);
+    case ut_Addr:
+        m_value.set_addr(!m_value.get<p2_LONG>());
         break;
-    case Long:
-        set_uint(m_type, 0 == to_long() ? 1 : 0);
+    case ut_Long:
+        m_value.set_long(!m_value.get<p2_LONG>());
         break;
-    case Quad:
-        set_uint(m_type, 0 == to_quad() ? 1 : 0);
+    case ut_Quad:
+        m_value.set_quad(!m_value.get<p2_QUAD>());
         break;
-    case Real:
-        set_real(m_type, qFuzzyIsNull(to_real()) ? 1.0 : 0.0);
+    case ut_Real:
+        m_value.set_real(!qRound(m_value.get<p2_REAL>()));
         break;
-    case String:
-        {
-            bool zero = true;
-            for (int i = 0; zero && i < m_data.size(); i++)
-                if (m_data[i])
-                    zero = false;
-            m_data.resize(1);
-            m_data[0] = zero;
-        }
+    case ut_String:
+        Q_ASSERT(m_value.type() != ut_Invalid);
         break;
     }
 }
@@ -836,83 +551,44 @@ void P2Atom::make_bool(bool flag)
 {
     if (!flag)
         return;
-
-    switch (m_type) {
-    case Invalid:
-        break;
-    case Bool:
-        set(Bool, to_bool());
-        break;
-    case Byte:
-        set(Bool, 0 != to_byte() ? 1 : 0);
-        break;
-    case Word:
-        set(Bool, 0 != to_word() ? 1 : 0);
-        break;
-    case Addr:
-        set(Bool, 0 != to_long() ? 1 : 0);
-        break;
-    case Long:
-        set(Bool, 0 != to_long() ? 1 : 0);
-        break;
-    case Quad:
-        set(Bool, 0 != to_quad() ? 1 : 0);
-        break;
-    case Real:
-        set_real(m_type, qFuzzyIsNull(to_real()) ? 0.0 : 1.0);
-        break;
-    case String:
-        set(Bool, to_bool());
-        break;
-    }
+    m_value.set(!m_value.is_zero());
 }
 
 /**
  * @brief Set atom to its pre/post decrement value
  * @param flag do the decrement if true, leave unchanged otherwise
  */
-void P2Atom::unary_dec(const P2Atom& val)
+void P2Atom::unary_dec(const p2_LONG val)
 {
-    if (val.isNull())
+    if (0 == val)
         return;
 
-    switch (m_type) {
-    case Invalid:
+    switch (m_value.type()) {
+    case ut_Invalid:
         break;
-    case Bool:
-        set_uint(m_type, !to_bool());
+    case ut_Bool:
+        m_value.set_bool((m_value.get<bool>() - val) & 1 ? true : false);
         break;
-    case Byte:
-        set_uint(m_type, to_byte() - val.to_byte());
+    case ut_Byte:
+        m_value.set_byte(m_value.get<p2_BYTE>() - val);
         break;
-    case Word:
-        set_uint(m_type, to_word() - val.to_word());
+    case ut_Word:
+        m_value.set_word(m_value.get<p2_WORD>() - val);
         break;
-    case Addr:
-        set_uint(m_type, to_long() - val.to_long());
+    case ut_Addr:
+        m_value.set_addr(m_value.get<p2_LONG>() - val);
         break;
-    case Long:
-        set_uint(m_type, to_long() - val.to_long());
+    case ut_Long:
+        m_value.set_long(m_value.get<p2_LONG>() - val);
         break;
-    case Quad:
-        set_uint(m_type, to_quad() - val.to_quad());
+    case ut_Quad:
+        m_value.set_quad(m_value.get<p2_QUAD>() - val);
         break;
-    case Real:
-        set_real(m_type, to_real() - val.to_real());
+    case ut_Real:
+        m_value.set_real(m_value.get<p2_REAL>() - val);
         break;
-    case String:
-        {
-            p2_LONG value = val.to_long();
-            uint cy = 0;
-            for (int i = 0; i < size(); i++) {
-                const uint byte = m_data[i] - value - cy;
-                cy = static_cast<uint>(byte >> 8);
-                m_data[i] = static_cast<p2_BYTE>(byte);
-                value >>= 8;
-            }
-            if (cy)
-                m_data.append(static_cast<p2_BYTE>(cy));
-        }
+    case ut_String:
+        Q_ASSERT(m_value.type() != ut_Invalid);
         break;
     }
 }
@@ -921,48 +597,37 @@ void P2Atom::unary_dec(const P2Atom& val)
  * @brief Set atom to its pre/post increment value
  * @param flag do the increment if true, leave unchanged otherwise
  */
-void P2Atom::unary_inc(const P2Atom& val)
+void P2Atom::unary_inc(const p2_LONG val)
 {
-    if (val.isNull())
+    if (0 == val)
         return;
 
-    switch (m_type) {
-    case Invalid:
+    switch (m_value.type()) {
+    case ut_Invalid:
         break;
-    case Bool:
-        set_uint(m_type, !to_bool());
+    case ut_Bool:
+        m_value.set_bool((m_value.get<bool>() + val) & 1 ? true : false);
         break;
-    case Byte:
-        set_uint(m_type, to_byte() + val.to_byte());
+    case ut_Byte:
+        m_value.set_byte(m_value.get<p2_BYTE>() + val);
         break;
-    case Word:
-        set_uint(m_type, to_word() + val.to_word());
+    case ut_Word:
+        m_value.set_word(m_value.get<p2_WORD>() + val);
         break;
-    case Addr:
-        set_uint(m_type, to_long() + val.to_long());
+    case ut_Addr:
+        m_value.set_addr(m_value.get<p2_LONG>() + val);
         break;
-    case Long:
-        set_uint(m_type, to_long() + val.to_long());
+    case ut_Long:
+        m_value.set_long(m_value.get<p2_LONG>() + val);
         break;
-    case Quad:
-        set_uint(m_type, to_quad() + val.to_quad());
+    case ut_Quad:
+        m_value.set_quad(m_value.get<p2_QUAD>() + val);
         break;
-    case Real:
-        set_real(m_type, to_real() + val.to_real());
+    case ut_Real:
+        m_value.set_real(m_value.get<p2_REAL>() + val);
         break;
-    case String:
-        {
-            p2_LONG value = val.to_long();
-            uint cy = 0;
-            for (int i = 0; i < size(); i++) {
-                const uint byte = m_data[i] + value + cy;
-                cy = static_cast<uint>(byte >> 8);
-                m_data[i] = static_cast<p2_BYTE>(byte);
-                value >>= 8;
-            }
-            if (cy)
-                m_data.append(static_cast<p2_BYTE>(cy));
-        }
+    case ut_String:
+        Q_ASSERT(m_value.type() != ut_Invalid);
         break;
     }
 }
@@ -971,178 +636,201 @@ void P2Atom::unary_inc(const P2Atom& val)
  * @brief Set atom to its multiplication result value
  * @param val value to multiply by
  */
-void P2Atom::arith_mul(const P2Atom& val)
+void P2Atom::arith_mul(const P2Atom& atom)
 {
-    if (val.isNull())
+    if (atom.isNull())
         return;
 
-    switch (m_type) {
-    case Invalid:
+    switch (m_value.type()) {
+    case ut_Invalid:
         break;
-    case Bool:
-        set_uint(m_type, false);
+    case ut_Bool:
+        m_value.set_bool((m_value.get<bool>() * atom.get<p2_BYTE>()) & 1 ? true : false);
         break;
-    case Byte:
-        set_uint(m_type, to_byte() * val.to_byte());
+    case ut_Byte:
+        m_value.set_byte(m_value.get<p2_BYTE>() * atom.get<p2_BYTE>());
         break;
-    case Word:
-        set_uint(m_type, to_word() * val.to_word());
+    case ut_Word:
+        m_value.set_word(m_value.get<p2_WORD>() * atom.get<p2_WORD>());
         break;
-    case Addr:
-        set_uint(m_type, to_long() * val.to_long());
+    case ut_Addr:
+        m_value.set_addr(m_value.get<p2_LONG>() * atom.get<p2_LONG>());
         break;
-    case Long:
-        set_uint(m_type, to_long() * val.to_long());
+    case ut_Long:
+        m_value.set_long(m_value.get<p2_LONG>() * atom.get<p2_LONG>());
         break;
-    case Quad:
-        set_uint(m_type, to_quad() * val.to_quad());
+    case ut_Quad:
+        m_value.set(m_value.get<p2_QUAD>() * atom.get<p2_QUAD>());
         break;
-    case Real:
-        set_real(m_type, to_real() * val.to_real());
+    case ut_Real:
+        m_value.set(m_value.get<p2_REAL>() * atom.get<p2_REAL>());
         break;
-    case String:
-        // TODO: implement
-        Q_ASSERT(m_type);
+    case ut_String:
+        Q_ASSERT(m_value.type() != ut_Invalid);
+        break;
     }
-
 }
 
 /**
  * @brief Set atom to its division result value
  * @param val value to multiply by
  */
-void P2Atom::arith_div(const P2Atom& val)
+void P2Atom::arith_div(const P2Atom& atom)
 {
-    if (val.isZero()) {
-        // Division by zero
-        if (Real == m_type)
-            set_real(Real, nan("qreal"));
-        else
-            set_uint(m_type, ~0u);
-        return;
+    switch (m_value.type()) {
+    case ut_Invalid:
+        break;
+    case ut_Bool:
+        {
+            p2_BYTE divisor = atom.get<p2_BYTE>();
+            if (0 != divisor)
+                m_value.set_bool((m_value.get<bool>() / divisor) & 1 ? true : false);
+        }
+        break;
+    case ut_Byte:
+        {
+            p2_BYTE divisor = atom.get<p2_BYTE>();
+            if (0 != divisor)
+                m_value.set_byte(m_value.get<p2_BYTE>() / divisor);
+        }
+        break;
+    case ut_Word:
+        {
+            p2_WORD divisor = atom.get<p2_WORD>();
+            if (0 != divisor)
+                m_value.set_word(m_value.get<p2_WORD>() / divisor);
+        }
+        break;
+    case ut_Addr:
+        {
+            p2_LONG divisor = atom.get<p2_LONG>();
+            if (0 != divisor)
+                m_value.set_addr(m_value.get<p2_LONG>() / divisor);
+        }
+        break;
+    case ut_Long:
+        {
+            p2_LONG divisor = atom.get<p2_LONG>();
+            if (0 != divisor)
+                m_value.set_long(m_value.get<p2_LONG>() / divisor);
+        }
+        break;
+    case ut_Quad:
+        {
+            p2_QUAD divisor = atom.get<p2_QUAD>();
+            if (0 != divisor)
+                m_value.set_quad(m_value.get<p2_QUAD>() / divisor);
+        }
+        break;
+    case ut_Real:
+        {
+            p2_REAL divisor = atom.get<p2_REAL>();
+            if (!qFuzzyIsNull(divisor))
+                m_value.set_real(m_value.get<p2_REAL>() / divisor);
+        }
+        break;
+    case ut_String:
+        Q_ASSERT(m_value.type() != ut_Invalid);
+        break;
     }
-    switch (m_type) {
-    case Invalid:
-        break;
-    case Bool:
-        set_uint(m_type, false);
-        break;
-    case Byte:
-        set_uint(m_type, to_byte() / val.to_byte());
-        break;
-    case Word:
-        set_uint(m_type, to_word() / val.to_word());
-        break;
-    case Addr:
-        set_uint(m_type, to_long() / val.to_long());
-        break;
-    case Long:
-        set_uint(m_type, to_long() / val.to_long());
-        break;
-    case Quad:
-        set_uint(m_type, to_quad() / val.to_quad());
-        break;
-    case Real:
-        set_real(m_type, to_real() / val.to_real());
-        break;
-    case String:
-        // TODO: implement
-        Q_ASSERT(m_type);
-    }
-
 }
 
 /**
  * @brief Set atom to its modulo result value
  * @param val value to do modulo by
  */
-void P2Atom::arith_mod(const P2Atom& val)
+void P2Atom::arith_mod(const P2Atom& atom)
 {
-    if (val.isZero()) {
-        // Modulus with zero
-        if (Real == m_type)
-            set_real(Real, nan("qreal"));
-        else
-            set_uint(m_type, ~0u);
-        return;
+    switch (m_value.type()) {
+    case ut_Invalid:
+        break;
+    case ut_Bool:
+        {
+            p2_BYTE divisor = atom.get<p2_BYTE>();
+            if (0 != divisor)
+                m_value.set_bool((m_value.get<bool>() % divisor) & 1 ? true : false);
+        }
+        break;
+    case ut_Byte:
+        {
+            p2_BYTE divisor = atom.get<p2_BYTE>();
+            if (0 != divisor)
+                m_value.set_byte(m_value.get<p2_BYTE>() % divisor);
+        }
+        break;
+    case ut_Word:
+        {
+            p2_WORD divisor = atom.get<p2_WORD>();
+            if (0 != divisor)
+                m_value.set_word(m_value.get<p2_WORD>() % divisor);
+        }
+        break;
+    case ut_Addr:
+        {
+            p2_LONG divisor = atom.get<p2_LONG>();
+            if (0 != divisor)
+                m_value.set_addr(m_value.get<p2_LONG>() % divisor);
+        }
+        break;
+    case ut_Long:
+        {
+            p2_LONG divisor = atom.get<p2_LONG>();
+            if (0 != divisor)
+                m_value.set_long(m_value.get<p2_LONG>() % divisor);
+        }
+        break;
+    case ut_Quad:
+        {
+            p2_QUAD divisor = atom.get<p2_QUAD>();
+            if (0 != divisor)
+                m_value.set_quad(m_value.get<p2_QUAD>() % divisor);
+        }
+        break;
+    case ut_Real:
+        {
+            p2_REAL divisor = atom.get<p2_REAL>();
+            if (!qFuzzyIsNull(divisor))
+                m_value.set_real(fmod(m_value.get<p2_REAL>(), divisor));
+        }
+        break;
+    case ut_String:
+        Q_ASSERT(m_value.type() != ut_Invalid);
+        break;
     }
-    switch (m_type) {
-    case Invalid:
-        break;
-    case Bool:
-        set_uint(m_type, val.to_bool() ? false : true );
-        break;
-    case Byte:
-        set_uint(m_type, to_byte() % val.to_byte());
-        break;
-    case Word:
-        set_uint(m_type, to_word() % val.to_word());
-        break;
-    case Addr:
-        set_uint(m_type, to_long() % val.to_long());
-        break;
-    case Long:
-        set_uint(m_type, to_long() % val.to_long());
-        break;
-    case Quad:
-        set_uint(m_type, to_quad() % val.to_quad());
-        break;
-    case Real:
-        set_real(m_type, fmod(to_real(), val.to_real()));
-        break;
-    case String:
-        // TODO: implement
-        Q_ASSERT(m_type);
-    }
-
 }
 
 /**
  * @brief Set atom to its addition result value
  * @param val value to add
  */
-void P2Atom::arith_add(const P2Atom& val)
+void P2Atom::arith_add(const P2Atom& atom)
 {
-    if (val.isZero())
-        return;
-
-    switch (m_type) {
-    case Invalid:
+    switch (m_value.type()) {
+    case ut_Invalid:
         break;
-    case Bool:
-        set_uint(m_type, (to_bool() + val.to_bool()) & 1 ? true : false);
+    case ut_Bool:
+        m_value.set_bool((m_value.get<p2_BYTE>() + atom.get<p2_BYTE>()) & 1 ? true : false);
         break;
-    case Byte:
-        set_uint(m_type, to_byte() + val.to_byte());
+    case ut_Byte:
+        m_value.set_byte(m_value.get<p2_BYTE>() + atom.get<p2_BYTE>());
         break;
-    case Word:
-        set_uint(m_type, to_word() + val.to_word());
+    case ut_Word:
+        m_value.set_word(m_value.get<p2_WORD>() + atom.get<p2_WORD>());
         break;
-    case Addr:
-        set_uint(m_type, to_long() + val.to_long());
+    case ut_Addr:
+        m_value.set_addr(m_value.get<p2_LONG>() + atom.get<p2_LONG>());
         break;
-    case Long:
-        set_uint(m_type, to_long() + val.to_long());
+    case ut_Long:
+        m_value.set_long(m_value.get<p2_LONG>() + atom.get<p2_LONG>());
         break;
-    case Quad:
-        set_uint(m_type, to_quad() + val.to_quad());
+    case ut_Quad:
+        m_value.set_quad(m_value.get<p2_QUAD>() + atom.get<p2_QUAD>());
         break;
-    case Real:
-        set_real(m_type, to_real() + val.to_real());
+    case ut_Real:
+        m_value.set_real(m_value.get<p2_REAL>() + atom.get<p2_REAL>());
         break;
-    case String:
-        {
-            p2_QUAD value = val.to_long();
-            uint cy = 0;
-            for (int i = 0; i < size(); i++) {
-                const p2_QUAD byte = m_data[i] + value + cy;
-                cy = static_cast<uint>(byte >> 8);
-                m_data[i] = static_cast<p2_BYTE>(byte);
-                value >>= 8;
-            }
-            if (cy)
-                m_data.append(static_cast<p2_BYTE>(cy));
-        }
+    case ut_String:
+        Q_ASSERT(m_value.type() != ut_Invalid);
         break;
     }
 }
@@ -1151,48 +839,34 @@ void P2Atom::arith_add(const P2Atom& val)
  * @brief Set atom to its subtraction result value
  * @param val value to subtract
  */
-void P2Atom::arith_sub(const P2Atom& val)
+void P2Atom::arith_sub(const P2Atom& atom)
 {
-    if (val.isZero())
-        return;
-
-    switch (m_type) {
-    case Invalid:
+    switch (m_value.type()) {
+    case ut_Invalid:
         break;
-    case Bool:
-        set_uint(m_type, (to_bool() - val.to_bool()) & 1 ? true : false);
+    case ut_Bool:
+        m_value.set_bool((m_value.get<p2_BYTE>() - atom.get<p2_BYTE>()) & 1 ? true : false);
         break;
-    case Byte:
-        set_uint(m_type, to_byte() - val.to_byte());
+    case ut_Byte:
+        m_value.set_byte(m_value.get<p2_BYTE>() - atom.get<p2_BYTE>());
         break;
-    case Word:
-        set_uint(m_type, to_word() - val.to_word());
+    case ut_Word:
+        m_value.set_word(m_value.get<p2_WORD>() - atom.get<p2_WORD>());
         break;
-    case Addr:
-        set_uint(m_type, to_long() - val.to_long());
+    case ut_Addr:
+        m_value.set_addr(m_value.get<p2_LONG>() - atom.get<p2_LONG>());
         break;
-    case Long:
-        set_uint(m_type, to_long() - val.to_long());
+    case ut_Long:
+        m_value.set_long(m_value.get<p2_LONG>() - atom.get<p2_LONG>());
         break;
-    case Quad:
-        set_uint(m_type, to_quad() - val.to_quad());
+    case ut_Quad:
+        m_value.set_quad(m_value.get<p2_QUAD>() - atom.get<p2_QUAD>());
         break;
-    case Real:
-        set_real(m_type, to_real() - val.to_real());
+    case ut_Real:
+        m_value.set_real(m_value.get<p2_REAL>() - atom.get<p2_REAL>());
         break;
-    case String:
-        {
-            p2_QUAD value = val.to_quad();
-            uint cy = 0;
-            for (int i = 0; i < size(); i++) {
-                const p2_QUAD byte = m_data[i] - value - cy;
-                cy = static_cast<uint>(byte >> 8);
-                m_data[i] = static_cast<p2_BYTE>(byte);
-                value >>= 8;
-            }
-            if (cy)
-                m_data.append(static_cast<p2_BYTE>(cy));
-        }
+    case ut_String:
+        Q_ASSERT(m_value.type() != ut_Invalid);
         break;
     }
 }
@@ -1201,37 +875,35 @@ void P2Atom::arith_sub(const P2Atom& val)
  * @brief Set atom to its left shifted value
  * @param bits number of bits to shift left
  */
-void P2Atom::binary_shl(const P2Atom& val)
+void P2Atom::binary_shl(const P2Atom& atom)
 {
-    if (val.isZero())
-        return;
-    switch (m_type) {
-    case Invalid:
+    switch (m_value.type()) {
+    case ut_Invalid:
         break;
-    case Bool:
-        set_uint(m_type, false);
+    case ut_Bool:
+        m_value.set_bool(false);
         break;
-    case Byte:
-        set_uint(m_type, to_long() << val.to_byte());
+    case ut_Byte:
+        m_value.set_byte(m_value.get<p2_BYTE>() << atom.get<p2_BYTE>());
         break;
-    case Word:
-        set_uint(m_type, to_long() << val.to_byte());
+    case ut_Word:
+        m_value.set_word(m_value.get<p2_WORD>() << atom.get<p2_WORD>());
         break;
-    case Addr:
-        set_uint(m_type, to_long() << val.to_byte());
+    case ut_Addr:
+        m_value.set_addr(m_value.get<p2_LONG>() << atom.get<p2_LONG>());
         break;
-    case Long:
-        set_uint(m_type, to_long() << val.to_byte());
+    case ut_Long:
+        m_value.set_long(m_value.get<p2_LONG>() << atom.get<p2_LONG>());
         break;
-    case Quad:
-        set_uint(m_type, to_quad() << val.to_byte());
+    case ut_Quad:
+        m_value.set_quad(m_value.get<p2_QUAD>() << atom.get<p2_LONG>());
         break;
-    case Real:
-        set_real(m_type, to_real() * (1u << val.to_byte()));
+    case ut_Real:
+        m_value.set_real(qRound(m_value.get<p2_REAL>()) << atom.get<p2_LONG>());
         break;
-    case String:
-        // TODO: implement
-        Q_ASSERT(m_type);
+    case ut_String:
+        Q_ASSERT(m_value.type() != ut_Invalid);
+        break;
     }
 }
 
@@ -1239,37 +911,35 @@ void P2Atom::binary_shl(const P2Atom& val)
  * @brief Set atom to its right shifted value
  * @param bits number of bits to shift right
  */
-void P2Atom::binary_shr(const P2Atom& val)
+void P2Atom::binary_shr(const P2Atom& atom)
 {
-    if (val.isZero())
-        return;
-    switch (m_type) {
-    case Invalid:
+    switch (m_value.type()) {
+    case ut_Invalid:
         break;
-    case Bool:
-        set_uint(m_type, false);
+    case ut_Bool:
+        m_value.set_bool(false);
         break;
-    case Byte:
-        set_uint(m_type, to_byte() >> val.to_byte());
+    case ut_Byte:
+        m_value.set_byte(m_value.get<p2_BYTE>() >> atom.get<p2_BYTE>());
         break;
-    case Word:
-        set_uint(m_type, to_word() >> val.to_byte());
+    case ut_Word:
+        m_value.set_word(m_value.get<p2_WORD>() >> atom.get<p2_WORD>());
         break;
-    case Addr:
-        set_uint(m_type, to_long() >> val.to_byte());
+    case ut_Addr:
+        m_value.set_addr(m_value.get<p2_LONG>() >> atom.get<p2_LONG>());
         break;
-    case Long:
-        set_uint(m_type, to_long() >> val.to_byte());
+    case ut_Long:
+        m_value.set_long(m_value.get<p2_LONG>() >> atom.get<p2_LONG>());
         break;
-    case Quad:
-        set_uint(m_type, to_quad() >> val.to_byte());
+    case ut_Quad:
+        m_value.set_quad(m_value.get<p2_QUAD>() >> atom.get<p2_LONG>());
         break;
-    case Real:
-        set_real(m_type, to_real() / (1u << val.to_byte()));
+    case ut_Real:
+        m_value.set_real(qRound(m_value.get<p2_REAL>()) >> atom.get<p2_LONG>());
         break;
-    case String:
-        // TODO: implement
-        Q_ASSERT(m_type);
+    case ut_String:
+        Q_ASSERT(m_value.type() != ut_Invalid);
+        break;
     }
 }
 
@@ -1277,35 +947,35 @@ void P2Atom::binary_shr(const P2Atom& val)
  * @brief Set atom to its binary AND value
  * @param mask value to AND with
  */
-void P2Atom::binary_and(const P2Atom& val)
+void P2Atom::binary_and(const P2Atom& atom)
 {
-    switch (m_type) {
-    case Invalid:
+    switch (m_value.type()) {
+    case ut_Invalid:
         break;
-    case Bool:
-        set_uint(m_type, (to_bool() & val.to_bool()) & 1 ? true : false);
+    case ut_Bool:
+        m_value.set_bool(m_value.get<bool>() & atom.get<bool>());
         break;
-    case Byte:
-        set_uint(m_type, to_byte() & val.to_byte());
+    case ut_Byte:
+        m_value.set_byte(m_value.get<p2_BYTE>() & atom.get<p2_BYTE>());
         break;
-    case Word:
-        set_uint(m_type, to_word() & val.to_word());
+    case ut_Word:
+        m_value.set_word(m_value.get<p2_WORD>() & atom.get<p2_WORD>());
         break;
-    case Addr:
-        set_uint(m_type, to_long() & val.to_word());
+    case ut_Addr:
+        m_value.set_addr(m_value.get<p2_LONG>() & atom.get<p2_LONG>());
         break;
-    case Long:
-        set_uint(m_type, to_long() & val.to_long());
+    case ut_Long:
+        m_value.set_long(m_value.get<p2_LONG>() & atom.get<p2_LONG>());
         break;
-    case Quad:
-        set_uint(m_type, to_quad() & val.to_quad());
+    case ut_Quad:
+        m_value.set_quad(m_value.get<p2_QUAD>() & atom.get<p2_QUAD>());
         break;
-    case Real:
-        set_real(m_type, static_cast<p2_REAL>(to_quad() & val.to_quad()));
+    case ut_Real:
+        m_value.set_real(m_value.get<p2_QUAD>() & atom.get<p2_QUAD>());
         break;
-    case String:
-        // TODO: implement
-        Q_ASSERT(m_type);
+    case ut_String:
+        Q_ASSERT(m_value.type() != ut_Invalid);
+        break;
     }
 }
 
@@ -1313,35 +983,35 @@ void P2Atom::binary_and(const P2Atom& val)
  * @brief Set atom to its binary XOR value
  * @param mask value to XOR with
  */
-void P2Atom::binary_xor(const P2Atom& val)
+void P2Atom::binary_xor(const P2Atom& atom)
 {
-    switch (m_type) {
-    case Invalid:
+    switch (m_value.type()) {
+    case ut_Invalid:
         break;
-    case Bool:
-        set_uint(m_type, (to_bool() ^ val.to_bool()) & 1 ? true : false);
+    case ut_Bool:
+        m_value.set_bool(m_value.get<bool>() ^ atom.get<bool>());
         break;
-    case Byte:
-        set_uint(m_type, to_byte() ^ val.to_byte());
+    case ut_Byte:
+        m_value.set_byte(m_value.get<p2_BYTE>() ^ atom.get<p2_BYTE>());
         break;
-    case Word:
-        set_uint(m_type, to_word() ^ val.to_word());
+    case ut_Word:
+        m_value.set_word(m_value.get<p2_WORD>() ^ atom.get<p2_WORD>());
         break;
-    case Addr:
-        set_uint(m_type, to_long() ^ val.to_long());
+    case ut_Addr:
+        m_value.set_addr(m_value.get<p2_LONG>() ^ atom.get<p2_LONG>());
         break;
-    case Long:
-        set_uint(m_type, to_long() ^ val.to_long());
+    case ut_Long:
+        m_value.set_long(m_value.get<p2_LONG>() ^ atom.get<p2_LONG>());
         break;
-    case Quad:
-        set_uint(m_type, to_quad() ^ val.to_quad());
+    case ut_Quad:
+        m_value.set_quad(m_value.get<p2_QUAD>() ^ atom.get<p2_QUAD>());
         break;
-    case Real:
-        set_real(m_type, static_cast<p2_REAL>(to_quad() ^ val.to_quad()));
+    case ut_Real:
+        m_value.set_real(m_value.get<p2_QUAD>() ^ atom.get<p2_QUAD>());
         break;
-    case String:
-        // TODO: implement
-        Q_ASSERT(m_type);
+    case ut_String:
+        Q_ASSERT(m_value.type() != ut_Invalid);
+        break;
     }
 }
 
@@ -1349,192 +1019,191 @@ void P2Atom::binary_xor(const P2Atom& val)
  * @brief Set atom to its binary OR value
  * @param mask value to OR with
  */
-void P2Atom::binary_or(const P2Atom& val)
+void P2Atom::binary_or(const P2Atom& atom)
 {
-    switch (m_type) {
-    case Invalid:
+    switch (m_value.type()) {
+    case ut_Invalid:
         break;
-    case Bool:
-        set_uint(m_type, (to_bool() | val.to_bool()) & 1 ? true : false);
+    case ut_Bool:
+        m_value.set_bool(m_value.get<bool>() | atom.get<bool>());
         break;
-    case Byte:
-        set_uint(m_type, to_byte() | val.to_byte());
+    case ut_Byte:
+        m_value.set_byte(m_value.get<p2_BYTE>() | atom.get<p2_BYTE>());
         break;
-    case Word:
-        set_uint(m_type, to_word() | val.to_word());
+    case ut_Word:
+        m_value.set_word(m_value.get<p2_WORD>() | atom.get<p2_WORD>());
         break;
-    case Addr:
-        set_uint(m_type, to_long() | val.to_long());
+    case ut_Addr:
+        m_value.set_addr(m_value.get<p2_LONG>() | atom.get<p2_LONG>());
         break;
-    case Long:
-        set_uint(m_type, to_long() | val.to_long());
+    case ut_Long:
+        m_value.set_long(m_value.get<p2_LONG>() | atom.get<p2_LONG>());
         break;
-    case Quad:
-        set_uint(m_type, to_quad() | val.to_quad());
+    case ut_Quad:
+        m_value.set_quad(m_value.get<p2_QUAD>() | atom.get<p2_QUAD>());
         break;
-    case Real:
-        set_real(m_type, static_cast<p2_REAL>(to_quad() ^ val.to_quad()));
+    case ut_Real:
+        m_value.set_real(m_value.get<p2_QUAD>() | atom.get<p2_QUAD>());
         break;
-    case String:
-        // TODO: implement
-        Q_ASSERT(m_type);
+    case ut_String:
+        Q_ASSERT(m_value.type() != ut_Invalid);
+        break;
     }
 }
 
 void P2Atom::binary_rev()
 {
-    switch (m_type) {
-    case Invalid:
+    switch (m_value.type()) {
+    case ut_Invalid:
         break;
-    case Bool:
+    case ut_Bool:
+        m_value.set_bool(m_value.get<bool>());
         break;
-    case Byte:
-        set_uint(m_type, P2Util::reverse(to_byte()));
+    case ut_Byte:
+        m_value.set_byte(P2Util::reverse(m_value.get<p2_BYTE>()));
         break;
-    case Word:
-        set_uint(m_type, P2Util::reverse(to_word()));
+    case ut_Word:
+        m_value.set_word(P2Util::reverse(m_value.get<p2_WORD>()));
         break;
-    case Addr:
-        set_uint(m_type, P2Util::reverse(to_long()));
+    case ut_Addr:
+        m_value.set_addr(P2Util::reverse(m_value.get<p2_LONG>()));
         break;
-    case Long:
-        set_uint(m_type, P2Util::reverse(to_long()));
+    case ut_Long:
+        m_value.set_long(P2Util::reverse(m_value.get<p2_LONG>()));
         break;
-    case Quad:
-        set_uint(m_type, P2Util::reverse(to_quad()));
+    case ut_Quad:
+        m_value.set_quad(P2Util::reverse(m_value.get<p2_QUAD>()));
         break;
-    case Real:
-        set_real(m_type, static_cast<p2_REAL>(P2Util::reverse(to_quad())));
+    case ut_Real:
+        m_value.set_real(P2Util::reverse(m_value.get<p2_QUAD>()));
         break;
-    case String:
-        // TODO: implement
-        Q_ASSERT(m_type);
+    case ut_String:
+        Q_ASSERT(m_value.type() != ut_Invalid);
+        break;
     }
 }
 
-void P2Atom::reverse(const P2Atom& val)
+void P2Atom::reverse(const P2Atom& atom)
 {
-    switch (m_type) {
-    case Invalid:
+    switch (m_value.type()) {
+    case ut_Invalid:
         break;
-    case Bool:
+    case ut_Bool:
+        m_value.set_bool(m_value.get<bool>());
         break;
-    case Byte:
-        set_uint(m_type, P2Util::reverse(to_byte(), val.to_byte()));
+    case ut_Byte:
+        m_value.set_byte(P2Util::reverse(m_value.get<p2_QUAD>(), atom.get<p2_LONG>()));
         break;
-    case Word:
-        set_uint(m_type, P2Util::reverse(to_word(), val.to_word()));
+    case ut_Word:
+        m_value.set_word(P2Util::reverse(m_value.get<p2_QUAD>(), atom.get<p2_LONG>()));
         break;
-    case Addr:
-        set_uint(m_type, P2Util::reverse(to_long(), val.to_long()));
+    case ut_Addr:
+        m_value.set_addr(P2Util::reverse(m_value.get<p2_QUAD>(), atom.get<p2_LONG>()));
         break;
-    case Long:
-        set_uint(m_type, P2Util::reverse(to_long(), val.to_long()));
+    case ut_Long:
+        m_value.set_long(P2Util::reverse(m_value.get<p2_QUAD>(), atom.get<p2_LONG>()));
         break;
-    case Quad:
-        set_uint(m_type, P2Util::reverse(to_quad(), val.to_long()));
+    case ut_Quad:
+        m_value.set_quad(P2Util::reverse(m_value.get<p2_QUAD>(), atom.get<p2_LONG>()));
         break;
-    case Real:
-        set_real(m_type, static_cast<p2_REAL>(P2Util::reverse(to_quad(), val.to_long())));
+    case ut_Real:
+        m_value.set_real(P2Util::reverse(m_value.get<p2_QUAD>(), atom.get<p2_LONG>()));
         break;
-    case String:
-        // TODO: implement
-        Q_ASSERT(m_type);
+    case ut_String:
+        Q_ASSERT(m_value.type() != ut_Invalid);
+        break;
     }
 }
 
-void P2Atom::encode(const P2Atom& val)
+void P2Atom::encode(const P2Atom& atom)
 {
-    switch (m_type) {
-    case Invalid:
+    switch (m_value.type()) {
+    case ut_Invalid:
         break;
-    case Bool:
+    case ut_Bool:
+        m_value.set_bool(m_value.get<bool>());
         break;
-    case Byte:
-        set_uint(m_type, P2Util::encode(val.to_byte()));
+    case ut_Byte:
+        m_value.set_byte(P2Util::encode(atom.get<p2_BYTE>()));
         break;
-    case Word:
-        set_uint(m_type, P2Util::encode(val.to_word()));
+    case ut_Word:
+        m_value.set_word(P2Util::encode(atom.get<p2_WORD>()));
         break;
-    case Addr:
-        set_uint(m_type, P2Util::encode(val.to_long()));
+    case ut_Addr:
+        m_value.set_addr(P2Util::encode(atom.get<p2_LONG>()));
         break;
-    case Long:
-        set_uint(m_type, P2Util::encode(val.to_long()));
+    case ut_Long:
+        m_value.set_long(P2Util::encode(atom.get<p2_LONG>()));
         break;
-    case Quad:
-        set_uint(m_type, P2Util::encode(val.to_quad()));
+    case ut_Quad:
+        m_value.set_quad(P2Util::encode(atom.get<p2_QUAD>()));
         break;
-    case Real:
-        set_real(m_type, static_cast<p2_REAL>(P2Util::encode(val.to_quad())));
+    case ut_Real:
+        m_value.set_real(P2Util::encode(atom.get<p2_QUAD>()));
         break;
-    case String:
-        // TODO: implement
-        Q_ASSERT(m_type);
+    case ut_String:
+        Q_ASSERT(m_value.type() != ut_Invalid);
+        break;
     }
 }
 
-void P2Atom::decode(const P2Atom& val)
+void P2Atom::decode(const P2Atom& atom)
 {
-    switch (m_type) {
-    case Invalid:
+    switch (m_value.type()) {
+    case ut_Invalid:
         break;
-    case Bool:
+    case ut_Bool:
+        m_value.set_bool(P2Util::lzc(atom.get<p2_BYTE>()));
         break;
-    case Byte:
-        set_uint(m_type, P2Util::lzc(val.to_byte()));
+    case ut_Byte:
+        m_value.set_byte(P2Util::lzc(atom.get<p2_BYTE>()));
         break;
-    case Word:
-        set_uint(m_type, P2Util::lzc(val.to_word()));
+    case ut_Word:
+        m_value.set_word(P2Util::lzc(atom.get<p2_WORD>()));
         break;
-    case Addr:
-        set_uint(m_type, P2Util::lzc(val.to_long()));
+    case ut_Addr:
+        m_value.set_addr(P2Util::lzc(atom.get<p2_LONG>()));
         break;
-    case Long:
-        set_uint(m_type, P2Util::lzc(val.to_long()));
+    case ut_Long:
+        m_value.set_long(P2Util::lzc(atom.get<p2_LONG>()));
         break;
-    case Quad:
-        set_uint(m_type, P2Util::lzc(val.to_quad()));
+    case ut_Quad:
+        m_value.set_quad(P2Util::lzc(atom.get<p2_QUAD>()));
         break;
-    case Real:
-        set_real(m_type, static_cast<p2_REAL>(P2Util::lzc(val.to_quad())));
+    case ut_Real:
+        m_value.set_real(P2Util::lzc(atom.get<p2_QUAD>()));
         break;
-    case String:
-        // TODO: implement
-        Q_ASSERT(m_type);
+    case ut_String:
+        Q_ASSERT(m_value.type() != ut_Invalid);
+        break;
     }
 }
 
 /**
- * @brief Return data as a single byte
- * @param ok optional pointer to a bool set to true if data is available
- * @return One p2_BYTE
+ * @brief Return data as a single bool
+ * @return One bool
  */
-bool P2Atom::to_bool(bool* ok) const
+bool P2Atom::to_bool() const
 {
-    if (ok)
-        *ok = m_data.size() > 0;
-    return m_data.count(0x00u) > 0;
+    return m_value.get<bool>();
 }
 
 /**
  * @brief Return data as a single byte
- * @param ok optional pointer to a bool set to true if data is available
  * @return One p2_BYTE
  */
-p2_BYTE P2Atom::to_byte(bool* ok) const
+p2_BYTE P2Atom::to_byte() const
 {
-    return private_val<p2_BYTE>(ok);
+    return m_value.get<p2_BYTE>();
 }
 
 /**
  * @brief Return data as a single word
- * @param ok optional pointer to a bool set to true if data is available
  * @return One p2_WORD
  */
-p2_WORD P2Atom::to_word(bool* ok) const
+p2_WORD P2Atom::to_word() const
 {
-    return private_val<p2_WORD>(ok);
+    return m_value.get<p2_WORD>();
 }
 
 /**
@@ -1542,9 +1211,9 @@ p2_WORD P2Atom::to_word(bool* ok) const
  * @param ok optional pointer to a bool set to true if data is available
  * @return One p2_LONG
  */
-p2_LONG P2Atom::to_long(bool* ok) const
+p2_LONG P2Atom::to_long() const
 {
-    return private_val<p2_LONG>(ok);
+    return m_value.get<p2_LONG>();
 }
 
 /**
@@ -1552,9 +1221,9 @@ p2_LONG P2Atom::to_long(bool* ok) const
  * @param ok optional pointer to a bool set to true if data is available
  * @return One p2_LONG
  */
-p2_QUAD P2Atom::to_quad(bool* ok) const
+p2_QUAD P2Atom::to_quad() const
 {
-    return private_val<p2_QUAD>(ok);
+    return m_value.get<p2_QUAD>();
 }
 
 /**
@@ -1562,9 +1231,9 @@ p2_QUAD P2Atom::to_quad(bool* ok) const
  * @param ok optional pointer to a bool set to true if data is available
  * @return One p2_LONG
  */
-p2_REAL P2Atom::to_real(bool* ok) const
+p2_REAL P2Atom::to_real() const
 {
-    return private_val<p2_REAL>(ok);
+    return m_value.get<p2_REAL>();
 }
 
 /**
@@ -1572,11 +1241,13 @@ p2_REAL P2Atom::to_real(bool* ok) const
  * @param ok optional pointer to a bool set to true if data is available
  * @return QString with the data
  */
-QString P2Atom::to_string(bool* ok) const
+QString P2Atom::to_string() const
 {
-    if (ok)
-        *ok = m_data.size() > 0;
-    return QString::fromUtf8(reinterpret_cast<const char *>(m_data.constData()), m_data.size());
+    QString result;
+    p2_CHARS chars = m_value.get<p2_CHARS>();
+    foreach(char ch, chars)
+        result += ch;
+    return result;
 }
 
 /**
@@ -1584,52 +1255,32 @@ QString P2Atom::to_string(bool* ok) const
  * @param ok optional pointer to a bool set to true if data is available
  * @return QString with the data
  */
-QByteArray P2Atom::to_array(bool* ok) const
+QByteArray P2Atom::to_array() const
 {
-    if (ok)
-        *ok = m_data.size() > 0;
-    QByteArray ba = QByteArray::fromRawData(reinterpret_cast<const char *>(m_data.constData()), m_data.size());
-    return ba;
+    QByteArray result;
+    p2_CHARS chars = m_value.get<p2_CHARS>();
+    foreach(char ch, chars)
+        result += ch;
+    return result;
 }
 
 /**
  * @brief Return data as a vector of bytes
  * @return p2_BYTEs of all data
  */
-p2_BYTES P2Atom::to_bytes(bool* ok) const
+p2_BYTES P2Atom::to_bytes() const
 {
-    if (ok)
-        *ok = m_data.size() > 0;
-    return p2_BYTES(m_data);
+    p2_BYTES result = m_value.get<p2_BYTES>();
+    return result;
 }
 
 /**
  * @brief Return data as a vector of words
  * @return p2_WORDs of all data
  */
-p2_WORDS P2Atom::to_words(bool* ok) const
+p2_WORDS P2Atom::to_words() const
 {
-    // reassemble BYTEs into WORDs (little endian)
-    constexpr int sz = sz_WORD;
-    const int size = m_data.size();
-    p2_WORDS result;
-    p2_WORD value = 0;
-    int filled = 0;
-
-    for (int i = 0; i < size; i++) {
-        value |= static_cast<p2_WORD>(m_data[i]) << (8 * filled);
-        if (++filled == sz) {
-            result += value;
-            filled = 0;
-            value = 0;
-        }
-    }
-
-    if (filled)
-        result += value;
-
-    if (nullptr != ok)
-        *ok = true;
+    p2_WORDS result = m_value.get<p2_WORDS>();
     return result;
 }
 
@@ -1637,75 +1288,147 @@ p2_WORDS P2Atom::to_words(bool* ok) const
  * @brief Return data as a vector of longs
  * @return p2_LONGs of all data
  */
-p2_LONGS P2Atom::to_longs(bool* ok) const
+p2_LONGS P2Atom::to_longs() const
 {
-    // reassemble BYTEs into WORDs (little endian)
-    constexpr int sz = sz_LONG;
-    const int size = m_data.size();
-    p2_LONGS result;
-    p2_LONG value = 0;
-    int filled = 0;
-
-    for (int i = 0; i < size; i++) {
-        value |= static_cast<p2_LONG>(m_data[i]) << (8 * filled);
-        if (++filled == sz) {
-            result += value;
-            filled = 0;
-            value = 0;
-        }
-    }
-
-    if (filled)
-        result += value;
-
-    if (nullptr != ok)
-        *ok = true;
-
+    p2_LONGS result = m_value.get<p2_LONGS>();
     return result;
 }
 
 void P2Atom::make_real()
 {
-    p2_REAL real = private_val<p2_REAL>(nullptr);
-    set_real(Real, real);
+    m_value.set_type(ut_Real);
 }
 
-P2Atom& P2Atom::operator = (const P2Atom& other)
+P2Atom& P2Atom::operator=(const P2Atom& other)
 {
-    m_type = other.m_type;
     m_trait = other.m_trait;
-    m_data = other.m_data;
+    m_value = other.m_value;
     return *this;
 }
 
 bool P2Atom::operator==(const P2Atom& other)
 {
-    return m_type == other.m_type && m_trait == other.m_trait && m_data == other.m_data;
+    switch (m_value.type()) {
+    case ut_Invalid:
+        return false;
+    case ut_Bool:
+        return m_value.get<bool>() == other.get<bool>();
+    case ut_Byte:
+        return m_value.get<p2_BYTE>() == other.get<p2_BYTE>();
+    case ut_Word:
+        return m_value.get<p2_WORD>() == other.get<p2_WORD>();
+    case ut_Addr:
+    case ut_Long:
+        return m_value.get<p2_LONG>() == other.get<p2_LONG>();
+    case ut_Quad:
+        return m_value.get<p2_QUAD>() == other.get<p2_QUAD>();
+    case ut_Real:
+        return qFuzzyCompare(m_value.get<p2_REAL>(), other.get<p2_REAL>());
+    case ut_String:
+        return m_value.get<p2_CHARS>() == other.get<p2_CHARS>();
+    }
+    return false;
 }
 
 bool P2Atom::operator!=(const P2Atom& other)
 {
-    return m_type != other.m_type || m_trait != other.m_trait || m_data != other.m_data;
+    return !(*this == other);
 }
 
 bool P2Atom::operator<(const P2Atom& other)
 {
-    return m_data < other.m_data;
+    switch (m_value.type()) {
+    case ut_Invalid:
+        return false;
+    case ut_Bool:
+        return m_value.get<bool>() < other.get<bool>();
+    case ut_Byte:
+        return m_value.get<p2_BYTE>() < other.get<p2_BYTE>();
+    case ut_Word:
+        return m_value.get<p2_WORD>() < other.get<p2_WORD>();
+    case ut_Addr:
+    case ut_Long:
+        return m_value.get<p2_LONG>() < other.get<p2_LONG>();
+    case ut_Quad:
+        return m_value.get<p2_QUAD>() < other.get<p2_QUAD>();
+    case ut_Real:
+        return m_value.get<p2_REAL>() < other.get<p2_REAL>();
+    case ut_String:
+        return m_value.get<p2_CHARS>() < other.get<p2_CHARS>();
+    }
+    return false;
 }
 
 bool P2Atom::operator<=(const P2Atom& other)
 {
-    return m_data <= other.m_data;
+    switch (m_value.type()) {
+    case ut_Invalid:
+        return false;
+    case ut_Bool:
+        return m_value.get<bool>() <= other.get<bool>();
+    case ut_Byte:
+        return m_value.get<p2_BYTE>() <= other.get<p2_BYTE>();
+    case ut_Word:
+        return m_value.get<p2_WORD>() <= other.get<p2_WORD>();
+    case ut_Addr:
+    case ut_Long:
+        return m_value.get<p2_LONG>() <= other.get<p2_LONG>();
+    case ut_Quad:
+        return m_value.get<p2_QUAD>() <= other.get<p2_QUAD>();
+    case ut_Real:
+        return m_value.get<p2_REAL>() <= other.get<p2_REAL>();
+    case ut_String:
+        return m_value.get<p2_CHARS>() <= other.get<p2_CHARS>();
+    }
+    return false;
 }
 
 bool P2Atom::operator>(const P2Atom& other)
 {
-    return m_data > other.m_data;
+    switch (m_value.type()) {
+    case ut_Invalid:
+        return false;
+    case ut_Bool:
+        return m_value.get<bool>() > other.get<bool>();
+    case ut_Byte:
+        return m_value.get<p2_BYTE>() > other.get<p2_BYTE>();
+    case ut_Word:
+        return m_value.get<p2_WORD>() > other.get<p2_WORD>();
+    case ut_Addr:
+    case ut_Long:
+        return m_value.get<p2_LONG>() > other.get<p2_LONG>();
+    case ut_Quad:
+        return m_value.get<p2_QUAD>() > other.get<p2_QUAD>();
+    case ut_Real:
+        return m_value.get<p2_REAL>() > other.get<p2_REAL>();
+    case ut_String:
+        return m_value.get<p2_CHARS>() > other.get<p2_CHARS>();
+    }
+    return false;
 }
 
 bool P2Atom::operator>=(const P2Atom& other)
 {
-    return m_data >= other.m_data;
+    switch (m_value.type()) {
+    case ut_Invalid:
+        return false;
+    case ut_Bool:
+        return m_value.get<bool>() >= other.get<bool>();
+    case ut_Byte:
+        return m_value.get<p2_BYTE>() >= other.get<p2_BYTE>();
+    case ut_Word:
+        return m_value.get<p2_WORD>() >= other.get<p2_WORD>();
+    case ut_Addr:
+    case ut_Long:
+        return m_value.get<p2_LONG>() >= other.get<p2_LONG>();
+    case ut_Quad:
+        return m_value.get<p2_QUAD>() >= other.get<p2_QUAD>();
+    case ut_Real:
+        return m_value.get<p2_REAL>() >= other.get<p2_REAL>();
+    case ut_String:
+        return m_value.get<p2_CHARS>() >= other.get<p2_CHARS>();
+    }
+    return false;
 }
 
 P2Atom& P2Atom::operator~()
@@ -1836,4 +1559,14 @@ QStringList P2Atom::format_data(const P2Atom& atom, const p2_LONG addr)
     if (mask)
         result += format_long_mask(data, mask);
     return result;
+}
+
+QByteArray P2Atom::to_array(const P2Atom& atom)
+{
+    return atom.to_array();
+}
+
+QString P2Atom::to_string(const P2Atom& atom)
+{
+    return atom.to_string();
 }

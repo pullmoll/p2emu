@@ -39,29 +39,29 @@
 
 #include "p2tokens.h"
 
-//! Type of the Propeller2 BYTE
-typedef quint8 p2_BYTE;
+typedef enum {
+    ut_Invalid = -1,                        //!< Type is not set
+    ut_Bool,                                //!< Value is bool
+    ut_Byte,                                //!< Value is BYTE sized
+    ut_Word,                                //!< Value is WORD sized
+    ut_Addr,                                //!< Value is an address (Program Counter)
+    ut_Long,                                //!< Value is LONG sized
+    ut_Quad,                                //!< Value is QUAD sized
+    ut_Real,                                //!< Value is REAL sized (qreal can be float or double)
+    ut_String                               //!< Value is an array of char
+}   p2_union_e;
 
-//! Type of the Propeller2 WORD
-typedef quint16 p2_WORD;
-
-//! Type of the Propeller2 LONG
-typedef quint32 p2_LONG;
-
-//! Intermediate type (unsigned long long); not a Propeller2 type
-typedef quint64 p2_QUAD;
-
-//! Intermediate type (unsigned long long); not a Propeller2 type
-typedef qreal p2_REAL;
-
-//! Type for an array (vector) of BYTEs
-typedef QVector<p2_BYTE> p2_BYTES;
-
-//! Type for an array (vector) of WORDs
-typedef QVector<p2_WORD> p2_WORDS;
-
-//! Type for an array (vector) of LONGs
-typedef QVector<p2_LONG> p2_LONGS;
+typedef quint8 p2_BYTE;                     //!< Type of the Propeller2 BYTE
+typedef quint16 p2_WORD;                    //!< Type of the Propeller2 WORD
+typedef quint32 p2_LONG;                    //!< Type of the Propeller2 LONG
+typedef quint64 p2_QUAD;                    //!< Intermediate type (unsigned long long); not a Propeller2 type
+typedef double p2_REAL;                     //! Intermediate type (double); not a Propeller2 type
+typedef QVector<p2_BYTE> p2_BYTES;          //! Type for an array (QVector) of BYTEs (ut_Byte or ut_Bool)
+typedef QVector<p2_WORD> p2_WORDS;          //! Type for an array (QVector) of WORDs (ut_Word)
+typedef QVector<p2_LONG> p2_LONGS;          //! Type for an array (QVector) of LONGs (ut_Addr or ut_Long)
+typedef QVector<p2_QUAD> p2_QUADS;          //! Type for an array (QVector) of QUADs (ut_Quad)
+typedef QVector<p2_REAL> p2_REALS;          //! Type for an array (QVector) of REALs (ut_Real)
+typedef QVector<char> p2_CHARS;             //! Type for an array (vector) of chars (ut_String)
 
 //! Type for a mask/match pair for P2DocOpcode and P2Doc
 typedef QPair<p2_LONG,p2_LONG> P2MatchMask;
@@ -1062,6 +1062,7 @@ typedef enum {
     offs_INA,                   //!< offset of input states for P31 ... P0
     offs_INB,                   //!< offset of input states for P63 ... P32
 }   p2_cogregs_e;
+Q_DECLARE_METATYPE(p2_cogregs_e);
 
 Q_STATIC_ASSERT(offs_INB == 0x1ff);
 
@@ -1236,6 +1237,7 @@ typedef enum {
     fmt_byt,
     fmt_dec,
     fmt_hex,
+    fmt_doc,
 }   p2_format_e;
 
 extern const QString template_str_origin;
@@ -1245,34 +1247,13 @@ extern const QString template_str_opcode_byt;
 extern const QString template_str_opcode_oct;
 extern const QString template_str_opcode_dec;
 extern const QString template_str_opcode_hex;
+extern const QString template_str_opcode_doc;
 extern const QString template_str_tokens;
 extern const QString template_str_symbols;
 extern const QString template_str_errors;
 extern const QString template_str_instruction;
 extern const QString template_str_description;
 extern const QString key_tv_asm;
-
-extern QString format_opcode_bin(const p2_opcode_u& IR);
-extern QString format_opcode_byt(const p2_opcode_u& IR);
-extern QString format_opcode_oct(const p2_opcode_u& IR);
-extern QString format_opcode_dec(const p2_opcode_u& IR);
-extern QString format_opcode_hex(const p2_opcode_u& IR);
-
-extern QString format_data_bin(const p2_opcode_u& IR, bool prefix = false);
-extern QString format_data_byt(const p2_opcode_u& IR, bool prefix = false);
-extern QString format_data_oct(const p2_opcode_u& IR, bool prefix = false);
-extern QString format_data_dec(const p2_opcode_u& IR);
-extern QString format_data_hex(const p2_opcode_u& IR, bool prefix = false);
-
-extern QString format_data_bin(const p2_LONG data, bool prefix = false);
-extern QString format_data_byt(const p2_LONG data, bool prefix = false);
-extern QString format_data_oct(const p2_LONG data, bool prefix = false);
-extern QString format_data_dec(const p2_LONG data);
-extern QString format_data_hex(const p2_LONG data, bool prefix = false);
-
-extern QString format_opcode(const p2_opcode_u& IR, const p2_format_e fmt = fmt_bin);
-extern QString format_data(const p2_opcode_u& IR, const p2_format_e fmt = fmt_bin, bool prefix = false);
-extern QString format_data(const p2_LONG data, const p2_format_e fmt = fmt_bin, bool prefix = false);
 
 /**
  * @brief enumeration of token types

@@ -617,6 +617,14 @@ const QStringList P2Doc::html_opcode(const p2_LONG opcode) const
     return html;
 }
 
+const QString P2Doc::pattern(p2_LONG opcode) const
+{
+    P2DocOpcode op = opcode_of(opcode);
+    if (op.isNull() || !op->isDefined())
+        return QString();
+    return op->pattern();
+}
+
 /**
  * @brief Create a HTML document describing the opcodes
  * @return QStringList with HTML lines

@@ -46,7 +46,6 @@ QStringList P2OpcodeDelegate::opcodeLines(const QModelIndex& index) const
 {
     const P2AsmModel* model = qobject_cast<const P2AsmModel*>(index.model());
     Q_ASSERT(model);    // assert the model is really P2AsmModel
-
     QVariant var = model->data(index, Qt::EditRole);
 
     const P2Opcode IR = qvariant_cast<P2Opcode>(var);
@@ -54,13 +53,13 @@ QStringList P2OpcodeDelegate::opcodeLines(const QModelIndex& index) const
     QStringList text;
 
     if (IR.is_ir())
-        text += format_opcode(IR.ir(), format);
+        text += P2Opcode::format_opcode(IR, format);
 
-    if (IR.is_equ())
-        text += format_data(IR.equ().to_long(), format);
+    if (IR.is_assign())
+        text += P2Opcode::format_assign(IR, format);
 
-    if (text.isEmpty() && !IR.data().isEmpty())
-        text = P2Atom::format_data(IR.data(), IR.orgh());
+    if (IR.is_data())
+        text += P2Opcode::format_data(IR, format);
     return text;
 }
 
@@ -109,6 +108,8 @@ void P2OpcodeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
 QSize P2OpcodeDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
     QStringList lines = opcodeLines(index);
+    const int flags = static_cast<int>(option.displayAlignment) |
+                      Qt::TextDontClip | Qt::TextExpandTabs | Qt::TextForceLeftToRight;
     QFontMetrics metrics(option.font);
-    return metrics.boundingRect(lines.join(QChar::LineFeed)).size();
+    return metrics.boundingRect(option.rect, flags, lines.join(QChar::LineFeed)).size();
 }

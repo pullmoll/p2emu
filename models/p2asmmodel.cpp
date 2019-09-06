@@ -53,37 +53,37 @@ P2AsmModel::P2AsmModel(P2Asm* p2asm, QObject *parent)
     m_header.insert(c_Origin,           tr("OrgH"));
     m_background.insert(c_Origin,       qRgb(0xff,0xfc,0xf8));
     m_head_alignment.insert(c_Origin,   Qt::AlignLeft | Qt::AlignVCenter);
-    m_text_alignment.insert(c_Origin,   Qt::AlignLeft | Qt::AlignVCenter);
+    m_text_alignment.insert(c_Origin,   Qt::AlignLeft | Qt::AlignTop);
 
     m_header.insert(c_Address,          tr("Org"));
     m_background.insert(c_Address,      qRgb(0xff,0xf0,0xe0));
     m_head_alignment.insert(c_Address,  Qt::AlignLeft | Qt::AlignVCenter);
-    m_text_alignment.insert(c_Address,  Qt::AlignLeft | Qt::AlignVCenter);
+    m_text_alignment.insert(c_Address,  Qt::AlignLeft | Qt::AlignTop);
 
     m_header.insert(c_Opcode,           tr("Opcode"));
     m_background.insert(c_Opcode,       qRgb(0xf8,0xfc,0xff));
     m_head_alignment.insert(c_Opcode,   Qt::AlignLeft | Qt::AlignVCenter);
-    m_text_alignment.insert(c_Opcode,   Qt::AlignLeft | Qt::AlignVCenter);
+    m_text_alignment.insert(c_Opcode,   Qt::AlignLeft | Qt::AlignTop);
 
     m_header.insert(c_Errors,           tr("Errors"));
     m_background.insert(c_Errors,       qRgb(0xff,0xc0,0xc0));
     m_head_alignment.insert(c_Errors,   Qt::AlignLeft | Qt::AlignVCenter);
-    m_text_alignment.insert(c_Errors,   Qt::AlignCenter);
+    m_text_alignment.insert(c_Errors,   Qt::AlignHCenter | Qt::AlignTop);
 
     m_header.insert(c_Tokens,           tr("Tokens"));
     m_background.insert(c_Tokens,       qRgb(0x10,0xfc,0xff));
     m_head_alignment.insert(c_Tokens,   Qt::AlignLeft | Qt::AlignVCenter);
-    m_text_alignment.insert(c_Tokens,   Qt::AlignCenter);
+    m_text_alignment.insert(c_Tokens,   Qt::AlignHCenter | Qt::AlignTop);
 
     m_header.insert(c_Symbols,          tr("Symbols"));
     m_background.insert(c_Symbols,      qRgb(0xff,0xf0,0xff));
     m_head_alignment.insert(c_Symbols,  Qt::AlignLeft | Qt::AlignVCenter);
-    m_text_alignment.insert(c_Symbols,  Qt::AlignCenter);
+    m_text_alignment.insert(c_Symbols,  Qt::AlignHCenter | Qt::AlignTop);
 
     m_header.insert(c_Source,           tr("Source"));
     m_background.insert(c_Source,       qRgb(0xff,0xff,0xff));
     m_head_alignment.insert(c_Source,   Qt::AlignLeft | Qt::AlignVCenter);
-    m_text_alignment.insert(c_Source,   Qt::AlignLeft | Qt::AlignVCenter);
+    m_text_alignment.insert(c_Source,   Qt::AlignLeft | Qt::AlignTop);
 }
 
 QVariant P2AsmModel::headerData(int section, Qt::Orientation orientation, int role) const
@@ -300,8 +300,9 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
             break;
 
         case c_Opcode:
-            if (has_IR)
-                result = opcodeToolTip(IR);
+            if (!has_IR)
+                break;
+            result = opcodeToolTip(IR);
             break;
 
         case c_Tokens:
@@ -570,32 +571,41 @@ static const QString html_td(const QString& text)
 QString P2AsmModel::opcodeToolTip(const P2Opcode& IR) const
 {
     QStringList html = html_head();
-    QString title;
+    QString title1;
+    QString title2;
     QStringList lines;
+    QStringList comments;
 
     if (IR.is_ir()) {
-        title = tr("Opcode");
-        lines += format_opcode(IR.ir(), m_format);
+        title1 = tr("Opcode");
+        lines += P2Opcode::format_opcode(IR, m_format).split(QChar::LineFeed);
+        title2 = tr("Brief");
+        comments += P2Opcode::format_opcode_doc(IR);
     }
 
-    if (IR.is_equ()) {
-        title = tr("Assigment");
-        lines += format_data(IR.equ().to_long(), m_format);
+    if (IR.is_assign()) {
+        title1 = tr("Assigment");
+        lines += P2Opcode::format_assign(IR, m_format).split(QChar::LineFeed);
     }
 
     if (lines.isEmpty() && !IR.data().isEmpty()) {
-        title = tr("Data");
-        lines = P2Atom::format_data(IR.data(), IR.orgh());
+        title1 = tr("Data");
+        lines += P2Opcode::format_data(IR, m_format).split(QChar::LineFeed);
     }
 
     // heading
     html += html_start_tr();
-    html += html_th(title);
+    html += html_th(title1);
+    if (!title2.isEmpty())
+        html += html_th(title2);
     html += html_end_tr();
 
-    foreach(const QString& line, lines) {
+    for (int i = 0; i < lines.count(); i++) {
+        const QString& line = lines[i];
         html += html_start_tr();
         html += html_td(line);
+        if (!comments.isEmpty())
+            html += html_td(comments.value(i));
         html += html_end_tr();
     }
 
@@ -660,9 +670,9 @@ QString P2AsmModel::symbolsToolTip(const P2SymbolTable& symbols, const QList<P2S
         html += html_td(QString::number(word.lineno()));
         html += html_td(sym.name());
         html += html_td(sym.type_name());
-        html += html_td(format_data_dec(val));
-        html += html_td(format_data_hex(val));
-        html += html_td(format_data_bin(val));
+        html += html_td(QString("%1").arg(val));
+        html += html_td(QString("$%1").arg(val, 8, 16, QChar('0')));
+        html += html_td(QString("%%1").arg(val, 32, 2, QChar('0')));
         html += html_end_tr();
     }
     html += html_end();

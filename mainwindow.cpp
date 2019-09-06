@@ -124,7 +124,7 @@ MainWindow::MainWindow(QWidget *parent)
     restoreSettings();
     setupFonts();
 
-    loadSource(QStringLiteral(":/spin2/spin2_interpreter.spin2"));
+    // loadSource(QStringLiteral(":/spin2/spin2_interpreter.spin2"));
     loadObjectRandom();
 }
 
@@ -635,6 +635,7 @@ void MainWindow::assemble()
         const QModelIndex idx = ui->tvAsm->currentIndex();
 
         m_amodel->invalidate();
+        ui->tvAsm->resizeRowsToContents();
         ui->tvAsm->setCurrentIndex(idx);
         m_smodel->setTable(m_asm->symbols());
     }
@@ -942,6 +943,7 @@ void MainWindow::updateAsmColumnSizes()
         if (size.isValid())
             ui->tvAsm->setColumnWidth(i, size.width());
     }
+    ui->tvAsm->resizeRowsToContents();
 }
 
 /**

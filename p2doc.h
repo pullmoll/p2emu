@@ -46,37 +46,11 @@ public:
     const QStringList html_opcodes() const;
     const QStringList html_opcode(const p2_LONG opcode) const;
 
+    const QString pattern(p2_LONG opcode) const;
     const QString brief(p2_LONG opcode) const;
-    const QString brief(p2_inst7_e inst) { return brief(opcode_inst7(inst)); }
-    const QString brief(p2_inst8_e inst) { return brief(opcode_inst8(inst)); }
-    const QString brief(p2_inst9_e inst) { return brief(opcode_inst9(inst)); }
-    const QString brief(p2_opdst_e inst) { return brief(opcode_opdst(inst)); }
-    const QString brief(p2_opsrc_e inst) { return brief(opcode_opsrc(inst)); }
-    const QString brief(p2_opx24_e inst) { return brief(opcode_opx24(inst)); }
-
     const QString instr(p2_LONG opcode) const;
-    const QString instr(p2_inst7_e inst) { return instr(opcode_inst7(inst)); }
-    const QString instr(p2_inst8_e inst) { return instr(opcode_inst8(inst)); }
-    const QString instr(p2_inst9_e inst) { return instr(opcode_inst9(inst)); }
-    const QString instr(p2_opdst_e inst) { return instr(opcode_opdst(inst)); }
-    const QString instr(p2_opsrc_e inst) { return instr(opcode_opsrc(inst)); }
-    const QString instr(p2_opx24_e inst) { return instr(opcode_opx24(inst)); }
-
     const QStringList descr(p2_LONG opcode) const;
-    QStringList descr(p2_inst7_e inst) { return descr(opcode_inst7(inst)); }
-    QStringList descr(p2_inst8_e inst) { return descr(opcode_inst8(inst)); }
-    QStringList descr(p2_inst9_e inst) { return descr(opcode_inst9(inst)); }
-    QStringList descr(p2_opdst_e inst) { return descr(opcode_opdst(inst)); }
-    QStringList descr(p2_opsrc_e inst) { return descr(opcode_opsrc(inst)); }
-    QStringList descr(p2_opx24_e inst) { return descr(opcode_opx24(inst)); }
-
     p2_token_e token(p2_LONG opcode);
-    p2_token_e token(p2_inst7_e inst) { return token(opcode_inst7(inst)); }
-    p2_token_e token(p2_inst8_e inst) { return token(opcode_inst8(inst)); }
-    p2_token_e token(p2_inst9_e inst) { return token(opcode_inst9(inst)); }
-    p2_token_e token(p2_opdst_e inst) { return token(opcode_opdst(inst)); }
-    p2_token_e token(p2_opsrc_e inst) { return token(opcode_opsrc(inst)); }
-    p2_token_e token(p2_opx24_e inst) { return token(opcode_opx24(inst)); }
 
 private:
     static constexpr p2_LONG C_match     = p2_mask_C;                   //!< C == match in pattern
@@ -114,6 +88,34 @@ private:
     static p2_LONG opcode_opdst(const p2_opdst_e instr);
     static p2_LONG opcode_opsrc(const p2_opsrc_e instr);
     static p2_LONG opcode_opx24(const p2_opx24_e instr);
+
+    const QString brief(p2_inst7_e inst) { return brief(opcode_inst7(inst)); }
+    const QString brief(p2_inst8_e inst) { return brief(opcode_inst8(inst)); }
+    const QString brief(p2_inst9_e inst) { return brief(opcode_inst9(inst)); }
+    const QString brief(p2_opdst_e inst) { return brief(opcode_opdst(inst)); }
+    const QString brief(p2_opsrc_e inst) { return brief(opcode_opsrc(inst)); }
+    const QString brief(p2_opx24_e inst) { return brief(opcode_opx24(inst)); }
+
+    const QString instr(p2_inst7_e inst) { return instr(opcode_inst7(inst)); }
+    const QString instr(p2_inst8_e inst) { return instr(opcode_inst8(inst)); }
+    const QString instr(p2_inst9_e inst) { return instr(opcode_inst9(inst)); }
+    const QString instr(p2_opdst_e inst) { return instr(opcode_opdst(inst)); }
+    const QString instr(p2_opsrc_e inst) { return instr(opcode_opsrc(inst)); }
+    const QString instr(p2_opx24_e inst) { return instr(opcode_opx24(inst)); }
+
+    const QStringList descr(p2_inst7_e inst) { return descr(opcode_inst7(inst)); }
+    const QStringList descr(p2_inst8_e inst) { return descr(opcode_inst8(inst)); }
+    const QStringList descr(p2_inst9_e inst) { return descr(opcode_inst9(inst)); }
+    const QStringList descr(p2_opdst_e inst) { return descr(opcode_opdst(inst)); }
+    const QStringList descr(p2_opsrc_e inst) { return descr(opcode_opsrc(inst)); }
+    const QStringList descr(p2_opx24_e inst) { return descr(opcode_opx24(inst)); }
+
+    p2_token_e token(p2_inst7_e inst) { return token(opcode_inst7(inst)); }
+    p2_token_e token(p2_inst8_e inst) { return token(opcode_inst8(inst)); }
+    p2_token_e token(p2_inst9_e inst) { return token(opcode_inst9(inst)); }
+    p2_token_e token(p2_opdst_e inst) { return token(opcode_opdst(inst)); }
+    p2_token_e token(p2_opsrc_e inst) { return token(opcode_opsrc(inst)); }
+    p2_token_e token(p2_opx24_e inst) { return token(opcode_opx24(inst)); }
 
     P2DocOpcode make_pattern(const char* _func, p2_LONG instr, const char* src, const p2_LONG instmask, p2_LONG mode = 0);
 

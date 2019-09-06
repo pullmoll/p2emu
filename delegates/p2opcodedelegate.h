@@ -34,6 +34,8 @@
 #pragma once
 #include <QStyledItemDelegate>
 
+class P2AsmModel;
+
 class P2OpcodeDelegate : public QStyledItemDelegate
 {
     Q_OBJECT

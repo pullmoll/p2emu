@@ -116,7 +116,7 @@ bool P2Symbol::set_atom(const P2Atom& value)
  * @brief Return the type of the value in this symbol
  * @return QVariant::Type of the value
  */
-P2Atom::Type P2Symbol::type() const
+p2_union_e P2Symbol::type() const
 {
     return m_atom.type();
 }

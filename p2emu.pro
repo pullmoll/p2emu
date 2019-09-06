@@ -39,6 +39,7 @@ SOURCES += \
 	p2symbol.cpp \
 	p2symboltable.cpp \
 	p2token.cpp \
+	p2union.cpp \
 	p2word.cpp \
 	delegates/p2opcodedelegate.cpp \
 	delegates/p2sourcedelegate.cpp \
@@ -71,6 +72,7 @@ HEADERS += \
 	p2symboltable.h \
 	p2token.h \
 	p2tokens.h \
+	p2union.h \
 	p2word.h \
 	delegates/p2opcodedelegate.h \
 	delegates/p2sourcedelegate.h \

@@ -53,7 +53,7 @@ public:
     bool insert(const P2Symbol& symbol);
     bool insert(const QString& name, const P2Atom& symbol);
     P2Symbol symbol(const QString& name) const;
-    P2Atom::Type type(const QString& name) const;
+    p2_union_e type(const QString& name) const;
     P2Word definition(const QString& name) const;
     const QList<P2Symbol> references_in(int lineno) const;
     P2Word reference(const QString& name, int idx = 0) const;

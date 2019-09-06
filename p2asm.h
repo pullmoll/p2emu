@@ -162,7 +162,7 @@ private:
     void results();
     QString expand_tabs(const QString& src);
     bool skip_comments();
-    bool tokenize(const QString& m_line);
+    bool tokenize();
 
     const P2Word& curr_word() const;
     const QString curr_str() const;
@@ -173,33 +173,34 @@ private:
     p2_cond_e conditional();
     p2_cond_e parse_modcz();
     P2Atom make_atom();
-    P2Atom bin_const(const QString& str);
-    P2Atom byt_const(const QString& str);
-    P2Atom dec_const(const QString& str);
-    P2Atom hex_const(const QString& str);
-    P2Atom real_const(const QString& str);
-    P2Atom str_const(const QString& str);
+    bool bin_const(P2Atom& atom, const QString& str);
+    bool byt_const(P2Atom& atom, const QString& str);
+    bool dec_const(P2Atom& atom, const QString& str);
+    bool hex_const(P2Atom& atom, const QString& str);
+    bool real_const(P2Atom& atom, const QString& str);
+    bool str_const(P2Atom& atom, const QString& str);
 
     QString find_symbol(Section sect = con_section, const QString& func = QString(), bool all_sections = false);
     QString find_locsym(Section sect = con_section, const QString& local = QString());
     bool define_symbol(const QString& symbol, const P2Atom& atom);
     void add_const_symbol(const QString& pfx, const P2Word& word = P2Word(), const P2Atom& atom = P2Atom());
 
-    bool assemble_con();
-    bool assemble_dat();
+    bool assemble_con_section();
+    bool assemble_dat_section();
     bool assemble_pass();
 
-    P2Atom parse_atom(int level);
-    P2Atom parse_ptr_index(int level);
-    P2Atom parse_primary(int level);
-    P2Atom parse_unary(int level);
-    P2Atom parse_mulops(int level);
-    P2Atom parse_addops(int level);
-    P2Atom parse_shiftops(int level);
-    P2Atom parse_binops(int level);
+    bool parse_atom(P2Atom& atom, int level);
+    bool parse_ptr_index(P2Atom& atom, int level);
+    bool parse_primary(P2Atom& atom, int level);
+    bool parse_unary(P2Atom& atom, int level);
+    bool parse_mulops(P2Atom& atom, int level);
+    bool parse_addops(P2Atom& atom, int level);
+    bool parse_shiftops(P2Atom& atom, int level);
+    bool parse_binops(P2Atom& atom, int level);
+    P2Atom::Traits parse_traits();
     P2Atom parse_expression(int level = 0);
 
-    bool encode_ptr_index(const P2Atom& index);
+    bool encode_ptr_index(P2Atom& index);
 
     bool error_dst_or_src();
     P2Atom parse_dst(P2Opcode::ImmFlag flag = P2Opcode::imm_none);

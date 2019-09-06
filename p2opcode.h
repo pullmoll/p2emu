@@ -46,6 +46,7 @@ class P2Opcode
 {
 public:
     explicit P2Opcode(const p2_LONG opcode = 0, p2_ORG_ORGH_t org_orgh = p2_ORG_ORGH_t(0,0));
+    P2Opcode(const p2_inst5_e inst7, p2_ORG_ORGH_t org_orgh = p2_ORG_ORGH_t(0,0));
     P2Opcode(const p2_inst7_e inst7, p2_ORG_ORGH_t org_orgh = p2_ORG_ORGH_t(0,0));
     P2Opcode(const p2_inst8_e inst8, p2_ORG_ORGH_t org_orgh = p2_ORG_ORGH_t(0,0));
     P2Opcode(const p2_inst9_e inst9, p2_ORG_ORGH_t org_orgh = p2_ORG_ORGH_t(0,0));
@@ -53,7 +54,7 @@ public:
     enum Type {
         type_none,
         type_ir,
-        type_equ,
+        type_assign,
         type_data
     };
 
@@ -97,7 +98,8 @@ public:
     Error aug_error() const;
 
     bool is_ir() const;
-    bool is_equ() const;
+    bool is_assign() const;
+    bool is_data() const;
 
     p2_opcode_u ir() const;
     p2_LONG opcode() const;
@@ -124,6 +126,7 @@ public:
 
     void set_opcode(const p2_LONG opcode);
     void set_cond(const p2_cond_e cond);
+    void set_inst5(const p2_inst5_e inst);
     void set_inst7(const p2_inst7_e inst);
     void set_inst8(const p2_inst8_e inst);
     void set_inst9(const p2_inst9_e inst);
@@ -133,6 +136,7 @@ public:
     void set_dst(const p2_LONG dst);
     void set_src(const p2_LONG src);
     void set_dst_src(const p2_LONG dst, const p2_LONG src);
+    void set_r20(const p2_LONG addr);
     void set_a20(const p2_LONG addr);
     void set_imm23(const p2_LONG addr);
     void set_wcz(bool on = true);
@@ -146,6 +150,25 @@ public:
     bool set_dst(const P2Atom& value, const p2_LONG ORG, const p2_LONG ORGH);
     bool set_src(const P2Atom& value, const p2_LONG ORG, const p2_LONG ORGH);
 
+    static QString format_opcode_bin(const P2Opcode& ir);
+    static QString format_opcode_byt(const P2Opcode& ir);
+    static QString format_opcode_dec(const P2Opcode& ir);
+    static QString format_opcode_hex(const P2Opcode& ir);
+    static QString format_opcode_doc(const P2Opcode& ir);
+    static QString format_opcode(const P2Opcode& ir, p2_format_e fmt = fmt_bin);
+
+    static QString format_assign_bin(const P2Opcode& ir, bool prefix = false);
+    static QString format_assign_byt(const P2Opcode& ir, bool prefix = false);
+    static QString format_assign_dec(const P2Opcode& ir, bool prefix = false);
+    static QString format_assign_hex(const P2Opcode& ir, bool prefix = false);
+    static QString format_assign(const P2Opcode& ir, p2_format_e fmt = fmt_bin);
+
+    static QString format_data_bin(const P2Opcode& ir, const p2_QUAD data, bool prefix = false);
+    static QString format_data_byt(const P2Opcode& ir, const p2_QUAD data, bool prefix = false);
+    static QString format_data_dec(const P2Opcode& ir, const p2_QUAD data, bool prefix = false);
+    static QString format_data_hex(const P2Opcode& ir, const p2_LONG data, bool prefix = false);
+    static QString format_data(const P2Opcode& ir, p2_format_e fmt = fmt_bin);
+
 private:
     p2_opcode_u m_u;                //!< instruction opcode or assignment value
     p2_ORG_ORGH_t m_org_orgh;       //!< QPair of the instruction's ORG and ORGH values
@@ -157,6 +180,9 @@ private:
     P2Atom m_data;                  //!< optional data generated from BYTE, WORD, LONG, FILE, etc.
     P2Atom m_equ;                   //!< optional atom from an assignment (=)
     Error m_error;                  //!< error set when set_dst() or set_src() return false
+
+    static P2Opcode make_augd(const P2Opcode& ir);
+    static P2Opcode make_augs(const P2Opcode& ir);
 };
 
 Q_DECLARE_METATYPE(P2Opcode);

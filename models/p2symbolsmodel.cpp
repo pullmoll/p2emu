@@ -168,7 +168,7 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
     const P2Word& definition = symbol.definition();
     const int definition_lineno = definition.lineno();
     const P2Atom& atom = symbol.atom();
-    const P2Atom::Type type = atom.type();
+    const p2_union_e type = atom.type();
 
     switch (role) {
     case Qt::DisplayRole:
@@ -191,31 +191,31 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
 
         case c_Value:
             switch (type) {
-            case P2Atom::Invalid:
+            case ut_Invalid:
                 break;
-            case P2Atom::Bool:
+            case ut_Bool:
                 result = atom.to_bool() ? QStringLiteral("true")
                                         : QStringLiteral("false");
                 break;
-            case P2Atom::Byte:
+            case ut_Byte:
                 result = QString("$%1").arg(atom.to_byte(), 0, 16, QChar('0'));
                 break;
-            case P2Atom::Word:
+            case ut_Word:
                 result = QString("$%1").arg(atom.to_word(), 0, 16, QChar('0'));
                 break;
-            case P2Atom::Addr:
+            case ut_Addr:
                 result = QString("$%1").arg(atom.to_word(), 0, 16, QChar('0'));
                 break;
-            case P2Atom::Long:
+            case ut_Long:
                 result = QString("$%1").arg(atom.to_word(), 0, 16, QChar('0'));
                 break;
-            case P2Atom::Quad:
+            case ut_Quad:
                 result = QString("$%1").arg(atom.to_word(), 0, 16, QChar('0'));
                 break;
-            case P2Atom::Real:
+            case ut_Real:
                 result = QString("%1").arg(atom.to_real());
                 break;
-            case P2Atom::String:
+            case ut_String:
                 result = atom.to_string();
                 break;
             }
