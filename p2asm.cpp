@@ -2514,7 +2514,7 @@ void P2Asm::results()
     if (m_IR.is_assign()) {
         m_listing += results_assignment();
     }
-    if (m_IR.is_data()) {
+    if (!m_data.isEmpty()) {
         m_listing += results_data(binary);
     }
     if (m_words.isEmpty() || Token.is_type(m_words[0].tok(), tm_comment)) {
@@ -11800,11 +11800,9 @@ bool P2Asm::asm_loc()
 {
     next();
     const int idx = m_idx;
-    m_IR.set_inst5(p2_LOC);
     P2Atom ptr = parse_dst();
     bool success = false;
-    if (!mandatory_COMMA())
-        return false;
+    m_IR.set_inst5(p2_LOC);
     switch (ptr.to_long()) {
     case offs_PA:
         m_IR.set_inst7(p2_LOC_PA);
@@ -11829,7 +11827,9 @@ bool P2Asm::asm_loc()
                   .arg(tr("PA, PB, PTRA, or PTRB"));
         emit Error(m_pass, m_lineno, m_errors.last());
     }
-    return success;
+    if (!mandatory_COMMA())
+        return false;
+    return parse_PC_A20();
 }
 
 /**
