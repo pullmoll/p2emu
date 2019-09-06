@@ -320,6 +320,7 @@ QString P2Atom::str(p2_format_e fmt) const
             break;
         case fmt_byt:
         case fmt_hex:
+        default:
             result = QString("<%1> $%2")
                      .arg(type_name())
                      .arg(get<p2_BYTE>(), 2, 16, QChar('0'));
@@ -345,6 +346,7 @@ QString P2Atom::str(p2_format_e fmt) const
                      .arg(get<p2_WORD>() & 0xff, 2, 16, QChar('0'));
             break;
         case fmt_hex:
+        default:
             result = QString("<%1> $%2")
                      .arg(type_name())
                      .arg(get<p2_WORD>(), 4, 16, QChar('0'));
@@ -375,6 +377,7 @@ QString P2Atom::str(p2_format_e fmt) const
                      .arg((get<p2_LONG>() >>  0) & 0xff, 2, 16, QChar('0'));
             break;
         case fmt_hex:
+        default:
             result = QString("<%1> $%2")
                      .arg(type_name())
                      .arg(get<p2_LONG>(), 8, 16, QChar('0'));
@@ -412,6 +415,7 @@ QString P2Atom::str(p2_format_e fmt) const
                      .arg((get<p2_QUAD>() >>  0) & 0xff, 2, 16, QChar('0'));
             break;
         case fmt_hex:
+        default:
             result = QString("<%1> $%2")
                      .arg(type_name())
                      .arg(get<p2_QUAD>(), 16, 16, QChar('0'));

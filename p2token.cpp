@@ -414,6 +414,8 @@ P2Token::P2Token()
     TN_ADD(t_MERGEW,            tm_mnemonic, QStringLiteral("MERGEW"));
     TN_ADD(t_MIXPIX,            tm_mnemonic, QStringLiteral("MIXPIX"));
     TN_ADD(t_MODCZ,             tm_mnemonic, QStringLiteral("MODCZ"));
+    TN_ADD(t_MODC,              tm_mnemonic, QStringLiteral("MODC"));
+    TN_ADD(t_MODZ,              tm_mnemonic, QStringLiteral("MODZ"));
     TN_ADD(t_MOV,               tm_mnemonic, QStringLiteral("MOV"));
     TN_ADD(t_MOVBYTS,           tm_mnemonic, QStringLiteral("MOVBYTS"));
     TN_ADD(t_MUL,               tm_mnemonic, QStringLiteral("MUL"));

@@ -50,13 +50,13 @@ static const QString p2_section_pub = QStringLiteral("PUB");
 static const QString p2_section_pri = QStringLiteral("PRI");
 static const QString p2_section_var = QStringLiteral("VAR");
 
-static const QString p2_prefix_bin_const = QStringLiteral("_BIN::");
-static const QString p2_prefix_byt_const = QStringLiteral("_BYT::");
-static const QString p2_prefix_dec_const = QStringLiteral("_DEC::");
-static const QString p2_prefix_hex_const = QStringLiteral("_HEX::");
-static const QString p2_prefix_str_const = QStringLiteral("_STR::");
-static const QString p2_prefix_real_const = QStringLiteral("_REAL::");
-static const QString p2_prefix_lut_const = QStringLiteral("_LUT::");
+static const QString p2_prefix_bin_const = QStringLiteral("_BIN=");
+static const QString p2_prefix_byt_const = QStringLiteral("_BYT=");
+static const QString p2_prefix_dec_const = QStringLiteral("_DEC=");
+static const QString p2_prefix_hex_const = QStringLiteral("_HEX=");
+static const QString p2_prefix_str_const = QStringLiteral("_STR=");
+static const QString p2_prefix_real_const = QStringLiteral("_REAL=");
+static const QString p2_prefix_offs_const = QStringLiteral("_OFFS=");
 
 
 #if DEBUG_EXPR
@@ -2500,16 +2500,17 @@ void P2Asm::results()
 {
     const bool binary = true;
 
-    if (m_IR.is_ir()) {
+    if (m_IR.is_instruction()) {
         m_listing += results_instruction(binary);
-    } else if (m_data.isEmpty()) {
-        if (m_words.isEmpty() || Token.is_type(m_words[0].tok(), tm_comment)) {
-            m_listing += results_comment();
-        } else {
-            m_listing += results_assignment();
-        }
-    } else {
+    }
+    if (m_IR.is_assign()) {
+        m_listing += results_assignment();
+    }
+    if (m_IR.is_data()) {
         m_listing += results_data(binary);
+    }
+    if (m_words.isEmpty() || Token.is_type(m_words[0].tok(), tm_comment)) {
+        m_listing += results_comment();
     }
 
     // Calculate next ORG and PC values by adding m_advance
@@ -2568,7 +2569,7 @@ bool P2Asm::skip_comments()
 {
     if (m_idx >= m_cnt)
         return false;
-    while (m_idx < m_cnt && Token.is_type(m_words.value(m_idx).tok(), tm_comment))
+    while (Token.is_type(curr_tok(), tm_comment))
         m_idx++;
     return m_idx < m_cnt;
 }
@@ -2929,56 +2930,56 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_DIRA:
         DBG_EXPR(" atom DIRA: %s", qPrintable(str));
         atom.set(offs_DIRA);
-        add_const_symbol(p2_prefix_lut_const, word, atom);
+        add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom DIRA atom = %s", qPrintable(atom.str()));
         break;
 
     case t_DIRB:
         DBG_EXPR(" atom DIRB: %s", qPrintable(str));
         atom.set(offs_DIRB);
-        add_const_symbol(p2_prefix_lut_const, word, atom);
+        add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom DIRB atom = %s", qPrintable(atom.str()));
         break;
 
     case t_INA:
         DBG_EXPR(" atom INA: %s", qPrintable(str));
         atom.set(offs_INA);
-        add_const_symbol(p2_prefix_lut_const, word, atom);
+        add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom INA atom = %s", qPrintable(atom.str()));
         break;
 
     case t_INB:
         DBG_EXPR(" atom INB: %s", qPrintable(str));
         atom.set(offs_INB);
-        add_const_symbol(p2_prefix_lut_const, word, atom);
+        add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom INB atom = %s", qPrintable(atom.str()));
         break;
 
     case t_OUTA:
         DBG_EXPR(" atom OUTA: %s", qPrintable(str));
         atom.set(offs_OUTA);
-        add_const_symbol(p2_prefix_lut_const, word, atom);
+        add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom OUTA atom = %s", qPrintable(atom.str()));
         break;
 
     case t_OUTB:
         DBG_EXPR(" atom OUTB: %s", qPrintable(str));
         atom.set(offs_OUTB);
-        add_const_symbol(p2_prefix_lut_const, word, atom);
+        add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom OUTB atom = %s", qPrintable(atom.str()));
         break;
 
     case t_PA:
         DBG_EXPR(" atom PA: %s", qPrintable(str));
         atom.set(offs_PA);
-        add_const_symbol(p2_prefix_lut_const, word, atom);
+        add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom PA atom = %s", qPrintable(atom.str()));
         break;
 
     case t_PB:
         DBG_EXPR(" atom PB: %s", qPrintable(str));
         atom.set(offs_PB);
-        add_const_symbol(p2_prefix_lut_const, word, atom);
+        add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom PB atom = %s", qPrintable(atom.str()));
         break;
 
@@ -2989,7 +2990,7 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_PTRA_predec:
         DBG_EXPR(" atom PTRA: %s", qPrintable(str));
         atom.set(offs_PTRA);
-        add_const_symbol(p2_prefix_lut_const, word, atom);
+        add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom PTRA atom = %s", qPrintable(atom.str()));
         index = parse_ptr_index(index, level);
         encode_ptr_index(index);
@@ -3002,7 +3003,7 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_PTRB_predec:
         DBG_EXPR(" atom PTRB: %s", qPrintable(str));
         atom.set(offs_PTRB);
-        add_const_symbol(p2_prefix_lut_const, word, atom);
+        add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom PTRB atom = %s", qPrintable(atom.str()));
         index = parse_ptr_index(index, level);
         encode_ptr_index(index);
@@ -3010,7 +3011,7 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
 
     case t_DOLLAR:
         DBG_EXPR(" atom current PC: %s", qPrintable(str));
-        atom.set(m_ORG);
+        atom.set(m_ORG / 4);    // FIXME: use m_ORG or m_ORG/4 ?
         atom.set_type(ut_Addr);
         DBG_EXPR(" atom $ atom = %s", qPrintable(atom.str()));
         break;
@@ -3638,26 +3639,29 @@ bool P2Asm::error_dst_or_src()
     if (m_pass < 2)
         return true;
 
-    switch (m_IR.aug_error()) {
+    switch (m_IR.aug_error_code()) {
     case P2Opcode::err_none:
         return true;
     case P2Opcode::dst_augd_none:
-        m_errors += tr("%1 constant larger than $1ff but %2.")
+        m_errors += tr("%1 constant $%2 is > $1ff but %3.")
                     .arg(QStringLiteral("DST"))
+                    .arg(m_IR.aug_error_value(), 0, 16)
                     .arg(tr("no imediate mode"));
         break;
 
     case P2Opcode::dst_augd_im:
-        m_errors += tr("%1 constant larger than $1ff but %2.")
+        m_errors += tr("%1 constant $%2 is > $1ff but %3.")
                     .arg(QStringLiteral("DST"))
+                    .arg(m_IR.aug_error_value(), 0, 16)
                     .arg(tr("%1 is not set for %2")
                          .arg(QStringLiteral("IM"))
                          .arg(QStringLiteral("L")));
         break;
 
     case P2Opcode::dst_augd_wz:
-        m_errors += tr("%1 constant larger than $1ff but %2.")
+        m_errors += tr("%1 constant $%2 is > $1ff but %3.")
                     .arg(QStringLiteral("DST"))
+                    .arg(m_IR.aug_error_value(), 0, 16)
                     .arg(tr("%1 is not set for %2")
                          .arg(QStringLiteral("WZ"))
                          .arg(QStringLiteral("L")));
@@ -3665,25 +3669,19 @@ bool P2Asm::error_dst_or_src()
 
 
     case P2Opcode::src_augs_none:
-        m_errors += tr("%1 constant larger than $1ff but %2.")
+        m_errors += tr("%1 constant $%2 is > $1ff but %3.")
                     .arg(QStringLiteral("SRC"))
+                    .arg(m_IR.aug_error_value(), 0, 16)
                     .arg(tr("no imediate mode"));
         break;
 
     case P2Opcode::src_augs_im:
-        m_errors += tr("%1 constant larger than $1ff but %2.")
+        m_errors += tr("%1 constant $%2 is > $1ff but %3.")
                     .arg(QStringLiteral("SRC"))
+                    .arg(m_IR.aug_error_value(), 0, 16)
                     .arg(tr("%1 is not set for %2")
                          .arg(QStringLiteral("IM"))
-                         .arg(QStringLiteral("L")));
-        break;
-
-    case P2Opcode::src_augs_wz:
-        m_errors += tr("%1 constant larger than $1ff but %2.")
-                    .arg(QStringLiteral("SRC"))
-                    .arg(tr("%1 is not set for %2")
-                         .arg(QStringLiteral("WZ"))
-                         .arg(QStringLiteral("L")));
+                         .arg(QStringLiteral("I")));
         break;
     }
     emit Error(m_pass, m_lineno, m_errors.last());
@@ -3748,7 +3746,7 @@ bool P2Asm::mandatory_COMMA()
         emit Error(m_pass, m_lineno, m_errors.last());
         return false;
     }
-    if (t_COMMA != m_words.value(m_idx).tok()) {
+    if (t_COMMA != curr_tok()) {
         m_errors += tr("Expected %1 but found %2.")
                   .arg(Token.string(t_COMMA))
                   .arg(Token.string(m_words.value(m_idx).tok()));
@@ -3767,7 +3765,7 @@ void P2Asm::optional_COMMA()
 {
     if (!skip_comments())
         return;
-    if (t_COMMA != m_words.value(m_idx).tok())
+    if (t_COMMA != curr_tok())
         return;
     next();
 }
@@ -3780,7 +3778,7 @@ void P2Asm::optional_COMMA()
 bool P2Asm::optional_WCZ()
 {
     while (skip_comments()) {
-        p2_token_e tok = m_words.value(m_idx).tok();
+        p2_token_e tok = curr_tok();
         switch (tok) {
         case t_WC:
             m_IR.set_wc();
@@ -3964,8 +3962,9 @@ bool P2Asm::parse_INST()
 bool P2Asm::parse_D_IM_S()
 {
     if (commata_left() < 1) {
+        const int idx = m_idx;
         P2Atom dst = parse_dst();
-        prev();
+        m_idx = idx;
         P2Atom src = parse_src();
     } else {
         P2Atom dst = parse_dst();
@@ -4101,15 +4100,14 @@ bool P2Asm::parse_D_IM_S_WCZ()
 {
     if (commata_left() < 1) {
         // if there is no comma, expect D = S and no #S
+        const int idx = m_idx;
         P2Atom dst = parse_dst();
-        prev();
+        m_idx = idx;
         P2Atom src = parse_src();
     } else {
         P2Atom dst = parse_dst();
-
         if (!mandatory_COMMA())
             return false;
-
         P2Atom src = parse_src(P2Opcode::imm_to_im);
     }
 
@@ -4124,13 +4122,18 @@ bool P2Asm::parse_D_IM_S_WCZ()
  */
 bool P2Asm::parse_D_IM_S_ANDCZ()
 {
-    P2Atom dst = parse_dst();
-
-    if (!mandatory_COMMA())
-        return false;
-
-    P2Atom src = parse_src(P2Opcode::imm_to_im);
-
+    if (commata_left() < 1) {
+        // if there is no comma, expect D = S and no #S
+        const int idx = m_idx;
+        P2Atom dst = parse_dst();
+        m_idx = idx;
+        P2Atom src = parse_src();
+    } else {
+        P2Atom dst = parse_dst();
+        if (!mandatory_COMMA())
+            return false;
+        P2Atom src = parse_src(P2Opcode::imm_to_im);
+    }
     mandatory_ANDC_ANDZ();
     return end_of_line();
 }
@@ -4142,12 +4145,18 @@ bool P2Asm::parse_D_IM_S_ANDCZ()
  */
 bool P2Asm::parse_D_IM_S_ORCZ()
 {
-    P2Atom dst = parse_dst();
-
-    if (!mandatory_COMMA())
-        return false;
-
-    P2Atom src = parse_src(P2Opcode::imm_to_im);
+    if (commata_left() < 1) {
+        // if there is no comma, expect D = S and no #S
+        const int idx = m_idx;
+        P2Atom dst = parse_dst();
+        m_idx = idx;
+        P2Atom src = parse_src();
+    } else {
+        P2Atom dst = parse_dst();
+        if (!mandatory_COMMA())
+            return false;
+        P2Atom src = parse_src(P2Opcode::imm_to_im);
+    }
 
     mandatory_ORC_ORZ();
     return end_of_line();
@@ -4160,12 +4169,18 @@ bool P2Asm::parse_D_IM_S_ORCZ()
  */
 bool P2Asm::parse_D_IM_S_XORCZ()
 {
-    P2Atom dst = parse_dst();
-
-    if (!mandatory_COMMA())
-        return false;
-
-    P2Atom src = parse_src(P2Opcode::imm_to_im);
+    if (commata_left() < 1) {
+        // if there is no comma, expect D = S and no #S
+        const int idx = m_idx;
+        P2Atom dst = parse_dst();
+        m_idx = idx;
+        P2Atom src = parse_src();
+    } else {
+        P2Atom dst = parse_dst();
+        if (!mandatory_COMMA())
+            return false;
+        P2Atom src = parse_src(P2Opcode::imm_to_im);
+    }
 
     mandatory_XORC_XORZ();
     return end_of_line();
@@ -4179,8 +4194,10 @@ bool P2Asm::parse_D_IM_S_XORCZ()
 bool P2Asm::parse_D_IM_S_WC()
 {
     if (commata_left() < 1) {
+        // if there is no comma, expect D = S and no #S
+        const int idx = m_idx;
         P2Atom dst = parse_dst();
-        prev();
+        m_idx = idx;
         P2Atom src = parse_src();
     } else {
         P2Atom dst = parse_dst();
@@ -4201,8 +4218,10 @@ bool P2Asm::parse_D_IM_S_WC()
 bool P2Asm::parse_D_IM_S_WZ()
 {
     if (commata_left() < 1) {
+        // if there is no comma, expect D = S and no #S
+        const int idx = m_idx;
         P2Atom dst = parse_dst();
-        prev();
+        m_idx = idx;
         P2Atom src = parse_src();
     } else {
         P2Atom dst = parse_dst();
@@ -4223,8 +4242,10 @@ bool P2Asm::parse_D_IM_S_WZ()
 bool P2Asm::parse_WZ_D_IM_S()
 {
     if (commata_left() < 1) {
+        // if there is no comma, expect D = S and no #S
+        const int idx = m_idx;
         P2Atom dst = parse_dst();
-        prev();
+        m_idx = idx;
         P2Atom src = parse_src();
     } else {
         P2Atom dst = parse_dst(P2Opcode::imm_to_wz);
@@ -4243,8 +4264,10 @@ bool P2Asm::parse_WZ_D_IM_S()
 bool P2Asm::parse_WZ_D_IM_S_WC()
 {
     if (commata_left() < 1) {
+        // if there is no comma, expect D = S and no #S
+        const int idx = m_idx;
         P2Atom dst = parse_dst();
-        prev();
+        m_idx = idx;
         P2Atom src = parse_src();
     } else {
         P2Atom dst = parse_dst(P2Opcode::imm_to_wz);
@@ -4263,15 +4286,11 @@ bool P2Asm::parse_WZ_D_IM_S_WC()
 bool P2Asm::parse_D_IM_S_NNN(uint max)
 {
     P2Atom dst = parse_dst();
-
     if (!mandatory_COMMA())
         return false;
-
     P2Atom src = parse_src(P2Opcode::imm_to_im);
-
     if (!mandatory_COMMA())
         return false;
-
     if (m_idx < m_cnt) {
         P2Atom n = parse_expression();
         if (n.isEmpty()) {
@@ -4446,28 +4465,29 @@ bool P2Asm::asm_enum_initial()
         while (m_idx < m_cnt) {
             if (!skip_comments())
                 break;
-            QString symbol = find_symbol(m_section, curr_str());
-            p2_token_e tok = curr_tok();
-            if (t_symbol == tok) {
+            if (t_symbol == curr_tok()) {
+                QString symbol = find_symbol(m_section, curr_str());
                 // append global name to section::symbol
                 define_symbol(symbol, atom);
                 // increase enumerator
                 atom += 1u;
-                next();
-            } else if (t_COMMA == tok) {
+            } else if (t_COMMA == curr_tok()) {
                 // skip next comma
                 next();
             } else {
-                m_errors += tr("Unexpected token in enumeration: %1.")
-                            .arg(symbol);
+                m_errors += tr("Unexpected token %1 in enumeration: %2.")
+                            .arg(curr_tok())
+                            .arg(curr_str());
                 emit Error(m_pass, m_lineno, m_errors.last());
                 m_idx = m_cnt;
                 break;
             }
-            if (t__LBRACKET == tok) {
+            if (!skip_comments())
+                break;
+            if (t__LBRACKET == curr_tok()) {
                // skip expr values
                P2Atom skip;
-               parse_primary(skip, 0);
+               parse_primary(skip, 0);  // FIXME: expression?
                if (skip.isValid()) {
                    atom += skip;
                    next();
@@ -4501,27 +4521,28 @@ bool P2Asm::asm_enum_continue()
         while (m_idx < m_cnt) {
             if (!skip_comments())
                 break;
-            QString symbol = find_symbol(m_section, curr_str());
-            p2_token_e tok = curr_tok();
-            if (t_symbol == tok) {
+            if (t_symbol == curr_tok()) {
+                QString symbol = find_symbol(m_section, curr_str());
                 // append global name to section::symbol
                 define_symbol(symbol, atom);
                 // increase enumerator
                 atom += 1u;
-                next();
-            } else if (t_COMMA == tok) {
+            } else if (t_COMMA == curr_tok()) {
                 // skip comma
                 next();
             } else {
-                m_errors += tr("Unexpected token in enumeration: %1.")
-                            .arg(symbol);
+                m_errors += tr("Unexpected token %1 in enumeration: %2.")
+                            .arg(curr_tok())
+                            .arg(curr_str());
                 emit Error(m_pass, m_lineno, m_errors.last());
                 m_idx = m_cnt;
             }
-            if (t__LBRACKET == tok) {
+            if (!skip_comments())
+                break;
+            if (t__LBRACKET == curr_tok()) {
                // skip expr values
                P2Atom skip;
-               parse_primary(skip, 0);
+               parse_primary(skip, 0);  // FIXME: expression?
                if (skip.isValid()) {
                    atom += skip;
                    next();
@@ -4750,6 +4771,7 @@ bool P2Asm::asm_byte()
         if (t__LBRACKET == curr_tok()) {
             P2Atom atom2 = parse_expression();
             p2_LONG count = atom2.to_long();
+            Q_ASSERT(count < 4096);
             while (count-- > 1)
                 m_data.add_atom(atom);
         } else {
@@ -4786,6 +4808,7 @@ bool P2Asm::asm_word()
         if (t__LBRACKET == curr_tok()) {
             P2Atom atom2 = parse_expression();
             p2_LONG count = atom2.to_long();
+            Q_ASSERT(count < 4096);
             while (count-- > 1)
                 m_data.add<p2_WORD>(words.value(0));
         } else {
@@ -4821,6 +4844,7 @@ bool P2Asm::asm_long()
         if (t__LBRACKET == curr_tok()) {
             P2Atom atom2 = parse_expression();
             p2_LONG count = atom2.to_long();
+            Q_ASSERT(count < 4096);
             while (count-- > 1)
                 m_data.add<p2_LONG>(longs.value(0));
         } else {
@@ -11766,96 +11790,37 @@ bool P2Asm::asm_calld_abs_ptrb()
 bool P2Asm::asm_loc()
 {
     next();
+    const int idx = m_idx;
+    m_IR.set_inst5(p2_LOC);
     P2Atom ptr = parse_dst();
     bool success = false;
     if (!mandatory_COMMA())
         return false;
     switch (ptr.to_long()) {
     case offs_PA:
-        success = asm_loc_pa();
+        m_IR.set_inst7(p2_LOC_PA);
+        success = true;
         break;
     case offs_PB:
-        success = asm_loc_pb();
+        m_IR.set_inst7(p2_LOC_PB);
+        success = true;
         break;
     case offs_PTRA:
-        success = asm_loc_ptra();
+        m_IR.set_inst7(p2_LOC_PTRA);
+        success = true;
         break;
     case offs_PTRB:
-        success = asm_loc_ptrb();
+        m_IR.set_inst7(p2_LOC_PTRB);
+        success = true;
         break;
     default:
-        prev();
-        prev();
+        m_idx = idx;
         m_errors += tr("Invalid pointer '%1'; expected one of %2.")
                   .arg(curr_str())
                   .arg(tr("PA, PB, PTRA, or PTRB"));
         emit Error(m_pass, m_lineno, m_errors.last());
     }
     return success;
-}
-
-/**
- * @brief Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).
- *<pre>
- * EEEE 11101WW RAA AAAAAAAAA AAAAAAAAA
- *
- * LOC     PA/PB/PTRA/PTRB,#A
- *
- * If R = 1, address = PC + A, else address = A.
- *</pre>
- */
-bool P2Asm::asm_loc_pa()
-{
-    m_IR.set_inst7(p2_LOC_PA);
-    return parse_PC_A20();
-}
-
-/**
- * @brief Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).
- *<pre>
- * EEEE 11101WW RAA AAAAAAAAA AAAAAAAAA
- *
- * LOC     PA/PB/PTRA/PTRB,#A
- *
- * If R = 1, address = PC + A, else address = A.
- *</pre>
- */
-bool P2Asm::asm_loc_pb()
-{
-    m_IR.set_inst7(p2_LOC_PB);
-    return parse_PC_A20();
-}
-
-/**
- * @brief Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).
- *<pre>
- * EEEE 11101WW RAA AAAAAAAAA AAAAAAAAA
- *
- * LOC     PA/PB/PTRA/PTRB,#A
- *
- * If R = 1, address = PC + A, else address = A.
- *</pre>
- */
-bool P2Asm::asm_loc_ptra()
-{
-    m_IR.set_inst7(p2_LOC_PTRA);
-    return parse_PC_A20();
-}
-
-/**
- * @brief Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).
- *<pre>
- * EEEE 11101WW RAA AAAAAAAAA AAAAAAAAA
- *
- * LOC     PA/PB/PTRA/PTRB,#A
- *
- * If R = 1, address = PC + A, else address = A.
- *</pre>
- */
-bool P2Asm::asm_loc_ptrb()
-{
-    m_IR.set_inst7(p2_LOC_PTRB);
-    return parse_PC_A20();
 }
 
 /**

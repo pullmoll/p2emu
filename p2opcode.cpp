@@ -44,7 +44,8 @@ P2Opcode::P2Opcode(const p2_LONG opcode, p2_ORG_ORGH_t org_orgh)
     , m_augs()
     , m_data()
     , m_equ()
-    , m_error(err_none)
+    , m_error_code(err_none)
+    , m_error_value(0)
 {
     m_u.opcode = opcode;
 }
@@ -59,7 +60,8 @@ P2Opcode::P2Opcode(const p2_inst5_e inst5, p2_ORG_ORGH_t org_orgh)
     , m_augs()
     , m_data()
     , m_equ()
-    , m_error(err_none)
+    , m_error_code(err_none)
+    , m_error_value(0)
 {
     set_inst5(inst5);
 }
@@ -74,7 +76,8 @@ P2Opcode::P2Opcode(const p2_inst7_e inst7, p2_ORG_ORGH_t org_orgh)
     , m_augs()
     , m_data()
     , m_equ()
-    , m_error(err_none)
+    , m_error_code(err_none)
+    , m_error_value(0)
 {
     set_inst7(inst7);
 }
@@ -89,7 +92,8 @@ P2Opcode::P2Opcode(const p2_inst8_e inst8, p2_ORG_ORGH_t org_orgh)
     , m_augs()
     , m_data()
     , m_equ()
-    , m_error(err_none)
+    , m_error_code(err_none)
+    , m_error_value(0)
 {
     set_inst8(inst8);
 }
@@ -104,7 +108,8 @@ P2Opcode::P2Opcode(const p2_inst9_e inst9, p2_ORG_ORGH_t org_orgh)
     , m_augs()
     , m_data()
     , m_equ()
-    , m_error(err_none)
+    , m_error_code(err_none)
+    , m_error_value(0)
 {
     set_inst9(inst9);
 }
@@ -124,7 +129,8 @@ void P2Opcode::clear(const p2_LONG opcode, p2_ORG_ORGH_t pc_orgh)
     m_augs.clear();
     m_data.clear();
     m_equ.clear();
-    m_error = err_none;
+    m_error_code = err_none;
+    m_error_value = 0;
 }
 
 /**
@@ -240,9 +246,9 @@ bool P2Opcode::augs_valid() const
  * @brief Return true, if the current P2Opcode is to be interpreted as instruction (opcode)
  * @return true if instruction, or false otherwise
  */
-bool P2Opcode::is_ir() const
+bool P2Opcode::is_instruction() const
 {
-    return type_ir == m_type;
+    return type_instruction == m_type;
 }
 
 /**
@@ -412,12 +418,21 @@ const P2Atom& P2Opcode::data() const
 }
 
 /**
- * @brief Return the most recent error when generating the AUGS/AUGD instructions
+ * @brief Return the most recent error code when generating the AUGS/AUGD instructions
  * @return Error code indicating the type of error
  */
-P2Opcode::Error P2Opcode::aug_error() const
+P2Opcode::Error P2Opcode::aug_error_code() const
 {
-    return m_error;
+    return m_error_code;
+}
+
+/**
+ * @brief Return the most recent error value when generating the AUGS/AUGD instructions
+ * @return value which would have been used for AUGS/AUGD
+ */
+p2_LONG P2Opcode::aug_error_value() const
+{
+    return m_error_value;
 }
 
 /**
@@ -427,7 +442,7 @@ P2Opcode::Error P2Opcode::aug_error() const
  */
 void P2Opcode::set_as_IR(bool on)
 {
-    m_type = on ? type_ir : type_none;
+    m_type = on ? type_instruction : type_none;
 }
 
 /**
@@ -710,12 +725,14 @@ void P2Opcode::set_n(const p2_LONG n)
 
 /**
  * @brief Set the opcode's dst field and possibly set the AUGD value
- * @param value value to set
- * @param imm_to where to find the immediate bit (L)
+ * @param atom value to set
+ * @param ORG origin
+ * @param ORGH origin high (output address)
  * @return true on success, or false on error
  */
 bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH)
 {
+    bool result = true;
     p2_LONG value;
 
     switch (atom.trait()) {
@@ -724,6 +741,19 @@ bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH
         break;
     case P2Atom::AddressHub:
         value = atom.to_long() - ORG + ORGH;
+        break;
+    case P2Atom::Augmented:
+        value = atom.to_long();
+        switch (m_imm_dst) {
+        case imm_none:
+            break;
+        case imm_to_im:
+            set_im();
+            break;
+        case imm_to_wz:
+            set_wz();
+            break;
+        }
         break;
     default:
         value = atom.to_long();
@@ -734,33 +764,39 @@ bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH
     if (value > COG_MASK || atom.trait() == P2Atom::Augmented) {
         switch (m_imm_dst) {
         case imm_none:
-            return true;
+            break;
         case imm_to_im:
-            if (m_u.op.im)
-                break;
-            m_error = dst_augd_im;
-            return false;
+            if (!im()) {
+                m_error_code = dst_augd_im;
+                m_error_value = value;
+                result = false;
+            }
+            break;
         case imm_to_wz:
-            if (m_u.op.wz)
-                break;
-            m_error = dst_augd_wz;
-            return false;
+            if (!wz()) {
+                m_error_code = dst_augd_wz;
+                m_error_value = value;
+                result = false;
+            }
+            break;
         }
         m_augd = value & ~COG_MASK;
     } else {
         m_augd.clear();
     }
-    return true;
+    return result;
 }
 
 /**
  * @brief Set the opcode's src field and possibly set the AUGS value
- * @param value value to set
- * @param imm_to where to find the immediate bit (I)
+ * @param atom value to set
+ * @param ORG origin
+ * @param ORGH origin high (output address)
  * @return true on success, or false on error
  */
 bool P2Opcode::set_src(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH)
 {
+    bool result = true;
     p2_LONG value;
 
     switch (atom.trait()) {
@@ -770,6 +806,19 @@ bool P2Opcode::set_src(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH
     case P2Atom::AddressHub:
         value = atom.to_long() - ORG + ORGH;
         break;
+    case P2Atom::Augmented:
+        value = atom.to_long();
+        switch (m_imm_src) {
+        case imm_none:
+            break;
+        case imm_to_im:
+            set_im();
+            break;
+        case imm_to_wz:
+            set_wz();
+            break;
+        }
+        break;
     default:
         value = atom.to_long();
     }
@@ -778,26 +827,23 @@ bool P2Opcode::set_src(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH
     if (value > COG_MASK || atom.trait() == P2Atom::Augmented) {
         switch (m_imm_src) {
         case imm_none:
-            return true;
+            break;
         case imm_to_im:
-            if (m_u.op.im)
-                break;
-            // XXX: can we do this...
-            m_u.op.im = true;
-            // instead of printing an error?
-            // error = src_augs_im;
-            return false;
+            if (!im()) {
+                m_error_code = src_augs_im;
+                m_error_value = value;
+                result = false;
+            }
+            break;
         case imm_to_wz:
-            if (m_u.op.wz)
-                break;
-            m_error = src_augs_wz;
-            return false;
+            Q_ASSERT_X(m_imm_src == imm_to_wz, "impossible instruction WZ for S", "set_src");
+            break;
         }
         m_augs = value & ~COG_MASK;
     } else {
         m_augs.clear();
     }
-    return true;
+    return result;
 }
 
 static QString bin(const p2_QUAD val, int digits)
@@ -862,14 +908,14 @@ QString P2Opcode::format_opcode_doc(const P2Opcode& ir)
 {
     return QString("[%1] %2")
             .arg(Doc.pattern(ir.opcode()))
-            .arg(Doc.brief(ir.opcode()));
+            .arg(Doc.instr(ir.opcode()));
 }
 
 P2Opcode P2Opcode::make_augd(const P2Opcode& ir)
 {
     P2Opcode IR(p2_AUGD, p2_ORG_ORGH_t(ir.org_orgh()));
     p2_LONG value = ir.augd_value<p2_LONG>();
-    IR.set_cond(cc_always);
+    IR.set_cond(ir.cond()); // FIXME: use cond of ir?
     IR.set_imm23(value);
     IR.set_org_orgh(IR.org_orgh());
     return IR;
@@ -879,7 +925,7 @@ P2Opcode P2Opcode::make_augs(const P2Opcode& ir)
 {
     P2Opcode IR(p2_AUGS, p2_ORG_ORGH_t(ir.org_orgh()));
     p2_LONG value = ir.augs_value<p2_LONG>();
-    IR.set_cond(cc_always);
+    IR.set_cond(ir.cond()); // FIXME: use cond of ir?
     IR.set_imm23(value);
     IR.set_org_orgh(IR.org_orgh());
     return IR;
@@ -1310,6 +1356,7 @@ QString P2Opcode::format_data(const P2Opcode& ir, p2_format_e fmt)
                 list += format_data_dec(ir, data, true);
             break;
         case fmt_hex:
+        default:
             foreach(const p2_LONG data, ir.data().to_longs())
                 list += format_data_hex(ir, data, true);
             break;

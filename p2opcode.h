@@ -52,28 +52,27 @@ public:
     P2Opcode(const p2_inst9_e inst9, p2_ORG_ORGH_t org_orgh = p2_ORG_ORGH_t(0,0));
 
     enum Type {
-        type_none,
-        type_ir,
-        type_assign,
-        type_data
+        type_none,          //!< type of the contents is unspecified
+        type_instruction,   //!< type of the contents is an instruction
+        type_assign,        //!< type of the contents is an assignment (CON section)
+        type_data           //!< type of the contents is data (BYTE, WORD, LONG, etc.)
     };
 
     //! enumeration of possible targets for the immediate (#) prefix(es)
     enum ImmFlag {
-        imm_none,       //!< don't care about immediate
-        imm_to_im,      //!< if immediate mode, set the immediate (im) flag in IR
-        imm_to_wz       //!< if immediate mode, set the with-zero (wz) flag in IR
+        imm_none,           //!< don't care about immediate
+        imm_to_im,          //!< if immediate mode, set the immediate (im) flag in IR
+        imm_to_wz           //!< if immediate mode, set the with-zero (wz) flag in IR
     };
 
     //! enumeration of possible results from setting the AUGD and/or AUGS flags
     enum Error {
-        err_none,
-        dst_augd_none,  //!< DST constant larger than $1ff but no imediate mode
-        dst_augd_im,    //!< DST constant larger than $1ff but im is not set for L
-        dst_augd_wz,    //!< DST constant larger than $1ff but wz is not set for L
-        src_augs_none,  //!< SRC constant larger than $1ff but no imediate mode
-        src_augs_im,    //!< SRC constant larger than $1ff but im is not set for I
-        src_augs_wz,    //!< SRC constant larger than $1ff but wz is not set for I
+        err_none,           //!< no error when creating AUGD and/or AUGS values
+        dst_augd_none,      //!< DST constant larger than $1ff but no imediate mode
+        dst_augd_im,        //!< DST constant larger than $1ff but im is not set for L
+        dst_augd_wz,        //!< DST constant larger than $1ff but wz is not set for L
+        src_augs_none,      //!< SRC constant larger than $1ff but no imediate mode
+        src_augs_im,        //!< SRC constant larger than $1ff but im is not set for I
     };
 
     void clear(const p2_LONG opcode = 0, p2_ORG_ORGH_t pc_orgh = p2_ORG_ORGH_t(0,0));
@@ -95,9 +94,10 @@ public:
     bool augs_valid() const;
     template <typename T> T augs_value() const { return qvariant_cast<T>(m_augs) & AUG_MASK; }
 
-    Error aug_error() const;
+    Error aug_error_code() const;
+    p2_LONG aug_error_value() const;
 
-    bool is_ir() const;
+    bool is_instruction() const;
     bool is_assign() const;
     bool is_data() const;
 
@@ -179,7 +179,8 @@ private:
     QVariant m_augs;                //!< optional value in case an AUGS is required
     P2Atom m_data;                  //!< optional data generated from BYTE, WORD, LONG, FILE, etc.
     P2Atom m_equ;                   //!< optional atom from an assignment (=)
-    Error m_error;                  //!< error set when set_dst() or set_src() return false
+    Error m_error_code;             //!< error set when set_dst() or set_src() return false
+    p2_LONG m_error_value;          //!< error value when set_dst() or set_src() return false
 
     static P2Opcode make_augd(const P2Opcode& ir);
     static P2Opcode make_augs(const P2Opcode& ir);

@@ -422,6 +422,9 @@ QSize P2AsmModel::sizeHint(const QModelIndex& index, const QString& text) const
         case fmt_hex:
             size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_hex : text);
             break;
+        case fmt_doc:
+            size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_doc : text);
+            break;
         }
         break;
 
@@ -576,11 +579,11 @@ QString P2AsmModel::opcodeToolTip(const P2Opcode& IR) const
     QStringList lines;
     QStringList comments;
 
-    if (IR.is_ir()) {
+    if (IR.is_instruction()) {
         title1 = tr("Opcode");
         lines += P2Opcode::format_opcode(IR, m_format).split(QChar::LineFeed);
         title2 = tr("Brief");
-        comments += P2Opcode::format_opcode_doc(IR);
+        comments += P2Opcode::format_opcode(IR, fmt_doc).split(QChar::LineFeed);
     }
 
     if (IR.is_assign()) {

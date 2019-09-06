@@ -52,7 +52,7 @@ QStringList P2OpcodeDelegate::opcodeLines(const QModelIndex& index) const
     p2_format_e format = model->opcode_format();
     QStringList text;
 
-    if (IR.is_ir())
+    if (IR.is_instruction())
         text += P2Opcode::format_opcode(IR, format);
 
     if (IR.is_assign())

@@ -712,10 +712,6 @@ private:
     bool asm_calld_abs_ptra();
     bool asm_calld_abs_ptrb();
     bool asm_loc();
-    bool asm_loc_pa();
-    bool asm_loc_pb();
-    bool asm_loc_ptra();
-    bool asm_loc_ptrb();
 
     bool asm_augs();
     bool asm_augd();
