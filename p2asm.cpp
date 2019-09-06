@@ -40,7 +40,7 @@
 #include "p2asm.h"
 #include "p2util.h"
 
-#define DEBUG_EXPR  1 //! set to 1 to debug expression parsing
+#define DEBUG_EXPR  0 //! set to 1 to debug expression parsing
 #define DEBUG_CON   0 //! set to 1 to debug CON section parsing
 #define DEBUG_DAT   0 //! set to 1 to debug DAT section parsing
 
