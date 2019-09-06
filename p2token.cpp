@@ -1093,13 +1093,13 @@ static int count_curly(const QStringRef& ref)
  * @param in_curly reference to an integer with the current curly braces level
  * @return A QVector of P2Words for the line
  */
-P2Words P2Token::tokenize(const QString& line, const int lineno, int& in_curly) const
+P2Words P2Token::tokenize(const QString* line, const int lineno, int& in_curly) const
 {
     static QRegExp rx;
-    static QString re;
+    static QString regex;
     P2Words words;
     p2_token_e tok;
-    const int len = line.length();
+    const int len = line->length();
     int pos = 0;
     int lastpos = 0;
 
@@ -1166,23 +1166,23 @@ P2Words P2Token::tokenize(const QString& line, const int lineno, int& in_curly) 
         list += QRegExp::escape(m_token_string.value(t_comment_lcurly));    // left curly brace ({) (comment start)
         list += QRegExp::escape(m_token_string.value(t_comment_rcurly));    // right curly brace (}) (comment end)
 
-        re = QString("(%1)").arg(list.join(QChar('|')));
         rx.setPatternSyntax(QRegExp::RegExp2);  // greedy syntax
-        rx.setPattern(re);
+        regex = QString("(%1)").arg(list.join(QChar('|')));
+        rx.setPattern(regex);
         rx.setCaseSensitivity(Qt::CaseInsensitive);
         Q_ASSERT(rx.isValid());
     }
 
-    while (pos < line.length() && line[pos].isSpace())
+    while (pos < line->length() && line->at(pos).isSpace())
         ++pos;
 
-    while (-1 != (pos = rx.indexIn(line, lastpos, QRegExp::CaretAtOffset))) {
+    while (-1 != (pos = rx.indexIn(*line, lastpos, QRegExp::CaretAtOffset))) {
         int tlen = rx.matchedLength();
-        QStringRef ref(&line, pos, tlen);
+        QStringRef ref(line, pos, tlen);
 
         if (tlen > 0 && ref.trimmed().isEmpty()) {
             DEBUG_REGEX("  match %d @%-3d #%-3d SPACE(S)", in_curly, pos, tlen);
-            while (pos < line.length() && line[pos].isSpace())
+            while (pos < line->length() && line->at(pos).isSpace())
                 ++pos;
             lastpos = pos;
             if (pos >= len) {
@@ -1203,7 +1203,8 @@ P2Words P2Token::tokenize(const QString& line, const int lineno, int& in_curly) 
                 in_curly = qMax(in_curly + curly, 0);
                 const int tlen = len - pos;
                 tok = curly >= 0 ? t_comment_lcurly : t_comment_rcurly;
-                words.append(P2Word(tok, line, lineno, pos, tlen));
+                QStringRef ref(line, pos, tlen);
+                words.append(P2Word(tok, ref, lineno));
                 pos += tlen;
                 DEBUG_REGEX("  match %d @%-3d #%-3d %s%s%s",
                             in_curly, pos, tlen,
@@ -1215,7 +1216,8 @@ P2Words P2Token::tokenize(const QString& line, const int lineno, int& in_curly) 
         if (ref[0] == chr_apostrophe) {
             const int tlen = len - pos;
             tok = t_comment_eol;
-            words.append(P2Word(tok, ref.toString(), lineno, pos, tlen));
+            QStringRef ref(line, pos, tlen);
+            words.append(P2Word(tok, ref, lineno));
             DEBUG_REGEX("  comnt %d @%-3d #%-3d %s%s%s",
                         in_curly, pos, tlen,
                         qPrintable(chr_ldangle), qPrintable(ref.toString()), qPrintable(chr_rdangle));
@@ -1224,12 +1226,12 @@ P2Words P2Token::tokenize(const QString& line, const int lineno, int& in_curly) 
 
         if (in_curly > 0) {
             const int tlen = len - pos;
-            QStringRef ref(&line, pos, tlen);
+            QStringRef ref(line, pos, tlen);
             int curly = count_curly(ref);
             in_curly = qMax(in_curly + curly, 0);
 
             tok = in_curly > 0 ? t_comment_lcurly : t_comment_rcurly;
-            words.append(P2Word(tok, ref.toString(), lineno, pos, tlen));
+            words.append(P2Word(tok, ref, lineno));
             DEBUG_REGEX("  curly %d @%-3d #%-3d %s%s%s",
                         in_curly, pos, tlen,
                         qPrintable(chr_ldangle), qPrintable(ref.toString()), qPrintable(chr_rdangle));
@@ -1240,9 +1242,9 @@ P2Words P2Token::tokenize(const QString& line, const int lineno, int& in_curly) 
                     in_curly, pos, tlen,
                     qPrintable(chr_ldangle), qPrintable(line.mid(pos, tlen)), qPrintable(chr_rdangle));
 
-        tok = token(line, pos, tlen);
-        ref = QStringRef(&line, pos, tlen);
-        words.append(P2Word(tok, ref.toString(), lineno, pos, tlen));
+        tok = token(*line, pos, tlen);
+        ref = QStringRef(line, pos, tlen);
+        words.append(P2Word(tok, ref, lineno));
         if (tok != t_str_const) {
             int curly = count_curly(ref);
             in_curly = qMax(in_curly + curly, 0);

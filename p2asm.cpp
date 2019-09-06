@@ -40,7 +40,7 @@
 #include "p2asm.h"
 #include "p2util.h"
 
-#define DEBUG_EXPR  0 //! set to 1 to debug expression parsing
+#define DEBUG_EXPR  1 //! set to 1 to debug expression parsing
 #define DEBUG_CON   0 //! set to 1 to debug CON section parsing
 #define DEBUG_DAT   0 //! set to 1 to debug DAT section parsing
 
@@ -90,7 +90,7 @@ P2Asm::P2Asm(QObject *parent)
     , m_symbols(P2SymbolTable(new P2SymbolTableClass()))
     , m_lineno(0)
     , m_in_curly(0)
-    , m_line()
+    , m_lineptr(nullptr)
     , m_errors()
     , m_ORG(0)
     , m_ORGH(0)
@@ -145,7 +145,6 @@ void P2Asm::pass_clear()
     m_hash_error.clear();
     m_lineno = 0;
     m_in_curly = 0;
-    m_line.clear();
     m_errors.clear();
     m_ORG = 0;
     m_ORGH = 0;
@@ -169,6 +168,7 @@ void P2Asm::pass_clear()
 void P2Asm::line_clear()
 {
     // Parse the next line
+    m_lineptr = &m_source[m_lineno];
     m_lineno += 1;
 
     // Reset some state
@@ -366,20 +366,20 @@ const P2SymbolTable& P2Asm::symbols() const
 p2_cond_e P2Asm::conditional()
 {
     p2_cond_e result = cc_always;
-    p2_token_e cond = m_words.value(m_idx).tok();
+    p2_token_e cond = curr_tok();
     if (Token.is_type(cond, tm_conditional)) {
         result = Token.conditional(cond, cc_always);
-        m_idx += 1;
+        next();
     }
     return result;
 }
 
 p2_cond_e P2Asm::parse_modcz()
 {
-    p2_token_e cond = m_words.value(m_idx).tok();
+    p2_token_e cond = curr_tok();
     if (Token.is_type(cond, tm_modcz_param)) {
         p2_cond_e result = Token.modcz_param(cond, cc_clr);
-        m_idx += 1;
+        next();
         return result;
     }
     P2Atom atom = parse_expression();
@@ -409,7 +409,7 @@ bool P2Asm::tokenize()
 {
     Q_ASSERT(m_in_curly >= 0);
     if (m_pass < 2) {
-        m_words = Token.tokenize(m_line, m_lineno, m_in_curly);
+        m_words = Token.tokenize(&m_source[m_lineno-1], m_lineno, m_in_curly);
     } else {
         m_words = m_hash_words.value(m_lineno);
     }
@@ -432,7 +432,17 @@ const P2Word& P2Asm::curr_word() const
 }
 
 /**
- * @brief Return the current P2Word's string
+ * @brief Return the current P2Word's QStringRef
+ * @return const reference to the current word
+ */
+const QStringRef P2Asm::curr_ref() const
+{
+    const P2Word& word = curr_word();
+    return word.ref();
+}
+
+/**
+ * @brief Return the current P2Word's QString
  * @return const reference to the current word
  */
 const QString P2Asm::curr_str() const
@@ -2224,10 +2234,8 @@ bool P2Asm::assemble_pass()
 {
     pass_clear();
 
-    foreach(m_line, m_source) {
-
+    for (int i = 0; i < m_source.count(); i++) {
         line_clear();
-
         tokenize();
 
         // Ignore empty lines
@@ -2350,7 +2358,7 @@ QStringList P2Asm::results_instruction(bool wr_mem)
     p2_LONG org = m_ORG;
     p2_LONG orgh = m_ORGH;
 
-    QString line = m_line;
+    QString* lineptr = m_lineptr;
     Q_ASSERT(m_advance == 4);
 
     m_IR.set_org_orgh(p2_ORG_ORGH_t(m_ORG, m_ORGH));
@@ -2367,14 +2375,14 @@ QStringList P2Asm::results_instruction(bool wr_mem)
                  .arg(m_lineno, -6)
                  .arg(org, 6, 16, QChar('0'))
                  .arg(IR.opcode(), 8, 16, QChar('0'))
-                 .arg(line);
+                 .arg(lineptr ? *lineptr : QString());
 
         org += 4;
         orgh += 4;
         m_IR.set_org_orgh(IR.org_orgh());
         m_advance += 4;
         m_IR.augd_clear();
-        line.clear();
+        lineptr = nullptr;
     }
 
     // Do we need to generate an AUGS instruction?
@@ -2387,20 +2395,20 @@ QStringList P2Asm::results_instruction(bool wr_mem)
                  .arg(m_lineno, -6)
                  .arg(org, 6, 16, QChar('0'))
                  .arg(IR.opcode(), 8, 16, QChar('0'))
-                 .arg(line);
+                 .arg(lineptr ? *lineptr : QString());
         org += 4;
         orgh += 4;
         m_IR.set_org_orgh(IR.org_orgh());
         m_advance += 4;
         m_IR.augs_clear();
-        line.clear();
+        lineptr = nullptr;
     }
 
     output += QString("%1 %2 [%3] %4")
              .arg(m_lineno, -6)
              .arg(org, 6, 16, QChar('0'))
              .arg(m_IR.opcode(), 8, 16, QChar('0'))
-             .arg(line);
+             .arg(lineptr ? *lineptr : QString());
 
     if (wr_mem && m_ORGH < MEM_SIZE) {
         MEM.LONGS[m_ORGH/4] = m_IR.opcode();
@@ -2421,7 +2429,7 @@ QString P2Asm::results_assignment()
              .arg(m_lineno, -6)
              .arg(m_ORG, 6, 16, QChar('0'))
              .arg(m_IR.opcode(), 8, 16, QChar('0'))
-             .arg(m_line);
+             .arg(*m_lineptr);
     return output;
 }
 
@@ -2436,7 +2444,7 @@ QString P2Asm::results_comment()
              .arg(m_lineno, -6)
              .arg(m_ORG, 6, 16, QChar('0'))
              .arg(QStringLiteral("--------"))
-             .arg(m_line);
+             .arg(*m_lineptr);
     return output;
 }
 
@@ -2468,7 +2476,7 @@ QStringList P2Asm::results_data(bool wr_mem)
                      .arg(m_lineno, -6)
                      .arg(offset - 4u, 6, 16, QChar('0'))
                      .arg(P2Atom::format_long_mask(data, mask))
-                     .arg(m_line);
+                     .arg(*m_lineptr);
             mask = 0;
         }
 
@@ -2484,7 +2492,7 @@ QStringList P2Asm::results_data(bool wr_mem)
                  .arg(m_lineno, -6)
                  .arg(offset & ~3u, 6, 16, QChar('0'))
                  .arg(P2Atom::format_long_mask(data, mask))
-                 .arg(m_line);
+                 .arg(*m_lineptr);
     }
 
     m_advance = offset - start;
@@ -7495,13 +7503,14 @@ bool P2Asm::asm_rdword()
 
 /**
  * @brief Read long from hub address {#}S/PTRx into D.
- * Prior <pre>SETQ/SETQ2 invokes cog/LUT block transfer.
+ * <pre>
  *
  * EEEE 1011000 CZI DDDDDDDDD SSSSSSSSS
  *
  * RDLONG  D,{#}S/P {WC/WZ/WCZ}
  *
  * C = MSB of long.
+ * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  *</pre>
  */
 bool P2Asm::asm_rdlong()

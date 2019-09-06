@@ -121,14 +121,14 @@ private:
     QString m_pathname;                     //!< current path name for FILE "filename.ext"
     QStringList m_source;                   //!< source code as QStringList
     QStringList m_listing;                  //!< listing as QStringList
-    p2_org_orgh_hash_t m_hash_PC;            //!< optional program counters per line
+    p2_org_orgh_hash_t m_hash_PC;           //!< optional program counters per line
     p2_opcode_hash_t m_hash_IR;             //!< optional P2Opcode per line
     p2_words_hash_t m_hash_words;           //!< optional words per line
     p2_error_hash_t m_hash_error;           //!< optional (multiple) error messages per line
     P2SymbolTable m_symbols;                //!< symbol table
     int m_lineno;                           //!< current line number
     int m_in_curly;                         //!< parser inside curly braces comment level
-    QString m_line;                         //!< current line of source
+    QString* m_lineptr;                        //!< pointer to current line of source
     QStringList m_errors;                   //!< error message(s) from parameters parser
     p2_LONG m_ORG;                          //!< current program counter (origin of the instruction)
     p2_LONG m_ORGH;                         //!< current origin, i.e. where the data is stored
@@ -145,9 +145,9 @@ private:
     int m_idx;                              //!< token (and word) index
 
     union {
-        p2_BYTE BYTES[MEM_SIZE];            //!< as bytes
-        p2_WORD WORDS[MEM_SIZE/2];          //!< as words
-        p2_LONG LONGS[MEM_SIZE/4];          //!< as longs
+        p2_BYTE BYTES[MEM_SIZE];            //!< as BYTEs
+        p2_WORD WORDS[MEM_SIZE/2];          //!< as WORDs
+        p2_LONG LONGS[MEM_SIZE/4];          //!< as LONGs
     } MEM;                                  //!< binary data
 
 private:
@@ -165,6 +165,7 @@ private:
     bool tokenize();
 
     const P2Word& curr_word() const;
+    const QStringRef curr_ref() const;
     const QString curr_str() const;
     p2_token_e curr_tok() const;
     bool next();

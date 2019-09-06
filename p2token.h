@@ -48,7 +48,7 @@ public:
     QString enum_name(p2_token_e tok) const;
     p2_token_e token(const QString& line, int pos, int& len, bool chop = false) const;
 
-    P2Words tokenize(const QString& line, const int lineno, int& in_curly) const;
+    P2Words tokenize(const QString* line, const int lineno, int& in_curly) const;
 
     bool is_type(p2_token_e tok, p2_t_mask_t typemask) const;
     bool is_type(p2_token_e tok, p2_t_type_e type) const;

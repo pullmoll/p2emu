@@ -6,9 +6,10 @@ class P2Word
 {
 public:
     explicit P2Word(p2_token_e tok = t_invalid,
-                    const QString& str = QString(),
-                    int lineno = 0, int pos = 0, int len = 0);
+                    const QStringRef& ref = QStringRef(),
+                    int lineno = 0);
 
+    const QStringRef ref() const;
     const QString str() const;
     p2_token_e tok() const;
     int lineno() const;
@@ -22,15 +23,12 @@ public:
 
     static QUrl url(const P2Word& word);
     static bool remove(QVector<P2Word>& words, p2_token_e tok);
-    static bool merge(QVector<P2Word>& words, p2_token_e tok1, p2_token_e tok2, p2_token_e tok);
 
     bool operator== (const P2Word& other) const;
 private:
-    QString m_str;
+    QStringRef m_ref;
     p2_token_e m_tok;
     int m_lineno;
-    int m_pos;
-    int m_len;
 };
 
 typedef QMultiHash<int,P2Word> p2_lineno_word_hash_t;

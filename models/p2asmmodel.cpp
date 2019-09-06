@@ -635,7 +635,7 @@ QString P2AsmModel::tokenToolTip(const P2Words& words) const
         const QString& token_id_str = QString("%1: %2").arg(token_id).arg(token_str);
         const QString& type_names = P2Util::esc(Token.type_names(word.tok()).join(QChar::Space));
         const QString& pos_len = QString("@%1 +%2").arg(word.pos()).arg(word.len());
-        const QString& source = P2Util::esc(word.str());
+        const QString& source = P2Util::esc(word.ref().toString());
 
         html += html_start_tr();
         html += html_td(token_id_str);
