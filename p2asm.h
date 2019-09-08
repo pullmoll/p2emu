@@ -162,6 +162,7 @@ private:
     void results();
     QString expand_tabs(const QString& src);
     bool skip_comments();
+    bool eol();
     bool tokenize();
 
     const P2Word& curr_word() const;
@@ -191,7 +192,6 @@ private:
     bool assemble_pass();
 
     bool parse_atom(P2Atom& atom, int level);
-    bool parse_ptr_index(P2Atom& atom, int level);
     bool parse_primary(P2Atom& atom, int level);
     bool parse_unary(P2Atom& atom, int level);
     bool parse_mulops(P2Atom& atom, int level);
@@ -224,9 +224,12 @@ private:
     bool parse_D_IM_S_ORCZ();
     bool parse_D_IM_S_XORCZ();
     bool parse_WZ_D_IM_S();
+    bool parse_WZ_D_IM_S_PTRx();
     bool parse_WZ_D_IM_S_WC();
     bool parse_D_IM_S_NNN(uint max = 7);
     bool parse_D_IM_S();
+    bool parse_D_IM_S_PTRx_WCZ();
+    bool parse_D_IM_S_PTRx();
     bool parse_D_WCZ();
     bool parse_WCZ();
     bool parse_D();

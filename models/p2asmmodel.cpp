@@ -624,7 +624,8 @@ QString P2AsmModel::tokenToolTip(const P2Words& words) const
     html += html_start_tr();
     html += html_th(tr("Token"));
     html += html_th(tr("Type"));
-    html += html_th(tr("Position, Length"));
+    html += html_th(tr("Pos"));
+    html += html_th(tr("Len"));
     html += html_th(tr("Source code"));
     html += html_end_tr();
 
@@ -634,13 +635,15 @@ QString P2AsmModel::tokenToolTip(const P2Words& words) const
         const QString& token_str = P2Util::esc(Token.enum_name(word.tok()));
         const QString& token_id_str = QString("%1: %2").arg(token_id).arg(token_str);
         const QString& type_names = P2Util::esc(Token.type_names(word.tok()).join(QChar::Space));
-        const QString& pos_len = QString("@%1 +%2").arg(word.pos()).arg(word.len());
-        const QString& source = P2Util::esc(word.ref().toString());
+        const QString& pos = QString("@%1").arg(word.pos());
+        const QString& len = QString("+%1").arg(word.len());
+        const QString& source = P2Util::esc(word.str());
 
         html += html_start_tr();
         html += html_td(token_id_str);
         html += html_td(type_names);
-        html += html_td(pos_len);
+        html += html_td(pos);
+        html += html_td(len);
         html += html_td(source);
         html += html_end_tr();
     }

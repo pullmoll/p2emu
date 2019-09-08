@@ -1023,7 +1023,8 @@ P2Token::P2Token()
             m_type_token.insertMulti(mask, tok);
 
     m_t_type_name.insert(tt_none,           QStringLiteral("-"));
-    m_t_type_name.insert(tt_parens,         QStringLiteral("Parenthesis"));
+    m_t_type_name.insert(tt_parens,         QStringLiteral("Parens"));
+    m_t_type_name.insert(tt_brackets,       QStringLiteral("Brackets"));
     m_t_type_name.insert(tt_primary,        QStringLiteral("Primary"));
     m_t_type_name.insert(tt_unary,          QStringLiteral("Unary"));
     m_t_type_name.insert(tt_mulop,          QStringLiteral("MulOp"));

@@ -32,6 +32,6 @@ private:
 };
 
 typedef QMultiHash<int,P2Word> p2_lineno_word_hash_t;
-typedef QVector<P2Word> P2Words;
+typedef QList<P2Word> P2Words;
 Q_DECLARE_METATYPE(P2Word);
 Q_DECLARE_METATYPE(P2Words);

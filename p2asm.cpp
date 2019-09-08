@@ -437,8 +437,7 @@ const P2Word& P2Asm::curr_word() const
  */
 const QStringRef P2Asm::curr_ref() const
 {
-    const P2Word& word = curr_word();
-    return word.ref();
+    return curr_word().ref();
 }
 
 /**
@@ -447,8 +446,7 @@ const QStringRef P2Asm::curr_ref() const
  */
 const QString P2Asm::curr_str() const
 {
-    const P2Word& word = curr_word();
-    return word.str();
+    return curr_word().str();
 }
 
 /**
@@ -457,8 +455,7 @@ const QString P2Asm::curr_str() const
  */
 p2_token_e P2Asm::curr_tok() const
 {
-    const P2Word& word = curr_word();
-    return word.tok();
+    return curr_word().tok();
 }
 
 /**
@@ -2513,6 +2510,10 @@ void P2Asm::results()
 {
     const bool binary = true;
 
+    if (!m_data.isEmpty()) {
+        m_IR.set_data(m_data);
+    }
+
     if (m_IR.is_instruction()) {
         m_listing += results_instruction(binary);
     } else if (m_IR.is_assign()) {
@@ -2582,6 +2583,17 @@ bool P2Asm::skip_comments()
     while (Token.is_type(curr_tok(), tm_comment))
         m_idx++;
     return m_idx < m_cnt;
+}
+
+/**
+ * @brief Skip over t_comments tokens and return true if end-of-line
+ * @return true if at end of line, or false otherwise
+ */
+bool P2Asm::eol()
+{
+    if (!skip_comments())
+        return true;
+    return false;
 }
 
 /**
@@ -2811,7 +2823,7 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
 {
     QString symbol;
 
-    if (!skip_comments())
+    if (eol())
         return false;
 
     const P2Word& word = curr_word();
@@ -3032,20 +3044,6 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     return true;
 }
 
-bool P2Asm::parse_ptr_index(P2Atom& atom, int level)
-{
-    if (next() && t__LBRACKET != curr_tok()) {
-        prev();
-        return false;
-    }
-    // index expression
-    DBG_EXPR(" atom index: %s", qPrintable(curr_str()));
-    next(); // skip left bracket
-    atom = parse_expression(level+1);
-    prev(); // return to right bracket
-    return true;
-}
-
 /**
  * @brief Parse an expression of primary operations
  * @param str string to parse
@@ -3053,7 +3051,7 @@ bool P2Asm::parse_ptr_index(P2Atom& atom, int level)
  */
 bool P2Asm::parse_primary(P2Atom& atom, int level)
 {
-    if (!skip_comments())
+    if (eol())
         return false;
 
     p2_LONG inc_by = 0;
@@ -3078,7 +3076,7 @@ bool P2Asm::parse_primary(P2Atom& atom, int level)
             return false;
         }
 
-        if (!skip_comments())
+        if (eol())
             break;
 
         op = curr_tok();
@@ -3101,7 +3099,7 @@ bool P2Asm::parse_primary(P2Atom& atom, int level)
  */
 bool P2Asm::parse_unary(P2Atom& atom, int level)
 {
-    if (!skip_comments())
+    if (eol())
         return false;
 
     bool do_logical_not = false;
@@ -3140,7 +3138,7 @@ bool P2Asm::parse_unary(P2Atom& atom, int level)
             parse_primary(atom, level);
         }
 
-        if (!skip_comments())
+        if (eol())
             break;
 
         op = curr_tok();
@@ -3166,7 +3164,7 @@ bool P2Asm::parse_mulops(P2Atom& atom, int level)
 {
     parse_unary(atom, level);
 
-    if (!skip_comments()) {
+    if (eol()) {
         DBG_EXPR(" mulops atom = %s", qPrintable(atom.str()));
         return true;
     }
@@ -3219,7 +3217,7 @@ bool P2Asm::parse_mulops(P2Atom& atom, int level)
             return false;
         }
 
-        if (!skip_comments())
+        if (eol())
             break;
 
         op = curr_tok();
@@ -3238,7 +3236,7 @@ bool P2Asm::parse_shiftops(P2Atom& atom, int level)
 {
     parse_mulops(atom, level);
 
-    if (!skip_comments()) {
+    if (eol()) {
         DBG_EXPR(" shiftops atom = %s", qPrintable(atom.str()));
         return true;
     }
@@ -3286,7 +3284,7 @@ bool P2Asm::parse_shiftops(P2Atom& atom, int level)
             return false;
         }
 
-        if (!skip_comments())
+        if (eol())
             break;
 
         op = curr_tok();
@@ -3305,7 +3303,7 @@ bool P2Asm::parse_addops(P2Atom& atom, int level)
 {
     parse_shiftops(atom, level);
 
-    if (!skip_comments()) {
+    if (eol()) {
         DBG_EXPR(" addops atom = %s", qPrintable(atom.str()));
         return true;
     }
@@ -3353,7 +3351,7 @@ bool P2Asm::parse_addops(P2Atom& atom, int level)
             return false;
         }
 
-        if (!skip_comments())
+        if (eol())
             break;
 
         op = curr_tok();
@@ -3372,7 +3370,7 @@ bool P2Asm::parse_binops(P2Atom& atom, int level)
 {
     parse_addops(atom, level);
 
-    if (!skip_comments()) {
+    if (eol()) {
         DBG_EXPR(" binops atom = %s", qPrintable(atom.str()));
         return true;
     }
@@ -3440,7 +3438,7 @@ bool P2Asm::parse_binops(P2Atom& atom, int level)
             return false;
         }
 
-        if (!skip_comments())
+        if (eol())
             break;
 
         op = curr_tok();
@@ -3491,7 +3489,7 @@ p2_traits_e P2Asm::parse_traits()
             break;
         }
 
-        if (!skip_comments())
+        if (eol())
             return trait;
 
         tok = curr_tok();
@@ -3507,10 +3505,9 @@ p2_traits_e P2Asm::parse_traits()
 P2Atom P2Asm::parse_expression(int level)
 {
     P2Atom atom = make_atom();
-    P2Atom index = P2Atom(ut_Long);
     DBG_EXPR("»»»» %d", level);
 
-    if (!skip_comments()) {
+    if (eol()) {
         DBG_EXPR(" expr atom = %s", qPrintable(atom.str()));
         return atom;
     }
@@ -3540,7 +3537,7 @@ P2Atom P2Asm::parse_expression(int level)
             prev();
         }
 
-        if (!skip_comments()) {
+        if (eol()) {
             DBG_EXPR(" expr atom = %s", qPrintable(atom.str()));
             return atom;
         }
@@ -3551,6 +3548,7 @@ P2Atom P2Asm::parse_expression(int level)
     DBG_EXPR(" expr atom = %s", qPrintable(atom.str()));
 
     // Check for index expression enclosed in square brackets
+    P2Atom index = P2Atom(ut_Long);
     tok = curr_tok();
     while (Token.is_type(tok, tm_brackets)) {
         switch (tok) {
@@ -3578,7 +3576,7 @@ P2Atom P2Asm::parse_expression(int level)
             break;
         }
 
-        if (!skip_comments()) {
+        if (eol()) {
             DBG_EXPR(" expr index: %s", "end-of-line");
             break;
         }
@@ -3626,7 +3624,7 @@ P2Atom P2Asm::parse_expression(int level)
         if (!Token.is_type(tok, tm_comment))
             break;
 
-        if (!skip_comments())
+        if (eol())
             break;
         tok = curr_tok();
     }
@@ -3761,7 +3759,7 @@ bool P2Asm::end_of_line()
  */
 bool P2Asm::mandatory_COMMA()
 {
-    if (!skip_comments()) {
+    if (eol()) {
         m_errors += tr("Expected %1 but found %2.")
                   .arg(Token.string(t_COMMA))
                   .arg(tr("end of line"));
@@ -3993,6 +3991,57 @@ bool P2Asm::parse_D_IM_S()
         if (!mandatory_COMMA())
             return false;
         P2Atom src = parse_src(P2Opcode::imm_to_im);
+    }
+    return end_of_line();
+}
+
+/**
+ * @brief Expect parameters for D and {#}S / PTRx followed by optional WC, WZ, WCZ
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_D_IM_S_PTRx_WCZ()
+{
+    if (commata_left() < 1) {
+        const int idx = m_idx;
+        P2Atom dst = parse_dst();
+        m_idx = idx;
+        P2Atom src = parse_src();
+    } else {
+        P2Atom dst = parse_dst();
+        if (!mandatory_COMMA())
+            return false;
+        P2Atom src = parse_src(P2Opcode::imm_to_im);
+        if (src.get_long() == offs_PTRA || src.get_long() == offs_PTRB) {
+            // TODO: index expression
+            qDebug("%s: index = %#x", __func__, src.get_index<p2_LONG>());
+        }
+    }
+    optional_WCZ();
+    return end_of_line();
+}
+
+/**
+ * @brief Expect parameters for D and {#}S / PTRx
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_D_IM_S_PTRx()
+{
+    if (commata_left() < 1) {
+        const int idx = m_idx;
+        P2Atom dst = parse_dst();
+        m_idx = idx;
+        P2Atom src = parse_src();
+    } else {
+        P2Atom dst = parse_dst();
+        if (!mandatory_COMMA())
+            return false;
+        P2Atom src = parse_src(P2Opcode::imm_to_im);
+        if (src.get_long() == offs_PTRA || src.get_long() == offs_PTRB) {
+            // TODO: index expression
+            qDebug("%s: index = %#x", __func__, src.get_index<p2_LONG>());
+        }
     }
     return end_of_line();
 }
@@ -4274,6 +4323,32 @@ bool P2Asm::parse_WZ_D_IM_S()
         if (!mandatory_COMMA())
             return false;
         P2Atom src = parse_src(P2Opcode::imm_to_im);
+    }
+    return end_of_line();
+}
+
+/**
+ * @brief Expect parameters for {#}D, and {#}S or PTRx[index]
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_WZ_D_IM_S_PTRx()
+{
+    if (commata_left() < 1) {
+        // if there is no comma, expect D = S and no #S
+        const int idx = m_idx;
+        P2Atom dst = parse_dst();
+        m_idx = idx;
+        P2Atom src = parse_src();
+    } else {
+        P2Atom dst = parse_dst(P2Opcode::imm_to_wz);
+        if (!mandatory_COMMA())
+            return false;
+        P2Atom src = parse_src(P2Opcode::imm_to_im);
+        if (src.get_long() == offs_PTRA || src.get_long() == offs_PTRB) {
+            // TODO: index expression
+            qDebug("%s: index = %#x", __func__, src.get_index<p2_LONG>());
+        }
     }
     return end_of_line();
 }
@@ -7402,7 +7477,7 @@ bool P2Asm::asm_wmlong()
 {
     next();
     m_IR.set_inst9(p2_WMLONG);
-    return parse_D_IM_S();
+    return parse_D_IM_S_PTRx();
 }
 
 /**
@@ -7472,7 +7547,7 @@ bool P2Asm::asm_rdbyte()
 {
     next();
     m_IR.set_inst7(p2_RDBYTE);
-    return parse_D_IM_S_WCZ();
+    return parse_D_IM_S_PTRx_WCZ();
 }
 
 /**
@@ -7490,7 +7565,7 @@ bool P2Asm::asm_rdword()
 {
     next();
     m_IR.set_inst7(p2_RDWORD);
-    return parse_D_IM_S_WCZ();
+    return parse_D_IM_S_PTRx_WCZ();
 }
 
 /**
@@ -7509,7 +7584,7 @@ bool P2Asm::asm_rdlong()
 {
     next();
     m_IR.set_inst7(p2_RDLONG);
-    return parse_D_IM_S_WCZ();
+    return parse_D_IM_S_PTRx_WCZ();
 }
 
 /**
@@ -8563,7 +8638,7 @@ bool P2Asm::asm_wrbyte()
 {
     next();
     m_IR.set_inst8(p2_WRBYTE);
-    return parse_WZ_D_IM_S();
+    return parse_WZ_D_IM_S_PTRx();
 }
 
 /**
@@ -8578,7 +8653,7 @@ bool P2Asm::asm_wrword()
 {
     next();
     m_IR.set_inst8(p2_WRWORD);
-    return parse_WZ_D_IM_S();
+    return parse_WZ_D_IM_S_PTRx();
 }
 
 /**
@@ -8594,7 +8669,7 @@ bool P2Asm::asm_wrlong()
 {
     next();
     m_IR.set_inst8(p2_WRLONG);
-    return parse_WZ_D_IM_S();
+    return parse_WZ_D_IM_S_PTRx();
 }
 
 /**

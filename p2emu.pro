@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT += core gui widgets svg
+QT += core gui widgets svg xml
 TARGET = p2
 TEMPLATE = app
 VER_MAJ = 0
