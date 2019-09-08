@@ -163,10 +163,10 @@ public:
     static QString format_assign_hex(const P2Opcode& ir, bool prefix = false);
     static QString format_assign(const P2Opcode& ir, p2_format_e fmt = fmt_bin);
 
-    static QString format_data_bin(const P2Opcode& ir, const p2_QUAD data, bool prefix = false);
-    static QString format_data_byt(const P2Opcode& ir, const p2_QUAD data, bool prefix = false);
-    static QString format_data_dec(const P2Opcode& ir, const p2_QUAD data, bool prefix = false);
-    static QString format_data_hex(const P2Opcode& ir, const p2_LONG data, bool prefix = false);
+    static QStringList format_data_bin(const P2Opcode& ir, bool prefix = false);
+    static QStringList format_data_byt(const P2Opcode& ir, bool prefix = false);
+    static QStringList format_data_dec(const P2Opcode& ir, bool prefix = false);
+    static QStringList format_data_hex(const P2Opcode& ir, bool prefix = false);
     static QString format_data(const P2Opcode& ir, p2_format_e fmt = fmt_bin);
 
 private:

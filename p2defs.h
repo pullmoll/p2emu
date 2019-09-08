@@ -39,6 +39,17 @@
 
 #include "p2tokens.h"
 
+/**
+ * @file This file defines the basic constants, enumerations, and structure
+ * of opcodes (instructions) and the bitfields contained therein of the
+ * Parallax Inc. Propeller2 microprocessor / microcontroller.
+ */
+
+/**
+ * @brief enumeration defining the basic data types used with the Propeller2
+ * These are all unsigned types as signed operations are just a specific
+ * subset in few Propeller2 instuctions.
+ */
 typedef enum {
     ut_Invalid = -1,                        //!< Type is not set
     ut_Bool,                                //!< Value is bool
@@ -51,66 +62,62 @@ typedef enum {
     ut_String                               //!< Value is an array of char
 }   p2_union_e;
 
+/*
+ * Definitions for the basic types based on Qt5 types
+ */
+
 typedef quint8 p2_BYTE;                     //!< Type of the Propeller2 BYTE
+Q_DECLARE_METATYPE(p2_BYTE);
+static constexpr int mt_BYTE = qMetaTypeId<p2_BYTE>();
+static constexpr int sz_BYTE = sizeof(p2_BYTE);
+
 typedef quint16 p2_WORD;                    //!< Type of the Propeller2 WORD
+Q_DECLARE_METATYPE(p2_WORD);
+static constexpr int mt_WORD = qMetaTypeId<p2_WORD>();
+static constexpr int sz_WORD = sizeof(p2_WORD);
+
 typedef quint32 p2_LONG;                    //!< Type of the Propeller2 LONG
-typedef quint64 p2_QUAD;                    //!< Intermediate type (unsigned long long); not a Propeller2 type
-typedef double p2_REAL;                     //! Intermediate type (double); not a Propeller2 type
-typedef QVector<p2_BYTE> p2_BYTES;          //! Type for an array (QVector) of BYTEs (ut_Byte or ut_Bool)
-typedef QVector<p2_WORD> p2_WORDS;          //! Type for an array (QVector) of WORDs (ut_Word)
-typedef QVector<p2_LONG> p2_LONGS;          //! Type for an array (QVector) of LONGs (ut_Addr or ut_Long)
-typedef QVector<p2_QUAD> p2_QUADS;          //! Type for an array (QVector) of QUADs (ut_Quad)
-typedef QVector<p2_REAL> p2_REALS;          //! Type for an array (QVector) of REALs (ut_Real)
-typedef QVector<char> p2_CHARS;             //! Type for an array (vector) of chars (ut_String)
+Q_DECLARE_METATYPE(p2_LONG);
+static constexpr int mt_LONG = qMetaTypeId<p2_LONG>();
+static constexpr int sz_LONG = sizeof(p2_LONG);
 
-//! Type for a mask/match pair for P2DocOpcode and P2Doc
-typedef QPair<p2_LONG,p2_LONG> P2MatchMask;
+typedef quint64 p2_QUAD;                    //!< Intermediate type (unsigned long long); not a Propeller2 type, but used in expressions
+Q_DECLARE_METATYPE(p2_QUAD);
+static constexpr int mt_QUAD = qMetaTypeId<p2_QUAD>();
+static constexpr int sz_QUAD = sizeof(p2_QUAD);
 
-/// Union of bytes, words, and a long in endianess aware ordering
-typedef union {
-#if (Q_BYTE_ORDER == Q_LITTLE_ENDIAN)
-    p2_LONG l;                              //!< long
-    p2_WORD w0, w1;                         //!< words 0, 1 as least significant word first
-    p2_WORD w[2];                           //!< 2 words as an array
-    p2_BYTE b0, b1, b2, b3;                 //!< bytes 0, 1, 2, 3 as least significant byte first
-    p2_BYTE b[4];                           //!< 4 bytes as an array
-#elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
-    p2_LONG l;                              //!< long
-    p2_WORD w1, w0;                         //!< words 1, 0 as most significant word first
-    p2_WORD w[2];                           //!< 2 words as an array
-    p2_BYTE b3, b2, b1, b0;                 //!< bytes 3, 2, 1, 0 as most significant byte first
-    p2_BYTE b[4];                           //!< 4 bytes as an array
-#else
-#error "Unknown byte order!"
-#endif
-}   p2_BWL;
+typedef double p2_REAL;                     //!< Intermediate type (double); not a Propeller2 type, but used in expressions
+Q_DECLARE_METATYPE(p2_REAL);
+static constexpr int mt_REAL = qMetaTypeId<p2_REAL>();
+static constexpr int sz_REAL = sizeof(p2_REAL);
 
+typedef QVector<p2_BYTE> p2_BYTES;          //!< Type for an array (QVector) of BYTEs (interpret as ut_Byte or ut_Bool)
+Q_DECLARE_METATYPE(p2_BYTES);
+static const int mt_BYTES = qMetaTypeId<p2_BYTES>();
 
-/// Union of bytes, words, and a long in endianess aware ordering
-typedef union {
-#if (Q_BYTE_ORDER == Q_LITTLE_ENDIAN)
-    p2_QUAD q;                              //!< quad
-    p2_LONG l0, l1;                         //!< long
-    p2_WORD w0, w1, w2, w3;                 //!< words 0, 1 as least significant word first
-    p2_WORD w[4];                           //!< 4 words as an array
-    p2_BYTE b0, b1, b2, b3, b4, b5, b6, b7; //!< bytes 0, 1, 2, 3, 4, 5, 6, 7 as least significant byte first
-    p2_BYTE b[8];                           //!< 8 bytes as an array
-    char c[8];                              //!< 8 chars as an array
-#elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
-    p2_QUAD q;                              //!< quad
-    p2_LONG l1, l0;                         //!< long
-    p2_WORD w3, w2, w1, w0;                 //!< words 3, 2, 1, 0 as least significant word last
-    p2_WORD w[4];                           //!< 4 words as an array
-    p2_BYTE b0, b1, b2, b3, b4, b5, b6, b7; //!< bytes 7, 6, 5, 4, 3, 2, 1, 0 as least significant byte last
-    p2_BYTE b[8];                           //!< 8 bytes as an array
-    char c[8];                              //!< 8 chars as an array
-#else
-#error "Unknown byte order!"
-#endif
-}   p2_BWLQ;
+typedef QVector<p2_WORD> p2_WORDS;          //!< Type for an array (QVector) of WORDs (ut_Word)
+Q_DECLARE_METATYPE(p2_WORDS);
+static const int mt_WORDS = qMetaTypeId<p2_WORDS>();
 
+typedef QVector<p2_LONG> p2_LONGS;          //!< Type for an array (QVector) of LONGs (ut_Addr or ut_Long)
+Q_DECLARE_METATYPE(p2_LONGS);
+static const int mt_LONGS = qMetaTypeId<p2_LONGS>();
 
-//! Size of the HUB memory in bytes (1MiB)
+typedef QVector<p2_QUAD> p2_QUADS;          //!< Type for an array (QVector) of QUADs (ut_Quad)
+Q_DECLARE_METATYPE(p2_QUADS);
+static const int mt_QUADS = qMetaTypeId<p2_QUADS>();
+
+typedef QVector<p2_REAL> p2_REALS;          //!< Type for an array (QVector) of REALs (ut_Real)
+Q_DECLARE_METATYPE(p2_REALS);
+static const int mt_REALS = qMetaTypeId<p2_REALS>();
+
+typedef QVector<char> p2_CHARS;             //!< Type for an array (vector) of chars (ut_String interpret as ut_Byte or char)
+Q_DECLARE_METATYPE(p2_CHARS);
+static const int mt_CHARS = qMetaTypeId<p2_CHARS>();
+
+typedef QPair<p2_LONG,p2_LONG> P2MatchMask; //! Type for a mask/match pair for P2DocOpcode and P2Doc
+
+//! Size of the HUB memory, i.e. address range, in bytes (this is 1MiB)
 static constexpr p2_LONG MEM_SIZE = 1u << 20;
 
 //! Lowest COG memory address
@@ -119,129 +126,236 @@ static constexpr p2_LONG COG_ADDR0 = 0u;
 //! COG shift value
 static constexpr p2_LONG COG_SHIFT = 9;
 
-//! Size of the COG memory in longs
+//! Size of the COG memory in LONGs
 static constexpr p2_LONG COG_SIZE = 1u << COG_SHIFT;
 
-//! Mask for the COG memory longs
+//! Mask for the COG memory LONGs
 static constexpr p2_LONG COG_MASK = (COG_SIZE-1);
 
-//! Lowest LUT memory address
+//! Lowest LUT memory address (in BYTEs)
 static constexpr p2_LONG LUT_ADDR0 = (COG_ADDR0+COG_SIZE*4u);
 
 //! COG shift value
 static constexpr p2_LONG LUT_SHIFT = 9;
 
-//! Size of the LUT memory in longs
+//! Size of the LUT memory in LONGs
 static constexpr p2_LONG LUT_SIZE = 1u << LUT_SHIFT;
 
-//! Mask for the LUT memory longs
+//! Mask for the LUT memory LONGs
 static constexpr p2_LONG LUT_MASK = (LUT_SIZE-1);
 
-//! Lowest HUB memory address
+//! Lowest HUB memory address (in BYTEs)
 static constexpr p2_LONG HUB_ADDR0 = (LUT_ADDR0+LUT_SIZE*4);
 
-//! most significant bit in a 32 bit word
+//! The most significant bit in a 32 bit word
 static constexpr p2_LONG MSB = 1u << 31;
 
-//! least significant bit in a 32 bit word
+//! The least significant bit in a 32 bit word
 static constexpr p2_LONG LSB = 1u;
 
-//! least significant nibble in a 32 bit word
+//! The least significant nibble in a 32 bit word
 static constexpr p2_LONG LNIBBLE = 0x0000000fu;
 
-//! least significant byte in a 32 bit word
+//! The least significant BYTE in a 32 bit LONG
 static constexpr p2_LONG LBYTE = 0x000000ffu;
 
-//! least significant word in a 32 bit word
+//! The least significant WORD in a 32 bit LONG
 static constexpr p2_LONG LWORD = 0x0000ffffu;
 
-//! most significant word in a 32 bit word
+//! The most significant WORD in a 32 bit LONG
 static constexpr p2_LONG HWORD = 0xffff0000u;
 
-//! bits without sign bit in a 32 bit word
+//! All bits except the sign bit in a 32 bit LONG
 static constexpr p2_LONG IMAX = 0x7fffffffu;
 
-//! no bits in a 32 bit word
+//! No bits 1 in a 32 bit LONG
 static constexpr p2_LONG ZERO = 0x00000000u;
 
-//! all bits in a 32 bit word
+//! All bits 1 in a 32 bit LONG
 static constexpr p2_LONG FULL = 0xffffffffu;
 
-//! least significant 20 bits for an address value
+//! The least significant 20 bits for an address value
 static constexpr p2_LONG A20MASK = (1u << 20) - 1;
 
-//! AUGS/AUGD value shift
+//! The AUGS/AUGD value shift count
 static constexpr p2_LONG AUG_SHIFT = 9;
 
-//! most significant 23 bits for an augmentation value
+//! The most significant 23 bits for an AUGS/AUGD (augmentation) value
 static constexpr p2_LONG AUG_MASK = FULL << AUG_SHIFT;
 
-//! upper word max / mask in a 64 bit unsigned
+//! The upper LONG max / mask in a 64 bit unsigned (QUAD)
 static constexpr p2_QUAD HMAX = Q_UINT64_C(0xffffffff00000000);
 
-//! lower word max / mask in a 64 bit unsigned
+//! The lower LONG max / mask in a 64 bit unsigned (QUAD)
 static constexpr p2_QUAD LMAX = Q_UINT64_C(0x00000000ffffffff);
 
+//! The mask for 5 bit instructions
 static constexpr p2_LONG p2_mask5 = (1u << 5) - 1;
+
+//! The mask for 7 bit instructions
 static constexpr p2_LONG p2_mask7 = (1u << 7) - 1;
+
+//! The mask for 8 bit instructions
 static constexpr p2_LONG p2_mask8 = (1u << 8) - 1;
+
+//! The mask for 9 bit instructions or DST/SRC values
 static constexpr p2_LONG p2_mask9 = (1u << 9) - 1;
+
+//! The shift count for the CZI bits in an instruction
 static constexpr p2_LONG p2_shift_CZI = 9 + 9;
+
+//! The shift count for the NNN bits (nibble index) in an instruction
 static constexpr p2_LONG p2_shift_NNN = 1 + p2_shift_CZI;
+
+//! The shift count for the NN bits (BYTE index) in an instruction
 static constexpr p2_LONG p2_shift_NN = p2_shift_NNN;
+
+//! The shift count for the N bit (WORD index) in an instruction
 static constexpr p2_LONG p2_shift_N = p2_shift_NNN;
+
+//! The shift count for a 5 bit instruction in the opcode
 static constexpr p2_LONG p2_shift_inst5 = 32 - 4 - 5;
+
+//! The shift count for a 7 bit instruction in the opcode
 static constexpr p2_LONG p2_shift_inst7 = 32 - 4 - 7;
+
+//! The shift count for an 8 bit instruction in the opcode
 static constexpr p2_LONG p2_shift_inst8 = 32 - 4 - 8;
+
+//! The shift count for a 9 bit instruction in the opcode
 static constexpr p2_LONG p2_shift_inst9 = 32 - 4 - 9;
+
+//! The shift count for the D field in the opcode
 static constexpr p2_LONG p2_shift_opdst = 9;
+
+//! The shift count for the S field in the opcode
 static constexpr p2_LONG p2_shift_opsrc = 0;
 
+//! The bit mask for a 5 bit instruction
 static constexpr p2_LONG p2_mask_inst5 = p2_mask5 << p2_shift_inst5;
+
+//! The bit mask for a 7 bit instruction
 static constexpr p2_LONG p2_mask_inst7 = p2_mask7 << p2_shift_inst7;
+
+//! The bit mask for an 8 bit instruction
 static constexpr p2_LONG p2_mask_inst8 = p2_mask8 << p2_shift_inst8;
+
+//! The bit mask for a 9 bit instruction
 static constexpr p2_LONG p2_mask_inst9 = p2_mask9 << p2_shift_inst9;
+
+//! The bit mask for the C bit in an instruction
 static constexpr p2_LONG p2_mask_C = 4u << p2_shift_CZI;
+
+//! The bit mask for the Z bit in an instruction
 static constexpr p2_LONG p2_mask_Z = 2u << p2_shift_CZI;
+
+//! The bit mask for the I bit in an instruction
 static constexpr p2_LONG p2_mask_I = 1u << p2_shift_CZI;
+
+//! The bit mask for both, the C and Z bits in an instruction
 static constexpr p2_LONG p2_mask_CZ = p2_mask_C | p2_mask_Z;
+
+//! The bit mask for all of the  C, Z, and I bits in an instruction
 static constexpr p2_LONG p2_mask_CZI = p2_mask_CZ | p2_mask_I;
+
+//! The bit mask for a nibble index in an instruction
 static constexpr p2_LONG p2_mask_NNN = 7u << p2_shift_NNN;
+
+//! The bit mask for a BYTE index in an instruction
 static constexpr p2_LONG p2_mask_NN = 3u << p2_shift_NN;
+
+//! The bit mask for a WORD index in an instruction
 static constexpr p2_LONG p2_mask_N = 1u << p2_shift_N;
+
+//! The bit mask for a D value in an instruction
 static constexpr p2_LONG p2_mask_D = p2_mask9 << p2_shift_opdst;
+
+//! The bit mask for an S value in an instruction
 static constexpr p2_LONG p2_mask_S = p2_mask9 << p2_shift_opsrc;
+
+//! The bit mask for a p2_opdst_e instruction (9 bit instruction and D) in an opcode
 static constexpr p2_LONG p2_mask_opdst = p2_mask_inst9 | p2_mask_D;
+
+//! The bit mask for a p2_opsrc_e instruction (7 bit instruction and S) in an opcode
 static constexpr p2_LONG p2_mask_opsrc = p2_mask_inst7 | p2_mask_S;
+
+//! The bit mask for a p2_opx24_e instruction (7 bit instruction, D, and S) in an opcode
 static constexpr p2_LONG p2_mask_opx24 = p2_mask_inst7 | p2_mask_D | p2_mask_S;
 
+//! Just a name for a commonly used character: separates arguments of an instruction
 static constexpr QChar chr_comma(',');
+
+//! Just a name for a commonly used character: the rest of the line is comment
 static constexpr QChar chr_apostrophe('\'');
+
+//! Just a name for a commonly used character: huh?
 static constexpr QChar chr_semicolon(';');
+
+//! Just a name for a commonly used character: double quotes enclose strings
 static constexpr QChar chr_dquote('"');
+
+//! Just a name for a commonly used character: underscore is a skipped character in numeric constants
 static constexpr QChar chr_skip_digit('_');
+
+//! Just a name for a commonly used character: string escape and also trait of an argument
 static constexpr QChar str_escape('\\');
+
+//! Just a name for a commonly used character: start of higher precedence subexpression
 static constexpr QChar chr_lparen('(');
+
+//! Just a name for a commonly used character: end of higher precedence subexpression
 static constexpr QChar chr_rparen(')');
+
+//! Just a name for a commonly used character: starts a single (in line) or multi line comment
 static constexpr QChar chr_lcurly('{');
+
+//! Just a name for a commonly used character: ends a single (in line) or multi line comment
 static constexpr QChar chr_rcurly('}');
+
+//! Just a name for a commonly used character: generally means "immediate"
 static constexpr QChar chr_number_sign('#');
+
+//! Just a name for a commonly used character: generally means "relative"
 static constexpr QChar chr_ampersand('@');
+
+//! Just a name for a commonly used character: first character for a binary constant (double %% is a byte index, i.e. base 4)
 static constexpr QChar chr_percent('%');
+
+//! Just a name for a commonly used character: represents the current origin (PC)
 static constexpr QChar chr_dollar('$');
+
+//! Just a name for a commonly used character: character used in tokenizer debugging
 static constexpr QChar chr_pilcrow(L'¶');
+
+//! Just a name for a commonly used character: character used to enclose non-token names for type masks
 static constexpr QChar chr_centerdot(L'·');
+
+//! Just a name for a commonly used character: character used in tokenizer debugging
 static constexpr QChar chr_ldangle(L'«');
+
+//! Just a name for a commonly used character: character used in tokenizer debugging
 static constexpr QChar chr_rdangle(L'»');
 
-extern const QString bin_digits;
-extern const QString byt_digits;
-extern const QString dec_digits;
-extern const QString hex_digits;
-extern const QString real_digits;
+//! P2Atom traits
+typedef enum {
+    tr_none         = 0,        //!< no special trait
+    tr_IMMEDIATE    = (1 << 0), //!< expression started with '#'
+    tr_AUGMENTED    = (1 << 1), //!< expression started with '##'
+    tr_RELATIVE     = (1 << 2), //!< expression started with '@'
+    tr_ABSOLUTE     = (1 << 3), //!< expression contained a '\'
+    tr_ADDRESS_HUB  = (1 << 4), //!< expression started with '#@'
+    tr_RELATIVE_HUB = (1 << 5), //!< expression started with '@@@'
+    tr_HAS_INDEX    = (1 << 6), //!< expression contains an index: '[' expr ']'
+}   p2_traits_e;
+
+extern void trait_set(p2_traits_e& traits, const p2_traits_e set);
+extern void trait_clr(p2_traits_e& traits, const p2_traits_e clr);
+extern bool has_trait(const p2_traits_e traits, const p2_traits_e has);
 
 /**
  * @brief Enumeration of the 16 conditional execution modes
+ * In opcode patterns these are represented as EEEE (conditional execution)
+ * or cccc, zzzz in the MODCZ,MODC,MODZ instructions.
  */
 typedef enum {
     cc_clr,                     //!< clear (never)
@@ -263,20 +377,28 @@ typedef enum {
     cc_always                   //!< always (default)
 }   p2_cond_e;
 
-//! define an instruction with 5 bits
+/**
+ * @brief Define an instruction with 5 bits in the p2_inst5_e enumeration
+ */
 #define INST5(b4,b3,b2,b1,b0) ((b4<<4)|(b3<<3)|(b2<<2)|(b1<<1)|(b0<<0))
 
-//! define an instruction with 7 bits
+/**
+ * @brief Define an instruction with 7 bits in the p2_inst7_e enumeration
+ */
 #define INST7(b6,b5,b4,b3,b2,b1,b0) ((b6<<6)|(b5<<5)|(b4<<4)|(b3<<3)|(b2<<2)|(b1<<1)|(b0))
 
-//! extend an instruction to 8 bits using wc
+/**
+ * @brief Define an instruction with 8 bits in the p2_inst8_e enumeration (uses C bit for the extension)
+ */
 #define INST8(inst,b0)              ((inst<<1)|(b0))
 
-//! extend an instruction to 9 bits using wc and wz
+/**
+ * @brief Define an instruction with 9 bits in the p2_inst9_e enumeration (uses C and Z bits for the extension)
+ */
 #define INST9(inst,b1,b0)           ((inst<<2)|(b1<<1)|(b0))
 
 /**
- * @brief Enumeration of the 3 instruction types using the more significant 5 of 7 bits
+ * @brief Enumeration of the 4 instructions using only the more significant 5 of 7 bits
  */
 typedef enum {
     p2_CALLD_ABS                = INST5(1,1,1,0,0),
@@ -286,7 +408,7 @@ typedef enum {
 }   p2_inst5_e;
 
 /**
- * @brief Enumeration of the 128 possible instruction types
+ * @brief Enumeration of the 128 possible instruction types in 7 bit instructions
  */
 typedef enum {
     p2_ROR                      = INST7(0,0,0,0,0,0,0),
@@ -456,6 +578,9 @@ typedef enum {
 
 Q_STATIC_ASSERT(p2_AUGD_11 == 127u);
 
+/**
+ * @brief Enumeration of the p2_OPDST 7 bit instruction's D fields
+ */
 typedef enum {
 
     p2_OPDST_JINT               = 0x000,
@@ -633,6 +758,9 @@ typedef enum {
     p2_OPSRC_INVALID            = 0x200
 }   p2_opsrc_e;
 
+/**
+ * @brief Enumeration of the p2_OPSRC_X24 instruction's D fields
+ */
 typedef enum {
     p2_OPX24_POLLINT            = 0x000,
     p2_OPX24_POLLCT1            = 0x001,
@@ -679,6 +807,9 @@ typedef enum {
     p2_OPX24_INVALID            = 0x200,
 }   p2_opx24_e;
 
+/**
+ * @brief some specific opcodes tested for in the COG emulation
+ */
 typedef enum {
     p2_OPCODE_WMLONG            = 0x053,
     p2_OPCODE_RDBYTE            = 0x056,
@@ -694,6 +825,9 @@ typedef enum {
     p2_OPCODE_QVECTOR           = 0x06a,
 }   p2_opcode_e;
 
+/**
+ * @brief some specific mask and opcodes tested for in the COG emulation
+ */
 typedef enum {
     p2_INSTR_MASK1              = 0x0fe001ff,
     p2_INSTR_LOCKNEW            = 0x0d600004,
@@ -711,6 +845,9 @@ typedef enum {
     p2_INSTR_WAITX              = 0x0d60001f,
 }   p2_instx1_e;
 
+/**
+ * @brief some specific opcodes tested for in the COG emulation
+ */
 typedef enum {
     p2_INSTR_MASK2              = 0x0fe3e1ff,
     p2_INSTR_WAITXXX            = 0x0d602024,
@@ -718,7 +855,7 @@ typedef enum {
 
 /**
  * @brief Enumeration of the 8 bit instruction types
- * This is the 7 bit instruction with appended WC
+ * This is a 7 bit instruction with C bit appendix
  */
 typedef enum {
     p2_MUL                      = INST8(p2_MUL_MULS,0),
@@ -772,7 +909,7 @@ typedef enum {
 
 /**
  * @brief Enumeration of the 9 bit instruction types
- * This is the 7 bit instruction with appended WC and WZ
+ * This is a 7 bit instruction with C and Z bits appendix
  */
 typedef enum {
     p2_BITL                     = INST9(p2_TESTB_W_BITL,0,0),
@@ -937,6 +1074,56 @@ typedef enum {
 
 }   p2_inst9_e;
 
+/**
+ * @brief structure of the 9 bit non-augmented index
+ *<pre>
+ * This structure defines the 9 bits of S/#/PTRx without AUGS
+ * 0:   %0AAAAAAAA
+ * 1:   %1SUPNNNNN
+ * The topmost bit (%sup) determines whether the
+ * lower 8 bits are to be interpreted as:
+ * 0:   AAAAAAAA: 8 bits of address (0…255)
+ * 1:   SUPNNNNN: structure definining the
+ *      + S: PTRx false for PTRA, true for PTRB
+ *      + U: false to keep PTRx same, true to update PTRx (PTRx += INDEX*SCALE)
+ *      + P: false to use PTRx + INDEX*SCALE, true to use PTRx (post-modify)
+ *      + NNNNN: index -16…15 for simple offsets, 0…15 for ++'s, 0…16 for --'s
+ * SCALE is:
+ *      = 1: for RDBYTE/WRBYTE
+ *      = 2: for RDWORD/WRWORD
+ *      = 4: for RDLONG/WRLONG/WMLONG
+ *</pre>
+ */
+typedef union {
+    uint        idx:9;              //!< 9 bits of index as unsigned int
+#if (Q_BYTE_ORDER == Q_LITTLE_ENDIAN)
+    struct {
+        bool    sup:1;              //!< 1: use 8 bits as follows
+        bool    S:1;                //!< S: false for PTRA, true for PTRB
+        bool    U:1;                //!< U: false to keep PTRx same, true to update PTRx (PTRx += INDEX*SCALE)
+        bool    P:1;                //!< P: false to use PTRx + INDEX*SCALE, true to use PTRx (post-modify)
+        uint    N:5;                //!< NNNNN: 5 bits of index
+    }   i;                          //!< index
+    struct {
+        bool    sup:1;              //!< 0: use 8 bits as follows
+        uint    A:8;                //!< AAAAAAAA: 8 bits of address
+    }   a;                          //!< address
+#elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
+    struct {
+        uint    N:5;                //!< NNNNN: 5 bits of index
+        bool    P:1;                //!< P: false to use PTRx + INDEX*SCALE, true to use PTRx (post-modify)
+        bool    U:1;                //!< U: false to keep PTRx same, true to update PTRx (PTRx += INDEX*SCALE)
+        bool    S:1;                //!< S: false for PTRA, true for PTRB
+        bool    sup:1;              //!< 1: use 8 bits as follows
+    }   i;                          //!< index
+    struct {
+        uint    A:8;                //!< AAAAAAAA: 8 bits of address
+        bool    sup:1;              //!< 0: use 8 bits as follows
+    }   a;                          //!< address
+#else
+#error "Unknown byte order!"
+#endif
+}   p2_index9_t;
 
 /**
  * @brief Structure of the Propeller2 opcode words with 7 bits instruction, wc, wz, and im
@@ -1011,6 +1198,9 @@ typedef struct {
 #endif
 }   p2_opcode9_t;
 
+/**
+ * @brief Union of the opcode and the variants with 7, 8, and 9 bit instructions
+ */
 typedef union {
     p2_LONG opcode;             //!< opcode as 32 bit word
     p2_opcode7_t op;            //!< ocpode as bit fields (version with 7 bits instruction)
@@ -1019,7 +1209,62 @@ typedef union {
 }   p2_opcode_u;
 
 /**
- * @brief Structure of the LUT and the shadow registers in the last 16 LONGs
+ * @brief structure of the 23 bit augmented (AUGS) index
+ *<pre>
+ * This structure defines the 23 bits of S/#/PTRx with AUGS
+ * 0:   %000000000000AAAAAAAAAAA_AAAAAAAAA
+ * 1:   %000000001SUPNNNNNNNNNNN_NNNNNNNNN
+ * The topmost bit (sup) determines whether the
+ * less significant 23 bits are to be interpreted as:
+ * 0:   AAAAAAAAAAA_AAAAAAAAA: structure defining the
+ *      + A: 20 bit of address ($000000…$fffff)
+ * 1:   SUPNNNNNNNNNNN_NNNNNNNNN: structure definining the
+ *      + S: PTRx false for PTRA, true for PTRB
+ *      + U: false to keep PTRx same, true to update PTRx (PTRx += INDEX)
+ *      + P: false to use PTRx + INDEX, true to use PTRx (post-modify)
+ *      + NNNNNNNNNNN_NNNNNNNNN: 20 bit unscaled index
+ *</pre>
+ */
+typedef union {
+    uint        aug:32;             //!< 32 bits of index as unsigned int
+#if (Q_BYTE_ORDER == Q_LITTLE_ENDIAN)
+    struct {
+        uint    unused_msb:8;       //!< 00000000: 8 unused most significant bits
+        bool    sup:1;              //!< 1: use 23 bits as defined below
+        bool    S:1;                //!< S: false for PTRA, true for PTRB
+        bool    U:1;                //!< U: false to keep PTRx same, true to update PTRx (PTRx += INDEX*SCALE)
+        bool    P:1;                //!< P: false to use PTRx + INDEX*SCALE, true to use PTRx (post-modify)
+        uint    N:20;               //!< NNNNNNNNNNN_NNNNNNNNN: 20 bits of index
+    }   i;                          //!< index
+    struct {
+        uint    unused_msb:8;       //!< 00000000: 8 unused most significant bits
+        bool    sup:1;              //!< 0: use 23 bits as defined below
+        bool    unused_nul:3;       //!< 000: more unused bits (000)
+        uint    A:20;               //!< AAAAAAAAAAA_AAAAAAAAA: 20 bits of address
+    }   a;                          //!< address
+#elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
+    struct {
+        uint    N:20;               //!< NNNNNNNNNNN_NNNNNNNNN: 20 bits of index
+        bool    P:1;                //!< P: false to use PTRx + INDEX*SCALE, true to use PTRx (post-modify)
+        bool    U:1;                //!< U: false to keep PTRx same, true to update PTRx (PTRx += INDEX*SCALE)
+        bool    S:1;                //!< S: false for PTRA, true for PTRB
+        bool    sup:1;              //!< 1: use 23 bits as defined above
+        uint    unused_msb:8;       //!< 00000000: 8 unused most significant bits
+    }   i;                          //!< index
+    struct {
+        uint    A:20;               //!< AAAAAAAAAAA_AAAAAAAAA: 20 bits of address
+        bool    unused_nul:3;       //!< 000: unused (000)
+        bool    sup:1;              //!< 0: use 23 bits as defined above
+        uint    unused_msb:8;       //!< 00000000: 8 unused most significant bits
+    }   a;                          //!< address
+#else
+#error "Unknown byte order!"
+#endif
+}   p2_index23_t;
+
+
+/**
+ * @brief Structure of the COG and the shadow registers in the last 16 LONGs
  */
 typedef struct {
     p2_LONG RAM[512-16];        //!< general-use code/data registers
@@ -1042,7 +1287,7 @@ typedef struct {
 }   p2_cogregs_t;
 
 /**
- * @brief Offsets of the LUT shadow registers
+ * @brief Offsets of the COG shadow registers
  */
 typedef enum {
     offs_IJMP3 = 0x1f0,         //!< offset of interrupt call address for INT3
@@ -1082,7 +1327,7 @@ typedef struct {
 }   p2_lut_t;
 
 /**
- * @brief 16 flag bits per COG
+ * @brief The 16 flag bits (interrupt sources) per COG
  */
 typedef struct {
     bool    f_INT:1;            //!< INT interrupt flag
@@ -1225,6 +1470,9 @@ typedef struct {
     p2_LONG flag;               //!< FIFO flags
 }   p2_fifo_t;
 
+/**
+ * @brief Ummm.. not yet used. Meant to put in a structure what is in the instruction queue
+ */
 typedef struct {
     p2_opcode_u IR;
     p2_LONG R;
@@ -1232,12 +1480,15 @@ typedef struct {
     p2_LONG S;
 }   p2_queue_t;
 
+/**
+ * @brief A globally used enumeration of display formats
+ */
 typedef enum {
-    fmt_bin,
-    fmt_byt,
-    fmt_dec,
-    fmt_hex,
-    fmt_doc,
+    fmt_bin,                    //!< display as binary
+    fmt_byt,                    //!< display as "byt" (that is hex fragments of about 8 bits, sometimes less, sometimes more)
+    fmt_dec,                    //!< display as decimal (who needs this?)
+    fmt_hex,                    //!< display as hexadecimal
+    fmt_doc,                    //!< display as excerpt of the P2Doc information
 }   p2_format_e;
 
 extern const QString template_str_origin;
@@ -1256,12 +1507,17 @@ extern const QString template_str_description;
 extern const QString key_tv_asm;
 
 /**
- * @brief enumeration of token types
+ * @brief The enumeration of token types
+ *
+ * This is used to classify tokens into groups which can be tested for
+ * easily using bit masks in a 64 bit mask value
+ *
  */
 typedef enum {
     tt_none,            //!< no specific type
     tt_comment,         //!< comment
-    tt_parens,          //!< precedence  0: parenthesis "(", ")", "[", "]"
+    tt_parens,          //!< precedence  0: parenthesis "(", ")"
+    tt_brackets,        //!< precedence  0: brackets "[", "]"
     tt_primary,         //!< precedence  1: primary operators (++, --)
     tt_unary,           //!< precedence  2: unary operators (+, -, !, ~, more?)
     tt_shiftop,         //!< precedence  3: shift operators (<<, >>)
@@ -1294,16 +1550,21 @@ typedef enum {
     tt_regexp,          //!< pseudo token from lexing a string
 }   p2_t_type_e;
 
+/**
+ * @brief The type for token type bitmasks
+ * Since there are more than 32 types we need to use a 64 bit quantity for the mask
+ */
 typedef quint64 p2_t_mask_t;
 
 /**
- * @brief bit masks for token types
+ * @brief Constants for the bit masks of token types
  */
 #define TTMASK(tt) static_cast<p2_t_mask_t>(Q_UINT64_C(1) << (tt))
 
 static constexpr p2_t_mask_t tm_none        = 0;
 static constexpr p2_t_mask_t tm_comment     = TTMASK(tt_comment);
 static constexpr p2_t_mask_t tm_parens      = TTMASK(tt_parens);
+static constexpr p2_t_mask_t tm_brackets    = TTMASK(tt_brackets);
 static constexpr p2_t_mask_t tm_primary     = TTMASK(tt_primary);
 static constexpr p2_t_mask_t tm_unary       = TTMASK(tt_unary);
 static constexpr p2_t_mask_t tm_shiftop     = TTMASK(tt_shiftop);

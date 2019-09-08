@@ -577,10 +577,10 @@ enum p2_token_e {
     t_PTRB_preinc,
     t_PTRB_predec,
 
-    // conversion
-    t__FLOAT,
-    t__ROUND,
-    t__TRUNC,
+    // conversion functions
+    t__FLOAT,           //!< float(integer)
+    t__ROUND,           //!< round(real)
+    t__TRUNC,           //!< trunc(real)
 
     // origin (PC)
     t_DOLLAR,           //!< "$"
@@ -592,7 +592,7 @@ enum p2_token_e {
     t_RELATIVE,         //!< "@"
     t_ABSOLUTE,         //!< "\"
     t_ADDRESS_HUB,      //!< "#@"
-    t_RELATIVE_HUB,     //!< "@@@"
+    t_RELATIVE_HUB,     //!< "##@"
 
     // relations
     t__LE,              //!< "<="

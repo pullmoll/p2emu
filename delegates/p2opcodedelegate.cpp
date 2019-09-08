@@ -58,8 +58,9 @@ QStringList P2OpcodeDelegate::opcodeLines(const QModelIndex& index) const
     if (IR.is_assign())
         text += P2Opcode::format_assign(IR, format);
 
-    if (IR.is_data())
+    if (IR.is_data()) {
         text += P2Opcode::format_data(IR, format);
+    }
     return text;
 }
 

@@ -97,9 +97,13 @@ bool P2Hub::load_obj(const QString& filename)
 
     QByteArray bin = file.read(MEM_SIZE);
     // qDebug("%s: file=%s size=0x%06x (%d)", __func__, qPrintable(filename), bin.size(), bin.size());
-    p2_BWL* p = reinterpret_cast<p2_BWL *>(bin.data());
-    for (p2_LONG i = 0; i < static_cast<p2_LONG>(bin.size()); i += 4, p++) {
-        wr_mem(0, i, p->l);
+    for (p2_LONG i = 0; i < static_cast<p2_LONG>(bin.size()); i += 4) {
+        p2_LONG value = // read as little-endian for both endiannesses
+                (static_cast<p2_LONG>(static_cast<p2_BYTE>(bin[i+0])) <<  0) |
+                (static_cast<p2_LONG>(static_cast<p2_BYTE>(bin[i+1])) <<  8) |
+                (static_cast<p2_LONG>(static_cast<p2_BYTE>(bin[i+2])) << 16) |
+                (static_cast<p2_LONG>(static_cast<p2_BYTE>(bin[i+3])) << 24);
+        wr_mem(0, i, value);
     }
 
     return true;

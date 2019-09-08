@@ -194,29 +194,29 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
             case ut_Invalid:
                 break;
             case ut_Bool:
-                result = atom.to_bool() ? QStringLiteral("true")
+                result = atom.get_bool() ? QStringLiteral("true")
                                         : QStringLiteral("false");
                 break;
             case ut_Byte:
-                result = QString("$%1").arg(atom.to_byte(), 0, 16, QChar('0'));
+                result = QString("$%1").arg(atom.get_byte(), 0, 16, QChar('0'));
                 break;
             case ut_Word:
-                result = QString("$%1").arg(atom.to_word(), 0, 16, QChar('0'));
+                result = QString("$%1").arg(atom.get_word(), 0, 16, QChar('0'));
                 break;
             case ut_Addr:
-                result = QString("$%1").arg(atom.to_word(), 0, 16, QChar('0'));
+                result = QString("$%1").arg(atom.get_word(), 0, 16, QChar('0'));
                 break;
             case ut_Long:
-                result = QString("$%1").arg(atom.to_word(), 0, 16, QChar('0'));
+                result = QString("$%1").arg(atom.get_word(), 0, 16, QChar('0'));
                 break;
             case ut_Quad:
-                result = QString("$%1").arg(atom.to_word(), 0, 16, QChar('0'));
+                result = QString("$%1").arg(atom.get_word(), 0, 16, QChar('0'));
                 break;
             case ut_Real:
-                result = QString("%1").arg(atom.to_real());
+                result = QString("%1").arg(atom.get_real());
                 break;
             case ut_String:
-                result = atom.to_string();
+                result = atom.string();
                 break;
             }
             break;
@@ -253,7 +253,7 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
             break;
 
         case c_Value:
-            result = atom.to_long();
+            result = atom.get_long();
             break;
         }
         break;

@@ -51,3 +51,18 @@ const QString template_str_instruction = QStringLiteral(" label_name IF_NC_AND_N
 const QString template_str_description = QStringLiteral(" Some description string... ");
 
 const QString key_tv_asm = QStringLiteral("tvAsm");
+
+void trait_set(p2_traits_e& traits, const p2_traits_e set)
+{
+    traits = static_cast<p2_traits_e>(traits | set);
+}
+
+void trait_clr(p2_traits_e& traits, const p2_traits_e clr)
+{
+    traits = static_cast<p2_traits_e>(traits & ~clr);
+}
+
+bool has_trait(const p2_traits_e traits, const p2_traits_e has)
+{
+    return traits & has ? true : false;
+}

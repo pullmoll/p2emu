@@ -1,10 +1,9 @@
 #include "p2union.h"
 
 P2Union::P2Union()
-    : QVariantList()
+    : QVector<TypedVar>()
     , m_type(ut_Invalid)
 {
-    mt_TypedVar = QMetaType::type("TypedVar");
 }
 
 P2Union::P2Union(bool b) : P2Union()
@@ -19,7 +18,7 @@ P2Union::P2Union(char c) : P2Union()
 
 P2Union::P2Union(int i) : P2Union()
 {
-    set_long(i);
+    set_long(static_cast<p2_LONG>(i));
 }
 
 P2Union::P2Union(p2_BYTE b) : P2Union()
@@ -54,17 +53,17 @@ P2Union::P2Union(const QByteArray& ba) : P2Union()
 
 P2Union::P2Union(p2_BYTES bv) : P2Union()
 {
-    set_bytes(QVariant::fromValue(bv));
+    set_bytes(bv);
 }
 
 P2Union::P2Union(p2_WORDS wv) : P2Union()
 {
-    set_words(QVariant::fromValue(wv));
+    set_words(wv);
 }
 
 P2Union::P2Union(p2_LONGS lv) : P2Union()
 {
-    set_longs(QVariant::fromValue(lv));
+    set_longs(lv);
 }
 
 int P2Union::unit() const
@@ -100,771 +99,930 @@ void P2Union::set_type(p2_union_e type)
 
 bool P2Union::is_zero() const
 {
-    foreach(const QVariant& v, QVariantList::toVector()) {
-        if (v.canConvert(mt_TypedVar)) {
-            TypedVar tv = qvariant_cast<TypedVar>(v);
-            switch (tv.first) {
-            case ut_Invalid:
-                return true;
-            case ut_Bool:
-                if (false != qvariant_cast<bool>(tv.second))
-                    return false;
-                break;
-            case ut_Byte:
-                if (null_BYTE != qvariant_cast<p2_BYTE>(tv.second))
-                    return false;
-                break;
-            case ut_Word:
-                if (null_WORD != qvariant_cast<p2_WORD>(tv.second))
-                    return false;
-                break;
-            case ut_Addr:
-            case ut_Long:
-                if (null_LONG != qvariant_cast<p2_LONG>(tv.second))
-                    return false;
-                break;
-            case ut_Quad:
-                if (null_QUAD != qvariant_cast<p2_QUAD>(tv.second))
-                    return false;
-                break;
-            case ut_Real:
-                if (!qFuzzyIsNull(qvariant_cast<p2_REAL>(tv.second)))
-                    return false;
-                break;
-            case ut_String:
-                Q_ASSERT(tv.first != ut_Invalid);
-                break;
-            }
-        } else {
-            switch (m_type) {
-            case ut_Invalid:
-                return true;
-            case ut_Bool:
-                if (qvariant_cast<bool>(v))
-                    return false;
-                break;
-            case ut_Byte:
-                if (null_BYTE != qvariant_cast<p2_BYTE>(v))
-                    return false;
-                break;
-            case ut_Word:
-                if (null_WORD != qvariant_cast<p2_WORD>(v))
-                    return false;
-                break;
-            case ut_Addr:
-            case ut_Long:
-                if (null_LONG != qvariant_cast<p2_LONG>(v))
-                    return false;
-                break;
-            case ut_Quad:
-                if (null_QUAD != qvariant_cast<p2_QUAD>(v))
-                    return false;
-                break;
-            case ut_Real:
-                if (!qFuzzyIsNull(qvariant_cast<p2_REAL>(v)))
-                    return false;
-                break;
-            case ut_String:
-                Q_ASSERT(m_type != ut_Invalid);
-                break;
-            }
-        }
-    }
     return true;
 }
 
-QVariant P2Union::get_bool() const
+QVariant P2Union::get() const
+{
+    if (isEmpty())
+        return QVariant();
+    switch (m_type) {
+    case ut_Invalid:
+        return QVariant();
+    case ut_Bool:
+        return get_bool();
+    case ut_Byte:
+        return get_byte();
+    case ut_Word:
+        return get_word();
+    case ut_Addr:
+    case ut_Long:
+        return get_long();
+    case ut_Quad:
+        return get_quad();
+    case ut_Real:
+        return get_real();
+    case ut_String:
+        return QVariant::fromValue(get_bytes());
+    }
+    return QVariant();
+}
+
+void P2Union::set(const QVariant& var)
+{
+    if (var.canConvert(mt_CHARS)) {
+        set_chars(qvariant_cast<p2_CHARS>(var));
+        return;
+    }
+    if (var.canConvert(mt_BYTES)) {
+        set_bytes(qvariant_cast<p2_BYTES>(var));
+        return;
+    }
+    if (var.canConvert(mt_WORDS)) {
+        set_words(qvariant_cast<p2_WORDS>(var));
+        return;
+    }
+    if (var.canConvert(mt_QUADS)) {
+        set_quads(qvariant_cast<p2_QUADS>(var));
+        return;
+    }
+    if (var.canConvert(mt_REALS)) {
+        set_reals(qvariant_cast<p2_REALS>(var));
+        return;
+    }
+    if (var.canConvert(mt_BYTE)) {
+        set_byte(qvariant_cast<p2_BYTE>(var));
+        return;
+    }
+    if (var.canConvert(mt_WORD)) {
+        set_word(qvariant_cast<p2_WORD>(var));
+        return;
+    }
+    if (var.canConvert(mt_LONG)) {
+        set_long(qvariant_cast<p2_LONG>(var));
+        return;
+    }
+    if (var.canConvert(mt_QUAD)) {
+        set_quad(qvariant_cast<p2_QUAD>(var));
+        return;
+    }
+    if (var.canConvert(mt_REAL)) {
+        set_real(qvariant_cast<p2_REAL>(var));
+        return;
+    }
+    if (var.canConvert(QVariant::Bool)) {
+        set_bool(qvariant_cast<p2_BYTE>(var));
+        return;
+    }
+    Q_ASSERT(var.isNull());
+}
+
+void P2Union::add(const QVariant& var)
+{
+    if (var.canConvert(mt_CHARS)) {
+        add_chars(qvariant_cast<p2_CHARS>(var));
+        return;
+    }
+    if (var.canConvert(mt_BYTES)) {
+        add_bytes(qvariant_cast<p2_BYTES>(var));
+        return;
+    }
+    if (var.canConvert(mt_WORDS)) {
+        add_words(qvariant_cast<p2_WORDS>(var));
+        return;
+    }
+    if (var.canConvert(mt_QUADS)) {
+        add_quads(qvariant_cast<p2_QUADS>(var));
+        return;
+    }
+    if (var.canConvert(mt_REALS)) {
+        add_reals(qvariant_cast<p2_REALS>(var));
+        return;
+    }
+    if (var.canConvert(mt_BYTE)) {
+        add_byte(qvariant_cast<p2_BYTE>(var));
+        return;
+    }
+    if (var.canConvert(mt_WORD)) {
+        add_word(qvariant_cast<p2_WORD>(var));
+        return;
+    }
+    if (var.canConvert(mt_LONG)) {
+        add_long(qvariant_cast<p2_LONG>(var));
+        return;
+    }
+    if (var.canConvert(mt_QUAD)) {
+        add_quad(qvariant_cast<p2_QUAD>(var));
+        return;
+    }
+    if (var.canConvert(mt_REAL)) {
+        add_real(qvariant_cast<p2_REAL>(var));
+        return;
+    }
+    if (var.canConvert(QVariant::Bool)) {
+        add_bool(qvariant_cast<p2_BYTE>(var));
+        return;
+    }
+    Q_ASSERT(var.isNull());
+}
+
+void P2Union::set_value(const QVariant& var)
+{
+    p2_union_e type = m_type;
+    if (var.canConvert(mt_TypedVar)) {
+        const TypedVar& tv = at(0);
+        set_value(QVariant::fromValue(tv.second));
+        m_type = type;
+        return;
+    }
+    if (var.canConvert(mt_CHARS)) {
+        set_chars(qvariant_cast<p2_CHARS>(var));
+        m_type = type;
+        return;
+    }
+    if (var.canConvert(mt_BYTES)) {
+        set_bytes(qvariant_cast<p2_BYTES>(var));
+        m_type = type;
+        return;
+    }
+    if (var.canConvert(mt_WORDS)) {
+        set_words(qvariant_cast<p2_WORDS>(var));
+        m_type = type;
+        return;
+    }
+    if (var.canConvert(mt_QUADS)) {
+        set_quads(qvariant_cast<p2_QUADS>(var));
+        m_type = type;
+        return;
+    }
+    if (var.canConvert(mt_REALS)) {
+        set_reals(qvariant_cast<p2_REALS>(var));
+        m_type = type;
+        return;
+    }
+    switch (type) {
+    case ut_Invalid:
+        set_real(qvariant_cast<p2_REAL>(var));
+        type = ut_Real;
+        break;
+    case ut_Bool:
+        set_bool(qvariant_cast<bool>(var));
+        break;
+    case ut_Byte:
+        set_byte(qvariant_cast<p2_BYTE>(var));
+        break;
+    case ut_Word:
+        set_word(qvariant_cast<p2_WORD>(var));
+        break;
+    case ut_Addr:
+        set_long(qvariant_cast<p2_LONG>(var));
+        break;
+    case ut_Long:
+        set_long(qvariant_cast<p2_LONG>(var));
+        break;
+    case ut_Quad:
+        set_quad(qvariant_cast<p2_QUAD>(var));
+        break;
+    case ut_Real:
+        set_real(qvariant_cast<p2_REAL>(var));
+        break;
+    case ut_String:
+        set_byte(qvariant_cast<p2_BYTE>(var));
+        break;
+    }
+    m_type = type;
+}
+
+bool P2Union::get_bool() const
 {
     if (isEmpty())
         return false;
-    const QVariant& v = QVariantList::at(0);
-    if (v.canConvert(QMetaType::type("TypedVar"))) {
-        const TypedVar& tv = qvariant_cast<TypedVar>(v);
-        return qvariant_cast<bool>(tv.second);
-    }
-    return false;
+    const TypedVar& tv = at(0);
+    return tv.second._bool;
 }
 
-QVariant P2Union::get_char() const
+char P2Union::get_char() const
 {
     if (isEmpty())
         return char(0);
-    const QVariant& v = QVariantList::at(0);
-    if (v.canConvert(QMetaType::type("TypedVar"))) {
-        const TypedVar& tv = qvariant_cast<TypedVar>(v);
-        return qvariant_cast<char>(tv.second);
-    }
-    return char(0);
+    if (isEmpty())
+        return false;
+    const TypedVar& tv = at(0);
+    return tv.second._char;
 }
 
-QVariant P2Union::get_byte() const
+p2_BYTE P2Union::get_byte() const
 {
     if (isEmpty())
         return null_BYTE;
-    const QVariant& v = QVariantList::at(0);
-    if (v.canConvert(QMetaType::type("TypedVar"))) {
-        const TypedVar& tv = qvariant_cast<TypedVar>(v);
-        return qvariant_cast<p2_BYTE>(tv.second);
-    }
-    return null_BYTE;
+    const TypedVar& tv = at(0);
+    return tv.second._byte;
 }
 
-QVariant P2Union::get_word() const
+p2_WORD P2Union::get_word() const
 {
     if (isEmpty())
         return null_WORD;
-    const QVariant& v = QVariantList::at(0);
-    if (v.canConvert(QMetaType::type("TypedVar"))) {
-        const TypedVar& tv = qvariant_cast<TypedVar>(v);
-        return qvariant_cast<p2_WORD>(tv.second);
-    }
-    return null_WORD;
+    const TypedVar& tv = at(0);
+    return tv.second._word;
 }
 
-QVariant P2Union::get_long() const
+p2_LONG P2Union::get_long() const
 {
     if (isEmpty())
         return null_LONG;
-    const QVariant& v = QVariantList::at(0);
-    if (v.canConvert(QMetaType::type("TypedVar"))) {
-        const TypedVar& tv = qvariant_cast<TypedVar>(v);
-        return qvariant_cast<p2_LONG>(tv.second);
-    }
-    return null_LONG;
+    const TypedVar& tv = at(0);
+    return tv.second._long;
 }
 
-QVariant P2Union::get_quad() const
+p2_QUAD P2Union::get_quad() const
 {
     if (isEmpty())
         return null_QUAD;
-    const QVariant& v = QVariantList::at(0);
-    if (v.canConvert(QMetaType::type("TypedVar"))) {
-        const TypedVar& tv = qvariant_cast<TypedVar>(v);
-        return qvariant_cast<p2_QUAD>(tv.second);
-    }
-    return null_QUAD;
+    const TypedVar& tv = at(0);
+    return tv.second._quad;
 }
 
-QVariant P2Union::get_real() const
+p2_REAL P2Union::get_real() const
 {
     if (isEmpty())
         return null_REAL;
-    const QVariant& v = QVariantList::at(0);
-    if (v.canConvert(QMetaType::type("TypedVar"))) {
-        const TypedVar& tv = qvariant_cast<TypedVar>(v);
-        return qvariant_cast<p2_REAL>(tv.second);
-    }
-    return null_REAL;
+    const TypedVar& tv = at(0);
+    return tv.second._real;
 }
 
-p2_CHARS P2Union::to_chars(const TypedVar& tv)
+static inline QByteArray byte_ba(const QVariant& v)
 {
-    p2_CHARS result;
-    switch (tv.first) {
-    case ut_Invalid:
-        break;
-    case ut_Bool:
-        result += qvariant_cast<bool>(tv.second);
-        break;
-    case ut_Byte:
-        {
-            p2_BYTE val = qvariant_cast<p2_BYTE>(tv.second);
-            result += static_cast<char>(val);
-        }
-        break;
-    case ut_Word:
-        {
-            p2_WORD val = qvariant_cast<p2_WORD>(tv.second);
-            result += static_cast<char>(val >> 0);
-            result += static_cast<char>(val >> 8);
-        }
-        break;
-    case ut_Addr:
-    case ut_Long:
-        {
-            p2_LONG val = qvariant_cast<p2_LONG>(tv.second);
-            result += static_cast<char>(val >> 0);
-            result += static_cast<char>(val >> 8);
-            result += static_cast<char>(val >> 16);
-            result += static_cast<char>(val >> 24);
-        }
-        break;
-    case ut_Quad:
-        {
-            p2_QUAD val = qvariant_cast<p2_QUAD>(tv.second);
-            result += static_cast<char>(val >> 0);
-            result += static_cast<char>(val >> 8);
-            result += static_cast<char>(val >> 16);
-            result += static_cast<char>(val >> 24);
-            result += static_cast<char>(val >> 32);
-            result += static_cast<char>(val >> 40);
-            result += static_cast<char>(val >> 48);
-            result += static_cast<char>(val >> 56);
-        }
-        break;
-    case ut_Real:
-        {
-            p2_REAL val = qvariant_cast<p2_REAL>(tv.second);
-            const char* ptr = reinterpret_cast<const char *>(&val);
-            result += static_cast<char>(ptr[0]);
-            result += static_cast<char>(ptr[1]);
-            result += static_cast<char>(ptr[2]);
-            result += static_cast<char>(ptr[3]);
-            result += static_cast<char>(ptr[4]);
-            result += static_cast<char>(ptr[5]);
-            result += static_cast<char>(ptr[6]);
-            result += static_cast<char>(ptr[7]);
-        }
-        break;
-    case ut_String:
-        {
-            p2_BYTES val = qvariant_cast<p2_BYTES>(tv.second);
-            foreach(const p2_BYTE b, val)
-                result += static_cast<char>(b);
-        }
-        break;
-    }
-    return result;
+    char _char = qvariant_cast<char>(v);
+    return QByteArray(1, _char);
 }
 
-QVariant P2Union::get_chars() const
+static inline QByteArray word_ba(const QVariant& v)
 {
-    p2_CHARS result;
-    const_iterator it = constBegin();
-    while (it != constEnd()) {
-        const QVariant& v = it->value<QVariant>();
-        if (v.canConvert(QMetaType::type("TypedVar"))) {
-            const TypedVar& tv = qvariant_cast<TypedVar>(v);
-            result += to_chars(tv);
-        }
-        it++;
-    }
-    return QVariant::fromValue(result);
+    p2_WORD _word = qvariant_cast<p2_WORD>(v);
+    char sz[2] = {
+        static_cast<char>(_word>>0),
+        static_cast<char>(_word>>8)
+    };
+    return QByteArray(sz, 2);
 }
 
-p2_BYTES P2Union::to_bytes(const TypedVar& tv)
+static inline QByteArray long_ba(const QVariant& v)
 {
-    p2_BYTES result;
-    switch (tv.first) {
-    case ut_Invalid:
-        break;
-    case ut_Bool:
-        result += qvariant_cast<bool>(tv.second);
-        break;
-    case ut_Byte:
-        {
-            p2_BYTE val = qvariant_cast<p2_BYTE>(tv.second);
-            result += static_cast<p2_BYTE>(val);
-        }
-        break;
-    case ut_Word:
-        {
-            p2_WORD val = qvariant_cast<p2_WORD>(tv.second);
-            result += static_cast<p2_BYTE>(val >> 0);
-            result += static_cast<p2_BYTE>(val >> 8);
-        }
-        break;
-    case ut_Addr:
-    case ut_Long:
-        {
-            p2_LONG val = qvariant_cast<p2_LONG>(tv.second);
-            result += static_cast<p2_BYTE>(val >> 0);
-            result += static_cast<p2_BYTE>(val >> 8);
-            result += static_cast<p2_BYTE>(val >> 16);
-            result += static_cast<p2_BYTE>(val >> 24);
-        }
-        break;
-    case ut_Quad:
-        {
-            p2_QUAD val = qvariant_cast<p2_QUAD>(tv.second);
-            result += static_cast<p2_BYTE>(val >> 0);
-            result += static_cast<p2_BYTE>(val >> 8);
-            result += static_cast<p2_BYTE>(val >> 16);
-            result += static_cast<p2_BYTE>(val >> 24);
-            result += static_cast<p2_BYTE>(val >> 32);
-            result += static_cast<p2_BYTE>(val >> 40);
-            result += static_cast<p2_BYTE>(val >> 48);
-            result += static_cast<p2_BYTE>(val >> 56);
-        }
-        break;
-    case ut_Real:
-        {
-            p2_REAL val = qvariant_cast<p2_REAL>(tv.second);
-            const p2_BYTE* ptr = reinterpret_cast<const p2_BYTE*>(&val);
-            result += static_cast<p2_BYTE>(ptr[0]);
-            result += static_cast<p2_BYTE>(ptr[1]);
-            result += static_cast<p2_BYTE>(ptr[2]);
-            result += static_cast<p2_BYTE>(ptr[3]);
-            result += static_cast<p2_BYTE>(ptr[4]);
-            result += static_cast<p2_BYTE>(ptr[5]);
-            result += static_cast<p2_BYTE>(ptr[6]);
-            result += static_cast<p2_BYTE>(ptr[7]);
-        }
-        break;
-    case ut_String:
-        {
-            p2_BYTES val = qvariant_cast<p2_BYTES>(tv.second);
-            foreach(const p2_BYTE b, val)
-                result += b;
-        }
-        break;
-    }
-    return result;
+    p2_LONG _long = qvariant_cast<p2_LONG>(v);
+    char sz[4] = {
+        static_cast<char>(_long>>0),
+        static_cast<char>(_long>>8),
+        static_cast<char>(_long>>16),
+        static_cast<char>(_long>>24)
+    };
+    return QByteArray(sz, 4);
 }
 
-QVariant P2Union::get_bytes() const
+static inline QByteArray quad_ba(const QVariant& v)
 {
-    p2_BYTES result;
-    const_iterator it = constBegin();
-    while (it != constEnd()) {
-        const QVariant& v = it->value<QVariant>();
-        if (v.canConvert(QMetaType::type("TypedVar"))) {
-            const TypedVar& tv = qvariant_cast<TypedVar>(v);
-            result += to_bytes(tv);
-        }
-        it++;
-    }
-    return QVariant::fromValue(result);
+    p2_QUAD _quad = qvariant_cast<p2_QUAD>(v);
+    char sz[8] = {
+        static_cast<char>(_quad>>0),
+        static_cast<char>(_quad>>8),
+        static_cast<char>(_quad>>16),
+        static_cast<char>(_quad>>24),
+        static_cast<char>(_quad>>32),
+        static_cast<char>(_quad>>40),
+        static_cast<char>(_quad>>48),
+        static_cast<char>(_quad>>56)
+    };
+    return QByteArray(sz, 8);
 }
 
-p2_WORDS P2Union::to_words(const TypedVar& tv)
+static inline QByteArray real_ba(const QVariant& v)
 {
-    p2_WORDS result;
-    switch (tv.first) {
-    case ut_Invalid:
-        break;
-    case ut_Bool:
-        result += qvariant_cast<bool>(tv.second);
-        break;
-    case ut_Byte:
-        {
-            p2_BYTE val = qvariant_cast<p2_BYTE>(tv.second);
-            result += static_cast<p2_WORD>(val);
-        }
-        break;
-    case ut_Word:
-        {
-            p2_WORD val = qvariant_cast<p2_WORD>(tv.second);
-            result += val;
-        }
-        break;
-    case ut_Addr:
-    case ut_Long:
-        {
-            p2_LONG val = qvariant_cast<p2_LONG>(tv.second);
-            result += static_cast<p2_WORD>(val >> 0);
-            result += static_cast<p2_WORD>(val >> 16);
-        }
-        break;
-    case ut_Quad:
-        {
-            p2_QUAD val = qvariant_cast<p2_QUAD>(tv.second);
-            result += static_cast<p2_WORD>(val >> 0);
-            result += static_cast<p2_WORD>(val >> 16);
-            result += static_cast<p2_WORD>(val >> 32);
-            result += static_cast<p2_WORD>(val >> 48);
-        }
-        break;
-    case ut_Real:
-        {
-            p2_REAL val = qvariant_cast<p2_REAL>(tv.second);
-            const p2_BYTE* ptr = reinterpret_cast<const p2_BYTE *>(&val);
-            result += static_cast<p2_WORD>(ptr[0] | (ptr[1] << 8));
-            result += static_cast<p2_WORD>(ptr[2] | (ptr[3] << 8));
-            result += static_cast<p2_WORD>(ptr[4] | (ptr[5] << 8));
-            result += static_cast<p2_WORD>(ptr[6] | (ptr[7] << 8));
-        }
-        break;
-    case ut_String:
-        {
-            p2_BYTES val = qvariant_cast<p2_BYTES>(tv.second);
-            p2_WORD res = 0;
-            int full = 0;
-            foreach(const p2_BYTE b, val) {
-                res |= static_cast<p2_WORD>(b) << (8*full);
-                if (++full == 2) {
-                    result += res;
-                    full = 0;
-                }
-            }
-            if (full)
-                result += res;
-        }
-        break;
-    }
-    return result;
+    union {
+        p2_REAL _real;
+        p2_QUAD _quad;
+    }   u = {qvariant_cast<p2_REAL>(v)};
+    return quad_ba(u._quad);
 }
 
-QVariant P2Union::get_words() const
+void P2Union::set_bool(const bool& var)
 {
-    p2_WORDS result;
-    const_iterator it = constBegin();
-    while (it != constEnd()) {
-        const QVariant& v = it->value<QVariant>();
-        if (v.canConvert(QMetaType::type("TypedVar"))) {
-            const TypedVar& tv = qvariant_cast<TypedVar>(v);
-            result += to_words(tv);
-        }
-        it++;
-    }
-    return QVariant::fromValue(result);
-}
-
-p2_LONGS P2Union::to_longs(const TypedVar& tv)
-{
-    p2_LONGS result;
-    switch (tv.first) {
-    case ut_Invalid:
-        break;
-    case ut_Bool:
-        result += qvariant_cast<bool>(tv.second);
-        break;
-    case ut_Byte:
-        {
-            p2_BYTE val = qvariant_cast<p2_BYTE>(tv.second);
-            result += static_cast<p2_LONG>(val);
-        }
-        break;
-    case ut_Word:
-        {
-            p2_WORD val = qvariant_cast<p2_WORD>(tv.second);
-            result += val;
-        }
-        break;
-    case ut_Addr:
-    case ut_Long:
-        {
-            p2_LONG val = qvariant_cast<p2_LONG>(tv.second);
-            result += val;
-        }
-        break;
-    case ut_Quad:
-        {
-            p2_QUAD val = qvariant_cast<p2_QUAD>(tv.second);
-            result += static_cast<p2_LONG>(val >> 0);
-            result += static_cast<p2_LONG>(val >> 32);
-        }
-        break;
-    case ut_Real:
-        {
-            p2_REAL val = qvariant_cast<p2_REAL>(tv.second);
-            const p2_BYTE* ptr = reinterpret_cast<const p2_BYTE *>(&val);
-            result += static_cast<p2_LONG>(
-                    (static_cast<p2_LONG>(ptr[0]) <<  0) |
-                    (static_cast<p2_LONG>(ptr[1]) <<  8) |
-                    (static_cast<p2_LONG>(ptr[2]) << 16) |
-                    (static_cast<p2_LONG>(ptr[3]) << 24)
-                    );
-            result += static_cast<p2_LONG>(
-                    (static_cast<p2_LONG>(ptr[4]) <<  0) |
-                    (static_cast<p2_LONG>(ptr[5]) <<  8) |
-                    (static_cast<p2_LONG>(ptr[6]) << 16) |
-                    (static_cast<p2_LONG>(ptr[7]) << 24)
-                    );
-        }
-        break;
-    case ut_String:
-        {
-            p2_BYTES val = qvariant_cast<p2_BYTES>(tv.second);
-            p2_LONG res = 0;
-            int full = 0;
-            foreach(const p2_BYTE b, val) {
-                res |= static_cast<p2_LONG>(b) << (8*full);
-                if (++full == 4) {
-                    result += res;
-                    full = 0;
-                }
-            }
-            if (full)
-                result += res;
-        }
-        break;
-    }
-    return result;
-}
-
-QVariant P2Union::get_longs() const
-{
-    p2_LONGS result;
-    const_iterator it = constBegin();
-    while (it != constEnd()) {
-        const QVariant& v = it->value<QVariant>();
-        if (v.canConvert(QMetaType::type("TypedVar"))) {
-            const TypedVar& tv = qvariant_cast<TypedVar>(v);
-            result += to_longs(tv);
-        }
-        it++;
-    }
-    return QVariant::fromValue(result);
-}
-
-p2_QUADS P2Union::to_quads(const TypedVar& tv)
-{
-    p2_QUADS result;
-    switch (tv.first) {
-    case ut_Invalid:
-        break;
-    case ut_Bool:
-        result += qvariant_cast<bool>(tv.second);
-        break;
-    case ut_Byte:
-        {
-            p2_BYTE val = qvariant_cast<p2_BYTE>(tv.second);
-            result += static_cast<p2_LONG>(val);
-        }
-        break;
-    case ut_Word:
-        {
-            p2_WORD val = qvariant_cast<p2_WORD>(tv.second);
-            result += val;
-        }
-        break;
-    case ut_Addr:
-    case ut_Long:
-        {
-            p2_LONG val = qvariant_cast<p2_LONG>(tv.second);
-            result += val;
-        }
-        break;
-    case ut_Quad:
-        {
-            p2_QUAD val = qvariant_cast<p2_QUAD>(tv.second);
-            result += val;
-        }
-        break;
-    case ut_Real:
-        {
-            p2_REAL val = qvariant_cast<p2_REAL>(tv.second);
-            const p2_QUAD* ptr = reinterpret_cast<const p2_QUAD *>(&val);
-            result += *ptr;
-        }
-        break;
-    case ut_String:
-        {
-            p2_BYTES val = qvariant_cast<p2_BYTES>(tv.second);
-            p2_QUAD res = 0;
-            int full = 0;
-            foreach(const p2_BYTE b, val) {
-                res |= static_cast<p2_QUAD>(b << (8*full));
-                if (++full == 8) {
-                    result += res;
-                    full = 0;
-                }
-            }
-            if (full)
-                result += res;
-        }
-        break;
-    }
-    return result;
-}
-
-QVariant P2Union::get_quads() const
-{
-    p2_QUADS result;
-    const_iterator it = constBegin();
-    while (it != constEnd()) {
-        const QVariant& v = it->value<QVariant>();
-        if (v.canConvert(QMetaType::type("TypedVar"))) {
-            const TypedVar& tv = qvariant_cast<TypedVar>(v);
-            result += to_quads(tv);
-        }
-        it++;
-    }
-    return QVariant::fromValue(result);
-}
-
-QVariant P2Union::get_reals() const
-{
-    p2_REALS result;
-    const_iterator it = constBegin();
-    while (it != constEnd()) {
-        const QVariant& v = it->value<QVariant>();
-        if (v.canConvert(QMetaType::type("TypedVar"))) {
-            const TypedVar& tv = qvariant_cast<TypedVar>(v);
-            result += qvariant_cast<p2_REAL>(tv.second);
-        }
-    }
-    return QVariant::fromValue(result);
-}
-
-void P2Union::set_bool(const QVariant& var)
-{
-    QVariantList::clear();
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Bool,var)));
+    clear();
+    TypedVar v{ut_Bool, {0}};
+    v.second._bool = var;
+    append(v);
     m_type = ut_Bool;
 }
 
-void P2Union::set_char(const QVariant& var)
+void P2Union::set_char(const char& var)
 {
-    QVariantList::clear();
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Byte,var)));
+    clear();
+    TypedVar v{ut_Byte, {0}};
+    v.second._char = var;
+    append(v);
     m_type = ut_Byte;
 }
 
-void P2Union::set_byte(const QVariant& var)
+void P2Union::set_byte(const p2_BYTE& var)
 {
-    QVariantList::clear();
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Byte,var)));
+    clear();
+    TypedVar v{ut_Byte, {0}};
+    v.second._byte = var;
+    append(v);
     m_type = ut_Byte;
 }
 
-void P2Union::set_word(const QVariant& var)
+void P2Union::set_word(const p2_WORD& var)
 {
-    QVariantList::clear();
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Word,var)));
+    clear();
+    TypedVar v{ut_Word, {0}};
+    v.second._word = var;
+    append(v);
     m_type = ut_Word;
 }
 
-void P2Union::set_addr(const QVariant& var)
+void P2Union::set_addr(const p2_LONG& var)
 {
-    QVariantList::clear();
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Long,var)));
+    clear();
+    TypedVar v{ut_Addr, {0}};
+    v.second._long = var;
+    append(v);
     m_type = ut_Addr;
 }
 
-void P2Union::set_long(const QVariant& var)
+void P2Union::set_long(const p2_LONG& var)
 {
-    QVariantList::clear();
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Long,var)));
+    clear();
+    TypedVar v{ut_Long, {0}};
+    v.second._long = var;
+    append(v);
     m_type = ut_Long;
 }
 
-void P2Union::set_quad(const QVariant& var)
+void P2Union::set_quad(const p2_QUAD& var)
 {
-    QVariantList::clear();
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Quad,var)));
+    clear();
+    TypedVar v{ut_Quad, {0}};
+    v.second._quad = var;
+    append(v);
     m_type = ut_Quad;
 }
 
-void P2Union::set_real(const QVariant& var)
+void P2Union::set_real(const p2_REAL& var)
 {
-    QVariantList::clear();
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Real,var)));
+    clear();
+    TypedVar v{ut_Real, {0}};
+    v.second._real = var;
+    append(v);
     m_type = ut_Real;
 }
 
-void P2Union::set_chars(const QVariant& var)
+void P2Union::set_chars(const p2_CHARS& var)
 {
-    QVariantList::clear();
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Byte,var)));
+    clear();
+    add_chars(var);
     m_type = ut_String;
 }
 
-void P2Union::set_bytes(const QVariant& var)
+void P2Union::set_bytes(const p2_BYTES& var)
 {
-    QVariantList::clear();
-    QVariantList::append(var.toList());
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Byte,var)));
+    clear();
+    add_bytes(var);
     m_type = ut_String;
 }
 
-void P2Union::set_words(const QVariant& var)
+void P2Union::set_words(const p2_WORDS& var)
 {
+    clear();
+    resize(var.size());
+    TypedVar v{ut_Word, {0}};
+    for (int i = 0; i < var.size(); i++) {
+        v.second._word = var[i];
+        replace(i, v);
+    }
     m_type = ut_Word;
-    QVariantList::clear();
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Word,var)));
-    m_type = ut_String;
 }
 
-void P2Union::set_longs(const QVariant& var)
+void P2Union::set_longs(const p2_LONGS& var)
 {
+    clear();
+    resize(var.size());
+    TypedVar v{ut_Long, {0}};
+    for (int i = 0; i < var.size(); i++) {
+        v.second._long = var[i];
+        replace(i, v);
+    }
     m_type = ut_Long;
-    QVariantList::clear();
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Long,var)));
-    m_type = ut_String;
 }
 
-void P2Union::set_quads(const QVariant& var)
+void P2Union::set_quads(const p2_QUADS& var)
 {
+    clear();
+    resize(var.size());
+    TypedVar v = {ut_Quad, {0}};
+    for (int i = 0; i < var.size(); i++) {
+        v.second._quad = var[i];
+        replace(i, v);
+    }
     m_type = ut_Quad;
-    QVariantList::clear();
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Quad,var)));
-    m_type = ut_String;
 }
 
-void P2Union::set_reals(const QVariant& var)
+void P2Union::set_reals(const p2_REALS& var)
 {
+    clear();
+    resize(var.size());
+    TypedVar v{ut_Real, {0}};
+    for (int i = 0; i < var.size(); i++) {
+        v.second._real = var[i];
+        replace(i, v);
+    }
     m_type = ut_Real;
-    QVariantList::clear();
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Real,var)));
+}
+
+void P2Union::set_array(const QByteArray& var)
+{
+    clear();
+    resize(var.size());
+    TypedVar v{ut_Byte, {0}};
+    for (int i = 0; i < var.size(); i++) {
+        v.second._char = var[i];
+        replace(i, v);
+    }
     m_type = ut_String;
 }
 
-void P2Union::set_array(const QVariant& var)
+void P2Union::set_string(const QString& var)
 {
-    QVariantList::clear();
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_String,var)));
+    clear();
+    resize(var.size());
+    TypedVar v{ut_Byte, {0}};
+    for (int i = 0; i < var.size(); i++) {
+        v.second._char = var[i].toLatin1();
+        replace(i, v);
+    }
     m_type = ut_String;
 }
 
-void P2Union::compact()
+void P2Union::add_bool(const bool& var)
 {
+    TypedVar v{ut_Byte, {0}};
+    v.second._bool = var;
+    append(v);
 }
 
-void P2Union::add_bool(const QVariant& var)
+void P2Union::add_char(const char& var)
 {
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Bool,var)));
+    TypedVar v{ut_Byte, {0}};
+    v.second._char = var;
+    append(v);
 }
 
-void P2Union::add_char(const QVariant& var)
+void P2Union::add_byte(const p2_BYTE& var)
 {
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Byte,var)));
+    TypedVar v{ut_Byte, {0}};
+    v.second._byte = var;
+    append(v);
 }
 
-void P2Union::add_byte(const QVariant& var)
+void P2Union::add_word(const p2_WORD& var)
 {
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Byte,var)));
+    TypedVar v{ut_Word, {0}};
+    v.second._word = var;
+    append(v);
 }
 
-void P2Union::add_word(const QVariant& var)
+void P2Union::add_long(const p2_LONG& var)
 {
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Word,var)));
+    TypedVar v{ut_Long, {0}};
+    v.second._long = var;
+    append(v);
 }
 
-void P2Union::add_long(const QVariant& var)
+void P2Union::add_quad(const p2_QUAD& var)
 {
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Long,var)));
+    TypedVar v{ut_Quad, {0}};
+    v.second._quad = var;
+    append(v);
 }
 
-void P2Union::add_quad(const QVariant& var)
+void P2Union::add_real(const p2_REAL& var)
 {
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Quad,var)));
+    TypedVar v{ut_Real, {0}};
+    v.second._real = var;
+    append(v);
 }
 
-void P2Union::add_real(const QVariant& var)
+void P2Union::add_chars(const p2_CHARS& var)
 {
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Real,var)));
+    const int pos = size();
+    resize(pos + var.size());
+    TypedVar v{ut_Byte, {0}};
+    for (int i = 0; i < var.size(); i++) {
+        v.second._char = var[i];
+        replace(pos + i, v);
+    }
 }
 
-void P2Union::add_chars(const QVariant& var)
+void P2Union::add_bytes(const p2_BYTES& var)
 {
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Byte,var)));
+    const int pos = size();
+    resize(pos + var.size());
+    TypedVar v{ut_Byte, {0}};
+    for (int i = 0; i < var.size(); i++) {
+        v.second._byte = var[i];
+        replace(pos + i, v);
+    }
 }
 
-void P2Union::add_bytes(const QVariant& var)
+void P2Union::add_words(const p2_WORDS& var)
 {
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Byte,var)));
+    const int pos = size();
+    resize(pos + var.size());
+    TypedVar v{ut_Word, {0}};
+    for (int i = 0; i < var.size(); i++) {
+        v.second._word = var[i];
+        replace(pos + i, v);
+    }
 }
 
-void P2Union::add_words(const QVariant& var)
+void P2Union::add_longs(const p2_LONGS& var)
 {
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Word,var)));
+    const int pos = size();
+    resize(pos + var.size());
+    TypedVar v{ut_Long, {0}};
+    for (int i = 0; i < var.size(); i++) {
+        v.second._long = var[i];
+        replace(pos + i, v);
+    }
 }
 
-void P2Union::add_longs(const QVariant& var)
+void P2Union::add_quads(const p2_QUADS& var)
 {
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Long,var)));
+    const int pos = size();
+    resize(pos + var.size());
+    TypedVar v{ut_Quad, {0}};
+    for (int i = 0; i < var.size(); i++) {
+        v.second._quad = var[i];
+        replace(pos + i, v);
+    }
 }
 
-void P2Union::add_quads(const QVariant& var)
+void P2Union::add_reals(const p2_REALS& var)
 {
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Quad,var)));
+    const int pos = size();
+    resize(pos + var.size());
+    TypedVar v{ut_Real, {0}};
+    for (int i = 0; i < var.size(); i++) {
+        v.second._real = var[i];
+        replace(pos + i, v);
+    }
 }
 
-void P2Union::add_reals(const QVariant& var)
+/**
+ * @brief Create a QByteArray with all data contained in %pun chained together
+ * @param pun const pointer to a P2Union
+ * @param expand if true, expand WORD, LONG, QUAD to 2/4/8 BYTEs
+ * @return QByteArray with data
+ */
+QByteArray P2Union::chain_bytes(const P2Union* pun, bool expand)
 {
-    QVariantList::append(QVariant::fromValue(TypedVar(ut_Real,var)));
+    QByteArray result;
+    QVariant list = QVariant::fromValue(pun->toList());
+    if (list.canConvert<QVariantList>()) {
+        QSequentialIterable it = list.value<QSequentialIterable>();
+        if (expand) {
+            foreach(const QVariant& v, it) {
+                TypedVar tv = qvariant_cast<TypedVar>(v);
+                switch (tv.first) {
+                case ut_Invalid:
+                    Q_ASSERT(tv.first != ut_Invalid);
+                    break;
+                case ut_Bool:
+                    result += byte_ba(tv.second._bool);
+                    break;
+                case ut_Byte:
+                    result += byte_ba(tv.second._byte);
+                    break;
+                case ut_Word:
+                    result += word_ba(tv.second._word);
+                    break;
+                case ut_Addr:
+                    result += long_ba(tv.second._long);
+                    break;
+                case ut_Long:
+                    result += long_ba(tv.second._long);
+                    break;
+                case ut_Quad:
+                    result += quad_ba(tv.second._quad);
+                    break;
+                case ut_Real:
+                    result += real_ba(tv.second._real);
+                    break;
+                case ut_String:
+                    result += byte_ba(tv.second._byte);
+                    break;
+                }
+            }
+        } else {
+            foreach(const QVariant& v, it) {
+                TypedVar tv = qvariant_cast<TypedVar>(v);
+                switch (tv.first) {
+                case ut_Invalid:
+                    Q_ASSERT(tv.first != ut_Invalid);
+                    break;
+                case ut_Bool:
+                case ut_Byte:
+                case ut_Word:
+                case ut_Addr:
+                case ut_Long:
+                case ut_Quad:
+                case ut_Real:
+                case ut_String:
+                    result += tv.second._char;
+                    break;
+                }
+            }
+        }
+    } else {
+        Q_ASSERT_X(false, "Cannot use QSequentialIterable", "chain_bytes");
+    }
+    return result;
+}
+
+/**
+ * @brief Create a QByteArray with all data contained in %pun chained together
+ * @param pun const pointer to a P2Union
+ * @param expand if true, expand LONG, QUAD to 2/4 WORDs
+ * @return QByteArray with data
+ */
+QByteArray P2Union::chain_words(const P2Union* pun, bool expand)
+{
+    QByteArray result;
+    QVariant list = QVariant::fromValue(pun->toList());
+    if (list.canConvert<QVariantList>()) {
+        QSequentialIterable it = list.value<QSequentialIterable>();
+        if (expand) {
+            foreach(const QVariant& v, it) {
+                TypedVar tv = qvariant_cast<TypedVar>(v);
+                switch (tv.first) {
+                case ut_Invalid:
+                    Q_ASSERT(tv.first != ut_Invalid);
+                    break;
+                case ut_Bool:
+                    result += word_ba(tv.second._bool);
+                    break;
+                case ut_Byte:
+                    result += word_ba(tv.second._byte);
+                    break;
+                case ut_Word:
+                    result += word_ba(tv.second._word);
+                    break;
+                case ut_Addr:
+                    result += long_ba(tv.second._long);
+                    break;
+                case ut_Long:
+                    result += long_ba(tv.second._long);
+                    break;
+                case ut_Quad:
+                    result += quad_ba(tv.second._quad);
+                    break;
+                case ut_Real:
+                    result += real_ba(tv.second._real);
+                    break;
+                case ut_String:
+                    result += word_ba(tv.second._byte);
+                    break;
+                }
+            }
+        } else {
+            foreach(const QVariant& v, it) {
+                TypedVar tv = qvariant_cast<TypedVar>(v);
+                switch (tv.first) {
+                case ut_Invalid:
+                    Q_ASSERT(tv.first != ut_Invalid);
+                    break;
+                case ut_Bool:
+                case ut_Byte:
+                case ut_Word:
+                case ut_Addr:
+                case ut_Long:
+                case ut_Quad:
+                case ut_Real:
+                case ut_String:
+                    result += word_ba(tv.second._word);
+                    break;
+                }
+            }
+        }
+    } else {
+        Q_ASSERT_X(false, "Cannot use QSequentialIterable", "chain_words");
+    }
+    return result;
+}
+
+/**
+ * @brief Create a QByteArray with all data contained in %tv chained together
+ * @param pun const pointer to a P2Union
+ * @param expand if true, expand LONG, QUAD to 2/4 WORDs
+ * @return QByteArray with data
+ */
+QByteArray P2Union::chain_longs(const P2Union* pun, bool expand)
+{
+    QByteArray result;
+    QVariant list = QVariant::fromValue(pun->toList());
+    if (list.canConvert<QVariantList>()) {
+        QSequentialIterable it = list.value<QSequentialIterable>();
+        if (expand) {
+            foreach(const QVariant& v, it) {
+                TypedVar tv = qvariant_cast<TypedVar>(v);
+                switch (tv.first) {
+                case ut_Invalid:
+                    Q_ASSERT(tv.first != ut_Invalid);
+                    break;
+                case ut_Bool:
+                    result += long_ba(tv.second._bool);
+                    break;
+                case ut_Byte:
+                    result += long_ba(tv.second._byte);
+                    break;
+                case ut_Word:
+                    result += long_ba(tv.second._word);
+                    break;
+                case ut_Addr:
+                    result += long_ba(tv.second._long);
+                    break;
+                case ut_Long:
+                    result += long_ba(tv.second._long);
+                    break;
+                case ut_Quad:
+                    result += quad_ba(tv.second._quad);
+                    break;
+                case ut_Real:
+                    result += real_ba(tv.second._real);
+                    break;
+                case ut_String:
+                    result += long_ba(tv.second._byte);
+                    break;
+                }
+            }
+        } else {
+            foreach(const QVariant& v, it) {
+                TypedVar tv = qvariant_cast<TypedVar>(v);
+                switch (tv.first) {
+                case ut_Invalid:
+                    Q_ASSERT(tv.first != ut_Invalid);
+                    break;
+                case ut_Bool:
+                case ut_Byte:
+                case ut_Word:
+                case ut_Addr:
+                case ut_Long:
+                case ut_Quad:
+                case ut_Real:
+                case ut_String:
+                    result += long_ba(tv.second._long);
+                    break;
+                }
+            }
+        }
+    } else {
+        Q_ASSERT_X(false, "Cannot use QSequentialIterable", "chain_longs");
+    }
+    return result;
+}
+
+QByteArray P2Union::chain_quads(const P2Union* pun, bool expand)
+{
+    QByteArray result;
+    QVariant list = QVariant::fromValue(pun->toList());
+    if (list.canConvert<QVariantList>()) {
+        QSequentialIterable it = list.value<QSequentialIterable>();
+        if (expand) {
+            foreach(const QVariant& v, it) {
+                TypedVar tv = qvariant_cast<TypedVar>(v);
+                switch (tv.first) {
+                case ut_Invalid:
+                    Q_ASSERT(tv.first != ut_Invalid);
+                    break;
+                case ut_Bool:
+                    result += quad_ba(tv.second._bool);
+                    break;
+                case ut_Byte:
+                    result += quad_ba(tv.second._byte);
+                    break;
+                case ut_Word:
+                    result += quad_ba(tv.second._word);
+                    break;
+                case ut_Addr:
+                    result += quad_ba(tv.second._long);
+                    break;
+                case ut_Long:
+                    result += quad_ba(tv.second._long);
+                    break;
+                case ut_Quad:
+                    result += quad_ba(tv.second._quad);
+                    break;
+                case ut_Real:
+                    result += real_ba(tv.second._real);
+                    break;
+                case ut_String:
+                    result += quad_ba(tv.second._byte);
+                    break;
+                }
+            }
+        } else {
+            foreach(const QVariant& v, it) {
+                TypedVar tv = qvariant_cast<TypedVar>(v);
+                switch (tv.first) {
+                case ut_Invalid:
+                    Q_ASSERT(tv.first != ut_Invalid);
+                    break;
+                case ut_Bool:
+                case ut_Byte:
+                case ut_Word:
+                case ut_Addr:
+                case ut_Long:
+                case ut_Quad:
+                case ut_Real:
+                case ut_String:
+                    result += quad_ba(tv.second._long);
+                    break;
+                }
+            }
+        }
+    } else {
+        Q_ASSERT_X(false, "Cannot use QSequentialIterable", "chain_quads");
+    }
+    return result;
+}
+
+p2_CHARS P2Union::get_chars(bool expand) const
+{
+    p2_CHARS result;
+    QByteArray chars = chain_bytes(this, expand);
+    size_t size = static_cast<size_t>(chars.count());
+    result.resize(chars.size());
+    if (size > 0)
+        memcpy(result.data(), chars.constData(), size);
+    return result;
+}
+
+p2_BYTES P2Union::get_bytes(bool expand) const
+{
+    p2_BYTES result;
+    QByteArray bytes = chain_bytes(this, expand);
+    size_t size = static_cast<size_t>(bytes.size());
+    result.resize(bytes.size() / sz_BYTE);
+    if (size > 0)
+        memcpy(result.data(), bytes.constData(), size);
+    return result;
+}
+
+p2_WORDS P2Union::get_words(bool expand) const
+{
+    p2_WORDS result;
+    QByteArray words = chain_words(this, expand);
+    size_t size = static_cast<size_t>(words.size());
+    result.resize((words.size() + sz_WORD - 1) / sz_WORD);
+    if (size > 0) {
+        memcpy(result.data(), words.constData(), size);
+    }
+    return result;
+}
+
+p2_LONGS P2Union::get_longs(bool expand) const
+{
+    p2_LONGS result;
+    QByteArray longs = chain_longs(this, expand);
+    size_t size = static_cast<size_t>(longs.size());
+    result.resize((longs.size() + sz_LONG - 1) / sz_LONG);
+    if (size > 0) {
+        memcpy(result.data(), longs.constData(), size);
+    }
+    return result;
+}
+
+p2_QUADS P2Union::get_quads(bool expand) const
+{
+    p2_QUADS result;
+    QByteArray quads = chain_quads(this, expand);
+    size_t size = static_cast<size_t>(quads.size());
+    result.resize((quads.size() + sz_QUAD - 1) / sz_QUAD);
+    if (size > 0) {
+        memcpy(result.data(), quads.constData(), size);
+    }
+    return result;
+}
+
+p2_REALS P2Union::get_reals(bool expand) const
+{
+    p2_REALS result;
+    QByteArray reals = chain_bytes(this, expand);
+    size_t size = static_cast<size_t>(reals.size());
+    result.resize((reals.size() + sz_REAL - 1) / sz_REAL);
+    if (size > 0) {
+        memcpy(result.data(), reals.constData(), size);
+    }
+    return result;
 }
 
 QString P2Union::type_name(p2_union_e type)

@@ -124,7 +124,8 @@ MainWindow::MainWindow(QWidget *parent)
     restoreSettings();
     setupFonts();
 
-    loadSource(QStringLiteral(":/spin2/spin2_interpreter.spin2"));
+    // loadSource(QStringLiteral(":/spin2/spin2_interpreter.spin2"));
+    loadSource(QStringLiteral(":/spin2/P2-qz80-rr032.spin2"));
     loadObjectRandom();
 }
 
@@ -638,6 +639,9 @@ void MainWindow::assemble()
         ui->tvAsm->resizeRowsToContents();
         ui->tvAsm->setCurrentIndex(idx);
         m_smodel->setTable(m_asm->symbols());
+
+        if (!ui->splResults->isVisible())
+            resize_source_results();
     }
 }
 

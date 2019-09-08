@@ -824,15 +824,15 @@ P2Token::P2Token()
     TN_ADD(t_RELATIVE,          tm_traits, QStringLiteral("@"));
     TN_ADD(t_ABSOLUTE,          tm_traits, QStringLiteral("\\"));
     TN_ADD(t_ADDRESS_HUB,       tm_traits, QStringLiteral("#@"));
-    TN_ADD(t_RELATIVE_HUB,      tm_traits, QStringLiteral("@@@"));
+    TN_ADD(t_RELATIVE_HUB,      tm_traits, QStringLiteral("##@"));
 
     // Sub expression in parens
     TN_ADD(t__LPAREN,           tm_parens, QStringLiteral("("));
     TN_ADD(t__RPAREN,           tm_parens, QStringLiteral(")"));
 
     // Index expression in brackets
-    TN_ADD(t__LBRACKET,         tm_parens, QStringLiteral("["));
-    TN_ADD(t__RBRACKET,         tm_parens, QStringLiteral("]"));
+    TN_ADD(t__LBRACKET,         tm_brackets, QStringLiteral("["));
+    TN_ADD(t__RBRACKET,         tm_brackets, QStringLiteral("]"));
 
     // Set the primary operators
     TN_ADD(t__INC,              tm_primary, QStringLiteral("++"));

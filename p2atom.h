@@ -70,17 +70,6 @@
 class P2Atom
 {
 public:
-
-    enum Traits {
-        None            = 0,        //!< no special trait
-        Immediate       = (1 << 0), //!< expression started with '#'
-        Augmented       = (1 << 1), //!< expression started with '##'
-        Relative        = (1 << 2), //!< expression started with '@'
-        Absolute        = (1 << 3), //!< expression contained a '\'
-        AddressHub      = (1 << 4), //!< expression started with '#@'
-        RelativeHub     = (1 << 5), //!< expression started with '@@@'
-    };
-
     explicit P2Atom(p2_union_e type = ut_Invalid);
     P2Atom(const P2Atom& other);
     P2Atom(bool get);
@@ -95,7 +84,7 @@ public:
     bool isEmpty() const;
     bool isZero() const;
     bool isValid() const;
-    Traits trait() const;
+    p2_traits_e traits() const;
 
     int size() const;
     p2_LONG usize() const;
@@ -103,40 +92,61 @@ public:
 
     p2_union_e type() const;
     const QString type_name() const;
+    void set_atom(const P2Atom& other);
+    void set_value(const QVariant& val);
+    void set_index(const QVariant& val);
     void set_type(p2_union_e type);
 
-    bool set_trait(Traits trait);
-    bool add_trait(Traits trait);
+    bool set_traits(p2_traits_e traits);
+    bool add_trait(p2_traits_e traits);
 
     const P2Union& value() const;
 
     template <typename T>
-    const T get() const { return m_value.get<T>(); }
+    const T get() const {
+        return qvariant_cast<T>(m_value.get());
+    }
 
     template <typename T>
-    void set(const T& value) { m_value.set<T>(value); }
+    void set(const T& value) {
+        m_value.set(value);
+    }
 
     template <typename T>
-    void add(const T& value) { m_value.add<T>(value); }
+    void add(const T& value) {
+        m_value.add(QVariant::fromValue(value));
+    }
 
-    bool add_atom(const P2Atom& atom);
-    bool add_bytes(const p2_BYTES& bytes);
-    bool add_words(const p2_WORDS& words);
-    bool add_longs(const p2_LONGS& longs);
+    template <typename T>
+    void set_value(const T& value) {
+        m_value.set_value(value);
+    }
+
+    template <typename T>
+    const T get_index() const {
+        return qvariant_cast<T>(m_index.get());
+    }
+
+    bool add_byte(const p2_BYTE& _byte);
+    bool add_word(const p2_WORD& _word);
+    bool add_long(const p2_LONG& _long);
+    bool add_bytes(const p2_BYTES& _bytes);
+    bool add_words(const p2_WORDS& _words);
+    bool add_longs(const p2_LONGS& _longs);
     bool add_array(const QByteArray& get);
 
     QString str(p2_format_e fmt = fmt_hex) const;
-    bool to_bool() const;
-    p2_BYTE to_byte() const;
-    p2_WORD to_word() const;
-    p2_LONG to_long() const;
-    p2_QUAD to_quad() const;
-    p2_REAL to_real() const;
-    QString to_string() const;
-    QByteArray to_array() const;
-    p2_BYTES to_bytes() const;
-    p2_WORDS to_words() const;
-    p2_LONGS to_longs() const;
+    bool get_bool() const;
+    p2_BYTE get_byte() const;
+    p2_WORD get_word() const;
+    p2_LONG get_long() const;
+    p2_QUAD get_quad() const;
+    p2_REAL get_real() const;
+    QString string(bool expand = false) const;
+    QByteArray array(bool expand = false) const;
+    p2_BYTES get_bytes(bool expand = false) const;
+    p2_WORDS get_words(bool expand = false) const;
+    p2_LONGS get_longs(bool expand = false) const;
 
     void make_real();
     void complement1(bool flag);
@@ -186,10 +196,14 @@ public:
     static QString format_long_mask(const p2_LONG data, const p2_LONG mask);
     static QStringList format_data(const P2Atom& data, const p2_LONG addr);
 
-    static QByteArray to_array(const P2Atom& atom);
-    static QString to_string(const P2Atom& atom);
+    static QByteArray array(const P2Atom& atom);
+    static QString string(const P2Atom& atom);
 
 private:
-    Traits m_trait;
-    P2Union m_value;
+    p2_traits_e m_trait;        //!< Traits for this atom
+    P2Union m_value;            //!< Actual value of this atom
+    P2Union m_index;            //!< Optional index value of this atom
 };
+
+Q_DECLARE_METATYPE(P2Atom);
+static const int mt_P2Atom = qMetaTypeId<P2Atom>();

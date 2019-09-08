@@ -198,7 +198,7 @@ private:
     bool parse_addops(P2Atom& atom, int level);
     bool parse_shiftops(P2Atom& atom, int level);
     bool parse_binops(P2Atom& atom, int level);
-    P2Atom::Traits parse_traits();
+    p2_traits_e parse_traits();
     P2Atom parse_expression(int level = 0);
 
     bool encode_ptr_index(P2Atom& index);

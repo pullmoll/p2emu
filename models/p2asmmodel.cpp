@@ -668,7 +668,7 @@ QString P2AsmModel::symbolsToolTip(const P2SymbolTable& symbols, const QList<P2S
         const P2Symbol& sym = symrefs[i];
         const P2Word& word = symbols->reference(sym.name());
         const P2Atom& atom = sym.atom();
-        p2_LONG val = atom.to_long();
+        p2_LONG val = atom.get_long();
         html += html_start_tr();
         html += html_td(QString::number(word.lineno()));
         html += html_td(sym.name());

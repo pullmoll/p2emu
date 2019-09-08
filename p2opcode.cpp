@@ -733,17 +733,16 @@ void P2Opcode::set_n(const p2_LONG n)
 bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH)
 {
     bool result = true;
-    p2_LONG value;
+    p2_traits_e traits = atom.traits();
+    p2_LONG value = atom.get_long();
 
-    switch (atom.trait()) {
-    case P2Atom::Relative:
-        value = atom.to_long();
-        break;
-    case P2Atom::AddressHub:
-        value = atom.to_long() - ORG + ORGH;
-        break;
-    case P2Atom::Augmented:
-        value = atom.to_long();
+    if (has_trait(traits, tr_RELATIVE))
+        value = atom.get_long();    // FIXME: huh?
+
+    if (has_trait(traits, tr_ADDRESS_HUB))
+        value = atom.get_long() - ORG + ORGH;
+
+    if (has_trait(traits, tr_AUGMENTED)) {
         switch (m_imm_dst) {
         case imm_none:
             break;
@@ -754,14 +753,10 @@ bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH
             set_wz();
             break;
         }
-        break;
-    default:
-        value = atom.to_long();
-        break;
     }
 
     m_u.op.dst = value & COG_MASK;
-    if (value > COG_MASK || atom.trait() == P2Atom::Augmented) {
+    if (value > COG_MASK || has_trait(traits, tr_AUGMENTED) || has_trait(traits, tr_RELATIVE_HUB)) {
         switch (m_imm_dst) {
         case imm_none:
             break;
@@ -797,17 +792,16 @@ bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH
 bool P2Opcode::set_src(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH)
 {
     bool result = true;
-    p2_LONG value;
+    p2_traits_e traits = atom.traits();
+    p2_LONG value = atom.get_long();
 
-    switch (atom.trait()) {
-    case P2Atom::Relative:
-        value = atom.to_long();
-        break;
-    case P2Atom::AddressHub:
-        value = atom.to_long() - ORG + ORGH;
-        break;
-    case P2Atom::Augmented:
-        value = atom.to_long();
+    if (has_trait(traits, tr_RELATIVE))
+        value = atom.get_long();    // FIXME: huh?
+
+    if (has_trait(traits, tr_ADDRESS_HUB))
+        value = atom.get_long() - ORG + ORGH;
+
+    if (has_trait(traits, tr_AUGMENTED)) {
         switch (m_imm_src) {
         case imm_none:
             break;
@@ -818,13 +812,10 @@ bool P2Opcode::set_src(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH
             set_wz();
             break;
         }
-        break;
-    default:
-        value = atom.to_long();
     }
 
     m_u.op.src = value & COG_MASK;
-    if (value > COG_MASK || atom.trait() == P2Atom::Augmented) {
+    if (value > COG_MASK || has_trait(traits, tr_AUGMENTED) || has_trait(traits, tr_RELATIVE_HUB)) {
         switch (m_imm_src) {
         case imm_none:
             break;
@@ -864,6 +855,13 @@ static QString dec(const p2_QUAD val, int digits)
 static QString hex(const p2_QUAD val, int digits)
 {
     return QString("%1").arg(val, digits, 16, QChar('0'));
+}
+
+static QString pad(int digits)
+{
+    QString pad;
+    pad.fill('-', digits);
+    return pad;
 }
 
 QString P2Opcode::format_opcode_bin(const P2Opcode& ir)
@@ -977,7 +975,7 @@ QString P2Opcode::format_opcode(const P2Opcode& ir, p2_format_e fmt)
 QString P2Opcode::format_assign_bin(const P2Opcode& ir, bool prefix)
 {
     QString result("=");
-    p2_QUAD data = ir.equ().to_quad();
+    p2_QUAD data = ir.equ().get_quad();
     if (prefix)
         result += QStringLiteral("%");
     switch (ir.equ().type()) {
@@ -1015,10 +1013,10 @@ QString P2Opcode::format_assign_bin(const P2Opcode& ir, bool prefix)
                   .arg(bin((data >>  0) & 0xff, 8));
         break;
     case ut_Real:
-        result += QString("%1").arg(ir.equ().to_real(), 0, 'f');
+        result += QString("%1").arg(ir.equ().get_real(), 0, 'f');
         break;
     case ut_String:
-        result += ir.equ().to_string();
+        result += ir.equ().string();
         break;
     }
     return result;
@@ -1027,7 +1025,7 @@ QString P2Opcode::format_assign_bin(const P2Opcode& ir, bool prefix)
 QString P2Opcode::format_assign_byt(const P2Opcode& ir, bool prefix)
 {
     QString result("=");
-    p2_QUAD data = ir.equ().to_quad();
+    p2_QUAD data = ir.equ().get_quad();
     if (prefix)
         result += QStringLiteral("%%");
     // FF_FF_FF_FF
@@ -1066,10 +1064,10 @@ QString P2Opcode::format_assign_byt(const P2Opcode& ir, bool prefix)
                   .arg(byt((data >>  0) & 0xff, 2));
         break;
     case ut_Real:
-        result += QString("%1").arg(ir.equ().to_real(), 0, 'f');
+        result += QString("%1").arg(ir.equ().get_real(), 0, 'f');
         break;
     case ut_String:
-        result += ir.equ().to_string();
+        result += ir.equ().string();
         break;
     }
     return result;
@@ -1078,7 +1076,7 @@ QString P2Opcode::format_assign_byt(const P2Opcode& ir, bool prefix)
 QString P2Opcode::format_assign_dec(const P2Opcode& ir, bool prefix)
 {
     QString result("=");
-    p2_QUAD data = ir.equ().to_quad();
+    p2_QUAD data = ir.equ().get_quad();
     Q_UNUSED(prefix)
     // 4294967295
     switch (ir.equ().type()) {
@@ -1102,10 +1100,10 @@ QString P2Opcode::format_assign_dec(const P2Opcode& ir, bool prefix)
         result += dec(data, 0);
         break;
     case ut_Real:
-        result += QString("%1").arg(ir.data().to_real(), 0, 'f');
+        result += QString("%1").arg(ir.data().get_real(), 0, 'f');
         break;
     case ut_String:
-        result += ir.equ().to_string();
+        result += ir.equ().string();
         break;
     }
     return result;
@@ -1114,7 +1112,7 @@ QString P2Opcode::format_assign_dec(const P2Opcode& ir, bool prefix)
 QString P2Opcode::format_assign_hex(const P2Opcode& ir, bool prefix)
 {
     QString result("=");
-    p2_QUAD data = ir.equ().to_quad();
+    p2_QUAD data = ir.equ().get_quad();
     if (prefix)
         result += QStringLiteral("$");
     switch (ir.data().type()) {
@@ -1138,10 +1136,10 @@ QString P2Opcode::format_assign_hex(const P2Opcode& ir, bool prefix)
         result += hex(data, 16);
         break;
     case ut_Real:
-        result += QString("%1").arg(ir.data().to_real(), 0, 'f');
+        result += QString("%1").arg(ir.data().get_real(), 0, 'f');
         break;
     case ut_String:
-        result += ir.equ().to_string();
+        result += ir.equ().string();
         break;
     }
     return result;
@@ -1172,169 +1170,168 @@ QString P2Opcode::format_assign(const P2Opcode& ir, p2_format_e fmt)
     return list.join(QChar::LineFeed);
 }
 
-QString P2Opcode::format_data_bin(const P2Opcode& ir, const p2_QUAD data, bool prefix)
+static p2_BYTES align_data_long(const P2Opcode& ir, p2_BYTES& bytes)
 {
-    QString result;
-    if (prefix)
-        result += QStringLiteral("%");
-    switch (ir.data().type()) {
-    case ut_Invalid:
-        break;
-    case ut_Bool:
-        result += bin(data & 1, 1);
-        break;
+    const P2Atom& atom = ir.data();
+    p2_BYTES mask;
 
+    switch (atom.type()) {
+    case ut_Invalid:
+        return mask;
+    case ut_Bool:
     case ut_Byte:
-        result += bin(data, 8);
-        break;
-    case ut_Word:
-        result += QString("%1_%2")
-                  .arg(bin((data >>  8) & 0xff, 8))
-                  .arg(bin((data >>  0) & 0xff, 8));
-        break;
-    case ut_Addr:
-    case ut_Long:
-        result += QString("%1_%2_%3_%4")
-                  .arg(bin((data >> 24) & 0xff, 8))
-                  .arg(bin((data >> 16) & 0xff, 8))
-                  .arg(bin((data >>  8) & 0xff, 8))
-                  .arg(bin((data >>  0) & 0xff, 8));
-        break;
-    case ut_Quad:
-        result += QString("%1_%2_%3_%4_%5_%6_%7_%8")
-                  .arg(bin((data >> 56) & 0xff, 8))
-                  .arg(bin((data >> 48) & 0xff, 8))
-                  .arg(bin((data >> 40) & 0xff, 8))
-                  .arg(bin((data >> 32) & 0xff, 8))
-                  .arg(bin((data >> 24) & 0xff, 8))
-                  .arg(bin((data >> 16) & 0xff, 8))
-                  .arg(bin((data >>  8) & 0xff, 8))
-                  .arg(bin((data >>  0) & 0xff, 8));
-        break;
-    case ut_Real:
-        result += QString("%1")
-                  .arg(ir.equ().to_real(), 0, 'f');
-        break;
     case ut_String:
-        result += ir.equ().to_string();
-        break;
-    }
-    return result;
-}
-
-QString P2Opcode::format_data_byt(const P2Opcode& ir, const p2_QUAD data, bool prefix)
-{
-    QString result;
-    if (prefix)
-        result += QStringLiteral("%%");
-    switch (ir.data().type()) {
-    case ut_Invalid:
-        break;
-    case ut_Bool:
-        result += byt(data & 1, 1);
+        bytes = atom.get_bytes();
         break;
 
-    case ut_Byte:
-        result += byt(data, 8);
-        break;
     case ut_Word:
-        result += QString("%1_%2")
-                  .arg(byt((data >>  8) & 0xff, 2))
-                  .arg(byt((data >>  0) & 0xff, 2));
+        {
+            p2_WORDS words = atom.get_words();
+            bytes.resize(words.size() * sz_WORD);
+            memcpy(bytes.data(), words.constData(), static_cast<size_t>(bytes.size()));
+        }
         break;
+
     case ut_Addr:
     case ut_Long:
-        result += QString("%1_%2_%3_%4")
-                  .arg(byt((data >> 24) & 0xff, 2))
-                  .arg(byt((data >> 16) & 0xff, 2))
-                  .arg(byt((data >>  8) & 0xff, 2))
-                  .arg(byt((data >>  0) & 0xff, 2));
-        break;
-    case ut_Quad:
-        result += QString("%1_%2_%3_%4_%5_%6_%7_%8")
-                  .arg(byt((data >> 56) & 0xff, 2))
-                  .arg(byt((data >> 48) & 0xff, 2))
-                  .arg(byt((data >> 40) & 0xff, 2))
-                  .arg(byt((data >> 32) & 0xff, 2))
-                  .arg(byt((data >> 24) & 0xff, 2))
-                  .arg(byt((data >> 16) & 0xff, 2))
-                  .arg(byt((data >>  8) & 0xff, 2))
-                  .arg(byt((data >>  0) & 0xff, 2));
-        break;
-    case ut_Real:
-        result += QString("%1")
-                  .arg(ir.equ().to_real(), 0, 'f');
-        break;
-    case ut_String:
-        result += ir.equ().to_string();
-        break;
-    }
-    return result;
-}
-
-QString P2Opcode::format_data_dec(const P2Opcode& ir, const p2_QUAD data, bool prefix)
-{
-    QString result;
-    Q_UNUSED(prefix)
-    // 4294967295
-    switch (ir.equ().type()) {
-    case ut_Invalid:
-        break;
-    case ut_Bool:
-        result += dec(data & 1, 1);
+        {
+            p2_LONGS longs = atom.get_longs();
+            bytes.resize(longs.size() * sz_LONG);
+            memcpy(bytes.data(), longs.constData(), static_cast<size_t>(bytes.size()));
+        }
         break;
 
-    case ut_Byte:
-        result += dec(data & 0xffu, 3);
-        break;
-    case ut_Word:
-        result += dec(data & 0xffffu, 5);
-        break;
-    case ut_Addr:
-    case ut_Long:
-        result += dec(data & 0x0000ffffu, 10);
-        break;
     case ut_Quad:
-        result += dec(data, 0);
+        {
+            p2_LONGS longs = atom.get_longs(true);
+            bytes.resize(longs.size() * sz_LONG);
+            memcpy(bytes.data(), longs.constData(), static_cast<size_t>(bytes.size()));
+        }
         break;
+
     default:
-        break;
+        return mask;
     }
+
+
+    // create a mask of the size of bytes
+    mask.fill(0xff, bytes.size());
+
+    // inset 00s for unused positions in LONGs
+    const int offs = ir.orgh() & 3;
+    if (offs > 0) {
+        bytes.insert(0, offs, 0x00);
+        mask.insert(0, offs, 0x00);
+    }
+
+    // pad to multiples of 4 bytes
+    const int pad = (mask.size() + 3) & ~3;
+    if (pad > mask.size()) {
+        bytes.resize(pad);
+        mask.resize(pad);
+    }
+    return mask;
+}
+
+QStringList P2Opcode::format_data_bin(const P2Opcode& ir, bool prefix)
+{
+    p2_BYTES bytes;
+    p2_BYTES mask = align_data_long(ir, bytes);
+    QStringList result;
+    QString line;
+
+
+    for (int i = 0; i < mask.size(); i++) {
+        if (prefix && 0 == i % 4)
+            line += chr_percent;
+        if (mask[i ^ 3] == 0xff) {
+            line += bin(bytes[i ^ 3], 8);
+        } else {
+            line += pad(8);
+        }
+        if (3 == i % 4) {
+            result += line;
+            line.clear();
+        } else {
+            line += chr_skip_digit;
+        }
+    }
+
     return result;
 }
 
-QString P2Opcode::format_data_hex(const P2Opcode& ir, const p2_LONG data, bool prefix)
+QStringList P2Opcode::format_data_byt(const P2Opcode& ir, bool prefix)
 {
-    QString result;
-    if (prefix)
-        result += QStringLiteral("$");
-    switch (ir.data().type()) {
-    case ut_Invalid:
-        break;
-    case ut_Bool:
-        result += hex(data & 1, 1);
-        break;
+    p2_BYTES bytes;
+    p2_BYTES mask = align_data_long(ir, bytes);
+    QStringList result;
+    QString line;
 
-    case ut_Byte:
-        result += hex(data & 0xffu, 2);
-        break;
-    case ut_Word:
-        result += hex(data & 0xffffu, 4);
-        break;
-    case ut_Addr:
-    case ut_Long:
-        result += hex(data & 0x0000ffffu, 8);
-        break;
-    case ut_Quad:
-        result += hex(data, 16);
-        break;
-    case ut_Real:
-        result += QString("%1").arg(ir.data().to_real(), 0, 'f');
-        break;
-    case ut_String:
-        result += ir.data().to_string();
-        break;
+    for (int i = 0; i < mask.size(); i++) {
+        if (prefix && 0 == i % 4)
+            line += QStringLiteral("%%");
+        if (mask[i] == 0xff) {
+            line += byt(bytes[i], 2);
+        } else {
+            line += pad(2);
+        }
+        if (3 == i % 4) {
+            result += line;
+            line.clear();
+        } else {
+            line += chr_comma;
+        }
     }
+
+    return result;
+}
+
+QStringList P2Opcode::format_data_dec(const P2Opcode& ir, bool prefix)
+{
+    p2_BYTES bytes;
+    p2_BYTES mask = align_data_long(ir, bytes);
+    QStringList result;
+    QString line;
+    Q_UNUSED(prefix)
+
+    for (int i = 0; i < mask.size(); i++) {
+        if (mask[i] == 0xff) {
+            line += dec(bytes[i], 0);
+        } else {
+            line += pad(1);
+        }
+        if (3 == i % 4) {
+            result += line;
+            line.clear();
+        } else {
+            line += chr_comma;
+        }
+    }
+
+    return result;
+}
+
+QStringList P2Opcode::format_data_hex(const P2Opcode& ir, bool prefix)
+{
+    p2_BYTES bytes;
+    p2_BYTES mask = align_data_long(ir, bytes);
+    QStringList result;
+    QString line;
+
+    for (int i = 0; i < mask.size(); i++) {
+        if (prefix && 0 == i % 4)
+            line += chr_dollar;
+        if (mask[i ^ 3] == 0xff) {
+            line += hex(bytes[i ^ 3], 2);
+        } else {
+            line += pad(2);
+        }
+        if (3 == i % 4) {
+            result += line;
+            line.clear();
+        }
+    }
+
     return result;
 }
 
@@ -1344,21 +1341,17 @@ QString P2Opcode::format_data(const P2Opcode& ir, p2_format_e fmt)
     if (!ir.data().isEmpty()) {
         switch (fmt) {
         case fmt_bin:
-            foreach(const p2_LONG data, ir.data().to_longs())
-                list += format_data_bin(ir, data, true);
+            list += format_data_bin(ir);
             break;
         case fmt_byt:
-            foreach(const p2_LONG data, ir.data().to_longs())
-                list += format_data_byt(ir, data, true);
+            list += format_data_byt(ir);
             break;
         case fmt_dec:
-            foreach(const p2_LONG data, ir.data().to_longs())
-                list += format_data_dec(ir, data, true);
+            list += format_data_dec(ir);
             break;
         case fmt_hex:
         default:
-            foreach(const p2_LONG data, ir.data().to_longs())
-                list += format_data_hex(ir, data, true);
+            list += format_data_hex(ir);
             break;
         }
     }
