@@ -1109,13 +1109,15 @@ typedef enum {
  */
 typedef struct {
 #if (Q_BYTE_ORDER == Q_LITTLE_ENDIAN)
-    uint address:23;            //!< 23 bits of address
+    uint address:22;            //!< 22 bits of address
+    bool rel:1;                 //!< R if true, relative to PC, otherwise absolute
     uint inst:5;                //!< instruction type
     uint cond:4;                //!< conditional execution
 #elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
     uint cond:4;                //!< conditional execution
     uint inst:5;                //!< instruction type
-    uint address:23;            //!< 23 bits of address
+    bool rel:1;                 //!< R if true, relative to PC, otherwise absolute
+    uint address:22;            //!< 22 bits of address
 #else
 #error "Unknown byte order!"
 #endif

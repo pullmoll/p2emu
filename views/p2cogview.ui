@@ -62,12 +62,8 @@
       <property name="spacing">
        <number>2</number>
       </property>
-      <item row="0" column="0">
-       <widget class="QLabel" name="lbl_CT1">
-        <property name="text">
-         <string>CT1:</string>
-        </property>
-       </widget>
+      <item row="0" column="3">
+       <widget class="QLineEdit" name="le_CT2"/>
       </item>
       <item row="0" column="1">
        <widget class="QLineEdit" name="le_CT1"/>
@@ -79,8 +75,12 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="3">
-       <widget class="QLineEdit" name="le_CT2"/>
+      <item row="0" column="0">
+       <widget class="QLabel" name="lbl_CT1">
+        <property name="text">
+         <string>CT1:</string>
+        </property>
+       </widget>
       </item>
       <item row="0" column="4">
        <widget class="QLabel" name="lbl_CT3">
@@ -91,6 +91,19 @@
       </item>
       <item row="0" column="5">
        <widget class="QLineEdit" name="le_CT3"/>
+      </item>
+      <item row="0" column="6">
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
       </item>
      </layout>
     </widget>
@@ -187,10 +200,10 @@
      </layout>
     </widget>
    </item>
-   <item row="6" column="0" colspan="2">
-    <widget class="QFrame" name="frame_LOCK">
+   <item row="4" column="0" colspan="2">
+    <widget class="QFrame" name="frame_PAT">
      <property name="toolTip">
-      <string>LOCK mode / edge / number values</string>
+      <string>PAT mode, mask, match values</string>
      </property>
      <property name="frameShape">
       <enum>QFrame::StyledPanel</enum>
@@ -198,7 +211,7 @@
      <property name="frameShadow">
       <enum>QFrame::Raised</enum>
      </property>
-     <layout class="QGridLayout" name="gridLayout_7">
+     <layout class="QGridLayout" name="gridLayout_4">
       <property name="leftMargin">
        <number>2</number>
       </property>
@@ -214,21 +227,34 @@
       <property name="spacing">
        <number>2</number>
       </property>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="le_PAT_mode"/>
+      </item>
+      <item row="0" column="2">
+       <widget class="QLineEdit" name="le_PAT_mask"/>
+      </item>
+      <item row="0" column="3">
+       <widget class="QLineEdit" name="le_PAT_match"/>
+      </item>
       <item row="0" column="0">
-       <widget class="QLabel" name="label">
+       <widget class="QLabel" name="lbl_PAT">
         <property name="text">
-         <string>LOCK:</string>
+         <string>PAT:</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="3">
-       <widget class="QLineEdit" name="le_LOCK_num"/>
-      </item>
-      <item row="0" column="1">
-       <widget class="QLineEdit" name="le_LOCK_mode"/>
-      </item>
-      <item row="0" column="2">
-       <widget class="QLineEdit" name="le_LOCK_edge"/>
+      <item row="0" column="4">
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
       </item>
      </layout>
     </widget>
@@ -375,98 +401,6 @@
      </layout>
     </widget>
    </item>
-   <item row="4" column="0" colspan="2">
-    <widget class="QFrame" name="frame_PAT">
-     <property name="toolTip">
-      <string>PAT mode, mask, match values</string>
-     </property>
-     <property name="frameShape">
-      <enum>QFrame::StyledPanel</enum>
-     </property>
-     <property name="frameShadow">
-      <enum>QFrame::Raised</enum>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_4">
-      <property name="leftMargin">
-       <number>2</number>
-      </property>
-      <property name="topMargin">
-       <number>2</number>
-      </property>
-      <property name="rightMargin">
-       <number>2</number>
-      </property>
-      <property name="bottomMargin">
-       <number>2</number>
-      </property>
-      <property name="spacing">
-       <number>2</number>
-      </property>
-      <item row="0" column="0">
-       <widget class="QLabel" name="lbl_PAT">
-        <property name="text">
-         <string>PAT:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QLineEdit" name="le_PAT_mode"/>
-      </item>
-      <item row="0" column="2">
-       <widget class="QLineEdit" name="le_PAT_mask"/>
-      </item>
-      <item row="0" column="3">
-       <widget class="QLineEdit" name="le_PAT_match"/>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="5" column="0" colspan="2">
-    <widget class="QFrame" name="frame_PIN">
-     <property name="toolTip">
-      <string>PIN mode, edge, and number values</string>
-     </property>
-     <property name="frameShape">
-      <enum>QFrame::StyledPanel</enum>
-     </property>
-     <property name="frameShadow">
-      <enum>QFrame::Raised</enum>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_5">
-      <property name="leftMargin">
-       <number>2</number>
-      </property>
-      <property name="topMargin">
-       <number>2</number>
-      </property>
-      <property name="rightMargin">
-       <number>2</number>
-      </property>
-      <property name="bottomMargin">
-       <number>2</number>
-      </property>
-      <property name="spacing">
-       <number>2</number>
-      </property>
-      <item row="0" column="0">
-       <widget class="QLabel" name="lbl_PIN">
-        <property name="text">
-         <string>PIN:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QLineEdit" name="le_PIN_mode"/>
-      </item>
-      <item row="0" column="2">
-       <widget class="QLineEdit" name="le_PIN_edge"/>
-      </item>
-      <item row="0" column="3">
-       <widget class="QLineEdit" name="le_PIN_num"/>
-      </item>
-     </layout>
-    </widget>
-   </item>
    <item row="1" column="0">
     <widget class="QTableView" name="tvDasm">
      <property name="toolTip">
@@ -511,6 +445,124 @@
      <attribute name="verticalHeaderDefaultSectionSize">
       <number>20</number>
      </attribute>
+    </widget>
+   </item>
+   <item row="5" column="0" colspan="2">
+    <widget class="QFrame" name="frame_PIN">
+     <property name="toolTip">
+      <string>PIN mode, edge, and number values</string>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_5">
+      <property name="leftMargin">
+       <number>2</number>
+      </property>
+      <property name="topMargin">
+       <number>2</number>
+      </property>
+      <property name="rightMargin">
+       <number>2</number>
+      </property>
+      <property name="bottomMargin">
+       <number>2</number>
+      </property>
+      <property name="spacing">
+       <number>2</number>
+      </property>
+      <item row="0" column="3">
+       <widget class="QLineEdit" name="le_PIN_num"/>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="lbl_PIN">
+        <property name="text">
+         <string>PIN:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="le_PIN_mode"/>
+      </item>
+      <item row="0" column="2">
+       <widget class="QLineEdit" name="le_PIN_edge"/>
+      </item>
+      <item row="0" column="4">
+       <spacer name="horizontalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="6" column="0" colspan="2">
+    <widget class="QFrame" name="frame_LOCK">
+     <property name="toolTip">
+      <string>LOCK mode / edge / number values</string>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_7">
+      <property name="leftMargin">
+       <number>2</number>
+      </property>
+      <property name="topMargin">
+       <number>2</number>
+      </property>
+      <property name="rightMargin">
+       <number>2</number>
+      </property>
+      <property name="bottomMargin">
+       <number>2</number>
+      </property>
+      <property name="spacing">
+       <number>2</number>
+      </property>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="le_LOCK_mode"/>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>LOCK:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QLineEdit" name="le_LOCK_edge"/>
+      </item>
+      <item row="0" column="3">
+       <widget class="QLineEdit" name="le_LOCK_num"/>
+      </item>
+      <item row="0" column="4">
+       <spacer name="horizontalSpacer_4">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
     </widget>
    </item>
   </layout>

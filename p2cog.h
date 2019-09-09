@@ -127,40 +127,54 @@ private:
     uchar *MEM;             //!< HUB memory pointer
     p2_LONG MEMSIZE;        //!< HUB memory size
 
+    //! return the %n bit sign extended value for val[n:0]
+    template <typename T, int n>
+    T SXn(T val) {
+        Q_STATIC_ASSERT(n > 0 && n <= 64);
+        return static_cast<T>((val ^ (Q_UINT64_C(1)<<(n-1))) - (Q_UINT64_C(1)<<(n-1)));
+    }
+
+    //! return the %n bit zero extended value for val[n:0]
+    template <typename T, int n>
+    T ZXn(T val) {
+        Q_STATIC_ASSERT(n > 0 && n <= 64);
+        return static_cast<T>(val & (Q_UINT64_C(1)<<(n-1)));
+    }
+
     //! return a signed 32 bit value for val[15:0]
     template <typename T>
     qint32 S16(T val) {
-        return static_cast<qint32>((val^0x8000)-0x8000);
+        return static_cast<qint32>(SXn<T,16>(val));
     }
 
     //! return the usigned 32 bit value for val[15:0]
     template <typename T>
     p2_LONG U16(T val) {
-        return static_cast<p2_LONG>(static_cast<p2_WORD>(val));
+        return static_cast<p2_LONG>(ZXn<T,16>(val));
     }
 
     //! return the signed 32 bit value for val[31:0]
     template <typename T>
     qint32 S32(T val) {
-        return static_cast<qint32>((val^0x80000000)-0x80000000);
+        return static_cast<qint32>(SXn<T,32>(val));
     }
 
     //! return the usigned 32 bit value for val[31:0]
     template <typename T>
     p2_LONG U32(T val) {
-        return static_cast<p2_LONG>(val);
+        return static_cast<p2_LONG>(ZXn<T,32>(val));
     }
 
     //! return the 64 bit sign extended value
     template <typename T>
     qint64 SX64(T val) {
-        return static_cast<qint64>((val^0x80000000)-0x80000000);
+        return static_cast<qint64>(SXn<T,64>(val));
     }
 
     //! return the usigned 64 bit value
     template <typename T>
     p2_QUAD U64(T val) {
-        return static_cast<p2_QUAD>(val);
+        return static_cast<p2_QUAD>(ZXn<T,64>(val));
     }
 
     //! return the upper half of a 64 bit value as 32 bit unsigned
@@ -187,6 +201,7 @@ private:
     void updateC(bool c);
     void updateZ(bool c);
     void updateD(p2_LONG d);
+    void updateQ(p2_LONG d);
     void updatePC(p2_LONG d);
     void updateLUT(p2_LONG addr, p2_LONG d);
     void updateSKIP(p2_LONG d);
@@ -221,441 +236,440 @@ private:
 
     int op_ADD();
     int op_ADDX();
-    int op_adds();
-    int op_addsx();
-    int op_sub();
-    int op_subx();
-    int op_subs();
-    int op_subsx();
+    int op_ADDS();
+    int op_ADDSX();
+    int op_SUB();
+    int op_SUBX();
+    int op_SUBS();
+    int op_SUBSX();
 
-    int op_cmp();
-    int op_cmpx();
-    int op_cmps();
-    int op_cmpsx();
-    int op_cmpr();
-    int op_cmpm();
-    int op_subr();
-    int op_cmpsub();
+    int op_CMP();
+    int op_CMPX();
+    int op_CMPS();
+    int op_CMPSX();
+    int op_CMPR();
+    int op_CMPM();
+    int op_SUBR();
+    int op_CMPSUB();
 
-    int op_fge();
-    int op_fle();
-    int op_fges();
-    int op_fles();
-    int op_sumc();
-    int op_sumnc();
-    int op_sumz();
-    int op_sumnz();
+    int op_FGE();
+    int op_FLE();
+    int op_FGES();
+    int op_FLES();
+    int op_SUMC();
+    int op_SUMNC();
+    int op_SUMZ();
+    int op_SUMNZ();
 
-    int op_testb_w();
-    int op_testbn_w();
-    int op_testb_and();
-    int op_testbn_and();
-    int op_testb_or();
-    int op_testbn_or();
-    int op_testb_xor();
-    int op_testbn_xor();
+    int op_TESTB_W();
+    int op_TESTBN_W();
+    int op_TESTB_AND();
+    int op_TESTBN_AND();
+    int op_TESTB_OR();
+    int op_TESTBN_OR();
+    int op_TESTB_XOR();
+    int op_TESTBN_XOR();
 
-    int op_bitl();
-    int op_bith();
-    int op_bitc();
-    int op_bitnc();
-    int op_bitz();
-    int op_bitnz();
-    int op_bitrnd();
-    int op_bitnot();
+    int op_BITL();
+    int op_BITH();
+    int op_BITC();
+    int op_BITNC();
+    int op_BITZ();
+    int op_BITNZ();
+    int op_BITRND();
+    int op_BITNOT();
 
-    int op_and();
-    int op_andn();
-    int op_or();
-    int op_xor();
-    int op_muxc();
-    int op_muxnc();
-    int op_muxz();
-    int op_muxnz();
+    int op_AND();
+    int op_ANDN();
+    int op_OR();
+    int op_XOR();
+    int op_MUXC();
+    int op_MUXNC();
+    int op_MUXZ();
+    int op_MUXNZ();
 
-    int op_mov();
-    int op_not();
-    int op_not_d();
-    int op_abs();
-    int op_neg();
-    int op_negc();
-    int op_negnc();
-    int op_negz();
-    int op_negnz();
+    int op_MOV();
+    int op_NOT();
+    int op_ABS();
+    int op_NEG();
+    int op_NEGC();
+    int op_NEGNC();
+    int op_NEGZ();
+    int op_NEGNZ();
 
-    int op_incmod();
-    int op_decmod();
-    int op_zerox();
-    int op_signx();
-    int op_encod();
-    int op_ones();
-    int op_test();
-    int op_testn();
+    int op_INCMOD();
+    int op_DECMOD();
+    int op_ZEROX();
+    int op_SIGNX();
+    int op_ENCOD();
+    int op_ONES();
+    int op_TEST();
+    int op_TESTN();
 
-    int op_setnib();
-    int op_setnib_altsn();
-    int op_getnib();
-    int op_getnib_altgn();
-    int op_rolnib();
-    int op_rolnib_altgn();
-    int op_setbyte();
-    int op_setbyte_altsb();
-    int op_getbyte();
-    int op_getbyte_altgb();
-    int op_rolbyte();
-    int op_rolbyte_altgb();
+    int op_SETNIB();
+    int op_SETNIB_ALTSN();
+    int op_GETNIB();
+    int op_GETNIB_ALTGN();
+    int op_ROLNIB();
+    int op_ROLNIB_ALTGN();
+    int op_SETBYTE();
+    int op_SETBYTE_ALTSB();
+    int op_GETBYTE();
+    int op_GETBYTE_ALTGB();
+    int op_ROLBYTE();
+    int op_ROLBYTE_ALTGB();
 
-    int op_setword();
-    int op_setword_altsw();
-    int op_getword();
-    int op_getword_altgw();
-    int op_rolword();
-    int op_rolword_altgw();
+    int op_SETWORD();
+    int op_SETWORD_ALTSW();
+    int op_GETWORD();
+    int op_GETWORD_ALTGW();
+    int op_ROLWORD();
+    int op_ROLWORD_ALTGW();
 
-    int op_altsn();
-    int op_altsn_d();
-    int op_altgn();
-    int op_altgn_d();
-    int op_altsb();
-    int op_altsb_d();
-    int op_altgb();
-    int op_altgb_d();
+    int op_ALTSN();
+    int op_ALTSN_D();
+    int op_ALTGN();
+    int op_ALTGN_D();
+    int op_ALTSB();
+    int op_ALTSB_D();
+    int op_ALTGB();
+    int op_ALTGB_D();
 
-    int op_altsw();
-    int op_altsw_d();
-    int op_altgw();
-    int op_altgw_d();
+    int op_ALTSW();
+    int op_ALTSW_D();
+    int op_ALTGW();
+    int op_ALTGW_D();
 
-    int op_altr();
-    int op_altr_d();
-    int op_altd();
-    int op_altd_d();
-    int op_alts();
-    int op_alts_d();
-    int op_altb();
-    int op_altb_d();
-    int op_alti();
-    int op_alti_d();
+    int op_ALTR();
+    int op_ALTR_D();
+    int op_ALTD();
+    int op_ALTD_D();
+    int op_ALTS();
+    int op_ALTS_D();
+    int op_ALTB();
+    int op_ALTB_D();
+    int op_ALTI();
+    int op_ALTI_D();
 
-    int op_setr();
-    int op_setd();
-    int op_sets();
-    int op_decod();
-    int op_decod_d();
-    int op_bmask();
-    int op_bmask_d();
-    int op_crcbit();
-    int op_crcnib();
+    int op_SETR();
+    int op_SETD();
+    int op_SETS();
+    int op_DECOD();
+    int op_DECOD_D();
+    int op_BMASK();
+    int op_BMASK_D();
+    int op_CRCBIT();
+    int op_CRCNIB();
 
-    int op_muxnits();
-    int op_muxnibs();
-    int op_muxq();
-    int op_movbyts();
-    int op_mul();
-    int op_muls();
-    int op_sca();
-    int op_scas();
+    int op_MUXNITS();
+    int op_MUXNIBS();
+    int op_MUXQ();
+    int op_MOVBYTS();
+    int op_MUL();
+    int op_MULS();
+    int op_SCA();
+    int op_SCAS();
 
-    int op_addpix();
-    int op_mulpix();
-    int op_blnpix();
-    int op_mixpix();
-    int op_addct1();
-    int op_addct2();
-    int op_addct3();
+    int op_ADDPIX();
+    int op_MULPIX();
+    int op_BLNPIX();
+    int op_MIXPIX();
+    int op_ADDCT1();
+    int op_ADDCT2();
+    int op_ADDCT3();
 
-    int op_wmlong();
-    int op_rqpin();
-    int op_rdpin();
-    int op_rdlut();
-    int op_rdbyte();
-    int op_rdword();
-    int op_rdlong();
+    int op_WMLONG();
+    int op_RQPIN();
+    int op_RDPIN();
+    int op_RDLUT();
+    int op_RDBYTE();
+    int op_RDWORD();
+    int op_RDLONG();
 
-    int op_popa();
-    int op_popb();
-    int op_calld();
-    int op_resi3();
-    int op_resi2();
-    int op_resi1();
-    int op_resi0();
-    int op_reti3();
-    int op_reti2();
-    int op_reti1();
-    int op_reti0();
-    int op_callpa();
-    int op_callpb();
+    int op_POPA();
+    int op_POPB();
+    int op_CALLD();
+    int op_RESI3();
+    int op_RESI2();
+    int op_RESI1();
+    int op_RESI0();
+    int op_RETI3();
+    int op_RETI2();
+    int op_RETI1();
+    int op_RETI0();
+    int op_CALLPA();
+    int op_CALLPB();
 
-    int op_djz();
-    int op_djnz();
-    int op_djf();
-    int op_djnf();
-    int op_ijz();
-    int op_ijnz();
-    int op_tjz();
-    int op_tjnz();
-    int op_tjf();
-    int op_tjnf();
-    int op_tjs();
-    int op_tjns();
-    int op_tjv();
+    int op_DJZ();
+    int op_DJNZ();
+    int op_DJF();
+    int op_DJNF();
+    int op_IJZ();
+    int op_IJNZ();
+    int op_TJZ();
+    int op_TJNZ();
+    int op_TJF();
+    int op_TJNF();
+    int op_TJS();
+    int op_TJNS();
+    int op_TJV();
 
-    int op_jint();
-    int op_jct1();
-    int op_jct2();
-    int op_jct3();
-    int op_jse1();
-    int op_jse2();
-    int op_jse3();
-    int op_jse4();
-    int op_jpat();
-    int op_jfbw();
-    int op_jxmt();
-    int op_jxfi();
-    int op_jxro();
-    int op_jxrl();
-    int op_jatn();
-    int op_jqmt();
+    int op_JINT();
+    int op_JCT1();
+    int op_JCT2();
+    int op_JCT3();
+    int op_JSE1();
+    int op_JSE2();
+    int op_JSE3();
+    int op_JSE4();
+    int op_JPAT();
+    int op_JFBW();
+    int op_JXMT();
+    int op_JXFI();
+    int op_JXRO();
+    int op_JXRL();
+    int op_JATN();
+    int op_JQMT();
 
-    int op_jnint();
-    int op_jnct1();
-    int op_jnct2();
-    int op_jnct3();
-    int op_jnse1();
-    int op_jnse2();
-    int op_jnse3();
-    int op_jnse4();
-    int op_jnpat();
-    int op_jnfbw();
-    int op_jnxmt();
-    int op_jnxfi();
-    int op_jnxro();
-    int op_jnxrl();
-    int op_jnatn();
-    int op_jnqmt();
+    int op_JNINT();
+    int op_JNCT1();
+    int op_JNCT2();
+    int op_JNCT3();
+    int op_JNSE1();
+    int op_JNSE2();
+    int op_JNSE3();
+    int op_JNSE4();
+    int op_JNPAT();
+    int op_JNFBW();
+    int op_JNXMT();
+    int op_JNXFI();
+    int op_JNXRO();
+    int op_JNXRL();
+    int op_JNATN();
+    int op_JNQMT();
     int op_1011110_1();
     int op_1011111_0();
-    int op_setpat();
+    int op_SETPAT();
 
-    int op_wrpin();
-    int op_akpin();
-    int op_wxpin();
-    int op_wypin();
-    int op_wrlut();
-    int op_wrbyte();
-    int op_wrword();
-    int op_wrlong();
+    int op_WRPIN();
+    int op_AKPIN();
+    int op_WXPIN();
+    int op_WYPIN();
+    int op_WRLUT();
+    int op_WRBYTE();
+    int op_WRWORD();
+    int op_WRLONG();
 
-    int op_pusha();
-    int op_pushb();
-    int op_rdfast();
-    int op_wrfast();
-    int op_fblock();
-    int op_xinit();
-    int op_xstop();
-    int op_xzero();
-    int op_xcont();
+    int op_PUSHA();
+    int op_PUSHB();
+    int op_RDFAST();
+    int op_WRFAST();
+    int op_FBLOCK();
+    int op_XINIT();
+    int op_XSTOP();
+    int op_XZERO();
+    int op_XCONT();
 
-    int op_rep();
-    int op_coginit();
+    int op_REP();
+    int op_COGINIT();
 
-    int op_qmul();
-    int op_qdiv();
-    int op_qfrac();
-    int op_qsqrt();
-    int op_qrotate();
-    int op_qvector();
+    int op_QMUL();
+    int op_QDIV();
+    int op_QFRAC();
+    int op_QSQRT();
+    int op_QROTATE();
+    int op_QVECTOR();
 
-    int op_hubset();
-    int op_cogid();
-    int op_cogstop();
-    int op_locknew();
-    int op_lockret();
-    int op_locktry();
-    int op_lockrel();
-    int op_qlog();
-    int op_qexp();
+    int op_HUBSET();
+    int op_COGID();
+    int op_COGSTOP();
+    int op_LOCKNEW();
+    int op_LOCKRET();
+    int op_LOCKTRY();
+    int op_LOCKREL();
+    int op_QLOG();
+    int op_QEXP();
 
-    int op_rfbyte();
-    int op_rfword();
-    int op_rflong();
-    int op_rfvar();
-    int op_rfvars();
-    int op_wfbyte();
-    int op_wfword();
-    int op_wflong();
+    int op_RFBYTE();
+    int op_RFWORD();
+    int op_RFLONG();
+    int op_RFVAR();
+    int op_RFVARS();
+    int op_WFBYTE();
+    int op_WFWORD();
+    int op_WFLONG();
 
-    int op_getqx();
-    int op_getqy();
-    int op_getct();
-    int op_getrnd();
-    int op_getrnd_cz();
+    int op_GETQX();
+    int op_GETQY();
+    int op_GETCT();
+    int op_GETRND();
+    int op_GETRND_CZ();
 
-    int op_setdacs();
-    int op_setxfrq();
-    int op_getxacc();
-    int op_waitx();
-    int op_setse1();
-    int op_setse2();
-    int op_setse3();
-    int op_setse4();
-    int op_pollint();
-    int op_pollct1();
-    int op_pollct2();
-    int op_pollct3();
-    int op_pollse1();
-    int op_pollse2();
-    int op_pollse3();
-    int op_pollse4();
-    int op_pollpat();
-    int op_pollfbw();
-    int op_pollxmt();
-    int op_pollxfi();
-    int op_pollxro();
-    int op_pollxrl();
-    int op_pollatn();
-    int op_pollqmt();
+    int op_SETDACS();
+    int op_SETXFRQ();
+    int op_GETACC();
+    int op_WAITX();
+    int op_SETSE1();
+    int op_SETSE2();
+    int op_SETSE3();
+    int op_SETSE4();
+    int op_POLLINT();
+    int op_POLLCT1();
+    int op_POLLCT2();
+    int op_POLLCT3();
+    int op_POLLSE1();
+    int op_POLLSE2();
+    int op_POLLSE3();
+    int op_POLLSE4();
+    int op_POLLPAT();
+    int op_POLLFBW();
+    int op_POLLXMT();
+    int op_POLLXFI();
+    int op_POLLXRO();
+    int op_POLLXRL();
+    int op_POLLATN();
+    int op_POLLQMT();
 
-    int op_waitint();
-    int op_waitct1();
-    int op_waitct2();
-    int op_waitct3();
-    int op_waitse1();
-    int op_waitse2();
-    int op_waitse3();
-    int op_waitse4();
-    int op_waitpat();
-    int op_waitfbw();
-    int op_waitxmt();
-    int op_waitxfi();
-    int op_waitxro();
-    int op_waitxrl();
-    int op_waitatn();
+    int op_WAITINT();
+    int op_WAITCT1();
+    int op_WAITCT2();
+    int op_WAITCT3();
+    int op_WAITSE1();
+    int op_WAITSE2();
+    int op_WAITSE3();
+    int op_WAITSE4();
+    int op_WAITPAT();
+    int op_WAITFBW();
+    int op_WAITXMT();
+    int op_WAITXFI();
+    int op_WAITXRO();
+    int op_WAITXRL();
+    int op_WAITATN();
 
-    int op_allowi();
-    int op_stalli();
-    int op_trgint1();
-    int op_trgint2();
-    int op_trgint3();
-    int op_nixint1();
-    int op_nixint2();
-    int op_nixint3();
-    int op_setint1();
-    int op_setint2();
-    int op_setint3();
-    int op_setq();
-    int op_setq2();
+    int op_ALLOWI();
+    int op_STALLI();
+    int op_TRGINT1();
+    int op_TRGINT2();
+    int op_TRGINT3();
+    int op_NIXINT1();
+    int op_NIXINT2();
+    int op_NIXINT3();
+    int op_SETINT1();
+    int op_SETINT2();
+    int op_SETINT3();
+    int op_SETQ();
+    int op_SETQ2();
 
-    int op_push();
-    int op_pop();
-    int op_jmp();
-    int op_call();
-    int op_ret();
-    int op_calla();
-    int op_reta();
-    int op_callb();
-    int op_retb();
+    int op_PUSH();
+    int op_POP();
+    int op_JMP();
+    int op_CALL();
+    int op_RET();
+    int op_CALLA();
+    int op_RETA();
+    int op_CALLB();
+    int op_RETB();
 
-    int op_jmprel();
-    int op_skip();
-    int op_skipf();
-    int op_execf();
-    int op_getptr();
-    int op_getbrk();
-    int op_cogbrk();
-    int op_brk();
+    int op_JMPREL();
+    int op_SKIP();
+    int op_SKIPF();
+    int op_EXECF();
+    int op_GETPTR();
+    int op_GETBRK();
+    int op_COGBRK();
+    int op_BRK();
 
-    int op_setluts();
-    int op_setcy();
-    int op_setci();
-    int op_setcq();
-    int op_setcfrq();
-    int op_setcmod();
-    int op_setpiv();
-    int op_setpix();
-    int op_cogatn();
+    int op_SETLUTS();
+    int op_SETCY();
+    int op_SETCI();
+    int op_SETCQ();
+    int op_SETCFRQ();
+    int op_SETCMOD();
+    int op_SETPIV();
+    int op_SETPIX();
+    int op_COGATN();
 
-    int op_testp_w();
-    int op_testpn_w();
-    int op_testp_and();
-    int op_testpn_and();
-    int op_testp_or();
-    int op_testpn_or();
-    int op_testp_xor();
-    int op_testpn_xor();
+    int op_TESTP_W();
+    int op_TESTPN_W();
+    int op_TESTP_AND();
+    int op_TESTPN_AND();
+    int op_TESTP_OR();
+    int op_TESTPN_OR();
+    int op_TESTP_XOR();
+    int op_TESTPN_XOR();
 
-    int op_dirl();
-    int op_dirh();
-    int op_dirc();
-    int op_dirnc();
-    int op_dirz();
-    int op_dirnz();
-    int op_dirrnd();
-    int op_dirnot();
+    int op_DIRL();
+    int op_DIRH();
+    int op_DIRC();
+    int op_DIRNC();
+    int op_DIRZ();
+    int op_DIRNZ();
+    int op_DIRRND();
+    int op_DIRNOT();
 
-    int op_outl();
-    int op_outh();
-    int op_outc();
-    int op_outnc();
-    int op_outz();
-    int op_outnz();
-    int op_outrnd();
-    int op_outnot();
+    int op_OUTL();
+    int op_OUTH();
+    int op_OUTC();
+    int op_OUTNC();
+    int op_OUTZ();
+    int op_OUTNZ();
+    int op_OUTRND();
+    int op_OUTNOT();
 
-    int op_fltl();
-    int op_flth();
-    int op_fltc();
-    int op_fltnc();
-    int op_fltz();
-    int op_fltnz();
-    int op_fltrnd();
-    int op_fltnot();
+    int op_FLTL();
+    int op_FLTH();
+    int op_FLTC();
+    int op_FLTNC();
+    int op_FLTZ();
+    int op_FLTNZ();
+    int op_FLTRND();
+    int op_FLTNOT();
 
-    int op_drvl();
-    int op_drvh();
-    int op_drvc();
-    int op_drvnc();
-    int op_drvz();
-    int op_drvnz();
-    int op_drvrnd();
-    int op_drvnot();
+    int op_DRVL();
+    int op_DRVH();
+    int op_DRVC();
+    int op_DRVNC();
+    int op_DRVZ();
+    int op_DRVNZ();
+    int op_DRVRND();
+    int op_DRVNOT();
 
-    int op_splitb();
-    int op_mergeb();
-    int op_splitw();
-    int op_mergew();
-    int op_seussf();
-    int op_seussr();
-    int op_rgbsqz();
-    int op_rgbexp();
-    int op_xoro32();
+    int op_SPLITB();
+    int op_MERGEB();
+    int op_SPLITW();
+    int op_MERGEW();
+    int op_SEUSSF();
+    int op_SEUSSR();
+    int op_RGBSQZ();
+    int op_RGBEXP();
+    int op_XORO32();
 
-    int op_rev();
-    int op_rczr();
-    int op_rczl();
-    int op_wrc();
-    int op_wrnc();
-    int op_wrz();
-    int op_wrnz();
-    int op_modcz();
-    int op_setscp();
-    int op_getscp();
+    int op_REV();
+    int op_RCZR();
+    int op_RCZL();
+    int op_WRC();
+    int op_WRNC();
+    int op_WRZ();
+    int op_WRNZ();
+    int op_MODCZ();
+    int op_SETSCP();
+    int op_GETSCP();
 
-    int op_jmp_abs();
-    int op_call_abs();
-    int op_calla_abs();
-    int op_callb_abs();
+    int op_JMP_ABS();
+    int op_CALL_ABS();
+    int op_CALLA_ABS();
+    int op_CALLB_ABS();
 
-    int op_calld_abs_pa();
-    int op_calld_abs_pb();
-    int op_calld_abs_ptra();
-    int op_calld_abs_ptrb();
+    int op_CALLD_ABS_PA();
+    int op_CALLD_ABS_PB();
+    int op_CALLD_ABS_PTRA();
+    int op_CALLD_ABS_PTRB();
 
-    int op_loc_pa();
-    int op_loc_pb();
-    int op_loc_ptra();
-    int op_loc_ptrb();
+    int op_LOC_PA();
+    int op_LOC_PB();
+    int op_LOC_PTRA();
+    int op_LOC_PTRB();
 
-    int op_augs();
+    int op_AUGS();
     int op_AUGD();
 };

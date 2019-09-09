@@ -2459,8 +2459,6 @@ QString P2Asm::results_assignment()
 QStringList P2Asm::results_data(bool wr_mem)
 {
     QStringList output;
-    const p2_LONG start = m_ORG;
-    p2_LONG offset = m_ORG;
     p2_ORG_ORGH_t org_orgh(m_ORG, m_ORGH);
 
     m_IR.set_data(m_data);
@@ -2468,8 +2466,8 @@ QStringList P2Asm::results_data(bool wr_mem)
     m_hash_PC.insert(m_lineno, org_orgh);
     m_hash_IR.insert(m_lineno, m_IR);
 
+    const p2_BYTES& _bytes = m_data.get_bytes(true);
     if (wr_mem) {
-        const p2_BYTES& _bytes = m_data.get_bytes();
         p2_LONG addr = m_ORGH;
         foreach(p2_BYTE b, _bytes) {
             if (addr >= MEM_SIZE)
@@ -2482,8 +2480,7 @@ QStringList P2Asm::results_data(bool wr_mem)
     if (m_pass > 1) {
         output += P2Opcode::format_data(m_IR, fmt_hex).split(QChar::LineFeed);
     }
-
-    m_advance = offset - start;
+    m_advance = static_cast<p2_LONG>(_bytes.size());
 
     return output;
 }
@@ -4742,11 +4739,8 @@ bool P2Asm::asm_enum_initial()
         if (t_symbol == curr_tok()) {
             QString symbol = find_symbol(m_section, curr_str());
             define_symbol(symbol, atom);    // append global name to section::symbol
-            if (t__LBRACKET == curr_tok()) {
-                qDebug("%s: %s with index", __func__, qPrintable(symbol));
-            }
-            prev();
-            atom = parse_expression();
+            prev();                         // back to the symbol
+            atom = parse_expression();      // parse as expression with possible index
             if (atom.has_trait(tr_INDEX))
                 atom += atom.index_long();
             else
@@ -4798,8 +4792,8 @@ bool P2Asm::asm_enum_continue()
             if (t__LBRACKET == curr_tok()) {
                 qDebug("%s: %s with index", __func__, qPrintable(symbol));
             }
-            prev();
-            atom = parse_expression();
+            prev();                         // back to the symbol
+            atom = parse_expression();      // parse as expression with possible index
             if (atom.has_trait(tr_INDEX))
                 atom += atom.index_long();
             else

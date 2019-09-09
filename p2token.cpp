@@ -782,7 +782,7 @@ P2Token::P2Token()
     TN_ADD(t_MODCZ__C_OR_Z,     tm_modcz_param, QStringLiteral("_C_OR_Z"));
     TN_ADD(t_MODCZ__Z_OR_C,     tm_modcz_param, QStringLiteral("_Z_OR_C"));
     TN_ADD(t_MODCZ__LE,         tm_modcz_param, QStringLiteral("_LE"));
-    TN_ADD(t_MODCZ__Z_OR_C,     tm_modcz_param, QStringLiteral("_NOT_00"));
+    TN_ADD(t_MODCZ__NOT_00,     tm_modcz_param, QStringLiteral("_NOT_00"));
 
     TN_ADD(t_MODCZ__SET,        tm_modcz_param, QStringLiteral("_SET"));
 
