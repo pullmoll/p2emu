@@ -102,7 +102,7 @@ p2_BYTE P2Util::msb(p2_BYTE val)
  * @param val value
  * @return position of top most 1 bit
  */
-uint P2Util::encode(p2_QUAD val)
+uchar P2Util::encode(p2_QUAD val)
 {
     val |= (val >> 1);
     val |= (val >> 2);
@@ -118,7 +118,7 @@ uint P2Util::encode(p2_QUAD val)
  * @param val value
  * @return position of top most 1 bit
  */
-uint P2Util::encode(p2_LONG val)
+uchar P2Util::encode(p2_LONG val)
 {
     val |= (val >> 1);
     val |= (val >> 2);
@@ -213,12 +213,17 @@ uint P2Util::lzc(p2_BYTE val)
     return 8u - ones(val);
 }
 
-uint P2Util::ones(p2_QUAD val)
+/**
+ * @brief Return the number of ones (1) in a 64 bit value
+ * @param val 64 bit value
+ * @return number of 1 bits
+ */
+uchar P2Util::ones(p2_QUAD val)
 {
     val = val - ((val >> 1) & Q_UINT64_C(0x5555555555555555));
     val = (val & Q_UINT64_C(0x3333333333333333)) + ((val >> 2) & Q_UINT64_C(0x3333333333333333));
     val = (((val + (val >> 4)) & Q_UINT64_C(0x0f0f0f0f0f0f0f0f)) * Q_UINT64_C(0x0101010101010101)) >> 56;
-    return static_cast<uint>(val);
+    return static_cast<uchar>(val);
 }
 
 /**
@@ -226,12 +231,12 @@ uint P2Util::ones(p2_QUAD val)
  * @param val 32 bit value
  * @return number of 1 bits
  */
-uint P2Util::ones(p2_LONG val)
+uchar P2Util::ones(p2_LONG val)
 {
     val = val - ((val >> 1) & 0x55555555);
     val = (val & 0x33333333) + ((val >> 2) & 0x33333333);
     val = (((val + (val >> 4)) & 0x0f0f0f0f) * 0x01010101) >> 24;
-    return val;
+    return static_cast<uchar>(val);
 }
 
 /**
@@ -239,12 +244,12 @@ uint P2Util::ones(p2_LONG val)
  * @param val 16 bit value
  * @return number of 1 bits
  */
-uint P2Util::ones(p2_WORD val)
+uchar P2Util::ones(p2_WORD val)
 {
     val = val - ((val >> 1) & 0x5555);
     val = (val & 0x3333) + ((val >> 2) & 0x3333);
     val = (((val + (val >> 4)) & 0x0f0f) * 0x0101) >> 12;
-    return val;
+    return static_cast<uchar>(val);
 }
 
 /**
@@ -252,7 +257,7 @@ uint P2Util::ones(p2_WORD val)
  * @param val 8 bit value
  * @return number of 1 bits
  */
-uint P2Util::ones(p2_BYTE val)
+uchar P2Util::ones(p2_BYTE val)
 {
     val = val - ((val >> 1) & 0x55);
     val = (val & 0x33) + ((val >> 2) & 0x33);
@@ -265,7 +270,7 @@ uint P2Util::ones(p2_BYTE val)
  * @param val 32 bit value
  * @return 1 for odd parity, 0 for even parity
  */
-uint P2Util::parity(p2_LONG val)
+uchar P2Util::parity(p2_LONG val)
 {
     val ^= val >> 16;
     val ^= val >> 8;
@@ -279,7 +284,7 @@ uint P2Util::parity(p2_LONG val)
  * @param val 16 bit value
  * @return 1 for odd parity, 0 for even parity
  */
-uint P2Util::parity(p2_WORD val)
+uchar P2Util::parity(p2_WORD val)
 {
     val ^= val >> 8;
     val ^= val >> 4;
@@ -292,7 +297,7 @@ uint P2Util::parity(p2_WORD val)
  * @param val 8 bit value
  * @return 1 for odd parity, 0 for even parity
  */
-uint P2Util::parity(p2_BYTE val)
+uchar P2Util::parity(p2_BYTE val)
 {
     val ^= val >> 4;
     val &= 15;
@@ -307,7 +312,7 @@ uint P2Util::parity(p2_BYTE val)
  */
 p2_LONG P2Util::seuss(p2_LONG val, bool forward)
 {
-    const uchar bits[32] = {
+    static const uchar bits[32] = {
         11,  5, 18, 24, 27, 19, 20, 30, 28, 26, 21, 25,  3,  8,  7, 23,
         13, 12, 16,  2, 15,  1,  9, 31,  0, 29, 17, 10, 14,  4,  6, 22
     };
