@@ -82,6 +82,44 @@ int P2Union::unit() const
     return 1;
 }
 
+int P2Union::usize() const
+{
+    int result = 0;
+    QVariant list = QVariant::fromValue(toList());
+    if (list.canConvert<QVariantList>()) {
+        QSequentialIterable it = list.value<QSequentialIterable>();
+        foreach(const QVariant& v, it) {
+            TypedVar tv = qvariant_cast<TypedVar>(v);
+            switch (tv.first) {
+            case ut_Invalid:
+                Q_ASSERT(tv.first != ut_Invalid);
+                break;
+            case ut_Bool:
+            case ut_Byte:
+                result += sz_BYTE;
+                break;
+            case ut_Word:
+                result += sz_WORD;
+                break;
+            case ut_Addr:
+            case ut_Long:
+                result += sz_LONG;
+                break;
+            case ut_Quad:
+                result += sz_QUAD;
+                break;
+            case ut_Real:
+                result += sz_REAL;
+                break;
+            case ut_String:
+                result += sz_BYTE;
+                break;
+            }
+        }
+    }
+    return result;
+}
+
 p2_union_e P2Union::type() const
 {
     return m_type;

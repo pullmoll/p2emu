@@ -88,7 +88,7 @@ public:
     bool has_trait(const p2_traits_e trait) const;
 
     int size() const;
-    p2_LONG usize() const;
+    int usize() const;
     int count() const;
 
     p2_union_e type() const;

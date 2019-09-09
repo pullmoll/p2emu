@@ -61,6 +61,7 @@ typedef enum {
     ut_Real,                                //!< Value is REAL sized (qreal can be float or double)
     ut_String                               //!< Value is an array of char
 }   p2_union_e;
+Q_DECLARE_METATYPE(p2_union_e);
 
 /*
  * Definitions for the basic types based on Qt5 types

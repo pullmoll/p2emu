@@ -52,13 +52,13 @@ static const QString p2_section_pub = QStringLiteral("PUB");
 static const QString p2_section_pri = QStringLiteral("PRI");
 static const QString p2_section_var = QStringLiteral("VAR");
 
-static const QString p2_prefix_bin_const = QStringLiteral("_BIN=");
-static const QString p2_prefix_byt_const = QStringLiteral("_BYT=");
-static const QString p2_prefix_dec_const = QStringLiteral("_DEC=");
-static const QString p2_prefix_hex_const = QStringLiteral("_HEX=");
-static const QString p2_prefix_str_const = QStringLiteral("_STR=");
-static const QString p2_prefix_real_const = QStringLiteral("_REAL=");
-static const QString p2_prefix_offs_const = QStringLiteral("_OFFS=");
+static const QString p2_prefix_bin_const = QStringLiteral("»%b=");
+static const QString p2_prefix_byt_const = QStringLiteral("»%y=");
+static const QString p2_prefix_dec_const = QStringLiteral("»%d=");
+static const QString p2_prefix_hex_const = QStringLiteral("»%x=");
+static const QString p2_prefix_str_const = QStringLiteral("»%s=");
+static const QString p2_prefix_real_const = QStringLiteral("»%f=");
+static const QString p2_prefix_offs_const = QStringLiteral("»%p=");
 
 
 #if DEBUG_EXPR
@@ -4687,7 +4687,10 @@ bool P2Asm::asm_assign()
     m_advance = 0;      // Don't advance PC
     P2Atom atom = parse_expression();
     P2Symbol sym = m_symbols->symbol(m_symbol);
-    m_symbols->set_value(m_symbol, atom.value());
+    if (sym.isNull())
+        m_symbols->insert(m_symbol, atom.value());
+    else
+        m_symbols->set_value(m_symbol, atom.value());
     m_IR.set_equ(atom);
     if (con_section != m_section) {
         m_errors += tr("Not in constant section (CON) but found %1.")

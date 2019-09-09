@@ -27,6 +27,7 @@ public:
     explicit P2Union(p2_QUADS vq);
 
     int unit() const;
+    int usize() const;
     p2_union_e type() const;
     QString type_name() const;
     void set_type(p2_union_e type);

@@ -125,8 +125,8 @@ MainWindow::MainWindow(QWidget *parent)
     restoreSettings();
     setupFonts();
 
-    loadSource(QStringLiteral(":/spin2/spin2_interpreter.spin2"));
-    // loadSource(QStringLiteral(":/spin2/P2-qz80-rr032.spin2"));
+    // loadSource(QStringLiteral(":/spin2/spin2_interpreter.spin2"));
+    loadSource(QStringLiteral(":/spin2/P2-qz80-rr032.spin2"));
     // loadSource(QStringLiteral(":/spin2/pointers.spin2"));
     loadObjectRandom();
 }
@@ -183,7 +183,7 @@ void MainWindow::saveSettingsAsm()
     QModelIndex index = ui->tvAsm->currentIndex();
     s.setValue(key_current_row, index.row());
     s.setValue(key_current_column, index.column());
-    s.setValue(key_font_size, ui->tvAsm->font().pixelSize());
+    s.setValue(key_font_size, ui->tvAsm->font().pointSize());
     s.setValue(key_splitter_source_percent, m_source_percent);
     s.setValue(key_splitter_results_percent, m_results_percent);
 
@@ -226,7 +226,7 @@ void MainWindow::saveSettingsDasm()
     QModelIndex index = ui->tvDasm->currentIndex();
     s.setValue(key_current_row, index.row());
     s.setValue(key_current_column, index.column());
-    s.setValue(key_font_size, ui->tvDasm->font().pixelSize());
+    s.setValue(key_font_size, ui->tvDasm->font().pointSize());
     s.endGroup();
 }
 
@@ -346,7 +346,7 @@ void MainWindow::setAsmOpcodes()
 void MainWindow::incAsmFontSize()
 {
     QFont font = ui->tvAsm->font();
-    int size = font.pixelSize();
+    int size = font.pointSize();
     if (size < 24) {
         size++;
         setAsmFontSize(size);
@@ -356,7 +356,7 @@ void MainWindow::incAsmFontSize()
 void MainWindow::decAsmFontSize()
 {
     QFont font = ui->tvAsm->font();
-    int size = font.pixelSize();
+    int size = font.pointSize();
     if (size > 5) {
         size--;
         setAsmFontSize(size);
@@ -369,7 +369,7 @@ void MainWindow::setAsmFontSize(int size)
     ui->tvSymbols->setUpdatesEnabled(false);
 
     QFont font = ui->tvAsm->font();
-    font.setPixelSize(size);
+    font.setPointSize(size);
     ui->tvAsm->setFont(font);
     m_amodel->setFont(font);
 
@@ -404,7 +404,7 @@ void MainWindow::setDasmOpcodes()
 void MainWindow::incDasmFontSize()
 {
     QFont font = ui->tvDasm->font();
-    int size = font.pixelSize();
+    int size = font.pointSize();
     if (size < 24) {
         size++;
         setDasmFontSize(size);
@@ -414,7 +414,7 @@ void MainWindow::incDasmFontSize()
 void MainWindow::decDasmFontSize()
 {
     QFont font = ui->tvDasm->font();
-    int size = font.pixelSize();
+    int size = font.pointSize();
     if (size > 5) {
         size--;
         setDasmFontSize(size);
@@ -426,7 +426,7 @@ void MainWindow::setDasmFontSize(int size)
     ui->tvDasm->setUpdatesEnabled(false);
 
     QFont font = ui->tvDasm->font();
-    font.setPixelSize(size);
+    font.setPointSize(size);
     ui->tvDasm->setFont(font);
     m_dmodel->setFont(font);
     updateDasmColumnSizes();
@@ -800,14 +800,12 @@ void MainWindow::setupFonts()
     font.setPointSize(11);
     ui->tabWidget->setFont(font);
 
-    font.setPixelSize(m_asm_font_size);
+    font.setPointSize(m_asm_font_size);
     ui->tvAsm->setFont(font);
     ui->tvSymbols->setFont(font);
-
-    font.setPointSize(9);
     ui->tbErrors->setFont(font);
 
-    font.setPixelSize(m_dasm_font_size);
+    font.setPointSize(m_dasm_font_size);
     ui->tvDasm->setFont(font);
 }
 

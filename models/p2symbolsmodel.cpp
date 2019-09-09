@@ -46,31 +46,39 @@ P2SymbolsModel::P2SymbolsModel(const P2SymbolTable& table, QObject *parent)
 {
 
     m_header_text.insert(c_Name,            tr("Name"));
-    m_header_tooltip.insert(c_Name,         tr("Name of this symbol."));
+    m_header_tooltip.insert(c_Name,         tr("This column shows the %1.")
+                            .arg(tr("name of the symbol")));
     m_background.insert(c_Name,             qRgb(0xff,0xfc,0xf8));
     m_head_alignment.insert(c_Name,         Qt::AlignLeft | Qt::AlignVCenter);
     m_text_alignment.insert(c_Name,         Qt::AlignLeft | Qt::AlignVCenter);
 
     m_header_text.insert(c_Definition,      tr("Line #"));
-    m_header_tooltip.insert(c_Definition,   tr("Definition is in source line number."));
+    m_header_tooltip.insert(c_Definition,   tr("This column shows the %1.")
+                            .arg(tr("source line where the symbol %1")
+                                 .arg(tr("is defined"))));
     m_background.insert(c_Definition,       qRgb(0xff,0xf0,0xe0));
     m_head_alignment.insert(c_Definition,   Qt::AlignRight | Qt::AlignVCenter);
     m_text_alignment.insert(c_Definition,   Qt::AlignRight | Qt::AlignVCenter);
 
     m_header_text.insert(c_References,      tr("Ref(s)"));
-    m_header_tooltip.insert(c_References,   tr("Referenced in source line number(s)."));
+    m_header_tooltip.insert(c_References,   tr("This column shows the %1.")
+                            .arg(tr("source line where the %1")
+                                 .arg(tr("is referenced"))));
     m_background.insert(c_References,       qRgb(0xf8,0xfc,0xff));
     m_head_alignment.insert(c_References,   Qt::AlignRight | Qt::AlignVCenter);
     m_text_alignment.insert(c_References,   Qt::AlignRight | Qt::AlignVCenter);
 
     m_header_text.insert(c_Type,            tr("Type"));
-    m_header_tooltip.insert(c_Type,         tr("Type of the symbol's data."));
+    m_header_tooltip.insert(c_Type,         tr("This column shows the %1 %2.")
+                            .arg(tr("type of the "))
+                            .arg(tr("symbol's value")));
     m_head_alignment.insert(c_Type,         Qt::AlignLeft | Qt::AlignVCenter);
     m_background.insert(c_Type,             qRgb(0x10,0xfc,0xff));
     m_text_alignment.insert(c_Type,         Qt::AlignCenter);
 
     m_header_text.insert(c_Value,           tr("Value"));
-    m_header_tooltip.insert(c_Value,        tr("Value of the symbol's data."));
+    m_header_tooltip.insert(c_Value,        tr("This column shows the %1.")
+                            .arg(tr("symbol's value")));
     m_head_alignment.insert(c_Value,        Qt::AlignLeft | Qt::AlignVCenter);
     m_background.insert(c_Value,            qRgb(0xff,0xf0,0xff));
     m_text_alignment.insert(c_Value,        Qt::AlignLeft | Qt::AlignVCenter);
@@ -204,7 +212,7 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
                 result = QString("$%1").arg(value.get_word(), 0, 16, QChar('0'));
                 break;
             case ut_Addr:
-                result = QString("$%1").arg(value.get_word(), 0, 16, QChar('0'));
+                result = QString("$%1").arg(value.get_long(), 0, 16, QChar('0'));
                 break;
             case ut_Long:
                 result = QString("$%1").arg(value.get_long(), 0, 16, QChar('0'));
@@ -241,11 +249,11 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
             break;
 
         case c_Type:
-            result = type;
+            result = QVariant::fromValue(type);
             break;
 
         case c_Value:
-            result = value.get_long();
+            result = QVariant::fromValue(value);
             break;
         }
         break;
@@ -253,31 +261,23 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
     case Qt::ToolTipRole:
         switch (column) {
         case c_Name:
-            result = tr("This column shows the %1")
-                     .arg(tr("name of the symbol."));
+            result = definition.isValid() ? definition.str() : name;
             break;
 
         case c_Definition:
-            result = tr("This column shows the %1.")
-                     .arg(tr("source line where the symbol %1")
-                          .arg(tr("is defined")));
+            // TODO: defintion tooltip
             break;
 
         case c_References:
-            result = tr("This column shows the %1.")
-                     .arg(tr("source line where the %1")
-                          .arg(tr("is referenced")));
+            // TODO: references tooltip
             break;
 
         case c_Type:
-            result = tr("This column shows the %1 %2.")
-                     .arg(tr("type of the "))
-                     .arg(tr("symbol's value"));
+            // TODO: type tooltip
             break;
 
         case c_Value:
-            result = tr("This column shows the %1.")
-                     .arg(tr("symbol's value"));
+            // TODO: value tooltip
             break;
         }
         break;

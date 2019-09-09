@@ -93,30 +93,30 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
 
     // redraw tokenized words
     foreach(const P2Word& word, words) {
-        const int len = word.len();
-        int pos = word.pos();
-        const QStringRef ref(&line, pos, len);
+        const QStringRef ref = word.ref();
+        const int len = ref.length();
+        int pos = ref.position();
 
         // draw the character
-        QRect box;
         p2_token_e tok = word.tok();
         const QColor& color = Colors.palette_color(tok, focus);
-        pos = word.pos();
 
         if (highlite.isValid() && highlite.pos() == pos) {
+            QRect box;
+            foreach(const QRect& r, bounding.mid(pos, len))
+                box = box.united(r);
             QColor lighter = color.lighter(150);
-            painter->setBackground(lighter);
-            painter->setPen(Qt::black);
-            painter->setBackgroundMode(Qt::OpaqueMode);
+            QColor darker = color.darker(150);
+            painter->fillRect(box, lighter);
+            painter->setPen(darker);
         } else {
             painter->setPen(color);
-            painter->setBackgroundMode(Qt::TransparentMode);
         }
 
+        pos = word.pos();
         foreach(const QChar ch, ref) {
             QRect br = bounding[pos++];
             painter->drawText(br, flags, ch);
-            box = box.united(br);
         }
     }
 

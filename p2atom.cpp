@@ -159,22 +159,30 @@ bool P2Atom::has_trait(const p2_traits_e trait) const
 }
 
 /**
- * @brief Return the size of the data in the atom
- * @return size of m_data
+ * @brief Return the size of the data in the atom in bytes
+ * @return size of m_value in bytes
  */
 int P2Atom::size() const
 {
-    return m_value.size();
+    return m_value.usize();
 }
 
-p2_LONG P2Atom::usize() const
+/**
+ * @brief Return the size of the data in the atom in units
+ * @return size of m_value in units
+ */
+int P2Atom::usize() const
 {
-    return static_cast<p2_LONG>(m_value.size());
+    return m_value.usize() / m_value.unit();
 }
 
+/**
+ * @brief Return the number of elements in the atom's value
+ * @return number of elements in m_value
+ */
 int P2Atom::count() const
 {
-    return m_value.size() / m_value.unit();
+    return m_value.size();
 }
 
 /**
@@ -192,8 +200,8 @@ const QString P2Atom::type_name() const
 }
 
 /**
- * @brief Set just the value of the atom, keeping its type
- * @param val new value
+ * @brief Set the index of the atom
+ * @param val new index value
  */
 void P2Atom::set_index(const QVariant& val)
 {
@@ -201,7 +209,7 @@ void P2Atom::set_index(const QVariant& val)
         P2Atom index = qvariant_cast<P2Atom>(val);
         m_index = index.m_value;
     } else {
-        m_index.set(val);
+        m_index.set_long(val.toUInt());
     }
 }
 
@@ -786,7 +794,7 @@ void P2Atom::make_bool(bool flag)
     if (!flag)
         return;
     p2_BYTES bytes = m_value.get_bytes(true);
-    m_value.set(bytes.count(0) != bytes.size());
+    m_value.set_bool(bytes.count(0) != bytes.size());
 }
 
 /**
@@ -895,10 +903,10 @@ void P2Atom::arith_mul(const P2Atom& atom)
         m_value.set_long(m_value.get_long() * atom.get_long());
         break;
     case ut_Quad:
-        m_value.set(m_value.get_quad() * atom.get_quad());
+        m_value.set_quad(m_value.get_quad() * atom.get_quad());
         break;
     case ut_Real:
-        m_value.set(m_value.get_real() * atom.get_real());
+        m_value.set_real(m_value.get_real() * atom.get_real());
         break;
     case ut_String:
         Q_ASSERT(m_value.type() != ut_Invalid);

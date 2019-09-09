@@ -465,7 +465,7 @@ void P2Colors::setup_tables() const
 void P2Colors::reset_palette()
 {
     m_default_colors.insert(p2_pal_source,        m_named_colors.value("Black"));
-    m_default_colors.insert(p2_pal_comment,       m_named_colors.value("Light Green"));
+    m_default_colors.insert(p2_pal_comment,       m_named_colors.value("Dark Olive Green"));
     m_default_colors.insert(p2_pal_str_const,     m_named_colors.value("Cadet Blue"));
     m_default_colors.insert(p2_pal_bin_const,     m_named_colors.value("Dark Blue"));
     m_default_colors.insert(p2_pal_byt_const,     m_named_colors.value("Deep Sky Blue"));
