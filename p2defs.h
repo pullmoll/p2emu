@@ -366,7 +366,7 @@ typedef enum {
     tr_RELATIVE     = (1 <<  2),    //!< expression started with '@'
     tr_ABSOLUTE     = (1 <<  3),    //!< expression contained a '\'
     tr_ADDRESS_HUB  = (1 <<  4),    //!< expression started with '#@'
-    tr_RELATIVE_HUB = (1 <<  5),    //!< expression started with '@@@'
+    tr_RELATIVE_HUB = (1 <<  5),    //!< expression started with '##@'
     tr_INDEX        = (1 <<  6),    //!< expression contains an index: '[' expr ']'
     tr_DEC          = (1 <<  7),    //!< PTRA/PTRB with decrement (--)
     tr_INC          = (1 <<  8),    //!< PTRA/PTRB with increment (++)
@@ -406,7 +406,7 @@ typedef enum {
 /**
  * @brief Define an instruction with 5 bits in the p2_inst5_e enumeration
  */
-#define INST5(b4,b3,b2,b1,b0) ((b4<<4)|(b3<<3)|(b2<<2)|(b1<<1)|(b0<<0))
+#define INST5(b4,b3,b2,b1,b0) ((b4<<4)|(b3<<3)|(b2<<2)|(b1<<1)|(b0))
 
 /**
  * @brief Define an instruction with 7 bits in the p2_inst7_e enumeration
@@ -1101,6 +1101,27 @@ typedef enum {
 }   p2_inst9_e;
 
 /**
+ * @brief Structure of the Propeller2 opcode words with 5 bits instruction, WW, wc, wz, and im
+ *
+ * Note: To have the bit fields work for both, little
+ * and big endian machines, the order has to match
+ * the native order of bits in 32 bit words of the target.
+ */
+typedef struct {
+#if (Q_BYTE_ORDER == Q_LITTLE_ENDIAN)
+    uint address:23;            //!< 23 bits of address
+    uint inst:5;                //!< instruction type
+    uint cond:4;                //!< conditional execution
+#elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
+    uint cond:4;                //!< conditional execution
+    uint inst:5;                //!< instruction type
+    uint address:23;            //!< 23 bits of address
+#else
+#error "Unknown byte order!"
+#endif
+}   p2_opcode5_t;
+
+/**
  * @brief Structure of the Propeller2 opcode words with 7 bits instruction, wc, wz, and im
  *
  * Note: To have the bit fields work for both, little
@@ -1178,7 +1199,8 @@ typedef struct {
  */
 typedef union {
     p2_LONG opcode;             //!< opcode as 32 bit word
-    p2_opcode7_t op;            //!< ocpode as bit fields (version with 7 bits instruction)
+    p2_opcode5_t op5;           //!< ocpode as bit fields (version with 5 bits instruction)
+    p2_opcode7_t op7;           //!< ocpode as bit fields (version with 7 bits instruction)
     p2_opcode8_t op8;           //!< ocpode as bit fields (version including WC)
     p2_opcode9_t op9;           //!< ocpode as bit fields (version including WC and WZ)
 }   p2_opcode_u;

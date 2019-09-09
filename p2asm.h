@@ -207,7 +207,8 @@ private:
     bool error_dst_or_src();
     P2Atom parse_dst(P2Opcode::ImmFlag flag = P2Opcode::imm_none);
     P2Atom parse_src(P2Opcode::ImmFlag flag = P2Opcode::imm_none);
-    bool parse_index(P2Atom& src, int scale = 1);
+    P2Atom parse_src_ptrx(int scale = 1, P2Opcode::ImmFlag flag = P2Opcode::imm_to_im);
+    bool parse_index(int scale, P2Atom& src);
     bool end_of_line();
     bool mandatory_COMMA();
     void optional_COMMA();

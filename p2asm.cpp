@@ -2387,7 +2387,7 @@ QStringList P2Asm::results_instruction(bool wr_mem)
         orgh += 4;
         m_IR.set_org_orgh(IR.org_orgh());
         m_advance += 4;
-        m_IR.set_AUGD();
+        m_IR.set_augd();
         lineptr = nullptr;
     }
 
@@ -3585,7 +3585,7 @@ P2Atom P2Asm::parse_expression(int level)
             next();
             index = parse_expression(level+1);  // evaluate the expression into index
             p2_set_trait(traits, tr_INDEX);
-            if (index.has_trait(tr_AUGMENTED))  // pass on tr_AUGMENTED to the atom traits
+            if (index.has_trait(tr_AUGMENTED))
                 p2_set_trait(traits, tr_AUGMENTED);
             break;
 
@@ -3765,25 +3765,27 @@ P2Atom P2Asm::parse_src(P2Opcode::ImmFlag flag)
 
 /**
  * @brief Evaluate the atom %src to create an index using PTRA or PTRB
+ * @param scale depends on the instruction (1 = BYTE, 2 = WORD, 4 = LONG)
  * @param src reference to the atom
  * @return true on success, or false on error
  */
-bool P2Asm::parse_index(P2Atom& src, int scale)
+bool P2Asm::parse_index(int scale, P2Atom& src)
 {
     bool result = true;
     const bool ptrb = offs_PTRB == src.get_long();
-    const bool pre = src.has_trait(tr_PRE);
     const bool post = src.has_trait(tr_POST);
     const bool inc = src.has_trait(tr_INC);
     const bool dec = src.has_trait(tr_DEC);
-    bool negate = false;
+    const bool negate = src.has_trait(tr_DEC);
+    const p2_LONG value = negate ? -src.index_long() : src.index_long();
+    const int svalue = static_cast<qint32>(value);
     p2_index9_t index = {0};
     p2_index23_t index_augs = {0};
 
+    m_IR.set_wz(false);
     m_IR.set_im(true);
     Q_UNUSED(scale)
 
-    index.i.sup = true;
     /*
      * Structure of the 9 bit non-augmented index
      *
@@ -3803,36 +3805,18 @@ bool P2Asm::parse_index(P2Atom& src, int scale)
      *      = 2: for RDWORD/WRWORD
      *      = 4: for RDLONG/WRLONG/WMLONG
      */
-    if (pre && inc) {
-        index.i.U = true;
-        index.i.P = false;
-        index.i.N = 1;
-    }
-
-    if (pre && dec) {
-        negate = true;
-        index.i.U = true;
-        index.i.P = false;
-        index.i.N = -1;
-    }
-
+    index.i.sup = true;
     index.i.S = ptrb;
-
-    if (post && inc) {
-        index.i.U = true;
-        index.i.P = true;
+    index.i.U = inc || dec;
+    index.i.P = post;
+    if (inc)
         index.i.N = 1;
-    }
-
-    if (post && dec) {
-        negate = true;
-        index.i.U = true;
-        index.i.P = true;
+    if (dec)
         index.i.N = -1;
-    }
+
+    m_IR.set_augs();
 
     if (src.has_trait(tr_INDEX)) {
-        p2_LONG value = src.index_long();
 
         if (src.has_trait(tr_AUGMENTED)) {
             /*
@@ -3851,13 +3835,16 @@ bool P2Asm::parse_index(P2Atom& src, int scale)
              *      + P: false to use PTRx + INDEX, true to use PTRx (post-modify)
              *      + NNNNNNNNNNN_NNNNNNNNN: 20 bit unscaled index
              */
-            if (negate)
-                value = -value;
-            const int ivalue = static_cast<qint32>(value);
-            if (ivalue < -0x80000 || ivalue > 0x7ffff) {
+
+            src.add_trait(tr_AUGMENTED);
+
+            if (svalue < -0x80000 || svalue > 0x7ffff) {
                 m_errors += tr("Pointer index $%1 is out of bounds.")
                             .arg(value, 8, 16, QChar('0'));
                 emit Error(m_pass, m_lineno, m_errors.last());
+            }
+            if (svalue == -20000) {
+                qDebug("Hit me!");
             }
             index_augs.i.sup = index.i.sup;
             index_augs.i.S = index.i.S;
@@ -3866,50 +3853,62 @@ bool P2Asm::parse_index(P2Atom& src, int scale)
             index_augs.i.N = value & A20MASK;
 
             m_IR.set_augs(index_augs.aug);
+            m_IR.set_src(value & COG_MASK);
+            return result;
+        }
 
-        } else {
-
-            if (negate)
-                value = -value;
-            const int ivalue = static_cast<qint32>(value);
-
-            if (m_v33mode) {
-                if (index.i.U) {
-                    if (ivalue < -16 || ivalue > 16 || ivalue == 0) {
-                        m_errors += tr("Pointer index $%1 is invalid.")
-                                    .arg(value, 8, 16, QChar('0'));
-                        emit Error(m_pass, m_lineno, m_errors.last());
-                        result = false;
-                    }
-                    if (value == 16)
-                        value = 0;
-                    index.i.N = static_cast<char>(value & 31);
-                } else {
-                    if (ivalue < -32 || ivalue > 31) {
-                        m_errors += tr("Pointer index $%1 is invalid.")
-                                    .arg(value, 8, 16, QChar('0'));
-                        emit Error(m_pass, m_lineno, m_errors.last());
-                        result = false;
-                    }
-                    index.i.P = ivalue < 0;
-                    index.i.N = static_cast<char>(value & 31);
-                }
-            } else {
-                if (ivalue < -16 || ivalue > 15) {
-                    m_errors += tr("Pointer index $%1 is invalid.")
+        if (m_v33mode) {
+            if (index.i.U) {
+                if (svalue < -16 || svalue > 16 || svalue == 0) {
+                    m_errors += tr("Pointer index %1 ($%2) is invalid.")
+                                .arg(svalue)
                                 .arg(value, 8, 16, QChar('0'));
                     emit Error(m_pass, m_lineno, m_errors.last());
                     result = false;
                 }
+                if (svalue == 16)
+                    index.i.N = 0;
+                else
+                    index.i.N = static_cast<char>(value & 31);
+            } else {
+                if (svalue < -32 || svalue > 31) {
+                    m_errors += tr("Pointer index %1 ($%2) is invalid.")
+                                .arg(svalue)
+                                .arg(value, 8, 16, QChar('0'));
+                    emit Error(m_pass, m_lineno, m_errors.last());
+                    result = false;
+                }
+                index.i.P = svalue < 0;
                 index.i.N = static_cast<char>(value & 31);
             }
-
-            m_IR.set_augs();
+        } else {
+            if (svalue < -16 || svalue > 15) {
+                m_errors += tr("Pointer index %1 ($%1) is invalid.")
+                            .arg(value, 8, 16, QChar('0'));
+                emit Error(m_pass, m_lineno, m_errors.last());
+                result = false;
+            }
+            index.i.N = static_cast<char>(value & 31);
         }
-    }
 
-    m_IR.set_src(index.src);
+        m_IR.set_src(index.src);
+    }
     return result;
+}
+
+/**
+ * @brief Set the source %src in the opcode and check for errors
+ * @return true if no error, or false for error
+ */
+P2Atom P2Asm::parse_src_ptrx(int scale, P2Opcode::ImmFlag flag)
+{
+    m_IR.set_src_imm(flag);
+    P2Atom src = parse_expression();
+    if (!m_IR.set_src(src, m_ORG, m_ORGH))
+        error_dst_or_src();
+    if (offs_PTRA == src.get_long() || offs_PTRB == src.get_long())
+        parse_index(scale, src);
+    return src;
 }
 
 /**
@@ -4189,9 +4188,7 @@ bool P2Asm::parse_D_IM_S_PTRx_WCZ(int scale)
         P2Atom dst = parse_dst();
         if (!mandatory_COMMA())
             return false;
-        P2Atom src = parse_src(P2Opcode::imm_to_im);
-        if (offs_PTRA == src.get_long() || offs_PTRB == src.get_long())
-            parse_index(src, scale);
+        P2Atom src = parse_src_ptrx(scale, P2Opcode::imm_to_im);
     }
     optional_WCZ();
     return end_of_line();
@@ -4213,9 +4210,7 @@ bool P2Asm::parse_D_IM_S_PTRx(int scale)
         P2Atom dst = parse_dst();
         if (!mandatory_COMMA())
             return false;
-        P2Atom src = parse_src(P2Opcode::imm_to_im);
-        if (offs_PTRA == src.get_long() || offs_PTRB == src.get_long())
-            parse_index(src, scale);
+        P2Atom src = parse_src_ptrx(scale, P2Opcode::imm_to_im);
     }
     return end_of_line();
 }
@@ -4518,9 +4513,7 @@ bool P2Asm::parse_WZ_D_IM_S_PTRx(int scale)
         P2Atom dst = parse_dst(P2Opcode::imm_to_wz);
         if (!mandatory_COMMA())
             return false;
-        P2Atom src = parse_src(P2Opcode::imm_to_im);
-        if (offs_PTRA == src.get_long() || offs_PTRB == src.get_long())
-            parse_index(src, scale);
+        P2Atom src = parse_src_ptrx(scale, P2Opcode::imm_to_im);
     }
     return end_of_line();
 }

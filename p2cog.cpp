@@ -174,7 +174,7 @@ void P2Cog::wr_PTRB(p2_LONG addr)
  * @param c new C flag
  */
 void P2Cog::updateC(bool c) {
-    if (IR.op.wc)
+    if (IR.op7.wc)
         C = static_cast<p2_LONG>(c) & 1;
 }
 
@@ -183,7 +183,7 @@ void P2Cog::updateC(bool c) {
  * @param z new Z flag
  */
 void P2Cog::updateZ(bool z) {
-    if (IR.op.wz)
+    if (IR.op7.wz)
         C = static_cast<p2_LONG>(z) & 1;
 }
 
@@ -193,7 +193,7 @@ void P2Cog::updateZ(bool z) {
  */
 void P2Cog::updateD(p2_LONG d)
 {
-    COG.RAM[IR.op.dst] = d;
+    COG.RAM[IR.op7.dst] = d;
 }
 
 /**
@@ -325,10 +325,10 @@ void P2Cog::augmentS(bool f)
 {
     if (f) {
         if (S_aug.isValid()) {
-            S = S_aug.toUInt() | IR.op.src;
+            S = S_aug.toUInt() | IR.op7.src;
             S_aug.clear();
         } else {
-            S = IR.op.src;
+            S = IR.op7.src;
         }
     }
     if (S_next.isValid()) {
@@ -346,10 +346,10 @@ void P2Cog::augmentD(bool f)
 {
     if (f) {
         if (D_aug.isValid()) {
-            D = D_aug.toUInt() | IR.op.dst;
+            D = D_aug.toUInt() | IR.op7.dst;
             D_aug.clear();
         } else {
-            D = IR.op.dst;
+            D = IR.op7.dst;
         }
     }
 }
@@ -651,7 +651,7 @@ p2_LONG P2Cog::check_wait_flag(p2_opcode_u IR, p2_LONG value1, p2_LONG value2, b
     p2_LONG hubcycles;
     const p2_instx1_e inst1 = static_cast<p2_instx1_e>(IR.opcode & p2_INSTR_MASK1);
     const p2_instx2_e inst2 = static_cast<p2_instx2_e>(IR.opcode & p2_INSTR_MASK2);
-    const p2_opcode_e opcode = static_cast<p2_opcode_e>(IR.op.inst);
+    const p2_opcode_e opcode = static_cast<p2_opcode_e>(IR.op7.inst);
 
     if (WAIT.flag) {
         switch (WAIT.mode) {
@@ -724,7 +724,7 @@ p2_LONG P2Cog::check_wait_flag(p2_opcode_u IR, p2_LONG value1, p2_LONG value2, b
         if (0x02024 == (IR.opcode & 0x3ffff))
             check_wait_int_state();
 
-        switch (IR.op.dst) {
+        switch (IR.op7.dst) {
         case 0x10:
             WAIT.flag = FLAGS.f_INT ? 0 : 1;
             WAIT.mode = FLAGS.f_INT ? p2_WAIT_NONE : p2_WAIT_FLAG;
@@ -798,8 +798,8 @@ p2_LONG P2Cog::check_wait_flag(p2_opcode_u IR, p2_LONG value1, p2_LONG value2, b
         WAIT.mode = p2_WAIT_HUB;
 
     } else if ((opcode == p2_OPCODE_WRBYTE) ||
-               (opcode == p2_OPCODE_WRLONG && IR.op.wc) ||
-               (opcode == p2_OPCODE_WMLONG && IR.op.wc && IR.op.wz)) {
+               (opcode == p2_OPCODE_WRLONG && IR.op7.wc) ||
+               (opcode == p2_OPCODE_WMLONG && IR.op7.wc && IR.op7.wz)) {
 
         HUBOP = 1;
         WAIT.flag = hubcycles + 2;
@@ -936,11 +936,11 @@ int P2Cog::decode()
             SKIPF >>= 1;
     } while (SKIPF & 1);
 
-    S = COG.RAM[IR.op.src]; // set S to COG[src]
-    D = COG.RAM[IR.op.dst]; // set D to COG[dst]
+    S = COG.RAM[IR.op7.src]; // set S to COG[src]
+    D = COG.RAM[IR.op7.dst]; // set D to COG[dst]
 
     // check for the condition
-    if (!conditional(IR.op.cond))
+    if (!conditional(IR.op7.cond))
         return cycles;
 
     if (SKIP) {
@@ -952,7 +952,7 @@ int P2Cog::decode()
     }
 
     // Dispatch to op_xxx() functions
-    switch (IR.op.inst) {
+    switch (IR.op7.inst) {
     case p2_ROR:
         cycles = op_ROR();
         break;
@@ -1304,7 +1304,7 @@ int P2Cog::decode()
     case p2_ROLWORD_ALTSN_ALTGN:
         switch (IR.op9.inst) {
         case p2_ROLWORD_ALTGW:
-            if (IR.op.src == 0) {
+            if (IR.op7.src == 0) {
                 cycles = op_rolword_altgw();
                 break;
             }
@@ -1313,14 +1313,14 @@ int P2Cog::decode()
             cycles = op_rolword();
             break;
         case p2_ALTSN:
-            if (IR.op.src == 0 && IR.op.im == 1) {
+            if (IR.op7.src == 0 && IR.op7.im == 1) {
                 cycles = op_altsn_d();
                 break;
             }
             cycles = op_altsn();
             break;
         case p2_ALTGN:
-            if (IR.op.src == 0 && IR.op.im == 1) {
+            if (IR.op7.src == 0 && IR.op7.im == 1) {
                 cycles = op_altgn_d();
                 break;
             }
@@ -1334,28 +1334,28 @@ int P2Cog::decode()
     case p2_ALTSB_ALTGB_ALTSW_ALTGW:
         switch (IR.op9.inst) {
         case p2_ALTSB:
-            if (IR.op.src == 0 && IR.op.im == 1) {
+            if (IR.op7.src == 0 && IR.op7.im == 1) {
                 cycles = op_altsb_d();
                 break;
             }
             cycles = op_altsb();
             break;
         case p2_ALTGB:
-            if (IR.op.src == 0 && IR.op.im == 1) {
+            if (IR.op7.src == 0 && IR.op7.im == 1) {
                 cycles = op_altgb_d();
                 break;
             }
             cycles = op_altgb();
             break;
         case p2_ALTSW:
-            if (IR.op.src == 0 && IR.op.im == 1) {
+            if (IR.op7.src == 0 && IR.op7.im == 1) {
                 cycles = op_altsw_d();
                 break;
             }
             cycles = op_altsw();
             break;
         case p2_ALTGW:
-            if (IR.op.src == 0 && IR.op.im == 1) {
+            if (IR.op7.src == 0 && IR.op7.im == 1) {
                 cycles = op_altgw_d();
                 break;
             }
@@ -1369,28 +1369,28 @@ int P2Cog::decode()
     case p2_ALTR_ALTD_ALTS_ALTB:
         switch (IR.op9.inst) {
         case p2_ALTR:
-            if (IR.op.src == 0 && IR.op.im == 1) {
+            if (IR.op7.src == 0 && IR.op7.im == 1) {
                 cycles = op_altr_d();
                 break;
             }
             cycles = op_altr();
             break;
         case p2_ALTD:
-            if (IR.op.src == 0 && IR.op.im == 1) {
+            if (IR.op7.src == 0 && IR.op7.im == 1) {
                 cycles = op_altd_d();
                 break;
             }
             cycles = op_altd();
             break;
         case p2_ALTS:
-            if (IR.op.src == 0 && IR.op.im == 1) {
+            if (IR.op7.src == 0 && IR.op7.im == 1) {
                 cycles = op_alts_d();
                 break;
             }
             cycles = op_alts();
             break;
         case p2_ALTB:
-            if (IR.op.src == 0 && IR.op.im == 1) {
+            if (IR.op7.src == 0 && IR.op7.im == 1) {
                 cycles = op_altb_d();
                 break;
             }
@@ -1404,7 +1404,7 @@ int P2Cog::decode()
     case p2_ALTI_SETR_SETD_SETS:
         switch (IR.op9.inst) {
         case p2_ALTI:
-            if (IR.op.im == 1 && IR.op.src == 0x164 /* 101100100 */) {
+            if (IR.op7.im == 1 && IR.op7.src == 0x164 /* 101100100 */) {
                 cycles = op_alti_d();
                 break;
             }
@@ -1427,14 +1427,14 @@ int P2Cog::decode()
     case p2_DECOD_BMASK_CRCBIT_CRCNIB:
         switch (IR.op9.inst) {
         case p2_DECOD:
-            if (IR.op.im == 0 && IR.op.src == IR.op.dst) {
+            if (IR.op7.im == 0 && IR.op7.src == IR.op7.dst) {
                 cycles = op_decod_d();
                 break;
             }
             cycles = op_decod();
             break;
         case p2_BMASK:
-            if (IR.op.im == 0 && IR.op.src == IR.op.dst) {
+            if (IR.op7.im == 0 && IR.op7.src == IR.op7.dst) {
                 cycles = op_bmask_d();
                 break;
             }
@@ -1638,11 +1638,11 @@ int P2Cog::decode()
         break;
 
     case p2_TJV_OPDST_empty:
-        if (IR.op.wc == 0) {
-            if (IR.op.wz == 0) {
+        if (IR.op7.wc == 0) {
+            if (IR.op7.wz == 0) {
                 cycles = op_tjv();
             } else {
-                switch (IR.op.dst) {
+                switch (IR.op7.dst) {
                 case p2_OPDST_JINT:
                     cycles = op_jint();
                     break;
@@ -1766,7 +1766,7 @@ int P2Cog::decode()
     case p2_WRPIN_AKPIN_WXPIN:
         switch (IR.op8.inst) {
         case p2_WRPIN:
-            if (IR.op.wz == 1 && IR.op.dst == 1) {
+            if (IR.op7.wz == 1 && IR.op7.dst == 1) {
                 cycles = op_akpin();
                 break;
             }
@@ -1835,7 +1835,7 @@ int P2Cog::decode()
     case p2_XINIT_XSTOP_XZERO:
         switch (IR.op8.inst) {
         case p2_XINIT:
-            if (IR.op.wz == 1 && IR.op.im == 1 && IR.op.src == 0 && IR.op.dst == 0) {
+            if (IR.op7.wz == 1 && IR.op7.im == 1 && IR.op7.src == 0 && IR.op7.dst == 0) {
                 cycles = op_xstop();
                 break;
             }
@@ -1906,7 +1906,7 @@ int P2Cog::decode()
         break;
 
     case p2_OPSRC:
-        switch (IR.op.src) {
+        switch (IR.op7.src) {
         case p2_OPSRC_HUBSET:
             cycles = op_hubset();
             break;
@@ -1968,7 +1968,7 @@ int P2Cog::decode()
             cycles = op_getct();
             break;
         case p2_OPSRC_GETRND:
-            if (IR.op.dst == 0) {
+            if (IR.op7.dst == 0) {
                 cycles = op_getrnd_cz();
                 break;
             }
@@ -1999,7 +1999,7 @@ int P2Cog::decode()
             cycles = op_setse4();
             break;
         case p2_OPSRC_X24:
-            switch (IR.op.dst) {
+            switch (IR.op7.dst) {
             case p2_OPX24_POLLINT:
                 cycles = op_pollint();
                 break;
@@ -2144,21 +2144,21 @@ int P2Cog::decode()
             cycles = op_jmp();
             break;
         case p2_OPSRC_CALL_RET:
-            if (IR.op.im == 0) {
+            if (IR.op7.im == 0) {
                 cycles = op_call();
                 break;
             }
             cycles = op_ret();
             break;
         case p2_OPSRC_CALLA_RETA:
-            if (IR.op.im == 0) {
+            if (IR.op7.im == 0) {
                 cycles = op_calla();
                 break;
             }
             cycles = op_reta();
             break;
         case p2_OPSRC_CALLB_RETB:
-            if (IR.op.im == 0) {
+            if (IR.op7.im == 0) {
                 cycles = op_callb();
                 break;
             }
@@ -2224,35 +2224,35 @@ int P2Cog::decode()
             cycles = op_cogatn();
             break;
         case p2_OPSRC_TESTP_W_DIRL:
-            cycles = (IR.op.wc == IR.op.wz) ? op_testp_w()
+            cycles = (IR.op7.wc == IR.op7.wz) ? op_testp_w()
                                             : op_dirl();
             break;
         case p2_OPSRC_TESTPN_W_DIRH:
-            cycles = (IR.op.wc == IR.op.wz) ? op_testpn_w()
+            cycles = (IR.op7.wc == IR.op7.wz) ? op_testpn_w()
                                             : op_dirh();
             break;
         case p2_OPSRC_TESTP_AND_DIRC:
-            cycles = (IR.op.wc == IR.op.wz) ? op_testp_and()
+            cycles = (IR.op7.wc == IR.op7.wz) ? op_testp_and()
                                             : op_dirc();
             break;
         case p2_OPSRC_TESTPN_AND_DIRNC:
-            cycles = (IR.op.wc == IR.op.wz) ? op_testpn_and()
+            cycles = (IR.op7.wc == IR.op7.wz) ? op_testpn_and()
                                             : op_dirnc();
             break;
         case p2_OPSRC_TESTP_OR_DIRZ:
-            cycles = (IR.op.wc == IR.op.wz) ? op_testp_or()
+            cycles = (IR.op7.wc == IR.op7.wz) ? op_testp_or()
                                             : op_dirz();
             break;
         case p2_OPSRC_TESTPN_OR_DIRNZ:
-            cycles = (IR.op.wc == IR.op.wz) ? op_testpn_or()
+            cycles = (IR.op7.wc == IR.op7.wz) ? op_testpn_or()
                                             : op_dirnz();
             break;
         case p2_OPSRC_TESTP_XOR_DIRRND:
-            cycles = (IR.op.wc == IR.op.wz) ? op_testp_xor()
+            cycles = (IR.op7.wc == IR.op7.wz) ? op_testp_xor()
                                             : op_dirrnd();
             break;
         case p2_OPSRC_TESTPN_XOR_DIRNOT:
-            cycles = (IR.op.wc == IR.op.wz) ? op_testpn_xor()
+            cycles = (IR.op7.wc == IR.op7.wz) ? op_testpn_xor()
                                             : op_dirnot();
             break;
 
@@ -2377,7 +2377,7 @@ int P2Cog::decode()
             cycles = op_wrz();
             break;
         case p2_OPSRC_WRNZ_MODCZ:
-            cycles = (IR.op.wc || IR.op.wz) ? op_modcz()
+            cycles = (IR.op7.wc || IR.op7.wz) ? op_modcz()
                                             : op_wrnz();
             break;
         case p2_OPSRC_SETSCP:
@@ -2497,7 +2497,7 @@ int P2Cog::op_ROR()
 {
     if (0 == IR.opcode)
         return op_NOP();
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const p2_QUAD accu = U64(D) << 32 | U64(D);
     const p2_LONG result = U32L(accu >> shift);
@@ -2521,7 +2521,7 @@ int P2Cog::op_ROR()
  */
 int P2Cog::op_ROL()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const p2_QUAD accu = U64(D) << 32 | U64(D);
     const p2_LONG result = U32H(accu << shift);
@@ -2545,7 +2545,7 @@ int P2Cog::op_ROL()
  */
 int P2Cog::op_SHR()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const p2_QUAD accu = U64(D);
     const p2_LONG result = U32L(accu >> shift);
@@ -2569,7 +2569,7 @@ int P2Cog::op_SHR()
  */
 int P2Cog::op_SHL()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const p2_QUAD accu = U64(D) << 32;
     const p2_LONG result = U32H(accu << shift);
@@ -2593,7 +2593,7 @@ int P2Cog::op_SHL()
  */
 int P2Cog::op_RCR()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const p2_QUAD accu = U64(D) | C ? HMAX : 0;
     const p2_LONG result = U32L(accu >> shift);
@@ -2617,7 +2617,7 @@ int P2Cog::op_RCR()
  */
 int P2Cog::op_RCL()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const p2_QUAD accu = U64(D) << 32 | C ? LMAX : 0;
     const p2_LONG result = U32H(accu << shift);
@@ -2641,7 +2641,7 @@ int P2Cog::op_RCL()
  */
 int P2Cog::op_SAR()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const p2_QUAD accu = U64(D) | (D & MSB) ? HMAX : 0;
     const p2_LONG result = U32L(accu >> shift);
@@ -2665,7 +2665,7 @@ int P2Cog::op_SAR()
  */
 int P2Cog::op_SAL()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const p2_QUAD accu = U64(D) << 32 | (D & LSB) ? LMAX : 0;
     const p2_LONG result = U32H(accu << shift);
@@ -2689,7 +2689,7 @@ int P2Cog::op_SAL()
  */
 int P2Cog::op_ADD()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_QUAD accu = U64(D) + U64(S);
     const p2_LONG result = U32L(accu);
     updateC((accu >> 32) & 1);
@@ -2712,7 +2712,7 @@ int P2Cog::op_ADD()
  */
 int P2Cog::op_ADDX()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_QUAD accu = U64(D) + U64(S) + C;
     const p2_LONG result = U32L(accu);
     updateC((accu >> 32) & 1);
@@ -2735,7 +2735,7 @@ int P2Cog::op_ADDX()
  */
 int P2Cog::op_adds()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const bool sign = (S32(D) ^ S32(S)) < 0;
     const qint64 accu = SX64(D) + SX64(S);
     const p2_LONG result = U32L(accu);
@@ -2759,7 +2759,7 @@ int P2Cog::op_adds()
  */
 int P2Cog::op_addsx()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar sign = (D ^ (S + C)) >> 31;
     const qint64 accu = SX64(D) + SX64(S) + C;
     const p2_LONG result = U32L(accu);
@@ -2783,7 +2783,7 @@ int P2Cog::op_addsx()
  */
 int P2Cog::op_sub()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_QUAD accu = U64(D) - U64(S);
     const p2_LONG result = U32L(accu);
     updateC((accu >> 32) & 1);
@@ -2806,7 +2806,7 @@ int P2Cog::op_sub()
  */
 int P2Cog::op_subx()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_QUAD accu = U64(D) - (U64(S) + C);
     const p2_LONG result = U32L(accu);
     updateC((accu >> 32) & 1);
@@ -2829,7 +2829,7 @@ int P2Cog::op_subx()
  */
 int P2Cog::op_subs()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const bool sign = (S32(D) ^ S32(S)) < 0;
     const qint64 accu = SX64(D) - SX64(S);
     const p2_LONG result = U32L(accu);
@@ -2853,7 +2853,7 @@ int P2Cog::op_subs()
  */
 int P2Cog::op_subsx()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar sign = (D ^ (S + C)) >> 31;
     const qint64 accu = SX64(D) - (SX64(S) + C);
     const p2_LONG result = U32L(accu);
@@ -2876,7 +2876,7 @@ int P2Cog::op_subsx()
  */
 int P2Cog::op_cmp()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_QUAD accu = U64(D) - U64(S);
     const p2_LONG result = U32L(accu);
     updateC((accu >> 32) & 1);
@@ -2897,7 +2897,7 @@ int P2Cog::op_cmp()
  */
 int P2Cog::op_cmpx()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_QUAD accu = U64(D) - (U64(S) + C);
     const p2_LONG result = U32L(accu);
     updateC((accu >> 32) & 1);
@@ -2918,7 +2918,7 @@ int P2Cog::op_cmpx()
  */
 int P2Cog::op_cmps()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const bool sign = (S32(D) ^ S32(S)) < 0;
     const qint64 accu = SX64(D) - SX64(S);
     const p2_LONG result = U32L(accu);
@@ -2940,7 +2940,7 @@ int P2Cog::op_cmps()
  */
 int P2Cog::op_cmpsx()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar sign = (D ^ (S + C)) >> 31;
     const qint64 accu = SX64(D) - (SX64(S) + C);
     const p2_LONG result = U32L(accu);
@@ -2962,7 +2962,7 @@ int P2Cog::op_cmpsx()
  */
 int P2Cog::op_cmpr()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_QUAD accu = U64(S) - U64(D);
     const p2_LONG result = U32L(accu);
     updateC((accu >> 32) & 1);
@@ -2983,7 +2983,7 @@ int P2Cog::op_cmpr()
  */
 int P2Cog::op_cmpm()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_QUAD accu = U64(D) - U64(S);
     const p2_LONG result = U32L(accu);
     updateC((accu >> 31) & 1);
@@ -3005,7 +3005,7 @@ int P2Cog::op_cmpm()
  */
 int P2Cog::op_subr()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_QUAD accu = U64(S) - U64(D);
     const p2_LONG result = U32L(accu);
     updateC((accu >> 32) & 1);
@@ -3027,7 +3027,7 @@ int P2Cog::op_subr()
  */
 int P2Cog::op_cmpsub()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     if (D < S) {
         // Do not change D
         const p2_LONG result = D;
@@ -3057,7 +3057,7 @@ int P2Cog::op_cmpsub()
  */
 int P2Cog::op_fge()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     if (D < S) {
         const p2_LONG result = S;
         updateC(1);
@@ -3084,7 +3084,7 @@ int P2Cog::op_fge()
  */
 int P2Cog::op_fle()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     if (D > S) {
         const p2_LONG result = S;
         updateC(1);
@@ -3111,7 +3111,7 @@ int P2Cog::op_fle()
  */
 int P2Cog::op_fges()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     if (S32(D) < S32(S)) {
         const p2_LONG result = S;
         updateC(1);
@@ -3138,7 +3138,7 @@ int P2Cog::op_fges()
  */
 int P2Cog::op_fles()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     if (S32(D) > S32(S)) {
         const p2_LONG result = S;
         updateC(1);
@@ -3166,7 +3166,7 @@ int P2Cog::op_fles()
  */
 int P2Cog::op_sumc()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const bool sign = (S32(D) ^ S32(S)) < 0;
     const p2_QUAD accu = C ? U64(D) - U64(S) : U64(D) + U64(S);
     const p2_LONG result = U32L(accu);
@@ -3190,7 +3190,7 @@ int P2Cog::op_sumc()
  */
 int P2Cog::op_sumnc()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const bool sign = (S32(D) ^ S32(S)) < 0;
     const p2_QUAD accu = !C ? U64(D) - U64(S) : U64(D) + U64(S);
     const p2_LONG result = U32L(accu);
@@ -3214,7 +3214,7 @@ int P2Cog::op_sumnc()
  */
 int P2Cog::op_sumz()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const bool sign = (S32(D) ^ S32(S)) < 0;
     const p2_QUAD accu = Z ? U64(D) - U64(S) : U64(D) + U64(S);
     const p2_LONG result = U32L(accu);
@@ -3238,7 +3238,7 @@ int P2Cog::op_sumz()
  */
 int P2Cog::op_sumnz()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const bool sign = (S32(D) ^ S32(S)) < 0;
     const p2_QUAD accu = !Z ? U64(D) - U64(S) : U64(D) + U64(S);
     const p2_LONG result = U32L(accu);
@@ -3260,7 +3260,7 @@ int P2Cog::op_sumnz()
  */
 int P2Cog::op_testb_w()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const uchar bit = (D >> shift) & 1;
     updateC(bit);
@@ -3280,7 +3280,7 @@ int P2Cog::op_testb_w()
  */
 int P2Cog::op_testbn_w()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const uchar bit = (~D >> shift) & 1;
     updateC(bit);
@@ -3300,7 +3300,7 @@ int P2Cog::op_testbn_w()
  */
 int P2Cog::op_testb_and()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const uchar bit = (D >> shift) & 1;
     updateC(C & bit);
@@ -3320,7 +3320,7 @@ int P2Cog::op_testb_and()
  */
 int P2Cog::op_testbn_and()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const uchar bit = (~D >> shift) & 1;
     updateC(C & bit);
@@ -3340,7 +3340,7 @@ int P2Cog::op_testbn_and()
  */
 int P2Cog::op_testb_or()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const uchar bit = (D >> shift) & 1;
     updateC(C | bit);
@@ -3360,7 +3360,7 @@ int P2Cog::op_testb_or()
  */
 int P2Cog::op_testbn_or()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const uchar bit = (~D >> shift) & 1;
     updateC(C | bit);
@@ -3380,7 +3380,7 @@ int P2Cog::op_testbn_or()
  */
 int P2Cog::op_testb_xor()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const uchar bit = (D >> shift) & 1;
     updateC(C ^ bit);
@@ -3400,7 +3400,7 @@ int P2Cog::op_testb_xor()
  */
 int P2Cog::op_testbn_xor()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const uchar bit = (~D >> shift) & 1;
     updateC(C ^ bit);
@@ -3418,7 +3418,7 @@ int P2Cog::op_testbn_xor()
  */
 int P2Cog::op_bitl()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const p2_LONG bit = LSB << shift;
     const p2_LONG result = D & ~bit;
@@ -3437,7 +3437,7 @@ int P2Cog::op_bitl()
  */
 int P2Cog::op_bith()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const p2_LONG bit = LSB << shift;
     const p2_LONG result = D | bit;
@@ -3456,7 +3456,7 @@ int P2Cog::op_bith()
  */
 int P2Cog::op_bitc()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const p2_LONG bit = LSB << shift;
     const p2_LONG result = C ? D | bit : D & ~bit;
@@ -3475,7 +3475,7 @@ int P2Cog::op_bitc()
  */
 int P2Cog::op_bitnc()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const p2_LONG bit = LSB << shift;
     const p2_LONG result = !C ? D | bit : D & ~bit;
@@ -3494,7 +3494,7 @@ int P2Cog::op_bitnc()
  */
 int P2Cog::op_bitz()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const p2_LONG bit = LSB << shift;
     const p2_LONG result = Z ? D | bit : D & ~bit;
@@ -3513,7 +3513,7 @@ int P2Cog::op_bitz()
  */
 int P2Cog::op_bitnz()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const p2_LONG bit = LSB << shift;
     const p2_LONG result = !Z ? D | bit : D & ~bit;
@@ -3532,7 +3532,7 @@ int P2Cog::op_bitnz()
  */
 int P2Cog::op_bitrnd()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const p2_LONG bit = LSB << shift;
     const p2_LONG result = (HUB->random(shift) & 1) ? D | bit : D & ~bit;
@@ -3551,7 +3551,7 @@ int P2Cog::op_bitrnd()
  */
 int P2Cog::op_bitnot()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const p2_LONG bit = LSB << shift;
     const p2_LONG result = D ^ bit;
@@ -3574,7 +3574,7 @@ int P2Cog::op_bitnot()
  */
 int P2Cog::op_and()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = D & S;
     updateC(P2Util::parity(result));
     updateZ(result == 0);
@@ -3595,7 +3595,7 @@ int P2Cog::op_and()
  */
 int P2Cog::op_andn()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = D & ~S;
     updateC(P2Util::parity(result));
     updateZ(result == 0);
@@ -3616,7 +3616,7 @@ int P2Cog::op_andn()
  */
 int P2Cog::op_or()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = D | S;
     updateC(P2Util::parity(result));
     updateZ(result == 0);
@@ -3637,7 +3637,7 @@ int P2Cog::op_or()
  */
 int P2Cog::op_xor()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = D ^ S;
     updateC(P2Util::parity(result));
     updateZ(result == 0);
@@ -3658,7 +3658,7 @@ int P2Cog::op_xor()
  */
 int P2Cog::op_muxc()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = (D & ~S) | (C ? S : 0);
     updateC(P2Util::parity(result));
     updateZ(result == 0);
@@ -3679,7 +3679,7 @@ int P2Cog::op_muxc()
  */
 int P2Cog::op_muxnc()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = (D & ~S) | (!C ? S : 0);
     updateC(P2Util::parity(result));
     updateZ(result == 0);
@@ -3700,7 +3700,7 @@ int P2Cog::op_muxnc()
  */
 int P2Cog::op_muxz()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = (D & ~S) | (Z ? S : 0);
     updateC(P2Util::parity(result));
     updateZ(result == 0);
@@ -3721,7 +3721,7 @@ int P2Cog::op_muxz()
  */
 int P2Cog::op_muxnz()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = (D & ~S) | (!Z ? S : 0);
     updateC(P2Util::parity(result));
     updateZ(result == 0);
@@ -3742,7 +3742,7 @@ int P2Cog::op_muxnz()
  */
 int P2Cog::op_mov()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = S;
     updateC(result >> 31);
     updateZ(result == 0);
@@ -3764,7 +3764,7 @@ int P2Cog::op_mov()
  */
 int P2Cog::op_not()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = ~S;
     updateC(result >> 31);
     updateZ(result == 0);
@@ -3786,7 +3786,7 @@ int P2Cog::op_not()
  */
 int P2Cog::op_abs()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const qint32 result = qAbs(S32(S));
     updateC(S >> 31);
     updateZ(result == 0);
@@ -3808,7 +3808,7 @@ int P2Cog::op_abs()
  */
 int P2Cog::op_neg()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const qint32 result = 0 - S32(S);
     updateC(result >> 31);
     updateZ(result == 0);
@@ -3830,7 +3830,7 @@ int P2Cog::op_neg()
  */
 int P2Cog::op_negc()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const qint32 result = C ? 0 - S32(S) : S32(32);
     updateC(result >> 31);
     updateZ(result == 0);
@@ -3852,7 +3852,7 @@ int P2Cog::op_negc()
  */
 int P2Cog::op_negnc()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const qint32 result = !C ? 0 - S32(S) : S32(32);
     updateC(result >> 31);
     updateZ(result == 0);
@@ -3874,7 +3874,7 @@ int P2Cog::op_negnc()
  */
 int P2Cog::op_negz()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const qint32 result = Z ? 0 - S32(S) : S32(32);
     updateC(result >> 31);
     updateZ(result == 0);
@@ -3896,7 +3896,7 @@ int P2Cog::op_negz()
  */
 int P2Cog::op_negnz()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const qint32 result = !Z ? 0 - S32(S) : S32(32);
     updateC(result >> 31);
     updateZ(result == 0);
@@ -3917,7 +3917,7 @@ int P2Cog::op_negnz()
  */
 int P2Cog::op_incmod()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = (D == S) ? 0 : D + 1;
     updateC(result == 0);
     updateZ(result == 0);
@@ -3938,7 +3938,7 @@ int P2Cog::op_incmod()
  */
 int P2Cog::op_decmod()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = (D == 0) ? S : D - 1;
     updateC(result == S);
     updateZ(result == 0);
@@ -3959,7 +3959,7 @@ int P2Cog::op_decmod()
  */
 int P2Cog::op_zerox()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const p2_LONG msb = (D >> (shift - 1)) & 1;
     const p2_LONG mask = 0xffffffffu << shift;
@@ -3983,7 +3983,7 @@ int P2Cog::op_zerox()
  */
 int P2Cog::op_signx()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const p2_LONG msb = (D >> (shift - 1)) & 1;
     const p2_LONG mask = FULL << shift;
@@ -4008,7 +4008,7 @@ int P2Cog::op_signx()
  */
 int P2Cog::op_encod()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = static_cast<p2_LONG>(P2Util::encode(S));
     updateC(S != 0);
     updateZ(result == 0);
@@ -4030,7 +4030,7 @@ int P2Cog::op_encod()
  */
 int P2Cog::op_ones()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = P2Util::ones(S);
     updateC(result & 1);
     updateZ(result == 0);
@@ -4050,7 +4050,7 @@ int P2Cog::op_ones()
  */
 int P2Cog::op_test()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = D & S;
     updateC(P2Util::parity(result));
     updateZ(result == 0);
@@ -4070,7 +4070,7 @@ int P2Cog::op_test()
  */
 int P2Cog::op_testn()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = D & ~S;
     updateC(P2Util::parity(result));
     updateZ(result == 0);
@@ -4087,7 +4087,7 @@ int P2Cog::op_testn()
  */
 int P2Cog::op_setnib()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = static_cast<uchar>((IR.opcode >> 19) & 7) * 4;
     const p2_LONG mask = LNIBBLE << shift;
     const p2_LONG result = (D & ~mask) | ((S << shift) & mask);
@@ -4105,7 +4105,7 @@ int P2Cog::op_setnib()
  */
 int P2Cog::op_setnib_altsn()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -4121,7 +4121,7 @@ int P2Cog::op_setnib_altsn()
  */
 int P2Cog::op_getnib()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = static_cast<uchar>((IR.opcode >> 19) & 7) * 4;
     const p2_LONG result = (S >> shift) & LNIBBLE;
     updateD(result);
@@ -4138,7 +4138,7 @@ int P2Cog::op_getnib()
  */
 int P2Cog::op_getnib_altgn()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -4154,7 +4154,7 @@ int P2Cog::op_getnib_altgn()
  */
 int P2Cog::op_rolnib()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = static_cast<uchar>((IR.opcode >> 19) & 7) * 4;
     const p2_LONG result = (D << 4) | ((S >> shift) & LNIBBLE);
     updateD(result);
@@ -4171,7 +4171,7 @@ int P2Cog::op_rolnib()
  */
 int P2Cog::op_rolnib_altgn()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -4185,7 +4185,7 @@ int P2Cog::op_rolnib_altgn()
  */
 int P2Cog::op_setbyte()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = static_cast<uchar>((IR.opcode >> 19) & 3) * 8;
     const p2_LONG mask = LBYTE << shift;
     const p2_LONG result = (D & ~mask) | ((S << shift) & mask);
@@ -4203,7 +4203,7 @@ int P2Cog::op_setbyte()
  */
 int P2Cog::op_setbyte_altsb()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -4219,7 +4219,7 @@ int P2Cog::op_setbyte_altsb()
  */
 int P2Cog::op_getbyte()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = static_cast<uchar>((IR.opcode >> 19) & 3) * 8;
     const p2_LONG result = (S >> shift) & LBYTE;
     updateD(result);
@@ -4236,7 +4236,7 @@ int P2Cog::op_getbyte()
  */
 int P2Cog::op_getbyte_altgb()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -4252,7 +4252,7 @@ int P2Cog::op_getbyte_altgb()
  */
 int P2Cog::op_rolbyte()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = static_cast<uchar>((IR.opcode >> 19) & 3) * 8;
     const p2_LONG result = (D << 8) | ((S >> shift) & LBYTE);
     updateD(result);
@@ -4269,7 +4269,7 @@ int P2Cog::op_rolbyte()
  */
 int P2Cog::op_rolbyte_altgb()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -4283,8 +4283,8 @@ int P2Cog::op_rolbyte_altgb()
  */
 int P2Cog::op_setword()
 {
-    augmentS(IR.op.im);
-    const uchar shift = IR.op.wz ? 16 : 0;
+    augmentS(IR.op7.im);
+    const uchar shift = IR.op7.wz ? 16 : 0;
     const p2_LONG mask = LWORD << shift;
     const p2_LONG result = (D & ~mask) | ((S >> shift) & mask);
     updateD(result);
@@ -4301,7 +4301,7 @@ int P2Cog::op_setword()
  */
 int P2Cog::op_setword_altsw()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -4317,8 +4317,8 @@ int P2Cog::op_setword_altsw()
  */
 int P2Cog::op_getword()
 {
-    augmentS(IR.op.im);
-    const uchar shift = IR.op.wz * 16;
+    augmentS(IR.op7.im);
+    const uchar shift = IR.op7.wz * 16;
     const p2_LONG result = (S >> shift) & LWORD;
     updateD(result);
     return 2;
@@ -4349,8 +4349,8 @@ int P2Cog::op_getword_altgw()
  */
 int P2Cog::op_rolword()
 {
-    augmentS(IR.op.im);
-    const uchar shift = IR.op.wz * 16;
+    augmentS(IR.op7.im);
+    const uchar shift = IR.op7.wz * 16;
     const p2_LONG result = (D << 16) & ((S >> shift) & LWORD);
     updateD(result);
     return 2;
@@ -4382,7 +4382,7 @@ int P2Cog::op_rolword_altgw()
  */
 int P2Cog::op_altsn()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -4414,7 +4414,7 @@ int P2Cog::op_altsn_d()
  */
 int P2Cog::op_altgn()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -4446,7 +4446,7 @@ int P2Cog::op_altgn_d()
  */
 int P2Cog::op_altsb()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -4478,7 +4478,7 @@ int P2Cog::op_altsb_d()
  */
 int P2Cog::op_altgb()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -4510,7 +4510,7 @@ int P2Cog::op_altgb_d()
  */
 int P2Cog::op_altsw()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -4542,7 +4542,7 @@ int P2Cog::op_altsw_d()
  */
 int P2Cog::op_altgw()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -4573,7 +4573,7 @@ int P2Cog::op_altgw_d()
  */
 int P2Cog::op_altr()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -4602,7 +4602,7 @@ int P2Cog::op_altr_d()
  */
 int P2Cog::op_altd()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -4631,7 +4631,7 @@ int P2Cog::op_altd_d()
  */
 int P2Cog::op_alts()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -4660,7 +4660,7 @@ int P2Cog::op_alts_d()
  */
 int P2Cog::op_altb()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -4689,7 +4689,7 @@ int P2Cog::op_altb_d()
  */
 int P2Cog::op_alti()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -4720,7 +4720,7 @@ int P2Cog::op_alti_d()
  */
 int P2Cog::op_setr()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -4736,7 +4736,7 @@ int P2Cog::op_setr()
  */
 int P2Cog::op_setd()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -4752,7 +4752,7 @@ int P2Cog::op_setd()
  */
 int P2Cog::op_sets()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -4768,7 +4768,7 @@ int P2Cog::op_sets()
  */
 int P2Cog::op_decod()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const uchar shift = S & 31;
     const p2_LONG result = LSB << shift;
     updateD(result);
@@ -4805,7 +4805,7 @@ int P2Cog::op_bmask()
     const uchar shift = S & 31;
     const p2_LONG result = U32L((Q_UINT64_C(2) << shift) - 1);
     updateD(result);
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -4839,7 +4839,7 @@ int P2Cog::op_bmask_d()
  */
 int P2Cog::op_crcbit()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = ((C ^ D) & 1) ? (D >> 1) ^ S : (D >> 1);
     updateC(D & 1);
     updateD(result);
@@ -4860,7 +4860,7 @@ int P2Cog::op_crcbit()
  */
 int P2Cog::op_crcnib()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     // FIXME: Huh?
     return 2;
 }
@@ -4875,7 +4875,7 @@ int P2Cog::op_crcnib()
  */
 int P2Cog::op_muxnits()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG mask = S | ((S & 0xaaaaaaaa) >> 1) | ((S & 0x55555555) << 1);
     const p2_LONG result = (D & ~mask) | (S & mask);
     updateD(result);
@@ -4892,7 +4892,7 @@ int P2Cog::op_muxnits()
  */
 int P2Cog::op_muxnibs()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG mask0 = S | ((S & 0xaaaaaaaa) >> 1) | ((S & 0x55555555) << 1);
     const p2_LONG mask1 = ((mask0 & 0xcccccccc) >> 2) | ((mask0 & 0x33333333) << 2);
     const p2_LONG result = (D & ~mask1) | (S & mask1);
@@ -4913,7 +4913,7 @@ int P2Cog::op_muxnibs()
  */
 int P2Cog::op_muxq()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = (D & ~Q) | (S & Q);
     updateD(result);
     return 2;
@@ -4931,7 +4931,7 @@ int P2Cog::op_muxq()
  */
 int P2Cog::op_movbyts()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     union {
         p2_LONG l;
         p2_BYTE b[4];
@@ -4957,7 +4957,7 @@ int P2Cog::op_movbyts()
  */
 int P2Cog::op_mul()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = U16(D) * U16(S);
     updateZ(result == 0);
     updateD(result);
@@ -4976,7 +4976,7 @@ int P2Cog::op_mul()
  */
 int P2Cog::op_muls()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const qint32 result = S16(D) * S16(S);
     updateZ(result == 0);
     updateD(result);
@@ -4995,7 +4995,7 @@ int P2Cog::op_muls()
  */
 int P2Cog::op_sca()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = (U16(D) * U16(S)) >> 16;
     updateZ(result == 0);
     S_next = result;
@@ -5015,7 +5015,7 @@ int P2Cog::op_sca()
  */
 int P2Cog::op_scas()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const qint32 result = (S16(D) * S16(S)) >> 14;
     updateZ(result == 0);
     S_next = result;
@@ -5032,7 +5032,7 @@ int P2Cog::op_scas()
  */
 int P2Cog::op_addpix()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     union {
         p2_LONG l;
         p2_BYTE b[4];
@@ -5057,7 +5057,7 @@ int P2Cog::op_addpix()
  */
 int P2Cog::op_mulpix()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -5071,7 +5071,7 @@ int P2Cog::op_mulpix()
  */
 int P2Cog::op_blnpix()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -5085,7 +5085,7 @@ int P2Cog::op_blnpix()
  */
 int P2Cog::op_mixpix()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -5101,7 +5101,7 @@ int P2Cog::op_mixpix()
  */
 int P2Cog::op_addct1()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -5117,7 +5117,7 @@ int P2Cog::op_addct1()
  */
 int P2Cog::op_addct2()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -5133,7 +5133,7 @@ int P2Cog::op_addct2()
  */
 int P2Cog::op_addct3()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -5149,7 +5149,7 @@ int P2Cog::op_addct3()
  */
 int P2Cog::op_wmlong()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -5165,7 +5165,7 @@ int P2Cog::op_wmlong()
  */
 int P2Cog::op_rqpin()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -5181,7 +5181,7 @@ int P2Cog::op_rqpin()
  */
 int P2Cog::op_rdpin()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -5198,7 +5198,7 @@ int P2Cog::op_rdpin()
  */
 int P2Cog::op_rdlut()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     p2_LONG result;
     if (S == offs_PTRA) {
         result = HUB->rd_LONG(COG.REG.PTRA);
@@ -5226,7 +5226,7 @@ int P2Cog::op_rdlut()
  */
 int P2Cog::op_rdbyte()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     p2_BYTE result;
     if (S == offs_PTRA) {
         result = HUB->rd_BYTE(COG.REG.PTRA);
@@ -5254,7 +5254,7 @@ int P2Cog::op_rdbyte()
  */
 int P2Cog::op_rdword()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     p2_WORD result;
     if (S == offs_PTRA) {
         result = HUB->rd_WORD(COG.REG.PTRA);
@@ -5282,7 +5282,7 @@ int P2Cog::op_rdword()
  */
 int P2Cog::op_rdlong()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     p2_LONG result;
     if (S == offs_PTRA) {
         result = HUB->rd_LONG(COG.REG.PTRA);
@@ -5341,23 +5341,23 @@ int P2Cog::op_popb()
  */
 int P2Cog::op_calld()
 {
-    augmentS(IR.op.im);
-    if (IR.op.wc && IR.op.wz) {
-        if (IR.op.dst == offs_IJMP3 && IR.op.src == offs_IRET3)
+    augmentS(IR.op7.im);
+    if (IR.op7.wc && IR.op7.wz) {
+        if (IR.op7.dst == offs_IJMP3 && IR.op7.src == offs_IRET3)
             return op_resi3();
-        if (IR.op.dst == offs_IJMP2 && IR.op.src == offs_IRET2)
+        if (IR.op7.dst == offs_IJMP2 && IR.op7.src == offs_IRET2)
             return op_resi2();
-        if (IR.op.dst == offs_IJMP1 && IR.op.src == offs_IRET1)
+        if (IR.op7.dst == offs_IJMP1 && IR.op7.src == offs_IRET1)
             return op_resi1();
-        if (IR.op.dst == offs_INA && IR.op.src == offs_INB)
+        if (IR.op7.dst == offs_INA && IR.op7.src == offs_INB)
             return op_resi0();
-        if (IR.op.dst == offs_INB && IR.op.src == offs_IRET3)
+        if (IR.op7.dst == offs_INB && IR.op7.src == offs_IRET3)
             return op_reti3();
-        if (IR.op.dst == offs_INB && IR.op.src == offs_IRET2)
+        if (IR.op7.dst == offs_INB && IR.op7.src == offs_IRET2)
             return op_reti2();
-        if (IR.op.dst == offs_INB && IR.op.src == offs_IRET1)
+        if (IR.op7.dst == offs_INB && IR.op7.src == offs_IRET1)
             return op_reti1();
-        if (IR.op.dst == offs_INB && IR.op.src == offs_INB)
+        if (IR.op7.dst == offs_INB && IR.op7.src == offs_INB)
             return op_reti0();
     }
     const p2_LONG result = (U32(C) << 31) | (U32(Z) << 30) | PC;
@@ -5499,8 +5499,8 @@ int P2Cog::op_reti0()
  */
 int P2Cog::op_callpa()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.wz);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.wz);
     const p2_LONG stack = (C << 31) | (Z << 30) | PC;
     const p2_LONG address = S;
     const p2_LONG result = D;
@@ -5521,8 +5521,8 @@ int P2Cog::op_callpa()
  */
 int P2Cog::op_callpb()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.wz);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.wz);
     const p2_LONG stack = (C << 31) | (Z << 30) | PC;
     const p2_LONG address = S;
     const p2_LONG result = D;
@@ -5543,7 +5543,7 @@ int P2Cog::op_callpb()
  */
 int P2Cog::op_djz()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = D - 1;
     const p2_LONG address = S;
     if (result == ZERO)
@@ -5562,7 +5562,7 @@ int P2Cog::op_djz()
  */
 int P2Cog::op_djnz()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = D - 1;
     const p2_LONG address = S;
     if (result != ZERO)
@@ -5581,7 +5581,7 @@ int P2Cog::op_djnz()
  */
 int P2Cog::op_djf()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = D - 1;
     const p2_LONG address = S;
     if (result == FULL)
@@ -5600,7 +5600,7 @@ int P2Cog::op_djf()
  */
 int P2Cog::op_djnf()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = D - 1;
     const p2_LONG address = S;
     if (result != FULL)
@@ -5619,7 +5619,7 @@ int P2Cog::op_djnf()
  */
 int P2Cog::op_ijz()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = D + 1;
     const p2_LONG address = S;
     if (result == ZERO)
@@ -5638,7 +5638,7 @@ int P2Cog::op_ijz()
  */
 int P2Cog::op_ijnz()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = D + 1;
     const p2_LONG address = S;
     if (result != ZERO)
@@ -5657,7 +5657,7 @@ int P2Cog::op_ijnz()
  */
 int P2Cog::op_tjz()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = D;
     const p2_LONG address = S;
     if (result == ZERO)
@@ -5676,7 +5676,7 @@ int P2Cog::op_tjz()
  */
 int P2Cog::op_tjnz()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = D;
     const p2_LONG address = S;
     if (result != ZERO)
@@ -5695,7 +5695,7 @@ int P2Cog::op_tjnz()
  */
 int P2Cog::op_tjf()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = D;
     const p2_LONG address = S;
     if (result == FULL)
@@ -5714,7 +5714,7 @@ int P2Cog::op_tjf()
  */
 int P2Cog::op_tjnf()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = D;
     const p2_LONG address = S;
     if (result != FULL)
@@ -5733,7 +5733,7 @@ int P2Cog::op_tjnf()
  */
 int P2Cog::op_tjs()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = D & MSB;
     const p2_LONG address = S;
     if (result)
@@ -5752,7 +5752,7 @@ int P2Cog::op_tjs()
  */
 int P2Cog::op_tjns()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = D & MSB;
     const p2_LONG address = S;
     if (!result)
@@ -5771,7 +5771,7 @@ int P2Cog::op_tjns()
  */
 int P2Cog::op_tjv()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG result = (D >> 31) ^ C;
     const p2_LONG address = S;
     if (result)
@@ -5790,7 +5790,7 @@ int P2Cog::op_tjv()
  */
 int P2Cog::op_jint()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (FLAGS.f_INT)
         updatePC(address);
@@ -5808,7 +5808,7 @@ int P2Cog::op_jint()
  */
 int P2Cog::op_jct1()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (FLAGS.f_CT1)
         updatePC(address);
@@ -5826,7 +5826,7 @@ int P2Cog::op_jct1()
  */
 int P2Cog::op_jct2()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (FLAGS.f_CT2)
         updatePC(address);
@@ -5844,7 +5844,7 @@ int P2Cog::op_jct2()
  */
 int P2Cog::op_jct3()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (FLAGS.f_CT3)
         updatePC(address);
@@ -5862,7 +5862,7 @@ int P2Cog::op_jct3()
  */
 int P2Cog::op_jse1()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (FLAGS.f_SE1)
         updatePC(address);
@@ -5880,7 +5880,7 @@ int P2Cog::op_jse1()
  */
 int P2Cog::op_jse2()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (FLAGS.f_SE2)
         updatePC(address);
@@ -5898,7 +5898,7 @@ int P2Cog::op_jse2()
  */
 int P2Cog::op_jse3()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (FLAGS.f_SE3)
         updatePC(address);
@@ -5916,7 +5916,7 @@ int P2Cog::op_jse3()
  */
 int P2Cog::op_jse4()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (FLAGS.f_SE4)
         updatePC(address);
@@ -5934,7 +5934,7 @@ int P2Cog::op_jse4()
  */
 int P2Cog::op_jpat()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (FLAGS.f_PAT)
         updatePC(address);
@@ -5952,7 +5952,7 @@ int P2Cog::op_jpat()
  */
 int P2Cog::op_jfbw()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (FLAGS.f_FBW)
         updatePC(address);
@@ -5970,7 +5970,7 @@ int P2Cog::op_jfbw()
  */
 int P2Cog::op_jxmt()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (FLAGS.f_XMT)
         updatePC(address);
@@ -5988,7 +5988,7 @@ int P2Cog::op_jxmt()
  */
 int P2Cog::op_jxfi()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (FLAGS.f_XFI)
         updatePC(address);
@@ -6006,7 +6006,7 @@ int P2Cog::op_jxfi()
  */
 int P2Cog::op_jxro()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (FLAGS.f_XRO)
         updatePC(address);
@@ -6024,7 +6024,7 @@ int P2Cog::op_jxro()
  */
 int P2Cog::op_jxrl()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (FLAGS.f_XRL)
         updatePC(address);
@@ -6042,7 +6042,7 @@ int P2Cog::op_jxrl()
  */
 int P2Cog::op_jatn()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (FLAGS.f_ATN)
         updatePC(address);
@@ -6060,7 +6060,7 @@ int P2Cog::op_jatn()
  */
 int P2Cog::op_jqmt()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (FLAGS.f_QMT)
         updatePC(address);
@@ -6078,7 +6078,7 @@ int P2Cog::op_jqmt()
  */
 int P2Cog::op_jnint()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (!FLAGS.f_INT)
         updatePC(address);
@@ -6096,7 +6096,7 @@ int P2Cog::op_jnint()
  */
 int P2Cog::op_jnct1()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (!FLAGS.f_CT1)
         updatePC(address);
@@ -6114,7 +6114,7 @@ int P2Cog::op_jnct1()
  */
 int P2Cog::op_jnct2()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (!FLAGS.f_CT2)
         updatePC(address);
@@ -6132,7 +6132,7 @@ int P2Cog::op_jnct2()
  */
 int P2Cog::op_jnct3()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (!FLAGS.f_CT3)
         updatePC(address);
@@ -6150,7 +6150,7 @@ int P2Cog::op_jnct3()
  */
 int P2Cog::op_jnse1()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (!FLAGS.f_SE1)
         updatePC(address);
@@ -6168,7 +6168,7 @@ int P2Cog::op_jnse1()
  */
 int P2Cog::op_jnse2()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (!FLAGS.f_SE2)
         updatePC(address);
@@ -6186,7 +6186,7 @@ int P2Cog::op_jnse2()
  */
 int P2Cog::op_jnse3()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (!FLAGS.f_SE3)
         updatePC(address);
@@ -6204,7 +6204,7 @@ int P2Cog::op_jnse3()
  */
 int P2Cog::op_jnse4()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (!FLAGS.f_SE4)
         updatePC(address);
@@ -6222,7 +6222,7 @@ int P2Cog::op_jnse4()
  */
 int P2Cog::op_jnpat()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (!FLAGS.f_PAT)
         updatePC(address);
@@ -6240,7 +6240,7 @@ int P2Cog::op_jnpat()
  */
 int P2Cog::op_jnfbw()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (!FLAGS.f_FBW)
         updatePC(address);
@@ -6258,7 +6258,7 @@ int P2Cog::op_jnfbw()
  */
 int P2Cog::op_jnxmt()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (!FLAGS.f_XMT)
         updatePC(address);
@@ -6276,7 +6276,7 @@ int P2Cog::op_jnxmt()
  */
 int P2Cog::op_jnxfi()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (!FLAGS.f_XFI)
         updatePC(address);
@@ -6294,7 +6294,7 @@ int P2Cog::op_jnxfi()
  */
 int P2Cog::op_jnxro()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (!FLAGS.f_XRO)
         updatePC(address);
@@ -6312,7 +6312,7 @@ int P2Cog::op_jnxro()
  */
 int P2Cog::op_jnxrl()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (!FLAGS.f_XRL)
         updatePC(address);
@@ -6330,7 +6330,7 @@ int P2Cog::op_jnxrl()
  */
 int P2Cog::op_jnatn()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (!FLAGS.f_ATN)
         updatePC(address);
@@ -6348,7 +6348,7 @@ int P2Cog::op_jnatn()
  */
 int P2Cog::op_jnqmt()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     const p2_LONG address = S;
     if (!FLAGS.f_QMT)
         updatePC(address);
@@ -6366,8 +6366,8 @@ int P2Cog::op_jnqmt()
  */
 int P2Cog::op_1011110_1()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.wz);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.wz);
     return 2;
 }
 
@@ -6382,8 +6382,8 @@ int P2Cog::op_1011110_1()
  */
 int P2Cog::op_1011111_0()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.wz);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.wz);
     return 2;
 }
 
@@ -6399,10 +6399,10 @@ int P2Cog::op_1011111_0()
  */
 int P2Cog::op_setpat()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.im);
-    PAT.mode = IR.op.wc ? (IR.op.wz ? p2_PAT_PB_EQ : p2_PAT_PB_NE)
-                        : (IR.op.wz ? p2_PAT_PA_EQ : p2_PAT_PA_NE);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.im);
+    PAT.mode = IR.op7.wc ? (IR.op7.wz ? p2_PAT_PB_EQ : p2_PAT_PB_NE)
+                        : (IR.op7.wz ? p2_PAT_PA_EQ : p2_PAT_PA_NE);
     PAT.mask = D;
     PAT.match = S;
     return 2;
@@ -6419,8 +6419,8 @@ int P2Cog::op_setpat()
  */
 int P2Cog::op_wrpin()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.wz);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.wz);
     return 2;
 }
 
@@ -6435,7 +6435,7 @@ int P2Cog::op_wrpin()
  */
 int P2Cog::op_akpin()
 {
-    augmentS(IR.op.im);
+    augmentS(IR.op7.im);
     return 2;
 }
 
@@ -6450,8 +6450,8 @@ int P2Cog::op_akpin()
  */
 int P2Cog::op_wxpin()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.wz);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.wz);
     return 2;
 }
 
@@ -6466,8 +6466,8 @@ int P2Cog::op_wxpin()
  */
 int P2Cog::op_wypin()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.wz);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.wz);
     return 2;
 }
 
@@ -6482,8 +6482,8 @@ int P2Cog::op_wypin()
  */
 int P2Cog::op_wrlut()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.wz);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.wz);
     const p2_LONG address = D;
     const p2_LONG result = S;
     updateLUT(address, result);
@@ -6501,8 +6501,8 @@ int P2Cog::op_wrlut()
  */
 int P2Cog::op_wrbyte()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.wz);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.wz);
     p2_LONG address = get_pointer(S, 2);
     p2_BYTE result = static_cast<p2_BYTE>(D);
     HUB->wr_BYTE(address, result);
@@ -6520,8 +6520,8 @@ int P2Cog::op_wrbyte()
  */
 int P2Cog::op_wrword()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.wz);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.wz);
     p2_LONG address = get_pointer(S, 1);
     p2_WORD result = static_cast<p2_WORD>(D);
     HUB->wr_WORD(address, result);
@@ -6540,8 +6540,8 @@ int P2Cog::op_wrword()
  */
 int P2Cog::op_wrlong()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.wz);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.wz);
     p2_LONG address = get_pointer(S, 0);
     p2_LONG result = D;
     HUB->wr_BYTE(address, result);
@@ -6559,7 +6559,7 @@ int P2Cog::op_wrlong()
  */
 int P2Cog::op_pusha()
 {
-    augmentD(IR.op.wz);
+    augmentD(IR.op7.wz);
     p2_LONG result = D;
     pushPTRA(result);
     return 2;
@@ -6576,7 +6576,7 @@ int P2Cog::op_pusha()
  */
 int P2Cog::op_pushb()
 {
-    augmentD(IR.op.wz);
+    augmentD(IR.op7.wz);
     p2_LONG result = D;
     pushPTRB(result);
     return 2;
@@ -6594,8 +6594,8 @@ int P2Cog::op_pushb()
  */
 int P2Cog::op_rdfast()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.wz);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.wz);
     return 2;
 }
 
@@ -6611,8 +6611,8 @@ int P2Cog::op_rdfast()
  */
 int P2Cog::op_wrfast()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.wz);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.wz);
     return 2;
 }
 
@@ -6628,8 +6628,8 @@ int P2Cog::op_wrfast()
  */
 int P2Cog::op_fblock()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.wz);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.wz);
     return 2;
 }
 
@@ -6644,8 +6644,8 @@ int P2Cog::op_fblock()
  */
 int P2Cog::op_xinit()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.wz);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.wz);
     return 2;
 }
 
@@ -6674,8 +6674,8 @@ int P2Cog::op_xstop()
  */
 int P2Cog::op_xzero()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.wz);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.wz);
     return 2;
 }
 
@@ -6690,8 +6690,8 @@ int P2Cog::op_xzero()
  */
 int P2Cog::op_xcont()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.wz);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.wz);
     return 2;
 }
 
@@ -6708,8 +6708,8 @@ int P2Cog::op_xcont()
  */
 int P2Cog::op_rep()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.wz);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.wz);
     updateREP(D, S);
     return 2;
 }
@@ -6727,8 +6727,8 @@ int P2Cog::op_rep()
  */
 int P2Cog::op_coginit()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.wz);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.wz);
     Q_ASSERT(HUB);
     HUB->coginit(D, S, Q);
     return 2;
@@ -6746,8 +6746,8 @@ int P2Cog::op_coginit()
  */
 int P2Cog::op_qmul()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.wz);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.wz);
     return 2;
 }
 
@@ -6763,8 +6763,8 @@ int P2Cog::op_qmul()
  */
 int P2Cog::op_qdiv()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.wz);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.wz);
     return 2;
 }
 
@@ -6780,8 +6780,8 @@ int P2Cog::op_qdiv()
  */
 int P2Cog::op_qfrac()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.wz);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.wz);
     return 2;
 }
 
@@ -6797,8 +6797,8 @@ int P2Cog::op_qfrac()
  */
 int P2Cog::op_qsqrt()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.wz);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.wz);
     return 2;
 }
 
@@ -6814,8 +6814,8 @@ int P2Cog::op_qsqrt()
  */
 int P2Cog::op_qrotate()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.wz);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.wz);
     return 2;
 }
 
@@ -6831,8 +6831,8 @@ int P2Cog::op_qrotate()
  */
 int P2Cog::op_qvector()
 {
-    augmentS(IR.op.im);
-    augmentD(IR.op.wz);
+    augmentS(IR.op7.im);
+    augmentD(IR.op7.wz);
     return 2;
 }
 
@@ -6847,7 +6847,7 @@ int P2Cog::op_qvector()
  */
 int P2Cog::op_hubset()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -6863,7 +6863,7 @@ int P2Cog::op_hubset()
  */
 int P2Cog::op_cogid()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -6878,7 +6878,7 @@ int P2Cog::op_cogid()
  */
 int P2Cog::op_cogstop()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -6909,7 +6909,7 @@ int P2Cog::op_locknew()
  */
 int P2Cog::op_lockret()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -6927,7 +6927,7 @@ int P2Cog::op_lockret()
  */
 int P2Cog::op_locktry()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -6943,7 +6943,7 @@ int P2Cog::op_locktry()
  */
 int P2Cog::op_lockrel()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -6959,7 +6959,7 @@ int P2Cog::op_lockrel()
  */
 int P2Cog::op_qlog()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -6975,7 +6975,7 @@ int P2Cog::op_qlog()
  */
 int P2Cog::op_qexp()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -7203,7 +7203,7 @@ int P2Cog::op_getrnd_cz()
  */
 int P2Cog::op_setdacs()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -7218,7 +7218,7 @@ int P2Cog::op_setdacs()
  */
 int P2Cog::op_setxfrq()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -7249,7 +7249,7 @@ int P2Cog::op_getxacc()
  */
 int P2Cog::op_waitx()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -7264,7 +7264,7 @@ int P2Cog::op_waitx()
  */
 int P2Cog::op_setse1()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -7279,7 +7279,7 @@ int P2Cog::op_setse1()
  */
 int P2Cog::op_setse2()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -7294,7 +7294,7 @@ int P2Cog::op_setse2()
  */
 int P2Cog::op_setse3()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -7309,7 +7309,7 @@ int P2Cog::op_setse3()
  */
 int P2Cog::op_setse4()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -7900,7 +7900,7 @@ int P2Cog::op_nixint3()
  */
 int P2Cog::op_setint1()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -7915,7 +7915,7 @@ int P2Cog::op_setint1()
  */
 int P2Cog::op_setint2()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -7930,7 +7930,7 @@ int P2Cog::op_setint2()
  */
 int P2Cog::op_setint3()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -7947,7 +7947,7 @@ int P2Cog::op_setint3()
  */
 int P2Cog::op_setq()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -7963,7 +7963,7 @@ int P2Cog::op_setq()
  */
 int P2Cog::op_setq2()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -7978,7 +7978,7 @@ int P2Cog::op_setq2()
  */
 int P2Cog::op_push()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -8148,7 +8148,7 @@ int P2Cog::op_retb()
  */
 int P2Cog::op_jmprel()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = PC < 0x400 ? PC + D : PC + D * 4;
     updatePC(result);
     return 2;
@@ -8166,7 +8166,7 @@ int P2Cog::op_jmprel()
  */
 int P2Cog::op_skip()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = D;
     updateSKIP(result);
     return 2;
@@ -8184,7 +8184,7 @@ int P2Cog::op_skip()
  */
 int P2Cog::op_skipf()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -8200,7 +8200,7 @@ int P2Cog::op_skipf()
  */
 int P2Cog::op_execf()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -8248,7 +8248,7 @@ int P2Cog::op_getbrk()
  */
 int P2Cog::op_cogbrk()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -8264,7 +8264,7 @@ int P2Cog::op_cogbrk()
  */
 int P2Cog::op_brk()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -8279,7 +8279,7 @@ int P2Cog::op_brk()
  */
 int P2Cog::op_setluts()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -8294,7 +8294,7 @@ int P2Cog::op_setluts()
  */
 int P2Cog::op_setcy()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -8309,7 +8309,7 @@ int P2Cog::op_setcy()
  */
 int P2Cog::op_setci()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -8324,7 +8324,7 @@ int P2Cog::op_setci()
  */
 int P2Cog::op_setcq()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -8339,7 +8339,7 @@ int P2Cog::op_setcq()
  */
 int P2Cog::op_setcfrq()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -8354,7 +8354,7 @@ int P2Cog::op_setcfrq()
  */
 int P2Cog::op_setcmod()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -8369,7 +8369,7 @@ int P2Cog::op_setcmod()
  */
 int P2Cog::op_setpiv()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -8384,7 +8384,7 @@ int P2Cog::op_setpiv()
  */
 int P2Cog::op_setpix()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -8399,7 +8399,7 @@ int P2Cog::op_setpix()
  */
 int P2Cog::op_cogatn()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -8415,7 +8415,7 @@ int P2Cog::op_cogatn()
  */
 int P2Cog::op_testp_w()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -8431,7 +8431,7 @@ int P2Cog::op_testp_w()
  */
 int P2Cog::op_testpn_w()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -8447,7 +8447,7 @@ int P2Cog::op_testpn_w()
  */
 int P2Cog::op_testp_and()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -8463,7 +8463,7 @@ int P2Cog::op_testp_and()
  */
 int P2Cog::op_testpn_and()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -8479,7 +8479,7 @@ int P2Cog::op_testpn_and()
  */
 int P2Cog::op_testp_or()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -8495,7 +8495,7 @@ int P2Cog::op_testp_or()
  */
 int P2Cog::op_testpn_or()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -8511,7 +8511,7 @@ int P2Cog::op_testpn_or()
  */
 int P2Cog::op_testp_xor()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -8527,7 +8527,7 @@ int P2Cog::op_testp_xor()
  */
 int P2Cog::op_testpn_xor()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     return 2;
 }
 
@@ -8543,7 +8543,7 @@ int P2Cog::op_testpn_xor()
  */
 int P2Cog::op_dirl()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = 0;
     updateC(result);
     updateZ(result);
@@ -8563,7 +8563,7 @@ int P2Cog::op_dirl()
  */
 int P2Cog::op_dirh()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = 1;
     updateC(result);
     updateZ(result);
@@ -8583,7 +8583,7 @@ int P2Cog::op_dirh()
  */
 int P2Cog::op_dirc()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = C;
     updateC(result);
     updateZ(result);
@@ -8603,7 +8603,7 @@ int P2Cog::op_dirc()
  */
 int P2Cog::op_dirnc()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = C ^ 1;
     updateC(result);
     updateZ(result);
@@ -8623,7 +8623,7 @@ int P2Cog::op_dirnc()
  */
 int P2Cog::op_dirz()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = Z;
     updateC(result);
     updateZ(result);
@@ -8643,7 +8643,7 @@ int P2Cog::op_dirz()
  */
 int P2Cog::op_dirnz()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = Z ^ 1;
     updateC(result);
     updateZ(result);
@@ -8663,7 +8663,7 @@ int P2Cog::op_dirnz()
  */
 int P2Cog::op_dirrnd()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = HUB->random(2*ID) & 1;
     updateC(result);
     updateZ(result);
@@ -8683,7 +8683,7 @@ int P2Cog::op_dirrnd()
  */
 int P2Cog::op_dirnot()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = HUB->rd_DIR(D) ^ 1;
     updateC(result);
     updateZ(result);
@@ -8703,7 +8703,7 @@ int P2Cog::op_dirnot()
  */
 int P2Cog::op_outl()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = 0;
     updateC(result);
     updateZ(result);
@@ -8723,7 +8723,7 @@ int P2Cog::op_outl()
  */
 int P2Cog::op_outh()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = 1;
     updateC(result);
     updateZ(result);
@@ -8743,7 +8743,7 @@ int P2Cog::op_outh()
  */
 int P2Cog::op_outc()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = C;
     updateC(result);
     updateZ(result);
@@ -8763,7 +8763,7 @@ int P2Cog::op_outc()
  */
 int P2Cog::op_outnc()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = C ^ 1;
     updateC(result);
     updateZ(result);
@@ -8783,7 +8783,7 @@ int P2Cog::op_outnc()
  */
 int P2Cog::op_outz()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = Z;
     updateC(result);
     updateZ(result);
@@ -8803,7 +8803,7 @@ int P2Cog::op_outz()
  */
 int P2Cog::op_outnz()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = Z ^ 1;
     updateC(result);
     updateZ(result);
@@ -8823,7 +8823,7 @@ int P2Cog::op_outnz()
  */
 int P2Cog::op_outrnd()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = HUB->random(2*ID) & 1;
     updateC(result);
     updateZ(result);
@@ -8843,7 +8843,7 @@ int P2Cog::op_outrnd()
  */
 int P2Cog::op_outnot()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = HUB->rd_OUT(D) ^ 1;
     updateC(result);
     updateZ(result);
@@ -8864,7 +8864,7 @@ int P2Cog::op_outnot()
  */
 int P2Cog::op_fltl()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = 0;
     updateC(result);
     updateZ(result);
@@ -8886,7 +8886,7 @@ int P2Cog::op_fltl()
  */
 int P2Cog::op_flth()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = 1;
     updateC(result);
     updateZ(result);
@@ -8908,7 +8908,7 @@ int P2Cog::op_flth()
  */
 int P2Cog::op_fltc()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = C;
     updateC(result);
     updateZ(result);
@@ -8930,7 +8930,7 @@ int P2Cog::op_fltc()
  */
 int P2Cog::op_fltnc()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = C ^ 1;
     updateC(result);
     updateZ(result);
@@ -8952,7 +8952,7 @@ int P2Cog::op_fltnc()
  */
 int P2Cog::op_fltz()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = Z;
     updateC(result);
     updateZ(result);
@@ -8974,7 +8974,7 @@ int P2Cog::op_fltz()
  */
 int P2Cog::op_fltnz()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = Z ^ 1;
     updateC(result);
     updateZ(result);
@@ -8996,7 +8996,7 @@ int P2Cog::op_fltnz()
  */
 int P2Cog::op_fltrnd()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = HUB->random(2*ID) & 1;
     updateC(result);
     updateZ(result);
@@ -9018,7 +9018,7 @@ int P2Cog::op_fltrnd()
  */
 int P2Cog::op_fltnot()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = HUB->rd_OUT(D);
     updateC(result);
     updateZ(result);
@@ -9040,7 +9040,7 @@ int P2Cog::op_fltnot()
  */
 int P2Cog::op_drvl()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = 0;
     updateC(result);
     updateZ(result);
@@ -9062,7 +9062,7 @@ int P2Cog::op_drvl()
  */
 int P2Cog::op_drvh()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = 1;
     updateC(result);
     updateZ(result);
@@ -9084,7 +9084,7 @@ int P2Cog::op_drvh()
  */
 int P2Cog::op_drvc()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = C;
     updateC(result);
     updateZ(result);
@@ -9106,7 +9106,7 @@ int P2Cog::op_drvc()
  */
 int P2Cog::op_drvnc()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = C ^ 1;
     updateC(result);
     updateZ(result);
@@ -9128,7 +9128,7 @@ int P2Cog::op_drvnc()
  */
 int P2Cog::op_drvz()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = Z;
     updateC(result);
     updateZ(result);
@@ -9150,7 +9150,7 @@ int P2Cog::op_drvz()
  */
 int P2Cog::op_drvnz()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = Z ^ 1;
     updateC(result);
     updateZ(result);
@@ -9172,7 +9172,7 @@ int P2Cog::op_drvnz()
  */
 int P2Cog::op_drvrnd()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = HUB->random(2*ID) & 1;
     updateC(result);
     updateZ(result);
@@ -9194,7 +9194,7 @@ int P2Cog::op_drvrnd()
  */
 int P2Cog::op_drvnot()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     const p2_LONG result = HUB->rd_OUT(D) ^ 1;
     updateC(result);
     updateZ(result);
@@ -9541,8 +9541,8 @@ int P2Cog::op_wrnz()
  */
 int P2Cog::op_modcz()
 {
-    const p2_cond_e cccc = static_cast<p2_cond_e>((IR.op.dst >> 4) & 15);
-    const p2_cond_e zzzz = static_cast<p2_cond_e>((IR.op.dst >> 0) & 15);
+    const p2_cond_e cccc = static_cast<p2_cond_e>((IR.op7.dst >> 4) & 15);
+    const p2_cond_e zzzz = static_cast<p2_cond_e>((IR.op7.dst >> 0) & 15);
     updateC(conditional(cccc));
     updateZ(conditional(zzzz));
     return 2;
@@ -9565,7 +9565,7 @@ int P2Cog::op_modcz()
  */
 int P2Cog::op_setscp()
 {
-    augmentD(IR.op.im);
+    augmentD(IR.op7.im);
     HUB->wr_SCP(D);
     return 2;
 }
@@ -9601,7 +9601,7 @@ int P2Cog::op_getscp()
  */
 int P2Cog::op_jmp_abs()
 {
-    const p2_LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
+    const p2_LONG result = (IR.op7.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
     updatePC(result);
     return 2;
 }
@@ -9619,7 +9619,7 @@ int P2Cog::op_jmp_abs()
 int P2Cog::op_call_abs()
 {
     const p2_LONG stack = (C << 31) | (Z << 30) | PC;
-    const p2_LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
+    const p2_LONG result = (IR.op7.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
     pushK(stack);
     updatePC(result);
     return 2;
@@ -9638,7 +9638,7 @@ int P2Cog::op_call_abs()
 int P2Cog::op_calla_abs()
 {
     const p2_LONG stack = (C << 31) | (Z << 30) | PC;
-    const p2_LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
+    const p2_LONG result = (IR.op7.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
     pushPTRA(stack);
     updatePC(result);
     return 2;
@@ -9657,7 +9657,7 @@ int P2Cog::op_calla_abs()
 int P2Cog::op_callb_abs()
 {
     const p2_LONG stack = (C << 31) | (Z << 30) | PC;
-    const p2_LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
+    const p2_LONG result = (IR.op7.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
     pushPTRB(stack);
     updatePC(result);
     return 2;
@@ -9676,7 +9676,7 @@ int P2Cog::op_callb_abs()
 int P2Cog::op_calld_abs_pa()
 {
     const p2_LONG stack = (C << 31) | (Z << 30) | PC;
-    const p2_LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
+    const p2_LONG result = (IR.op7.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
     pushPA(stack);
     updatePC(result);
     return 2;
@@ -9695,7 +9695,7 @@ int P2Cog::op_calld_abs_pa()
 int P2Cog::op_calld_abs_pb()
 {
     const p2_LONG stack = (C << 31) | (Z << 30) | PC;
-    const p2_LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
+    const p2_LONG result = (IR.op7.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
     pushPB(stack);
     updatePC(result);
     return 2;
@@ -9714,7 +9714,7 @@ int P2Cog::op_calld_abs_pb()
 int P2Cog::op_calld_abs_ptra()
 {
     const p2_LONG stack = (C << 31) | (Z << 30) | PC;
-    const p2_LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
+    const p2_LONG result = (IR.op7.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
     pushPTRA(stack);
     updatePC(result);
     return 2;
@@ -9733,7 +9733,7 @@ int P2Cog::op_calld_abs_ptra()
 int P2Cog::op_calld_abs_ptrb()
 {
     const p2_LONG stack = (C << 31) | (Z << 30) | PC;
-    const p2_LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
+    const p2_LONG result = (IR.op7.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
     pushPTRB(stack);
     updatePC(result);
     return 2;
@@ -9751,7 +9751,7 @@ int P2Cog::op_calld_abs_ptrb()
  */
 int P2Cog::op_loc_pa()
 {
-    const p2_LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
+    const p2_LONG result = (IR.op7.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
     updatePA(result);
     return 2;
 }
@@ -9768,7 +9768,7 @@ int P2Cog::op_loc_pa()
  */
 int P2Cog::op_loc_pb()
 {
-    const p2_LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
+    const p2_LONG result = (IR.op7.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
     updatePB(result);
     return 2;
 }
@@ -9785,7 +9785,7 @@ int P2Cog::op_loc_pb()
  */
 int P2Cog::op_loc_ptra()
 {
-    const p2_LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
+    const p2_LONG result = (IR.op7.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
     updatePTRA(result);
     return 2;
 }
@@ -9802,7 +9802,7 @@ int P2Cog::op_loc_ptra()
  */
 int P2Cog::op_loc_ptrb()
 {
-    const p2_LONG result = (IR.op.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
+    const p2_LONG result = (IR.op7.wc ? (PC + IR.opcode) : IR.opcode) & A20MASK;
     updatePTRB(result);
     return 2;
 }

@@ -97,6 +97,7 @@ public:
 
     bool set_traits(p2_traits_e traits);
     bool add_trait(p2_traits_e traits);
+    bool clr_trait(p2_traits_e traits);
 
     const P2Union& value() const;
     void set_value(const P2Union& value);

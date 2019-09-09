@@ -84,7 +84,7 @@ public:
 
     void set_dst_imm(ImmFlag flag);
     const QVariant& augd() const;
-    void set_AUGD(const QVariant& value = QVariant());
+    void set_augd(const QVariant& value = QVariant());
     bool augd_valid() const;
     p2_LONG augd_value() const;
 

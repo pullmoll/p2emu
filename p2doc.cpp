@@ -718,8 +718,9 @@ p2_token_e P2Doc::token(p2_LONG opcode)
  */
 p2_LONG P2Doc::opcode_inst5(const p2_inst5_e instr)
 {
-    p2_LONG inst5 = static_cast<p2_LONG>(instr) << p2_shift_inst5;
-    return inst5;
+    p2_opcode_u op = {0};
+    op.op5.inst = static_cast<uint>(instr);
+    return op.opcode;
 }
 
 /**
@@ -729,8 +730,9 @@ p2_LONG P2Doc::opcode_inst5(const p2_inst5_e instr)
  */
 p2_LONG P2Doc::opcode_inst7(const p2_inst7_e instr)
 {
-    p2_LONG inst7 = static_cast<p2_LONG>(instr) << p2_shift_inst7;
-    return inst7;
+    p2_opcode_u op = {0};
+    op.op7.inst = static_cast<uint>(instr);
+    return op.opcode;
 }
 
 /**
@@ -740,8 +742,9 @@ p2_LONG P2Doc::opcode_inst7(const p2_inst7_e instr)
  */
 p2_LONG P2Doc::opcode_inst8(const p2_inst8_e instr)
 {
-    p2_LONG inst8 = static_cast<p2_LONG>(instr) << p2_shift_inst8;
-    return inst8;
+    p2_opcode_u op = {0};
+    op.op8.inst = static_cast<uint>(instr);
+    return op.opcode;
 }
 
 /**
@@ -751,8 +754,9 @@ p2_LONG P2Doc::opcode_inst8(const p2_inst8_e instr)
  */
 p2_LONG P2Doc::opcode_inst9(const p2_inst9_e instr)
 {
-    p2_LONG inst9 = static_cast<p2_LONG>(instr) << p2_shift_inst9;
-    return inst9;
+    p2_opcode_u op = {0};
+    op.op9.inst = static_cast<uint>(instr);
+    return op.opcode;
 }
 
 /**
@@ -762,8 +766,10 @@ p2_LONG P2Doc::opcode_inst9(const p2_inst9_e instr)
  */
 p2_LONG P2Doc::opcode_opdst(const p2_opdst_e instr)
 {
-    p2_LONG opdst = opcode_inst9(p2_OPDST) | (static_cast<p2_LONG>(instr) << p2_shift_opdst);
-    return opdst;
+    p2_opcode_u op = {0};
+    op.op9.inst = static_cast<uint>(p2_OPDST);
+    op.op9.dst = static_cast<uint>(instr);
+    return op.opcode;
 }
 
 
@@ -774,8 +780,10 @@ p2_LONG P2Doc::opcode_opdst(const p2_opdst_e instr)
  */
 p2_LONG P2Doc::opcode_opsrc(const p2_opsrc_e instr)
 {
-    p2_LONG opsrc = opcode_inst7(p2_OPSRC) | (static_cast<p2_LONG>(instr) << p2_shift_opsrc);
-    return opsrc;
+    p2_opcode_u op = {0};
+    op.op7.inst = static_cast<uint>(p2_OPSRC);
+    op.op7.src = static_cast<uint>(instr);
+    return op.opcode;
 }
 
 /**
@@ -785,8 +793,11 @@ p2_LONG P2Doc::opcode_opsrc(const p2_opsrc_e instr)
  */
 p2_LONG P2Doc::opcode_opx24(const p2_opx24_e instr)
 {
-    p2_LONG opx24 = opcode_inst7(p2_OPSRC) | (static_cast<p2_LONG>(instr) << p2_shift_opdst) | (static_cast<p2_LONG>(p2_OPSRC_X24) << p2_shift_opsrc);
-    return opx24;
+    p2_opcode_u op = {0};
+    op.op7.inst = static_cast<uint>(p2_OPSRC);
+    op.op7.dst = static_cast<uint>(instr);
+    op.op7.src = static_cast<uint>(p2_OPSRC_X24);
+    return op.opcode;
 }
 
 /**

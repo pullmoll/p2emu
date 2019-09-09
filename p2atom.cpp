@@ -241,6 +241,19 @@ bool P2Atom::add_trait(p2_traits_e trait)
 }
 
 /**
+ * @brief Clear a trait from the atom's trait
+ * @param trait trait to clear
+ * @return true if added, false if not changed
+ */
+bool P2Atom::clr_trait(p2_traits_e trait)
+{
+    if (!p2_has_trait(m_trait, trait))
+        return false;
+    p2_clr_trait(m_trait, trait);
+    return true;
+}
+
+/**
  * @brief Return the atom's value
  * @return const reference to the value
  */

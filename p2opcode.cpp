@@ -193,7 +193,7 @@ const QVariant& P2Opcode::augd() const
 /**
  * @brief Set the current AUGD value (or clear if value is QVariant(), the default)
  */
-void P2Opcode::set_AUGD(const QVariant& value)
+void P2Opcode::set_augd(const QVariant& value)
 {
     m_augd = value;
 }
@@ -311,7 +311,7 @@ p2_LONG P2Opcode::opcode() const
  */
 p2_cond_e P2Opcode::cond() const
 {
-    return static_cast<p2_cond_e>(m_u.op.cond);
+    return static_cast<p2_cond_e>(m_u.op7.cond);
 }
 
 /**
@@ -320,7 +320,7 @@ p2_cond_e P2Opcode::cond() const
  */
 p2_inst7_e P2Opcode::inst7() const
 {
-    return static_cast<p2_inst7_e>(m_u.op.inst);
+    return static_cast<p2_inst7_e>(m_u.op7.inst);
 }
 
 /**
@@ -348,7 +348,7 @@ p2_inst9_e P2Opcode::inst9() const
 p2_opsrc_e P2Opcode::opsrc() const
 {
     if (p2_OPSRC == inst7())
-        return static_cast<p2_opsrc_e>(m_u.op.src);
+        return static_cast<p2_opsrc_e>(m_u.op7.src);
     return p2_OPSRC_INVALID;
 }
 
@@ -359,7 +359,7 @@ p2_opsrc_e P2Opcode::opsrc() const
 p2_opx24_e P2Opcode::opx24() const
 {
     if (p2_OPSRC_X24 == opsrc())
-        return static_cast<p2_opx24_e>(m_u.op.dst);
+        return static_cast<p2_opx24_e>(m_u.op7.dst);
     return p2_OPX24_INVALID;
 }
 
@@ -369,7 +369,7 @@ p2_opx24_e P2Opcode::opx24() const
  */
 bool P2Opcode::wc() const
 {
-    return m_u.op.wc;
+    return m_u.op7.wc;
 }
 
 /**
@@ -378,7 +378,7 @@ bool P2Opcode::wc() const
  */
 bool P2Opcode::wz() const
 {
-    return m_u.op.wz;
+    return m_u.op7.wz;
 }
 
 /**
@@ -387,7 +387,7 @@ bool P2Opcode::wz() const
  */
 bool P2Opcode::im() const
 {
-    return m_u.op.im;
+    return m_u.op7.im;
 }
 
 /**
@@ -396,7 +396,7 @@ bool P2Opcode::im() const
  */
 p2_LONG P2Opcode::dst() const
 {
-    return m_u.op.dst;
+    return m_u.op7.dst;
 }
 
 /**
@@ -405,7 +405,7 @@ p2_LONG P2Opcode::dst() const
  */
 p2_LONG P2Opcode::src() const
 {
-    return m_u.op.src;
+    return m_u.op7.src;
 }
 
 /**
@@ -512,7 +512,7 @@ void P2Opcode::set_opcode(const p2_LONG opcode)
  */
 void P2Opcode::set_cond(const p2_cond_e cond)
 {
-    m_u.op.cond = cond;
+    m_u.op7.cond = cond;
 }
 
 /**
@@ -521,7 +521,7 @@ void P2Opcode::set_cond(const p2_cond_e cond)
  */
 void P2Opcode::set_inst5(const p2_inst5_e inst)
 {
-    m_u.op.inst = static_cast<uint>(inst) << (7 - 5);
+    m_u.op5.inst = static_cast<uint>(inst);
 }
 
 /**
@@ -530,7 +530,7 @@ void P2Opcode::set_inst5(const p2_inst5_e inst)
  */
 void P2Opcode::set_inst7(const p2_inst7_e inst)
 {
-    m_u.op.inst = static_cast<uint>(inst);
+    m_u.op7.inst = static_cast<uint>(inst);
 }
 
 /**
@@ -559,7 +559,7 @@ void P2Opcode::set_inst9(const p2_inst9_e inst)
 void P2Opcode::set_opdst(const p2_opdst_e inst)
 {
     set_inst9(p2_OPDST);
-    m_u.op.dst = static_cast<uint>(inst);
+    m_u.op7.dst = static_cast<uint>(inst);
 }
 
 /**
@@ -570,7 +570,7 @@ void P2Opcode::set_opdst(const p2_opdst_e inst)
 void P2Opcode::set_opsrc(const p2_opsrc_e inst)
 {
     set_inst7(p2_OPSRC);
-    m_u.op.src = static_cast<uint>(inst);
+    m_u.op7.src = static_cast<uint>(inst);
 }
 
 /**
@@ -581,7 +581,7 @@ void P2Opcode::set_opsrc(const p2_opsrc_e inst)
 void P2Opcode::set_opx24(const p2_opx24_e inst)
 {
     set_opsrc(p2_OPSRC_X24);
-    m_u.op.dst = static_cast<uint>(inst);
+    m_u.op7.dst = static_cast<uint>(inst);
 }
 
 /**
@@ -590,7 +590,7 @@ void P2Opcode::set_opx24(const p2_opx24_e inst)
  */
 void P2Opcode::set_dst(const p2_LONG dst)
 {
-    m_u.op.dst = static_cast<uint>(dst);
+    m_u.op7.dst = static_cast<uint>(dst);
 }
 
 /**
@@ -599,7 +599,7 @@ void P2Opcode::set_dst(const p2_LONG dst)
  */
 void P2Opcode::set_src(const p2_LONG src)
 {
-    m_u.op.src = static_cast<uint>(src);
+    m_u.op7.src = static_cast<uint>(src);
 }
 
 /**
@@ -610,8 +610,8 @@ void P2Opcode::set_src(const p2_LONG src)
 void P2Opcode::set_dst_src(const p2_LONG dst, const p2_LONG src)
 {
     Q_ASSERT(0 == (dst & ~p2_mask9));
-    m_u.op.dst = static_cast<uint>(dst);
-    m_u.op.src = static_cast<uint>(src);
+    m_u.op7.dst = static_cast<uint>(dst);
+    m_u.op7.src = static_cast<uint>(src);
 }
 
 /**
@@ -650,8 +650,8 @@ void P2Opcode::set_imm23(const p2_LONG addr)
  */
 void P2Opcode::set_wcz(bool on)
 {
-    m_u.op.wc = on;
-    m_u.op.wz = on;
+    m_u.op7.wc = on;
+    m_u.op7.wz = on;
 }
 
 
@@ -661,7 +661,7 @@ void P2Opcode::set_wcz(bool on)
  */
 void P2Opcode::set_wc(bool on)
 {
-    m_u.op.wc = on;
+    m_u.op7.wc = on;
 }
 
 /**
@@ -670,7 +670,7 @@ void P2Opcode::set_wc(bool on)
  */
 void P2Opcode::set_wz(bool on)
 {
-    m_u.op.wz = on;
+    m_u.op7.wz = on;
 }
 
 /**
@@ -679,7 +679,7 @@ void P2Opcode::set_wz(bool on)
  */
 void P2Opcode::set_im(bool on)
 {
-    m_u.op.im = on;
+    m_u.op7.im = on;
 }
 
 /**
@@ -773,7 +773,7 @@ bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH
         }
     }
 
-    m_u.op.dst = value & COG_MASK;
+    m_u.op7.dst = value & COG_MASK;
     if (value > COG_MASK || p2_has_trait(traits, tr_AUGMENTED) || p2_has_trait(traits, tr_RELATIVE_HUB)) {
         switch (m_imm_dst) {
         case imm_none:
@@ -832,7 +832,7 @@ bool P2Opcode::set_src(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH
         }
     }
 
-    m_u.op.src = value & COG_MASK;
+    m_u.op7.src = value & COG_MASK;
     if (value > COG_MASK || p2_has_trait(traits, tr_AUGMENTED) || p2_has_trait(traits, tr_RELATIVE_HUB)) {
         switch (m_imm_src) {
         case imm_none:
