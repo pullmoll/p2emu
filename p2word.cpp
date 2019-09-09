@@ -1,4 +1,3 @@
-#include <QUrl>
 #include "p2word.h"
 
 P2Word::P2Word(p2_token_e tok, const QStringRef& ref, int lineno)
@@ -6,6 +5,11 @@ P2Word::P2Word(p2_token_e tok, const QStringRef& ref, int lineno)
     , m_tok(tok)
     , m_lineno(lineno)
 {}
+
+bool P2Word::isValid() const
+{
+    return t_invalid != m_tok;
+}
 
 p2_token_e P2Word::tok() const
 {
@@ -42,11 +46,6 @@ int P2Word::end() const
     return m_ref.position() + m_ref.length();
 }
 
-QUrl P2Word::url() const
-{
-    return url(*this);
-}
-
 void P2Word::set_tok(p2_token_e tok)
 {
     m_tok = tok;
@@ -55,15 +54,6 @@ void P2Word::set_tok(p2_token_e tok)
 void P2Word::set_lineno(const int line)
 {
     m_lineno = line;
-}
-
-QUrl P2Word::url(const P2Word& word)
-{
-    QUrl url;
-    url.setPath(key_tv_asm);
-    url.setQuery(word.ref().toString());
-    url.setFragment(QString::number(word.lineno()));
-    return url;
 }
 
 bool P2Word::remove(QVector<P2Word>& words, p2_token_e tok)
@@ -80,11 +70,9 @@ bool P2Word::remove(QVector<P2Word>& words, p2_token_e tok)
 
 bool P2Word::operator==(const P2Word& other) const
 {
-    if (m_tok != other.m_tok)
-        return false;
-    if (m_ref != other.m_ref)
-        return false;
     if (m_lineno != other.m_lineno)
+        return false;
+    if (m_ref.position() != other.m_ref.position())
         return false;
     return true;
 }

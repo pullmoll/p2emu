@@ -34,6 +34,7 @@
 #include <QPainter>
 #include <QComboBox>
 #include <QStandardItemModel>
+#include "p2word.h"
 #include "p2symbolsmodel.h"
 #include "p2referencesdelegate.h"
 
@@ -65,10 +66,8 @@ P2ReferencesDelegate::P2ReferencesDelegate(QObject* parent)
  */
 QWidget* P2ReferencesDelegate::createEditor(QWidget* parent, const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
-    const P2SymbolsModel* model = qobject_cast<const P2SymbolsModel*>(index.model());
-    Q_ASSERT(model);    // assert the model is really P2SymbolsModel
+    const QAbstractItemModel* model = index.model();
     Q_UNUSED(option)
-    Q_UNUSED(index)
     QComboBox* cb = new QComboBox(parent);
     cb->setFont(qvariant_cast<QFont>(model->data(index, Qt::FontRole)));
     cb->setFocusPolicy(Qt::StrongFocus);
@@ -78,30 +77,39 @@ QWidget* P2ReferencesDelegate::createEditor(QWidget* parent, const QStyleOptionV
 
 void P2ReferencesDelegate::setEditorData(QWidget* editor, const QModelIndex& index) const
 {
-    const P2SymbolsModel* model = qobject_cast<const P2SymbolsModel*>(index.model());
-    Q_ASSERT(model);    // assert the model is really P2SymbolsModel
+    const QAbstractItemModel* model = index.model();
     QComboBox* cb = qobject_cast<QComboBox*>(editor);
-    if (!cb)
+    if (nullptr == cb)
         return;
 
+    // clear and refill the QComboBox with updates disabled
     cb->setUpdatesEnabled(false);
     cb->clear();
     QVariant data = model->data(index, Qt::EditRole);
-    QVariantList list = data.toList();
-    QStringList texts;
+    P2Symbol symbol = qvariant_cast<P2Symbol>(data);
 
-    if (list.isEmpty()) {
+    if (symbol.isNull()) {
         cb->setUpdatesEnabled(true);
         return;
     }
 
-    cb->addItem(tr("%1 refs").arg(list.count()));
-    qobject_cast<QStandardItemModel*>(cb->model())->item(0)->setEnabled(false);
-    foreach(const QVariant& var, list) {
-        const P2Word& word = qvariant_cast<P2Word>(var);
-        const QString text = tr("Line #%1").arg(word.lineno());
-        cb->addItem(text, P2Word::url(word));
+    // create a map of QUrl sorted by line number
+    QMap<int,QUrl> urlmap;
+    foreach(const P2Word& word, symbol->references()) {
+        const QUrl& url = P2SymbolClass::url(*symbol, word);
+        urlmap.insert(word.lineno(), url);
     }
+
+    // add a zeroth item with the number of references to not select anything at first
+    cb->addItem(tr("%1 refs").arg(urlmap.count()));
+    qobject_cast<QStandardItemModel*>(cb->model())->item(0)->setEnabled(false);
+
+    // Fill the QComboBox with items
+    foreach(int key, urlmap.keys()) {
+        const QString text = tr("Line #%1").arg(key);
+        cb->addItem(text, urlmap[key]);
+    }
+
     cb->setMaxVisibleItems(10);
     cb->setUpdatesEnabled(true);
 }
@@ -111,8 +119,9 @@ void P2ReferencesDelegate::setModelData(QWidget* editor, QAbstractItemModel* mod
     QComboBox* cb = qobject_cast<QComboBox*>(editor);
     if (!cb)
         return;
-    // model->setData(index, cb->currentText(), Qt::EditRole);
-    emit urlSelected(cb->itemData(cb->currentIndex()).toUrl());
+    const QVariant &var = cb->itemData(cb->currentIndex());
+    if (var.isValid() && var.canConvert(QVariant::Url))
+        emit urlSelected(var.toUrl());
     Q_UNUSED(model)
     Q_UNUSED(index)
 }
@@ -128,19 +137,19 @@ void P2ReferencesDelegate::updateEditorGeometry(QWidget* editor, const QStyleOpt
 
 void P2ReferencesDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
-    const P2SymbolsModel* model = qobject_cast<const P2SymbolsModel*>(index.model());
-    Q_ASSERT(model);    // assert the model is really P2SymbolsModel
-    QVariant var = model->data(index, Qt::EditRole);
-    QVariantList list = var.toList();
+    const QAbstractItemModel* model = index.model();
+    QVariant data = model->data(index, Qt::EditRole);
+    const P2Symbol symbol = qvariant_cast<P2Symbol>(data);
+    const p2_lineno_word_hash_t& hash = symbol->references();
     QStyleOptionViewItem opt(option);
     QString text;
     int flags = Qt::AlignRight | Qt::AlignVCenter |
                 Qt::TextSingleLine | Qt::TextDontClip;
 
-    if (list.count() < 1) {
+    if (hash.count() < 1) {
         text = tr("%1 refs").arg(tr("no"));
     } else {
-        text = tr("%1 refs").arg(list.count());
+        text = tr("%1 refs").arg(hash.count());
     }
     painter->drawText(opt.rect, flags, text);
 }
@@ -150,5 +159,7 @@ void P2ReferencesDelegate::indexChanged(int i) const
     QComboBox* cb = qobject_cast<QComboBox*>(sender());
     if (!cb)
         return;
-    emit urlSelected(cb->itemData(i).toUrl());
+    QVariant var = cb->itemData(i);
+    if (var.isValid() && var.canConvert(QVariant::Url))
+        emit urlSelected(var.toUrl());
 }

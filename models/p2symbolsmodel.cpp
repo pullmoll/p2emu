@@ -77,7 +77,6 @@ P2SymbolsModel::P2SymbolsModel(const P2SymbolTable& table, QObject *parent)
 
     if (!m_table.isNull())
         m_names = m_table->names();
-
 }
 
 QVariant P2SymbolsModel::headerData(int section, Qt::Orientation orientation, int role) const
@@ -164,10 +163,11 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
     const int row = index.row();
     const QString& name = m_names[row];
 
-    const P2Symbol& symbol = m_table->symbol(name);
-    const P2Word& definition = symbol.definition();
+    const P2Symbol symbol = m_table->symbol(name);
+    const bool has_symbol = !symbol.isNull();
+    const P2Word& definition = has_symbol ? symbol->definition() : P2Word();
     const int definition_lineno = definition.lineno();
-    const P2Union& value = symbol.value();
+    const P2Union& value = has_symbol ? symbol->value() : P2Union();
     const p2_union_e type = value.type();
 
     switch (role) {
@@ -178,7 +178,7 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
             break;
 
         case c_Definition:
-            result = QString::number(definition.lineno());
+            result = QString::number(definition_lineno);
             break;
 
         case c_References:
@@ -186,7 +186,8 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
             break;
 
         case c_Type:
-            result = symbol.type_name();
+            if (has_symbol)
+                result = symbol->type_name();
             break;
 
         case c_Value:
@@ -232,19 +233,11 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
             break;
 
         case c_Definition:
-            result = definition.lineno();
+            result = QVariant::fromValue(definition);
             break;
 
         case c_References:
-            {
-                QVariantList words;
-                foreach (int lineno, m_table->references(name)) {
-                    QList<P2Symbol> refs = m_table->references_in(lineno);
-                    foreach(const P2Symbol& sym, refs)
-                        words += qVariantFromValue(sym.definition());
-                }
-                result = qVariantFromValue(words);
-            }
+            result = QVariant::fromValue(symbol);
             break;
 
         case c_Type:
@@ -260,23 +253,31 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
     case Qt::ToolTipRole:
         switch (column) {
         case c_Name:
-            result = tr("This column shows the %1").arg(tr("name of the symbol."));
+            result = tr("This column shows the %1")
+                     .arg(tr("name of the symbol."));
             break;
 
         case c_Definition:
-            result = tr("This column shows the %1").arg(tr("source line where the symbol is defined."));
+            result = tr("This column shows the %1.")
+                     .arg(tr("source line where the symbol %1")
+                          .arg(tr("is defined")));
             break;
 
         case c_References:
-            result = tr("This column shows the %1").arg(tr("source line numbers where the symbol is referenced."));
+            result = tr("This column shows the %1.")
+                     .arg(tr("source line where the %1")
+                          .arg(tr("is referenced")));
             break;
 
         case c_Type:
-            result = tr("This column shows the %1").arg(tr("type of the symbol's value."));
+            result = tr("This column shows the %1 %2.")
+                     .arg(tr("type of the "))
+                     .arg(tr("symbol's value"));
             break;
 
         case c_Value:
-            result = tr("This column shows the %1").arg(tr("symbol's value."));
+            result = tr("This column shows the %1.")
+                     .arg(tr("symbol's value"));
             break;
         }
         break;

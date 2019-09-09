@@ -44,12 +44,13 @@ P2OpcodeDelegate::P2OpcodeDelegate(QObject* parent)
 
 QStringList P2OpcodeDelegate::opcodeLines(const QModelIndex& index) const
 {
-    const P2AsmModel* model = qobject_cast<const P2AsmModel*>(index.model());
-    Q_ASSERT(model);    // assert the model is really P2AsmModel
-    QVariant var = model->data(index, Qt::EditRole);
+    const QAbstractItemModel* model = index.model();
+    QVariant data = model->data(index, Qt::EditRole);
 
-    const P2Opcode IR = qvariant_cast<P2Opcode>(var);
-    p2_format_e format = model->opcode_format();
+    const P2Opcode IR = qvariant_cast<P2Opcode>(data);
+    p2_format_e format = qobject_cast<const P2AsmModel *>(model)
+                         ? qobject_cast<const P2AsmModel *>(model)->opcode_format()
+                         : fmt_hex;
     QStringList text;
 
     if (IR.is_instruction())
@@ -66,9 +67,6 @@ QStringList P2OpcodeDelegate::opcodeLines(const QModelIndex& index) const
 
 void P2OpcodeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
-    const P2AsmModel* model = qobject_cast<const P2AsmModel*>(index.model());
-    Q_ASSERT(model);    // assert the model is really P2AsmModel
-
     QStyleOptionViewItem opt(option);
     initStyleOption(&opt, index);
 

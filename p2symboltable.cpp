@@ -75,11 +75,13 @@ bool P2SymbolTableClass::contains(const QString& name) const
  * @param symbol const reference to the symbol to insert
  * @return false if the symbol was already in the table, or true if inserted
  */
-bool P2SymbolTableClass::insert(const P2Symbol& symbol)
+bool P2SymbolTableClass::insert(const P2SymbolClass& symbol)
 {
+    if (symbol.isNull())
+        return false;
     if (m_symbols.contains(symbol.name()))
         return false;
-    m_symbols.insert(symbol.name(), symbol);
+    m_symbols.insert(symbol.name(), P2Symbol(new P2SymbolClass(symbol)));
     return true;
 }
 
@@ -91,7 +93,7 @@ bool P2SymbolTableClass::insert(const P2Symbol& symbol)
  */
 bool P2SymbolTableClass::insert(const QString& name, const P2Union& value)
 {
-    return insert(P2Symbol(name, value));
+    return insert(P2SymbolClass(name, value));
 }
 
 /**
@@ -104,14 +106,14 @@ bool P2SymbolTableClass::set_value(const QString& name, const P2Union& value)
 {
     if (!m_symbols.contains(name))
         return false;
-    m_symbols[name].set_value(value);
+    m_symbols[name]->set_value(value);
     return true;
 }
 
 /**
  * @brief Return a copy of the P2Symbol with %name
- * @param name name of the symbold
- * @return P2Symbol which may be empty, if the symbol name is not in the table
+ * @param name name of the symbol
+ * @return P2Symbol which may be empty, if the symbol name is not in the has
  */
 P2Symbol P2SymbolTableClass::symbol(const QString& name) const
 {
@@ -120,21 +122,24 @@ P2Symbol P2SymbolTableClass::symbol(const QString& name) const
 
 p2_union_e P2SymbolTableClass::type(const QString& name) const
 {
-    return m_symbols.value(name).type();
+    return m_symbols.value(name)->type();
 }
 
 /**
- * @brief Return the QVariant::Type for the value of the symbol with %name
+ * @brief Return the definition of the symbol with %name
  * @param name of the symbol to check for
- * @return QVariant::Type of the value
+ * @return P2Word where the symbol is defined
  */
-
-
 P2Word P2SymbolTableClass::definition(const QString& name) const
 {
-    return m_symbols.value(name).definition();
+    return m_symbols.value(name)->definition();
 }
 
+/**
+ * @brief Return a list of symbols referenced in a specific line number
+ * @param lineno line number
+ * @return QList<P2Symbol> of referenced symbols
+ */
 const QList<P2Symbol> P2SymbolTableClass::references_in(int lineno) const
 {
     QList<P2Symbol> symbols;
@@ -148,7 +153,7 @@ P2Word P2SymbolTableClass::reference(const QString& name, int idx) const
 {
     if (!m_symbols.contains(name))
         return P2Word();
-    return m_symbols[name].reference(idx);
+    return m_symbols[name]->reference(idx);
 }
 
 const QList<int> P2SymbolTableClass::references(const QString& name) const
@@ -167,7 +172,7 @@ bool P2SymbolTableClass::add_reference(int lineno, const QString& name, const P2
     m_references.insert(lineno, name);
     if (!m_symbols.contains(name))
         return false;
-    m_symbols[name].add_reference(lineno, word);
+    m_symbols[name]->add_reference(lineno, word);
     return true;
 }
 
@@ -177,15 +182,18 @@ bool P2SymbolTableClass::add_reference(int lineno, const QString& name, const P2
  */
 const P2Union& P2SymbolTableClass::atom(const QString& name) const
 {
+    static const P2Union empty;
     const P2Symbol sym = m_symbols.value(name);
-    return sym.value();
+    if (sym.isNull())
+        return empty;
+    return sym->value();
 }
 
 QStringList P2SymbolTableClass::names() const
 {
     QStringList names;
     foreach (const P2Symbol sym, m_symbols)
-        names += sym.name();
+        names += sym->name();
     names.sort();
     return names;
 }

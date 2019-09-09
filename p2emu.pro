@@ -49,6 +49,7 @@ SOURCES += \
 	dialogs/gotoline.cpp \
 	dialogs/palettesetup.cpp \
 	dialogs/textbrowser.cpp \
+	filters/p2symbolsorter.cpp \
 	models/p2asmmodel.cpp \
 	models/p2dasmmodel.cpp \
 	models/p2symbolsmodel.cpp \
@@ -82,6 +83,7 @@ HEADERS += \
 	dialogs/gotoline.h \
 	dialogs/palettesetup.h \
 	dialogs/textbrowser.h \
+	filters/p2symbolsorter.h \
 	models/p2asmmodel.h \
 	models/p2dasmmodel.h \
 	models/p2symbolsmodel.h \
@@ -102,6 +104,7 @@ FORMS += \
 
 INCLUDEPATH += $$PWD/delegates
 INCLUDEPATH += $$PWD/dialogs
+INCLUDEPATH += $$PWD/filters
 INCLUDEPATH += $$PWD/models
 INCLUDEPATH += $$PWD/views
 INCLUDEPATH += $$PWD/util

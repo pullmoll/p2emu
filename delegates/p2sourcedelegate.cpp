@@ -43,11 +43,9 @@ P2SourceDelegate::P2SourceDelegate(QObject* parent)
 
 void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
-    const P2AsmModel* model = qobject_cast<const P2AsmModel*>(index.model());
-    Q_ASSERT(model);
-    QVariant v_words = model->data(index, Qt::UserRole);
-    const P2Words words = qvariant_cast<P2Words>(v_words);
-    const P2Word hword = model->highlight(index);
+    const QAbstractItemModel* model = index.model();
+    const P2Words words = qvariant_cast<P2Words>(model->data(index, Qt::UserRole));
+    const P2Word highlite = qvariant_cast<P2Word>(model->data(index, Qt::UserRole+1));
 
     QStyleOptionViewItem opt(option);
     initStyleOption(&opt, index);
@@ -60,7 +58,10 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     QRect rect = option.rect;
     QVector<QRect> bounding(ll);
     const int flags = static_cast<int>(opt.displayAlignment) |
-                      Qt::TextSingleLine | Qt::TextDontClip | Qt::TextExpandTabs | Qt::TextForceLeftToRight;
+                      Qt::TextSingleLine |
+                      Qt::TextDontClip |
+                      Qt::TextExpandTabs |
+                      Qt::TextForceLeftToRight;
     const int lw = opt.fontMetrics.size(flags, line).width();
     const int x0 = rect.x();
 
@@ -78,8 +79,8 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     }
     painter->fillRect(opt.rect, brush);
 
-    painter->setBackgroundMode(Qt::TransparentMode);
     painter->setFont(opt.font);
+    painter->setBackgroundMode(Qt::TransparentMode);
     painter->setPen(Qt::transparent);
 
     // paint all text character wise to collect the bounding rects
@@ -96,33 +97,39 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
         int pos = word.pos();
         const QStringRef ref(&line, pos, len);
 
-        QPalette pal;
-        p2_token_e tok = word.tok();
-        painter->setPen(Colors.palette_color(tok, focus));
-
         // draw the character
         QRect box;
+        p2_token_e tok = word.tok();
+        const QColor& color = Colors.palette_color(tok, focus);
+        pos = word.pos();
+
+        if (highlite.isValid() && highlite.pos() == pos) {
+            QColor lighter = color.lighter(150);
+            painter->setBackground(lighter);
+            painter->setPen(Qt::black);
+            painter->setBackgroundMode(Qt::OpaqueMode);
+        } else {
+            painter->setPen(color);
+            painter->setBackgroundMode(Qt::TransparentMode);
+        }
+
         foreach(const QChar ch, ref) {
             QRect br = bounding[pos++];
             painter->drawText(br, flags, ch);
             box = box.united(br);
         }
-
-        if (word == hword) {
-            painter->setPen(QColor(0x00,0x00,0xff));
-            painter->drawRect(box);
-        }
     }
 
     if (focus) {
+        QRect box = opt.rect;
         QColor tl = opt.backgroundBrush.color().darker(120);
         QColor br = opt.backgroundBrush.color().darker(110);
         painter->setPen(tl);
-        painter->drawLine(opt.rect.bottomLeft(), opt.rect.topLeft());
-        painter->drawLine(opt.rect.topLeft(), opt.rect.topRight());
+        painter->drawLine(box.bottomLeft(), opt.rect.topLeft());
+        painter->drawLine(box.topLeft(), opt.rect.topRight());
         painter->setPen(br);
-        painter->drawLine(opt.rect.bottomLeft(), opt.rect.bottomRight());
-        painter->drawLine(opt.rect.bottomRight(), opt.rect.topRight());
+        painter->drawLine(box.bottomLeft(), opt.rect.bottomRight());
+        painter->drawLine(box.bottomRight(), opt.rect.topRight());
     }
 
     painter->restore();

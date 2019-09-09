@@ -897,7 +897,7 @@ QString P2Opcode::format_opcode_bin(const P2Opcode& ir)
 
 QString P2Opcode::format_opcode_byt(const P2Opcode& ir)
 {
-    return QString("%1 %2 %3%4%5 %6 %7")
+    return QString("%1'%2'%3%4%5'%6'%7")
             .arg(byt(ir.cond(),  1))
             .arg(byt(ir.inst7(), 2))
             .arg(byt(ir.wc(),    1))

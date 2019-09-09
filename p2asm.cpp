@@ -491,7 +491,7 @@ bool P2Asm::define_symbol(const QString& symbol, const P2Atom& atom)
     P2Symbol sym = m_symbols->symbol(symbol);
     next();
 
-    if (sym.isEmpty()) {
+    if (sym.isNull()) {
         // Not defined yet
         m_symbols->insert(symbol, atom.value());
         m_symbols->add_reference(m_lineno, symbol, word);
@@ -510,18 +510,18 @@ bool P2Asm::define_symbol(const QString& symbol, const P2Atom& atom)
     }
 
     // Already defined
-    const P2Union& old_value = sym.value();
+    const P2Union& old_value = sym->value();
     if (ut_Real == old_value.type()) {
         const p2_REAL value = old_value.get_real();
         m_errors += tr("Symbol '%1' already defined in line #%2 (Value: %3).")
                   .arg(symbol)
-                  .arg(sym.definition().lineno())
+                  .arg(sym->definition().lineno())
                   .arg(value, 2, 'f');
     } else {
         const p2_LONG value = old_value.get_long();
         m_errors += tr("Symbol '%1' already defined in line #%2 (Value: %3, $%4, %%5).")
                     .arg(symbol)
-                    .arg(sym.definition().lineno())
+                    .arg(sym->definition().lineno())
                     .arg(value)
                     .arg(value, 6, 16, QChar('0'))
                     .arg(value, 32, 2, QChar('0'));
@@ -2808,7 +2808,7 @@ void P2Asm::add_const_symbol(const QString& pfx, const P2Word& word, const P2Ato
                      .arg(pfx)
                      .arg(word.str().toUpper());
     if (!m_symbols->contains(symbol))
-        m_symbols->insert(P2Symbol(symbol, atom.value()));
+        m_symbols->insert(symbol, atom.value());
     m_symbols->add_reference(m_lineno, symbol, word);
 }
 
@@ -2819,6 +2819,7 @@ void P2Asm::add_const_symbol(const QString& pfx, const P2Word& word, const P2Ato
 bool P2Asm::parse_atom(P2Atom& atom, int level)
 {
     QString symbol;
+    P2Symbol sym;
 
     if (eol())
         return false;
@@ -2882,10 +2883,11 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
 
     case t_locsym:
         symbol = find_locsym(m_section, str);
-        if (m_symbols->contains(symbol)) {
-            P2Symbol sym = m_symbols->symbol(symbol);
-            DBG_EXPR(" atom found locsym: %s = %s", qPrintable(symbol), qPrintable(sym.()));
+        sym = m_symbols->symbol(symbol);
+        if (!sym.isNull()) {
             m_symbols->add_reference(m_lineno, symbol, word);
+            atom.set_value(sym->value());
+            DBG_EXPR(" atom found locsym: %s = %s", qPrintable(symbol), qPrintable(atom.str()));
             break;
         }
         DBG_EXPR(" atom undefined locsym: %s", qPrintable(symbol));
@@ -2893,11 +2895,11 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
 
     case t_symbol:
         symbol = find_symbol(m_section, str, true);
-        if (m_symbols->contains(symbol)) {
-            P2Symbol sym = m_symbols->symbol(symbol);
-            atom.set_value(sym.value());
-            DBG_EXPR(" atom found symbol: %s = %s", qPrintable(symbol), qPrintable(atom.str()));
+        sym = m_symbols->symbol(symbol);
+        if (!sym.isNull()) {
             m_symbols->add_reference(m_lineno, symbol, word);
+            atom.set_value(sym->value());
+            DBG_EXPR(" atom found symbol: %s = %s", qPrintable(symbol), qPrintable(atom.str()));
             break;
         }
         DBG_EXPR(" atom undefined symbol: %s", qPrintable(symbol));

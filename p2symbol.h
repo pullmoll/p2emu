@@ -34,17 +34,20 @@
 #pragma once
 #include <QString>
 #include <QVariant>
+#include <QSharedPointer>
 #include "p2atom.h"
 #include "p2word.h"
 
 /**
  * @brief The P2Symbol class is a wrapper for one symbolic name for a value
+ * The P2Symbol is implemented as a QSharedPointer<P2SymbolClass> to avoid
+ * duplication of symbols in other containers and when passing as values.
  */
-class P2Symbol
+class P2SymbolClass
 {
 public:
-    explicit P2Symbol(const QString& name = QString(), const P2Union& value = P2Union());
-    explicit P2Symbol(const QString& name, const P2Atom& atom);
+    explicit P2SymbolClass(const QString& name = QString(), const P2Union& value = P2Union());
+    explicit P2SymbolClass(const QString& name, const P2Atom& atom);
 
     bool isNull() const;
     bool isEmpty() const;
@@ -57,7 +60,10 @@ public:
     P2Word reference(int idx = 0) const;
     void add_reference(int lineno, const P2Word& word);
     const p2_lineno_word_hash_t& references() const;
-    QList<P2Word> references(const P2Symbol& sym) const;
+    QList<P2Word> references(const P2SymbolClass& sym) const;
+    QUrl url(const P2Word& word) const;
+
+    static QUrl url(const P2SymbolClass& symbol, const P2Word& word);
 
 private:
     QString m_name;
@@ -66,4 +72,5 @@ private:
     p2_lineno_word_hash_t m_references;
 };
 
+typedef QSharedPointer<P2SymbolClass> P2Symbol;
 Q_DECLARE_METATYPE(P2Symbol);

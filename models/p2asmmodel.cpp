@@ -45,6 +45,9 @@ P2AsmModel::P2AsmModel(P2Asm* p2asm, QObject *parent)
     , m_font()
     , m_error_pixmap()
     , m_error()
+    , m_highlite_index()
+    , m_highlight_symbol()
+    , m_highlight_word()
     , m_head_alignment()
     , m_text_alignment()
 {
@@ -176,10 +179,11 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     const int row = index.row();
     const int lineno = row + 1;
 
-    const P2SymbolTable symbols = m_asm->symbols();
-    const QList<P2Symbol>& symrefs = symbols.isNull() ? QList<P2Symbol>()
-                                                      : symbols->references_in(lineno);
+    const P2SymbolTable& symbols = m_asm->symbols();
+
+    const bool has_symbols = !symbols.isNull();
     const QStringList& errors = m_asm->errors(lineno);
+
     const bool has_errors = !errors.isEmpty();
     const P2Words& words = m_asm->words(lineno);
 
@@ -190,7 +194,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     const p2_LONG ORGH = PC_orgh.second;
 
     const bool has_IR = m_asm->has_IR(lineno);
-    const P2Opcode IR = m_asm->get_IR(lineno);
+    const P2Opcode& IR = m_asm->get_IR(lineno);
 
     switch (role) {
     case Qt::DisplayRole:
@@ -215,7 +219,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
 
         case c_Opcode: // Opcode string
             if (has_IR)
-                result = qVariantFromValue(IR);
+                result = QVariant::fromValue(IR);
             break;
 
         case c_Tokens:
@@ -231,8 +235,8 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
             break;
 
         case c_Symbols:
-            if (!symrefs.isEmpty())
-                result = QString::number(symrefs.count());
+            if (has_symbols)
+                result = QString::number(symbols->references_in(lineno).count());
             break;
 
         case c_Source:  // Source code
@@ -256,32 +260,33 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
         switch (column) {
         case c_Origin:
             if (has_PC)
-                return qVariantFromValue(PC_orgh.second);
+                result = QVariant::fromValue(PC_orgh.second);
             break;
 
         case c_Address:
             if (has_PC)
-                return qVariantFromValue(PC_orgh.first);
+                result = QVariant::fromValue(PC_orgh.first);
             break;
 
         case c_Opcode:
             if (has_IR)
-                return qVariantFromValue(IR);
+                result = QVariant::fromValue(IR);
             break;
 
         case c_Tokens:
             if (!words.isEmpty())
-                return qVariantFromValue(words);
+                result = QVariant::fromValue(words);
             break;
 
         case c_Symbols:
-            if (!symrefs.isEmpty())
-                return qVariantFromValue(symrefs);
+            if (has_symbols)
+                break;
+            result = QVariant::fromValue(symbols->references_in(lineno));
             break;
 
         case c_Errors:
             if (has_errors)
-                return errors;
+                result = errors;
             break;
 
         case c_Source:
@@ -300,9 +305,8 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
             break;
 
         case c_Opcode:
-            if (!has_IR)
-                break;
-            result = opcodeToolTip(IR);
+            if (has_IR)
+                result = opcodeToolTip(IR);
             break;
 
         case c_Tokens:
@@ -312,15 +316,13 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
             break;
 
         case c_Symbols:
-            if (symrefs.isEmpty())
-                break;
-            result = symbolsToolTip(symbols, symrefs);
+            if (has_symbols)
+                result = symbolsToolTip(symbols, symbols->references_in(lineno));
             break;
 
         case c_Errors:
-            if (!has_errors)
-                break;
-            result = errorsToolTip(errors);
+            if (has_errors)
+                result = errorsToolTip(errors);
             break;
 
         case c_Source:
@@ -364,7 +366,12 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
 
     case Qt::UserRole:
         if (c_Source == column && !words.isEmpty())
-            result = qVariantFromValue(words);
+            result = QVariant::fromValue(words);
+        break;
+
+    case Qt::UserRole+1:
+        if (has_symbols && index == m_highlite_index)
+            result = QVariant::fromValue(m_highlight_word);
         break;
     }
     return result;
@@ -508,16 +515,10 @@ void P2AsmModel::setFont(const QFont& font)
     endResetModel();
 }
 
-const P2Word P2AsmModel::highlight(const QModelIndex& index) const
+void P2AsmModel::set_highlight(const QModelIndex& index, const P2Symbol& symbol, const P2Word& word)
 {
-    if (index != m_highlight_index)
-        return P2Word();
-    return m_highlight_word;
-}
-
-void P2AsmModel::setHighlight(const QModelIndex& index, const P2Word& word)
-{
-    m_highlight_index = index;
+    m_highlite_index = index;
+    m_highlight_symbol = symbol;
     m_highlight_word = word;
 }
 
@@ -668,14 +669,14 @@ QString P2AsmModel::symbolsToolTip(const P2SymbolTable& symbols, const QList<P2S
     html += html_end_tr();
 
     for (int i = 0; i < symrefs.count(); i++) {
-        const P2Symbol& sym = symrefs[i];
-        const P2Word& word = symbols->reference(sym.name());
-        const P2Union& value = sym.value();
+        const P2Symbol symbol = symrefs[i];
+        const P2Word& word = symbols->reference(symbol->name());
+        const P2Union& value = symbol->value();
         p2_LONG val = value.get_long();
         html += html_start_tr();
         html += html_td(QString::number(word.lineno()));
-        html += html_td(sym.name());
-        html += html_td(sym.type_name());
+        html += html_td(symbol->name());
+        html += html_td(symbol->type_name());
         html += html_td(QString("%1").arg(val));
         html += html_td(QString("$%1").arg(val, 8, 16, QChar('0')));
         html += html_td(QString("%%1").arg(val, 32, 2, QChar('0')));

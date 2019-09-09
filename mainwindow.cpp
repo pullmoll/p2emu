@@ -61,6 +61,7 @@
 #include "p2opcodedelegate.h"
 #include "p2sourcedelegate.h"
 #include "p2referencesdelegate.h"
+#include "p2symbolsorter.h"
 
 static const int ncogs = 8;
 static const QLatin1String key_windowGeometry("windowGeometry");
@@ -161,14 +162,14 @@ void MainWindow::restoreSettings()
 void MainWindow::saveSettingsAsm()
 {
     QSettings s;
-    QList<int> source_sizes = ui->splSource->sizes();
+    QList<int> spl_sizes = ui->splSource->sizes();
     QSize size = ui->tabAsm->size();
-    if (source_sizes.count() > 1 && size.height() > 0)
-        m_source_percent = source_sizes[0] * 100 / size.height();
-
-    QList<int> results_sizes = ui->splResults->sizes();
-    if (!results_sizes.isEmpty() && 0 != size.width())
-        m_results_percent = results_sizes[0] * 100 / size.width();
+    if (spl_sizes.count() > 1 && size.height() > 0) {
+        m_source_percent = spl_sizes[0] * 100 / size.height();
+        if (spl_sizes.count() > 2) {
+            m_results_percent = spl_sizes[1] * 100 / size.height();
+        }
+    }
 
     s.beginGroup(grp_assembler);
     s.setValue(key_opcodes, m_amodel->opcode_format());
@@ -623,7 +624,6 @@ void MainWindow::loadSourceRandom()
 void MainWindow::assemble()
 {
     QStringList source = m_asm->source();
-    ui->splResults->setVisible(false);
     ui->tbErrors->clear();
 
     qint64 t0 = QDateTime::currentMSecsSinceEpoch();
@@ -641,8 +641,7 @@ void MainWindow::assemble()
         ui->tvAsm->setCurrentIndex(idx);
         m_smodel->setTable(m_asm->symbols());
 
-        if (!ui->splResults->isVisible())
-            resize_source_results();
+        resize_source_results();
     }
 }
 
@@ -670,25 +669,29 @@ void MainWindow::print_error(int pass, int line, const QString& message)
                        .arg(QString::number(line));
     QString error = str_pass + str_line + message;
     ui->tbErrors->append(error);
-
-    if (!ui->splResults->isVisible())
-        resize_source_results();
+    resize_source_results();
 }
 
 void MainWindow::goto_line(const QUrl& url)
 {
     const P2SymbolTable& table = m_asm->symbols();
     const QString& path = url.path();
-    const QString& frag = url.fragment();
-    const QString& symbol = url.query();
+    const QString& name = url.query();
+    const QStringList& frag = url.fragment().split(QChar(','));
+    const int lineno = frag.value(0).toInt();
+    const int pos = frag.value(1).toInt();
+    const int len = frag.value(2).toInt();
 
-    bool ok;
-    const int line = frag.toInt(&ok);
-    const P2Symbol& sym = table->symbol(symbol);
-    const P2Word& word = table->definition(sym.name());
+    const P2Symbol symbol = table->symbol(name);
+    const P2Words& words = m_asm->words(lineno);
+    P2Word word;
+    for (int i = 0; !word.isValid() && i < words.count(); i++)
+        if (pos == words[i].pos() && len == words[i].len())
+            word = words[i];
+
     if (path == key_tv_asm) {
-        const QModelIndex idx = m_amodel->index(line - 1, P2AsmModel::c_Source);
-        m_amodel->setHighlight(idx, word);
+        const QModelIndex idx = m_amodel->index(lineno - 1, P2AsmModel::c_Source);
+        m_amodel->set_highlight(idx, symbol, word);
         ui->tvAsm->setCurrentIndex(idx);
         ui->tvAsm->viewport()->repaint();
         // ui->tvAsm->setFocus(Qt::OtherFocusReason);
@@ -705,16 +708,23 @@ void MainWindow::goto_line_number()
     goto_line(url);
 }
 
-void MainWindow::resize_source_results(const int results_min)
+void MainWindow::resize_source_results(const int results_min, const int errors_min)
 {
-    ui->splResults->setVisible(true);
     QList<int> sizes = ui->splSource->sizes();
+    const int height = ui->tabAsm->height();
     if (sizes.count() > 1 && sizes[1] < results_min) {
         sizes.clear();
-        sizes.append(ui->tabAsm->height() * (100 - results_min) / 100);
-        sizes.append(ui->tabAsm->height() * results_min / 100);
+        sizes.append(height * (100 - results_min) / 100);
+        sizes.append(height * results_min / 100);
         ui->splSource->setSizes(sizes);
+        if (sizes.count() > 2 && sizes[2] < errors_min) {
+            sizes.clear();
+            sizes.append(height * (100 - results_min - errors_min) / 100);
+            sizes.append(height * results_min / 100);
+            sizes.append(height * errors_min / 100);
+        }
     }
+    ui->splSource->setSizes(sizes);
 }
 
 void MainWindow::setDasmLowercase(bool check)
@@ -734,6 +744,8 @@ void MainWindow::setupAssembler()
     // prevent opening of (external) links
     ui->tbErrors->setOpenLinks(false);
     ui->tbErrors->setOpenExternalLinks(false);
+    ui->splSource->setCollapsible(1, false);
+    ui->splSource->setCollapsible(2, true);
 
     // but connect to the anchorClicked(QUrl) signal
     connect(ui->tbErrors, SIGNAL(anchorClicked(QUrl)), SLOT(goto_line(QUrl)), Qt::UniqueConnection);
@@ -762,8 +774,10 @@ void MainWindow::setupAssembler()
 
     ui->tvAsm->setModel(m_amodel);
 
-    ui->tvSymbols->setModel(m_smodel);
-    ui->splResults->setVisible(true);
+    P2SymbolSorter* sorter = new P2SymbolSorter(this);
+    sorter->setSourceModel(m_smodel);
+    ui->tvSymbols->setModel(sorter);
+    ui->tvSymbols->setSortingEnabled(true);
 }
 
 void MainWindow::setupDisassembler()

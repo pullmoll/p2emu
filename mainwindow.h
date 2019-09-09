@@ -118,7 +118,7 @@ private slots:
     void print_error(int pass, int lineno, const QString& message);
     void goto_line(const QUrl& url);
     void goto_line_number();
-    void resize_source_results(const int results_min = 10);
+    void resize_source_results(const int results_min = 10, const int errors_min = 5);
 private:
     Ui::MainWindow *ui;
     QVector<P2CogView*> m_vcog;
