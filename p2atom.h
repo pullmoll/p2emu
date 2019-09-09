@@ -105,10 +105,12 @@ public:
     const P2Union& index() const;
     p2_LONG index_long() const;
 
+    void set_int(const int& _int);
     void set_bool(const bool& _bool);
     void set_char(const char& _char);
     void set_byte(const p2_BYTE& _byte);
     void set_word(const p2_WORD& _word);
+    void set_addr(const p2_LONG& _addr);
     void set_long(const p2_LONG& _long);
     void set_real(const p2_REAL& _real);
     void set_chars(const p2_CHARS& _chars);
@@ -119,6 +121,9 @@ public:
 
     void set_index(const QVariant& val);
 
+    void add_int(const int& _int);
+    void add_bool(const bool& _bool);
+    void add_char(const char& _char);
     void add_byte(const p2_BYTE& _byte);
     void add_word(const p2_WORD& _word);
     void add_long(const p2_LONG& _long);
@@ -130,6 +135,7 @@ public:
 
     QString str(p2_format_e fmt = fmt_hex) const;
     bool get_bool() const;
+    int get_int() const;
     p2_BYTE get_byte() const;
     p2_WORD get_word() const;
     p2_LONG get_long() const;

@@ -290,7 +290,18 @@ p2_LONG P2Atom::index_long() const
 }
 
 /**
+ * @brief Set the atom value to %_int
+ * NB: The atom's value type becomes ut_Long
+ * @param _int to set
+ */
+void P2Atom::set_int(const int& _int)
+{
+    m_value.set_int(_int);
+}
+
+/**
  * @brief Set the atom value to %_bool
+ * NB: The atom's value type becomes ut_Bool
  * @param _bool to set
  */
 void P2Atom::set_bool(const bool& _bool)
@@ -300,6 +311,7 @@ void P2Atom::set_bool(const bool& _bool)
 
 /**
  * @brief Set the atom value to %_char
+ * NB: The atom's value type becomes ut_Byte
  * @param _char to set
  */
 void P2Atom::set_char(const char& _char)
@@ -309,6 +321,7 @@ void P2Atom::set_char(const char& _char)
 
 /**
  * @brief Set the atom value to %_byte
+ * NB: The atom's value type becomes ut_Byte
  * @param _byte to set
  */
 void P2Atom::set_byte(const p2_BYTE& _byte)
@@ -318,6 +331,7 @@ void P2Atom::set_byte(const p2_BYTE& _byte)
 
 /**
  * @brief Set the atom value to %_word
+ * NB: The atom's value type becomes ut_Word
  * @param _word to set
  */
 void P2Atom::set_word(const p2_WORD& _word)
@@ -326,7 +340,18 @@ void P2Atom::set_word(const p2_WORD& _word)
 }
 
 /**
+ * @brief Set the atom value to %_add
+ * NB: The atom's value type becomes ut_Addr
+ * @param _addr to set
+ */
+void P2Atom::set_addr(const p2_LONG& _addr)
+{
+    m_value.set_addr(_addr);
+}
+
+/**
  * @brief Set the atom value to %_long
+ * NB: The atom's value type becomes ut_Long
  * @param _long to set
  */
 void P2Atom::set_long(const p2_LONG& _long)
@@ -336,6 +361,7 @@ void P2Atom::set_long(const p2_LONG& _long)
 
 /**
  * @brief Set the atom value to %_real
+ * NB: The atom's value type becomes ut_Real
  * @param _real to set
  */
 void P2Atom::set_real(const p2_REAL& _real)
@@ -345,6 +371,7 @@ void P2Atom::set_real(const p2_REAL& _real)
 
 /**
  * @brief Set the atom value to %_bytes
+ * NB: The atom's value type becomes ut_String
  * @param _bytes to set
  */
 void P2Atom::set_chars(const p2_CHARS& _chars)
@@ -354,6 +381,7 @@ void P2Atom::set_chars(const p2_CHARS& _chars)
 
 /**
  * @brief Set the atom value to %_bytes
+ * NB: The atom's value type becomes ut_String
  * @param _bytes to set
  */
 void P2Atom::set_bytes(const p2_BYTES& _bytes)
@@ -363,6 +391,7 @@ void P2Atom::set_bytes(const p2_BYTES& _bytes)
 
 /**
  * @brief Set the atom value to %_words
+ * NB: The atom's value type becomes ut_Word
  * @param _bytes to set
  */
 void P2Atom::set_words(const p2_WORDS& _words)
@@ -372,6 +401,7 @@ void P2Atom::set_words(const p2_WORDS& _words)
 
 /**
  * @brief Set the atom value to %_longs
+ * NB: The atom's value type becomes ut_Long
  * @param _longs to set
  */
 void P2Atom::set_longs(const p2_LONGS& _longs)
@@ -381,11 +411,39 @@ void P2Atom::set_longs(const p2_LONGS& _longs)
 
 /**
  * @brief Set the atom value to %_array
+ * NB: The atom's value type becomes ut_String
  * @param _array to set
  */
 void P2Atom::set_array(const QByteArray& _array)
 {
     m_value.set_array(_array);
+}
+
+/**
+ * @brief Append a single int to this atom
+ * @param _int to append
+ */
+void P2Atom::add_int(const int& _int)
+{
+    m_value.add_int(_int);
+}
+
+/**
+ * @brief Append a single bool to this atom
+ * @param _bool to append
+ */
+void P2Atom::add_bool(const bool& _bool)
+{
+    m_value.add_bool(_bool);
+}
+
+/**
+ * @brief Append a single char to this atom
+ * @param _char to append
+ */
+void P2Atom::add_char(const char& _char)
+{
+    m_value.add_char(_char);
 }
 
 /**
@@ -727,7 +785,8 @@ void P2Atom::make_bool(bool flag)
 {
     if (!flag)
         return;
-    m_value.set(!m_value.is_zero());
+    p2_BYTES bytes = m_value.get_bytes(true);
+    m_value.set(bytes.count(0) != bytes.size());
 }
 
 /**
@@ -743,7 +802,7 @@ void P2Atom::unary_dec(const p2_LONG val)
     case ut_Invalid:
         break;
     case ut_Bool:
-        m_value.set_bool((m_value.get_bool() - val) & 1 ? true : false);
+        m_value.set_bool((m_value.get_bool() - val) & true);
         break;
     case ut_Byte:
         m_value.set_byte(static_cast<p2_BYTE>(m_value.get_byte() - val));
@@ -782,7 +841,7 @@ void P2Atom::unary_inc(const p2_LONG val)
     case ut_Invalid:
         break;
     case ut_Bool:
-        m_value.set_bool((m_value.get_bool() + val) & 1 ? true : false);
+        m_value.set_bool((m_value.get_bool() + val) & true);
         break;
     case ut_Byte:
         m_value.set_byte(static_cast<p2_BYTE>(m_value.get_byte() + val));
@@ -821,7 +880,7 @@ void P2Atom::arith_mul(const P2Atom& atom)
     case ut_Invalid:
         break;
     case ut_Bool:
-        m_value.set_bool((m_value.get_bool() * atom.get_byte()) & 1 ? true : false);
+        m_value.set_bool((m_value.get_bool() * atom.get_byte()) & true);
         break;
     case ut_Byte:
         m_value.set_byte(m_value.get_byte() * atom.get_byte());
@@ -860,7 +919,7 @@ void P2Atom::arith_div(const P2Atom& atom)
         {
             p2_BYTE divisor = atom.get_byte();
             if (0 != divisor)
-                m_value.set_bool((m_value.get_bool() / divisor) & 1 ? true : false);
+                m_value.set_bool((m_value.get_bool() / divisor) & true);
         }
         break;
     case ut_Byte:
@@ -924,7 +983,7 @@ void P2Atom::arith_mod(const P2Atom& atom)
         {
             p2_BYTE divisor = atom.get_byte();
             if (0 != divisor)
-                m_value.set_bool((m_value.get_bool() % divisor) & 1 ? true : false);
+                m_value.set_bool((m_value.get_bool() % divisor) & true);
         }
         break;
     case ut_Byte:
@@ -985,7 +1044,7 @@ void P2Atom::arith_add(const P2Atom& atom)
     case ut_Invalid:
         break;
     case ut_Bool:
-        m_value.set_bool((m_value.get_byte() + atom.get_byte()) & 1 ? true : false);
+        m_value.set_bool((m_value.get_bool() + atom.get_bool()) & true);
         break;
     case ut_Byte:
         m_value.set_byte(m_value.get_byte() + atom.get_byte());
@@ -1021,7 +1080,7 @@ void P2Atom::arith_sub(const P2Atom& atom)
     case ut_Invalid:
         break;
     case ut_Bool:
-        m_value.set_bool((m_value.get_byte() - atom.get_byte()) & 1 ? true : false);
+        m_value.set_bool((m_value.get_bool() - atom.get_bool()) & true);
         break;
     case ut_Byte:
         m_value.set_byte(m_value.get_byte() - atom.get_byte());
@@ -1362,6 +1421,15 @@ void P2Atom::decode(const P2Atom& atom)
 bool P2Atom::get_bool() const
 {
     return m_value.get_bool();
+}
+
+/**
+ * @brief Return data as a single int
+ * @return One int
+ */
+int P2Atom::get_int() const
+{
+    return m_value.get_int();
 }
 
 /**
