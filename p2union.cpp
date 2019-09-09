@@ -300,6 +300,14 @@ void P2Union::set_value(const QVariant& var)
 }
 #endif
 
+int P2Union::get_int() const
+{
+    if (isEmpty())
+        return int(0);
+    const TypedVar& tv = at(0);
+    return tv.second._int;
+}
+
 bool P2Union::get_bool() const
 {
     if (isEmpty())
@@ -312,8 +320,6 @@ char P2Union::get_char() const
 {
     if (isEmpty())
         return char(0);
-    if (isEmpty())
-        return false;
     const TypedVar& tv = at(0);
     return tv.second._char;
 }
@@ -358,13 +364,13 @@ p2_REAL P2Union::get_real() const
     return tv.second._real;
 }
 
-static inline QByteArray byte_array(const QVariant& v)
+static inline QByteArray one_byte_array(const QVariant& v)
 {
     char _char = qvariant_cast<char>(v);
     return QByteArray(1, _char);
 }
 
-static inline QByteArray word_array(const QVariant& v)
+static inline QByteArray one_word_array(const QVariant& v)
 {
     p2_WORD _word = qvariant_cast<p2_WORD>(v);
     char sz[2] = {
@@ -374,7 +380,7 @@ static inline QByteArray word_array(const QVariant& v)
     return QByteArray(sz, 2);
 }
 
-static inline QByteArray long_array(const QVariant& v)
+static inline QByteArray one_long_array(const QVariant& v)
 {
     p2_LONG _long = qvariant_cast<p2_LONG>(v);
     char sz[4] = {
@@ -386,7 +392,7 @@ static inline QByteArray long_array(const QVariant& v)
     return QByteArray(sz, 4);
 }
 
-static inline QByteArray quad_array(const QVariant& v)
+static inline QByteArray one_quad_array(const QVariant& v)
 {
     p2_QUAD _quad = qvariant_cast<p2_QUAD>(v);
     char sz[8] = {
@@ -402,13 +408,20 @@ static inline QByteArray quad_array(const QVariant& v)
     return QByteArray(sz, 8);
 }
 
-static inline QByteArray real_array(const QVariant& v)
+static inline QByteArray one_real_array(const QVariant& v)
 {
     union {
         p2_REAL _real;
         p2_QUAD _quad;
     }   u = {qvariant_cast<p2_REAL>(v)};
-    return quad_array(u._quad);
+    return one_quad_array(u._quad);
+}
+
+void P2Union::set_int(const int& var)
+{
+    clear();
+    add_int(var);
+    m_type = ut_Long;
 }
 
 void P2Union::set_bool(const bool& var)
@@ -529,6 +542,14 @@ void P2Union::set_typed_var(const TypedVar& var)
     set(QVariant::fromValue(var.second));
     m_type = type;
 }
+
+void P2Union::add_int(const int& var)
+{
+    TypedVar v{ut_Long, {0}};
+    v.second._int = var;
+    append(v);
+}
+
 
 void P2Union::add_bool(const bool& var)
 {
@@ -687,28 +708,28 @@ QByteArray P2Union::chain_bytes(const P2Union* pun, bool expand)
                     Q_ASSERT(tv.first != ut_Invalid);
                     break;
                 case ut_Bool:
-                    result += byte_array(tv.second._bool);
+                    result += one_byte_array(tv.second._bool);
                     break;
                 case ut_Byte:
-                    result += byte_array(tv.second._byte);
+                    result += one_byte_array(tv.second._byte);
                     break;
                 case ut_Word:
-                    result += word_array(tv.second._word);
+                    result += one_word_array(tv.second._word);
                     break;
                 case ut_Addr:
-                    result += long_array(tv.second._long);
+                    result += one_long_array(tv.second._long);
                     break;
                 case ut_Long:
-                    result += long_array(tv.second._long);
+                    result += one_long_array(tv.second._long);
                     break;
                 case ut_Quad:
-                    result += quad_array(tv.second._quad);
+                    result += one_quad_array(tv.second._quad);
                     break;
                 case ut_Real:
-                    result += real_array(tv.second._real);
+                    result += one_real_array(tv.second._real);
                     break;
                 case ut_String:
-                    result += byte_array(tv.second._byte);
+                    result += one_byte_array(tv.second._byte);
                     break;
                 }
             }
@@ -758,28 +779,28 @@ QByteArray P2Union::chain_words(const P2Union* pun, bool expand)
                     Q_ASSERT(tv.first != ut_Invalid);
                     break;
                 case ut_Bool:
-                    result += word_array(tv.second._bool);
+                    result += one_word_array(tv.second._bool);
                     break;
                 case ut_Byte:
-                    result += word_array(tv.second._byte);
+                    result += one_word_array(tv.second._byte);
                     break;
                 case ut_Word:
-                    result += word_array(tv.second._word);
+                    result += one_word_array(tv.second._word);
                     break;
                 case ut_Addr:
-                    result += long_array(tv.second._long);
+                    result += one_long_array(tv.second._long);
                     break;
                 case ut_Long:
-                    result += long_array(tv.second._long);
+                    result += one_long_array(tv.second._long);
                     break;
                 case ut_Quad:
-                    result += quad_array(tv.second._quad);
+                    result += one_quad_array(tv.second._quad);
                     break;
                 case ut_Real:
-                    result += real_array(tv.second._real);
+                    result += one_real_array(tv.second._real);
                     break;
                 case ut_String:
-                    result += word_array(tv.second._byte);
+                    result += one_word_array(tv.second._byte);
                     break;
                 }
             }
@@ -798,7 +819,7 @@ QByteArray P2Union::chain_words(const P2Union* pun, bool expand)
                 case ut_Quad:
                 case ut_Real:
                 case ut_String:
-                    result += word_array(tv.second._word);
+                    result += one_word_array(tv.second._word);
                     break;
                 }
             }
@@ -829,28 +850,28 @@ QByteArray P2Union::chain_longs(const P2Union* pun, bool expand)
                     Q_ASSERT(tv.first != ut_Invalid);
                     break;
                 case ut_Bool:
-                    result += long_array(tv.second._bool);
+                    result += one_long_array(tv.second._bool);
                     break;
                 case ut_Byte:
-                    result += long_array(tv.second._byte);
+                    result += one_long_array(tv.second._byte);
                     break;
                 case ut_Word:
-                    result += long_array(tv.second._word);
+                    result += one_long_array(tv.second._word);
                     break;
                 case ut_Addr:
-                    result += long_array(tv.second._long);
+                    result += one_long_array(tv.second._long);
                     break;
                 case ut_Long:
-                    result += long_array(tv.second._long);
+                    result += one_long_array(tv.second._long);
                     break;
                 case ut_Quad:
-                    result += quad_array(tv.second._quad);
+                    result += one_quad_array(tv.second._quad);
                     break;
                 case ut_Real:
-                    result += real_array(tv.second._real);
+                    result += one_real_array(tv.second._real);
                     break;
                 case ut_String:
-                    result += long_array(tv.second._byte);
+                    result += one_long_array(tv.second._byte);
                     break;
                 }
             }
@@ -869,7 +890,7 @@ QByteArray P2Union::chain_longs(const P2Union* pun, bool expand)
                 case ut_Quad:
                 case ut_Real:
                 case ut_String:
-                    result += long_array(tv.second._long);
+                    result += one_long_array(tv.second._long);
                     break;
                 }
             }
@@ -894,28 +915,28 @@ QByteArray P2Union::chain_quads(const P2Union* pun, bool expand)
                     Q_ASSERT(tv.first != ut_Invalid);
                     break;
                 case ut_Bool:
-                    result += quad_array(tv.second._bool);
+                    result += one_quad_array(tv.second._bool);
                     break;
                 case ut_Byte:
-                    result += quad_array(tv.second._byte);
+                    result += one_quad_array(tv.second._byte);
                     break;
                 case ut_Word:
-                    result += quad_array(tv.second._word);
+                    result += one_quad_array(tv.second._word);
                     break;
                 case ut_Addr:
-                    result += quad_array(tv.second._long);
+                    result += one_quad_array(tv.second._long);
                     break;
                 case ut_Long:
-                    result += quad_array(tv.second._long);
+                    result += one_quad_array(tv.second._long);
                     break;
                 case ut_Quad:
-                    result += quad_array(tv.second._quad);
+                    result += one_quad_array(tv.second._quad);
                     break;
                 case ut_Real:
-                    result += real_array(tv.second._real);
+                    result += one_real_array(tv.second._real);
                     break;
                 case ut_String:
-                    result += quad_array(tv.second._byte);
+                    result += one_quad_array(tv.second._byte);
                     break;
                 }
             }
@@ -934,7 +955,7 @@ QByteArray P2Union::chain_quads(const P2Union* pun, bool expand)
                 case ut_Quad:
                 case ut_Real:
                 case ut_String:
-                    result += quad_array(tv.second._long);
+                    result += one_quad_array(tv.second._long);
                     break;
                 }
             }

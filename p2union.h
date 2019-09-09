@@ -36,6 +36,7 @@ public:
     void set(const QVariant& var);
     void add(const QVariant& var);
 
+    int get_int() const;
     bool get_bool() const;
     char get_char() const;
     p2_BYTE get_byte() const;
@@ -52,6 +53,7 @@ public:
     p2_REALS get_reals(bool expand = false) const;
     QString get_string(bool expand = false) const;
 
+    void set_int(const int& var);
     void set_bool(const bool& var);
     void set_char(const char& var);
     void set_byte(const p2_BYTE& var);
@@ -72,6 +74,7 @@ public:
 
     void set_typed_var(const TypedVar& var);
 
+    void add_int(const int& var);
     void add_bool(const bool& var);
     void add_char(const char& var);
     void add_byte(const p2_BYTE& var);
