@@ -45,465 +45,465 @@ P2Doc::P2Doc()
     , m_masks()
     , m_ones()
 {
-    doc_nop(p2_ROR);
-    doc_ror(p2_ROR);
-    doc_rol(p2_ROL);
-    doc_shr(p2_SHR);
-    doc_shl(p2_SHL);
-    doc_rcr(p2_RCR);
-    doc_rcl(p2_RCL);
-    doc_sar(p2_SAR);
-    doc_sal(p2_SAL);
-    doc_add(p2_ADD);
-    doc_addx(p2_ADDX);
-    doc_adds(p2_ADDS);
-    doc_addsx(p2_ADDSX);
-    doc_sub(p2_SUB);
-    doc_subx(p2_SUBX);
-    doc_subs(p2_SUBS);
-    doc_subsx(p2_SUBSX);
-    doc_cmp(p2_CMP);
-    doc_cmpx(p2_CMPX);
-    doc_cmps(p2_CMPS);
-    doc_cmpsx(p2_CMPSX);
-    doc_cmpr(p2_CMPR);
-    doc_cmpm(p2_CMPM);
-    doc_subr(p2_SUBR);
-    doc_cmpsub(p2_CMPSUB);
-    doc_fge(p2_FGE);
-    doc_fle(p2_FLE);
-    doc_fges(p2_FGES);
-    doc_fles(p2_FLES);
-    doc_sumc(p2_SUMC);
-    doc_sumnc(p2_SUMNC);
-    doc_sumz(p2_SUMZ);
-    doc_sumnz(p2_SUMNZ);
+    doc_NOP(p2_ROR);
+    doc_ROR(p2_ROR);
+    doc_ROL(p2_ROL);
+    doc_SHR(p2_SHR);
+    doc_SHL(p2_SHL);
+    doc_RCR(p2_RCR);
+    doc_RCL(p2_RCL);
+    doc_SAR(p2_SAR);
+    doc_SAL(p2_SAL);
+    doc_ADD(p2_ADD);
+    doc_ADDX(p2_ADDX);
+    doc_ADDS(p2_ADDS);
+    doc_ADDSX(p2_ADDSX);
+    doc_SUB(p2_SUB);
+    doc_SUBX(p2_SUBX);
+    doc_SUBS(p2_SUBS);
+    doc_SUBSX(p2_SUBSX);
+    doc_CMP(p2_CMP);
+    doc_CMPX(p2_CMPX);
+    doc_CMPS(p2_CMPS);
+    doc_CMPSX(p2_CMPSX);
+    doc_CMPR(p2_CMPR);
+    doc_CMPM(p2_CMPM);
+    doc_SUBR(p2_SUBR);
+    doc_CMPSUB(p2_CMPSUB);
+    doc_FGE(p2_FGE);
+    doc_FLE(p2_FLE);
+    doc_FGES(p2_FGES);
+    doc_FLES(p2_FLES);
+    doc_SUMC(p2_SUMC);
+    doc_SUMNC(p2_SUMNC);
+    doc_SUMZ(p2_SUMZ);
+    doc_SUMNZ(p2_SUMNZ);
 
-    doc_testb_w(p2_TESTB_WC);
-    doc_testb_w(p2_TESTB_WZ);
-    doc_testbn_w(p2_TESTBN_WZ);
-    doc_testbn_w(p2_TESTBN_WC);
-    doc_testb_and(p2_TESTB_ANDZ);
-    doc_testb_and(p2_TESTB_ANDC);
-    doc_testbn_and(p2_TESTBN_ANDZ);
-    doc_testbn_and(p2_TESTBN_ANDC);
-    doc_testb_or(p2_TESTB_ORC);
-    doc_testb_or(p2_TESTB_ORZ);
-    doc_testbn_or(p2_TESTBN_ORC);
-    doc_testbn_or(p2_TESTBN_ORZ);
-    doc_testb_xor(p2_TESTB_XORC);
-    doc_testb_xor(p2_TESTB_XORZ);
-    doc_testbn_xor(p2_TESTBN_XORC);
-    doc_testbn_xor(p2_TESTBN_XORZ);
+    doc_TESTB_W(p2_TESTB_WC);
+    doc_TESTB_W(p2_TESTB_WZ);
+    doc_TESTBN_W(p2_TESTBN_WZ);
+    doc_TESTBN_W(p2_TESTBN_WC);
+    doc_TESTB_AND(p2_TESTB_ANDZ);
+    doc_TESTB_AND(p2_TESTB_ANDC);
+    doc_TESTBN_AND(p2_TESTBN_ANDZ);
+    doc_TESTBN_AND(p2_TESTBN_ANDC);
+    doc_TESTB_OR(p2_TESTB_ORC);
+    doc_TESTB_OR(p2_TESTB_ORZ);
+    doc_TESTBN_OR(p2_TESTBN_ORC);
+    doc_TESTBN_OR(p2_TESTBN_ORZ);
+    doc_TESTB_XOR(p2_TESTB_XORC);
+    doc_TESTB_XOR(p2_TESTB_XORZ);
+    doc_TESTBN_XOR(p2_TESTBN_XORC);
+    doc_TESTBN_XOR(p2_TESTBN_XORZ);
 
-    doc_bitl(p2_BITL);
-    doc_bitl(p2_BITL_WCZ);
-    doc_bith(p2_BITH);
-    doc_bith(p2_BITH_WCZ);
-    doc_bitc(p2_BITC);
-    doc_bitc(p2_BITC_WCZ);
-    doc_bitnc(p2_BITNC);
-    doc_bitnc(p2_BITNC_WCZ);
-    doc_bitz(p2_BITZ);
-    doc_bitz(p2_BITZ_WCZ);
-    doc_bitnz(p2_BITNZ);
-    doc_bitnz(p2_BITNZ_WCZ);
-    doc_bitrnd(p2_BITRND);
-    doc_bitrnd(p2_BITRND_WCZ);
-    doc_bitnot(p2_BITNOT);
-    doc_bitnot(p2_BITNOT_WCZ);
+    doc_BITL(p2_BITL);
+    doc_BITL(p2_BITL_WCZ);
+    doc_BITH(p2_BITH);
+    doc_BITH(p2_BITH_WCZ);
+    doc_BITC(p2_BITC);
+    doc_BITC(p2_BITC_WCZ);
+    doc_BITNC(p2_BITNC);
+    doc_BITNC(p2_BITNC_WCZ);
+    doc_BITZ(p2_BITZ);
+    doc_BITZ(p2_BITZ_WCZ);
+    doc_BITNZ(p2_BITNZ);
+    doc_BITNZ(p2_BITNZ_WCZ);
+    doc_BITRND(p2_BITRND);
+    doc_BITRND(p2_BITRND_WCZ);
+    doc_BITNOT(p2_BITNOT);
+    doc_BITNOT(p2_BITNOT_WCZ);
 
-    doc_and(p2_AND);
-    doc_andn(p2_ANDN);
-    doc_or(p2_OR);
-    doc_xor(p2_XOR);
-    doc_muxc(p2_MUXC);
-    doc_muxnc(p2_MUXNC);
-    doc_muxz(p2_MUXZ);
-    doc_muxnz(p2_MUXNZ);
-    doc_mov(p2_MOV);
-    doc_not(p2_NOT);
-    doc_abs(p2_ABS);
-    doc_neg(p2_NEG);
-    doc_negc(p2_NEGC);
+    doc_AND(p2_AND);
+    doc_ANDN(p2_ANDN);
+    doc_OR(p2_OR);
+    doc_XOR(p2_XOR);
+    doc_MUXC(p2_MUXC);
+    doc_MUXNC(p2_MUXNC);
+    doc_MUXZ(p2_MUXZ);
+    doc_MUXNZ(p2_MUXNZ);
+    doc_MOV(p2_MOV);
+    doc_NOT(p2_NOT);
+    doc_ABS(p2_ABS);
+    doc_NEG(p2_NEG);
+    doc_NEGC(p2_NEGC);
 
-    doc_negnc(p2_NEGNC);
-    doc_negz(p2_NEGZ);
-    doc_negnz(p2_NEGNZ);
-    doc_incmod(p2_INCMOD);
-    doc_decmod(p2_DECMOD);
-    doc_zerox(p2_ZEROX);
-    doc_signx(p2_SIGNX);
-    doc_encod(p2_ENCOD);
-    doc_ones(p2_ONES);
+    doc_NEGNC(p2_NEGNC);
+    doc_NEGZ(p2_NEGZ);
+    doc_NEGNZ(p2_NEGNZ);
+    doc_INCMOD(p2_INCMOD);
+    doc_DECMOD(p2_DECMOD);
+    doc_ZEROX(p2_ZEROX);
+    doc_SIGNX(p2_SIGNX);
+    doc_ENCOD(p2_ENCOD);
+    doc_ONES(p2_ONES);
 
-    doc_test(p2_TEST);
-    doc_testn(p2_TESTN);
-    doc_setnib(p2_SETNIB_0);
-    doc_setnib(p2_SETNIB_1);
-    doc_getnib(p2_GETNIB_0);
-    doc_getnib(p2_GETNIB_1);
-    doc_rolnib(p2_ROLNIB_0);
-    doc_rolnib(p2_ROLNIB_1);
-    doc_setbyte(p2_SETBYTE);
-    doc_getbyte(p2_GETBYTE);
-    doc_rolbyte(p2_ROLBYTE);
+    doc_TEST(p2_TEST);
+    doc_TESTN(p2_TESTN);
+    doc_SETNIB(p2_SETNIB_0);
+    doc_SETNIB(p2_SETNIB_1);
+    doc_GETNIB(p2_GETNIB_0);
+    doc_GETNIB(p2_GETNIB_1);
+    doc_ROLNIB(p2_ROLNIB_0);
+    doc_ROLNIB(p2_ROLNIB_1);
+    doc_SETBYTE(p2_SETBYTE);
+    doc_GETBYTE(p2_GETBYTE);
+    doc_ROLBYTE(p2_ROLBYTE);
 
-    doc_setword_altsw(p2_SETWORD_ALTSW);
-    doc_setword(p2_SETWORD);
-    doc_getword_altgw(p2_GETWORD_ALTGW);
-    doc_getword(p2_GETWORD);
-    doc_rolword_altgw(p2_ROLWORD_ALTGW);
-    doc_rolword(p2_ROLWORD_ALTGW);
-    doc_rolword(p2_ROLWORD);
-    doc_altsn_d(p2_ALTSN);
-    doc_altsn(p2_ALTSN);
-    doc_altgn_d(p2_ALTGN);
-    doc_altgn(p2_ALTGN);
+    doc_SETWORD_ALTSW(p2_SETWORD_ALTSW);
+    doc_SETWORD(p2_SETWORD);
+    doc_GETWORD_ALTGW(p2_GETWORD_ALTGW);
+    doc_GETWORD(p2_GETWORD);
+    doc_ROLWORD_ALTGW(p2_ROLWORD_ALTGW);
+    doc_ROLWORD(p2_ROLWORD_ALTGW);
+    doc_ROLWORD(p2_ROLWORD);
+    doc_ALTSN_D(p2_ALTSN);
+    doc_ALTSN(p2_ALTSN);
+    doc_ALTGN_D(p2_ALTGN);
+    doc_ALTGN(p2_ALTGN);
 
-    doc_altsb_d(p2_ALTSB);
-    doc_altsb(p2_ALTSB);
-    doc_altgb_d(p2_ALTGB);
-    doc_altgb(p2_ALTGB);
-    doc_altsw_d(p2_ALTSW);
-    doc_altsw(p2_ALTSW);
-    doc_altgw_d(p2_ALTGW);
-    doc_altgw(p2_ALTGW);
+    doc_ALTSB_D(p2_ALTSB);
+    doc_ALTSB(p2_ALTSB);
+    doc_ALTGB_D(p2_ALTGB);
+    doc_ATLGB(p2_ALTGB);
+    doc_ALTSW_D(p2_ALTSW);
+    doc_ALTSW(p2_ALTSW);
+    doc_ALTGW_D(p2_ALTGW);
+    doc_ALTGW(p2_ALTGW);
 
-    doc_altr_d(p2_ALTR);
-    doc_altr(p2_ALTR);
-    doc_altd_d(p2_ALTD);
-    doc_altd(p2_ALTD);
-    doc_alts_d(p2_ALTS);
-    doc_alts(p2_ALTS);
-    doc_altb_d(p2_ALTB);
-    doc_altb(p2_ALTB);
+    doc_ALTR_D(p2_ALTR);
+    doc_ALTR(p2_ALTR);
+    doc_ALTD_D(p2_ALTD);
+    doc_ALTD(p2_ALTD);
+    doc_ALTS_D(p2_ALTS);
+    doc_ALTS(p2_ALTS);
+    doc_ALTB_D(p2_ALTB);
+    doc_ALTB(p2_ALTB);
 
-    doc_alti_d(p2_ALTI);
-    doc_alti(p2_ALTI);
-    doc_setr(p2_SETR);
-    doc_setd(p2_SETD);
-    doc_sets(p2_SETS);
+    doc_ALTI_D(p2_ALTI);
+    doc_ALTI(p2_ALTI);
+    doc_SETR(p2_SETR);
+    doc_SETD(p2_SETD);
+    doc_SETS(p2_SETS);
 
-    doc_decod_d(p2_DECOD);
-    doc_decod(p2_DECOD);
-    doc_bmask_d(p2_BMASK);
-    doc_bmask(p2_BMASK);
-    doc_crcbit(p2_CRCBIT);
-    doc_crcnib(p2_CRCNIB);
+    doc_DECOD_D(p2_DECOD);
+    doc_DECOD(p2_DECOD);
+    doc_BMASK_D(p2_BMASK);
+    doc_BMASK(p2_BMASK);
+    doc_CRCBIT(p2_CRCBIT);
+    doc_CRCNIB(p2_CRCNIB);
 
-    doc_muxnits(p2_MUXNITS);
-    doc_muxnibs(p2_MUXNIBS);
-    doc_muxq(p2_MUXQ);
-    doc_movbyts(p2_MOVBYTS);
+    doc_MUXNITS(p2_MUXNITS);
+    doc_MUXNIBS(p2_MUXNIBS);
+    doc_MUXQ(p2_MUXQ);
+    doc_MOVBYTS(p2_MOVBYTS);
 
-    doc_mul(p2_MUL);
-    doc_muls(p2_MULS);
+    doc_MUL(p2_MUL);
+    doc_MULS(p2_MULS);
 
-    doc_sca(p2_SCA);
-    doc_scas(p2_SCAS);
+    doc_SCA(p2_SCA);
+    doc_SCAS(p2_SCAS);
 
-    doc_addpix(p2_ADDPIX);
-    doc_mulpix(p2_MULPIX);
-    doc_blnpix(p2_BLNPIX);
-    doc_mixpix(p2_MIXPIX);
+    doc_ADDPIX(p2_ADDPIX);
+    doc_MULPIX(p2_MULPIX);
+    doc_BLNPIX(p2_BLNPIX);
+    doc_MIXPIX(p2_MIXPIX);
 
-    doc_addct1(p2_ADDCT1);
-    doc_addct2(p2_ADDCT2);
-    doc_addct3(p2_ADDCT3);
-    doc_wmlong(p2_WMLONG);
+    doc_ADDCT1(p2_ADDCT1);
+    doc_ADDCT2(p2_ADDCT2);
+    doc_ADDCT3(p2_ADDCT3);
+    doc_WMLONG(p2_WMLONG);
 
-    doc_rqpin(p2_RQPIN);
-    doc_rdpin(p2_RDPIN);
+    doc_RQPIN(p2_RQPIN);
+    doc_RDPIN(p2_RDPIN);
 
-    doc_rdlut(p2_RDLUT);
-    doc_rdbyte(p2_RDBYTE);
-    doc_rdword(p2_RDWORD);
+    doc_RDLUT(p2_RDLUT);
+    doc_RDBYTE(p2_RDBYTE);
+    doc_RDWORD(p2_RDWORD);
 
-    doc_rdlong(p2_RDLONG);
+    doc_RDLONG(p2_RDLONG);
 
-    doc_calld(p2_CALLD);
-    doc_resi3(p2_RESI3);
-    doc_resi2(p2_RESI2);
-    doc_resi1(p2_RESI1);
-    doc_resi0(p2_RESI0);
+    doc_CALLD(p2_CALLD);
+    doc_RESI3(p2_RESI3);
+    doc_RESI2(p2_RESI2);
+    doc_RESI1(p2_RESI1);
+    doc_RESI0(p2_RESI0);
 
-    doc_callpa(p2_CALLPA);
-    doc_callpb(p2_CALLPB);
+    doc_CALLPA(p2_CALLPA);
+    doc_CALLPB(p2_CALLPB);
 
-    doc_djz(p2_DJZ);
-    doc_djnz(p2_DJNZ);
-    doc_djf(p2_DJF);
-    doc_djnf(p2_DJNF);
-    doc_ijz(p2_IJZ);
-    doc_ijnz(p2_IJNZ);
-    doc_tjz(p2_TJZ);
-    doc_tjnz(p2_TJNZ);
-    doc_tjf(p2_TJF);
-    doc_tjnf(p2_TJNF);
-    doc_tjs(p2_TJS);
-    doc_tjns(p2_TJNS);
-    doc_tjv(p2_TJV);
+    doc_DJZ(p2_DJZ);
+    doc_DJNZ(p2_DJNZ);
+    doc_DJF(p2_DJF);
+    doc_DJNF(p2_DJNF);
+    doc_IJZ(p2_IJZ);
+    doc_IJNZ(p2_IJNZ);
+    doc_TJZ(p2_TJZ);
+    doc_TJNZ(p2_TJNZ);
+    doc_TJF(p2_TJF);
+    doc_TJNF(p2_TJNF);
+    doc_TJS(p2_TJS);
+    doc_TJNS(p2_TJNS);
+    doc_TJV(p2_TJV);
 
-    doc_jint(p2_OPDST_JINT);
-    doc_jct1(p2_OPDST_JCT1);
-    doc_jct2(p2_OPDST_JCT2);
-    doc_jct3(p2_OPDST_JCT3);
-    doc_jse1(p2_OPDST_JSE1);
-    doc_jse2(p2_OPDST_JSE2);
-    doc_jse3(p2_OPDST_JSE3);
-    doc_jse4(p2_OPDST_JSE4);
-    doc_jpat(p2_OPDST_JPAT);
-    doc_jfbw(p2_OPDST_JFBW);
-    doc_jxmt(p2_OPDST_JXMT);
-    doc_jxfi(p2_OPDST_JXFI);
-    doc_jxro(p2_OPDST_JXRO);
-    doc_jxrl(p2_OPDST_JXRL);
-    doc_jatn(p2_OPDST_JATN);
-    doc_jqmt(p2_OPDST_JQMT);
+    doc_JINT(p2_OPDST_JINT);
+    doc_JCT1(p2_OPDST_JCT1);
+    doc_JCT2(p2_OPDST_JCT2);
+    doc_JCT3(p2_OPDST_JCT3);
+    doc_JSE1(p2_OPDST_JSE1);
+    doc_JSE2(p2_OPDST_JSE2);
+    doc_JSE3(p2_OPDST_JSE3);
+    doc_JSE4(p2_OPDST_JSE4);
+    doc_JPAT(p2_OPDST_JPAT);
+    doc_JFBW(p2_OPDST_JFBW);
+    doc_JXMT(p2_OPDST_JXMT);
+    doc_JXFI(p2_OPDST_JXFI);
+    doc_JXRO(p2_OPDST_JXRO);
+    doc_JXRL(p2_OPDST_JXRL);
+    doc_JATN(p2_OPDST_JATN);
+    doc_JQMT(p2_OPDST_JQMT);
 
-    doc_jnint(p2_OPDST_JNINT);
-    doc_jnct1(p2_OPDST_JNCT1);
-    doc_jnct2(p2_OPDST_JNCT2);
-    doc_jnct3(p2_OPDST_JNCT3);
-    doc_jnse1(p2_OPDST_JNSE1);
-    doc_jnse2(p2_OPDST_JNSE2);
-    doc_jnse3(p2_OPDST_JNSE3);
-    doc_jnse4(p2_OPDST_JNSE4);
-    doc_jnpat(p2_OPDST_JNPAT);
-    doc_jnfbw(p2_OPDST_JNFBW);
-    doc_jnxmt(p2_OPDST_JNXMT);
-    doc_jnxfi(p2_OPDST_JNXFI);
-    doc_jnxro(p2_OPDST_JNXRO);
-    doc_jnxrl(p2_OPDST_JNXRL);
-    doc_jnatn(p2_OPDST_JNATN);
-    doc_jnqmt(p2_OPDST_JNQMT);
+    doc_JNINT(p2_OPDST_JNINT);
+    doc_JNCT1(p2_OPDST_JNCT1);
+    doc_JNCT2(p2_OPDST_JNCT2);
+    doc_JNCT3(p2_OPDST_JNCT3);
+    doc_JNSE1(p2_OPDST_JNSE1);
+    doc_JNSE2(p2_OPDST_JNSE2);
+    doc_JNSE3(p2_OPDST_JNSE3);
+    doc_JNSE4(p2_OPDST_JNSE4);
+    doc_JNPAT(p2_OPDST_JNPAT);
+    doc_JNFBW(p2_OPDST_JNFBW);
+    doc_JNXMT(p2_OPDST_JNXMT);
+    doc_JNXFI(p2_OPDST_JNXFI);
+    doc_JNXRO(p2_OPDST_JNXRO);
+    doc_JNXRL(p2_OPDST_JNXRL);
+    doc_JNATN(p2_OPDST_JNATN);
+    doc_JNQMT(p2_OPDST_JNQMT);
     doc_1011110_1(p2_1011110_1);
 
     doc_1011111_0(p2_1011111_0);
-    doc_setpat(p2_SETPAT);
+    doc_SETPAT(p2_SETPAT);
 
-    doc_akpin(p2_WRPIN);
-    doc_wrpin(p2_WRPIN);
-    doc_wxpin(p2_WXPIN);
-    doc_wypin(p2_WYPIN);
-    doc_wrlut(p2_WRLUT);
-    doc_wrbyte(p2_WRBYTE);
-    doc_wrword(p2_WRWORD);
-    doc_wrlong(p2_WRLONG);
-    doc_rdfast(p2_RDFAST);
-    doc_wrfast(p2_WRFAST);
-    doc_fblock(p2_FBLOCK);
+    doc_AKPIN(p2_WRPIN);
+    doc_WRPIN(p2_WRPIN);
+    doc_WXPIN(p2_WXPIN);
+    doc_WYPIN(p2_WYPIN);
+    doc_WRLUT(p2_WRLUT);
+    doc_WRBYTE(p2_WRBYTE);
+    doc_WRWORD(p2_WRWORD);
+    doc_WRLONG(p2_WRLONG);
+    doc_RDFAST(p2_RDFAST);
+    doc_WRFAST(p2_WRFAST);
+    doc_FBLOCK(p2_FBLOCK);
 
-    doc_xstop(p2_XINIT);
-    doc_xinit(p2_XINIT);
-    doc_xzero(p2_XZERO);
-    doc_xcont(p2_XCONT);
-    doc_rep(p2_REP);
-    doc_coginit(p2_COGINIT);
-    doc_qmul(p2_QMUL);
-    doc_qdiv(p2_QDIV);
-    doc_qfrac(p2_QFRAC);
-    doc_qsqrt(p2_QSQRT);
-    doc_qrotate(p2_QROTATE);
-    doc_qvector(p2_QVECTOR);
+    doc_XSTOP(p2_XINIT);
+    doc_XINIT(p2_XINIT);
+    doc_XZERO(p2_XZERO);
+    doc_XCONT(p2_XCONT);
+    doc_REP(p2_REP);
+    doc_COGINIT(p2_COGINIT);
+    doc_QMUL(p2_QMUL);
+    doc_QDIV(p2_QDIV);
+    doc_QFRAC(p2_QFRAC);
+    doc_QSQRT(p2_QSQRT);
+    doc_QROTATE(p2_QROTATE);
+    doc_QVECTOR(p2_QVECTOR);
 
-    doc_hubset(p2_OPSRC_HUBSET);
-    doc_cogid(p2_OPSRC_COGID);
-    doc_cogstop(p2_OPSRC_COGSTOP);
-    doc_locknew(p2_OPSRC_LOCKNEW);
-    doc_lockret(p2_OPSRC_LOCKRET);
-    doc_locktry(p2_OPSRC_LOCKTRY);
-    doc_lockrel(p2_OPSRC_LOCKREL);
-    doc_qlog(p2_OPSRC_QLOG);
-    doc_qexp(p2_OPSRC_QEXP);
+    doc_HUBSET(p2_OPSRC_HUBSET);
+    doc_COGID(p2_OPSRC_COGID);
+    doc_COGSTOP(p2_OPSRC_COGSTOP);
+    doc_LOCKNEW(p2_OPSRC_LOCKNEW);
+    doc_LOCKRET(p2_OPSRC_LOCKRET);
+    doc_LOCKTRY(p2_OPSRC_LOCKTRY);
+    doc_LOCKREL(p2_OPSRC_LOCKREL);
+    doc_QLOG(p2_OPSRC_QLOG);
+    doc_QEXP(p2_OPSRC_QEXP);
 
-    doc_rfbyte(p2_OPSRC_RFBYTE);
-    doc_rfword(p2_OPSRC_RFWORD);
-    doc_rflong(p2_OPSRC_RFLONG);
-    doc_rfvar(p2_OPSRC_RFVAR);
-    doc_rfvars(p2_OPSRC_RFVARS);
-    doc_wfbyte(p2_OPSRC_WFBYTE);
-    doc_wfword(p2_OPSRC_WFWORD);
-    doc_wflong(p2_OPSRC_WFLONG);
+    doc_RFBYTE(p2_OPSRC_RFBYTE);
+    doc_RFWORD(p2_OPSRC_RFWORD);
+    doc_RFLONG(p2_OPSRC_RFLONG);
+    doc_RFVAR(p2_OPSRC_RFVAR);
+    doc_RFVARS(p2_OPSRC_RFVARS);
+    doc_WFBYTE(p2_OPSRC_WFBYTE);
+    doc_WFWORD(p2_OPSRC_WFWORD);
+    doc_WFLONG(p2_OPSRC_WFLONG);
 
-    doc_getqx(p2_OPSRC_GETQX);
-    doc_getqy(p2_OPSRC_GETQY);
-    doc_getct(p2_OPSRC_GETCT);
-    doc_getrnd_cz(p2_OPSRC_GETRND);
-    doc_getrnd(p2_OPSRC_GETRND);
-    doc_setdacs(p2_OPSRC_SETDACS);
-    doc_setxfrq(p2_OPSRC_SETXFRQ);
-    doc_getxacc(p2_OPSRC_GETXACC);
-    doc_waitx(p2_OPSRC_WAITX);
-    doc_setse1(p2_OPSRC_SETSE1);
-    doc_setse2(p2_OPSRC_SETSE2);
-    doc_setse3(p2_OPSRC_SETSE3);
-    doc_setse4(p2_OPSRC_SETSE4);
+    doc_GETQX(p2_OPSRC_GETQX);
+    doc_GETQY(p2_OPSRC_GETQY);
+    doc_GETCT(p2_OPSRC_GETCT);
+    doc_GETRND_CZ(p2_OPSRC_GETRND);
+    doc_GETRND(p2_OPSRC_GETRND);
+    doc_SETDACS(p2_OPSRC_SETDACS);
+    doc_SETXFRQ(p2_OPSRC_SETXFRQ);
+    doc_GETXACC(p2_OPSRC_GETXACC);
+    doc_WAITX(p2_OPSRC_WAITX);
+    doc_SETSE1(p2_OPSRC_SETSE1);
+    doc_SETSE2(p2_OPSRC_SETSE2);
+    doc_SETSE3(p2_OPSRC_SETSE3);
+    doc_SETSE4(p2_OPSRC_SETSE4);
 
-    doc_pollint(p2_OPX24_POLLINT);
-    doc_pollct1(p2_OPX24_POLLCT1);
-    doc_pollct2(p2_OPX24_POLLCT2);
-    doc_pollct3(p2_OPX24_POLLCT3);
-    doc_pollse1(p2_OPX24_POLLSE1);
-    doc_pollse2(p2_OPX24_POLLSE2);
-    doc_pollse3(p2_OPX24_POLLSE3);
-    doc_pollse4(p2_OPX24_POLLSE4);
-    doc_pollpat(p2_OPX24_POLLPAT);
-    doc_pollfbw(p2_OPX24_POLLFBW);
-    doc_pollxmt(p2_OPX24_POLLXMT);
-    doc_pollxfi(p2_OPX24_POLLXFI);
-    doc_pollxro(p2_OPX24_POLLXRO);
-    doc_pollxrl(p2_OPX24_POLLXRL);
-    doc_pollatn(p2_OPX24_POLLATN);
-    doc_pollqmt(p2_OPX24_POLLQMT);
-    doc_waitint(p2_OPX24_WAITINT);
-    doc_waitct1(p2_OPX24_WAITCT1);
-    doc_waitct2(p2_OPX24_WAITCT2);
-    doc_waitct3(p2_OPX24_WAITCT3);
-    doc_waitse1(p2_OPX24_WAITSE1);
-    doc_waitse2(p2_OPX24_WAITSE2);
-    doc_waitse3(p2_OPX24_WAITSE3);
-    doc_waitse4(p2_OPX24_WAITSE4);
-    doc_waitpat(p2_OPX24_WAITPAT);
-    doc_waitfbw(p2_OPX24_WAITFBW);
-    doc_waitxmt(p2_OPX24_WAITXMT);
-    doc_waitxfi(p2_OPX24_WAITXFI);
-    doc_waitxro(p2_OPX24_WAITXRO);
-    doc_waitxrl(p2_OPX24_WAITXRL);
-    doc_waitatn(p2_OPX24_WAITATN);
-    doc_allowi(p2_OPX24_ALLOWI);
-    doc_stalli(p2_OPX24_STALLI);
-    doc_trgint1(p2_OPX24_TRGINT1);
-    doc_trgint2(p2_OPX24_TRGINT2);
-    doc_trgint3(p2_OPX24_TRGINT3);
-    doc_nixint1(p2_OPX24_NIXINT1);
-    doc_nixint2(p2_OPX24_NIXINT2);
-    doc_nixint3(p2_OPX24_NIXINT3);
+    doc_POLLINT(p2_OPX24_POLLINT);
+    doc_POLLCT1(p2_OPX24_POLLCT1);
+    doc_POLLCT2(p2_OPX24_POLLCT2);
+    doc_POLLCT3(p2_OPX24_POLLCT3);
+    doc_POLLSE1(p2_OPX24_POLLSE1);
+    doc_POLLSE2(p2_OPX24_POLLSE2);
+    doc_POLLSE3(p2_OPX24_POLLSE3);
+    doc_POLLSE4(p2_OPX24_POLLSE4);
+    doc_POLLPAT(p2_OPX24_POLLPAT);
+    doc_POLLFBW(p2_OPX24_POLLFBW);
+    doc_POLLXMT(p2_OPX24_POLLXMT);
+    doc_POLLXFI(p2_OPX24_POLLXFI);
+    doc_POLLXRO(p2_OPX24_POLLXRO);
+    doc_POLLXRL(p2_OPX24_POLLXRL);
+    doc_POLLATN(p2_OPX24_POLLATN);
+    doc_POLLQMT(p2_OPX24_POLLQMT);
+    doc_WAITINT(p2_OPX24_WAITINT);
+    doc_WAITCT1(p2_OPX24_WAITCT1);
+    doc_WAITCT2(p2_OPX24_WAITCT2);
+    doc_WAITCT3(p2_OPX24_WAITCT3);
+    doc_WAITSE1(p2_OPX24_WAITSE1);
+    doc_WAITSE2(p2_OPX24_WAITSE2);
+    doc_WAITSE3(p2_OPX24_WAITSE3);
+    doc_WAITSE4(p2_OPX24_WAITSE4);
+    doc_WAITPAT(p2_OPX24_WAITPAT);
+    doc_WAITFBW(p2_OPX24_WAITFBW);
+    doc_WAITXMT(p2_OPX24_WAITXMT);
+    doc_WAITXFI(p2_OPX24_WAITXFI);
+    doc_WAITXRO(p2_OPX24_WAITXRO);
+    doc_WAITXRL(p2_OPX24_WAITXRL);
+    doc_WAITATN(p2_OPX24_WAITATN);
+    doc_ALLOWI(p2_OPX24_ALLOWI);
+    doc_STALLI(p2_OPX24_STALLI);
+    doc_TRGINT1(p2_OPX24_TRGINT1);
+    doc_TRGINT2(p2_OPX24_TRGINT2);
+    doc_TRGINT3(p2_OPX24_TRGINT3);
+    doc_NIXINT1(p2_OPX24_NIXINT1);
+    doc_NIXINT2(p2_OPX24_NIXINT2);
+    doc_NIXINT3(p2_OPX24_NIXINT3);
 
-    doc_setint1(p2_OPSRC_SETINT1);
-    doc_setint2(p2_OPSRC_SETINT2);
-    doc_setint3(p2_OPSRC_SETINT3);
-    doc_setq(p2_OPSRC_SETQ);
-    doc_setq2(p2_OPSRC_SETQ2);
-    doc_push(p2_OPSRC_PUSH);
-    doc_pop(p2_OPSRC_POP);
-    doc_jmp(p2_OPSRC_JMP);
-    doc_call(p2_OPSRC_CALL_RET);
-    doc_ret(p2_OPSRC_CALL_RET);
-    doc_calla(p2_OPSRC_CALLA_RETA);
-    doc_reta(p2_OPSRC_CALLA_RETA);
-    doc_callb(p2_OPSRC_CALLB_RETB);
-    doc_retb(p2_OPSRC_CALLB_RETB);
-    doc_jmprel(p2_OPSRC_JMPREL);
-    doc_skip(p2_OPSRC_SKIP);
-    doc_skipf(p2_OPSRC_SKIPF);
-    doc_execf(p2_OPSRC_EXECF);
-    doc_getptr(p2_OPSRC_GETPTR);
-    doc_cogbrk(p2_OPSRC_COGBRK);
-    doc_getbrk(p2_OPSRC_COGBRK);
-    doc_brk(p2_OPSRC_BRK);
-    doc_setluts(p2_OPSRC_SETLUTS);
-    doc_setcy(p2_OPSRC_SETCY);
-    doc_setci(p2_OPSRC_SETCI);
-    doc_setcq(p2_OPSRC_SETCQ);
-    doc_setcfrq(p2_OPSRC_SETCFRQ);
-    doc_setcmod(p2_OPSRC_SETCMOD);
-    doc_setpiv(p2_OPSRC_SETPIV);
-    doc_setpix(p2_OPSRC_SETPIX);
-    doc_cogatn(p2_OPSRC_COGATN);
+    doc_SETINT1(p2_OPSRC_SETINT1);
+    doc_SETINT2(p2_OPSRC_SETINT2);
+    doc_SETINT3(p2_OPSRC_SETINT3);
+    doc_SETQ(p2_OPSRC_SETQ);
+    doc_SETQ2(p2_OPSRC_SETQ2);
+    doc_PUSH(p2_OPSRC_PUSH);
+    doc_POP(p2_OPSRC_POP);
+    doc_JMP(p2_OPSRC_JMP);
+    doc_CALL(p2_OPSRC_CALL_RET);
+    doc_RET(p2_OPSRC_CALL_RET);
+    doc_CALLA(p2_OPSRC_CALLA_RETA);
+    doc_RETA(p2_OPSRC_CALLA_RETA);
+    doc_CALLB(p2_OPSRC_CALLB_RETB);
+    doc_RETB(p2_OPSRC_CALLB_RETB);
+    doc_JMPREL(p2_OPSRC_JMPREL);
+    doc_SKIP(p2_OPSRC_SKIP);
+    doc_SKIPF(p2_OPSRC_SKIPF);
+    doc_EXECF(p2_OPSRC_EXECF);
+    doc_GETPTR(p2_OPSRC_GETPTR);
+    doc_COGBRK(p2_OPSRC_COGBRK);
+    doc_GETBRK(p2_OPSRC_COGBRK);
+    doc_BRK(p2_OPSRC_BRK);
+    doc_SETLUTS(p2_OPSRC_SETLUTS);
+    doc_SETCY(p2_OPSRC_SETCY);
+    doc_SETCI(p2_OPSRC_SETCI);
+    doc_SETCQ(p2_OPSRC_SETCQ);
+    doc_SETCFRQ(p2_OPSRC_SETCFRQ);
+    doc_SETCMOD(p2_OPSRC_SETCMOD);
+    doc_SETPIV(p2_OPSRC_SETPIV);
+    doc_SETPIX(p2_OPSRC_SETPIX);
+    doc_COGATN(p2_OPSRC_COGATN);
 
-    doc_dirl(p2_OPSRC_DIRL, p2_DIRL);
-    doc_dirl(p2_OPSRC_DIRL, p2_DIRL_WCZ);
-    doc_dirh(p2_OPSRC_DIRH, p2_DIRH);
-    doc_dirh(p2_OPSRC_DIRH, p2_DIRH_WCZ);
-    doc_dirc(p2_OPSRC_DIRC, p2_DIRC);
-    doc_dirc(p2_OPSRC_DIRC, p2_DIRC_WCZ);
-    doc_dirnc(p2_OPSRC_DIRNC, p2_DIRNC);
-    doc_dirnc(p2_OPSRC_DIRNC, p2_DIRNC_WCZ);
-    doc_dirz(p2_OPSRC_DIRZ, p2_DIRZ);
-    doc_dirz(p2_OPSRC_DIRZ, p2_DIRZ_WCZ);
-    doc_dirnz(p2_OPSRC_DIRNZ, p2_DIRNZ);
-    doc_dirnz(p2_OPSRC_DIRNZ, p2_DIRNZ_WCZ);
-    doc_dirrnd(p2_OPSRC_DIRRND, p2_DIRRND);
-    doc_dirrnd(p2_OPSRC_DIRRND, p2_DIRRND_WCZ);
-    doc_dirnot(p2_OPSRC_DIRNOT, p2_DIRNOT);
-    doc_dirnot(p2_OPSRC_DIRNOT, p2_DIRNOT_WCZ);
+    doc_DIRL(p2_OPSRC_DIRL, p2_DIRL);
+    doc_DIRL(p2_OPSRC_DIRL, p2_DIRL_WCZ);
+    doc_DIRH(p2_OPSRC_DIRH, p2_DIRH);
+    doc_DIRH(p2_OPSRC_DIRH, p2_DIRH_WCZ);
+    doc_DIRC(p2_OPSRC_DIRC, p2_DIRC);
+    doc_DIRC(p2_OPSRC_DIRC, p2_DIRC_WCZ);
+    doc_DIRNC(p2_OPSRC_DIRNC, p2_DIRNC);
+    doc_DIRNC(p2_OPSRC_DIRNC, p2_DIRNC_WCZ);
+    doc_DIRZ(p2_OPSRC_DIRZ, p2_DIRZ);
+    doc_DIRZ(p2_OPSRC_DIRZ, p2_DIRZ_WCZ);
+    doc_DIRNZ(p2_OPSRC_DIRNZ, p2_DIRNZ);
+    doc_DIRNZ(p2_OPSRC_DIRNZ, p2_DIRNZ_WCZ);
+    doc_DIRRND(p2_OPSRC_DIRRND, p2_DIRRND);
+    doc_DIRRND(p2_OPSRC_DIRRND, p2_DIRRND_WCZ);
+    doc_DIRNOT(p2_OPSRC_DIRNOT, p2_DIRNOT);
+    doc_DIRNOT(p2_OPSRC_DIRNOT, p2_DIRNOT_WCZ);
 
-    doc_testp_wc_wz(p2_OPSRC_TESTP_W, p2_TESTP_WZ);
-    doc_testp_wc_wz(p2_OPSRC_TESTP_W, p2_TESTP_WC);
-    doc_testpn_wc_wz(p2_OPSRC_TESTPN_W, p2_TESTPN_WZ);
-    doc_testpn_wc_wz(p2_OPSRC_TESTPN_W, p2_TESTPN_WC);
-    doc_testp_and(p2_OPSRC_TESTP_AND, p2_TESTP_ANDC);
-    doc_testp_and(p2_OPSRC_TESTP_AND, p2_TESTP_ANDZ);
-    doc_testpn_and(p2_OPSRC_TESTPN_AND, p2_TESTPN_ANDC);
-    doc_testpn_and(p2_OPSRC_TESTPN_AND, p2_TESTPN_ANDZ);
-    doc_testp_or(p2_OPSRC_TESTP_OR, p2_TESTP_ORC);
-    doc_testp_or(p2_OPSRC_TESTP_OR, p2_TESTP_ORZ);
-    doc_testpn_or(p2_OPSRC_TESTPN_OR, p2_TESTPN_ORC);
-    doc_testpn_or(p2_OPSRC_TESTPN_OR, p2_TESTPN_ORZ);
-    doc_testp_xor(p2_OPSRC_TESTP_XOR, p2_TESTP_XORC);
-    doc_testp_xor(p2_OPSRC_TESTP_XOR, p2_TESTP_XORZ);
-    doc_testpn_xor(p2_OPSRC_TESTPN_XOR, p2_TESTPN_XORC);
-    doc_testpn_xor(p2_OPSRC_TESTPN_XOR, p2_TESTPN_XORZ);
+    doc_TESTP_W(p2_OPSRC_TESTP_W, p2_TESTP_WZ);
+    doc_TESTP_W(p2_OPSRC_TESTP_W, p2_TESTP_WC);
+    doc_TESTPN_W(p2_OPSRC_TESTPN_W, p2_TESTPN_WZ);
+    doc_TESTPN_W(p2_OPSRC_TESTPN_W, p2_TESTPN_WC);
+    doc_TESTP_AND(p2_OPSRC_TESTP_AND, p2_TESTP_ANDC);
+    doc_TESTP_AND(p2_OPSRC_TESTP_AND, p2_TESTP_ANDZ);
+    doc_TESTPN_AND(p2_OPSRC_TESTPN_AND, p2_TESTPN_ANDC);
+    doc_TESTPN_AND(p2_OPSRC_TESTPN_AND, p2_TESTPN_ANDZ);
+    doc_TESTP_OR(p2_OPSRC_TESTP_OR, p2_TESTP_ORC);
+    doc_TESTP_OR(p2_OPSRC_TESTP_OR, p2_TESTP_ORZ);
+    doc_TESTPN_OR(p2_OPSRC_TESTPN_OR, p2_TESTPN_ORC);
+    doc_TESTPN_OR(p2_OPSRC_TESTPN_OR, p2_TESTPN_ORZ);
+    doc_TESTP_XOR(p2_OPSRC_TESTP_XOR, p2_TESTP_XORC);
+    doc_TESTP_XOR(p2_OPSRC_TESTP_XOR, p2_TESTP_XORZ);
+    doc_TESTPN_XOR(p2_OPSRC_TESTPN_XOR, p2_TESTPN_XORC);
+    doc_TESTPN_XOR(p2_OPSRC_TESTPN_XOR, p2_TESTPN_XORZ);
 
-    doc_outl(p2_OPSRC_OUTL);
-    doc_outh(p2_OPSRC_OUTH);
-    doc_outc(p2_OPSRC_OUTC);
-    doc_outnc(p2_OPSRC_OUTNC);
-    doc_outz(p2_OPSRC_OUTZ);
-    doc_outnz(p2_OPSRC_OUTNZ);
-    doc_outrnd(p2_OPSRC_OUTRND);
-    doc_outnot(p2_OPSRC_OUTNOT);
+    doc_OUTL(p2_OPSRC_OUTL);
+    doc_OUTH(p2_OPSRC_OUTH);
+    doc_OUTC(p2_OPSRC_OUTC);
+    doc_OUTNC(p2_OPSRC_OUTNC);
+    doc_OUTZ(p2_OPSRC_OUTZ);
+    doc_OUTNZ(p2_OPSRC_OUTNZ);
+    doc_OUTRND(p2_OPSRC_OUTRND);
+    doc_OUTNOT(p2_OPSRC_OUTNOT);
 
-    doc_fltl(p2_OPSRC_FLTL);
-    doc_flth(p2_OPSRC_FLTH);
-    doc_fltc(p2_OPSRC_FLTC);
-    doc_fltnc(p2_OPSRC_FLTNC);
-    doc_fltz(p2_OPSRC_FLTZ);
-    doc_fltnz(p2_OPSRC_FLTNZ);
-    doc_fltrnd(p2_OPSRC_FLTRND);
-    doc_fltnot(p2_OPSRC_FLTNOT);
+    doc_FLTL(p2_OPSRC_FLTL);
+    doc_FLTH(p2_OPSRC_FLTH);
+    doc_FLTC(p2_OPSRC_FLTC);
+    doc_FLTNC(p2_OPSRC_FLTNC);
+    doc_FLTZ(p2_OPSRC_FLTZ);
+    doc_FLTNZ(p2_OPSRC_FLTNZ);
+    doc_FLTRND(p2_OPSRC_FLTRND);
+    doc_FLTNOT(p2_OPSRC_FLTNOT);
 
-    doc_drvl(p2_OPSRC_DRVL);
-    doc_drvh(p2_OPSRC_DRVH);
-    doc_drvc(p2_OPSRC_DRVC);
-    doc_drvnc(p2_OPSRC_DRVNC);
-    doc_drvz(p2_OPSRC_DRVZ);
-    doc_drvnz(p2_OPSRC_DRVNZ);
-    doc_drvrnd(p2_OPSRC_DRVRND);
-    doc_drvnot(p2_OPSRC_DRVNOT);
+    doc_DRVL(p2_OPSRC_DRVL);
+    doc_DRVH(p2_OPSRC_DRVH);
+    doc_DRVC(p2_OPSRC_DRVC);
+    doc_DRVNC(p2_OPSRC_DRVNC);
+    doc_DRVZ(p2_OPSRC_DRVZ);
+    doc_DRVNZ(p2_OPSRC_DRVNZ);
+    doc_DRVRND(p2_OPSRC_DRVRND);
+    doc_DRVNOT(p2_OPSRC_DRVNOT);
 
-    doc_splitb(p2_OPSRC_SPLITB);
-    doc_mergeb(p2_OPSRC_MERGEB);
-    doc_splitw(p2_OPSRC_SPLITW);
-    doc_mergew(p2_OPSRC_MERGEW);
-    doc_seussf(p2_OPSRC_SEUSSF);
-    doc_seussr(p2_OPSRC_SEUSSR);
-    doc_rgbsqz(p2_OPSRC_RGBSQZ);
-    doc_rgbexp(p2_OPSRC_RGBEXP);
+    doc_SPLITB(p2_OPSRC_SPLITB);
+    doc_MERGEB(p2_OPSRC_MERGEB);
+    doc_SPLITW(p2_OPSRC_SPLITW);
+    doc_MERGEW(p2_OPSRC_MERGEW);
+    doc_SEUSSF(p2_OPSRC_SEUSSF);
+    doc_SEUSSR(p2_OPSRC_SEUSSR);
+    doc_RGBSQZ(p2_OPSRC_RGBSQZ);
+    doc_RGBEXP(p2_OPSRC_RGBEXP);
 
-    doc_xoro32(p2_OPSRC_XORO32);
-    doc_rev(p2_OPSRC_REV);
-    doc_rczr(p2_OPSRC_RCZR);
-    doc_rczl(p2_OPSRC_RCZL);
-    doc_wrc(p2_OPSRC_WRC);
-    doc_wrnc(p2_OPSRC_WRNC);
-    doc_wrz(p2_OPSRC_WRZ);
-    doc_modcz(p2_OPSRC_WRNZ_MODCZ);
-    doc_wrnz(p2_OPSRC_WRNZ_MODCZ);
-    doc_setscp(p2_OPSRC_SETSCP);
-    doc_getscp(p2_OPSRC_GETSCP);
+    doc_XORO32(p2_OPSRC_XORO32);
+    doc_REV(p2_OPSRC_REV);
+    doc_RCZR(p2_OPSRC_RCZR);
+    doc_RCZL(p2_OPSRC_RCZL);
+    doc_WRC(p2_OPSRC_WRC);
+    doc_WRNC(p2_OPSRC_WRNC);
+    doc_WRZ(p2_OPSRC_WRZ);
+    doc_MODCZ(p2_OPSRC_WRNZ_MODCZ);
+    doc_WRNZ(p2_OPSRC_WRNZ_MODCZ);
+    doc_SETSCP(p2_OPSRC_SETSCP);
+    doc_GETSCP(p2_OPSRC_GETSCP);
 
-    doc_jmp_abs(p2_JMP_ABS);
-    doc_call_abs(p2_CALL_ABS);
-    doc_calla_abs(p2_CALLA_ABS);
-    doc_callb_abs(p2_CALLB_ABS);
+    doc_JMP_abs(p2_JMP_ABS);
+    doc_CALL_abs(p2_CALL_ABS);
+    doc_CALLA_abs(p2_CALLA_ABS);
+    doc_CALLB_abs(p2_CALLB_ABS);
 
-    doc_calld_abs(p2_CALLD_ABS);
-    doc_loc(p2_LOC);
-    doc_augs(p2_AUGS);
-    doc_augd(p2_AUGD);
+    doc_CALLD_abs(p2_CALLD_ABS);
+    doc_LOC(p2_LOC);
+    doc_AUGS(p2_AUGS);
+    doc_AUGD(p2_AUGD);
 
     foreach(P2DocOpcode op, m_opcodes) {
         P2MatchMask matchmask = op->matchmask();
@@ -1296,7 +1296,7 @@ void P2Doc::params_IMM23(P2DocOpcode& op)
  * NOP
  *
  */
-void P2Doc::doc_nop(p2_inst7_e instr)
+void P2Doc::doc_NOP(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "0000 0000000 000 000000000 000000000", ALL_match);
 
@@ -1316,7 +1316,7 @@ void P2Doc::doc_nop(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_ror(p2_inst7_e instr)
+void P2Doc::doc_ROR(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0000000 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1341,7 +1341,7 @@ void P2Doc::doc_ror(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_rol(p2_inst7_e instr)
+void P2Doc::doc_ROL(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0000001 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1366,7 +1366,7 @@ void P2Doc::doc_rol(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_shr(p2_inst7_e instr)
+void P2Doc::doc_SHR(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0000010 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1391,7 +1391,7 @@ void P2Doc::doc_shr(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_shl(p2_inst7_e instr)
+void P2Doc::doc_SHL(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0000011 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1416,7 +1416,7 @@ void P2Doc::doc_shl(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_rcr(p2_inst7_e instr)
+void P2Doc::doc_RCR(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0000100 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1441,7 +1441,7 @@ void P2Doc::doc_rcr(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_rcl(p2_inst7_e instr)
+void P2Doc::doc_RCL(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0000101 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1466,7 +1466,7 @@ void P2Doc::doc_rcl(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_sar(p2_inst7_e instr)
+void P2Doc::doc_SAR(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0000110 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1491,7 +1491,7 @@ void P2Doc::doc_sar(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_sal(p2_inst7_e instr)
+void P2Doc::doc_SAL(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0000111 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1516,7 +1516,7 @@ void P2Doc::doc_sal(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_add(p2_inst7_e instr)
+void P2Doc::doc_ADD(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0001000 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1541,7 +1541,7 @@ void P2Doc::doc_add(p2_inst7_e instr)
  * Z = Z AND (result == 0).
  *
  */
-void P2Doc::doc_addx(p2_inst7_e instr)
+void P2Doc::doc_ADDX(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0001001 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1566,7 +1566,7 @@ void P2Doc::doc_addx(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_adds(p2_inst7_e instr)
+void P2Doc::doc_ADDS(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0001010 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1591,7 +1591,7 @@ void P2Doc::doc_adds(p2_inst7_e instr)
  * Z = Z AND (result == 0).
  *
  */
-void P2Doc::doc_addsx(p2_inst7_e instr)
+void P2Doc::doc_ADDSX(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0001011 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1616,7 +1616,7 @@ void P2Doc::doc_addsx(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_sub(p2_inst7_e instr)
+void P2Doc::doc_SUB(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0001100 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1641,7 +1641,7 @@ void P2Doc::doc_sub(p2_inst7_e instr)
  * Z = Z AND (result == 0).
  *
  */
-void P2Doc::doc_subx(p2_inst7_e instr)
+void P2Doc::doc_SUBX(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0001101 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1666,7 +1666,7 @@ void P2Doc::doc_subx(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_subs(p2_inst7_e instr)
+void P2Doc::doc_SUBS(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0001110 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1691,7 +1691,7 @@ void P2Doc::doc_subs(p2_inst7_e instr)
  * Z = Z AND (result == 0).
  *
  */
-void P2Doc::doc_subsx(p2_inst7_e instr)
+void P2Doc::doc_SUBSX(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0001111 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1715,7 +1715,7 @@ void P2Doc::doc_subsx(p2_inst7_e instr)
  * Z = (D == S).
  *
  */
-void P2Doc::doc_cmp(p2_inst7_e instr)
+void P2Doc::doc_CMP(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0010000 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1738,7 +1738,7 @@ void P2Doc::doc_cmp(p2_inst7_e instr)
  * Z = Z AND (D == S + C).
  *
  */
-void P2Doc::doc_cmpx(p2_inst7_e instr)
+void P2Doc::doc_CMPX(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0010001 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1761,7 +1761,7 @@ void P2Doc::doc_cmpx(p2_inst7_e instr)
  * Z = (D == S).
  *
  */
-void P2Doc::doc_cmps(p2_inst7_e instr)
+void P2Doc::doc_CMPS(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0010010 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1784,7 +1784,7 @@ void P2Doc::doc_cmps(p2_inst7_e instr)
  * Z = Z AND (D == S + C).
  *
  */
-void P2Doc::doc_cmpsx(p2_inst7_e instr)
+void P2Doc::doc_CMPSX(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0010011 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1807,7 +1807,7 @@ void P2Doc::doc_cmpsx(p2_inst7_e instr)
  * Z = (D == S).
  *
  */
-void P2Doc::doc_cmpr(p2_inst7_e instr)
+void P2Doc::doc_CMPR(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0010100 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1830,7 +1830,7 @@ void P2Doc::doc_cmpr(p2_inst7_e instr)
  * Z = (D == S).
  *
  */
-void P2Doc::doc_cmpm(p2_inst7_e instr)
+void P2Doc::doc_CMPM(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0010101 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1854,7 +1854,7 @@ void P2Doc::doc_cmpm(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_subr(p2_inst7_e instr)
+void P2Doc::doc_SUBR(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0010110 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1878,7 +1878,7 @@ void P2Doc::doc_subr(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_cmpsub(p2_inst7_e instr)
+void P2Doc::doc_CMPSUB(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0010111 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1901,7 +1901,7 @@ void P2Doc::doc_cmpsub(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_fge(p2_inst7_e instr)
+void P2Doc::doc_FGE(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0011000 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1924,7 +1924,7 @@ void P2Doc::doc_fge(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_fle(p2_inst7_e instr)
+void P2Doc::doc_FLE(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0011001 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1947,7 +1947,7 @@ void P2Doc::doc_fle(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_fges(p2_inst7_e instr)
+void P2Doc::doc_FGES(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0011010 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1970,7 +1970,7 @@ void P2Doc::doc_fges(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_fles(p2_inst7_e instr)
+void P2Doc::doc_FLES(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0011011 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -1994,7 +1994,7 @@ void P2Doc::doc_fles(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_sumc(p2_inst7_e instr)
+void P2Doc::doc_SUMC(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0011100 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2019,7 +2019,7 @@ void P2Doc::doc_sumc(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_sumnc(p2_inst7_e instr)
+void P2Doc::doc_SUMNC(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0011101 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2044,7 +2044,7 @@ void P2Doc::doc_sumnc(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_sumz(p2_inst7_e instr)
+void P2Doc::doc_SUMZ(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0011110 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2069,7 +2069,7 @@ void P2Doc::doc_sumz(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_sumnz(p2_inst7_e instr)
+void P2Doc::doc_SUMNZ(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0011111 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2092,7 +2092,7 @@ void P2Doc::doc_sumnz(p2_inst7_e instr)
  * C/Z =          D[S[4:0]].
  *
  */
-void P2Doc::doc_testb_w(p2_inst9_e instr)
+void P2Doc::doc_TESTB_W(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0100000 CZI DDDDDDDDD SSSSSSSSS", C_neq_Z);
 
@@ -2112,7 +2112,7 @@ void P2Doc::doc_testb_w(p2_inst9_e instr)
  * C/Z =         !D[S[4:0]].
  *
  */
-void P2Doc::doc_testbn_w(p2_inst9_e instr)
+void P2Doc::doc_TESTBN_W(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0100001 CZI DDDDDDDDD SSSSSSSSS", C_neq_Z);
 
@@ -2132,7 +2132,7 @@ void P2Doc::doc_testbn_w(p2_inst9_e instr)
  * C/Z = C/Z AND  D[S[4:0]].
  *
  */
-void P2Doc::doc_testb_and(p2_inst9_e instr)
+void P2Doc::doc_TESTB_AND(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0100010 CZI DDDDDDDDD SSSSSSSSS", C_neq_Z);
 
@@ -2152,7 +2152,7 @@ void P2Doc::doc_testb_and(p2_inst9_e instr)
  * C/Z = C/Z AND !D[S[4:0]].
  *
  */
-void P2Doc::doc_testbn_and(p2_inst9_e instr)
+void P2Doc::doc_TESTBN_AND(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0100011 CZI DDDDDDDDD SSSSSSSSS", C_neq_Z);
 
@@ -2172,7 +2172,7 @@ void P2Doc::doc_testbn_and(p2_inst9_e instr)
  * C/Z = C/Z OR   D[S[4:0]].
  *
  */
-void P2Doc::doc_testb_or(p2_inst9_e instr)
+void P2Doc::doc_TESTB_OR(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0100100 CZI DDDDDDDDD SSSSSSSSS", C_neq_Z);
 
@@ -2192,7 +2192,7 @@ void P2Doc::doc_testb_or(p2_inst9_e instr)
  * C/Z = C/Z OR  !D[S[4:0]].
  *
  */
-void P2Doc::doc_testbn_or(p2_inst9_e instr)
+void P2Doc::doc_TESTBN_OR(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0100101 CZI DDDDDDDDD SSSSSSSSS", C_neq_Z);
 
@@ -2212,7 +2212,7 @@ void P2Doc::doc_testbn_or(p2_inst9_e instr)
  * C/Z = C/Z XOR  D[S[4:0]].
  *
  */
-void P2Doc::doc_testb_xor(p2_inst9_e instr)
+void P2Doc::doc_TESTB_XOR(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0100110 CZI DDDDDDDDD SSSSSSSSS", C_neq_Z);
 
@@ -2232,7 +2232,7 @@ void P2Doc::doc_testb_xor(p2_inst9_e instr)
  * C/Z = C/Z XOR !D[S[4:0]].
  *
  */
-void P2Doc::doc_testbn_xor(p2_inst9_e instr)
+void P2Doc::doc_TESTBN_XOR(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0100111 CZI DDDDDDDDD SSSSSSSSS", C_neq_Z);
 
@@ -2251,7 +2251,7 @@ void P2Doc::doc_testbn_xor(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_bitl(p2_inst9_e instr)
+void P2Doc::doc_BITL(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0100000 CZI DDDDDDDDD SSSSSSSSS", C_equ_Z);
 
@@ -2269,7 +2269,7 @@ void P2Doc::doc_bitl(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_bith(p2_inst9_e instr)
+void P2Doc::doc_BITH(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0100001 CZI DDDDDDDDD SSSSSSSSS", C_equ_Z);
 
@@ -2287,7 +2287,7 @@ void P2Doc::doc_bith(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_bitc(p2_inst9_e instr)
+void P2Doc::doc_BITC(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0100010 CZI DDDDDDDDD SSSSSSSSS", C_equ_Z);
 
@@ -2305,7 +2305,7 @@ void P2Doc::doc_bitc(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_bitnc(p2_inst9_e instr)
+void P2Doc::doc_BITNC(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0100011 CZI DDDDDDDDD SSSSSSSSS", C_equ_Z);
 
@@ -2323,7 +2323,7 @@ void P2Doc::doc_bitnc(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_bitz(p2_inst9_e instr)
+void P2Doc::doc_BITZ(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0100100 CZI DDDDDDDDD SSSSSSSSS", C_equ_Z);
 
@@ -2341,7 +2341,7 @@ void P2Doc::doc_bitz(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_bitnz(p2_inst9_e instr)
+void P2Doc::doc_BITNZ(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0100101 CZI DDDDDDDDD SSSSSSSSS", C_equ_Z);
 
@@ -2359,7 +2359,7 @@ void P2Doc::doc_bitnz(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_bitrnd(p2_inst9_e instr)
+void P2Doc::doc_BITRND(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0100110 CZI DDDDDDDDD SSSSSSSSS", C_equ_Z);
 
@@ -2377,7 +2377,7 @@ void P2Doc::doc_bitrnd(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_bitnot(p2_inst9_e instr)
+void P2Doc::doc_BITNOT(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0100111 CZI DDDDDDDDD SSSSSSSSS", C_equ_Z);
 
@@ -2398,7 +2398,7 @@ void P2Doc::doc_bitnot(p2_inst9_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_and(p2_inst7_e instr)
+void P2Doc::doc_AND(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0101000 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2423,7 +2423,7 @@ void P2Doc::doc_and(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_andn(p2_inst7_e instr)
+void P2Doc::doc_ANDN(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0101001 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2448,7 +2448,7 @@ void P2Doc::doc_andn(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_or(p2_inst7_e instr)
+void P2Doc::doc_OR(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0101010 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2473,7 +2473,7 @@ void P2Doc::doc_or(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_xor(p2_inst7_e instr)
+void P2Doc::doc_XOR(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0101011 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2498,7 +2498,7 @@ void P2Doc::doc_xor(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_muxc(p2_inst7_e instr)
+void P2Doc::doc_MUXC(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0101100 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2523,7 +2523,7 @@ void P2Doc::doc_muxc(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_muxnc(p2_inst7_e instr)
+void P2Doc::doc_MUXNC(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0101101 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2548,7 +2548,7 @@ void P2Doc::doc_muxnc(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_muxz(p2_inst7_e instr)
+void P2Doc::doc_MUXZ(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0101110 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2573,7 +2573,7 @@ void P2Doc::doc_muxz(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_muxnz(p2_inst7_e instr)
+void P2Doc::doc_MUXNZ(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0101111 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2598,7 +2598,7 @@ void P2Doc::doc_muxnz(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_mov(p2_inst7_e instr)
+void P2Doc::doc_MOV(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0110000 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2623,7 +2623,7 @@ void P2Doc::doc_mov(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_not(p2_inst7_e instr)
+void P2Doc::doc_NOT(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0110001 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2648,7 +2648,7 @@ void P2Doc::doc_not(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_abs(p2_inst7_e instr)
+void P2Doc::doc_ABS(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0110010 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2673,7 +2673,7 @@ void P2Doc::doc_abs(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_neg(p2_inst7_e instr)
+void P2Doc::doc_NEG(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0110011 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2698,7 +2698,7 @@ void P2Doc::doc_neg(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_negc(p2_inst7_e instr)
+void P2Doc::doc_NEGC(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0110100 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2723,7 +2723,7 @@ void P2Doc::doc_negc(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_negnc(p2_inst7_e instr)
+void P2Doc::doc_NEGNC(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0110101 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2748,7 +2748,7 @@ void P2Doc::doc_negnc(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_negz(p2_inst7_e instr)
+void P2Doc::doc_NEGZ(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0110110 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2773,7 +2773,7 @@ void P2Doc::doc_negz(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_negnz(p2_inst7_e instr)
+void P2Doc::doc_NEGNZ(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0110111 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2797,7 +2797,7 @@ void P2Doc::doc_negnz(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_incmod(p2_inst7_e instr)
+void P2Doc::doc_INCMOD(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0111000 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2820,7 +2820,7 @@ void P2Doc::doc_incmod(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_decmod(p2_inst7_e instr)
+void P2Doc::doc_DECMOD(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0111001 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2843,7 +2843,7 @@ void P2Doc::doc_decmod(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_zerox(p2_inst7_e instr)
+void P2Doc::doc_ZEROX(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0111010 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2866,7 +2866,7 @@ void P2Doc::doc_zerox(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_signx(p2_inst7_e instr)
+void P2Doc::doc_SIGNX(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0111011 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2890,7 +2890,7 @@ void P2Doc::doc_signx(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_encod(p2_inst7_e instr)
+void P2Doc::doc_ENCOD(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0111100 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2915,7 +2915,7 @@ void P2Doc::doc_encod(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_ones(p2_inst7_e instr)
+void P2Doc::doc_ONES(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0111101 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2939,7 +2939,7 @@ void P2Doc::doc_ones(p2_inst7_e instr)
  * Z = ((D & S) == 0).
  *
  */
-void P2Doc::doc_test(p2_inst7_e instr)
+void P2Doc::doc_TEST(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0111110 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2962,7 +2962,7 @@ void P2Doc::doc_test(p2_inst7_e instr)
  * Z = ((D & !S) == 0).
  *
  */
-void P2Doc::doc_testn(p2_inst7_e instr)
+void P2Doc::doc_TESTN(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 0111111 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -2983,7 +2983,7 @@ void P2Doc::doc_testn(p2_inst7_e instr)
  *
  *
  */
-void P2Doc::doc_setnib(p2_inst7_e instr)
+void P2Doc::doc_SETNIB(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 100000N NNI DDDDDDDDD SSSSSSSSS", NNN_match);
 
@@ -3001,7 +3001,7 @@ void P2Doc::doc_setnib(p2_inst7_e instr)
  *
  *
  */
-void P2Doc::doc_setnib_altsn(p2_inst7_e instr)
+void P2Doc::doc_SETNIB_ALTSN(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1000000 00I 000000000 SSSSSSSSS", NNN_match | D_match);
 
@@ -3020,7 +3020,7 @@ void P2Doc::doc_setnib_altsn(p2_inst7_e instr)
  * D = {28'b0, S.NIBBLE[N]).
  *
  */
-void P2Doc::doc_getnib(p2_inst7_e instr)
+void P2Doc::doc_GETNIB(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 100001N NNI DDDDDDDDD SSSSSSSSS", NNN_match);
 
@@ -3039,7 +3039,7 @@ void P2Doc::doc_getnib(p2_inst7_e instr)
  *
  *
  */
-void P2Doc::doc_getnib_altgn(p2_inst7_e instr)
+void P2Doc::doc_GETNIB_ALTGN(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1000010 000 DDDDDDDDD 000000000", NNN_match | I_match | S_match);
 
@@ -3058,7 +3058,7 @@ void P2Doc::doc_getnib_altgn(p2_inst7_e instr)
  * D = {D[27:0], S.NIBBLE[N]).
  *
  */
-void P2Doc::doc_rolnib(p2_inst7_e instr)
+void P2Doc::doc_ROLNIB(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 100010N NNI DDDDDDDDD SSSSSSSSS", NNN_match);
 
@@ -3077,7 +3077,7 @@ void P2Doc::doc_rolnib(p2_inst7_e instr)
  *
  *
  */
-void P2Doc::doc_rolnib_altgn(p2_inst7_e instr)
+void P2Doc::doc_ROLNIB_ALTGN(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1000100 000 DDDDDDDDD 000000000", NNN_match | I_match | S_match);
 
@@ -3095,7 +3095,7 @@ void P2Doc::doc_rolnib_altgn(p2_inst7_e instr)
  *
  *
  */
-void P2Doc::doc_setbyte(p2_inst7_e instr)
+void P2Doc::doc_SETBYTE(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1000110 NNI DDDDDDDDD SSSSSSSSS", NN_match);
 
@@ -3113,7 +3113,7 @@ void P2Doc::doc_setbyte(p2_inst7_e instr)
  *
  *
  */
-void P2Doc::doc_setbyte_altsb(p2_inst7_e instr)
+void P2Doc::doc_SETBYTE_ALTSB(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1000110 00I 000000000 SSSSSSSSS", NN_match | D_match);
 
@@ -3132,7 +3132,7 @@ void P2Doc::doc_setbyte_altsb(p2_inst7_e instr)
  * D = {24'b0, S.BYTE[N]).
  *
  */
-void P2Doc::doc_getbyte(p2_inst7_e instr)
+void P2Doc::doc_GETBYTE(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1000111 NNI DDDDDDDDD SSSSSSSSS", NN_match);
 
@@ -3151,7 +3151,7 @@ void P2Doc::doc_getbyte(p2_inst7_e instr)
  *
  *
  */
-void P2Doc::doc_getbyte_altgb(p2_inst7_e instr)
+void P2Doc::doc_GETBYTE_ALTGB(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1000111 000 DDDDDDDDD 000000000", NN_match | I_match | S_match);
 
@@ -3170,7 +3170,7 @@ void P2Doc::doc_getbyte_altgb(p2_inst7_e instr)
  * D = {D[23:0], S.BYTE[N]).
  *
  */
-void P2Doc::doc_rolbyte(p2_inst7_e instr)
+void P2Doc::doc_ROLBYTE(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001000 NNI DDDDDDDDD SSSSSSSSS", NN_match);
 
@@ -3189,7 +3189,7 @@ void P2Doc::doc_rolbyte(p2_inst7_e instr)
  *
  *
  */
-void P2Doc::doc_rolbyte_altgb(p2_inst7_e instr)
+void P2Doc::doc_ROLBYTE_ALTGB(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001000 000 DDDDDDDDD 000000000", NN_match | I_match | S_match);
 
@@ -3207,7 +3207,7 @@ void P2Doc::doc_rolbyte_altgb(p2_inst7_e instr)
  *
  *
  */
-void P2Doc::doc_setword(p2_inst9_e instr)
+void P2Doc::doc_SETWORD(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001001 0NI DDDDDDDDD SSSSSSSSS", N_match);
 
@@ -3225,7 +3225,7 @@ void P2Doc::doc_setword(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_setword_altsw(p2_inst9_e instr)
+void P2Doc::doc_SETWORD_ALTSW(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001001 00I 000000000 SSSSSSSSS", N_match);
 
@@ -3244,7 +3244,7 @@ void P2Doc::doc_setword_altsw(p2_inst9_e instr)
  * D = {16'b0, S.WORD[N]).
  *
  */
-void P2Doc::doc_getword(p2_inst9_e instr)
+void P2Doc::doc_GETWORD(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001001 1NI DDDDDDDDD SSSSSSSSS", N_match);
 
@@ -3263,7 +3263,7 @@ void P2Doc::doc_getword(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_getword_altgw(p2_inst9_e instr)
+void P2Doc::doc_GETWORD_ALTGW(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001001 100 DDDDDDDDD 000000000", N_match | I_match | S_match);
 
@@ -3282,7 +3282,7 @@ void P2Doc::doc_getword_altgw(p2_inst9_e instr)
  * D = {D[15:0], S.WORD[N]).
  *
  */
-void P2Doc::doc_rolword(p2_inst9_e instr)
+void P2Doc::doc_ROLWORD(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001010 0NI DDDDDDDDD SSSSSSSSS", N_match);
 
@@ -3301,7 +3301,7 @@ void P2Doc::doc_rolword(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_rolword_altgw(p2_inst9_e instr)
+void P2Doc::doc_ROLWORD_ALTGW(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001010 000 DDDDDDDDD 000000000", N_match | I_match | S_match);
 
@@ -3321,7 +3321,7 @@ void P2Doc::doc_rolword_altgw(p2_inst9_e instr)
  * D += sign-extended S[17:9].
  *
  */
-void P2Doc::doc_altsn(p2_inst9_e instr)
+void P2Doc::doc_ALTSN(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001010 10I DDDDDDDDD SSSSSSSSS");
 
@@ -3342,7 +3342,7 @@ void P2Doc::doc_altsn(p2_inst9_e instr)
  * Next D field = D[11:3], N field = D[2:0].
  *
  */
-void P2Doc::doc_altsn_d(p2_inst9_e instr)
+void P2Doc::doc_ALTSN_D(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001010 101 DDDDDDDDD 000000000", I_match | S_match);
 
@@ -3363,7 +3363,7 @@ void P2Doc::doc_altsn_d(p2_inst9_e instr)
  * D += sign-extended S[17:9].
  *
  */
-void P2Doc::doc_altgn(p2_inst9_e instr)
+void P2Doc::doc_ALTGN(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001010 11I DDDDDDDDD SSSSSSSSS");
 
@@ -3384,7 +3384,7 @@ void P2Doc::doc_altgn(p2_inst9_e instr)
  * Next S field = D[11:3], N field = D[2:0].
  *
  */
-void P2Doc::doc_altgn_d(p2_inst9_e instr)
+void P2Doc::doc_ALTGN_D(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001010 111 DDDDDDDDD 000000000", S_match);
 
@@ -3405,7 +3405,7 @@ void P2Doc::doc_altgn_d(p2_inst9_e instr)
  * D += sign-extended S[17:9].
  *
  */
-void P2Doc::doc_altsb(p2_inst9_e instr)
+void P2Doc::doc_ALTSB(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001011 00I DDDDDDDDD SSSSSSSSS");
 
@@ -3426,7 +3426,7 @@ void P2Doc::doc_altsb(p2_inst9_e instr)
  * Next D field = D[10:2], N field = D[1:0].
  *
  */
-void P2Doc::doc_altsb_d(p2_inst9_e instr)
+void P2Doc::doc_ALTSB_D(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001011 001 DDDDDDDDD 000000000", S_match);
 
@@ -3447,7 +3447,7 @@ void P2Doc::doc_altsb_d(p2_inst9_e instr)
  * D += sign-extended S[17:9].
  *
  */
-void P2Doc::doc_altgb(p2_inst9_e instr)
+void P2Doc::doc_ATLGB(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001011 01I DDDDDDDDD SSSSSSSSS");
 
@@ -3468,7 +3468,7 @@ void P2Doc::doc_altgb(p2_inst9_e instr)
  * Next S field = D[10:2], N field = D[1:0].
  *
  */
-void P2Doc::doc_altgb_d(p2_inst9_e instr)
+void P2Doc::doc_ALTGB_D(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001011 011 DDDDDDDDD 000000000", S_match);
 
@@ -3489,7 +3489,7 @@ void P2Doc::doc_altgb_d(p2_inst9_e instr)
  * D += sign-extended S[17:9].
  *
  */
-void P2Doc::doc_altsw(p2_inst9_e instr)
+void P2Doc::doc_ALTSW(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001011 10I DDDDDDDDD SSSSSSSSS");
 
@@ -3510,7 +3510,7 @@ void P2Doc::doc_altsw(p2_inst9_e instr)
  * Next D field = D[9:1], N field = D[0].
  *
  */
-void P2Doc::doc_altsw_d(p2_inst9_e instr)
+void P2Doc::doc_ALTSW_D(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001011 101 DDDDDDDDD 000000000", S_match);
 
@@ -3531,7 +3531,7 @@ void P2Doc::doc_altsw_d(p2_inst9_e instr)
  * D += sign-extended S[17:9].
  *
  */
-void P2Doc::doc_altgw(p2_inst9_e instr)
+void P2Doc::doc_ALTGW(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001011 11I DDDDDDDDD SSSSSSSSS");
 
@@ -3552,7 +3552,7 @@ void P2Doc::doc_altgw(p2_inst9_e instr)
  * Next S field = D[9:1], N field = D[0].
  *
  */
-void P2Doc::doc_altgw_d(p2_inst9_e instr)
+void P2Doc::doc_ALTGW_D(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001011 111 DDDDDDDDD 000000000", S_match);
 
@@ -3572,7 +3572,7 @@ void P2Doc::doc_altgw_d(p2_inst9_e instr)
  * D += sign-extended S[17:9].
  *
  */
-void P2Doc::doc_altr(p2_inst9_e instr)
+void P2Doc::doc_ALTR(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001100 00I DDDDDDDDD SSSSSSSSS");
 
@@ -3591,7 +3591,7 @@ void P2Doc::doc_altr(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_altr_d(p2_inst9_e instr)
+void P2Doc::doc_ALTR_D(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001100 001 DDDDDDDDD 000000000", S_match);
 
@@ -3610,7 +3610,7 @@ void P2Doc::doc_altr_d(p2_inst9_e instr)
  * D += sign-extended S[17:9].
  *
  */
-void P2Doc::doc_altd(p2_inst9_e instr)
+void P2Doc::doc_ALTD(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001100 01I DDDDDDDDD SSSSSSSSS");
 
@@ -3629,7 +3629,7 @@ void P2Doc::doc_altd(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_altd_d(p2_inst9_e instr)
+void P2Doc::doc_ALTD_D(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001100 011 DDDDDDDDD 000000000", S_match);
 
@@ -3648,7 +3648,7 @@ void P2Doc::doc_altd_d(p2_inst9_e instr)
  * D += sign-extended S[17:9].
  *
  */
-void P2Doc::doc_alts(p2_inst9_e instr)
+void P2Doc::doc_ALTS(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001100 10I DDDDDDDDD SSSSSSSSS");
 
@@ -3667,7 +3667,7 @@ void P2Doc::doc_alts(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_alts_d(p2_inst9_e instr)
+void P2Doc::doc_ALTS_D(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001100 101 DDDDDDDDD 000000000", S_match);
 
@@ -3686,7 +3686,7 @@ void P2Doc::doc_alts_d(p2_inst9_e instr)
  * D += sign-extended S[17:9].
  *
  */
-void P2Doc::doc_altb(p2_inst9_e instr)
+void P2Doc::doc_ALTB(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001100 11I DDDDDDDDD SSSSSSSSS");
 
@@ -3705,7 +3705,7 @@ void P2Doc::doc_altb(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_altb_d(p2_inst9_e instr)
+void P2Doc::doc_ALTB_D(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001100 111 DDDDDDDDD 000000000", S_match);
 
@@ -3724,7 +3724,7 @@ void P2Doc::doc_altb_d(p2_inst9_e instr)
  * Modify D per S.
  *
  */
-void P2Doc::doc_alti(p2_inst9_e instr)
+void P2Doc::doc_ALTI(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001101 00I DDDDDDDDD SSSSSSSSS");
 
@@ -3744,7 +3744,7 @@ void P2Doc::doc_alti(p2_inst9_e instr)
  * D stays same.
  *
  */
-void P2Doc::doc_alti_d(p2_inst9_e instr)
+void P2Doc::doc_ALTI_D(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001101 001 DDDDDDDDD 101100100", S_match);
 
@@ -3764,7 +3764,7 @@ void P2Doc::doc_alti_d(p2_inst9_e instr)
  * D = {D[31:28], S[8:0], D[18:0]}.
  *
  */
-void P2Doc::doc_setr(p2_inst9_e instr)
+void P2Doc::doc_SETR(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001101 01I DDDDDDDDD SSSSSSSSS");
 
@@ -3784,7 +3784,7 @@ void P2Doc::doc_setr(p2_inst9_e instr)
  * D = {D[31:18], S[8:0], D[8:0]}.
  *
  */
-void P2Doc::doc_setd(p2_inst9_e instr)
+void P2Doc::doc_SETD(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001101 10I DDDDDDDDD SSSSSSSSS");
 
@@ -3804,7 +3804,7 @@ void P2Doc::doc_setd(p2_inst9_e instr)
  * D = {D[31:9], S[8:0]}.
  *
  */
-void P2Doc::doc_sets(p2_inst9_e instr)
+void P2Doc::doc_SETS(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001101 11I DDDDDDDDD SSSSSSSSS");
 
@@ -3824,7 +3824,7 @@ void P2Doc::doc_sets(p2_inst9_e instr)
  * D = 1 << S[4:0].
  *
  */
-void P2Doc::doc_decod(p2_inst9_e instr)
+void P2Doc::doc_DECOD(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001110 00I DDDDDDDDD SSSSSSSSS");
 
@@ -3844,7 +3844,7 @@ void P2Doc::doc_decod(p2_inst9_e instr)
  * D = 1 << D[4:0].
  *
  */
-void P2Doc::doc_decod_d(p2_inst9_e instr)
+void P2Doc::doc_DECOD_D(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001110 000 DDDDDDDDD DDDDDDDDD", D_equ_S);
 
@@ -3864,7 +3864,7 @@ void P2Doc::doc_decod_d(p2_inst9_e instr)
  * D = ($0000_0002 << S[4:0]) - 1.
  *
  */
-void P2Doc::doc_bmask(p2_inst9_e instr)
+void P2Doc::doc_BMASK(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001110 01I DDDDDDDDD SSSSSSSSS");
 
@@ -3884,7 +3884,7 @@ void P2Doc::doc_bmask(p2_inst9_e instr)
  * D = ($0000_0002 << D[4:0]) - 1.
  *
  */
-void P2Doc::doc_bmask_d(p2_inst9_e instr)
+void P2Doc::doc_BMASK_D(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001110 010 DDDDDDDDD DDDDDDDDD", D_equ_S);
 
@@ -3904,7 +3904,7 @@ void P2Doc::doc_bmask_d(p2_inst9_e instr)
  * If (C XOR D[0]) then D = (D >> 1) XOR S, else D = (D >> 1).
  *
  */
-void P2Doc::doc_crcbit(p2_inst9_e instr)
+void P2Doc::doc_CRCBIT(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001110 10I DDDDDDDDD SSSSSSSSS");
 
@@ -3926,7 +3926,7 @@ void P2Doc::doc_crcbit(p2_inst9_e instr)
  * Use SETQ+CRCNIB+CRCNIB+CRCNIB.
  *
  */
-void P2Doc::doc_crcnib(p2_inst9_e instr)
+void P2Doc::doc_CRCNIB(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001110 11I DDDDDDDDD SSSSSSSSS");
 
@@ -3947,7 +3947,7 @@ void P2Doc::doc_crcnib(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_muxnits(p2_inst9_e instr)
+void P2Doc::doc_MUXNITS(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001111 00I DDDDDDDDD SSSSSSSSS");
 
@@ -3965,7 +3965,7 @@ void P2Doc::doc_muxnits(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_muxnibs(p2_inst9_e instr)
+void P2Doc::doc_MUXNIBS(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001111 01I DDDDDDDDD SSSSSSSSS");
 
@@ -3985,7 +3985,7 @@ void P2Doc::doc_muxnibs(p2_inst9_e instr)
  * D = (D & !Q) | (S & Q).
  *
  */
-void P2Doc::doc_muxq(p2_inst9_e instr)
+void P2Doc::doc_MUXQ(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001111 10I DDDDDDDDD SSSSSSSSS");
 
@@ -4006,7 +4006,7 @@ void P2Doc::doc_muxq(p2_inst9_e instr)
  * D = {D.BYTE[S[7:6]], D.BYTE[S[5:4]], D.BYTE[S[3:2]], D.BYTE[S[1:0]]}.
  *
  */
-void P2Doc::doc_movbyts(p2_inst9_e instr)
+void P2Doc::doc_MOVBYTS(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1001111 11I DDDDDDDDD SSSSSSSSS");
 
@@ -4026,7 +4026,7 @@ void P2Doc::doc_movbyts(p2_inst9_e instr)
  * Z = (S == 0) | (D == 0).
  *
  */
-void P2Doc::doc_mul(p2_inst8_e instr)
+void P2Doc::doc_MUL(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1010000 0ZI DDDDDDDDD SSSSSSSSS");
 
@@ -4046,7 +4046,7 @@ void P2Doc::doc_mul(p2_inst8_e instr)
  * Z = (S == 0) | (D == 0).
  *
  */
-void P2Doc::doc_muls(p2_inst8_e instr)
+void P2Doc::doc_MULS(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1010000 1ZI DDDDDDDDD SSSSSSSSS");
 
@@ -4066,7 +4066,7 @@ void P2Doc::doc_muls(p2_inst8_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_sca(p2_inst8_e instr)
+void P2Doc::doc_SCA(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1010001 0ZI DDDDDDDDD SSSSSSSSS");
 
@@ -4087,7 +4087,7 @@ void P2Doc::doc_sca(p2_inst8_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_scas(p2_inst8_e instr)
+void P2Doc::doc_SCAS(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1010001 1ZI DDDDDDDDD SSSSSSSSS");
 
@@ -4107,7 +4107,7 @@ void P2Doc::doc_scas(p2_inst8_e instr)
  *
  *
  */
-void P2Doc::doc_addpix(p2_inst9_e instr)
+void P2Doc::doc_ADDPIX(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1010010 00I DDDDDDDDD SSSSSSSSS");
 
@@ -4126,7 +4126,7 @@ void P2Doc::doc_addpix(p2_inst9_e instr)
  * 0.
  *
  */
-void P2Doc::doc_mulpix(p2_inst9_e instr)
+void P2Doc::doc_MULPIX(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1010010 01I DDDDDDDDD SSSSSSSSS");
 
@@ -4145,7 +4145,7 @@ void P2Doc::doc_mulpix(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_blnpix(p2_inst9_e instr)
+void P2Doc::doc_BLNPIX(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1010010 10I DDDDDDDDD SSSSSSSSS");
 
@@ -4163,7 +4163,7 @@ void P2Doc::doc_blnpix(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_mixpix(p2_inst9_e instr)
+void P2Doc::doc_MIXPIX(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1010010 11I DDDDDDDDD SSSSSSSSS");
 
@@ -4182,7 +4182,7 @@ void P2Doc::doc_mixpix(p2_inst9_e instr)
  * Adds S into D.
  *
  */
-void P2Doc::doc_addct1(p2_inst9_e instr)
+void P2Doc::doc_ADDCT1(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1010011 00I DDDDDDDDD SSSSSSSSS");
 
@@ -4202,7 +4202,7 @@ void P2Doc::doc_addct1(p2_inst9_e instr)
  * Adds S into D.
  *
  */
-void P2Doc::doc_addct2(p2_inst9_e instr)
+void P2Doc::doc_ADDCT2(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1010011 01I DDDDDDDDD SSSSSSSSS");
 
@@ -4222,7 +4222,7 @@ void P2Doc::doc_addct2(p2_inst9_e instr)
  * Adds S into D.
  *
  */
-void P2Doc::doc_addct3(p2_inst9_e instr)
+void P2Doc::doc_ADDCT3(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1010011 10I DDDDDDDDD SSSSSSSSS");
 
@@ -4242,7 +4242,7 @@ void P2Doc::doc_addct3(p2_inst9_e instr)
  * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  *
  */
-void P2Doc::doc_wmlong(p2_inst9_e instr)
+void P2Doc::doc_WMLONG(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1010011 11I DDDDDDDDD SSSSSSSSS");
 
@@ -4262,7 +4262,7 @@ void P2Doc::doc_wmlong(p2_inst9_e instr)
  * C = modal result.
  *
  */
-void P2Doc::doc_rqpin(p2_inst8_e instr)
+void P2Doc::doc_RQPIN(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1010100 C0I DDDDDDDDD SSSSSSSSS", C_match);
 
@@ -4282,7 +4282,7 @@ void P2Doc::doc_rqpin(p2_inst8_e instr)
  * C = modal result.
  *
  */
-void P2Doc::doc_rdpin(p2_inst8_e instr)
+void P2Doc::doc_RDPIN(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1010100 C1I DDDDDDDDD SSSSSSSSS", C_match);
 
@@ -4303,7 +4303,7 @@ void P2Doc::doc_rdpin(p2_inst8_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_rdlut(p2_inst7_e instr)
+void P2Doc::doc_RDLUT(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1010101 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -4326,7 +4326,7 @@ void P2Doc::doc_rdlut(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_rdbyte(p2_inst7_e instr)
+void P2Doc::doc_RDBYTE(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1010110 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -4348,7 +4348,7 @@ void P2Doc::doc_rdbyte(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_rdword(p2_inst7_e instr)
+void P2Doc::doc_RDWORD(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1010111 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -4370,7 +4370,7 @@ void P2Doc::doc_rdword(p2_inst7_e instr)
  * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  *
  */
-void P2Doc::doc_rdlong(p2_inst7_e instr)
+void P2Doc::doc_RDLONG(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011000 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -4392,7 +4392,7 @@ void P2Doc::doc_rdlong(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_popa(p2_inst7_e instr)
+void P2Doc::doc_POPA(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011000 CZ1 DDDDDDDDD 101011111");
 
@@ -4414,7 +4414,7 @@ void P2Doc::doc_popa(p2_inst7_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_popb(p2_inst7_e instr)
+void P2Doc::doc_POPB(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011000 CZ1 DDDDDDDDD 111011111");
 
@@ -4435,7 +4435,7 @@ void P2Doc::doc_popb(p2_inst7_e instr)
  * C = S[31], Z = S[30].
  *
  */
-void P2Doc::doc_calld(p2_inst7_e instr)
+void P2Doc::doc_CALLD(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011001 CZI DDDDDDDDD SSSSSSSSS");
 
@@ -4456,7 +4456,7 @@ void P2Doc::doc_calld(p2_inst7_e instr)
  * (CALLD $1F0,$1F1 WC,WZ).
  *
  */
-void P2Doc::doc_resi3(p2_inst9_e instr)
+void P2Doc::doc_RESI3(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011001 110 111110000 111110001", I_match | D_S_match);
 
@@ -4476,7 +4476,7 @@ void P2Doc::doc_resi3(p2_inst9_e instr)
  * (CALLD $1F2,$1F3 WC,WZ).
  *
  */
-void P2Doc::doc_resi2(p2_inst9_e instr)
+void P2Doc::doc_RESI2(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011001 110 111110010 111110011", I_match | D_S_match);
 
@@ -4496,7 +4496,7 @@ void P2Doc::doc_resi2(p2_inst9_e instr)
  * (CALLD $1F4,$1F5 WC,WZ).
  *
  */
-void P2Doc::doc_resi1(p2_inst9_e instr)
+void P2Doc::doc_RESI1(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011001 110 111110100 111110101", CZI_match | D_S_match);
 
@@ -4516,7 +4516,7 @@ void P2Doc::doc_resi1(p2_inst9_e instr)
  * (CALLD $1FE,$1FF WC,WZ).
  *
  */
-void P2Doc::doc_resi0(p2_inst9_e instr)
+void P2Doc::doc_RESI0(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011001 110 111111110 111111111", CZI_match | D_S_match);
 
@@ -4536,7 +4536,7 @@ void P2Doc::doc_resi0(p2_inst9_e instr)
  * (CALLD $1FF,$1F1 WC,WZ).
  *
  */
-void P2Doc::doc_reti3(p2_inst7_e instr)
+void P2Doc::doc_RETI3(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011001 110 111111111 111110001", CZI_match | D_S_match);
 
@@ -4556,7 +4556,7 @@ void P2Doc::doc_reti3(p2_inst7_e instr)
  * (CALLD $1FF,$1F3 WC,WZ).
  *
  */
-void P2Doc::doc_reti2(p2_inst7_e instr)
+void P2Doc::doc_RETI2(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011001 110 111111111 111110011", CZI_match | D_S_match);
 
@@ -4576,7 +4576,7 @@ void P2Doc::doc_reti2(p2_inst7_e instr)
  * (CALLD $1FF,$1F5 WC,WZ).
  *
  */
-void P2Doc::doc_reti1(p2_inst7_e instr)
+void P2Doc::doc_RETI1(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011001 110 111111111 111110101", CZI_match | D_S_match);
 
@@ -4596,7 +4596,7 @@ void P2Doc::doc_reti1(p2_inst7_e instr)
  * (CALLD $1FF,$1FF WC,WZ).
  *
  */
-void P2Doc::doc_reti0(p2_inst7_e instr)
+void P2Doc::doc_RETI0(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011001 110 111111111 111111111", CZI_match | D_S_match);
 
@@ -4615,7 +4615,7 @@ void P2Doc::doc_reti0(p2_inst7_e instr)
  *
  *
  */
-void P2Doc::doc_callpa(p2_inst8_e instr)
+void P2Doc::doc_CALLPA(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011010 0LI DDDDDDDDD SSSSSSSSS");
 
@@ -4633,7 +4633,7 @@ void P2Doc::doc_callpa(p2_inst8_e instr)
  *
  *
  */
-void P2Doc::doc_callpb(p2_inst8_e instr)
+void P2Doc::doc_CALLPB(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011010 1LI DDDDDDDDD SSSSSSSSS");
 
@@ -4651,7 +4651,7 @@ void P2Doc::doc_callpb(p2_inst8_e instr)
  *
  *
  */
-void P2Doc::doc_djz(p2_inst9_e instr)
+void P2Doc::doc_DJZ(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011011 00I DDDDDDDDD SSSSSSSSS");
 
@@ -4669,7 +4669,7 @@ void P2Doc::doc_djz(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_djnz(p2_inst9_e instr)
+void P2Doc::doc_DJNZ(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011011 01I DDDDDDDDD SSSSSSSSS");
 
@@ -4687,7 +4687,7 @@ void P2Doc::doc_djnz(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_djf(p2_inst9_e instr)
+void P2Doc::doc_DJF(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011011 10I DDDDDDDDD SSSSSSSSS");
 
@@ -4705,7 +4705,7 @@ void P2Doc::doc_djf(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_djnf(p2_inst9_e instr)
+void P2Doc::doc_DJNF(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011011 11I DDDDDDDDD SSSSSSSSS");
 
@@ -4723,7 +4723,7 @@ void P2Doc::doc_djnf(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_ijz(p2_inst9_e instr)
+void P2Doc::doc_IJZ(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011100 00I DDDDDDDDD SSSSSSSSS");
 
@@ -4741,7 +4741,7 @@ void P2Doc::doc_ijz(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_ijnz(p2_inst9_e instr)
+void P2Doc::doc_IJNZ(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011100 01I DDDDDDDDD SSSSSSSSS");
 
@@ -4759,7 +4759,7 @@ void P2Doc::doc_ijnz(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_tjz(p2_inst9_e instr)
+void P2Doc::doc_TJZ(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011100 10I DDDDDDDDD SSSSSSSSS");
 
@@ -4777,7 +4777,7 @@ void P2Doc::doc_tjz(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_tjnz(p2_inst9_e instr)
+void P2Doc::doc_TJNZ(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011100 11I DDDDDDDDD SSSSSSSSS");
 
@@ -4795,7 +4795,7 @@ void P2Doc::doc_tjnz(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_tjf(p2_inst9_e instr)
+void P2Doc::doc_TJF(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011101 00I DDDDDDDDD SSSSSSSSS");
 
@@ -4813,7 +4813,7 @@ void P2Doc::doc_tjf(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_tjnf(p2_inst9_e instr)
+void P2Doc::doc_TJNF(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011101 01I DDDDDDDDD SSSSSSSSS");
 
@@ -4831,7 +4831,7 @@ void P2Doc::doc_tjnf(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_tjs(p2_inst9_e instr)
+void P2Doc::doc_TJS(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011101 10I DDDDDDDDD SSSSSSSSS");
 
@@ -4849,7 +4849,7 @@ void P2Doc::doc_tjs(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_tjns(p2_inst9_e instr)
+void P2Doc::doc_TJNS(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011101 11I DDDDDDDDD SSSSSSSSS");
 
@@ -4867,7 +4867,7 @@ void P2Doc::doc_tjns(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_tjv(p2_inst9_e instr)
+void P2Doc::doc_TJV(p2_inst9_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 00I DDDDDDDDD SSSSSSSSS");
 
@@ -4885,7 +4885,7 @@ void P2Doc::doc_tjv(p2_inst9_e instr)
  *
  *
  */
-void P2Doc::doc_jint(p2_opdst_e instr)
+void P2Doc::doc_JINT(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000000000 SSSSSSSSS");
 
@@ -4903,7 +4903,7 @@ void P2Doc::doc_jint(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jct1(p2_opdst_e instr)
+void P2Doc::doc_JCT1(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000000001 SSSSSSSSS");
 
@@ -4921,7 +4921,7 @@ void P2Doc::doc_jct1(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jct2(p2_opdst_e instr)
+void P2Doc::doc_JCT2(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000000010 SSSSSSSSS");
 
@@ -4939,7 +4939,7 @@ void P2Doc::doc_jct2(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jct3(p2_opdst_e instr)
+void P2Doc::doc_JCT3(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000000011 SSSSSSSSS");
 
@@ -4957,7 +4957,7 @@ void P2Doc::doc_jct3(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jse1(p2_opdst_e instr)
+void P2Doc::doc_JSE1(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000000100 SSSSSSSSS");
 
@@ -4975,7 +4975,7 @@ void P2Doc::doc_jse1(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jse2(p2_opdst_e instr)
+void P2Doc::doc_JSE2(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000000101 SSSSSSSSS");
 
@@ -4993,7 +4993,7 @@ void P2Doc::doc_jse2(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jse3(p2_opdst_e instr)
+void P2Doc::doc_JSE3(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000000110 SSSSSSSSS");
 
@@ -5011,7 +5011,7 @@ void P2Doc::doc_jse3(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jse4(p2_opdst_e instr)
+void P2Doc::doc_JSE4(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000000111 SSSSSSSSS");
 
@@ -5029,7 +5029,7 @@ void P2Doc::doc_jse4(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jpat(p2_opdst_e instr)
+void P2Doc::doc_JPAT(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000001000 SSSSSSSSS");
 
@@ -5047,7 +5047,7 @@ void P2Doc::doc_jpat(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jfbw(p2_opdst_e instr)
+void P2Doc::doc_JFBW(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000001001 SSSSSSSSS");
 
@@ -5065,7 +5065,7 @@ void P2Doc::doc_jfbw(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jxmt(p2_opdst_e instr)
+void P2Doc::doc_JXMT(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000001010 SSSSSSSSS");
 
@@ -5083,7 +5083,7 @@ void P2Doc::doc_jxmt(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jxfi(p2_opdst_e instr)
+void P2Doc::doc_JXFI(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000001011 SSSSSSSSS");
 
@@ -5101,7 +5101,7 @@ void P2Doc::doc_jxfi(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jxro(p2_opdst_e instr)
+void P2Doc::doc_JXRO(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000001100 SSSSSSSSS");
 
@@ -5119,7 +5119,7 @@ void P2Doc::doc_jxro(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jxrl(p2_opdst_e instr)
+void P2Doc::doc_JXRL(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000001101 SSSSSSSSS");
 
@@ -5137,7 +5137,7 @@ void P2Doc::doc_jxrl(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jatn(p2_opdst_e instr)
+void P2Doc::doc_JATN(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000001110 SSSSSSSSS");
 
@@ -5155,7 +5155,7 @@ void P2Doc::doc_jatn(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jqmt(p2_opdst_e instr)
+void P2Doc::doc_JQMT(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000001111 SSSSSSSSS");
 
@@ -5173,7 +5173,7 @@ void P2Doc::doc_jqmt(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jnint(p2_opdst_e instr)
+void P2Doc::doc_JNINT(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000010000 SSSSSSSSS");
 
@@ -5191,7 +5191,7 @@ void P2Doc::doc_jnint(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jnct1(p2_opdst_e instr)
+void P2Doc::doc_JNCT1(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000010001 SSSSSSSSS");
 
@@ -5209,7 +5209,7 @@ void P2Doc::doc_jnct1(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jnct2(p2_opdst_e instr)
+void P2Doc::doc_JNCT2(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000010010 SSSSSSSSS");
 
@@ -5227,7 +5227,7 @@ void P2Doc::doc_jnct2(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jnct3(p2_opdst_e instr)
+void P2Doc::doc_JNCT3(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000010011 SSSSSSSSS");
 
@@ -5245,7 +5245,7 @@ void P2Doc::doc_jnct3(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jnse1(p2_opdst_e instr)
+void P2Doc::doc_JNSE1(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000010100 SSSSSSSSS");
 
@@ -5263,7 +5263,7 @@ void P2Doc::doc_jnse1(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jnse2(p2_opdst_e instr)
+void P2Doc::doc_JNSE2(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000010101 SSSSSSSSS");
 
@@ -5281,7 +5281,7 @@ void P2Doc::doc_jnse2(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jnse3(p2_opdst_e instr)
+void P2Doc::doc_JNSE3(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000010110 SSSSSSSSS");
 
@@ -5299,7 +5299,7 @@ void P2Doc::doc_jnse3(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jnse4(p2_opdst_e instr)
+void P2Doc::doc_JNSE4(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000010111 SSSSSSSSS");
 
@@ -5317,7 +5317,7 @@ void P2Doc::doc_jnse4(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jnpat(p2_opdst_e instr)
+void P2Doc::doc_JNPAT(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000011000 SSSSSSSSS");
 
@@ -5335,7 +5335,7 @@ void P2Doc::doc_jnpat(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jnfbw(p2_opdst_e instr)
+void P2Doc::doc_JNFBW(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000011001 SSSSSSSSS");
 
@@ -5353,7 +5353,7 @@ void P2Doc::doc_jnfbw(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jnxmt(p2_opdst_e instr)
+void P2Doc::doc_JNXMT(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000011010 SSSSSSSSS");
 
@@ -5371,7 +5371,7 @@ void P2Doc::doc_jnxmt(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jnxfi(p2_opdst_e instr)
+void P2Doc::doc_JNXFI(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000011011 SSSSSSSSS");
 
@@ -5389,7 +5389,7 @@ void P2Doc::doc_jnxfi(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jnxro(p2_opdst_e instr)
+void P2Doc::doc_JNXRO(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000011100 SSSSSSSSS");
 
@@ -5407,7 +5407,7 @@ void P2Doc::doc_jnxro(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jnxrl(p2_opdst_e instr)
+void P2Doc::doc_JNXRL(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000011101 SSSSSSSSS");
 
@@ -5425,7 +5425,7 @@ void P2Doc::doc_jnxrl(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jnatn(p2_opdst_e instr)
+void P2Doc::doc_JNATN(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000011110 SSSSSSSSS");
 
@@ -5443,7 +5443,7 @@ void P2Doc::doc_jnatn(p2_opdst_e instr)
  *
  *
  */
-void P2Doc::doc_jnqmt(p2_opdst_e instr)
+void P2Doc::doc_JNQMT(p2_opdst_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011110 01I 000011111 SSSSSSSSS");
 
@@ -5498,7 +5498,7 @@ void P2Doc::doc_1011111_0(p2_inst8_e instr)
  * C selects INA/INB, Z selects =/!=, D provides mask value, S provides match value.
  *
  */
-void P2Doc::doc_setpat(p2_inst8_e instr)
+void P2Doc::doc_SETPAT(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1011111 1LI DDDDDDDDD SSSSSSSSS");
 
@@ -5517,7 +5517,7 @@ void P2Doc::doc_setpat(p2_inst8_e instr)
  *
  *
  */
-void P2Doc::doc_wrpin(p2_inst8_e instr)
+void P2Doc::doc_WRPIN(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1100000 0LI DDDDDDDDD SSSSSSSSS");
 
@@ -5535,7 +5535,7 @@ void P2Doc::doc_wrpin(p2_inst8_e instr)
  *
  *
  */
-void P2Doc::doc_akpin(p2_inst8_e instr)
+void P2Doc::doc_AKPIN(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1100000 01I 000000001 SSSSSSSSS", D_match);
 
@@ -5553,7 +5553,7 @@ void P2Doc::doc_akpin(p2_inst8_e instr)
  *
  *
  */
-void P2Doc::doc_wxpin(p2_inst8_e instr)
+void P2Doc::doc_WXPIN(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1100000 1LI DDDDDDDDD SSSSSSSSS");
 
@@ -5571,7 +5571,7 @@ void P2Doc::doc_wxpin(p2_inst8_e instr)
  *
  *
  */
-void P2Doc::doc_wypin(p2_inst8_e instr)
+void P2Doc::doc_WYPIN(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1100001 0LI DDDDDDDDD SSSSSSSSS");
 
@@ -5589,7 +5589,7 @@ void P2Doc::doc_wypin(p2_inst8_e instr)
  *
  *
  */
-void P2Doc::doc_wrlut(p2_inst8_e instr)
+void P2Doc::doc_WRLUT(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1100001 1LI DDDDDDDDD SSSSSSSSS");
 
@@ -5607,7 +5607,7 @@ void P2Doc::doc_wrlut(p2_inst8_e instr)
  *
  *
  */
-void P2Doc::doc_wrbyte(p2_inst8_e instr)
+void P2Doc::doc_WRBYTE(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1100010 0LI DDDDDDDDD SSSSSSSSS");
 
@@ -5625,7 +5625,7 @@ void P2Doc::doc_wrbyte(p2_inst8_e instr)
  *
  *
  */
-void P2Doc::doc_wrword(p2_inst8_e instr)
+void P2Doc::doc_WRWORD(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1100010 1LI DDDDDDDDD SSSSSSSSS");
 
@@ -5644,7 +5644,7 @@ void P2Doc::doc_wrword(p2_inst8_e instr)
  * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  *
  */
-void P2Doc::doc_wrlong(p2_inst8_e instr)
+void P2Doc::doc_WRLONG(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1100011 0LI DDDDDDDDD SSSSSSSSS");
 
@@ -5663,7 +5663,7 @@ void P2Doc::doc_wrlong(p2_inst8_e instr)
  *
  *
  */
-void P2Doc::doc_pusha(p2_inst8_e instr)
+void P2Doc::doc_PUSHA(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1100011 0L1 DDDDDDDDD 101100001");
 
@@ -5681,7 +5681,7 @@ void P2Doc::doc_pusha(p2_inst8_e instr)
  *
  *
  */
-void P2Doc::doc_pushb(p2_inst8_e instr)
+void P2Doc::doc_PUSHB(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1100011 0L1 DDDDDDDDD 111100001");
 
@@ -5700,7 +5700,7 @@ void P2Doc::doc_pushb(p2_inst8_e instr)
  * D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
  *
  */
-void P2Doc::doc_rdfast(p2_inst8_e instr)
+void P2Doc::doc_RDFAST(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1100011 1LI DDDDDDDDD SSSSSSSSS");
 
@@ -5720,7 +5720,7 @@ void P2Doc::doc_rdfast(p2_inst8_e instr)
  * D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
  *
  */
-void P2Doc::doc_wrfast(p2_inst8_e instr)
+void P2Doc::doc_WRFAST(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1100100 0LI DDDDDDDDD SSSSSSSSS");
 
@@ -5740,7 +5740,7 @@ void P2Doc::doc_wrfast(p2_inst8_e instr)
  * D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
  *
  */
-void P2Doc::doc_fblock(p2_inst8_e instr)
+void P2Doc::doc_FBLOCK(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1100100 1LI DDDDDDDDD SSSSSSSSS");
 
@@ -5759,7 +5759,7 @@ void P2Doc::doc_fblock(p2_inst8_e instr)
  *
  *
  */
-void P2Doc::doc_xinit(p2_inst8_e instr)
+void P2Doc::doc_XINIT(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1100101 0LI DDDDDDDDD SSSSSSSSS");
 
@@ -5777,7 +5777,7 @@ void P2Doc::doc_xinit(p2_inst8_e instr)
  *
  *
  */
-void P2Doc::doc_xstop(p2_inst8_e instr)
+void P2Doc::doc_XSTOP(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1100101 011 000000000 000000000", D_S_match);
 
@@ -5795,7 +5795,7 @@ void P2Doc::doc_xstop(p2_inst8_e instr)
  *
  *
  */
-void P2Doc::doc_xzero(p2_inst8_e instr)
+void P2Doc::doc_XZERO(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1100101 1LI DDDDDDDDD SSSSSSSSS");
 
@@ -5813,7 +5813,7 @@ void P2Doc::doc_xzero(p2_inst8_e instr)
  *
  *
  */
-void P2Doc::doc_xcont(p2_inst8_e instr)
+void P2Doc::doc_XCONT(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1100110 0LI DDDDDDDDD SSSSSSSSS");
 
@@ -5833,7 +5833,7 @@ void P2Doc::doc_xcont(p2_inst8_e instr)
  * If D[8:0] = 0, nothing repeats.
  *
  */
-void P2Doc::doc_rep(p2_inst8_e instr)
+void P2Doc::doc_REP(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1100110 1LI DDDDDDDDD SSSSSSSSS");
 
@@ -5855,7 +5855,7 @@ void P2Doc::doc_rep(p2_inst8_e instr)
  * Prior SETQ sets PTRA of cog.
  *
  */
-void P2Doc::doc_coginit(p2_inst7_e instr)
+void P2Doc::doc_COGINIT(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1100111 CLI DDDDDDDDD SSSSSSSSS");
 
@@ -5876,7 +5876,7 @@ void P2Doc::doc_coginit(p2_inst7_e instr)
  * GETQX/GETQY retrieves lower/upper product.
  *
  */
-void P2Doc::doc_qmul(p2_inst8_e instr)
+void P2Doc::doc_QMUL(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101000 0LI DDDDDDDDD SSSSSSSSS");
 
@@ -5896,7 +5896,7 @@ void P2Doc::doc_qmul(p2_inst8_e instr)
  * GETQX/GETQY retrieves quotient/remainder.
  *
  */
-void P2Doc::doc_qdiv(p2_inst8_e instr)
+void P2Doc::doc_QDIV(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101000 1LI DDDDDDDDD SSSSSSSSS");
 
@@ -5916,7 +5916,7 @@ void P2Doc::doc_qdiv(p2_inst8_e instr)
  * GETQX/GETQY retrieves quotient/remainder.
  *
  */
-void P2Doc::doc_qfrac(p2_inst8_e instr)
+void P2Doc::doc_QFRAC(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101001 0LI DDDDDDDDD SSSSSSSSS");
 
@@ -5936,7 +5936,7 @@ void P2Doc::doc_qfrac(p2_inst8_e instr)
  * GETQX retrieves root.
  *
  */
-void P2Doc::doc_qsqrt(p2_inst8_e instr)
+void P2Doc::doc_QSQRT(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101001 1LI DDDDDDDDD SSSSSSSSS");
 
@@ -5956,7 +5956,7 @@ void P2Doc::doc_qsqrt(p2_inst8_e instr)
  * GETQX/GETQY retrieves X/Y.
  *
  */
-void P2Doc::doc_qrotate(p2_inst8_e instr)
+void P2Doc::doc_QROTATE(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101010 0LI DDDDDDDDD SSSSSSSSS");
 
@@ -5976,7 +5976,7 @@ void P2Doc::doc_qrotate(p2_inst8_e instr)
  * GETQX/GETQY retrieves length/angle.
  *
  */
-void P2Doc::doc_qvector(p2_inst8_e instr)
+void P2Doc::doc_QVECTOR(p2_inst8_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101010 1LI DDDDDDDDD SSSSSSSSS");
 
@@ -5995,7 +5995,7 @@ void P2Doc::doc_qvector(p2_inst8_e instr)
  *
  *
  */
-void P2Doc::doc_hubset(p2_opsrc_e instr)
+void P2Doc::doc_HUBSET(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000000000");
 
@@ -6014,7 +6014,7 @@ void P2Doc::doc_hubset(p2_opsrc_e instr)
  * If WC, check status of cog D[3:0], C = 1 if on.
  *
  */
-void P2Doc::doc_cogid(p2_opsrc_e instr)
+void P2Doc::doc_COGID(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 C0L DDDDDDDDD 000000001");
 
@@ -6033,7 +6033,7 @@ void P2Doc::doc_cogid(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_cogstop(p2_opsrc_e instr)
+void P2Doc::doc_COGSTOP(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000000011");
 
@@ -6053,7 +6053,7 @@ void P2Doc::doc_cogstop(p2_opsrc_e instr)
  * C = 1 if no LOCK available.
  *
  */
-void P2Doc::doc_locknew(p2_opsrc_e instr)
+void P2Doc::doc_LOCKNEW(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 C00 DDDDDDDDD 000000100");
 
@@ -6073,7 +6073,7 @@ void P2Doc::doc_locknew(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_lockret(p2_opsrc_e instr)
+void P2Doc::doc_LOCKRET(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000000101");
 
@@ -6094,7 +6094,7 @@ void P2Doc::doc_lockret(p2_opsrc_e instr)
  * LOCK is also released if owner cog stops or restarts.
  *
  */
-void P2Doc::doc_locktry(p2_opsrc_e instr)
+void P2Doc::doc_LOCKTRY(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 C0L DDDDDDDDD 000000110");
 
@@ -6116,7 +6116,7 @@ void P2Doc::doc_locktry(p2_opsrc_e instr)
  * If D is a register and WC, get current/last cog id of LOCK owner into D and LOCK status into C.
  *
  */
-void P2Doc::doc_lockrel(p2_opsrc_e instr)
+void P2Doc::doc_LOCKREL(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 C0L DDDDDDDDD 000000111");
 
@@ -6136,7 +6136,7 @@ void P2Doc::doc_lockrel(p2_opsrc_e instr)
  * GETQX retrieves log {5'whole_exponent, 27'fractional_exponent}.
  *
  */
-void P2Doc::doc_qlog(p2_opsrc_e instr)
+void P2Doc::doc_QLOG(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000001110");
 
@@ -6156,7 +6156,7 @@ void P2Doc::doc_qlog(p2_opsrc_e instr)
  * GETQX retrieves number.
  *
  */
-void P2Doc::doc_qexp(p2_opsrc_e instr)
+void P2Doc::doc_QEXP(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000001111");
 
@@ -6177,7 +6177,7 @@ void P2Doc::doc_qexp(p2_opsrc_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_rfbyte(p2_opsrc_e instr)
+void P2Doc::doc_RFBYTE(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000010000");
 
@@ -6199,7 +6199,7 @@ void P2Doc::doc_rfbyte(p2_opsrc_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_rfword(p2_opsrc_e instr)
+void P2Doc::doc_RFWORD(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000010001");
 
@@ -6221,7 +6221,7 @@ void P2Doc::doc_rfword(p2_opsrc_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_rflong(p2_opsrc_e instr)
+void P2Doc::doc_RFLONG(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000010010");
 
@@ -6243,7 +6243,7 @@ void P2Doc::doc_rflong(p2_opsrc_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_rfvar(p2_opsrc_e instr)
+void P2Doc::doc_RFVAR(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000010011");
 
@@ -6265,7 +6265,7 @@ void P2Doc::doc_rfvar(p2_opsrc_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_rfvars(p2_opsrc_e instr)
+void P2Doc::doc_RFVARS(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000010100");
 
@@ -6285,7 +6285,7 @@ void P2Doc::doc_rfvars(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_wfbyte(p2_opsrc_e instr)
+void P2Doc::doc_WFBYTE(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000010101");
 
@@ -6303,7 +6303,7 @@ void P2Doc::doc_wfbyte(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_wfword(p2_opsrc_e instr)
+void P2Doc::doc_WFWORD(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000010110");
 
@@ -6321,7 +6321,7 @@ void P2Doc::doc_wfword(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_wflong(p2_opsrc_e instr)
+void P2Doc::doc_WFLONG(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000010111");
 
@@ -6342,7 +6342,7 @@ void P2Doc::doc_wflong(p2_opsrc_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_getqx(p2_opsrc_e instr)
+void P2Doc::doc_GETQX(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000011000");
 
@@ -6366,7 +6366,7 @@ void P2Doc::doc_getqx(p2_opsrc_e instr)
  * Z = (result == 0).
  *
  */
-void P2Doc::doc_getqy(p2_opsrc_e instr)
+void P2Doc::doc_GETQY(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000011001");
 
@@ -6388,7 +6388,7 @@ void P2Doc::doc_getqy(p2_opsrc_e instr)
  * CT is the free-running 32-bit system counter that increments on every clock.
  *
  */
-void P2Doc::doc_getct(p2_opsrc_e instr)
+void P2Doc::doc_GETCT(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 000011010");
 
@@ -6409,7 +6409,7 @@ void P2Doc::doc_getct(p2_opsrc_e instr)
  * D = RND[31:0], C = RND[31], Z = RND[30], unique per cog.
  *
  */
-void P2Doc::doc_getrnd(p2_opsrc_e instr)
+void P2Doc::doc_GETRND(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000011011");
 
@@ -6430,7 +6430,7 @@ void P2Doc::doc_getrnd(p2_opsrc_e instr)
  * C = RND[31], Z = RND[30], unique per cog.
  *
  */
-void P2Doc::doc_getrnd_cz(p2_opsrc_e instr)
+void P2Doc::doc_GETRND_CZ(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ1 000000000 000011011", D_match);
 
@@ -6449,7 +6449,7 @@ void P2Doc::doc_getrnd_cz(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_setdacs(p2_opsrc_e instr)
+void P2Doc::doc_SETDACS(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000011100");
 
@@ -6467,7 +6467,7 @@ void P2Doc::doc_setdacs(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_setxfrq(p2_opsrc_e instr)
+void P2Doc::doc_SETXFRQ(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000011101");
 
@@ -6485,7 +6485,7 @@ void P2Doc::doc_setxfrq(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_getxacc(p2_opsrc_e instr)
+void P2Doc::doc_GETXACC(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 000011110");
 
@@ -6505,7 +6505,7 @@ void P2Doc::doc_getxacc(p2_opsrc_e instr)
  * C/Z = 0.
  *
  */
-void P2Doc::doc_waitx(p2_opsrc_e instr)
+void P2Doc::doc_WAITX(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000011111");
 
@@ -6525,7 +6525,7 @@ void P2Doc::doc_waitx(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_setse1(p2_opsrc_e instr)
+void P2Doc::doc_SETSE1(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000100000");
 
@@ -6543,7 +6543,7 @@ void P2Doc::doc_setse1(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_setse2(p2_opsrc_e instr)
+void P2Doc::doc_SETSE2(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000100001");
 
@@ -6561,7 +6561,7 @@ void P2Doc::doc_setse2(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_setse3(p2_opsrc_e instr)
+void P2Doc::doc_SETSE3(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000100010");
 
@@ -6579,7 +6579,7 @@ void P2Doc::doc_setse3(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_setse4(p2_opsrc_e instr)
+void P2Doc::doc_SETSE4(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000100011");
 
@@ -6597,7 +6597,7 @@ void P2Doc::doc_setse4(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_pollint(p2_opx24_e instr)
+void P2Doc::doc_POLLINT(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000000000 000100100");
 
@@ -6615,7 +6615,7 @@ void P2Doc::doc_pollint(p2_opx24_e instr)
  *
  *
  */
-void P2Doc::doc_pollct1(p2_opx24_e instr)
+void P2Doc::doc_POLLCT1(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000000001 000100100");
 
@@ -6633,7 +6633,7 @@ void P2Doc::doc_pollct1(p2_opx24_e instr)
  *
  *
  */
-void P2Doc::doc_pollct2(p2_opx24_e instr)
+void P2Doc::doc_POLLCT2(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000000010 000100100");
 
@@ -6651,7 +6651,7 @@ void P2Doc::doc_pollct2(p2_opx24_e instr)
  *
  *
  */
-void P2Doc::doc_pollct3(p2_opx24_e instr)
+void P2Doc::doc_POLLCT3(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000000011 000100100");
 
@@ -6669,7 +6669,7 @@ void P2Doc::doc_pollct3(p2_opx24_e instr)
  *
  *
  */
-void P2Doc::doc_pollse1(p2_opx24_e instr)
+void P2Doc::doc_POLLSE1(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000000100 000100100");
 
@@ -6687,7 +6687,7 @@ void P2Doc::doc_pollse1(p2_opx24_e instr)
  *
  *
  */
-void P2Doc::doc_pollse2(p2_opx24_e instr)
+void P2Doc::doc_POLLSE2(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000000101 000100100");
 
@@ -6705,7 +6705,7 @@ void P2Doc::doc_pollse2(p2_opx24_e instr)
  *
  *
  */
-void P2Doc::doc_pollse3(p2_opx24_e instr)
+void P2Doc::doc_POLLSE3(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000000110 000100100");
 
@@ -6723,7 +6723,7 @@ void P2Doc::doc_pollse3(p2_opx24_e instr)
  *
  *
  */
-void P2Doc::doc_pollse4(p2_opx24_e instr)
+void P2Doc::doc_POLLSE4(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000000111 000100100");
 
@@ -6741,7 +6741,7 @@ void P2Doc::doc_pollse4(p2_opx24_e instr)
  *
  *
  */
-void P2Doc::doc_pollpat(p2_opx24_e instr)
+void P2Doc::doc_POLLPAT(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000001000 000100100");
 
@@ -6759,7 +6759,7 @@ void P2Doc::doc_pollpat(p2_opx24_e instr)
  *
  *
  */
-void P2Doc::doc_pollfbw(p2_opx24_e instr)
+void P2Doc::doc_POLLFBW(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000001001 000100100");
 
@@ -6777,7 +6777,7 @@ void P2Doc::doc_pollfbw(p2_opx24_e instr)
  *
  *
  */
-void P2Doc::doc_pollxmt(p2_opx24_e instr)
+void P2Doc::doc_POLLXMT(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000001010 000100100");
 
@@ -6795,7 +6795,7 @@ void P2Doc::doc_pollxmt(p2_opx24_e instr)
  *
  *
  */
-void P2Doc::doc_pollxfi(p2_opx24_e instr)
+void P2Doc::doc_POLLXFI(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000001011 000100100");
 
@@ -6813,7 +6813,7 @@ void P2Doc::doc_pollxfi(p2_opx24_e instr)
  *
  *
  */
-void P2Doc::doc_pollxro(p2_opx24_e instr)
+void P2Doc::doc_POLLXRO(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000001100 000100100");
 
@@ -6831,7 +6831,7 @@ void P2Doc::doc_pollxro(p2_opx24_e instr)
  *
  *
  */
-void P2Doc::doc_pollxrl(p2_opx24_e instr)
+void P2Doc::doc_POLLXRL(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000001101 000100100");
 
@@ -6849,7 +6849,7 @@ void P2Doc::doc_pollxrl(p2_opx24_e instr)
  *
  *
  */
-void P2Doc::doc_pollatn(p2_opx24_e instr)
+void P2Doc::doc_POLLATN(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000001110 000100100");
 
@@ -6867,7 +6867,7 @@ void P2Doc::doc_pollatn(p2_opx24_e instr)
  *
  *
  */
-void P2Doc::doc_pollqmt(p2_opx24_e instr)
+void P2Doc::doc_POLLQMT(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000001111 000100100");
 
@@ -6887,7 +6887,7 @@ void P2Doc::doc_pollqmt(p2_opx24_e instr)
  * C/Z = timeout.
  *
  */
-void P2Doc::doc_waitint(p2_opx24_e instr)
+void P2Doc::doc_WAITINT(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000010000 000100100");
 
@@ -6909,7 +6909,7 @@ void P2Doc::doc_waitint(p2_opx24_e instr)
  * C/Z = timeout.
  *
  */
-void P2Doc::doc_waitct1(p2_opx24_e instr)
+void P2Doc::doc_WAITCT1(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000010001 000100100");
 
@@ -6931,7 +6931,7 @@ void P2Doc::doc_waitct1(p2_opx24_e instr)
  * C/Z = timeout.
  *
  */
-void P2Doc::doc_waitct2(p2_opx24_e instr)
+void P2Doc::doc_WAITCT2(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000010010 000100100");
 
@@ -6953,7 +6953,7 @@ void P2Doc::doc_waitct2(p2_opx24_e instr)
  * C/Z = timeout.
  *
  */
-void P2Doc::doc_waitct3(p2_opx24_e instr)
+void P2Doc::doc_WAITCT3(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000010011 000100100");
 
@@ -6975,7 +6975,7 @@ void P2Doc::doc_waitct3(p2_opx24_e instr)
  * C/Z = timeout.
  *
  */
-void P2Doc::doc_waitse1(p2_opx24_e instr)
+void P2Doc::doc_WAITSE1(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000010100 000100100");
 
@@ -6997,7 +6997,7 @@ void P2Doc::doc_waitse1(p2_opx24_e instr)
  * C/Z = timeout.
  *
  */
-void P2Doc::doc_waitse2(p2_opx24_e instr)
+void P2Doc::doc_WAITSE2(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000010101 000100100");
 
@@ -7019,7 +7019,7 @@ void P2Doc::doc_waitse2(p2_opx24_e instr)
  * C/Z = timeout.
  *
  */
-void P2Doc::doc_waitse3(p2_opx24_e instr)
+void P2Doc::doc_WAITSE3(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000010110 000100100");
 
@@ -7041,7 +7041,7 @@ void P2Doc::doc_waitse3(p2_opx24_e instr)
  * C/Z = timeout.
  *
  */
-void P2Doc::doc_waitse4(p2_opx24_e instr)
+void P2Doc::doc_WAITSE4(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000010111 000100100");
 
@@ -7063,7 +7063,7 @@ void P2Doc::doc_waitse4(p2_opx24_e instr)
  * C/Z = timeout.
  *
  */
-void P2Doc::doc_waitpat(p2_opx24_e instr)
+void P2Doc::doc_WAITPAT(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000011000 000100100");
 
@@ -7085,7 +7085,7 @@ void P2Doc::doc_waitpat(p2_opx24_e instr)
  * C/Z = timeout.
  *
  */
-void P2Doc::doc_waitfbw(p2_opx24_e instr)
+void P2Doc::doc_WAITFBW(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000011001 000100100");
 
@@ -7107,7 +7107,7 @@ void P2Doc::doc_waitfbw(p2_opx24_e instr)
  * C/Z = timeout.
  *
  */
-void P2Doc::doc_waitxmt(p2_opx24_e instr)
+void P2Doc::doc_WAITXMT(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000011010 000100100");
 
@@ -7129,7 +7129,7 @@ void P2Doc::doc_waitxmt(p2_opx24_e instr)
  * C/Z = timeout.
  *
  */
-void P2Doc::doc_waitxfi(p2_opx24_e instr)
+void P2Doc::doc_WAITXFI(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000011011 000100100");
 
@@ -7151,7 +7151,7 @@ void P2Doc::doc_waitxfi(p2_opx24_e instr)
  * C/Z = timeout.
  *
  */
-void P2Doc::doc_waitxro(p2_opx24_e instr)
+void P2Doc::doc_WAITXRO(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000011100 000100100");
 
@@ -7173,7 +7173,7 @@ void P2Doc::doc_waitxro(p2_opx24_e instr)
  * C/Z = timeout.
  *
  */
-void P2Doc::doc_waitxrl(p2_opx24_e instr)
+void P2Doc::doc_WAITXRL(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000011101 000100100");
 
@@ -7195,7 +7195,7 @@ void P2Doc::doc_waitxrl(p2_opx24_e instr)
  * C/Z = timeout.
  *
  */
-void P2Doc::doc_waitatn(p2_opx24_e instr)
+void P2Doc::doc_WAITATN(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 000011110 000100100");
 
@@ -7215,7 +7215,7 @@ void P2Doc::doc_waitatn(p2_opx24_e instr)
  *
  *
  */
-void P2Doc::doc_allowi(p2_opx24_e instr)
+void P2Doc::doc_ALLOWI(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 000100000 000100100");
 
@@ -7233,7 +7233,7 @@ void P2Doc::doc_allowi(p2_opx24_e instr)
  *
  *
  */
-void P2Doc::doc_stalli(p2_opx24_e instr)
+void P2Doc::doc_STALLI(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 000100001 000100100");
 
@@ -7251,7 +7251,7 @@ void P2Doc::doc_stalli(p2_opx24_e instr)
  *
  *
  */
-void P2Doc::doc_trgint1(p2_opx24_e instr)
+void P2Doc::doc_TRGINT1(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 000100010 000100100");
 
@@ -7269,7 +7269,7 @@ void P2Doc::doc_trgint1(p2_opx24_e instr)
  *
  *
  */
-void P2Doc::doc_trgint2(p2_opx24_e instr)
+void P2Doc::doc_TRGINT2(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 000100011 000100100");
 
@@ -7287,7 +7287,7 @@ void P2Doc::doc_trgint2(p2_opx24_e instr)
  *
  *
  */
-void P2Doc::doc_trgint3(p2_opx24_e instr)
+void P2Doc::doc_TRGINT3(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 000100100 000100100");
 
@@ -7305,7 +7305,7 @@ void P2Doc::doc_trgint3(p2_opx24_e instr)
  *
  *
  */
-void P2Doc::doc_nixint1(p2_opx24_e instr)
+void P2Doc::doc_NIXINT1(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 000100101 000100100");
 
@@ -7323,7 +7323,7 @@ void P2Doc::doc_nixint1(p2_opx24_e instr)
  *
  *
  */
-void P2Doc::doc_nixint2(p2_opx24_e instr)
+void P2Doc::doc_NIXINT2(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 000100110 000100100");
 
@@ -7341,7 +7341,7 @@ void P2Doc::doc_nixint2(p2_opx24_e instr)
  *
  *
  */
-void P2Doc::doc_nixint3(p2_opx24_e instr)
+void P2Doc::doc_NIXINT3(p2_opx24_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 000100111 000100100");
 
@@ -7359,7 +7359,7 @@ void P2Doc::doc_nixint3(p2_opx24_e instr)
  *
  *
  */
-void P2Doc::doc_setint1(p2_opsrc_e instr)
+void P2Doc::doc_SETINT1(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000100101");
 
@@ -7377,7 +7377,7 @@ void P2Doc::doc_setint1(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_setint2(p2_opsrc_e instr)
+void P2Doc::doc_SETINT2(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000100110");
 
@@ -7395,7 +7395,7 @@ void P2Doc::doc_setint2(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_setint3(p2_opsrc_e instr)
+void P2Doc::doc_SETINT3(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000100111");
 
@@ -7415,7 +7415,7 @@ void P2Doc::doc_setint3(p2_opsrc_e instr)
  * Also used before MUXQ/COGINIT/QDIV/QFRAC/QROTATE/WAITxxx.
  *
  */
-void P2Doc::doc_setq(p2_opsrc_e instr)
+void P2Doc::doc_SETQ(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000101000");
 
@@ -7436,7 +7436,7 @@ void P2Doc::doc_setq(p2_opsrc_e instr)
  * Use before RDLONG/WRLONG/WMLONG to set LUT block transfer.
  *
  */
-void P2Doc::doc_setq2(p2_opsrc_e instr)
+void P2Doc::doc_SETQ2(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000101001");
 
@@ -7455,7 +7455,7 @@ void P2Doc::doc_setq2(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_push(p2_opsrc_e instr)
+void P2Doc::doc_PUSH(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000101010");
 
@@ -7474,7 +7474,7 @@ void P2Doc::doc_push(p2_opsrc_e instr)
  * C = K[31], Z = K[30], D = K.
  *
  */
-void P2Doc::doc_pop(p2_opsrc_e instr)
+void P2Doc::doc_POP(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000101011");
 
@@ -7494,7 +7494,7 @@ void P2Doc::doc_pop(p2_opsrc_e instr)
  * C = D[31], Z = D[30], PC = D[19:0].
  *
  */
-void P2Doc::doc_jmp(p2_opsrc_e instr)
+void P2Doc::doc_JMP(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000101100");
 
@@ -7514,7 +7514,7 @@ void P2Doc::doc_jmp(p2_opsrc_e instr)
  * C = D[31], Z = D[30], PC = D[19:0].
  *
  */
-void P2Doc::doc_call(p2_opsrc_e instr)
+void P2Doc::doc_CALL(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000101101", I_match);
 
@@ -7534,7 +7534,7 @@ void P2Doc::doc_call(p2_opsrc_e instr)
  * C = K[31], Z = K[30], PC = K[19:0].
  *
  */
-void P2Doc::doc_ret(p2_opsrc_e instr)
+void P2Doc::doc_RET(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ1 000000000 000101101", I_D_match);
 
@@ -7554,7 +7554,7 @@ void P2Doc::doc_ret(p2_opsrc_e instr)
  * C = D[31], Z = D[30], PC = D[19:0].
  *
  */
-void P2Doc::doc_calla(p2_opsrc_e instr)
+void P2Doc::doc_CALLA(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000101110", I_match);
 
@@ -7574,7 +7574,7 @@ void P2Doc::doc_calla(p2_opsrc_e instr)
  * C = L[31], Z = L[30], PC = L[19:0].
  *
  */
-void P2Doc::doc_reta(p2_opsrc_e instr)
+void P2Doc::doc_RETA(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ1 000000000 000101110", I_D_match);
 
@@ -7594,7 +7594,7 @@ void P2Doc::doc_reta(p2_opsrc_e instr)
  * C = D[31], Z = D[30], PC = D[19:0].
  *
  */
-void P2Doc::doc_callb(p2_opsrc_e instr)
+void P2Doc::doc_CALLB(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000101111");
 
@@ -7614,7 +7614,7 @@ void P2Doc::doc_callb(p2_opsrc_e instr)
  * C = L[31], Z = L[30], PC = L[19:0].
  *
  */
-void P2Doc::doc_retb(p2_opsrc_e instr)
+void P2Doc::doc_RETB(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ1 000000000 000101111", I_D_match);
 
@@ -7635,7 +7635,7 @@ void P2Doc::doc_retb(p2_opsrc_e instr)
  * For hubex, PC += D[17:0] << 2.
  *
  */
-void P2Doc::doc_jmprel(p2_opsrc_e instr)
+void P2Doc::doc_JMPREL(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000110000");
 
@@ -7656,7 +7656,7 @@ void P2Doc::doc_jmprel(p2_opsrc_e instr)
  * Subsequent instructions 0..31 get cancelled for each '1' bit in D[0]..D[31].
  *
  */
-void P2Doc::doc_skip(p2_opsrc_e instr)
+void P2Doc::doc_SKIP(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000110001");
 
@@ -7676,7 +7676,7 @@ void P2Doc::doc_skip(p2_opsrc_e instr)
  * Like SKIP, but instead of cancelling instructions, the PC leaps over them.
  *
  */
-void P2Doc::doc_skipf(p2_opsrc_e instr)
+void P2Doc::doc_SKIPF(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000110010");
 
@@ -7696,7 +7696,7 @@ void P2Doc::doc_skipf(p2_opsrc_e instr)
  * PC = {10'b0, D[9:0]}.
  *
  */
-void P2Doc::doc_execf(p2_opsrc_e instr)
+void P2Doc::doc_EXECF(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000110011");
 
@@ -7715,7 +7715,7 @@ void P2Doc::doc_execf(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_getptr(p2_opsrc_e instr)
+void P2Doc::doc_GETPTR(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 000110100");
 
@@ -7735,7 +7735,7 @@ void P2Doc::doc_getptr(p2_opsrc_e instr)
  * Z = 0.
  *
  */
-void P2Doc::doc_getbrk(p2_opsrc_e instr)
+void P2Doc::doc_GETBRK(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 000110101", I_match);
 
@@ -7756,7 +7756,7 @@ void P2Doc::doc_getbrk(p2_opsrc_e instr)
  * Cog D[3:0] must have asynchronous breakpoint enabled.
  *
  */
-void P2Doc::doc_cogbrk(p2_opsrc_e instr)
+void P2Doc::doc_COGBRK(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000110101");
 
@@ -7776,7 +7776,7 @@ void P2Doc::doc_cogbrk(p2_opsrc_e instr)
  * Else, trigger break if enabled, conditionally write break code to D[7:0].
  *
  */
-void P2Doc::doc_brk(p2_opsrc_e instr)
+void P2Doc::doc_BRK(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000110110");
 
@@ -7795,7 +7795,7 @@ void P2Doc::doc_brk(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_setluts(p2_opsrc_e instr)
+void P2Doc::doc_SETLUTS(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000110111");
 
@@ -7813,7 +7813,7 @@ void P2Doc::doc_setluts(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_setcy(p2_opsrc_e instr)
+void P2Doc::doc_SETCY(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000111000");
 
@@ -7831,7 +7831,7 @@ void P2Doc::doc_setcy(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_setci(p2_opsrc_e instr)
+void P2Doc::doc_SETCI(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000111001");
 
@@ -7849,7 +7849,7 @@ void P2Doc::doc_setci(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_setcq(p2_opsrc_e instr)
+void P2Doc::doc_SETCQ(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000111010");
 
@@ -7867,7 +7867,7 @@ void P2Doc::doc_setcq(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_setcfrq(p2_opsrc_e instr)
+void P2Doc::doc_SETCFRQ(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000111011");
 
@@ -7885,7 +7885,7 @@ void P2Doc::doc_setcfrq(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_setcmod(p2_opsrc_e instr)
+void P2Doc::doc_SETCMOD(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000111100");
 
@@ -7903,7 +7903,7 @@ void P2Doc::doc_setcmod(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_setpiv(p2_opsrc_e instr)
+void P2Doc::doc_SETPIV(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000111101");
 
@@ -7921,7 +7921,7 @@ void P2Doc::doc_setpiv(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_setpix(p2_opsrc_e instr)
+void P2Doc::doc_SETPIX(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000111110");
 
@@ -7939,7 +7939,7 @@ void P2Doc::doc_setpix(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_cogatn(p2_opsrc_e instr)
+void P2Doc::doc_COGATN(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 000111111");
 
@@ -7958,7 +7958,7 @@ void P2Doc::doc_cogatn(p2_opsrc_e instr)
  * C/Z =          IN[D[5:0]].
  *
  */
-void P2Doc::doc_testp_wc_wz(p2_opsrc_e instr, p2_inst9_e inst9)
+void P2Doc::doc_TESTP_W(p2_opsrc_e instr, p2_inst9_e inst9)
 {
     P2DocOpcode op = make_pattern(__func__, instr, inst9, "EEEE 1101011 CZL DDDDDDDDD 001000000", C_neq_Z);
 
@@ -7979,7 +7979,7 @@ void P2Doc::doc_testp_wc_wz(p2_opsrc_e instr, p2_inst9_e inst9)
  * C/Z =         !IN[D[5:0]].
  *
  */
-void P2Doc::doc_testpn_wc_wz(p2_opsrc_e instr, p2_inst9_e inst9)
+void P2Doc::doc_TESTPN_W(p2_opsrc_e instr, p2_inst9_e inst9)
 {
     P2DocOpcode op = make_pattern(__func__, instr, inst9, "EEEE 1101011 CZL DDDDDDDDD 001000001", C_neq_Z);
 
@@ -7999,7 +7999,7 @@ void P2Doc::doc_testpn_wc_wz(p2_opsrc_e instr, p2_inst9_e inst9)
  * C/Z = C/Z AND  IN[D[5:0]].
  *
  */
-void P2Doc::doc_testp_and(p2_opsrc_e instr, p2_inst9_e inst9)
+void P2Doc::doc_TESTP_AND(p2_opsrc_e instr, p2_inst9_e inst9)
 {
     P2DocOpcode op = make_pattern(__func__, instr, inst9, "EEEE 1101011 CZL DDDDDDDDD 001000010", C_neq_Z);
 
@@ -8019,7 +8019,7 @@ void P2Doc::doc_testp_and(p2_opsrc_e instr, p2_inst9_e inst9)
  * C/Z = C/Z AND !IN[D[5:0]].
  *
  */
-void P2Doc::doc_testpn_and(p2_opsrc_e instr, p2_inst9_e inst9)
+void P2Doc::doc_TESTPN_AND(p2_opsrc_e instr, p2_inst9_e inst9)
 {
     P2DocOpcode op = make_pattern(__func__, instr, inst9, "EEEE 1101011 CZL DDDDDDDDD 001000011", C_neq_Z);
 
@@ -8039,7 +8039,7 @@ void P2Doc::doc_testpn_and(p2_opsrc_e instr, p2_inst9_e inst9)
  * C/Z = C/Z OR   IN[D[5:0]].
  *
  */
-void P2Doc::doc_testp_or(p2_opsrc_e instr, p2_inst9_e inst9)
+void P2Doc::doc_TESTP_OR(p2_opsrc_e instr, p2_inst9_e inst9)
 {
     P2DocOpcode op = make_pattern(__func__, instr, inst9, "EEEE 1101011 CZL DDDDDDDDD 001000100", C_neq_Z);
 
@@ -8059,7 +8059,7 @@ void P2Doc::doc_testp_or(p2_opsrc_e instr, p2_inst9_e inst9)
  * C/Z = C/Z OR  !IN[D[5:0]].
  *
  */
-void P2Doc::doc_testpn_or(p2_opsrc_e instr, p2_inst9_e inst9)
+void P2Doc::doc_TESTPN_OR(p2_opsrc_e instr, p2_inst9_e inst9)
 {
     P2DocOpcode op = make_pattern(__func__, instr, inst9, "EEEE 1101011 CZL DDDDDDDDD 001000101", C_neq_Z);
 
@@ -8079,7 +8079,7 @@ void P2Doc::doc_testpn_or(p2_opsrc_e instr, p2_inst9_e inst9)
  * C/Z = C/Z XOR  IN[D[5:0]].
  *
  */
-void P2Doc::doc_testp_xor(p2_opsrc_e instr, p2_inst9_e inst9)
+void P2Doc::doc_TESTP_XOR(p2_opsrc_e instr, p2_inst9_e inst9)
 {
     P2DocOpcode op = make_pattern(__func__, instr, inst9, "EEEE 1101011 CZL DDDDDDDDD 001000110", C_neq_Z);
 
@@ -8099,7 +8099,7 @@ void P2Doc::doc_testp_xor(p2_opsrc_e instr, p2_inst9_e inst9)
  * C/Z = C/Z XOR !IN[D[5:0]].
  *
  */
-void P2Doc::doc_testpn_xor(p2_opsrc_e instr, p2_inst9_e inst9)
+void P2Doc::doc_TESTPN_XOR(p2_opsrc_e instr, p2_inst9_e inst9)
 {
     P2DocOpcode op = make_pattern(__func__, instr, inst9, "EEEE 1101011 CZL DDDDDDDDD 001000111", C_neq_Z);
 
@@ -8119,7 +8119,7 @@ void P2Doc::doc_testpn_xor(p2_opsrc_e instr, p2_inst9_e inst9)
  * C,Z = DIR bit.
  *
  */
-void P2Doc::doc_dirl(p2_opsrc_e instr, p2_inst9_e inst9)
+void P2Doc::doc_DIRL(p2_opsrc_e instr, p2_inst9_e inst9)
 {
     P2DocOpcode op = make_pattern(__func__, instr, inst9, "EEEE 1101011 CZL DDDDDDDDD 001000000", C_equ_Z);
 
@@ -8139,7 +8139,7 @@ void P2Doc::doc_dirl(p2_opsrc_e instr, p2_inst9_e inst9)
  * C,Z = DIR bit.
  *
  */
-void P2Doc::doc_dirh(p2_opsrc_e instr, p2_inst9_e inst9)
+void P2Doc::doc_DIRH(p2_opsrc_e instr, p2_inst9_e inst9)
 {
     P2DocOpcode op = make_pattern(__func__, instr, inst9, "EEEE 1101011 CZL DDDDDDDDD 001000001", C_equ_Z);
 
@@ -8159,7 +8159,7 @@ void P2Doc::doc_dirh(p2_opsrc_e instr, p2_inst9_e inst9)
  * C,Z = DIR bit.
  *
  */
-void P2Doc::doc_dirc(p2_opsrc_e instr, p2_inst9_e inst9)
+void P2Doc::doc_DIRC(p2_opsrc_e instr, p2_inst9_e inst9)
 {
     P2DocOpcode op = make_pattern(__func__, instr, inst9, "EEEE 1101011 CZL DDDDDDDDD 001000010", C_equ_Z);
 
@@ -8179,7 +8179,7 @@ void P2Doc::doc_dirc(p2_opsrc_e instr, p2_inst9_e inst9)
  * C,Z = DIR bit.
  *
  */
-void P2Doc::doc_dirnc(p2_opsrc_e instr, p2_inst9_e inst9)
+void P2Doc::doc_DIRNC(p2_opsrc_e instr, p2_inst9_e inst9)
 {
     P2DocOpcode op = make_pattern(__func__, instr, inst9, "EEEE 1101011 CZL DDDDDDDDD 001000011", C_equ_Z);
 
@@ -8199,7 +8199,7 @@ void P2Doc::doc_dirnc(p2_opsrc_e instr, p2_inst9_e inst9)
  * C,Z = DIR bit.
  *
  */
-void P2Doc::doc_dirz(p2_opsrc_e instr, p2_inst9_e inst9)
+void P2Doc::doc_DIRZ(p2_opsrc_e instr, p2_inst9_e inst9)
 {
     P2DocOpcode op = make_pattern(__func__, instr, inst9, "EEEE 1101011 CZL DDDDDDDDD 001000100", C_equ_Z);
 
@@ -8219,7 +8219,7 @@ void P2Doc::doc_dirz(p2_opsrc_e instr, p2_inst9_e inst9)
  * C,Z = DIR bit.
  *
  */
-void P2Doc::doc_dirnz(p2_opsrc_e instr, p2_inst9_e inst9)
+void P2Doc::doc_DIRNZ(p2_opsrc_e instr, p2_inst9_e inst9)
 {
     P2DocOpcode op = make_pattern(__func__, instr, inst9, "EEEE 1101011 CZL DDDDDDDDD 001000101", C_equ_Z);
 
@@ -8239,7 +8239,7 @@ void P2Doc::doc_dirnz(p2_opsrc_e instr, p2_inst9_e inst9)
  * C,Z = DIR bit.
  *
  */
-void P2Doc::doc_dirrnd(p2_opsrc_e instr, p2_inst9_e inst9)
+void P2Doc::doc_DIRRND(p2_opsrc_e instr, p2_inst9_e inst9)
 {
     P2DocOpcode op = make_pattern(__func__, instr, inst9, "EEEE 1101011 CZL DDDDDDDDD 001000110", C_equ_Z);
 
@@ -8259,7 +8259,7 @@ void P2Doc::doc_dirrnd(p2_opsrc_e instr, p2_inst9_e inst9)
  * C,Z = DIR bit.
  *
  */
-void P2Doc::doc_dirnot(p2_opsrc_e instr, p2_inst9_e inst9)
+void P2Doc::doc_DIRNOT(p2_opsrc_e instr, p2_inst9_e inst9)
 {
     P2DocOpcode op = make_pattern(__func__, instr, inst9, "EEEE 1101011 CZL DDDDDDDDD 001000111", C_equ_Z);
 
@@ -8279,7 +8279,7 @@ void P2Doc::doc_dirnot(p2_opsrc_e instr, p2_inst9_e inst9)
  * C,Z = OUT bit.
  *
  */
-void P2Doc::doc_outl(p2_opsrc_e instr)
+void P2Doc::doc_OUTL(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001001000", C_equ_Z);
 
@@ -8299,7 +8299,7 @@ void P2Doc::doc_outl(p2_opsrc_e instr)
  * C,Z = OUT bit.
  *
  */
-void P2Doc::doc_outh(p2_opsrc_e instr)
+void P2Doc::doc_OUTH(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001001001", C_equ_Z);
 
@@ -8319,7 +8319,7 @@ void P2Doc::doc_outh(p2_opsrc_e instr)
  * C,Z = OUT bit.
  *
  */
-void P2Doc::doc_outc(p2_opsrc_e instr)
+void P2Doc::doc_OUTC(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001001010", C_equ_Z);
 
@@ -8339,7 +8339,7 @@ void P2Doc::doc_outc(p2_opsrc_e instr)
  * C,Z = OUT bit.
  *
  */
-void P2Doc::doc_outnc(p2_opsrc_e instr)
+void P2Doc::doc_OUTNC(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001001011", C_equ_Z);
 
@@ -8359,7 +8359,7 @@ void P2Doc::doc_outnc(p2_opsrc_e instr)
  * C,Z = OUT bit.
  *
  */
-void P2Doc::doc_outz(p2_opsrc_e instr)
+void P2Doc::doc_OUTZ(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001001100", C_equ_Z);
 
@@ -8379,7 +8379,7 @@ void P2Doc::doc_outz(p2_opsrc_e instr)
  * C,Z = OUT bit.
  *
  */
-void P2Doc::doc_outnz(p2_opsrc_e instr)
+void P2Doc::doc_OUTNZ(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001001101", C_equ_Z);
 
@@ -8399,7 +8399,7 @@ void P2Doc::doc_outnz(p2_opsrc_e instr)
  * C,Z = OUT bit.
  *
  */
-void P2Doc::doc_outrnd(p2_opsrc_e instr)
+void P2Doc::doc_OUTRND(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001001110", C_equ_Z);
 
@@ -8419,7 +8419,7 @@ void P2Doc::doc_outrnd(p2_opsrc_e instr)
  * C,Z = OUT bit.
  *
  */
-void P2Doc::doc_outnot(p2_opsrc_e instr)
+void P2Doc::doc_OUTNOT(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001001111", C_equ_Z);
 
@@ -8440,7 +8440,7 @@ void P2Doc::doc_outnot(p2_opsrc_e instr)
  * C,Z = OUT bit.
  *
  */
-void P2Doc::doc_fltl(p2_opsrc_e instr)
+void P2Doc::doc_FLTL(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001010000");
 
@@ -8462,7 +8462,7 @@ void P2Doc::doc_fltl(p2_opsrc_e instr)
  * C,Z = OUT bit.
  *
  */
-void P2Doc::doc_flth(p2_opsrc_e instr)
+void P2Doc::doc_FLTH(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001010001");
 
@@ -8484,7 +8484,7 @@ void P2Doc::doc_flth(p2_opsrc_e instr)
  * C,Z = OUT bit.
  *
  */
-void P2Doc::doc_fltc(p2_opsrc_e instr)
+void P2Doc::doc_FLTC(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001010010");
 
@@ -8506,7 +8506,7 @@ void P2Doc::doc_fltc(p2_opsrc_e instr)
  * C,Z = OUT bit.
  *
  */
-void P2Doc::doc_fltnc(p2_opsrc_e instr)
+void P2Doc::doc_FLTNC(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001010011");
 
@@ -8528,7 +8528,7 @@ void P2Doc::doc_fltnc(p2_opsrc_e instr)
  * C,Z = OUT bit.
  *
  */
-void P2Doc::doc_fltz(p2_opsrc_e instr)
+void P2Doc::doc_FLTZ(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001010100");
 
@@ -8550,7 +8550,7 @@ void P2Doc::doc_fltz(p2_opsrc_e instr)
  * C,Z = OUT bit.
  *
  */
-void P2Doc::doc_fltnz(p2_opsrc_e instr)
+void P2Doc::doc_FLTNZ(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001010101");
 
@@ -8572,7 +8572,7 @@ void P2Doc::doc_fltnz(p2_opsrc_e instr)
  * C,Z = OUT bit.
  *
  */
-void P2Doc::doc_fltrnd(p2_opsrc_e instr)
+void P2Doc::doc_FLTRND(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001010110");
 
@@ -8594,7 +8594,7 @@ void P2Doc::doc_fltrnd(p2_opsrc_e instr)
  * C,Z = OUT bit.
  *
  */
-void P2Doc::doc_fltnot(p2_opsrc_e instr)
+void P2Doc::doc_FLTNOT(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001010111");
 
@@ -8616,7 +8616,7 @@ void P2Doc::doc_fltnot(p2_opsrc_e instr)
  * C,Z = OUT bit.
  *
  */
-void P2Doc::doc_drvl(p2_opsrc_e instr)
+void P2Doc::doc_DRVL(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001011000");
 
@@ -8638,7 +8638,7 @@ void P2Doc::doc_drvl(p2_opsrc_e instr)
  * C,Z = OUT bit.
  *
  */
-void P2Doc::doc_drvh(p2_opsrc_e instr)
+void P2Doc::doc_DRVH(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001011001");
 
@@ -8660,7 +8660,7 @@ void P2Doc::doc_drvh(p2_opsrc_e instr)
  * C,Z = OUT bit.
  *
  */
-void P2Doc::doc_drvc(p2_opsrc_e instr)
+void P2Doc::doc_DRVC(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001011010");
 
@@ -8682,7 +8682,7 @@ void P2Doc::doc_drvc(p2_opsrc_e instr)
  * C,Z = OUT bit.
  *
  */
-void P2Doc::doc_drvnc(p2_opsrc_e instr)
+void P2Doc::doc_DRVNC(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001011011");
 
@@ -8704,7 +8704,7 @@ void P2Doc::doc_drvnc(p2_opsrc_e instr)
  * C,Z = OUT bit.
  *
  */
-void P2Doc::doc_drvz(p2_opsrc_e instr)
+void P2Doc::doc_DRVZ(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001011100");
 
@@ -8726,7 +8726,7 @@ void P2Doc::doc_drvz(p2_opsrc_e instr)
  * C,Z = OUT bit.
  *
  */
-void P2Doc::doc_drvnz(p2_opsrc_e instr)
+void P2Doc::doc_DRVNZ(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001011101");
 
@@ -8748,7 +8748,7 @@ void P2Doc::doc_drvnz(p2_opsrc_e instr)
  * C,Z = OUT bit.
  *
  */
-void P2Doc::doc_drvrnd(p2_opsrc_e instr)
+void P2Doc::doc_DRVRND(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001011110");
 
@@ -8770,7 +8770,7 @@ void P2Doc::doc_drvrnd(p2_opsrc_e instr)
  * C,Z = OUT bit.
  *
  */
-void P2Doc::doc_drvnot(p2_opsrc_e instr)
+void P2Doc::doc_DRVNOT(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZL DDDDDDDDD 001011111");
 
@@ -8791,7 +8791,7 @@ void P2Doc::doc_drvnot(p2_opsrc_e instr)
  * D = {S[31], S[27], S[23], S[19], ... S[12], S[8], S[4], S[0]}.
  *
  */
-void P2Doc::doc_splitb(p2_opsrc_e instr)
+void P2Doc::doc_SPLITB(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001100000");
 
@@ -8811,7 +8811,7 @@ void P2Doc::doc_splitb(p2_opsrc_e instr)
  * D = {S[31], S[23], S[15], S[7], ... S[24], S[16], S[8], S[0]}.
  *
  */
-void P2Doc::doc_mergeb(p2_opsrc_e instr)
+void P2Doc::doc_MERGEB(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001100001");
 
@@ -8831,7 +8831,7 @@ void P2Doc::doc_mergeb(p2_opsrc_e instr)
  * D = {S[31], S[29], S[27], S[25], ... S[6], S[4], S[2], S[0]}.
  *
  */
-void P2Doc::doc_splitw(p2_opsrc_e instr)
+void P2Doc::doc_SPLITW(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001100010");
 
@@ -8851,7 +8851,7 @@ void P2Doc::doc_splitw(p2_opsrc_e instr)
  * D = {S[31], S[15], S[30], S[14], ... S[17], S[1], S[16], S[0]}.
  *
  */
-void P2Doc::doc_mergew(p2_opsrc_e instr)
+void P2Doc::doc_MERGEW(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001100011");
 
@@ -8871,7 +8871,7 @@ void P2Doc::doc_mergew(p2_opsrc_e instr)
  * Returns to original value on 32nd iteration.
  * Forward pattern.
  */
-void P2Doc::doc_seussf(p2_opsrc_e instr)
+void P2Doc::doc_SEUSSF(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001100100");
 
@@ -8891,7 +8891,7 @@ void P2Doc::doc_seussf(p2_opsrc_e instr)
  * Returns to original value on 32nd iteration.
  * Reverse pattern.
  */
-void P2Doc::doc_seussr(p2_opsrc_e instr)
+void P2Doc::doc_SEUSSR(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001100101");
 
@@ -8911,7 +8911,7 @@ void P2Doc::doc_seussr(p2_opsrc_e instr)
  * D = {15'b0, S[31:27], S[23:18], S[15:11]}.
  *
  */
-void P2Doc::doc_rgbsqz(p2_opsrc_e instr)
+void P2Doc::doc_RGBSQZ(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001100110");
 
@@ -8931,7 +8931,7 @@ void P2Doc::doc_rgbsqz(p2_opsrc_e instr)
  * D = {S[15:11,15:13], S[10:5,10:9], S[4:0,4:2], 8'b0}.
  *
  */
-void P2Doc::doc_rgbexp(p2_opsrc_e instr)
+void P2Doc::doc_RGBEXP(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001100111");
 
@@ -8950,7 +8950,7 @@ void P2Doc::doc_rgbexp(p2_opsrc_e instr)
  *
  *
  */
-void P2Doc::doc_xoro32(p2_opsrc_e instr)
+void P2Doc::doc_XORO32(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001101000");
 
@@ -8969,7 +8969,7 @@ void P2Doc::doc_xoro32(p2_opsrc_e instr)
  * D = D[0:31].
  *
  */
-void P2Doc::doc_rev(p2_opsrc_e instr)
+void P2Doc::doc_REV(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001101001");
 
@@ -8990,7 +8990,7 @@ void P2Doc::doc_rev(p2_opsrc_e instr)
  * C = D[1],  Z = D[0].
  *
  */
-void P2Doc::doc_rczr(p2_opsrc_e instr)
+void P2Doc::doc_RCZR(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 001101010");
 
@@ -9012,7 +9012,7 @@ void P2Doc::doc_rczr(p2_opsrc_e instr)
  * C = D[31], Z = D[30].
  *
  */
-void P2Doc::doc_rczl(p2_opsrc_e instr)
+void P2Doc::doc_RCZL(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ0 DDDDDDDDD 001101011");
 
@@ -9033,7 +9033,7 @@ void P2Doc::doc_rczl(p2_opsrc_e instr)
  * D = {31'b0,  C}.
  *
  */
-void P2Doc::doc_wrc(p2_opsrc_e instr)
+void P2Doc::doc_WRC(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001101100", CZI_match);
 
@@ -9053,7 +9053,7 @@ void P2Doc::doc_wrc(p2_opsrc_e instr)
  * D = {31'b0, !C}.
  *
  */
-void P2Doc::doc_wrnc(p2_opsrc_e instr)
+void P2Doc::doc_WRNC(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001101101", CZI_match);
 
@@ -9073,7 +9073,7 @@ void P2Doc::doc_wrnc(p2_opsrc_e instr)
  * D = {31'b0,  Z}.
  *
  */
-void P2Doc::doc_wrz(p2_opsrc_e instr)
+void P2Doc::doc_WRZ(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001101110", CZI_match);
 
@@ -9093,7 +9093,7 @@ void P2Doc::doc_wrz(p2_opsrc_e instr)
  * D = {31'b0, !Z}.
  *
  */
-void P2Doc::doc_wrnz(p2_opsrc_e instr)
+void P2Doc::doc_WRNZ(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001101111", CZI_match);
 
@@ -9113,7 +9113,7 @@ void P2Doc::doc_wrnz(p2_opsrc_e instr)
  * C = cccc[{C,Z}], Z = zzzz[{C,Z}].
  *
  */
-void P2Doc::doc_modcz(p2_opsrc_e instr)
+void P2Doc::doc_MODCZ(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 CZ1 0cccczzzz 001101111");
 
@@ -9136,7 +9136,7 @@ void P2Doc::doc_modcz(p2_opsrc_e instr)
  * at (D[5:0] AND $3C), with D[6]=1 to enable scope operation.
  *
  */
-void P2Doc::doc_setscp(p2_opsrc_e instr)
+void P2Doc::doc_SETSCP(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 00L DDDDDDDDD 001110000");
 
@@ -9158,7 +9158,7 @@ void P2Doc::doc_setscp(p2_opsrc_e instr)
  * Any time GETSCP is executed, the lower bytes of those four pins' RDPIN values are returned in D.
  * This feature will mainly be useful on the next silicon, as the FPGAs don't have ADC-capable pins.
  */
-void P2Doc::doc_getscp(p2_opsrc_e instr)
+void P2Doc::doc_GETSCP(p2_opsrc_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101011 000 DDDDDDDDD 001110001");
 
@@ -9179,7 +9179,7 @@ void P2Doc::doc_getscp(p2_opsrc_e instr)
  * If R = 1, PC += A, else PC = A.
  *
  */
-void P2Doc::doc_jmp_abs(p2_inst7_e instr)
+void P2Doc::doc_JMP_abs(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101100 RAA AAAAAAAAA AAAAAAAAA");
 
@@ -9199,7 +9199,7 @@ void P2Doc::doc_jmp_abs(p2_inst7_e instr)
  * If R = 1, PC += A, else PC = A.
  *
  */
-void P2Doc::doc_call_abs(p2_inst7_e instr)
+void P2Doc::doc_CALL_abs(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101101 RAA AAAAAAAAA AAAAAAAAA");
 
@@ -9219,7 +9219,7 @@ void P2Doc::doc_call_abs(p2_inst7_e instr)
  * If R = 1, PC += A, else PC = A.
  *
  */
-void P2Doc::doc_calla_abs(p2_inst7_e instr)
+void P2Doc::doc_CALLA_abs(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101110 RAA AAAAAAAAA AAAAAAAAA");
 
@@ -9239,7 +9239,7 @@ void P2Doc::doc_calla_abs(p2_inst7_e instr)
  * If R = 1, PC += A, else PC = A.
  *
  */
-void P2Doc::doc_callb_abs(p2_inst7_e instr)
+void P2Doc::doc_CALLB_abs(p2_inst7_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1101111 RAA AAAAAAAAA AAAAAAAAA");
 
@@ -9259,7 +9259,7 @@ void P2Doc::doc_callb_abs(p2_inst7_e instr)
  * If R = 1, PC += A, else PC = A.
  *
  */
-void P2Doc::doc_calld_abs(p2_inst5_e instr)
+void P2Doc::doc_CALLD_abs(p2_inst5_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 11100WW RAA AAAAAAAAA AAAAAAAAA", INST_5);
 
@@ -9279,7 +9279,7 @@ void P2Doc::doc_calld_abs(p2_inst5_e instr)
  * If R = 1, address = PC + A, else address = A.
  *
  */
-void P2Doc::doc_loc(p2_inst5_e instr)
+void P2Doc::doc_LOC(p2_inst5_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 11101WW RAA AAAAAAAAA AAAAAAAAA", INST_5);
 
@@ -9298,7 +9298,7 @@ void P2Doc::doc_loc(p2_inst5_e instr)
  *
  *
  */
-void P2Doc::doc_augs(p2_inst5_e instr)
+void P2Doc::doc_AUGS(p2_inst5_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 11110NN NNN NNNNNNNNN NNNNNNNNN", INST_5);
 
@@ -9318,7 +9318,7 @@ void P2Doc::doc_augs(p2_inst5_e instr)
  *
  *
  */
-void P2Doc::doc_augd(p2_inst5_e instr)
+void P2Doc::doc_AUGD(p2_inst5_e instr)
 {
     P2DocOpcode op = make_pattern(__func__, instr, "EEEE 11111NN NNN NNNNNNNNN NNNNNNNNN", INST_5);
 

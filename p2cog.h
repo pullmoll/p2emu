@@ -209,18 +209,18 @@ private:
     void updateOUT(p2_LONG pin, bool v);
     void updateREP(p2_LONG instr, p2_LONG times);
 
-    int op_nop();
-    int op_ror();
-    int op_rol();
-    int op_shr();
-    int op_shl();
-    int op_rcr();
-    int op_rcl();
-    int op_sar();
-    int op_sal();
+    int op_NOP();
+    int op_ROR();
+    int op_ROL();
+    int op_SHR();
+    int op_SHL();
+    int op_RCR();
+    int op_RCL();
+    int op_SAR();
+    int op_SAL();
 
-    int op_add();
-    int op_addx();
+    int op_ADD();
+    int op_ADDX();
     int op_adds();
     int op_addsx();
     int op_sub();
@@ -657,5 +657,5 @@ private:
     int op_loc_ptrb();
 
     int op_augs();
-    int op_augd();
+    int op_AUGD();
 };

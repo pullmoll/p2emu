@@ -321,6 +321,9 @@ static constexpr QChar chr_ampersand('@');
 //! Just a name for a commonly used character: first character for a binary constant (double %% is a byte index, i.e. base 4)
 static constexpr QChar chr_percent('%');
 
+//! Just a name for a commonly used character: first character for a binary constant (double %% is a byte index, i.e. base 4)
+static const QString str_byt_prefix = QLatin1String("%%");
+
 //! Just a name for a commonly used character: represents the current origin (PC)
 static constexpr QChar chr_dollar('$');
 
@@ -336,21 +339,44 @@ static constexpr QChar chr_ldangle(L'«');
 //! Just a name for a commonly used character: character used in tokenizer debugging
 static constexpr QChar chr_rdangle(L'»');
 
+/**
+ * @brief Union of the integral Propeller2 types to store in a QVector
+ */
+typedef union {
+    bool _bool;
+    char _char;
+    p2_BYTE _byte;
+    p2_WORD _word;
+    p2_LONG _long;
+    p2_QUAD _quad;
+    p2_REAL _real;
+}   p2_union_t;
+
+Q_DECLARE_METATYPE(p2_union_t);
+
+typedef QPair<p2_union_e,p2_union_t> TypedVar;    //!< A typed union member
+Q_DECLARE_METATYPE(TypedVar);
+static const int mt_TypedVar = qMetaTypeId<TypedVar>();
+
 //! P2Atom traits
 typedef enum {
-    tr_none         = 0,        //!< no special trait
-    tr_IMMEDIATE    = (1 << 0), //!< expression started with '#'
-    tr_AUGMENTED    = (1 << 1), //!< expression started with '##'
-    tr_RELATIVE     = (1 << 2), //!< expression started with '@'
-    tr_ABSOLUTE     = (1 << 3), //!< expression contained a '\'
-    tr_ADDRESS_HUB  = (1 << 4), //!< expression started with '#@'
-    tr_RELATIVE_HUB = (1 << 5), //!< expression started with '@@@'
-    tr_HAS_INDEX    = (1 << 6), //!< expression contains an index: '[' expr ']'
+    tr_none         = 0,            //!< no special trait
+    tr_IMMEDIATE    = (1 <<  0),    //!< expression started with '#'
+    tr_AUGMENTED    = (1 <<  1),    //!< expression started with '##'
+    tr_RELATIVE     = (1 <<  2),    //!< expression started with '@'
+    tr_ABSOLUTE     = (1 <<  3),    //!< expression contained a '\'
+    tr_ADDRESS_HUB  = (1 <<  4),    //!< expression started with '#@'
+    tr_RELATIVE_HUB = (1 <<  5),    //!< expression started with '@@@'
+    tr_INDEX        = (1 <<  6),    //!< expression contains an index: '[' expr ']'
+    tr_DEC          = (1 <<  7),    //!< PTRA/PTRB with decrement (--)
+    tr_INC          = (1 <<  8),    //!< PTRA/PTRB with increment (++)
+    tr_PRE          = (1 <<  9),    //!< PTRA/PTRB with pre inc/dec (--PTRx or ++PTRx)
+    tr_POST         = (1 << 10),    //!< PTRA/PTRB with post inc/dec post (PTRx-- or PTRx++)
 }   p2_traits_e;
 
-extern void trait_set(p2_traits_e& traits, const p2_traits_e set);
-extern void trait_clr(p2_traits_e& traits, const p2_traits_e clr);
-extern bool has_trait(const p2_traits_e traits, const p2_traits_e has);
+extern void p2_set_trait(p2_traits_e& traits, const p2_traits_e set);
+extern void p2_clr_trait(p2_traits_e& traits, const p2_traits_e clr);
+extern bool p2_has_trait(const p2_traits_e traits, const p2_traits_e has);
 
 /**
  * @brief Enumeration of the 16 conditional execution modes
@@ -1075,57 +1101,6 @@ typedef enum {
 }   p2_inst9_e;
 
 /**
- * @brief structure of the 9 bit non-augmented index
- *<pre>
- * This structure defines the 9 bits of S/#/PTRx without AUGS
- * 0:   %0AAAAAAAA
- * 1:   %1SUPNNNNN
- * The topmost bit (%sup) determines whether the
- * lower 8 bits are to be interpreted as:
- * 0:   AAAAAAAA: 8 bits of address (0…255)
- * 1:   SUPNNNNN: structure definining the
- *      + S: PTRx false for PTRA, true for PTRB
- *      + U: false to keep PTRx same, true to update PTRx (PTRx += INDEX*SCALE)
- *      + P: false to use PTRx + INDEX*SCALE, true to use PTRx (post-modify)
- *      + NNNNN: index -16…15 for simple offsets, 0…15 for ++'s, 0…16 for --'s
- * SCALE is:
- *      = 1: for RDBYTE/WRBYTE
- *      = 2: for RDWORD/WRWORD
- *      = 4: for RDLONG/WRLONG/WMLONG
- *</pre>
- */
-typedef union {
-    uint        idx:9;              //!< 9 bits of index as unsigned int
-#if (Q_BYTE_ORDER == Q_LITTLE_ENDIAN)
-    struct {
-        bool    sup:1;              //!< 1: use 8 bits as follows
-        bool    S:1;                //!< S: false for PTRA, true for PTRB
-        bool    U:1;                //!< U: false to keep PTRx same, true to update PTRx (PTRx += INDEX*SCALE)
-        bool    P:1;                //!< P: false to use PTRx + INDEX*SCALE, true to use PTRx (post-modify)
-        uint    N:5;                //!< NNNNN: 5 bits of index
-    }   i;                          //!< index
-    struct {
-        bool    sup:1;              //!< 0: use 8 bits as follows
-        uint    A:8;                //!< AAAAAAAA: 8 bits of address
-    }   a;                          //!< address
-#elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
-    struct {
-        uint    N:5;                //!< NNNNN: 5 bits of index
-        bool    P:1;                //!< P: false to use PTRx + INDEX*SCALE, true to use PTRx (post-modify)
-        bool    U:1;                //!< U: false to keep PTRx same, true to update PTRx (PTRx += INDEX*SCALE)
-        bool    S:1;                //!< S: false for PTRA, true for PTRB
-        bool    sup:1;              //!< 1: use 8 bits as follows
-    }   i;                          //!< index
-    struct {
-        uint    A:8;                //!< AAAAAAAA: 8 bits of address
-        bool    sup:1;              //!< 0: use 8 bits as follows
-    }   a;                          //!< address
-#else
-#error "Unknown byte order!"
-#endif
-}   p2_index9_t;
-
-/**
  * @brief Structure of the Propeller2 opcode words with 7 bits instruction, wc, wz, and im
  *
  * Note: To have the bit fields work for both, little
@@ -1208,8 +1183,64 @@ typedef union {
     p2_opcode9_t op9;           //!< ocpode as bit fields (version including WC and WZ)
 }   p2_opcode_u;
 
+
 /**
- * @brief structure of the 23 bit augmented (AUGS) index
+ * @brief Structure of the 9 bit non-augmented index
+ *<pre>
+ * This structure defines the 9 bits of S/#/PTRx without AUGS
+ * 0:   %0AAAAAAAA
+ * 1:   %1SUPNNNNN
+ * The topmost bit (%sup) determines whether the
+ * lower 8 bits are to be interpreted as:
+ * 0:   AAAAAAAA: 8 bits of address (0…255)
+ * 1:   SUPNNNNN: structure definining the
+ *      + S: PTRx false for PTRA, true for PTRB
+ *      + U: false to keep PTRx same, true to update PTRx (PTRx += INDEX*SCALE)
+ *      + P: false to use PTRx + INDEX*SCALE, true to use PTRx (post-modify)
+ *      + NNNNN: index -16…15 for simple offsets, 0…15 for ++'s, 0…16 for --'s
+ * SCALE is:
+ *      = 1: for RDBYTE/WRBYTE
+ *      = 2: for RDWORD/WRWORD
+ *      = 4: for RDLONG/WRLONG/WMLONG
+ *</pre>
+ */
+typedef union {
+    uint        src:32;             //!< 9 lower bits of index as unsigned int
+#if (Q_BYTE_ORDER == Q_LITTLE_ENDIAN)
+    struct {
+        char    N:5;                //!< NNNNN: 5 bits of index
+        bool    P:1;                //!< P: false to use PTRx + INDEX*SCALE, true to use PTRx (post-modify)
+        bool    U:1;                //!< U: false to keep PTRx same, true to update PTRx (PTRx += INDEX*SCALE)
+        bool    S:1;                //!< S: false for PTRA, true for PTRB
+        bool    sup:1;              //!< 1: use 8 bits as follows
+        uint    unused:23;          //!< 23 bits unused
+    }   i;                          //!< index
+    struct {
+        uchar   A:8;                //!< AAAAAAAA: 8 bits of address
+        bool    sup:1;              //!< 0: use 8 bits as follows
+        uint    unused:23;          //!< 23 bits unused
+    }   a;                          //!< address
+#elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
+    struct {
+        uint    unused:23;          //!< 23 bits unused
+        bool    sup:1;              //!< 1: use 8 bits as follows
+        bool    S:1;                //!< S: false for PTRA, true for PTRB
+        bool    U:1;                //!< U: false to keep PTRx same, true to update PTRx (PTRx += INDEX*SCALE)
+        bool    P:1;                //!< P: false to use PTRx + INDEX*SCALE, true to use PTRx (post-modify)
+        char    N:5;                //!< NNNNN: 5 bits of index
+    }   i;                          //!< index
+    struct {
+        uint    unused:23;          //!< 23 bits unused
+        bool    sup:1;              //!< 0: use 8 bits as follows
+        uchar   A:8;                //!< AAAAAAAA: 8 bits of address
+    }   a;                          //!< address
+#else
+#error "Unknown byte order!"
+#endif
+}   p2_index9_t;
+
+/**
+ * @brief Structure of the 23 bit augmented (AUGS) index
  *<pre>
  * This structure defines the 23 bits of S/#/PTRx with AUGS
  * 0:   %000000000000AAAAAAAAAAA_AAAAAAAAA
@@ -1229,39 +1260,38 @@ typedef union {
     uint        aug:32;             //!< 32 bits of index as unsigned int
 #if (Q_BYTE_ORDER == Q_LITTLE_ENDIAN)
     struct {
-        uint    unused_msb:8;       //!< 00000000: 8 unused most significant bits
-        bool    sup:1;              //!< 1: use 23 bits as defined below
-        bool    S:1;                //!< S: false for PTRA, true for PTRB
-        bool    U:1;                //!< U: false to keep PTRx same, true to update PTRx (PTRx += INDEX*SCALE)
+        int     N:20;               //!< NNNNNNNNNNN_NNNNNNNNN: 20 bits of index
         bool    P:1;                //!< P: false to use PTRx + INDEX*SCALE, true to use PTRx (post-modify)
-        uint    N:20;               //!< NNNNNNNNNNN_NNNNNNNNN: 20 bits of index
+        bool    U:1;                //!< U: false to keep PTRx same, true to update PTRx (PTRx += INDEX*SCALE)
+        bool    S:1;                //!< S: false for PTRA, true for PTRB
+        bool    sup:1;              //!< 1: use 23 bits as defined below
+        uchar   unused_msb:8;       //!< 00000000: 8 unused most significant bits
     }   i;                          //!< index
     struct {
-        uint    unused_msb:8;       //!< 00000000: 8 unused most significant bits
-        bool    sup:1;              //!< 0: use 23 bits as defined below
-        bool    unused_nul:3;       //!< 000: more unused bits (000)
         uint    A:20;               //!< AAAAAAAAAAA_AAAAAAAAA: 20 bits of address
+        bool    unused_nul:3;       //!< 000: more unused bits (000)
+        bool    sup:1;              //!< 0: use 23 bits as defined below
+        uchar   unused_msb:8;       //!< 00000000: 8 unused most significant bits
     }   a;                          //!< address
 #elif (Q_BYTE_ORDER == Q_BIG_ENDIAN)
     struct {
-        uint    N:20;               //!< NNNNNNNNNNN_NNNNNNNNN: 20 bits of index
-        bool    P:1;                //!< P: false to use PTRx + INDEX*SCALE, true to use PTRx (post-modify)
-        bool    U:1;                //!< U: false to keep PTRx same, true to update PTRx (PTRx += INDEX*SCALE)
-        bool    S:1;                //!< S: false for PTRA, true for PTRB
+        uchar   unused_msb:8;       //!< 00000000: 8 unused most significant bits
         bool    sup:1;              //!< 1: use 23 bits as defined above
-        uint    unused_msb:8;       //!< 00000000: 8 unused most significant bits
+        bool    S:1;                //!< S: false for PTRA, true for PTRB
+        bool    U:1;                //!< U: false to keep PTRx same, true to update PTRx (PTRx += INDEX*SCALE)
+        bool    P:1;                //!< P: false to use PTRx + INDEX*SCALE, true to use PTRx (post-modify)
+        int     N:20;               //!< NNNNNNNNNNN_NNNNNNNNN: 20 bits of index
     }   i;                          //!< index
     struct {
-        uint    A:20;               //!< AAAAAAAAAAA_AAAAAAAAA: 20 bits of address
-        bool    unused_nul:3;       //!< 000: unused (000)
+        uchar   unused_msb:8;       //!< 00000000: 8 unused most significant bits
         bool    sup:1;              //!< 0: use 23 bits as defined above
-        uint    unused_msb:8;       //!< 00000000: 8 unused most significant bits
+        bool    unused_nul:3;       //!< 000: unused (000)
+        uint    A:20;               //!< AAAAAAAAAAA_AAAAAAAAA: 20 bits of address
     }   a;                          //!< address
 #else
 #error "Unknown byte order!"
 #endif
 }   p2_index23_t;
-
 
 /**
  * @brief Structure of the COG and the shadow registers in the last 16 LONGs

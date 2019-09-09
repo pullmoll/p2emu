@@ -43,13 +43,14 @@
 class P2Symbol
 {
 public:
-    explicit P2Symbol(const QString& name = QString(), const P2Atom& value = P2Atom());
+    explicit P2Symbol(const QString& name = QString(), const P2Union& value = P2Union());
+    explicit P2Symbol(const QString& name, const P2Atom& atom);
 
     bool isNull() const;
     bool isEmpty() const;
     const QString& name() const;
-    const P2Atom& atom() const;
-    bool set_atom(const P2Atom& value);
+    const P2Union& value() const;
+    void set_value(const P2Union& value);
     p2_union_e type() const;
     const QString type_name() const;
     P2Word definition() const;
@@ -60,7 +61,7 @@ public:
 
 private:
     QString m_name;
-    P2Atom m_atom;
+    P2Union m_value;
     P2Word m_definition;
     p2_lineno_word_hash_t m_references;
 };

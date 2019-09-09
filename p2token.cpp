@@ -54,13 +54,13 @@
 /**
  * @brief Regular expression for comments
  */
-static const QString re_comment_curly = QStringLiteral("\\{[^\\}]*\\}");
+static const QString re_comment_curly = QLatin1String("\\{[^\\}]*\\}");
 
 /**
  * @brief Regular expression for comments
  */
-//static const QString re_comment_eol = QStringLiteral("'[^\\{\\}]*");
-static const QString re_comment_eol = QStringLiteral("^'.*");
+//static const QString re_comment_eol = QLatin1String("'[^\\{\\}]*");
+static const QString re_comment_eol = QLatin1String("^'.*");
 
 /**
  * @brief Regular expression for local symbol
@@ -68,7 +68,7 @@ static const QString re_comment_eol = QStringLiteral("^'.*");
  * leading "."
  * then any number of "A"…"Z", "0"…"9", or "_"
  */
-static const QString re_locsym = QStringLiteral("^[.][A-Z_]+[A-Z0-9_]*");
+static const QString re_locsym = QLatin1String("^[.][A-Z_]+[A-Z0-9_]*");
 
 /**
  * @brief Regular expression for alphanumeric
@@ -76,7 +76,7 @@ static const QString re_locsym = QStringLiteral("^[.][A-Z_]+[A-Z0-9_]*");
  * leading "A"…"Z", or "_"
  * then any number of "A"…"Z", "0"…"9", or "_"
  */
-static const QString re_symbol = QStringLiteral("^[A-Z_]+[A-Z0-9_]*");
+static const QString re_symbol = QLatin1String("^[A-Z_]+[A-Z0-9_]*");
 
 /**
  * @brief Regular expression for binary number
@@ -84,7 +84,7 @@ static const QString re_symbol = QStringLiteral("^[A-Z_]+[A-Z0-9_]*");
  * leading "%"
  * then one or more of "0", "1", or "_"
  */
-static const QString re_bin_const = QStringLiteral("^%[_]*[01_]+");
+static const QString re_bin_const = QLatin1String("^%[_]*[01_]+");
 
 /**
  * @brief Regular expression for byte number
@@ -92,7 +92,7 @@ static const QString re_bin_const = QStringLiteral("^%[_]*[01_]+");
  * leading "%%"
  * then one or more of "0"…"3", or "_"
  */
-static const QString re_byt_const = QStringLiteral("^%%[_]*[0-3_]+");
+static const QString re_byt_const = QLatin1String("^%%[_]*[0-3_]+");
 
 /**
  * @brief Regular expression for a decimal number
@@ -100,7 +100,7 @@ static const QString re_byt_const = QStringLiteral("^%%[_]*[0-3_]+");
  * leading "0"…"9"
  * then any number of "0"…"9", or "_"
  */
-static const QString re_dec_const = QStringLiteral("^[0-9_]+(?!\\.)");
+static const QString re_dec_const = QLatin1String("^[0-9_]+(?!\\.)");
 
 /**
  * @brief Regular expression an octal number
@@ -108,7 +108,7 @@ static const QString re_dec_const = QStringLiteral("^[0-9_]+(?!\\.)");
  * leading "$"
  * then any number of "0"…"9", "A"…"F", or "_"
  */
-static const QString re_hex_const = QStringLiteral("^\\$[_]*[0-9A-F_]+");
+static const QString re_hex_const = QLatin1String("^\\$[_]*[0-9A-F_]+");
 
 /**
  * @brief Regular expression for a string enclosed in doublequotes, possibly containing escaped doublequotes
@@ -116,7 +116,7 @@ static const QString re_hex_const = QStringLiteral("^\\$[_]*[0-9A-F_]+");
  * then any number of escaped doublequotes (\") or other characters (.)
  * trailing '"'
  */
-static const QString re_str_const = QStringLiteral("^\"([^\\\"]|\\\\.)*\"");
+static const QString re_str_const = QLatin1String("^\"([^\\\"]|\\\\.)*\"");
 
 /**
  * @brief Regular expression for a qreal number
@@ -125,7 +125,7 @@ static const QString re_str_const = QStringLiteral("^\"([^\\\"]|\\\\.)*\"");
  * then one period "."
  * then any number of "0"…"9"
  */
-static const QString re_real_const = QStringLiteral("^[0-9_]*\\.[0-9_]*");
+static const QString re_real_const = QLatin1String("^[0-9_]*\\.[0-9_]*");
 
 //! Global static instance of the P2Token class
 P2Token Token;
@@ -221,7 +221,7 @@ P2Token Token;
  *
  */
 
-#define TN_ADD(token,mask,string) tn_add(token,#token,mask,string)
+#define TN_ADD(token,mask,string) tn_ADD(token,#token,mask,string)
 
 P2Token::P2Token()
     : m_token_enum_name()
@@ -1789,7 +1789,7 @@ bool P2Token::tt_chk(p2_token_e tok, p2_t_mask_t typemask) const
  * @param typemask token type bitmask
  * @param str string
  */
-void P2Token::tn_add(p2_token_e tok, const QString& enum_name, p2_t_mask_t typemask, const QString& string)
+void P2Token::tn_ADD(p2_token_e tok, const QString& enum_name, p2_t_mask_t typemask, const QString& string)
 {
     m_token_enum_name.insert(tok, enum_name);
     m_token_string.insert(tok, string);

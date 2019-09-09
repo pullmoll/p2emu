@@ -954,43 +954,43 @@ int P2Cog::decode()
     // Dispatch to op_xxx() functions
     switch (IR.op.inst) {
     case p2_ROR:
-        cycles = op_ror();
+        cycles = op_ROR();
         break;
 
     case p2_ROL:
-        cycles = op_rol();
+        cycles = op_ROL();
         break;
 
     case p2_SHR:
-        cycles = op_shr();
+        cycles = op_SHR();
         break;
 
     case p2_SHL:
-        cycles = op_shl();
+        cycles = op_SHL();
         break;
 
     case p2_RCR:
-        cycles = op_rcr();
+        cycles = op_RCR();
         break;
 
     case p2_RCL:
-        cycles = op_rcl();
+        cycles = op_RCL();
         break;
 
     case p2_SAR:
-        cycles = op_sar();
+        cycles = op_SAR();
         break;
 
     case p2_SAL:
-        cycles = op_sal();
+        cycles = op_SAL();
         break;
 
     case p2_ADD:
-        cycles = op_add();
+        cycles = op_ADD();
         break;
 
     case p2_ADDX:
-        cycles = op_addx();
+        cycles = op_ADDX();
         break;
 
     case p2_ADDS:
@@ -2448,7 +2448,7 @@ int P2Cog::decode()
     case p2_AUGD_01:
     case p2_AUGD_10:
     case p2_AUGD_11:
-        cycles = op_augd();
+        cycles = op_AUGD();
         break;
     }
 
@@ -2476,7 +2476,7 @@ int P2Cog::decode()
  * NOP
  *</pre>
  */
-int P2Cog::op_nop()
+int P2Cog::op_NOP()
 {
     return 2;
 }
@@ -2493,10 +2493,10 @@ int P2Cog::op_nop()
  * Z = (result == 0).
  *</pre>
  */
-int P2Cog::op_ror()
+int P2Cog::op_ROR()
 {
     if (0 == IR.opcode)
-        return op_nop();
+        return op_NOP();
     augmentS(IR.op.im);
     const uchar shift = S & 31;
     const p2_QUAD accu = U64(D) << 32 | U64(D);
@@ -2519,7 +2519,7 @@ int P2Cog::op_ror()
  * Z = (result == 0).
  *</pre>
  */
-int P2Cog::op_rol()
+int P2Cog::op_ROL()
 {
     augmentS(IR.op.im);
     const uchar shift = S & 31;
@@ -2543,7 +2543,7 @@ int P2Cog::op_rol()
  * Z = (result == 0).
  *</pre>
  */
-int P2Cog::op_shr()
+int P2Cog::op_SHR()
 {
     augmentS(IR.op.im);
     const uchar shift = S & 31;
@@ -2567,7 +2567,7 @@ int P2Cog::op_shr()
  * Z = (result == 0).
  *</pre>
  */
-int P2Cog::op_shl()
+int P2Cog::op_SHL()
 {
     augmentS(IR.op.im);
     const uchar shift = S & 31;
@@ -2591,7 +2591,7 @@ int P2Cog::op_shl()
  * Z = (result == 0).
  *</pre>
  */
-int P2Cog::op_rcr()
+int P2Cog::op_RCR()
 {
     augmentS(IR.op.im);
     const uchar shift = S & 31;
@@ -2615,7 +2615,7 @@ int P2Cog::op_rcr()
  * Z = (result == 0).
  *</pre>
  */
-int P2Cog::op_rcl()
+int P2Cog::op_RCL()
 {
     augmentS(IR.op.im);
     const uchar shift = S & 31;
@@ -2639,7 +2639,7 @@ int P2Cog::op_rcl()
  * Z = (result == 0).
  *</pre>
  */
-int P2Cog::op_sar()
+int P2Cog::op_SAR()
 {
     augmentS(IR.op.im);
     const uchar shift = S & 31;
@@ -2663,7 +2663,7 @@ int P2Cog::op_sar()
  * Z = (result == 0).
  *</pre>
  */
-int P2Cog::op_sal()
+int P2Cog::op_SAL()
 {
     augmentS(IR.op.im);
     const uchar shift = S & 31;
@@ -2687,7 +2687,7 @@ int P2Cog::op_sal()
  * Z = (result == 0).
  *</pre>
  */
-int P2Cog::op_add()
+int P2Cog::op_ADD()
 {
     augmentS(IR.op.im);
     const p2_QUAD accu = U64(D) + U64(S);
@@ -2710,7 +2710,7 @@ int P2Cog::op_add()
  * Z = Z AND (result == 0).
  *</pre>
  */
-int P2Cog::op_addx()
+int P2Cog::op_ADDX()
 {
     augmentS(IR.op.im);
     const p2_QUAD accu = U64(D) + U64(S) + C;
@@ -9831,7 +9831,7 @@ int P2Cog::op_augs()
  *
  *</pre>
  */
-int P2Cog::op_augd()
+int P2Cog::op_AUGD()
 {
     D_aug = (IR.opcode << AUG_SHIFT) & AUG_MASK;
     return 2;

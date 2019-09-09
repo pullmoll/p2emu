@@ -108,7 +108,7 @@ private:
     void tt_set(p2_token_e tok, p2_t_mask_t typemask);
     void tt_clr(p2_token_e tok, p2_t_mask_t typemask);
     bool tt_chk(p2_token_e tok, p2_t_mask_t typemask) const;
-    void tn_add(p2_token_e tok, const QString& enum_name, p2_t_mask_t typemask, const QString& string);
+    void tn_ADD(p2_token_e tok, const QString& enum_name, p2_t_mask_t typemask, const QString& string);
 };
 
 extern P2Token Token;

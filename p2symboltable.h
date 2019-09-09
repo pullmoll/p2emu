@@ -51,7 +51,7 @@ public:
     int count(const QString& name = QString()) const;
     bool contains(const QString& name) const;
     bool insert(const P2Symbol& symbol);
-    bool insert(const QString& name, const P2Atom& symbol);
+    bool insert(const QString& name, const P2Union& value);
     P2Symbol symbol(const QString& name) const;
     p2_union_e type(const QString& name) const;
     P2Word definition(const QString& name) const;
@@ -63,8 +63,8 @@ public:
     const p2_symbols_hash_t& symbols() const;
     const QMultiHash<int, QString>& references() const;
 
-    const P2Atom& atom(const QString& name) const;
-    bool set_atom(const QString& name, const P2Atom& symbol);
+    const P2Union& atom(const QString& name) const;
+    bool set_value(const QString& name, const P2Union& symbol);
     bool add_reference(int lineno, const QString& name, const P2Word& word);
 
 private:

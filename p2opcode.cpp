@@ -191,11 +191,20 @@ const QVariant& P2Opcode::augd() const
 }
 
 /**
- * @brief Clear (reset to invalid) the current AUGD value
+ * @brief Set the current AUGD value (or clear if value is QVariant(), the default)
  */
-void P2Opcode::augd_clear()
+void P2Opcode::set_AUGD(const QVariant& value)
 {
-    m_augd.clear();
+    m_augd = value;
+}
+
+/**
+ * @brief Return the AUGD value as p2_LONG
+ * @return p2_LONG with the AUGS value (including the lower 9 bits)
+ */
+p2_LONG P2Opcode::augd_value() const
+{
+    return m_augd.toUInt() & AUG_MASK;
 }
 
 /**
@@ -226,11 +235,11 @@ const QVariant& P2Opcode::augs() const
 }
 
 /**
- * @brief Clear (reset to invalid) the current AUGS value
+ * @brief Set the current AUGS value (or clear if value is QVariant(), the default)
  */
-void P2Opcode::augs_clear()
+void P2Opcode::set_augs(const QVariant& value)
 {
-    m_augs.clear();
+    m_augs = value;
 }
 
 /**
@@ -240,6 +249,15 @@ void P2Opcode::augs_clear()
 bool P2Opcode::augs_valid() const
 {
     return m_augs.isValid();
+}
+
+/**
+ * @brief Return the AUGS value as p2_LONG
+ * @return p2_LONG with the AUGS value (including the lower 9 bits)
+ */
+p2_LONG P2Opcode::augs_value() const
+{
+    return m_augs.toUInt();
 }
 
 /**
@@ -736,13 +754,13 @@ bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH
     p2_traits_e traits = atom.traits();
     p2_LONG value = atom.get_long();
 
-    if (has_trait(traits, tr_RELATIVE))
+    if (p2_has_trait(traits, tr_RELATIVE))
         value = atom.get_long();    // FIXME: huh?
 
-    if (has_trait(traits, tr_ADDRESS_HUB))
+    if (p2_has_trait(traits, tr_ADDRESS_HUB))
         value = atom.get_long() - ORG + ORGH;
 
-    if (has_trait(traits, tr_AUGMENTED)) {
+    if (p2_has_trait(traits, tr_AUGMENTED)) {
         switch (m_imm_dst) {
         case imm_none:
             break;
@@ -756,7 +774,7 @@ bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH
     }
 
     m_u.op.dst = value & COG_MASK;
-    if (value > COG_MASK || has_trait(traits, tr_AUGMENTED) || has_trait(traits, tr_RELATIVE_HUB)) {
+    if (value > COG_MASK || p2_has_trait(traits, tr_AUGMENTED) || p2_has_trait(traits, tr_RELATIVE_HUB)) {
         switch (m_imm_dst) {
         case imm_none:
             break;
@@ -795,13 +813,13 @@ bool P2Opcode::set_src(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH
     p2_traits_e traits = atom.traits();
     p2_LONG value = atom.get_long();
 
-    if (has_trait(traits, tr_RELATIVE))
+    if (p2_has_trait(traits, tr_RELATIVE))
         value = atom.get_long();    // FIXME: huh?
 
-    if (has_trait(traits, tr_ADDRESS_HUB))
+    if (p2_has_trait(traits, tr_ADDRESS_HUB))
         value = atom.get_long() - ORG + ORGH;
 
-    if (has_trait(traits, tr_AUGMENTED)) {
+    if (p2_has_trait(traits, tr_AUGMENTED)) {
         switch (m_imm_src) {
         case imm_none:
             break;
@@ -815,7 +833,7 @@ bool P2Opcode::set_src(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH
     }
 
     m_u.op.src = value & COG_MASK;
-    if (value > COG_MASK || has_trait(traits, tr_AUGMENTED) || has_trait(traits, tr_RELATIVE_HUB)) {
+    if (value > COG_MASK || p2_has_trait(traits, tr_AUGMENTED) || p2_has_trait(traits, tr_RELATIVE_HUB)) {
         switch (m_imm_src) {
         case imm_none:
             break;
@@ -909,10 +927,10 @@ QString P2Opcode::format_opcode_doc(const P2Opcode& ir)
             .arg(Doc.instr(ir.opcode()));
 }
 
-P2Opcode P2Opcode::make_augd(const P2Opcode& ir)
+P2Opcode P2Opcode::make_AUGD(const P2Opcode& ir)
 {
     P2Opcode IR(p2_AUGD, p2_ORG_ORGH_t(ir.org_orgh()));
-    p2_LONG value = ir.augd_value<p2_LONG>();
+    p2_LONG value = ir.augd_value();
     IR.set_cond(ir.cond()); // FIXME: use cond of ir?
     IR.set_imm23(value);
     IR.set_org_orgh(IR.org_orgh());
@@ -922,7 +940,7 @@ P2Opcode P2Opcode::make_augd(const P2Opcode& ir)
 P2Opcode P2Opcode::make_augs(const P2Opcode& ir)
 {
     P2Opcode IR(p2_AUGS, p2_ORG_ORGH_t(ir.org_orgh()));
-    p2_LONG value = ir.augs_value<p2_LONG>();
+    p2_LONG value = ir.augs_value();
     IR.set_cond(ir.cond()); // FIXME: use cond of ir?
     IR.set_imm23(value);
     IR.set_org_orgh(IR.org_orgh());
@@ -935,35 +953,35 @@ QString P2Opcode::format_opcode(const P2Opcode& ir, p2_format_e fmt)
     switch (fmt) {
     case fmt_bin:
         if (ir.augd_valid())
-            list += format_opcode_bin(make_augd(ir));
+            list += format_opcode_bin(make_AUGD(ir));
         if (ir.augs_valid())
             list += format_opcode_bin(make_augs(ir));
         list += format_opcode_bin(ir);
         break;
     case fmt_byt:
         if (ir.augd_valid())
-            list += format_opcode_byt(make_augd(ir));
+            list += format_opcode_byt(make_AUGD(ir));
         if (ir.augs_valid())
             list += format_opcode_byt(make_augs(ir));
         list += format_opcode_byt(ir);
         break;
     case fmt_dec:
         if (ir.augd_valid())
-            list += format_opcode_dec(make_augd(ir));
+            list += format_opcode_dec(make_AUGD(ir));
         if (ir.augs_valid())
             list += format_opcode_dec(make_augs(ir));
         list += format_opcode_dec(ir);
         break;
     case fmt_hex:
         if (ir.augd_valid())
-            list += format_opcode_hex(make_augd(ir));
+            list += format_opcode_hex(make_AUGD(ir));
         if (ir.augs_valid())
             list += format_opcode_hex(make_augs(ir));
         list += format_opcode_hex(ir);
         break;
     case fmt_doc:
         if (ir.augd_valid())
-            list += format_opcode_doc(make_augd(ir));
+            list += format_opcode_doc(make_AUGD(ir));
         if (ir.augs_valid())
             list += format_opcode_doc(make_augs(ir));
         list += format_opcode_doc(ir);

@@ -94,18 +94,18 @@ private:
     void format_PC_A20(QString* instruction, p2_token_e inst, p2_token_e dest = t_none);
     void format_IMM23(QString* instruction, p2_token_e inst);
 
-    void dasm_nop(QString* instruction = nullptr);
-    void dasm_ror(QString* instruction = nullptr);
-    void dasm_rol(QString* instruction = nullptr);
-    void dasm_shr(QString* instruction = nullptr);
-    void dasm_shl(QString* instruction = nullptr);
-    void dasm_rcr(QString* instruction = nullptr);
-    void dasm_rcl(QString* instruction = nullptr);
-    void dasm_sar(QString* instruction = nullptr);
-    void dasm_sal(QString* instruction = nullptr);
+    void dasm_NOP(QString* instruction = nullptr);
+    void dasm_ROR(QString* instruction = nullptr);
+    void dasm_ROL(QString* instruction = nullptr);
+    void dasm_SHR(QString* instruction = nullptr);
+    void dasm_SHL(QString* instruction = nullptr);
+    void dasm_RCR(QString* instruction = nullptr);
+    void dasm_RCL(QString* instruction = nullptr);
+    void dasm_SAR(QString* instruction = nullptr);
+    void dasm_SAL(QString* instruction = nullptr);
 
-    void dasm_add(QString* instruction = nullptr);
-    void dasm_addx(QString* instruction = nullptr);
+    void dasm_ADD(QString* instruction = nullptr);
+    void dasm_ADDX(QString* instruction = nullptr);
     void dasm_adds(QString* instruction = nullptr);
     void dasm_addsx(QString* instruction = nullptr);
     void dasm_sub(QString* instruction = nullptr);
@@ -540,5 +540,5 @@ private:
     void dasm_loc_ptrb(QString* instruction = nullptr);
 
     void dasm_augs(QString* instruction = nullptr);
-    void dasm_augd(QString* instruction = nullptr);
+    void dasm_AUGD(QString* instruction = nullptr);
 };

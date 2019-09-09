@@ -85,6 +85,7 @@ public:
     bool isZero() const;
     bool isValid() const;
     p2_traits_e traits() const;
+    bool has_trait(const p2_traits_e trait) const;
 
     int size() const;
     p2_LONG usize() const;
@@ -92,48 +93,39 @@ public:
 
     p2_union_e type() const;
     const QString type_name() const;
-    void set_atom(const P2Atom& other);
-    void set_value(const QVariant& val);
-    void set_index(const QVariant& val);
     void set_type(p2_union_e type);
 
     bool set_traits(p2_traits_e traits);
     bool add_trait(p2_traits_e traits);
 
     const P2Union& value() const;
+    void set_value(const P2Union& value);
 
-    template <typename T>
-    const T get() const {
-        return qvariant_cast<T>(m_value.get());
-    }
+    const P2Union& index() const;
+    p2_LONG index_long() const;
 
-    template <typename T>
-    void set(const T& value) {
-        m_value.set(value);
-    }
+    void set_bool(const bool& _bool);
+    void set_char(const char& _char);
+    void set_byte(const p2_BYTE& _byte);
+    void set_word(const p2_WORD& _word);
+    void set_long(const p2_LONG& _long);
+    void set_real(const p2_REAL& _real);
+    void set_chars(const p2_CHARS& _chars);
+    void set_bytes(const p2_BYTES& _bytes);
+    void set_words(const p2_WORDS& _words);
+    void set_longs(const p2_LONGS& _longs);
+    void set_array(const QByteArray& _array);
 
-    template <typename T>
-    void add(const T& value) {
-        m_value.add(QVariant::fromValue(value));
-    }
+    void set_index(const QVariant& val);
 
-    template <typename T>
-    void set_value(const T& value) {
-        m_value.set_value(value);
-    }
-
-    template <typename T>
-    const T get_index() const {
-        return qvariant_cast<T>(m_index.get());
-    }
-
-    bool add_byte(const p2_BYTE& _byte);
-    bool add_word(const p2_WORD& _word);
-    bool add_long(const p2_LONG& _long);
-    bool add_bytes(const p2_BYTES& _bytes);
-    bool add_words(const p2_WORDS& _words);
-    bool add_longs(const p2_LONGS& _longs);
-    bool add_array(const QByteArray& get);
+    void add_byte(const p2_BYTE& _byte);
+    void add_word(const p2_WORD& _word);
+    void add_long(const p2_LONG& _long);
+    void add_chars(const p2_CHARS& _chars);
+    void add_bytes(const p2_BYTES& _bytes);
+    void add_words(const p2_WORDS& _words);
+    void add_longs(const p2_LONGS& _longs);
+    void add_array(const QByteArray& get);
 
     QString str(p2_format_e fmt = fmt_hex) const;
     bool get_bool() const;
@@ -192,9 +184,6 @@ public:
     P2Atom& operator&=(const P2Atom& other);
     P2Atom& operator^=(const P2Atom& other);
     P2Atom& operator|=(const P2Atom& other);
-
-    static QString format_long_mask(const p2_LONG data, const p2_LONG mask);
-    static QStringList format_data(const P2Atom& data, const p2_LONG addr);
 
     static QByteArray array(const P2Atom& atom);
     static QString string(const P2Atom& atom);

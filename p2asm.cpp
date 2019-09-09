@@ -151,7 +151,7 @@ void P2Asm::pass_clear()
     m_advance = 0;
     m_IR.clear();
     m_data.clear();
-    m_enum.set(p2_LONG(0));
+    m_enum.clear();
     m_words.clear();
     m_instr = t_invalid;
     m_symbol.clear();
@@ -490,14 +490,14 @@ bool P2Asm::define_symbol(const QString& symbol, const P2Atom& atom)
 
     if (sym.isEmpty()) {
         // Not defined yet
-        m_symbols->insert(symbol, atom);
+        m_symbols->insert(symbol, atom.value());
         m_symbols->add_reference(m_lineno, symbol, word);
         return true;
     }
 
     if (m_pass > 1) {
         // Redefine in pass 2
-        m_symbols->set_atom(symbol, atom);
+        m_symbols->set_value(symbol, atom.value());
         return true;
     }
 
@@ -507,15 +507,15 @@ bool P2Asm::define_symbol(const QString& symbol, const P2Atom& atom)
     }
 
     // Already defined
-    const P2Atom& old_atom = sym.atom();
-    if (ut_Real == old_atom.type()) {
-        const p2_REAL value = old_atom.get_real();
+    const P2Union& old_value = sym.value();
+    if (ut_Real == old_value.type()) {
+        const p2_REAL value = old_value.get_real();
         m_errors += tr("Symbol '%1' already defined in line #%2 (Value: %3).")
                   .arg(symbol)
                   .arg(sym.definition().lineno())
                   .arg(value, 2, 'f');
     } else {
-        const p2_LONG value = old_atom.get_long();
+        const p2_LONG value = old_value.get_long();
         m_errors += tr("Symbol '%1' already defined in line #%2 (Value: %3, $%4, %%5).")
                     .arg(symbol)
                     .arg(sym.definition().lineno())
@@ -579,26 +579,26 @@ bool P2Asm::assemble_con_section()
             break;
 
         case t_DAT:
-            success = asm_dat();
+            success = asm_DAT();
             success = assemble_dat_section();
             break;
 
         case t_CON: // redundant
-            success = asm_con();
+            success = asm_CON();
             break;
 
         case t_PUB:
-            success = asm_pub();
+            success = asm_PUB();
             success = assemble_dat_section();
             break;
 
         case t_PRI:
-            success = asm_pri();
+            success = asm_PRI();
             success = assemble_dat_section();
             break;
 
         case t_VAR:
-            success = asm_var();
+            success = asm_VAR();
             success = assemble_dat_section();
             break;
 
@@ -684,1496 +684,1496 @@ bool P2Asm::assemble_dat_section()
             break;
 
         case t_DAT:
-            success = asm_dat();
+            success = asm_DAT();
             break;
 
         case t_CON:
-            success = asm_con();
+            success = asm_CON();
             success = assemble_con_section();
             break;
 
         case t_PUB:
-            success = asm_pub();
+            success = asm_PUB();
             break;
 
         case t_PRI:
-            success = asm_pri();
+            success = asm_PRI();
             break;
 
         case t_VAR:
-            success = asm_var();
+            success = asm_VAR();
             break;
 
         case t_ABS:
-            success = asm_abs();
+            success = asm_ABS();
             break;
 
         case t_ADD:
-            success = asm_add();
+            success = asm_ADD();
             break;
 
         case t_ADDCT1:
-            success = asm_addct1();
+            success = asm_ADDCT1();
             break;
 
         case t_ADDCT2:
-            success = asm_addct2();
+            success = asm_ADDCT2();
             break;
 
         case t_ADDCT3:
-            success = asm_addct3();
+            success = asm_ADDCT3();
             break;
 
         case t_ADDPIX:
-            success = asm_addpix();
+            success = asm_ADDPIX();
             break;
 
         case t_ADDS:
-            success = asm_adds();
+            success = asm_ADDS();
             break;
 
         case t_ADDSX:
-            success = asm_addsx();
+            success = asm_ADDSX();
             break;
 
         case t_ADDX:
-            success = asm_addx();
+            success = asm_ADDX();
             break;
 
         case t_AKPIN:
-            success = asm_akpin();
+            success = asm_AKPIN();
             break;
 
         case t_ALLOWI:
-            success = asm_allowi();
+            success = asm_ALLOWI();
             break;
 
         case t_ALTB:
-            success = asm_altb();
+            success = asm_ALTB();
             break;
 
         case t_ALTD:
-            success = asm_altd();
+            success = asm_ALTD();
             break;
 
         case t_ALTGB:
-            success = asm_altgb();
+            success = asm_ALTGB();
             break;
 
         case t_ALTGN:
-            success = asm_altgn();
+            success = asm_ALTGN();
             break;
 
         case t_ALTGW:
-            success = asm_altgw();
+            success = asm_ALTGW();
             break;
 
         case t_ALTI:
-            success = asm_alti();
+            success = asm_ALTI();
             break;
 
         case t_ALTR:
-            success = asm_altr();
+            success = asm_ALTR();
             break;
 
         case t_ALTS:
-            success = asm_alts();
+            success = asm_ALTS();
             break;
 
         case t_ALTSB:
-            success = asm_altsb();
+            success = asm_ALTSB();
             break;
 
         case t_ALTSN:
-            success = asm_altsn();
+            success = asm_ALTSN();
             break;
 
         case t_ALTSW:
-            success = asm_altsw();
+            success = asm_ALTSW();
             break;
 
         case t_AND:
-            success = asm_and();
+            success = asm_AND();
             break;
 
         case t_ANDN:
-            success = asm_andn();
+            success = asm_ANDN();
             break;
 
         case t_AUGD:
-            success = asm_augd();
+            success = asm_AUGD();
             break;
 
         case t_AUGS:
-            success = asm_augs();
+            success = asm_AUGS();
             break;
 
         case t_BITC:
-            success = asm_bitc();
+            success = asm_BITC();
             break;
 
         case t_BITH:
-            success = asm_bith();
+            success = asm_BITH();
             break;
 
         case t_BITL:
-            success = asm_bitl();
+            success = asm_BITL();
             break;
 
         case t_BITNC:
-            success = asm_bitnc();
+            success = asm_BITNC();
             break;
 
         case t_BITNOT:
-            success = asm_bitnot();
+            success = asm_BITNOT();
             break;
 
         case t_BITNZ:
-            success = asm_bitnz();
+            success = asm_BITNZ();
             break;
 
         case t_BITRND:
-            success = asm_bitrnd();
+            success = asm_BITRND();
             break;
 
         case t_BITZ:
-            success = asm_bitz();
+            success = asm_BITZ();
             break;
 
         case t_BLNPIX:
-            success = asm_blnpix();
+            success = asm_BLNPIX();
             break;
 
         case t_BMASK:
-            success = asm_bmask();
+            success = asm_BMASK();
             break;
 
         case t_BRK:
-            success = asm_brk();
+            success = asm_BRK();
             break;
 
         case t_CALL:
-            success = asm_call();
+            success = asm_CALL();
             break;
 
         case t_CALLA:
-            success = asm_calla();
+            success = asm_CALLA();
             break;
 
         case t_CALLB:
-            success = asm_callb();
+            success = asm_CALLB();
             break;
 
         case t_CALLD:
-            success = asm_calld();
+            success = asm_CALLD();
             break;
 
         case t_CALLPA:
-            success = asm_callpa();
+            success = asm_CALLPA();
             break;
 
         case t_CALLPB:
-            success = asm_callpb();
+            success = asm_CALLPB();
             break;
 
         case t_CMP:
-            success = asm_cmp();
+            success = asm_CMP();
             break;
 
         case t_CMPM:
-            success = asm_cmpm();
+            success = asm_CMPM();
             break;
 
         case t_CMPR:
-            success = asm_cmpr();
+            success = asm_CMPR();
             break;
 
         case t_CMPS:
-            success = asm_cmps();
+            success = asm_CMPS();
             break;
 
         case t_CMPSUB:
-            success = asm_cmpsub();
+            success = asm_CMPSUB();
             break;
 
         case t_CMPSX:
-            success = asm_cmpsx();
+            success = asm_CMPSX();
             break;
 
         case t_CMPX:
-            success = asm_cmpx();
+            success = asm_CMPX();
             break;
 
         case t_COGATN:
-            success = asm_cogatn();
+            success = asm_COGATN();
             break;
 
         case t_COGBRK:
-            success = asm_cogbrk();
+            success = asm_COGBRK();
             break;
 
         case t_COGID:
-            success = asm_cogid();
+            success = asm_COGID();
             break;
 
         case t_COGINIT:
-            success = asm_coginit();
+            success = asm_COGINIT();
             break;
 
         case t_COGSTOP:
-            success = asm_cogstop();
+            success = asm_COGSTOP();
             break;
 
         case t_CRCBIT:
-            success = asm_crcbit();
+            success = asm_CRCBIT();
             break;
 
         case t_CRCNIB:
-            success = asm_crcnib();
+            success = asm_CRCNIB();
             break;
 
         case t_DECMOD:
-            success = asm_decmod();
+            success = asm_DECMOD();
             break;
 
         case t_DECOD:
-            success = asm_decod();
+            success = asm_DECOD();
             break;
 
         case t_DIRC:
-            success = asm_dirc();
+            success = asm_DIRC();
             break;
 
         case t_DIRH:
-            success = asm_dirh();
+            success = asm_DIRH();
             break;
 
         case t_DIRL:
-            success = asm_dirl();
+            success = asm_DIRL();
             break;
 
         case t_DIRNC:
-            success = asm_dirnc();
+            success = asm_DIRNC();
             break;
 
         case t_DIRNOT:
-            success = asm_dirnot();
+            success = asm_DIRNOT();
             break;
 
         case t_DIRNZ:
-            success = asm_dirnz();
+            success = asm_DIRNZ();
             break;
 
         case t_DIRRND:
-            success = asm_dirrnd();
+            success = asm_DIRRND();
             break;
 
         case t_DIRZ:
-            success = asm_dirz();
+            success = asm_DIRZ();
             break;
 
         case t_DJF:
-            success = asm_djf();
+            success = asm_DJF();
             break;
 
         case t_DJNF:
-            success = asm_djnf();
+            success = asm_DJNF();
             break;
 
         case t_DJNZ:
-            success = asm_djnz();
+            success = asm_DJNZ();
             break;
 
         case t_DJZ:
-            success = asm_djz();
+            success = asm_DJZ();
             break;
 
         case t_DRVC:
-            success = asm_drvc();
+            success = asm_DRVC();
             break;
 
         case t_DRVH:
-            success = asm_drvh();
+            success = asm_DRVH();
             break;
 
         case t_DRVL:
-            success = asm_drvl();
+            success = asm_DRVL();
             break;
 
         case t_DRVNC:
-            success = asm_drvnc();
+            success = asm_DRVNC();
             break;
 
         case t_DRVNOT:
-            success = asm_drvnot();
+            success = asm_DRVNOT();
             break;
 
         case t_DRVNZ:
-            success = asm_drvnz();
+            success = asm_DRVNZ();
             break;
 
         case t_DRVRND:
-            success = asm_drvrnd();
+            success = asm_DRVRND();
             break;
 
         case t_DRVZ:
-            success = asm_drvz();
+            success = asm_DRVZ();
             break;
 
         case t_ENCOD:
-            success = asm_encod();
+            success = asm_ENCOD();
             break;
 
         case t_EXECF:
-            success = asm_execf();
+            success = asm_EXECF();
             break;
 
         case t_FBLOCK:
-            success = asm_fblock();
+            success = asm_FBLOCK();
             break;
 
         case t_FGE:
-            success = asm_fge();
+            success = asm_FGE();
             break;
 
         case t_FGES:
-            success = asm_fges();
+            success = asm_FGES();
             break;
 
         case t_FLE:
-            success = asm_fle();
+            success = asm_FLE();
             break;
 
         case t_FLES:
-            success = asm_fles();
+            success = asm_FLES();
             break;
 
         case t_FLTC:
-            success = asm_fltc();
+            success = asm_FLTC();
             break;
 
         case t_FLTH:
-            success = asm_flth();
+            success = asm_FLTH();
             break;
 
         case t_FLTL:
-            success = asm_fltl();
+            success = asm_FLTL();
             break;
 
         case t_FLTNC:
-            success = asm_fltnc();
+            success = asm_FLTNC();
             break;
 
         case t_FLTNOT:
-            success = asm_fltnot();
+            success = asm_FLTNOT();
             break;
 
         case t_FLTNZ:
-            success = asm_fltnz();
+            success = asm_FLTNZ();
             break;
 
         case t_FLTRND:
-            success = asm_fltrnd();
+            success = asm_FLTRND();
             break;
 
         case t_FLTZ:
-            success = asm_fltz();
+            success = asm_FLTZ();
             break;
 
         case t_GETBRK:
-            success = asm_getbrk();
+            success = asm_GETBRK();
             break;
 
         case t_GETBYTE:
-            success = asm_getbyte();
+            success = asm_GETBYTE();
             break;
 
         case t_GETCT:
-            success = asm_getct();
+            success = asm_GETCT();
             break;
 
         case t_GETNIB:
-            success = asm_getnib();
+            success = asm_GETNIB();
             break;
 
         case t_GETPTR:
-            success = asm_getptr();
+            success = asm_GETPTR();
             break;
 
         case t_GETQX:
-            success = asm_getqx();
+            success = asm_GETQX();
             break;
 
         case t_GETQY:
-            success = asm_getqy();
+            success = asm_GETQY();
             break;
 
         case t_GETRND:
-            success = asm_getrnd();
+            success = asm_GETRND();
             break;
 
         case t_GETSCP:
-            success = asm_getscp();
+            success = asm_GETSCP();
             break;
 
         case t_GETWORD:
-            success = asm_getword();
+            success = asm_GETWORD();
             break;
 
         case t_GETXACC:
-            success = asm_getxacc();
+            success = asm_GETXACC();
             break;
 
         case t_HUBSET:
-            success = asm_hubset();
+            success = asm_HUBSET();
             break;
 
         case t_IJNZ:
-            success = asm_ijnz();
+            success = asm_IJNZ();
             break;
 
         case t_IJZ:
-            success = asm_ijz();
+            success = asm_IJZ();
             break;
 
         case t_INCMOD:
-            success = asm_incmod();
+            success = asm_INCMOD();
             break;
 
         case t_JATN:
-            success = asm_jatn();
+            success = asm_JATN();
             break;
 
         case t_JCT1:
-            success = asm_jct1();
+            success = asm_JCT1();
             break;
 
         case t_JCT2:
-            success = asm_jct2();
+            success = asm_JCT2();
             break;
 
         case t_JCT3:
-            success = asm_jct3();
+            success = asm_JCT3();
             break;
 
         case t_JFBW:
-            success = asm_jfbw();
+            success = asm_JFBW();
             break;
 
         case t_JINT:
-            success = asm_jint();
+            success = asm_JINT();
             break;
 
         case t_JMP:
-            success = asm_jmp();
+            success = asm_JMP();
             break;
 
         case t_JMPREL:
-            success = asm_jmprel();
+            success = asm_JMPREL();
             break;
 
         case t_JNATN:
-            success = asm_jnatn();
+            success = asm_JNATN();
             break;
 
         case t_JNCT1:
-            success = asm_jnct1();
+            success = asm_JNCT1();
             break;
 
         case t_JNCT2:
-            success = asm_jnct2();
+            success = asm_JNCT2();
             break;
 
         case t_JNCT3:
-            success = asm_jnct3();
+            success = asm_JNCT3();
             break;
 
         case t_JNFBW:
-            success = asm_jnfbw();
+            success = asm_JNFBW();
             break;
 
         case t_JNINT:
-            success = asm_jnint();
+            success = asm_JNINT();
             break;
 
         case t_JNPAT:
-            success = asm_jnpat();
+            success = asm_JNPAT();
             break;
 
         case t_JNQMT:
-            success = asm_jnqmt();
+            success = asm_JNQMT();
             break;
 
         case t_JNSE1:
-            success = asm_jnse1();
+            success = asm_JNSE1();
             break;
 
         case t_JNSE2:
-            success = asm_jnse2();
+            success = asm_JNSE2();
             break;
 
         case t_JNSE3:
-            success = asm_jnse3();
+            success = asm_JNSE3();
             break;
 
         case t_JNSE4:
-            success = asm_jnse4();
+            success = asm_JNSE4();
             break;
 
         case t_JNXFI:
-            success = asm_jnxfi();
+            success = asm_JNXFI();
             break;
 
         case t_JNXMT:
-            success = asm_jnxmt();
+            success = asm_JNXMT();
             break;
 
         case t_JNXRL:
-            success = asm_jnxrl();
+            success = asm_JNXRL();
             break;
 
         case t_JNXRO:
-            success = asm_jnxro();
+            success = asm_JNXRO();
             break;
 
         case t_JPAT:
-            success = asm_jpat();
+            success = asm_JPAT();
             break;
 
         case t_JQMT:
-            success = asm_jqmt();
+            success = asm_JQMT();
             break;
 
         case t_JSE1:
-            success = asm_jse1();
+            success = asm_JSE1();
             break;
 
         case t_JSE2:
-            success = asm_jse2();
+            success = asm_JSE2();
             break;
 
         case t_JSE3:
-            success = asm_jse3();
+            success = asm_JSE3();
             break;
 
         case t_JSE4:
-            success = asm_jse4();
+            success = asm_JSE4();
             break;
 
         case t_JXFI:
-            success = asm_jxfi();
+            success = asm_JXFI();
             break;
 
         case t_JXMT:
-            success = asm_jxmt();
+            success = asm_JXMT();
             break;
 
         case t_JXRL:
-            success = asm_jxrl();
+            success = asm_JXRL();
             break;
 
         case t_JXRO:
-            success = asm_jxro();
+            success = asm_JXRO();
             break;
 
         case t_LOC:
-            success = asm_loc();
+            success = asm_LOC();
             break;
 
         case t_LOCKNEW:
-            success = asm_locknew();
+            success = asm_LOCKNEW();
             break;
 
         case t_LOCKREL:
-            success = asm_lockrel();
+            success = asm_LOCKREL();
             break;
 
         case t_LOCKRET:
-            success = asm_lockret();
+            success = asm_LOCKRET();
             break;
 
         case t_LOCKTRY:
-            success = asm_locktry();
+            success = asm_LOCKTRY();
             break;
 
         case t_MERGEB:
-            success = asm_mergeb();
+            success = asm_MERGEB();
             break;
 
         case t_MERGEW:
-            success = asm_mergew();
+            success = asm_MERGEW();
             break;
 
         case t_MIXPIX:
-            success = asm_mixpix();
+            success = asm_MIXPIX();
             break;
 
         case t_MODCZ:
-            success = asm_modcz();
+            success = asm_MODCZ();
             break;
 
         case t_MODC:
-            success = asm_modc();
+            success = asm_MODC();
             break;
 
         case t_MODZ:
-            success = asm_modz();
+            success = asm_MODZ();
             break;
 
         case t_MOV:
-            success = asm_mov();
+            success = asm_MOV();
             break;
 
         case t_MOVBYTS:
-            success = asm_movbyts();
+            success = asm_MOVBYTS();
             break;
 
         case t_MUL:
-            success = asm_mul();
+            success = asm_MUL();
             break;
 
         case t_MULPIX:
-            success = asm_mulpix();
+            success = asm_MULPIX();
             break;
 
         case t_MULS:
-            success = asm_muls();
+            success = asm_MULS();
             break;
 
         case t_MUXC:
-            success = asm_muxc();
+            success = asm_MUXC();
             break;
 
         case t_MUXNC:
-            success = asm_muxnc();
+            success = asm_MUXNC();
             break;
 
         case t_MUXNIBS:
-            success = asm_muxnibs();
+            success = asm_MUXNIBS();
             break;
 
         case t_MUXNITS:
-            success = asm_muxnits();
+            success = asm_MUXNITS();
             break;
 
         case t_MUXNZ:
-            success = asm_muxnz();
+            success = asm_MUXNZ();
             break;
 
         case t_MUXQ:
-            success = asm_muxq();
+            success = asm_MUXQ();
             break;
 
         case t_MUXZ:
-            success = asm_muxz();
+            success = asm_MUXZ();
             break;
 
         case t_NEG:
-            success = asm_neg();
+            success = asm_NEG();
             break;
 
         case t_NEGC:
-            success = asm_negc();
+            success = asm_NEGC();
             break;
 
         case t_NEGNC:
-            success = asm_negnc();
+            success = asm_NEGNC();
             break;
 
         case t_NEGNZ:
-            success = asm_negnz();
+            success = asm_NEGNZ();
             break;
 
         case t_NEGZ:
-            success = asm_negz();
+            success = asm_NEGZ();
             break;
 
         case t_NIXINT1:
-            success = asm_nixint1();
+            success = asm_NIXINT1();
             break;
 
         case t_NIXINT2:
-            success = asm_nixint2();
+            success = asm_NIXINT2();
             break;
 
         case t_NIXINT3:
-            success = asm_nixint3();
+            success = asm_NIXINT3();
             break;
 
         case t_NOP:
-            success = asm_nop();
+            success = asm_NOP();
             break;
 
         case t_NOT:
-            success = asm_not();
+            success = asm_NOT();
             break;
 
         case t_ONES:
-            success = asm_ones();
+            success = asm_ONES();
             break;
 
         case t_OR:
-            success = asm_or();
+            success = asm_OR();
             break;
 
         case t_OUTC:
-            success = asm_outc();
+            success = asm_OUTC();
             break;
 
         case t_OUTH:
-            success = asm_outh();
+            success = asm_OUTH();
             break;
 
         case t_OUTL:
-            success = asm_outl();
+            success = asm_OUTL();
             break;
 
         case t_OUTNC:
-            success = asm_outnc();
+            success = asm_OUTNC();
             break;
 
         case t_OUTNOT:
-            success = asm_outnot();
+            success = asm_OUTNOT();
             break;
 
         case t_OUTNZ:
-            success = asm_outnz();
+            success = asm_OUTNZ();
             break;
 
         case t_OUTRND:
-            success = asm_outrnd();
+            success = asm_OUTRND();
             break;
 
         case t_OUTZ:
-            success = asm_outz();
+            success = asm_OUTZ();
             break;
 
         case t_POLLATN:
-            success = asm_pollatn();
+            success = asm_POLLATN();
             break;
 
         case t_POLLCT1:
-            success = asm_pollct1();
+            success = asm_POLLCT1();
             break;
 
         case t_POLLCT2:
-            success = asm_pollct2();
+            success = asm_POLLCT2();
             break;
 
         case t_POLLCT3:
-            success = asm_pollct3();
+            success = asm_POLLCT3();
             break;
 
         case t_POLLFBW:
-            success = asm_pollfbw();
+            success = asm_POLLFBW();
             break;
 
         case t_POLLINT:
-            success = asm_pollint();
+            success = asm_POLLINT();
             break;
 
         case t_POLLPAT:
-            success = asm_pollpat();
+            success = asm_POLLPAT();
             break;
 
         case t_POLLQMT:
-            success = asm_pollqmt();
+            success = asm_POLLQMT();
             break;
 
         case t_POLLSE1:
-            success = asm_pollse1();
+            success = asm_POLLSE1();
             break;
 
         case t_POLLSE2:
-            success = asm_pollse2();
+            success = asm_POLLSE2();
             break;
 
         case t_POLLSE3:
-            success = asm_pollse3();
+            success = asm_POLLSE3();
             break;
 
         case t_POLLSE4:
-            success = asm_pollse4();
+            success = asm_POLLSE4();
             break;
 
         case t_POLLXFI:
-            success = asm_pollxfi();
+            success = asm_POLLXFI();
             break;
 
         case t_POLLXMT:
-            success = asm_pollxmt();
+            success = asm_POLLXMT();
             break;
 
         case t_POLLXRL:
-            success = asm_pollxrl();
+            success = asm_POLLXRL();
             break;
 
         case t_POLLXRO:
-            success = asm_pollxro();
+            success = asm_POLLXRO();
             break;
 
         case t_POP:
-            success = asm_pop();
+            success = asm_POP();
             break;
 
         case t_POPA:
-            success = asm_popa();
+            success = asm_POPA();
             break;
 
         case t_POPB:
-            success = asm_popb();
+            success = asm_POPB();
             break;
 
         case t_PUSH:
-            success = asm_push();
+            success = asm_PUSH();
             break;
 
         case t_PUSHA:
-            success = asm_pusha();
+            success = asm_PUSHA();
             break;
 
         case t_PUSHB:
-            success = asm_pushb();
+            success = asm_PUSHB();
             break;
 
         case t_QDIV:
-            success = asm_qdiv();
+            success = asm_QDIV();
             break;
 
         case t_QEXP:
-            success = asm_qexp();
+            success = asm_QEXP();
             break;
 
         case t_QFRAC:
-            success = asm_qfrac();
+            success = asm_QFRAC();
             break;
 
         case t_QLOG:
-            success = asm_qlog();
+            success = asm_QLOG();
             break;
 
         case t_QMUL:
-            success = asm_qmul();
+            success = asm_QMUL();
             break;
 
         case t_QROTATE:
-            success = asm_qrotate();
+            success = asm_QROTATE();
             break;
 
         case t_QSQRT:
-            success = asm_qsqrt();
+            success = asm_QSQRT();
             break;
 
         case t_QVECTOR:
-            success = asm_qvector();
+            success = asm_QVECTOR();
             break;
 
         case t_RCL:
-            success = asm_rcl();
+            success = asm_RCL();
             break;
 
         case t_RCR:
-            success = asm_rcr();
+            success = asm_RCR();
             break;
 
         case t_RCZL:
-            success = asm_rczl();
+            success = asm_RCZL();
             break;
 
         case t_RCZR:
-            success = asm_rczr();
+            success = asm_RCZR();
             break;
 
         case t_RDBYTE:
-            success = asm_rdbyte();
+            success = asm_RDBYTE();
             break;
 
         case t_RDFAST:
-            success = asm_rdfast();
+            success = asm_RDFAST();
             break;
 
         case t_RDLONG:
-            success = asm_rdlong();
+            success = asm_RDLONG();
             break;
 
         case t_RDLUT:
-            success = asm_rdlut();
+            success = asm_RDLUT();
             break;
 
         case t_RDPIN:
-            success = asm_rdpin();
+            success = asm_RDPIN();
             break;
 
         case t_RDWORD:
-            success = asm_rdword();
+            success = asm_RDWORD();
             break;
 
         case t_REP:
-            success = asm_rep();
+            success = asm_REP();
             break;
 
         case t_RESI0:
-            success = asm_resi0();
+            success = asm_RESI0();
             break;
 
         case t_RESI1:
-            success = asm_resi1();
+            success = asm_RESI1();
             break;
 
         case t_RESI2:
-            success = asm_resi2();
+            success = asm_RESI2();
             break;
 
         case t_RESI3:
-            success = asm_resi3();
+            success = asm_RESI3();
             break;
 
         case t_RET:
-            success = asm_ret();
+            success = asm_RET();
             break;
 
         case t_RETA:
-            success = asm_reta();
+            success = asm_RETA();
             break;
 
         case t_RETB:
-            success = asm_retb();
+            success = asm_RETB();
             break;
 
         case t_RETI0:
-            success = asm_reti0();
+            success = asm_RETI0();
             break;
 
         case t_RETI1:
-            success = asm_reti1();
+            success = asm_RETI1();
             break;
 
         case t_RETI2:
-            success = asm_reti2();
+            success = asm_RETI2();
             break;
 
         case t_RETI3:
-            success = asm_reti3();
+            success = asm_RETI3();
             break;
 
         case t_REV:
-            success = asm_rev();
+            success = asm_REV();
             break;
 
         case t_RFBYTE:
-            success = asm_rfbyte();
+            success = asm_RFBYTE();
             break;
 
         case t_RFLONG:
-            success = asm_rflong();
+            success = asm_RFLONG();
             break;
 
         case t_RFVAR:
-            success = asm_rfvar();
+            success = asm_RFVAR();
             break;
 
         case t_RFVARS:
-            success = asm_rfvars();
+            success = asm_RFVARS();
             break;
 
         case t_RFWORD:
-            success = asm_rfword();
+            success = asm_RFWORD();
             break;
 
         case t_RGBEXP:
-            success = asm_rgbexp();
+            success = asm_RGBEXP();
             break;
 
         case t_RGBSQZ:
-            success = asm_rgbsqz();
+            success = asm_RGBSQZ();
             break;
 
         case t_ROL:
-            success = asm_rol();
+            success = asm_ROL();
             break;
 
         case t_ROLBYTE:
-            success = asm_rolbyte();
+            success = asm_ROLBYTE();
             break;
 
         case t_ROLNIB:
-            success = asm_rolnib();
+            success = asm_ROLNIB();
             break;
 
         case t_ROLWORD:
-            success = asm_rolword();
+            success = asm_ROLWORD();
             break;
 
         case t_ROR:
-            success = asm_ror();
+            success = asm_ROR();
             break;
 
         case t_RQPIN:
-            success = asm_rqpin();
+            success = asm_RQPIN();
             break;
 
         case t_SAL:
-            success = asm_sal();
+            success = asm_SAL();
             break;
 
         case t_SAR:
-            success = asm_sar();
+            success = asm_SAR();
             break;
 
         case t_SCA:
-            success = asm_sca();
+            success = asm_SCA();
             break;
 
         case t_SCAS:
-            success = asm_scas();
+            success = asm_SCAS();
             break;
 
         case t_SETBYTE:
-            success = asm_setbyte();
+            success = asm_SETBYTE();
             break;
 
         case t_SETCFRQ:
-            success = asm_setcfrq();
+            success = asm_SETCFRQ();
             break;
 
         case t_SETCI:
-            success = asm_setci();
+            success = asm_SETCI();
             break;
 
         case t_SETCMOD:
-            success = asm_setcmod();
+            success = asm_SETCMOD();
             break;
 
         case t_SETCQ:
-            success = asm_setcq();
+            success = asm_SETCQ();
             break;
 
         case t_SETCY:
-            success = asm_setcy();
+            success = asm_SETCY();
             break;
 
         case t_SETD:
-            success = asm_setd();
+            success = asm_SETD();
             break;
 
         case t_SETDACS:
-            success = asm_setdacs();
+            success = asm_SETDACS();
             break;
 
         case t_SETINT1:
-            success = asm_setint1();
+            success = asm_SETINT1();
             break;
 
         case t_SETINT2:
-            success = asm_setint2();
+            success = asm_SETINT2();
             break;
 
         case t_SETINT3:
-            success = asm_setint3();
+            success = asm_SETINT3();
             break;
 
         case t_SETLUTS:
-            success = asm_setluts();
+            success = asm_SETLUTS();
             break;
 
         case t_SETNIB:
-            success = asm_setnib();
+            success = asm_SETNIB();
             break;
 
         case t_SETPAT:
-            success = asm_setpat();
+            success = asm_SETPAT();
             break;
 
         case t_SETPIV:
-            success = asm_setpiv();
+            success = asm_SETPIV();
             break;
 
         case t_SETPIX:
-            success = asm_setpix();
+            success = asm_SETPIX();
             break;
 
         case t_SETQ:
-            success = asm_setq();
+            success = asm_SETQ();
             break;
 
         case t_SETQ2:
-            success = asm_setq2();
+            success = asm_SETQ2();
             break;
 
         case t_SETR:
-            success = asm_setr();
+            success = asm_SETR();
             break;
 
         case t_SETS:
-            success = asm_sets();
+            success = asm_SETS();
             break;
 
         case t_SETSCP:
-            success = asm_setscp();
+            success = asm_SETSCP();
             break;
 
         case t_SETSE1:
-            success = asm_setse1();
+            success = asm_SETSE1();
             break;
 
         case t_SETSE2:
-            success = asm_setse2();
+            success = asm_SETSE2();
             break;
 
         case t_SETSE3:
-            success = asm_setse3();
+            success = asm_SETSE3();
             break;
 
         case t_SETSE4:
-            success = asm_setse4();
+            success = asm_SETSE4();
             break;
 
         case t_SETWORD:
-            success = asm_setword();
+            success = asm_SETWORD();
             break;
 
         case t_SETXFRQ:
-            success = asm_setxfrq();
+            success = asm_SETXFRQ();
             break;
 
         case t_SEUSSF:
-            success = asm_seussf();
+            success = asm_SEUSSF();
             break;
 
         case t_SEUSSR:
-            success = asm_seussr();
+            success = asm_SEUSSR();
             break;
 
         case t_SHL:
-            success = asm_shl();
+            success = asm_SHL();
             break;
 
         case t_SHR:
-            success = asm_shr();
+            success = asm_SHR();
             break;
 
         case t_SIGNX:
-            success = asm_signx();
+            success = asm_SIGNX();
             break;
 
         case t_SKIP:
-            success = asm_skip();
+            success = asm_SKIP();
             break;
 
         case t_SKIPF:
-            success = asm_skipf();
+            success = asm_SKIPF();
             break;
 
         case t_SPLITB:
-            success = asm_splitb();
+            success = asm_SPLITB();
             break;
 
         case t_SPLITW:
-            success = asm_splitw();
+            success = asm_SPLITW();
             break;
 
         case t_STALLI:
-            success = asm_stalli();
+            success = asm_STALLI();
             break;
 
         case t_SUB:
-            success = asm_sub();
+            success = asm_SUB();
             break;
 
         case t_SUBR:
-            success = asm_subr();
+            success = asm_SUBR();
             break;
 
         case t_SUBS:
-            success = asm_subs();
+            success = asm_SUBS();
             break;
 
         case t_SUBSX:
-            success = asm_subsx();
+            success = asm_SUBSX();
             break;
 
         case t_SUBX:
-            success = asm_subx();
+            success = asm_SUBX();
             break;
 
         case t_SUMC:
-            success = asm_sumc();
+            success = asm_SUMC();
             break;
 
         case t_SUMNC:
-            success = asm_sumnc();
+            success = asm_SUMNC();
             break;
 
         case t_SUMNZ:
-            success = asm_sumnz();
+            success = asm_SUMNZ();
             break;
 
         case t_SUMZ:
-            success = asm_sumz();
+            success = asm_SUMZ();
             break;
 
         case t_TEST:
-            success = asm_test();
+            success = asm_TEST();
             break;
 
         case t_TESTB:
-            success = asm_testb();
+            success = asm_TESTB();
             break;
 
         case t_TESTBN:
-            success = asm_testbn();
+            success = asm_TESTBN();
             break;
 
         case t_TESTN:
-            success = asm_testn();
+            success = asm_TESTN();
             break;
 
         case t_TESTP:
-            success = asm_testp();
+            success = asm_TESTP();
             break;
 
         case t_TESTPN:
-            success = asm_testpn();
+            success = asm_TESTPN();
             break;
 
         case t_TJF:
-            success = asm_tjf();
+            success = asm_TJF();
             break;
 
         case t_TJNF:
-            success = asm_tjnf();
+            success = asm_TJNF();
             break;
 
         case t_TJNS:
-            success = asm_tjns();
+            success = asm_TJNS();
             break;
 
         case t_TJNZ:
-            success = asm_tjnz();
+            success = asm_TJNZ();
             break;
 
         case t_TJS:
-            success = asm_tjs();
+            success = asm_TJS();
             break;
 
         case t_TJV:
-            success = asm_tjv();
+            success = asm_TJV();
             break;
 
         case t_TJZ:
-            success = asm_tjz();
+            success = asm_TJZ();
             break;
 
         case t_TRGINT1:
-            success = asm_trgint1();
+            success = asm_TRGINT1();
             break;
 
         case t_TRGINT2:
-            success = asm_trgint2();
+            success = asm_TRGINT2();
             break;
 
         case t_TRGINT3:
-            success = asm_trgint3();
+            success = asm_TRGINT3();
             break;
 
         case t_WAITATN:
-            success = asm_waitatn();
+            success = asm_WAITATN();
             break;
 
         case t_WAITCT1:
-            success = asm_waitct1();
+            success = asm_WAITCT1();
             break;
 
         case t_WAITCT2:
-            success = asm_waitct2();
+            success = asm_WAITCT2();
             break;
 
         case t_WAITCT3:
-            success = asm_waitct3();
+            success = asm_WAITCT3();
             break;
 
         case t_WAITFBW:
-            success = asm_waitfbw();
+            success = asm_WAITFBW();
             break;
 
         case t_WAITINT:
-            success = asm_waitint();
+            success = asm_WAITINT();
             break;
 
         case t_WAITPAT:
-            success = asm_waitpat();
+            success = asm_WAITPAT();
             break;
 
         case t_WAITSE1:
-            success = asm_waitse1();
+            success = asm_WAITSE1();
             break;
 
         case t_WAITSE2:
-            success = asm_waitse2();
+            success = asm_WAITSE2();
             break;
 
         case t_WAITSE3:
-            success = asm_waitse3();
+            success = asm_WAITSE3();
             break;
 
         case t_WAITSE4:
-            success = asm_waitse4();
+            success = asm_WAITSE4();
             break;
 
         case t_WAITX:
-            success = asm_waitx();
+            success = asm_WAITX();
             break;
 
         case t_WAITXFI:
-            success = asm_waitxfi();
+            success = asm_WAITXFI();
             break;
 
         case t_WAITXMT:
-            success = asm_waitxmt();
+            success = asm_WAITXMT();
             break;
 
         case t_WAITXRL:
-            success = asm_waitxrl();
+            success = asm_WAITXRL();
             break;
 
         case t_WAITXRO:
-            success = asm_waitxro();
+            success = asm_WAITXRO();
             break;
 
         case t_WFBYTE:
-            success = asm_wfbyte();
+            success = asm_WFBYTE();
             break;
 
         case t_WFLONG:
-            success = asm_wflong();
+            success = asm_WFLONG();
             break;
 
         case t_WFWORD:
-            success = asm_wfword();
+            success = asm_WFWORD();
             break;
 
         case t_WMLONG:
-            success = asm_wmlong();
+            success = asm_WMLONG();
             break;
 
         case t_WRBYTE:
-            success = asm_wrbyte();
+            success = asm_WRBYTE();
             break;
 
         case t_WRC:
-            success = asm_wrc();
+            success = asm_WRC();
             break;
 
         case t_WRFAST:
-            success = asm_wrfast();
+            success = asm_WRFAST();
             break;
 
         case t_WRLONG:
-            success = asm_wrlong();
+            success = asm_WRLONG();
             break;
 
         case t_WRLUT:
-            success = asm_wrlut();
+            success = asm_WRLUT();
             break;
 
         case t_WRNC:
-            success = asm_wrnc();
+            success = asm_WRNC();
             break;
 
         case t_WRNZ:
-            success = asm_wrnz();
+            success = asm_WRNZ();
             break;
 
         case t_WRPIN:
-            success = asm_wrpin();
+            success = asm_WRPIN();
             break;
 
         case t_WRWORD:
-            success = asm_wrword();
+            success = asm_WRWORD();
             break;
 
         case t_WRZ:
-            success = asm_wrz();
+            success = asm_WRZ();
             break;
 
         case t_WXPIN:
-            success = asm_wxpin();
+            success = asm_WXPIN();
             break;
 
         case t_WYPIN:
-            success = asm_wypin();
+            success = asm_WYPIN();
             break;
 
         case t_XCONT:
-            success = asm_xcont();
+            success = asm_XCONT();
             break;
 
         case t_XINIT:
-            success = asm_xinit();
+            success = asm_XINIT();
             break;
 
         case t_XOR:
-            success = asm_xor();
+            success = asm_XOR();
             break;
 
         case t_XORO32:
-            success = asm_xoro32();
+            success = asm_XORO32();
             break;
 
         case t_XSTOP:
-            success = asm_xstop();
+            success = asm_XSTOP();
             break;
 
         case t_XZERO:
-            success = asm_xzero();
+            success = asm_XZERO();
             break;
 
         case t_ZEROX:
-            success = asm_zerox();
+            success = asm_ZEROX();
             break;
 
         case t_BYTE:
-            success = asm_byte();
+            success = asm_BYTE();
             break;
 
         case t_WORD:
-            success = asm_word();
+            success = asm_WORD();
             break;
 
         case t_LONG:
-            success = asm_long();
+            success = asm_LONG();
             break;
 
         case t_FILE:
-            success = asm_file();
+            success = asm_FILE();
             break;
 
         case t_RES:
-            success = asm_res();
+            success = asm_RES();
             break;
 
         case t_ALIGNW:
-            success = asm_alignw();
+            success = asm_ALIGNW();
             break;
 
         case t_ALIGNL:
-            success = asm_alignl();
+            success = asm_ALIGNL();
             break;
 
         case t_ORG:
-            success = asm_org();
+            success = asm_ORG();
             break;
 
         case t_ORGF:
-            success = asm_orgf();
+            success = asm_ORGF();
             break;
 
         case t_ORGH:
-            success = asm_orgh();
+            success = asm_ORGH();
             break;
 
         case t_FIT:
-            success = asm_fit();
+            success = asm_FIT();
             break;
 
         default:
@@ -2364,7 +2364,7 @@ QStringList P2Asm::results_instruction(bool wr_mem)
 
     // Do we need to generate an AUGD instruction?
     if (m_IR.augd_valid()) {
-        p2_LONG value = m_IR.augd_value<p2_LONG>();
+        p2_LONG value = m_IR.augd_value();
         P2Opcode IR(p2_AUGD, p2_ORG_ORGH_t(org, orgh));
         IR.set_imm23(value);
 
@@ -2384,13 +2384,13 @@ QStringList P2Asm::results_instruction(bool wr_mem)
         orgh += 4;
         m_IR.set_org_orgh(IR.org_orgh());
         m_advance += 4;
-        m_IR.augd_clear();
+        m_IR.set_AUGD();
         lineptr = nullptr;
     }
 
     // Do we need to generate an AUGS instruction?
     if (m_IR.augs_valid()) {
-        p2_LONG value = m_IR.augs_value<p2_LONG>();
+        p2_LONG value = m_IR.augs_value();
         P2Opcode IR(p2_AUGS, p2_ORG_ORGH_t(org, orgh));
         IR.set_imm23(value);
 
@@ -2410,7 +2410,7 @@ QStringList P2Asm::results_instruction(bool wr_mem)
         orgh += 4;
         m_IR.set_org_orgh(IR.org_orgh());
         m_advance += 4;
-        m_IR.augs_clear();
+        m_IR.set_augs();
         lineptr = nullptr;
     }
 
@@ -2636,7 +2636,7 @@ bool P2Asm::bin_const(P2Atom& atom, const QString& str)
     bool ok;
     p2_QUAD quad = num.toULongLong(&ok, 2);
     if (ok)
-        atom.set_value(quad);
+        atom.set_value(P2Union(quad));
     return ok;
 }
 
@@ -2648,13 +2648,13 @@ bool P2Asm::bin_const(P2Atom& atom, const QString& str)
 bool P2Asm::byt_const(P2Atom &atom, const QString& str)
 {
     QString num = str;
-    if (num.startsWith(QStringLiteral("%%")))
+    if (num.startsWith(str_byt_prefix))
         num.remove(0, 2);
     num.remove(chr_skip_digit);
     bool ok;
     p2_QUAD quad = num.toULongLong(&ok, 4);
     if (ok)
-        atom.set_value(quad);
+        atom.set_value(P2Union(quad));
     return ok;
 }
 
@@ -2670,7 +2670,7 @@ bool P2Asm::dec_const(P2Atom& atom, const QString& str)
     bool ok;
     p2_QUAD quad = num.toULongLong(&ok, 10);
     if (ok)
-        atom.set_value(quad);
+        atom.set_value(P2Union(quad));
     return ok;
 }
 
@@ -2688,7 +2688,7 @@ bool P2Asm::hex_const(P2Atom& atom, const QString& str)
     bool ok;
     p2_QUAD quad = num.toULongLong(&ok, 16);
     if (ok)
-        atom.set_value(quad);
+        atom.set_value(P2Union(quad));
     return ok;
 }
 
@@ -2704,7 +2704,7 @@ bool P2Asm::real_const(P2Atom& atom, const QString& str)
     bool ok;
     p2_REAL real = num.toDouble(&ok);
     if (ok)
-        atom.set_value(real);
+        atom.set_value(P2Union(real));
     return ok;
 }
 
@@ -2736,7 +2736,7 @@ bool P2Asm::str_const(P2Atom& atom, const QString& str)
             chars += ch.toLatin1();
         }
     }
-    atom.set_value(QVariant::fromValue(chars));
+    atom.set_chars(chars);
 
     return true;
 }
@@ -2807,11 +2807,8 @@ void P2Asm::add_const_symbol(const QString& pfx, const P2Word& word, const P2Ato
     QString symbol = QString("%1%2")
                      .arg(pfx)
                      .arg(word.str().toUpper());
-    if (m_symbols->contains(symbol)) {
-        m_symbols->set_atom(symbol, atom);
-    } else {
-        m_symbols->insert(P2Symbol(symbol, atom));
-    }
+    if (!m_symbols->contains(symbol))
+        m_symbols->insert(P2Symbol(symbol, atom.value()));
     m_symbols->add_reference(m_lineno, symbol, word);
 }
 
@@ -2828,8 +2825,9 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
 
     const P2Word& word = curr_word();
     QString str = word.str();
+    p2_token_e tok = word.tok();
 
-    switch (word.tok()) {
+    switch (tok) {
     case t__FLOAT:
         next();
         DBG_EXPR(" atom float function: %s", qPrintable(str));
@@ -2860,7 +2858,7 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
         // precedence 0
         DBG_EXPR(" atom lparen: %s", qPrintable(curr_str()));
         next();
-        atom.set_value(QVariant::fromValue(parse_expression(level+1)));
+        atom = parse_expression(level+1);
         prev();
         break;
 
@@ -2886,8 +2884,7 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
         symbol = find_locsym(m_section, str);
         if (m_symbols->contains(symbol)) {
             P2Symbol sym = m_symbols->symbol(symbol);
-            atom.set_atom(sym.atom());
-            DBG_EXPR(" atom found locsym: %s = %s", qPrintable(symbol), qPrintable(atom.str()));
+            DBG_EXPR(" atom found locsym: %s = %s", qPrintable(symbol), qPrintable(sym.()));
             m_symbols->add_reference(m_lineno, symbol, word);
             break;
         }
@@ -2898,7 +2895,7 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
         symbol = find_symbol(m_section, str, true);
         if (m_symbols->contains(symbol)) {
             P2Symbol sym = m_symbols->symbol(symbol);
-            atom.set_atom(sym.atom());
+            atom.set_value(sym.value());
             DBG_EXPR(" atom found symbol: %s = %s", qPrintable(symbol), qPrintable(atom.str()));
             m_symbols->add_reference(m_lineno, symbol, word);
             break;
@@ -2944,62 +2941,71 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_real_const:
         DBG_EXPR(" atom real const: %s", qPrintable(str));
         real_const(atom, str);
+        atom.set_type(ut_Real);
         add_const_symbol(p2_prefix_real_const, word, atom);
         DBG_EXPR(" atom real atom = %s", qPrintable(atom.str()));
         break;
 
     case t_DIRA:
         DBG_EXPR(" atom DIRA: %s", qPrintable(str));
-        atom.set(offs_DIRA);
+        atom.set_type(ut_Addr);
+        atom.set_value(P2Union(offs_DIRA));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom DIRA atom = %s", qPrintable(atom.str()));
         break;
 
     case t_DIRB:
         DBG_EXPR(" atom DIRB: %s", qPrintable(str));
-        atom.set(offs_DIRB);
+        atom.set_type(ut_Addr);
+        atom.set_value(P2Union(offs_DIRB));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom DIRB atom = %s", qPrintable(atom.str()));
         break;
 
     case t_INA:
         DBG_EXPR(" atom INA: %s", qPrintable(str));
-        atom.set(offs_INA);
+        atom.set_type(ut_Addr);
+        atom.set_value(P2Union(offs_INA));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom INA atom = %s", qPrintable(atom.str()));
         break;
 
     case t_INB:
         DBG_EXPR(" atom INB: %s", qPrintable(str));
-        atom.set(offs_INB);
+        atom.set_type(ut_Addr);
+        atom.set_value(P2Union(offs_INB));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom INB atom = %s", qPrintable(atom.str()));
         break;
 
     case t_OUTA:
         DBG_EXPR(" atom OUTA: %s", qPrintable(str));
-        atom.set(offs_OUTA);
+        atom.set_type(ut_Addr);
+        atom.set_value(P2Union(offs_OUTA));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom OUTA atom = %s", qPrintable(atom.str()));
         break;
 
     case t_OUTB:
         DBG_EXPR(" atom OUTB: %s", qPrintable(str));
-        atom.set(offs_OUTB);
+        atom.set_type(ut_Addr);
+        atom.set_value(P2Union(offs_OUTB));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom OUTB atom = %s", qPrintable(atom.str()));
         break;
 
     case t_PA:
         DBG_EXPR(" atom PA: %s", qPrintable(str));
-        atom.set(offs_PA);
+        atom.set_type(ut_Addr);
+        atom.set_value(P2Union(offs_PA));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom PA atom = %s", qPrintable(atom.str()));
         break;
 
     case t_PB:
         DBG_EXPR(" atom PB: %s", qPrintable(str));
-        atom.set(offs_PB);
+        atom.set_type(ut_Addr);
+        atom.set_value(P2Union(offs_PB));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom PB atom = %s", qPrintable(atom.str()));
         break;
@@ -3010,8 +3016,17 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_PTRA_preinc:
     case t_PTRA_predec:
         DBG_EXPR(" atom PTRA: %s", qPrintable(str));
-        atom.set(offs_PTRA);
+        atom.set_type(ut_Addr);
+        atom.set_value(P2Union(offs_PTRA));
         add_const_symbol(p2_prefix_offs_const, word, atom);
+        if (t_PTRA_preinc == tok || t_PTRA_predec == tok)
+            atom.add_trait(tr_PRE);
+        if (t_PTRA_postinc == tok || t_PTRA_postdec == tok)
+            atom.add_trait(tr_POST);
+        if (t_PTRA_preinc == tok || t_PTRA_postinc == tok)
+            atom.add_trait(tr_INC);
+        if (t_PTRA_predec == tok || t_PTRA_postdec == tok)
+            atom.add_trait(tr_DEC);
         DBG_EXPR(" atom PTRA atom = %s", qPrintable(atom.str()));
         break;
 
@@ -3021,15 +3036,24 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_PTRB_preinc:
     case t_PTRB_predec:
         DBG_EXPR(" atom PTRB: %s", qPrintable(str));
-        atom.set(offs_PTRB);
+        atom.set_type(ut_Addr);
+        atom.set_value(P2Union(offs_PTRB));
         add_const_symbol(p2_prefix_offs_const, word, atom);
+        if (t_PTRB_preinc == tok || t_PTRB_predec == tok)
+            atom.add_trait(tr_PRE);
+        if (t_PTRB_postinc == tok || t_PTRB_postdec == tok)
+            atom.add_trait(tr_POST);
+        if (t_PTRB_preinc == tok || t_PTRB_postinc == tok)
+            atom.add_trait(tr_INC);
+        if (t_PTRB_predec == tok || t_PTRB_postdec == tok)
+            atom.add_trait(tr_DEC);
         DBG_EXPR(" atom PTRB atom = %s", qPrintable(atom.str()));
         break;
 
     case t_DOLLAR:
         DBG_EXPR(" atom current PC: %s", qPrintable(str));
-        atom.set(m_ORG / 4);    // FIXME: use m_ORG or m_ORG/4 ?
         atom.set_type(ut_Addr);
+        atom.set_value(P2Union(m_ORG / 4));    // FIXME: use m_ORG or m_ORG/4 ?
         DBG_EXPR(" atom $ atom = %s", qPrintable(atom.str()));
         break;
 
@@ -3457,32 +3481,32 @@ p2_traits_e P2Asm::parse_traits()
         switch (tok) {
         case t_IMMEDIATE:
             DBG_EXPR(" trait immediate: %s", qPrintable(Token.string(tok)));
-            trait_set(trait, tr_IMMEDIATE);
+            p2_set_trait(trait, tr_IMMEDIATE);
             next();
             break;
         case t_AUGMENTED:
             DBG_EXPR(" trait force AUGS/AUGD: %s", qPrintable(Token.string(tok)));
-            trait_set(trait, tr_AUGMENTED);
+            p2_set_trait(trait, tr_AUGMENTED);
             next();
             break;
         case t_RELATIVE:
             DBG_EXPR(" trait relative: %s", qPrintable(Token.string(tok)));
-            trait_set(trait, tr_RELATIVE);
+            p2_set_trait(trait, tr_RELATIVE);
             next();
             break;
         case t_ABSOLUTE:
             DBG_EXPR(" trait absolute: %s", qPrintable(Token.string(tok)));
-            trait_set(trait, tr_ABSOLUTE);
+            p2_set_trait(trait, tr_ABSOLUTE);
             next();
             break;
         case t_ADDRESS_HUB:
             DBG_EXPR(" trait address HUB: %s", qPrintable(Token.string(tok)));
-            trait_set(trait, tr_ADDRESS_HUB);
+            p2_set_trait(trait, tr_ADDRESS_HUB);
             next();
             break;
         case t_RELATIVE_HUB:
             DBG_EXPR(" trait relative HUB: %s", qPrintable(Token.string(tok)));
-            trait_set(trait, tr_RELATIVE_HUB);
+            p2_set_trait(trait, tr_RELATIVE_HUB);
             next();
             break;
         default:
@@ -3556,8 +3580,10 @@ P2Atom P2Asm::parse_expression(int level)
             // precedence 0
             DBG_EXPR(" expr lbracket: %s", qPrintable(curr_str()));
             next();
-            parse_binops(index, level+1);   // evaluate the expression into index
-            trait_set(traits, tr_HAS_INDEX);
+            index = parse_expression(level+1);  // evaluate the expression into index
+            p2_set_trait(traits, tr_INDEX);
+            if (index.has_trait(tr_AUGMENTED))  // pass on tr_AUGMENTED to the atom traits
+                p2_set_trait(traits, tr_AUGMENTED);
             break;
 
         case t__RBRACKET:
@@ -3585,10 +3611,10 @@ P2Atom P2Asm::parse_expression(int level)
 
     if (traits != tr_none) {
 
-        DBG_EXPR(" expr set traits: %#x", traits);
-        atom.set_traits(traits);
+        DBG_EXPR(" expr add traits: %#x", traits);
+        atom.add_trait(traits);
 
-        if (traits & tr_HAS_INDEX) {
+        if (traits & tr_INDEX) {
             DBG_EXPR(" expr set index: %#x", index.get_long());
             atom.set_index(QVariant::fromValue(index));
         }
@@ -3732,6 +3758,93 @@ P2Atom P2Asm::parse_src(P2Opcode::ImmFlag flag)
     if (!m_IR.set_src(src, m_ORG, m_ORGH))
         error_dst_or_src();
     return src;
+}
+
+/**
+ * @brief Evaluate the atom %src to create an index using PTRA or PTRB
+ * @param src reference to the atom
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_index(P2Atom& src, int scale)
+{
+    const bool ptrb = offs_PTRB == src.get_long();
+    const bool update = src.has_trait(tr_INC) || src.has_trait(tr_DEC);
+    const bool post = src.has_trait(tr_POST);
+    const bool inc = src.has_trait(tr_INC);
+    const bool dec = src.has_trait(tr_DEC);
+    const p2_LONG _long = src.index_long();
+
+    if (src.has_trait(tr_AUGMENTED)) {
+        /*
+         * Structure of the 23 bit augmented (AUGS) index
+         *
+         * This structure defines the 23 bits of S/#/PTRx with AUGS
+         * 0:   %000000000000AAAAAAAAAAA_AAAAAAAAA
+         * 1:   %000000001SUPNNNNNNNNNNN_NNNNNNNNN
+         * The topmost bit (sup) determines whether the
+         * less significant 23 bits are to be interpreted as:
+         * 0:   000AAAAAAAAAAA_AAAAAAAAA: structure defining the
+         *      + A: 20 bit of address ($000000…$fffff)
+         * 1:   SUPNNNNNNNNNNN_NNNNNNNNN: structure definining the
+         *      + S: PTRx false for PTRA, true for PTRB
+         *      + U: false to keep PTRx same, true to update PTRx (PTRx += INDEX)
+         *      + P: false to use PTRx + INDEX, true to use PTRx (post-modify)
+         *      + NNNNNNNNNNN_NNNNNNNNN: 20 bit unscaled index
+         */
+        p2_index23_t index = {0};
+        if (update || dec || inc) {
+            // signed value
+            const qint32 nnn = static_cast<qint32>(_long) + (inc ? 1 : 0) - (dec ? 1 : 0);
+            index.i.sup = true;
+            index.i.S = ptrb;
+            index.i.U = update;
+            index.i.P = post;
+            index.i.N = scale * nnn;
+        } else {
+            index.a.sup = false;
+            index.a.A = src.index_long();
+        }
+
+        m_IR.set_augs(index.aug);
+
+    } else {
+        /*
+         * Structure of the 9 bit non-augmented index
+         *
+         * This structure defines the 9 bits of S/#/PTRx without AUGS
+         * 0:   %0AAAAAAAA
+         * 1:   %1SUPNNNNN
+         * The topmost bit (%sup) determines whether the
+         * lower 8 bits are to be interpreted as:
+         * 0:   AAAAAAAA: 8 bits of address (0…255)
+         * 1:   SUPNNNNN: structure definining the
+         *      + S: PTRx false for PTRA, true for PTRB
+         *      + U: false to keep PTRx same, true to update PTRx (PTRx += INDEX*SCALE)
+         *      + P: false to use PTRx + INDEX*SCALE, true to use PTRx (post-modify)
+         *      + NNNNN: index -16…15 for simple offsets, 0…15 for ++'s, 0…16 for --'s
+         * SCALE is:
+         *      = 1: for RDBYTE/WRBYTE
+         *      = 2: for RDWORD/WRWORD
+         *      = 4: for RDLONG/WRLONG/WMLONG
+         */
+        p2_index9_t index = {0};
+        if (update || dec || inc || 0 == _long) {
+            // signed value
+            const qint32 nnn = static_cast<qint32>(_long) + (inc ? 1 : 0) - (dec ? 1 : 0);
+            index.i.sup = true;
+            index.i.S = ptrb;
+            index.i.U = update;
+            index.i.P = post;
+            index.i.N = static_cast<char>(nnn);
+        } else {
+            index.a.sup = false;
+            index.a.A = static_cast<uchar>(_long);
+        }
+        m_IR.set_src(index.src);
+    }
+
+    m_IR.set_im(true);
+    return true;
 }
 
 /**
@@ -4000,7 +4113,7 @@ bool P2Asm::parse_D_IM_S()
  *
  * @return true on success, or false on error
  */
-bool P2Asm::parse_D_IM_S_PTRx_WCZ()
+bool P2Asm::parse_D_IM_S_PTRx_WCZ(int scale)
 {
     if (commata_left() < 1) {
         const int idx = m_idx;
@@ -4012,10 +4125,8 @@ bool P2Asm::parse_D_IM_S_PTRx_WCZ()
         if (!mandatory_COMMA())
             return false;
         P2Atom src = parse_src(P2Opcode::imm_to_im);
-        if (src.get_long() == offs_PTRA || src.get_long() == offs_PTRB) {
-            // TODO: index expression
-            qDebug("%s: index = %#x", __func__, src.get_index<p2_LONG>());
-        }
+        if (offs_PTRA == src.get_long() || offs_PTRB == src.get_long())
+            parse_index(src, scale);
     }
     optional_WCZ();
     return end_of_line();
@@ -4026,7 +4137,7 @@ bool P2Asm::parse_D_IM_S_PTRx_WCZ()
  *
  * @return true on success, or false on error
  */
-bool P2Asm::parse_D_IM_S_PTRx()
+bool P2Asm::parse_D_IM_S_PTRx(int scale)
 {
     if (commata_left() < 1) {
         const int idx = m_idx;
@@ -4038,10 +4149,8 @@ bool P2Asm::parse_D_IM_S_PTRx()
         if (!mandatory_COMMA())
             return false;
         P2Atom src = parse_src(P2Opcode::imm_to_im);
-        if (src.get_long() == offs_PTRA || src.get_long() == offs_PTRB) {
-            // TODO: index expression
-            qDebug("%s: index = %#x", __func__, src.get_index<p2_LONG>());
-        }
+        if (offs_PTRA == src.get_long() || offs_PTRB == src.get_long())
+            parse_index(src, scale);
     }
     return end_of_line();
 }
@@ -4332,7 +4441,7 @@ bool P2Asm::parse_WZ_D_IM_S()
  *
  * @return true on success, or false on error
  */
-bool P2Asm::parse_WZ_D_IM_S_PTRx()
+bool P2Asm::parse_WZ_D_IM_S_PTRx(int scale)
 {
     if (commata_left() < 1) {
         // if there is no comma, expect D = S and no #S
@@ -4345,10 +4454,8 @@ bool P2Asm::parse_WZ_D_IM_S_PTRx()
         if (!mandatory_COMMA())
             return false;
         P2Atom src = parse_src(P2Opcode::imm_to_im);
-        if (src.get_long() == offs_PTRA || src.get_long() == offs_PTRB) {
-            // TODO: index expression
-            qDebug("%s: index = %#x", __func__, src.get_index<p2_LONG>());
-        }
+        if (offs_PTRA == src.get_long() || offs_PTRB == src.get_long())
+            parse_index(src, scale);
     }
     return end_of_line();
 }
@@ -4522,7 +4629,8 @@ bool P2Asm::asm_assign()
     next();
     m_advance = 0;      // Don't advance PC
     P2Atom atom = parse_expression();
-    m_symbols->set_atom(m_symbol, atom);
+    P2Symbol sym = m_symbols->symbol(m_symbol);
+    m_symbols->set_value(m_symbol, atom.value());
     m_IR.set_equ(atom);
     if (con_section != m_section) {
         m_errors += tr("Not in constant section (CON) but found %1.")
@@ -4554,54 +4662,47 @@ bool P2Asm::asm_enum_initial()
     m_advance = 0;      // Don't advance PC
     P2Atom atom = parse_expression();
     m_IR.set_equ(atom);
-    if (con_section == m_section) {
-        if (!skip_comments())
-            return false;
-        if (!mandatory_COMMA())
-            return false;
-        while (m_idx < m_cnt) {
-            if (!skip_comments())
-                break;
-            if (t_symbol == curr_tok()) {
-                QString symbol = find_symbol(m_section, curr_str());
-                // append global name to section::symbol
-                define_symbol(symbol, atom);
-                // increase enumerator
-                atom += 1u;
-            } else if (t_COMMA == curr_tok()) {
-                // skip next comma
-                next();
-            } else {
-                m_errors += tr("Unexpected token %1 in enumeration: %2.")
-                            .arg(curr_tok())
-                            .arg(curr_str());
-                emit Error(m_pass, m_lineno, m_errors.last());
-                m_idx = m_cnt;
-                break;
-            }
-            if (!skip_comments())
-                break;
-            if (t__LBRACKET == curr_tok()) {
-               // skip expr values
-               P2Atom skip;
-               parse_primary(skip, 0);  // FIXME: expression?
-               if (skip.isValid()) {
-                   atom += skip;
-                   next();
-               } else {
-                   m_errors += tr("Invalid skip in enumeration: %1.")
-                               .arg(curr_str());
-                   emit Error(m_pass, m_lineno, m_errors.last());
-                   m_idx = m_cnt;
-               }
-           }
-        }
-        m_enum = atom;
-    } else {
+
+    if (con_section != m_section) {
         m_errors += tr("Not in constant section (CON) but found %1.")
                     .arg(tr("enumeration start"));
         emit Error(m_pass, m_lineno, m_errors.last());
+        return end_of_line();
     }
+
+    if (eol())
+        return false;
+    if (!mandatory_COMMA())
+        return false;
+    while (!eol()) {
+        if (t_COMMA == curr_tok()) {
+            // skip next comma
+            next();
+            continue;
+        }
+
+        if (t_symbol == curr_tok()) {
+            QString symbol = find_symbol(m_section, curr_str());
+            define_symbol(symbol, atom);    // append global name to section::symbol
+            if (t__LBRACKET == curr_tok()) {
+                qDebug("%s: %s with index", __func__, qPrintable(symbol));
+            }
+            prev();
+            atom = parse_expression();
+            if (atom.has_trait(tr_INDEX))
+                atom += atom.index_long();
+            else
+                atom += 1u; // increase enumerator
+            continue;
+        }
+
+        m_errors += tr("Unexpected token %1 in enumeration: %2.")
+                    .arg(curr_tok())
+                    .arg(curr_str());
+        emit Error(m_pass, m_lineno, m_errors.last());
+        m_idx = m_cnt;
+    }
+    m_enum = atom;
     return end_of_line();
 }
 
@@ -4612,51 +4713,49 @@ bool P2Asm::asm_enum_continue()
     m_IR.set_as_IR(false);
     P2Atom atom = m_enum;
     m_IR.set_equ(atom);
-    if (con_section == m_section) {
-        if (!mandatory_COMMA())
-            return false;
-        while (m_idx < m_cnt) {
-            if (!skip_comments())
-                break;
-            if (t_symbol == curr_tok()) {
-                QString symbol = find_symbol(m_section, curr_str());
-                // append global name to section::symbol
-                define_symbol(symbol, atom);
-                // increase enumerator
-                atom += 1u;
-            } else if (t_COMMA == curr_tok()) {
-                // skip comma
-                next();
-            } else {
-                m_errors += tr("Unexpected token %1 in enumeration: %2.")
-                            .arg(curr_tok())
-                            .arg(curr_str());
-                emit Error(m_pass, m_lineno, m_errors.last());
-                m_idx = m_cnt;
-            }
-            if (!skip_comments())
-                break;
-            if (t__LBRACKET == curr_tok()) {
-               // skip expr values
-               P2Atom skip;
-               parse_primary(skip, 0);  // FIXME: expression?
-               if (skip.isValid()) {
-                   atom += skip;
-                   next();
-               } else {
-                   m_errors += tr("Invalid skip in enumeration: %1.")
-                               .arg(curr_str());
-                   emit Error(m_pass, m_lineno, m_errors.last());
-                   m_idx = m_cnt;
-               }
-           }
-        }
-        m_enum = atom;
-    } else {
+
+
+    if (con_section != m_section) {
         m_errors += tr("Not in constant section (CON) but found %1.")
                     .arg(tr("enumeration continuation"));
         emit Error(m_pass, m_lineno, m_errors.last());
+        return end_of_line();
     }
+
+    if (!mandatory_COMMA())
+        return false;
+
+    while (!eol()) {
+
+        if (t_COMMA == curr_tok()) {
+            // skip comma
+            next();
+            continue;
+        }
+
+        if (t_symbol == curr_tok()) {
+            QString symbol = find_symbol(m_section, curr_str());
+            // append global name to section::symbol
+            define_symbol(symbol, atom);
+            if (t__LBRACKET == curr_tok()) {
+                qDebug("%s: %s with index", __func__, qPrintable(symbol));
+            }
+            prev();
+            atom = parse_expression();
+            if (atom.has_trait(tr_INDEX))
+                atom += atom.index_long();
+            else
+                atom += 1u; // increase enumerator
+            continue;
+        }
+
+        m_errors += tr("Unexpected token %1 in enumeration: %2.")
+                    .arg(curr_tok())
+                    .arg(curr_str());
+        emit Error(m_pass, m_lineno, m_errors.last());
+        m_idx = m_cnt;
+    }
+    m_enum = atom;
     return end_of_line();
 }
 
@@ -4665,7 +4764,7 @@ bool P2Asm::asm_enum_continue()
  *
  * @return true on success, or false on error
  */
-bool P2Asm::asm_alignw()
+bool P2Asm::asm_ALIGNW()
 {
     next();
     m_IR.set_as_IR(false);
@@ -4678,7 +4777,7 @@ bool P2Asm::asm_alignw()
  *
  * @return true on success, or false on error
  */
-bool P2Asm::asm_alignl()
+bool P2Asm::asm_ALIGNL()
 {
     next();
     m_IR.set_as_IR(false);
@@ -4692,7 +4791,7 @@ bool P2Asm::asm_alignl()
  *
  * @return true on success, or false on error
  */
-bool P2Asm::asm_org()
+bool P2Asm::asm_ORG()
 {
     next();
     m_advance = 0;      // Don't advance PC
@@ -4707,7 +4806,7 @@ bool P2Asm::asm_org()
         m_ORG = value;
     }
     m_IR.set_equ(m_ORG);
-    m_symbols->set_atom(m_symbol, value);
+    m_symbols->set_value(m_symbol, P2Union(value));
     return end_of_line();
 }
 
@@ -4716,7 +4815,7 @@ bool P2Asm::asm_org()
  *
  * @return true on success, or false on error
  */
-bool P2Asm::asm_orgf()
+bool P2Asm::asm_ORGF()
 {
     next();
     m_advance = 0;      // Don't advance PC
@@ -4732,11 +4831,11 @@ bool P2Asm::asm_orgf()
     }
     for (p2_LONG pc = m_ORG; pc < value; pc += 4) {
         p2_LONG empty = 0;
-        m_data.add<p2_LONG>(empty);
+        m_data.add_long(empty);
     }
     m_advance = m_data.usize();
     m_IR.set_equ(m_ORG);
-    m_symbols->set_atom(m_symbol, value);
+    m_symbols->set_value(m_symbol, P2Union(value));
     return end_of_line();
 }
 
@@ -4745,7 +4844,7 @@ bool P2Asm::asm_orgf()
  *
  * @return true on success, or false on error
  */
-bool P2Asm::asm_orgh()
+bool P2Asm::asm_ORGH()
 {
     next();
     m_advance = 0;      // Don't advance PC
@@ -4762,7 +4861,7 @@ bool P2Asm::asm_orgh()
     }
     m_ORGH = value;
     m_IR.set_equ(m_ORGH);
-    m_symbols->set_atom(m_symbol, value);
+    m_symbols->set_value(m_symbol, P2Union(value));
     return end_of_line();
 }
 
@@ -4770,7 +4869,7 @@ bool P2Asm::asm_orgh()
  * @brief Expect an address which is checked for being < curr_pc
  * @return true on success, or false on error
  */
-bool P2Asm::asm_fit()
+bool P2Asm::asm_FIT()
 {
     next();
     m_advance = 0;
@@ -4791,7 +4890,7 @@ bool P2Asm::asm_fit()
  * @brief Switch to data section
  * @return true on success
  */
-bool P2Asm::asm_dat()
+bool P2Asm::asm_DAT()
 {
     next();
     m_advance = 0;
@@ -4804,7 +4903,7 @@ bool P2Asm::asm_dat()
  * @brief Switch to constant section
  * @return true on success
  */
-bool P2Asm::asm_con()
+bool P2Asm::asm_CON()
 {
     next();
     m_advance = 0;
@@ -4817,7 +4916,7 @@ bool P2Asm::asm_con()
  * @brief Switch to publics section
  * @return true on success
  */
-bool P2Asm::asm_pub()
+bool P2Asm::asm_PUB()
 {
     next();
     m_advance = 0;
@@ -4830,7 +4929,7 @@ bool P2Asm::asm_pub()
  * @brief Switch to private section
  * @return true on success
  */
-bool P2Asm::asm_pri()
+bool P2Asm::asm_PRI()
 {
     next();
     m_advance = 0;
@@ -4843,7 +4942,7 @@ bool P2Asm::asm_pri()
  * @brief Switch to variable section
  * @return true on success
  */
-bool P2Asm::asm_var()
+bool P2Asm::asm_VAR()
 {
     next();
     m_advance = 0;
@@ -4857,7 +4956,7 @@ bool P2Asm::asm_var()
  *
  * @return true on success, or false on error
  */
-bool P2Asm::asm_byte()
+bool P2Asm::asm_BYTE()
 {
     P2Atom atom;
     next();
@@ -4867,7 +4966,7 @@ bool P2Asm::asm_byte()
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
         p2_BYTES _bytes = atom.get_bytes();
-        p2_LONG count = atom.get_index<p2_LONG>();
+        p2_LONG count = atom.index_long();
         m_data.set_type(ut_Byte);
         m_data.add_bytes(_bytes);
         if (count > 0) {
@@ -4886,7 +4985,7 @@ bool P2Asm::asm_byte()
  *
  * @return true on success, or false on error
  */
-bool P2Asm::asm_word()
+bool P2Asm::asm_WORD()
 {
     P2Atom atom(ut_Word);
     next();
@@ -4896,7 +4995,7 @@ bool P2Asm::asm_word()
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
         p2_WORD _word = atom.get_word();
-        p2_LONG count = atom.get_index<p2_LONG>();
+        p2_LONG count = atom.index_long();
         m_data.set_type(ut_Word);
         m_data.add_word(_word);
         if (count > 0) {
@@ -4915,7 +5014,7 @@ bool P2Asm::asm_word()
  *
  * @return true on success, or false on error
  */
-bool P2Asm::asm_long()
+bool P2Asm::asm_LONG()
 {
     next();
     m_advance = 0;      // Don't advance PC, as it's done based on m_data
@@ -4924,7 +5023,7 @@ bool P2Asm::asm_long()
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
         p2_LONG _long = atom.get_long();
-        p2_LONG count = atom.get_index<p2_LONG>();
+        p2_LONG count = atom.index_long();
         m_data.set_type(ut_Long);
         m_data.add_long(_long);
         if (count > 0) {
@@ -4943,7 +5042,7 @@ bool P2Asm::asm_long()
  *
  * @return true on success, or false on error
  */
-bool P2Asm::asm_res()
+bool P2Asm::asm_RES()
 {
     next();
     m_advance = 0;      // Don't advance PC if no value is specified
@@ -4954,7 +5053,7 @@ bool P2Asm::asm_res()
         p2_LONG count = atom.get_long();
         p2_BYTE b = 0;
         while (count-- > 0)
-            m_data.add(b);
+            m_data.add_byte(b);
         optional_COMMA();
     }
     m_data.set_type(ut_Byte);
@@ -4967,7 +5066,7 @@ bool P2Asm::asm_res()
  *
  * @return true on success, or false on error
  */
-bool P2Asm::asm_file()
+bool P2Asm::asm_FILE()
 {
     next();
     m_advance = 0;      // Don't advance PC, as it's done based on m_data
@@ -4980,7 +5079,7 @@ bool P2Asm::asm_file()
                            .arg(atom.string());
         QFile data(filename);
         if (data.open(QIODevice::ReadOnly)) {
-            m_data.add(data.readAll());
+            m_data.add_array(data.readAll());
             m_data.set_type(ut_String);
             data.close();
         } else {
@@ -5003,7 +5102,7 @@ bool P2Asm::asm_file()
  * NOP
  *</pre>
  */
-bool P2Asm::asm_nop()
+bool P2Asm::asm_NOP()
 {
     next();
     m_IR.set_opcode(0);
@@ -5022,7 +5121,7 @@ bool P2Asm::asm_nop()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_ror()
+bool P2Asm::asm_ROR()
 {
     next();
     m_IR.set_inst7(p2_ROR);
@@ -5041,7 +5140,7 @@ bool P2Asm::asm_ror()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_rol()
+bool P2Asm::asm_ROL()
 {
     next();
     m_IR.set_inst7(p2_ROR);
@@ -5060,7 +5159,7 @@ bool P2Asm::asm_rol()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_shr()
+bool P2Asm::asm_SHR()
 {
     next();
     m_IR.set_inst7(p2_SHR);
@@ -5079,7 +5178,7 @@ bool P2Asm::asm_shr()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_shl()
+bool P2Asm::asm_SHL()
 {
     next();
     m_IR.set_inst7(p2_SHL);
@@ -5098,7 +5197,7 @@ bool P2Asm::asm_shl()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_rcr()
+bool P2Asm::asm_RCR()
 {
     next();
     m_IR.set_inst7(p2_RCR);
@@ -5117,7 +5216,7 @@ bool P2Asm::asm_rcr()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_rcl()
+bool P2Asm::asm_RCL()
 {
     next();
     m_IR.set_inst7(p2_RCL);
@@ -5136,7 +5235,7 @@ bool P2Asm::asm_rcl()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_sar()
+bool P2Asm::asm_SAR()
 {
     next();
     m_IR.set_inst7(p2_SAR);
@@ -5155,7 +5254,7 @@ bool P2Asm::asm_sar()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_sal()
+bool P2Asm::asm_SAL()
 {
     next();
     m_IR.set_inst7(p2_SAL);
@@ -5174,7 +5273,7 @@ bool P2Asm::asm_sal()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_add()
+bool P2Asm::asm_ADD()
 {
     next();
     m_IR.set_inst7(p2_ADD);
@@ -5193,7 +5292,7 @@ bool P2Asm::asm_add()
  * Z = Z AND (result == 0).
  *</pre>
  */
-bool P2Asm::asm_addx()
+bool P2Asm::asm_ADDX()
 {
     next();
     m_IR.set_inst7(p2_ADDX);
@@ -5212,7 +5311,7 @@ bool P2Asm::asm_addx()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_adds()
+bool P2Asm::asm_ADDS()
 {
     next();
     m_IR.set_inst7(p2_ADDS);
@@ -5231,7 +5330,7 @@ bool P2Asm::asm_adds()
  * Z = Z AND (result == 0).
  *</pre>
  */
-bool P2Asm::asm_addsx()
+bool P2Asm::asm_ADDSX()
 {
     next();
     m_IR.set_inst7(p2_ADDSX);
@@ -5250,7 +5349,7 @@ bool P2Asm::asm_addsx()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_sub()
+bool P2Asm::asm_SUB()
 {
     next();
     m_IR.set_inst7(p2_SUB);
@@ -5269,7 +5368,7 @@ bool P2Asm::asm_sub()
  * Z = Z AND (result == 0).
  *</pre>
  */
-bool P2Asm::asm_subx()
+bool P2Asm::asm_SUBX()
 {
     next();
     m_IR.set_inst7(p2_SUBX);
@@ -5288,7 +5387,7 @@ bool P2Asm::asm_subx()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_subs()
+bool P2Asm::asm_SUBS()
 {
     next();
     m_IR.set_inst7(p2_SUBS);
@@ -5307,7 +5406,7 @@ bool P2Asm::asm_subs()
  * Z = Z AND (result == 0).
  *</pre>
  */
-bool P2Asm::asm_subsx()
+bool P2Asm::asm_SUBSX()
 {
     next();
     m_IR.set_inst7(p2_SUBSX);
@@ -5325,7 +5424,7 @@ bool P2Asm::asm_subsx()
  * Z = (D == S).
  *</pre>
  */
-bool P2Asm::asm_cmp()
+bool P2Asm::asm_CMP()
 {
     next();
     m_IR.set_inst7(p2_CMP);
@@ -5343,7 +5442,7 @@ bool P2Asm::asm_cmp()
  * Z = Z AND (D == S + C).
  *</pre>
  */
-bool P2Asm::asm_cmpx()
+bool P2Asm::asm_CMPX()
 {
     next();
     m_IR.set_inst7(p2_CMPX);
@@ -5361,7 +5460,7 @@ bool P2Asm::asm_cmpx()
  * Z = (D == S).
  *</pre>
  */
-bool P2Asm::asm_cmps()
+bool P2Asm::asm_CMPS()
 {
     next();
     m_IR.set_inst7(p2_CMPS);
@@ -5379,7 +5478,7 @@ bool P2Asm::asm_cmps()
  * Z = Z AND (D == S + C).
  *</pre>
  */
-bool P2Asm::asm_cmpsx()
+bool P2Asm::asm_CMPSX()
 {
     next();
     m_IR.set_inst7(p2_CMPSX);
@@ -5397,7 +5496,7 @@ bool P2Asm::asm_cmpsx()
  * Z = (D == S).
  *</pre>
  */
-bool P2Asm::asm_cmpr()
+bool P2Asm::asm_CMPR()
 {
     next();
     m_IR.set_inst7(p2_CMPR);
@@ -5415,7 +5514,7 @@ bool P2Asm::asm_cmpr()
  * Z = (D == S).
  *</pre>
  */
-bool P2Asm::asm_cmpm()
+bool P2Asm::asm_CMPM()
 {
     next();
     m_IR.set_inst7(p2_CMPM);
@@ -5434,7 +5533,7 @@ bool P2Asm::asm_cmpm()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_subr()
+bool P2Asm::asm_SUBR()
 {
     next();
     m_IR.set_inst7(p2_SUBR);
@@ -5452,7 +5551,7 @@ bool P2Asm::asm_subr()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_cmpsub()
+bool P2Asm::asm_CMPSUB()
 {
     next();
     m_IR.set_inst7(p2_CMPSUB);
@@ -5470,7 +5569,7 @@ bool P2Asm::asm_cmpsub()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_fge()
+bool P2Asm::asm_FGE()
 {
     next();
     m_IR.set_inst7(p2_FGE);
@@ -5488,7 +5587,7 @@ bool P2Asm::asm_fge()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_fle()
+bool P2Asm::asm_FLE()
 {
     next();
     m_IR.set_inst7(p2_FLE);
@@ -5506,7 +5605,7 @@ bool P2Asm::asm_fle()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_fges()
+bool P2Asm::asm_FGES()
 {
     next();
     m_IR.set_inst7(p2_FGES);
@@ -5524,7 +5623,7 @@ bool P2Asm::asm_fges()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_fles()
+bool P2Asm::asm_FLES()
 {
     next();
     m_IR.set_inst7(p2_FLES);
@@ -5543,7 +5642,7 @@ bool P2Asm::asm_fles()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_sumc()
+bool P2Asm::asm_SUMC()
 {
     next();
     m_IR.set_inst7(p2_SUMC);
@@ -5562,7 +5661,7 @@ bool P2Asm::asm_sumc()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_sumnc()
+bool P2Asm::asm_SUMNC()
 {
     next();
     m_IR.set_inst7(p2_SUMNC);
@@ -5581,7 +5680,7 @@ bool P2Asm::asm_sumnc()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_sumz()
+bool P2Asm::asm_SUMZ()
 {
     next();
     m_IR.set_inst7(p2_SUMZ);
@@ -5600,7 +5699,7 @@ bool P2Asm::asm_sumz()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_sumnz()
+bool P2Asm::asm_SUMNZ()
 {
     next();
     m_IR.set_inst7(p2_SUMNZ);
@@ -5617,7 +5716,7 @@ bool P2Asm::asm_sumnz()
  * C/Z =          D[S[4:0]].
  *</pre>
  */
-bool P2Asm::asm_testb_w()
+bool P2Asm::asm_TESTB_W()
 {
     next();
     m_IR.set_inst7(p2_TESTB_W);
@@ -5634,7 +5733,7 @@ bool P2Asm::asm_testb_w()
  * C/Z =         !D[S[4:0]].
  *</pre>
  */
-bool P2Asm::asm_testbn_w()
+bool P2Asm::asm_TESTBN_W()
 {
     next();
     m_IR.set_inst7(p2_TESTBN_W);
@@ -5651,7 +5750,7 @@ bool P2Asm::asm_testbn_w()
  * C/Z = C/Z AND  D[S[4:0]].
  *</pre>
  */
-bool P2Asm::asm_testb_and()
+bool P2Asm::asm_TESTB_AND()
 {
     next();
     m_IR.set_inst7(p2_TESTB_AND);
@@ -5668,7 +5767,7 @@ bool P2Asm::asm_testb_and()
  * C/Z = C/Z AND !D[S[4:0]].
  *</pre>
  */
-bool P2Asm::asm_testbn_and()
+bool P2Asm::asm_TESTBN_AND()
 {
     next();
     m_IR.set_inst7(p2_TESTBN_AND);
@@ -5685,7 +5784,7 @@ bool P2Asm::asm_testbn_and()
  * C/Z = C/Z OR   D[S[4:0]].
  *</pre>
  */
-bool P2Asm::asm_testb_or()
+bool P2Asm::asm_TESTB_OR()
 {
     next();
     m_IR.set_inst7(p2_TESTB_OR);
@@ -5702,7 +5801,7 @@ bool P2Asm::asm_testb_or()
  * C/Z = C/Z OR  !D[S[4:0]].
  *</pre>
  */
-bool P2Asm::asm_testbn_or()
+bool P2Asm::asm_TESTBN_OR()
 {
     next();
     m_IR.set_inst7(p2_TESTBN_OR);
@@ -5719,7 +5818,7 @@ bool P2Asm::asm_testbn_or()
  * C/Z = C/Z XOR  D[S[4:0]].
  *</pre>
  */
-bool P2Asm::asm_testb_xor()
+bool P2Asm::asm_TESTB_XOR()
 {
     next();
     m_IR.set_inst7(p2_TESTB_XOR);
@@ -5736,7 +5835,7 @@ bool P2Asm::asm_testb_xor()
  * C/Z = C/Z XOR !D[S[4:0]].
  *</pre>
  */
-bool P2Asm::asm_testbn_xor()
+bool P2Asm::asm_TESTBN_XOR()
 {
     next();
     m_IR.set_inst7(p2_TESTBN_XOR);
@@ -5747,16 +5846,16 @@ bool P2Asm::asm_testbn_xor()
  * @brief Test bit S[4:0] of  D[5:0], SET/AND/OR/XOR nto C/Z.
  * @return true on success, or false on error
  */
-bool P2Asm::asm_testb()
+bool P2Asm::asm_TESTB()
 {
     if (find_tok(t_WC) || find_tok(t_WZ))
-        return asm_testb_w();
+        return asm_TESTB_W();
     if (find_tok(t_ANDC) || find_tok(t_ANDZ))
-        return asm_testb_and();
+        return asm_TESTB_AND();
     if (find_tok(t_ORC) || find_tok(t_ORZ))
-        return asm_testb_or();
+        return asm_TESTB_OR();
     if (find_tok(t_XORC) || find_tok(t_XORZ))
-        return asm_testb_xor();
+        return asm_TESTB_XOR();
     return false;
 }
 
@@ -5764,16 +5863,16 @@ bool P2Asm::asm_testb()
  * @brief Test bit S[4:0] of !D[5:0], SET/AND/OR/XOR nto C/Z.
  * @return true on success, or false on error
  */
-bool P2Asm::asm_testbn()
+bool P2Asm::asm_TESTBN()
 {
     if (find_tok(t_WC) || find_tok(t_WZ))
-        return asm_testbn_w();
+        return asm_TESTBN_W();
     if (find_tok(t_ANDC) || find_tok(t_ANDZ))
-        return asm_testbn_and();
+        return asm_TESTBN_AND();
     if (find_tok(t_ORC) || find_tok(t_ORZ))
-        return asm_testbn_or();
+        return asm_TESTBN_OR();
     if (find_tok(t_XORC) || find_tok(t_XORZ))
-        return asm_testbn_xor();
+        return asm_TESTBN_XOR();
     return false;
 }
 
@@ -5785,7 +5884,7 @@ bool P2Asm::asm_testbn()
  * BITL    D,{#}S         {WCZ}
  *</pre>
  */
-bool P2Asm::asm_bitl()
+bool P2Asm::asm_BITL()
 {
     next();
     m_IR.set_inst7(p2_BITL_W);
@@ -5800,7 +5899,7 @@ bool P2Asm::asm_bitl()
  * BITH    D,{#}S         {WCZ}
  *</pre>
  */
-bool P2Asm::asm_bith()
+bool P2Asm::asm_BITH()
 {
     next();
     m_IR.set_inst7(p2_BITH_W);
@@ -5815,7 +5914,7 @@ bool P2Asm::asm_bith()
  * BITC    D,{#}S         {WCZ}
  *</pre>
  */
-bool P2Asm::asm_bitc()
+bool P2Asm::asm_BITC()
 {
     next();
     m_IR.set_inst7(p2_BITC_W);
@@ -5830,7 +5929,7 @@ bool P2Asm::asm_bitc()
  * BITNC   D,{#}S         {WCZ}
  *</pre>
  */
-bool P2Asm::asm_bitnc()
+bool P2Asm::asm_BITNC()
 {
     next();
     m_IR.set_inst7(p2_BITNC_W);
@@ -5845,7 +5944,7 @@ bool P2Asm::asm_bitnc()
  * BITZ    D,{#}S         {WCZ}
  *</pre>
  */
-bool P2Asm::asm_bitz()
+bool P2Asm::asm_BITZ()
 {
     next();
     m_IR.set_inst7(p2_BITZ_W);
@@ -5860,7 +5959,7 @@ bool P2Asm::asm_bitz()
  * BITNZ   D,{#}S         {WCZ}
  *</pre>
  */
-bool P2Asm::asm_bitnz()
+bool P2Asm::asm_BITNZ()
 {
     next();
     m_IR.set_inst7(p2_BITNZ_W);
@@ -5875,7 +5974,7 @@ bool P2Asm::asm_bitnz()
  * BITRND  D,{#}S         {WCZ}
  *</pre>
  */
-bool P2Asm::asm_bitrnd()
+bool P2Asm::asm_BITRND()
 {
     next();
     m_IR.set_inst7(p2_BITRND_W);
@@ -5890,7 +5989,7 @@ bool P2Asm::asm_bitrnd()
  * BITNOT  D,{#}S         {WCZ}
  *</pre>
  */
-bool P2Asm::asm_bitnot()
+bool P2Asm::asm_BITNOT()
 {
     next();
     m_IR.set_inst7(p2_BITNOT_W);
@@ -5909,7 +6008,7 @@ bool P2Asm::asm_bitnot()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_and()
+bool P2Asm::asm_AND()
 {
     next();
     m_IR.set_inst7(p2_AND);
@@ -5928,7 +6027,7 @@ bool P2Asm::asm_and()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_andn()
+bool P2Asm::asm_ANDN()
 {
     next();
     m_IR.set_inst7(p2_ANDN);
@@ -5947,7 +6046,7 @@ bool P2Asm::asm_andn()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_or()
+bool P2Asm::asm_OR()
 {
     next();
     m_IR.set_inst7(p2_OR);
@@ -5966,7 +6065,7 @@ bool P2Asm::asm_or()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_xor()
+bool P2Asm::asm_XOR()
 {
     next();
     m_IR.set_inst7(p2_XOR);
@@ -5985,7 +6084,7 @@ bool P2Asm::asm_xor()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_muxc()
+bool P2Asm::asm_MUXC()
 {
     next();
     m_IR.set_inst7(p2_MUXC);
@@ -6004,7 +6103,7 @@ bool P2Asm::asm_muxc()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_muxnc()
+bool P2Asm::asm_MUXNC()
 {
     next();
     m_IR.set_inst7(p2_MUXNC);
@@ -6023,7 +6122,7 @@ bool P2Asm::asm_muxnc()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_muxz()
+bool P2Asm::asm_MUXZ()
 {
     next();
     m_IR.set_inst7(p2_MUXZ);
@@ -6042,7 +6141,7 @@ bool P2Asm::asm_muxz()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_muxnz()
+bool P2Asm::asm_MUXNZ()
 {
     next();
     m_IR.set_inst7(p2_MUXNZ);
@@ -6061,7 +6160,7 @@ bool P2Asm::asm_muxnz()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_mov()
+bool P2Asm::asm_MOV()
 {
     next();
     m_IR.set_inst7(p2_MOV);
@@ -6080,7 +6179,7 @@ bool P2Asm::asm_mov()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_not()
+bool P2Asm::asm_NOT()
 {
     next();
     m_IR.set_inst7(p2_NOT);
@@ -6099,7 +6198,7 @@ bool P2Asm::asm_not()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_abs()
+bool P2Asm::asm_ABS()
 {
     next();
     m_IR.set_inst7(p2_ABS);
@@ -6118,7 +6217,7 @@ bool P2Asm::asm_abs()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_neg()
+bool P2Asm::asm_NEG()
 {
     next();
     m_IR.set_inst7(p2_NEG);
@@ -6137,7 +6236,7 @@ bool P2Asm::asm_neg()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_negc()
+bool P2Asm::asm_NEGC()
 {
     next();
     m_IR.set_inst7(p2_NEGC);
@@ -6156,7 +6255,7 @@ bool P2Asm::asm_negc()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_negnc()
+bool P2Asm::asm_NEGNC()
 {
     next();
     m_IR.set_inst7(p2_NEGNC);
@@ -6175,7 +6274,7 @@ bool P2Asm::asm_negnc()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_negz()
+bool P2Asm::asm_NEGZ()
 {
     next();
     m_IR.set_inst7(p2_NEGZ);
@@ -6194,7 +6293,7 @@ bool P2Asm::asm_negz()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_negnz()
+bool P2Asm::asm_NEGNZ()
 {
     next();
     m_IR.set_inst7(p2_NEGNZ);
@@ -6212,7 +6311,7 @@ bool P2Asm::asm_negnz()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_incmod()
+bool P2Asm::asm_INCMOD()
 {
     next();
     m_IR.set_inst7(p2_INCMOD);
@@ -6230,7 +6329,7 @@ bool P2Asm::asm_incmod()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_decmod()
+bool P2Asm::asm_DECMOD()
 {
     next();
     m_IR.set_inst7(p2_DECMOD);
@@ -6248,7 +6347,7 @@ bool P2Asm::asm_decmod()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_zerox()
+bool P2Asm::asm_ZEROX()
 {
     next();
     m_IR.set_inst7(p2_ZEROX);
@@ -6266,7 +6365,7 @@ bool P2Asm::asm_zerox()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_signx()
+bool P2Asm::asm_SIGNX()
 {
     next();
     m_IR.set_inst7(p2_SIGNX);
@@ -6285,32 +6384,11 @@ bool P2Asm::asm_signx()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_encod()
+bool P2Asm::asm_ENCOD()
 {
-    if (commata_left() < 1)
-        return asm_encod_d();
     next();
     m_IR.set_inst7(p2_ENCOD);
     return parse_D_IM_S_WCZ();
-}
-
-/**
- * @brief Get bit position of top-most '1' in S into D.
- *<pre>
- * EEEE 0111100 CZ0 DDDDDDDDD DDDDDDDDD
- *
- * ENCOD   D        {WC/WZ/WCZ}
- *
- * D = position of top '1' in S (0..31).
- * C = (S != 0).
- * Z = (result == 0).
- *</pre>
- */
-bool P2Asm::asm_encod_d()
-{
-    next();
-    m_IR.set_inst7(p2_ENCOD);
-    return parse_D_WCZ();
 }
 
 /**
@@ -6325,7 +6403,7 @@ bool P2Asm::asm_encod_d()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_ones()
+bool P2Asm::asm_ONES()
 {
     next();
     m_IR.set_inst7(p2_ONES);
@@ -6343,7 +6421,7 @@ bool P2Asm::asm_ones()
  * Z = ((D & S) == 0).
  *</pre>
  */
-bool P2Asm::asm_test()
+bool P2Asm::asm_TEST()
 {
     next();
     m_IR.set_inst7(p2_TEST);
@@ -6361,7 +6439,7 @@ bool P2Asm::asm_test()
  * Z = ((D & !S) == 0).
  *</pre>
  */
-bool P2Asm::asm_testn()
+bool P2Asm::asm_TESTN()
 {
     next();
     m_IR.set_inst7(p2_TESTN);
@@ -6376,10 +6454,10 @@ bool P2Asm::asm_testn()
  * SETNIB  D,{#}S,#N
  *</pre>
  */
-bool P2Asm::asm_setnib()
+bool P2Asm::asm_SETNIB()
 {
     if (commata_left() < 1)
-        return asm_setnib_altsn();
+        return asm_SETNIB_ALTSN();
     next();
     m_IR.set_inst7(p2_SETNIB_0);
     return parse_D_IM_S_NNN();
@@ -6393,7 +6471,7 @@ bool P2Asm::asm_setnib()
  * SETNIB  {#}S
  *</pre>
  */
-bool P2Asm::asm_setnib_altsn()
+bool P2Asm::asm_SETNIB_ALTSN()
 {
     next();
     m_IR.set_inst7(p2_SETNIB_0);
@@ -6410,10 +6488,10 @@ bool P2Asm::asm_setnib_altsn()
  * D = {28'b0, S.NIBBLE[N]).
  *</pre>
  */
-bool P2Asm::asm_getnib()
+bool P2Asm::asm_GETNIB()
 {
     if (commata_left() < 1)
-        return asm_getnib_altgn();
+        return asm_GETNIB_ALTGN();
     next();
     m_IR.set_inst7(p2_GETNIB_0);
     return parse_D_IM_S_NNN();
@@ -6427,7 +6505,7 @@ bool P2Asm::asm_getnib()
  * GETNIB  D
  *</pre>
  */
-bool P2Asm::asm_getnib_altgn()
+bool P2Asm::asm_GETNIB_ALTGN()
 {
     m_IR.set_inst7(p2_GETNIB_0);
     return parse_IM_S();
@@ -6443,10 +6521,10 @@ bool P2Asm::asm_getnib_altgn()
  * D = {D[27:0], S.NIBBLE[N]).
  *</pre>
  */
-bool P2Asm::asm_rolnib()
+bool P2Asm::asm_ROLNIB()
 {
     if (commata_left() < 1)
-        return asm_rolnib_altgn();
+        return asm_ROLNIB_ALTGN();
     next();
     m_IR.set_inst7(p2_ROLNIB_0);
     return parse_D_IM_S_NNN();
@@ -6460,7 +6538,7 @@ bool P2Asm::asm_rolnib()
  * ROLNIB  D
  *</pre>
  */
-bool P2Asm::asm_rolnib_altgn()
+bool P2Asm::asm_ROLNIB_ALTGN()
 {
     next();
     m_IR.set_inst7(p2_ROLNIB_0);
@@ -6475,10 +6553,10 @@ bool P2Asm::asm_rolnib_altgn()
  * SETBYTE D,{#}S,#N
  *</pre>
  */
-bool P2Asm::asm_setbyte()
+bool P2Asm::asm_SETBYTE()
 {
     if (commata_left() < 1)
-        return asm_setbyte_altsb();
+        return asm_SETBYTE_ALTSB();
     next();
     m_IR.set_inst7(p2_SETBYTE);
     return parse_D_IM_S_NNN();
@@ -6492,7 +6570,7 @@ bool P2Asm::asm_setbyte()
  * SETBYTE {#}S
  *</pre>
  */
-bool P2Asm::asm_setbyte_altsb()
+bool P2Asm::asm_SETBYTE_ALTSB()
 {
     next();
     m_IR.set_inst7(p2_SETBYTE);
@@ -6509,10 +6587,10 @@ bool P2Asm::asm_setbyte_altsb()
  * D = {24'b0, S.BYTE[N]).
  *</pre>
  */
-bool P2Asm::asm_getbyte()
+bool P2Asm::asm_GETBYTE()
 {
     if (commata_left() < 1)
-        return asm_getbyte_altgb();
+        return asm_GETBYTE_ALTGB();
     next();
     m_IR.set_inst7(p2_GETBYTE);
     return parse_D_IM_S_NNN();
@@ -6526,7 +6604,7 @@ bool P2Asm::asm_getbyte()
  * GETBYTE D
  *</pre>
  */
-bool P2Asm::asm_getbyte_altgb()
+bool P2Asm::asm_GETBYTE_ALTGB()
 {
     next();
     m_IR.set_inst7(p2_GETBYTE);
@@ -6543,10 +6621,10 @@ bool P2Asm::asm_getbyte_altgb()
  * D = {D[23:0], S.BYTE[N]).
  *</pre>
  */
-bool P2Asm::asm_rolbyte()
+bool P2Asm::asm_ROLBYTE()
 {
     if (commata_left() < 1)
-        return asm_rolbyte_altgb();
+        return asm_ROLBYTE_ALTGB();
     next();
     m_IR.set_inst7(p2_ROLBYTE);
     return parse_D_IM_S_NNN(3);
@@ -6560,7 +6638,7 @@ bool P2Asm::asm_rolbyte()
  * ROLBYTE D
  *</pre>
  */
-bool P2Asm::asm_rolbyte_altgb()
+bool P2Asm::asm_ROLBYTE_ALTGB()
 {
     next();
     m_IR.set_inst7(p2_ROLBYTE);
@@ -6575,10 +6653,10 @@ bool P2Asm::asm_rolbyte_altgb()
  * SETWORD D,{#}S,#N
  *</pre>
  */
-bool P2Asm::asm_setword()
+bool P2Asm::asm_SETWORD()
 {
     if (commata_left() < 1)
-        return asm_setword_altsw();
+        return asm_SETWORD_ALTSW();
     next();
     m_IR.set_inst9(p2_SETWORD);
     return parse_D_IM_S_NNN(1);
@@ -6592,7 +6670,7 @@ bool P2Asm::asm_setword()
  * SETWORD {#}S
  *</pre>
  */
-bool P2Asm::asm_setword_altsw()
+bool P2Asm::asm_SETWORD_ALTSW()
 {
     next();
     m_IR.set_inst9(p2_SETWORD_ALTSW);
@@ -6609,10 +6687,10 @@ bool P2Asm::asm_setword_altsw()
  * D = {16'b0, S.WORD[N]).
  *</pre>
  */
-bool P2Asm::asm_getword()
+bool P2Asm::asm_GETWORD()
 {
     if (commata_left() < 1)
-        return asm_getword_altgw();
+        return asm_GETWORD_ALTGW();
     next();
     m_IR.set_inst9(p2_GETWORD);
     return parse_D_IM_S_NNN(1);
@@ -6626,7 +6704,7 @@ bool P2Asm::asm_getword()
  * GETWORD D
  *</pre>
  */
-bool P2Asm::asm_getword_altgw()
+bool P2Asm::asm_GETWORD_ALTGW()
 {
     next();
     m_IR.set_inst9(p2_GETWORD_ALTGW);
@@ -6643,10 +6721,10 @@ bool P2Asm::asm_getword_altgw()
  * D = {D[15:0], S.WORD[N]).
  *</pre>
  */
-bool P2Asm::asm_rolword()
+bool P2Asm::asm_ROLWORD()
 {
     if (commata_left() < 1)
-        return asm_rolword_altgw();
+        return asm_ROLWORD_ALTGW();
     next();
     m_IR.set_inst9(p2_ROLWORD);
     return parse_D_IM_S_NNN(1);
@@ -6660,7 +6738,7 @@ bool P2Asm::asm_rolword()
  * ROLWORD D
  *</pre>
  */
-bool P2Asm::asm_rolword_altgw()
+bool P2Asm::asm_ROLWORD_ALTGW()
 {
     next();
     m_IR.set_inst9(p2_ROLWORD_ALTGW);
@@ -6678,10 +6756,10 @@ bool P2Asm::asm_rolword_altgw()
  * D += sign-extended S[17:9].
  *</pre>
  */
-bool P2Asm::asm_altsn()
+bool P2Asm::asm_ALTSN()
 {
     if (commata_left() < 1)
-        return asm_altsn_d();
+        return asm_ALTSN_D();
     next();
     m_IR.set_inst9(p2_ALTSN);
     return parse_D_IM_S();
@@ -6697,7 +6775,7 @@ bool P2Asm::asm_altsn()
  * Next D field = D[11:3], N field = D[2:0].
  *</pre>
  */
-bool P2Asm::asm_altsn_d()
+bool P2Asm::asm_ALTSN_D()
 {
     next();
     m_IR.set_inst9(p2_ALTSN);
@@ -6715,10 +6793,10 @@ bool P2Asm::asm_altsn_d()
  * D += sign-extended S[17:9].
  *</pre>
  */
-bool P2Asm::asm_altgn()
+bool P2Asm::asm_ALTGN()
 {
     if (commata_left() < 1)
-        return asm_altgn_d();
+        return asm_ALTGN_D();
     next();
     m_IR.set_inst9(p2_ALTGN);
     return parse_D_IM_S();
@@ -6734,7 +6812,7 @@ bool P2Asm::asm_altgn()
  * Next S field = D[11:3], N field = D[2:0].
  *</pre>
  */
-bool P2Asm::asm_altgn_d()
+bool P2Asm::asm_ALTGN_D()
 {
     next();
     m_IR.set_inst9(p2_ALTGN);
@@ -6752,10 +6830,10 @@ bool P2Asm::asm_altgn_d()
  * D += sign-extended S[17:9].
  *</pre>
  */
-bool P2Asm::asm_altsb()
+bool P2Asm::asm_ALTSB()
 {
     if (commata_left() < 1)
-        return asm_altsb_d();
+        return asm_ALTSB_D();
     next();
     m_IR.set_inst9(p2_ALTSB);
     return parse_D_IM_S();
@@ -6771,7 +6849,7 @@ bool P2Asm::asm_altsb()
  * Next D field = D[10:2], N field = D[1:0].
  *</pre>
  */
-bool P2Asm::asm_altsb_d()
+bool P2Asm::asm_ALTSB_D()
 {
     next();
     m_IR.set_inst9(p2_ALTSB);
@@ -6789,10 +6867,10 @@ bool P2Asm::asm_altsb_d()
  * D += sign-extended S[17:9].
  *</pre>
  */
-bool P2Asm::asm_altgb()
+bool P2Asm::asm_ALTGB()
 {
     if (commata_left() < 1)
-        return asm_altgb_d();
+        return asm_ALTGB_D();
     next();
     m_IR.set_inst9(p2_ALTGB);
     return parse_D_IM_S();
@@ -6808,7 +6886,7 @@ bool P2Asm::asm_altgb()
  * Next S field = D[10:2], N field = D[1:0].
  *</pre>
  */
-bool P2Asm::asm_altgb_d()
+bool P2Asm::asm_ALTGB_D()
 {
     next();
     m_IR.set_inst9(p2_ALTGB);
@@ -6826,10 +6904,10 @@ bool P2Asm::asm_altgb_d()
  * D += sign-extended S[17:9].
  *</pre>
  */
-bool P2Asm::asm_altsw()
+bool P2Asm::asm_ALTSW()
 {
     if (commata_left() < 1)
-        return asm_altsw_d();
+        return asm_ALTSW_D();
     next();
     m_IR.set_inst9(p2_ALTSW);
     return parse_D_IM_S();
@@ -6845,7 +6923,7 @@ bool P2Asm::asm_altsw()
  * Next D field = D[9:1], N field = D[0].
  *</pre>
  */
-bool P2Asm::asm_altsw_d()
+bool P2Asm::asm_ALTSW_D()
 {
     next();
     m_IR.set_inst9(p2_ALTSW);
@@ -6863,10 +6941,10 @@ bool P2Asm::asm_altsw_d()
  * D += sign-extended S[17:9].
  *</pre>
  */
-bool P2Asm::asm_altgw()
+bool P2Asm::asm_ALTGW()
 {
     if (commata_left() < 1)
-        return asm_altgw_d();
+        return asm_ALTGW_D();
     next();
     m_IR.set_inst9(p2_ALTGW);
     return parse_D_IM_S();
@@ -6882,7 +6960,7 @@ bool P2Asm::asm_altgw()
  * Next S field = D[9:1], N field = D[0].
  *</pre>
  */
-bool P2Asm::asm_altgw_d()
+bool P2Asm::asm_ALTGW_D()
 {
     next();
     m_IR.set_inst9(p2_ALTGW);
@@ -6899,10 +6977,10 @@ bool P2Asm::asm_altgw_d()
  * D += sign-extended S[17:9].
  *</pre>
  */
-bool P2Asm::asm_altr()
+bool P2Asm::asm_ALTR()
 {
     if (commata_left() < 1)
-        return asm_altr_d();
+        return asm_ALTR_D();
     next();
     m_IR.set_inst9(p2_ALTR);
     return parse_D_IM_S();
@@ -6916,7 +6994,7 @@ bool P2Asm::asm_altr()
  * ALTR    D
  *</pre>
  */
-bool P2Asm::asm_altr_d()
+bool P2Asm::asm_ALTR_D()
 {
     next();
     m_IR.set_inst9(p2_ALTD);
@@ -6933,10 +7011,10 @@ bool P2Asm::asm_altr_d()
  * D += sign-extended S[17:9].
  *</pre>
  */
-bool P2Asm::asm_altd()
+bool P2Asm::asm_ALTD()
 {
     if (commata_left() < 1)
-        return asm_altd_d();
+        return asm_ALTD_D();
     next();
     m_IR.set_inst9(p2_ALTD);
     return parse_D_IM_S();
@@ -6950,7 +7028,7 @@ bool P2Asm::asm_altd()
  * ALTD    D
  *</pre>
  */
-bool P2Asm::asm_altd_d()
+bool P2Asm::asm_ALTD_D()
 {
     next();
     m_IR.set_inst9(p2_ALTD);
@@ -6967,10 +7045,10 @@ bool P2Asm::asm_altd_d()
  * D += sign-extended S[17:9].
  *</pre>
  */
-bool P2Asm::asm_alts()
+bool P2Asm::asm_ALTS()
 {
     if (commata_left() < 1)
-        return asm_alts_d();
+        return asm_ALTS_D();
     next();
     m_IR.set_inst9(p2_ALTS);
     return parse_D_IM_S();
@@ -6984,7 +7062,7 @@ bool P2Asm::asm_alts()
  * ALTS    D
  *</pre>
  */
-bool P2Asm::asm_alts_d()
+bool P2Asm::asm_ALTS_D()
 {
     next();
     m_IR.set_inst9(p2_ALTS);
@@ -7001,10 +7079,10 @@ bool P2Asm::asm_alts_d()
  * D += sign-extended S[17:9].
  *</pre>
  */
-bool P2Asm::asm_altb()
+bool P2Asm::asm_ALTB()
 {
     if (commata_left() < 1)
-        return asm_altb_d();
+        return asm_ALTB_D();
     next();
     m_IR.set_inst9(p2_ALTB);
     return parse_D_IM_S();
@@ -7018,7 +7096,7 @@ bool P2Asm::asm_altb()
  * ALTB    D
  *</pre>
  */
-bool P2Asm::asm_altb_d()
+bool P2Asm::asm_ALTB_D()
 {
     next();
     m_IR.set_inst9(p2_ALTB);
@@ -7035,10 +7113,10 @@ bool P2Asm::asm_altb_d()
  * Modify D per S.
  *</pre>
  */
-bool P2Asm::asm_alti()
+bool P2Asm::asm_ALTI()
 {
     if (commata_left() < 1)
-        return asm_alti_d();
+        return asm_ALTI_D();
     next();
     m_IR.set_inst9(p2_ALTI);
     return parse_D_IM_S();
@@ -7054,7 +7132,7 @@ bool P2Asm::asm_alti()
  * D stays same.
  *</pre>
  */
-bool P2Asm::asm_alti_d()
+bool P2Asm::asm_ALTI_D()
 {
     next();
     m_IR.set_inst9(p2_ALTI);
@@ -7071,7 +7149,7 @@ bool P2Asm::asm_alti_d()
  * D = {D[31:28], S[8:0], D[18:0]}.
  *</pre>
  */
-bool P2Asm::asm_setr()
+bool P2Asm::asm_SETR()
 {
     next();
     m_IR.set_inst9(p2_SETR);
@@ -7088,7 +7166,7 @@ bool P2Asm::asm_setr()
  * D = {D[31:18], S[8:0], D[8:0]}.
  *</pre>
  */
-bool P2Asm::asm_setd()
+bool P2Asm::asm_SETD()
 {
     next();
     m_IR.set_inst9(p2_SETD);
@@ -7105,7 +7183,7 @@ bool P2Asm::asm_setd()
  * D = {D[31:9], S[8:0]}.
  *</pre>
  */
-bool P2Asm::asm_sets()
+bool P2Asm::asm_SETS()
 {
     next();
     m_IR.set_inst9(p2_SETS);
@@ -7122,28 +7200,11 @@ bool P2Asm::asm_sets()
  * D = 1 << S[4:0].
  *</pre>
  */
-bool P2Asm::asm_decod()
+bool P2Asm::asm_DECOD()
 {
     next();
     m_IR.set_inst9(p2_DECOD);
     return parse_D_IM_S();
-}
-
-/**
- * @brief Decode D[4:0] into D.
- *<pre>
- * EEEE 1001110 000 DDDDDDDDD DDDDDDDDD
- *
- * DECOD   D
- *
- * D = 1 << D[4:0].
- *</pre>
- */
-bool P2Asm::asm_decod_d()
-{
-    next();
-    m_IR.set_inst9(p2_DECOD);
-    return parse_D();
 }
 
 /**
@@ -7156,28 +7217,11 @@ bool P2Asm::asm_decod_d()
  * D = ($0000_0002 << S[4:0]) - 1.
  *</pre>
  */
-bool P2Asm::asm_bmask()
+bool P2Asm::asm_BMASK()
 {
     next();
     m_IR.set_inst9(p2_BMASK);
     return parse_D_IM_S();
-}
-
-/**
- * @brief Get LSB-justified bit mask of size (D[4:0] + 1) into D.
- *<pre>
- * EEEE 1001110 010 DDDDDDDDD DDDDDDDDD
- *
- * BMASK   D
- *
- * D = ($0000_0002 << D[4:0]) - 1.
- *</pre>
- */
-bool P2Asm::asm_bmask_d()
-{
-    next();
-    m_IR.set_inst9(p2_BMASK);
-    return parse_D();
 }
 
 /**
@@ -7190,7 +7234,7 @@ bool P2Asm::asm_bmask_d()
  * If (C XOR D[0]) then D = (D >> 1) XOR S, else D = (D >> 1).
  *</pre>
  */
-bool P2Asm::asm_crcbit()
+bool P2Asm::asm_CRCBIT()
 {
     next();
     m_IR.set_inst9(p2_CRCBIT);
@@ -7209,7 +7253,7 @@ bool P2Asm::asm_crcbit()
  * Use SETQ+CRCNIB+CRCNIB+CRCNIB.
  *</pre>
  */
-bool P2Asm::asm_crcnib()
+bool P2Asm::asm_CRCNIB()
 {
     next();
     m_IR.set_inst9(p2_CRCNIB);
@@ -7224,7 +7268,7 @@ bool P2Asm::asm_crcnib()
  * MUXNITS D,{#}S
  *</pre>
  */
-bool P2Asm::asm_muxnits()
+bool P2Asm::asm_MUXNITS()
 {
     next();
     m_IR.set_inst9(p2_MUXNITS);
@@ -7239,7 +7283,7 @@ bool P2Asm::asm_muxnits()
  * MUXNIBS D,{#}S
  *</pre>
  */
-bool P2Asm::asm_muxnibs()
+bool P2Asm::asm_MUXNIBS()
 {
     next();
     m_IR.set_inst9(p2_MUXNIBS);
@@ -7257,7 +7301,7 @@ bool P2Asm::asm_muxnibs()
  * D = (D & !Q) | (S & Q).
  *</pre>
  */
-bool P2Asm::asm_muxq()
+bool P2Asm::asm_MUXQ()
 {
     next();
     m_IR.set_inst9(p2_MUXQ);
@@ -7274,7 +7318,7 @@ bool P2Asm::asm_muxq()
  * D = {D.BYTE[S[7:6]], D.BYTE[S[5:4]], D.BYTE[S[3:2]], D.BYTE[S[1:0]]}.
  *</pre>
  */
-bool P2Asm::asm_movbyts()
+bool P2Asm::asm_MOVBYTS()
 {
     next();
     m_IR.set_inst9(p2_MOVBYTS);
@@ -7291,7 +7335,7 @@ bool P2Asm::asm_movbyts()
  * Z = (S == 0) | (D == 0).
  *</pre>
  */
-bool P2Asm::asm_mul()
+bool P2Asm::asm_MUL()
 {
     next();
     m_IR.set_inst8(p2_MUL);
@@ -7308,7 +7352,7 @@ bool P2Asm::asm_mul()
  * Z = (S == 0) | (D == 0).
  *</pre>
  */
-bool P2Asm::asm_muls()
+bool P2Asm::asm_MULS()
 {
     next();
     m_IR.set_inst8(p2_MULS);
@@ -7325,7 +7369,7 @@ bool P2Asm::asm_muls()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_sca()
+bool P2Asm::asm_SCA()
 {
     next();
     m_IR.set_inst8(p2_SCA);
@@ -7343,7 +7387,7 @@ bool P2Asm::asm_sca()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_scas()
+bool P2Asm::asm_SCAS()
 {
     next();
     m_IR.set_inst8(p2_SCAS);
@@ -7358,7 +7402,7 @@ bool P2Asm::asm_scas()
  * ADDPIX  D,{#}S
  *</pre>
  */
-bool P2Asm::asm_addpix()
+bool P2Asm::asm_ADDPIX()
 {
     next();
     m_IR.set_inst9(p2_ADDPIX);
@@ -7375,7 +7419,7 @@ bool P2Asm::asm_addpix()
  * 0.
  *</pre>
  */
-bool P2Asm::asm_mulpix()
+bool P2Asm::asm_MULPIX()
 {
     next();
     m_IR.set_inst9(p2_MULPIX);
@@ -7390,7 +7434,7 @@ bool P2Asm::asm_mulpix()
  * BLNPIX  D,{#}S
  *</pre>
  */
-bool P2Asm::asm_blnpix()
+bool P2Asm::asm_BLNPIX()
 {
     next();
     m_IR.set_inst9(p2_BLNPIX);
@@ -7405,7 +7449,7 @@ bool P2Asm::asm_blnpix()
  * MIXPIX  D,{#}S
  *</pre>
  */
-bool P2Asm::asm_mixpix()
+bool P2Asm::asm_MIXPIX()
 {
     next();
     m_IR.set_inst9(p2_MIXPIX);
@@ -7422,7 +7466,7 @@ bool P2Asm::asm_mixpix()
  * Adds S into D.
  *</pre>
  */
-bool P2Asm::asm_addct1()
+bool P2Asm::asm_ADDCT1()
 {
     next();
     m_IR.set_inst9(p2_ADDCT1);
@@ -7439,7 +7483,7 @@ bool P2Asm::asm_addct1()
  * Adds S into D.
  *</pre>
  */
-bool P2Asm::asm_addct2()
+bool P2Asm::asm_ADDCT2()
 {
     next();
     m_IR.set_inst9(p2_ADDCT2);
@@ -7456,7 +7500,7 @@ bool P2Asm::asm_addct2()
  * Adds S into D.
  *</pre>
  */
-bool P2Asm::asm_addct3()
+bool P2Asm::asm_ADDCT3()
 {
     next();
     m_IR.set_inst9(p2_ADDCT3);
@@ -7473,11 +7517,11 @@ bool P2Asm::asm_addct3()
  * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  *</pre>
  */
-bool P2Asm::asm_wmlong()
+bool P2Asm::asm_WMLONG()
 {
     next();
     m_IR.set_inst9(p2_WMLONG);
-    return parse_D_IM_S_PTRx();
+    return parse_D_IM_S_PTRx(sz_LONG);
 }
 
 /**
@@ -7490,7 +7534,7 @@ bool P2Asm::asm_wmlong()
  * C = modal result.
  *</pre>
  */
-bool P2Asm::asm_rqpin()
+bool P2Asm::asm_RQPIN()
 {
     next();
     m_IR.set_inst8(p2_RQPIN);
@@ -7507,7 +7551,7 @@ bool P2Asm::asm_rqpin()
  * C = modal result.
  *</pre>
  */
-bool P2Asm::asm_rdpin()
+bool P2Asm::asm_RDPIN()
 {
     next();
     m_IR.set_inst8(p2_RDPIN);
@@ -7525,7 +7569,7 @@ bool P2Asm::asm_rdpin()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_rdlut()
+bool P2Asm::asm_RDLUT()
 {
     next();
     m_IR.set_inst7(p2_RDLUT);
@@ -7543,11 +7587,11 @@ bool P2Asm::asm_rdlut()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_rdbyte()
+bool P2Asm::asm_RDBYTE()
 {
     next();
     m_IR.set_inst7(p2_RDBYTE);
-    return parse_D_IM_S_PTRx_WCZ();
+    return parse_D_IM_S_PTRx_WCZ(sz_BYTE);
 }
 
 /**
@@ -7561,11 +7605,11 @@ bool P2Asm::asm_rdbyte()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_rdword()
+bool P2Asm::asm_RDWORD()
 {
     next();
     m_IR.set_inst7(p2_RDWORD);
-    return parse_D_IM_S_PTRx_WCZ();
+    return parse_D_IM_S_PTRx_WCZ(sz_WORD);
 }
 
 /**
@@ -7580,11 +7624,11 @@ bool P2Asm::asm_rdword()
  * Prior SETQ/SETQ2 invokes cog/LUT block transfer.
  *</pre>
  */
-bool P2Asm::asm_rdlong()
+bool P2Asm::asm_RDLONG()
 {
     next();
     m_IR.set_inst7(p2_RDLONG);
-    return parse_D_IM_S_PTRx_WCZ();
+    return parse_D_IM_S_PTRx_WCZ(sz_LONG);
 }
 
 /**
@@ -7598,7 +7642,7 @@ bool P2Asm::asm_rdlong()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_popa()
+bool P2Asm::asm_POPA()
 {
     next();
     m_IR.set_inst7(p2_RDLONG);
@@ -7618,7 +7662,7 @@ bool P2Asm::asm_popa()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_popb()
+bool P2Asm::asm_POPB()
 {
     next();
     m_IR.set_inst7(p2_RDLONG);
@@ -7637,7 +7681,7 @@ bool P2Asm::asm_popb()
  * C = S[31], Z = S[30].
  *</pre>
  */
-bool P2Asm::asm_calld()
+bool P2Asm::asm_CALLD()
 {
     next();
     m_IR.set_inst7(p2_CALLD);
@@ -7654,7 +7698,7 @@ bool P2Asm::asm_calld()
  * (CALLD $1F0,$1F1 WC,WZ).
  *</pre>
  */
-bool P2Asm::asm_resi3()
+bool P2Asm::asm_RESI3()
 {
     next();
     m_IR.set_inst7(p2_CALLD);
@@ -7674,7 +7718,7 @@ bool P2Asm::asm_resi3()
  * (CALLD $1F2,$1F3 WC,WZ).
  *</pre>
  */
-bool P2Asm::asm_resi2()
+bool P2Asm::asm_RESI2()
 {
     next();
     m_IR.set_inst7(p2_CALLD);
@@ -7693,7 +7737,7 @@ bool P2Asm::asm_resi2()
  * (CALLD $1F4,$1F5 WC,WZ).
  *</pre>
  */
-bool P2Asm::asm_resi1()
+bool P2Asm::asm_RESI1()
 {
     next();
     m_IR.set_inst7(p2_CALLD);
@@ -7712,7 +7756,7 @@ bool P2Asm::asm_resi1()
  * (CALLD $1FE,$1FF WC,WZ).
  *</pre>
  */
-bool P2Asm::asm_resi0()
+bool P2Asm::asm_RESI0()
 {
     next();
     m_IR.set_inst7(p2_CALLD);
@@ -7731,7 +7775,7 @@ bool P2Asm::asm_resi0()
  * (CALLD $1FF,$1F1 WC,WZ).
  *</pre>
  */
-bool P2Asm::asm_reti3()
+bool P2Asm::asm_RETI3()
 {
     next();
     m_IR.set_inst7(p2_CALLD);
@@ -7750,7 +7794,7 @@ bool P2Asm::asm_reti3()
  * (CALLD $1FF,$1F3 WC,WZ).
  *</pre>
  */
-bool P2Asm::asm_reti2()
+bool P2Asm::asm_RETI2()
 {
     next();
     m_IR.set_inst7(p2_CALLD);
@@ -7769,7 +7813,7 @@ bool P2Asm::asm_reti2()
  * (CALLD $1FF,$1F5 WC,WZ).
  *</pre>
  */
-bool P2Asm::asm_reti1()
+bool P2Asm::asm_RETI1()
 {
     next();
     m_IR.set_inst7(p2_CALLD);
@@ -7788,7 +7832,7 @@ bool P2Asm::asm_reti1()
  * (CALLD $1FF,$1FF WC,WZ).
  *</pre>
  */
-bool P2Asm::asm_reti0()
+bool P2Asm::asm_RETI0()
 {
     next();
     m_IR.set_inst7(p2_CALLD);
@@ -7805,7 +7849,7 @@ bool P2Asm::asm_reti0()
  * CALLPA  {#}D,{#}S
  *</pre>
  */
-bool P2Asm::asm_callpa()
+bool P2Asm::asm_CALLPA()
 {
     next();
     m_IR.set_inst8(p2_CALLPA);
@@ -7820,7 +7864,7 @@ bool P2Asm::asm_callpa()
  * CALLPB  {#}D,{#}S
  *</pre>
  */
-bool P2Asm::asm_callpb()
+bool P2Asm::asm_CALLPB()
 {
     next();
     m_IR.set_inst8(p2_CALLPB);
@@ -7835,7 +7879,7 @@ bool P2Asm::asm_callpb()
  * DJZ     D,{#}S
  *</pre>
  */
-bool P2Asm::asm_djz()
+bool P2Asm::asm_DJZ()
 {
     next();
     m_IR.set_inst9(p2_DJZ);
@@ -7850,7 +7894,7 @@ bool P2Asm::asm_djz()
  * DJNZ    D,{#}S
  *</pre>
  */
-bool P2Asm::asm_djnz()
+bool P2Asm::asm_DJNZ()
 {
     next();
     m_IR.set_inst9(p2_DJNZ);
@@ -7865,7 +7909,7 @@ bool P2Asm::asm_djnz()
  * DJF     D,{#}S
  *</pre>
  */
-bool P2Asm::asm_djf()
+bool P2Asm::asm_DJF()
 {
     next();
     m_IR.set_inst9(p2_DJF);
@@ -7880,7 +7924,7 @@ bool P2Asm::asm_djf()
  * DJNF    D,{#}S
  *</pre>
  */
-bool P2Asm::asm_djnf()
+bool P2Asm::asm_DJNF()
 {
     next();
     m_IR.set_inst9(p2_DJNF);
@@ -7895,7 +7939,7 @@ bool P2Asm::asm_djnf()
  * IJZ     D,{#}S
  *</pre>
  */
-bool P2Asm::asm_ijz()
+bool P2Asm::asm_IJZ()
 {
     next();
     m_IR.set_inst9(p2_IJZ);
@@ -7910,7 +7954,7 @@ bool P2Asm::asm_ijz()
  * IJNZ    D,{#}S
  *</pre>
  */
-bool P2Asm::asm_ijnz()
+bool P2Asm::asm_IJNZ()
 {
     next();
     m_IR.set_inst9(p2_IJNZ);
@@ -7925,7 +7969,7 @@ bool P2Asm::asm_ijnz()
  * TJZ     D,{#}S
  *</pre>
  */
-bool P2Asm::asm_tjz()
+bool P2Asm::asm_TJZ()
 {
     next();
     m_IR.set_inst9(p2_TJZ);
@@ -7940,7 +7984,7 @@ bool P2Asm::asm_tjz()
  * TJNZ    D,{#}S
  *</pre>
  */
-bool P2Asm::asm_tjnz()
+bool P2Asm::asm_TJNZ()
 {
     next();
     m_IR.set_inst9(p2_TJNZ);
@@ -7955,7 +7999,7 @@ bool P2Asm::asm_tjnz()
  * TJF     D,{#}S
  *</pre>
  */
-bool P2Asm::asm_tjf()
+bool P2Asm::asm_TJF()
 {
     next();
     m_IR.set_inst9(p2_TJF);
@@ -7970,7 +8014,7 @@ bool P2Asm::asm_tjf()
  * TJNF    D,{#}S
  *</pre>
  */
-bool P2Asm::asm_tjnf()
+bool P2Asm::asm_TJNF()
 {
     next();
     m_IR.set_inst9(p2_TJNF);
@@ -7985,7 +8029,7 @@ bool P2Asm::asm_tjnf()
  * TJS     D,{#}S
  *</pre>
  */
-bool P2Asm::asm_tjs()
+bool P2Asm::asm_TJS()
 {
     next();
     m_IR.set_inst9(p2_TJS);
@@ -8000,7 +8044,7 @@ bool P2Asm::asm_tjs()
  * TJNS    D,{#}S
  *</pre>
  */
-bool P2Asm::asm_tjns()
+bool P2Asm::asm_TJNS()
 {
     next();
     m_IR.set_inst9(p2_TJNS);
@@ -8015,7 +8059,7 @@ bool P2Asm::asm_tjns()
  * TJV     D,{#}S
  *</pre>
  */
-bool P2Asm::asm_tjv()
+bool P2Asm::asm_TJV()
 {
     next();
     m_IR.set_inst9(p2_TJV);
@@ -8030,7 +8074,7 @@ bool P2Asm::asm_tjv()
  * JINT    {#}S
  *</pre>
  */
-bool P2Asm::asm_jint()
+bool P2Asm::asm_JINT()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JINT);
@@ -8045,7 +8089,7 @@ bool P2Asm::asm_jint()
  * JCT1    {#}S
  *</pre>
  */
-bool P2Asm::asm_jct1()
+bool P2Asm::asm_JCT1()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JCT1);
@@ -8060,7 +8104,7 @@ bool P2Asm::asm_jct1()
  * JCT2    {#}S
  *</pre>
  */
-bool P2Asm::asm_jct2()
+bool P2Asm::asm_JCT2()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JCT2);
@@ -8075,7 +8119,7 @@ bool P2Asm::asm_jct2()
  * JCT3    {#}S
  *</pre>
  */
-bool P2Asm::asm_jct3()
+bool P2Asm::asm_JCT3()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JCT3);
@@ -8090,7 +8134,7 @@ bool P2Asm::asm_jct3()
  * JSE1    {#}S
  *</pre>
  */
-bool P2Asm::asm_jse1()
+bool P2Asm::asm_JSE1()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JSE1);
@@ -8105,7 +8149,7 @@ bool P2Asm::asm_jse1()
  * JSE2    {#}S
  *</pre>
  */
-bool P2Asm::asm_jse2()
+bool P2Asm::asm_JSE2()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JSE2);
@@ -8120,7 +8164,7 @@ bool P2Asm::asm_jse2()
  * JSE3    {#}S
  *</pre>
  */
-bool P2Asm::asm_jse3()
+bool P2Asm::asm_JSE3()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JSE3);
@@ -8135,7 +8179,7 @@ bool P2Asm::asm_jse3()
  * JSE4    {#}S
  *</pre>
  */
-bool P2Asm::asm_jse4()
+bool P2Asm::asm_JSE4()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JSE4);
@@ -8150,7 +8194,7 @@ bool P2Asm::asm_jse4()
  * JPAT    {#}S
  *</pre>
  */
-bool P2Asm::asm_jpat()
+bool P2Asm::asm_JPAT()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JPAT);
@@ -8165,7 +8209,7 @@ bool P2Asm::asm_jpat()
  * JFBW    {#}S
  *</pre>
  */
-bool P2Asm::asm_jfbw()
+bool P2Asm::asm_JFBW()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JFBW);
@@ -8180,7 +8224,7 @@ bool P2Asm::asm_jfbw()
  * JXMT    {#}S
  *</pre>
  */
-bool P2Asm::asm_jxmt()
+bool P2Asm::asm_JXMT()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JXMT);
@@ -8195,7 +8239,7 @@ bool P2Asm::asm_jxmt()
  * JXFI    {#}S
  *</pre>
  */
-bool P2Asm::asm_jxfi()
+bool P2Asm::asm_JXFI()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JXFI);
@@ -8210,7 +8254,7 @@ bool P2Asm::asm_jxfi()
  * JXRO    {#}S
  *</pre>
  */
-bool P2Asm::asm_jxro()
+bool P2Asm::asm_JXRO()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JXRO);
@@ -8225,7 +8269,7 @@ bool P2Asm::asm_jxro()
  * JXRL    {#}S
  *</pre>
  */
-bool P2Asm::asm_jxrl()
+bool P2Asm::asm_JXRL()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JXRL);
@@ -8240,7 +8284,7 @@ bool P2Asm::asm_jxrl()
  * JATN    {#}S
  *</pre>
  */
-bool P2Asm::asm_jatn()
+bool P2Asm::asm_JATN()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JATN);
@@ -8255,7 +8299,7 @@ bool P2Asm::asm_jatn()
  * JQMT    {#}S
  *</pre>
  */
-bool P2Asm::asm_jqmt()
+bool P2Asm::asm_JQMT()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JQMT);
@@ -8270,7 +8314,7 @@ bool P2Asm::asm_jqmt()
  * JNINT   {#}S
  *</pre>
  */
-bool P2Asm::asm_jnint()
+bool P2Asm::asm_JNINT()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNINT);
@@ -8285,7 +8329,7 @@ bool P2Asm::asm_jnint()
  * JNCT1   {#}S
  *</pre>
  */
-bool P2Asm::asm_jnct1()
+bool P2Asm::asm_JNCT1()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNCT1);
@@ -8300,7 +8344,7 @@ bool P2Asm::asm_jnct1()
  * JNCT2   {#}S
  *</pre>
  */
-bool P2Asm::asm_jnct2()
+bool P2Asm::asm_JNCT2()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNCT2);
@@ -8315,7 +8359,7 @@ bool P2Asm::asm_jnct2()
  * JNCT3   {#}S
  *</pre>
  */
-bool P2Asm::asm_jnct3()
+bool P2Asm::asm_JNCT3()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNCT3);
@@ -8330,7 +8374,7 @@ bool P2Asm::asm_jnct3()
  * JNSE1   {#}S
  *</pre>
  */
-bool P2Asm::asm_jnse1()
+bool P2Asm::asm_JNSE1()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNSE1);
@@ -8345,7 +8389,7 @@ bool P2Asm::asm_jnse1()
  * JNSE2   {#}S
  *</pre>
  */
-bool P2Asm::asm_jnse2()
+bool P2Asm::asm_JNSE2()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNSE2);
@@ -8360,7 +8404,7 @@ bool P2Asm::asm_jnse2()
  * JNSE3   {#}S
  *</pre>
  */
-bool P2Asm::asm_jnse3()
+bool P2Asm::asm_JNSE3()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNSE3);
@@ -8375,7 +8419,7 @@ bool P2Asm::asm_jnse3()
  * JNSE4   {#}S
  *</pre>
  */
-bool P2Asm::asm_jnse4()
+bool P2Asm::asm_JNSE4()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNSE4);
@@ -8390,7 +8434,7 @@ bool P2Asm::asm_jnse4()
  * JNPAT   {#}S
  *</pre>
  */
-bool P2Asm::asm_jnpat()
+bool P2Asm::asm_JNPAT()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNPAT);
@@ -8405,7 +8449,7 @@ bool P2Asm::asm_jnpat()
  * JNFBW   {#}S
  *</pre>
  */
-bool P2Asm::asm_jnfbw()
+bool P2Asm::asm_JNFBW()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNFBW);
@@ -8420,7 +8464,7 @@ bool P2Asm::asm_jnfbw()
  * JNXMT   {#}S
  *</pre>
  */
-bool P2Asm::asm_jnxmt()
+bool P2Asm::asm_JNXMT()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNXMT);
@@ -8435,7 +8479,7 @@ bool P2Asm::asm_jnxmt()
  * JNXFI   {#}S
  *</pre>
  */
-bool P2Asm::asm_jnxfi()
+bool P2Asm::asm_JNXFI()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNXFI);
@@ -8450,7 +8494,7 @@ bool P2Asm::asm_jnxfi()
  * JNXRO   {#}S
  *</pre>
  */
-bool P2Asm::asm_jnxro()
+bool P2Asm::asm_JNXRO()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNXRO);
@@ -8465,7 +8509,7 @@ bool P2Asm::asm_jnxro()
  * JNXRL   {#}S
  *</pre>
  */
-bool P2Asm::asm_jnxrl()
+bool P2Asm::asm_JNXRL()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNXRL);
@@ -8480,7 +8524,7 @@ bool P2Asm::asm_jnxrl()
  * JNATN   {#}S
  *</pre>
  */
-bool P2Asm::asm_jnatn()
+bool P2Asm::asm_JNATN()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNATN);
@@ -8495,7 +8539,7 @@ bool P2Asm::asm_jnatn()
  * JNQMT   {#}S
  *</pre>
  */
-bool P2Asm::asm_jnqmt()
+bool P2Asm::asm_JNQMT()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNQMT);
@@ -8542,7 +8586,7 @@ bool P2Asm::asm_1011111_0()
  * C selects INA/INB, Z selects =/!=, D provides mask value, S provides match value.
  *</pre>
  */
-bool P2Asm::asm_setpat()
+bool P2Asm::asm_SETPAT()
 {
     next();
     m_IR.set_inst8(p2_SETPAT);
@@ -8557,7 +8601,7 @@ bool P2Asm::asm_setpat()
  * WRPIN   {#}D,{#}S
  *</pre>
  */
-bool P2Asm::asm_wrpin()
+bool P2Asm::asm_WRPIN()
 {
     next();
     m_IR.set_inst8(p2_WRPIN);
@@ -8572,7 +8616,7 @@ bool P2Asm::asm_wrpin()
  * AKPIN   {#}S
  *</pre>
  */
-bool P2Asm::asm_akpin()
+bool P2Asm::asm_AKPIN()
 {
     next();
     m_IR.set_inst8(p2_WRPIN);
@@ -8589,7 +8633,7 @@ bool P2Asm::asm_akpin()
  * WXPIN   {#}D,{#}S
  *</pre>
  */
-bool P2Asm::asm_wxpin()
+bool P2Asm::asm_WXPIN()
 {
     next();
     m_IR.set_inst8(p2_WXPIN);
@@ -8604,7 +8648,7 @@ bool P2Asm::asm_wxpin()
  * WYPIN   {#}D,{#}S
  *</pre>
  */
-bool P2Asm::asm_wypin()
+bool P2Asm::asm_WYPIN()
 {
     next();
     m_IR.set_inst8(p2_WYPIN);
@@ -8619,7 +8663,7 @@ bool P2Asm::asm_wypin()
  * WRLUT   {#}D,{#}S
  *</pre>
  */
-bool P2Asm::asm_wrlut()
+bool P2Asm::asm_WRLUT()
 {
     next();
     m_IR.set_inst8(p2_WRLUT);
@@ -8634,11 +8678,11 @@ bool P2Asm::asm_wrlut()
  * WRBYTE  {#}D,{#}S/P
  *</pre>
  */
-bool P2Asm::asm_wrbyte()
+bool P2Asm::asm_WRBYTE()
 {
     next();
     m_IR.set_inst8(p2_WRBYTE);
-    return parse_WZ_D_IM_S_PTRx();
+    return parse_WZ_D_IM_S_PTRx(sz_BYTE);
 }
 
 /**
@@ -8649,11 +8693,11 @@ bool P2Asm::asm_wrbyte()
  * WRWORD  {#}D,{#}S/P
  *</pre>
  */
-bool P2Asm::asm_wrword()
+bool P2Asm::asm_WRWORD()
 {
     next();
     m_IR.set_inst8(p2_WRWORD);
-    return parse_WZ_D_IM_S_PTRx();
+    return parse_WZ_D_IM_S_PTRx(sz_WORD);
 }
 
 /**
@@ -8665,11 +8709,11 @@ bool P2Asm::asm_wrword()
  * WRLONG  {#}D,{#}S/P
  *</pre>
  */
-bool P2Asm::asm_wrlong()
+bool P2Asm::asm_WRLONG()
 {
     next();
     m_IR.set_inst8(p2_WRLONG);
-    return parse_WZ_D_IM_S_PTRx();
+    return parse_WZ_D_IM_S_PTRx(sz_LONG);
 }
 
 /**
@@ -8680,7 +8724,7 @@ bool P2Asm::asm_wrlong()
  * PUSHA   {#}D
  *</pre>
  */
-bool P2Asm::asm_pusha()
+bool P2Asm::asm_PUSHA()
 {
     next();
     m_IR.set_inst8(p2_WRLONG);
@@ -8697,7 +8741,7 @@ bool P2Asm::asm_pusha()
  * PUSHB   {#}D
  *</pre>
  */
-bool P2Asm::asm_pushb()
+bool P2Asm::asm_PUSHB()
 {
     next();
     m_IR.set_inst8(p2_WRLONG);
@@ -8716,7 +8760,7 @@ bool P2Asm::asm_pushb()
  * D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
  *</pre>
  */
-bool P2Asm::asm_rdfast()
+bool P2Asm::asm_RDFAST()
 {
     next();
     m_IR.set_inst8(p2_RDFAST);
@@ -8733,7 +8777,7 @@ bool P2Asm::asm_rdfast()
  * D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
  *</pre>
  */
-bool P2Asm::asm_wrfast()
+bool P2Asm::asm_WRFAST()
 {
     next();
     m_IR.set_inst8(p2_WRFAST);
@@ -8750,7 +8794,7 @@ bool P2Asm::asm_wrfast()
  * D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
  *</pre>
  */
-bool P2Asm::asm_fblock()
+bool P2Asm::asm_FBLOCK()
 {
     next();
     m_IR.set_inst8(p2_FBLOCK);
@@ -8765,7 +8809,7 @@ bool P2Asm::asm_fblock()
  * XINIT   {#}D,{#}S
  *</pre>
  */
-bool P2Asm::asm_xinit()
+bool P2Asm::asm_XINIT()
 {
     next();
     m_IR.set_inst8(p2_XINIT);
@@ -8780,7 +8824,7 @@ bool P2Asm::asm_xinit()
  * XSTOP
  *</pre>
  */
-bool P2Asm::asm_xstop()
+bool P2Asm::asm_XSTOP()
 {
     next();
     m_IR.set_inst8(p2_XINIT);
@@ -8798,7 +8842,7 @@ bool P2Asm::asm_xstop()
  * XZERO   {#}D,{#}S
  *</pre>
  */
-bool P2Asm::asm_xzero()
+bool P2Asm::asm_XZERO()
 {
     next();
     m_IR.set_inst8(p2_XZERO);
@@ -8813,7 +8857,7 @@ bool P2Asm::asm_xzero()
  * XCONT   {#}D,{#}S
  *</pre>
  */
-bool P2Asm::asm_xcont()
+bool P2Asm::asm_XCONT()
 {
     next();
     m_IR.set_inst8(p2_XCONT);
@@ -8831,7 +8875,7 @@ bool P2Asm::asm_xcont()
  * If D[8:0] = 0, nothing repeats.
  *</pre>
  */
-bool P2Asm::asm_rep()
+bool P2Asm::asm_REP()
 {
     next();
     m_IR.set_inst8(p2_REP);
@@ -8849,7 +8893,7 @@ bool P2Asm::asm_rep()
  * Prior SETQ sets PTRA of cog.
  *</pre>
  */
-bool P2Asm::asm_coginit()
+bool P2Asm::asm_COGINIT()
 {
     next();
     m_IR.set_inst7(p2_COGINIT);
@@ -8866,7 +8910,7 @@ bool P2Asm::asm_coginit()
  * GETQX/GETQY retrieves lower/upper product.
  *</pre>
  */
-bool P2Asm::asm_qmul()
+bool P2Asm::asm_QMUL()
 {
     next();
     m_IR.set_inst8(p2_QMUL);
@@ -8883,7 +8927,7 @@ bool P2Asm::asm_qmul()
  * GETQX/GETQY retrieves quotient/remainder.
  *</pre>
  */
-bool P2Asm::asm_qdiv()
+bool P2Asm::asm_QDIV()
 {
     next();
     m_IR.set_inst8(p2_QDIV);
@@ -8900,7 +8944,7 @@ bool P2Asm::asm_qdiv()
  * GETQX/GETQY retrieves quotient/remainder.
  *</pre>
  */
-bool P2Asm::asm_qfrac()
+bool P2Asm::asm_QFRAC()
 {
     next();
     m_IR.set_inst8(p2_QFRAC);
@@ -8917,7 +8961,7 @@ bool P2Asm::asm_qfrac()
  * GETQX retrieves root.
  *</pre>
  */
-bool P2Asm::asm_qsqrt()
+bool P2Asm::asm_QSQRT()
 {
     next();
     m_IR.set_inst8(p2_QSQRT);
@@ -8934,7 +8978,7 @@ bool P2Asm::asm_qsqrt()
  * GETQX/GETQY retrieves X/Y.
  *</pre>
  */
-bool P2Asm::asm_qrotate()
+bool P2Asm::asm_QROTATE()
 {
     next();
     m_IR.set_inst8(p2_QROTATE);
@@ -8951,7 +8995,7 @@ bool P2Asm::asm_qrotate()
  * GETQX/GETQY retrieves length/angle.
  *</pre>
  */
-bool P2Asm::asm_qvector()
+bool P2Asm::asm_QVECTOR()
 {
     next();
     m_IR.set_inst8(p2_QVECTOR);
@@ -8966,7 +9010,7 @@ bool P2Asm::asm_qvector()
  * HUBSET  {#}D
  *</pre>
  */
-bool P2Asm::asm_hubset()
+bool P2Asm::asm_HUBSET()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_HUBSET);
@@ -8983,7 +9027,7 @@ bool P2Asm::asm_hubset()
  * If WC, check status of cog D[3:0], C = 1 if on.
  *</pre>
  */
-bool P2Asm::asm_cogid()
+bool P2Asm::asm_COGID()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_COGID);
@@ -8998,7 +9042,7 @@ bool P2Asm::asm_cogid()
  * COGSTOP {#}D
  *</pre>
  */
-bool P2Asm::asm_cogstop()
+bool P2Asm::asm_COGSTOP()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_COGSTOP);
@@ -9016,7 +9060,7 @@ bool P2Asm::asm_cogstop()
  * C = 1 if no LOCK available.
  *</pre>
  */
-bool P2Asm::asm_locknew()
+bool P2Asm::asm_LOCKNEW()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_LOCKNEW);
@@ -9031,7 +9075,7 @@ bool P2Asm::asm_locknew()
  * LOCKRET {#}D
  *</pre>
  */
-bool P2Asm::asm_lockret()
+bool P2Asm::asm_LOCKRET()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_LOCKRET);
@@ -9050,7 +9094,7 @@ bool P2Asm::asm_lockret()
  * LOCK is also released if owner cog stops or restarts.
  *</pre>
  */
-bool P2Asm::asm_locktry()
+bool P2Asm::asm_LOCKTRY()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_LOCKTRY);
@@ -9067,7 +9111,7 @@ bool P2Asm::asm_locktry()
  * If D is a register and WC, get current/last cog id of LOCK owner into D and LOCK status into C.
  *</pre>
  */
-bool P2Asm::asm_lockrel()
+bool P2Asm::asm_LOCKREL()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_LOCKREL);
@@ -9084,7 +9128,7 @@ bool P2Asm::asm_lockrel()
  * GETQX retrieves log {5'whole_exponent, 27'fractional_exponent}.
  *</pre>
  */
-bool P2Asm::asm_qlog()
+bool P2Asm::asm_QLOG()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_QLOG);
@@ -9101,7 +9145,7 @@ bool P2Asm::asm_qlog()
  * GETQX retrieves number.
  *</pre>
  */
-bool P2Asm::asm_qexp()
+bool P2Asm::asm_QEXP()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_QEXP);
@@ -9119,7 +9163,7 @@ bool P2Asm::asm_qexp()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_rfbyte()
+bool P2Asm::asm_RFBYTE()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_RFBYTE);
@@ -9137,7 +9181,7 @@ bool P2Asm::asm_rfbyte()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_rfword()
+bool P2Asm::asm_RFWORD()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_RFWORD);
@@ -9155,7 +9199,7 @@ bool P2Asm::asm_rfword()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_rflong()
+bool P2Asm::asm_RFLONG()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_RFLONG);
@@ -9173,7 +9217,7 @@ bool P2Asm::asm_rflong()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_rfvar()
+bool P2Asm::asm_RFVAR()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_RFVAR);
@@ -9191,7 +9235,7 @@ bool P2Asm::asm_rfvar()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_rfvars()
+bool P2Asm::asm_RFVARS()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_RFVARS);
@@ -9206,7 +9250,7 @@ bool P2Asm::asm_rfvars()
  * WFBYTE  {#}D
  *</pre>
  */
-bool P2Asm::asm_wfbyte()
+bool P2Asm::asm_WFBYTE()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_WFBYTE);
@@ -9221,7 +9265,7 @@ bool P2Asm::asm_wfbyte()
  * WFWORD  {#}D
  *</pre>
  */
-bool P2Asm::asm_wfword()
+bool P2Asm::asm_WFWORD()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_WFWORD);
@@ -9236,7 +9280,7 @@ bool P2Asm::asm_wfword()
  * WFLONG  {#}D
  *</pre>
  */
-bool P2Asm::asm_wflong()
+bool P2Asm::asm_WFLONG()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_WFLONG);
@@ -9255,7 +9299,7 @@ bool P2Asm::asm_wflong()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_getqx()
+bool P2Asm::asm_GETQX()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_GETQX);
@@ -9274,7 +9318,7 @@ bool P2Asm::asm_getqx()
  * Z = (result == 0).
  *</pre>
  */
-bool P2Asm::asm_getqy()
+bool P2Asm::asm_GETQY()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_GETQY);
@@ -9291,7 +9335,7 @@ bool P2Asm::asm_getqy()
  * CT is the free-running 32-bit system counter that increments on every clock.
  *</pre>
  */
-bool P2Asm::asm_getct()
+bool P2Asm::asm_GETCT()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_GETCT);
@@ -9309,7 +9353,7 @@ bool P2Asm::asm_getct()
  * D = RND[31:0], C = RND[31], Z = RND[30], unique per cog.
  *</pre>
  */
-bool P2Asm::asm_getrnd()
+bool P2Asm::asm_GETRND()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_GETRND);
@@ -9326,7 +9370,7 @@ bool P2Asm::asm_getrnd()
  * C = RND[31], Z = RND[30], unique per cog.
  *</pre>
  */
-bool P2Asm::asm_getrnd_cz()
+bool P2Asm::asm_GETRND_CZ()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_GETRND);
@@ -9341,7 +9385,7 @@ bool P2Asm::asm_getrnd_cz()
  * SETDACS {#}D
  *</pre>
  */
-bool P2Asm::asm_setdacs()
+bool P2Asm::asm_SETDACS()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SETDACS);
@@ -9356,7 +9400,7 @@ bool P2Asm::asm_setdacs()
  * SETXFRQ {#}D
  *</pre>
  */
-bool P2Asm::asm_setxfrq()
+bool P2Asm::asm_SETXFRQ()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SETXFRQ);
@@ -9371,7 +9415,7 @@ bool P2Asm::asm_setxfrq()
  * GETXACC D
  *</pre>
  */
-bool P2Asm::asm_getxacc()
+bool P2Asm::asm_GETXACC()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_GETXACC);
@@ -9389,7 +9433,7 @@ bool P2Asm::asm_getxacc()
  * C/Z = 0.
  *</pre>
  */
-bool P2Asm::asm_waitx()
+bool P2Asm::asm_WAITX()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_WAITX);
@@ -9404,7 +9448,7 @@ bool P2Asm::asm_waitx()
  * SETSE1  {#}D
  *</pre>
  */
-bool P2Asm::asm_setse1()
+bool P2Asm::asm_SETSE1()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SETSE1);
@@ -9419,7 +9463,7 @@ bool P2Asm::asm_setse1()
  * SETSE2  {#}D
  *</pre>
  */
-bool P2Asm::asm_setse2()
+bool P2Asm::asm_SETSE2()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SETSE2);
@@ -9434,7 +9478,7 @@ bool P2Asm::asm_setse2()
  * SETSE3  {#}D
  *</pre>
  */
-bool P2Asm::asm_setse3()
+bool P2Asm::asm_SETSE3()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SETSE3);
@@ -9449,7 +9493,7 @@ bool P2Asm::asm_setse3()
  * SETSE4  {#}D
  *</pre>
  */
-bool P2Asm::asm_setse4()
+bool P2Asm::asm_SETSE4()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SETSE4);
@@ -9464,7 +9508,7 @@ bool P2Asm::asm_setse4()
  * POLLINT          {WC/WZ/WCZ}
  *</pre>
  */
-bool P2Asm::asm_pollint()
+bool P2Asm::asm_POLLINT()
 {
     next();
     m_IR.set_opx24(p2_OPX24_POLLINT);
@@ -9479,7 +9523,7 @@ bool P2Asm::asm_pollint()
  * POLLCT1          {WC/WZ/WCZ}
  *</pre>
  */
-bool P2Asm::asm_pollct1()
+bool P2Asm::asm_POLLCT1()
 {
     next();
     m_IR.set_opx24(p2_OPX24_POLLCT1);
@@ -9494,7 +9538,7 @@ bool P2Asm::asm_pollct1()
  * POLLCT2          {WC/WZ/WCZ}
  *</pre>
  */
-bool P2Asm::asm_pollct2()
+bool P2Asm::asm_POLLCT2()
 {
     next();
     m_IR.set_opx24(p2_OPX24_POLLCT2);
@@ -9509,7 +9553,7 @@ bool P2Asm::asm_pollct2()
  * POLLCT3          {WC/WZ/WCZ}
  *</pre>
  */
-bool P2Asm::asm_pollct3()
+bool P2Asm::asm_POLLCT3()
 {
     next();
     m_IR.set_opx24(p2_OPX24_POLLCT3);
@@ -9524,7 +9568,7 @@ bool P2Asm::asm_pollct3()
  * POLLSE1          {WC/WZ/WCZ}
  *</pre>
  */
-bool P2Asm::asm_pollse1()
+bool P2Asm::asm_POLLSE1()
 {
     next();
     m_IR.set_opx24(p2_OPX24_POLLSE1);
@@ -9539,7 +9583,7 @@ bool P2Asm::asm_pollse1()
  * POLLSE2          {WC/WZ/WCZ}
  *</pre>
  */
-bool P2Asm::asm_pollse2()
+bool P2Asm::asm_POLLSE2()
 {
     next();
     m_IR.set_opx24(p2_OPX24_POLLSE2);
@@ -9554,7 +9598,7 @@ bool P2Asm::asm_pollse2()
  * POLLSE3          {WC/WZ/WCZ}
  *</pre>
  */
-bool P2Asm::asm_pollse3()
+bool P2Asm::asm_POLLSE3()
 {
     next();
     m_IR.set_opx24(p2_OPX24_POLLSE3);
@@ -9569,7 +9613,7 @@ bool P2Asm::asm_pollse3()
  * POLLSE4          {WC/WZ/WCZ}
  *</pre>
  */
-bool P2Asm::asm_pollse4()
+bool P2Asm::asm_POLLSE4()
 {
     next();
     m_IR.set_opx24(p2_OPX24_POLLSE4);
@@ -9584,7 +9628,7 @@ bool P2Asm::asm_pollse4()
  * POLLPAT          {WC/WZ/WCZ}
  *</pre>
  */
-bool P2Asm::asm_pollpat()
+bool P2Asm::asm_POLLPAT()
 {
     next();
     m_IR.set_opx24(p2_OPX24_POLLPAT);
@@ -9599,7 +9643,7 @@ bool P2Asm::asm_pollpat()
  * POLLFBW          {WC/WZ/WCZ}
  *</pre>
  */
-bool P2Asm::asm_pollfbw()
+bool P2Asm::asm_POLLFBW()
 {
     next();
     m_IR.set_opx24(p2_OPX24_POLLFBW);
@@ -9614,7 +9658,7 @@ bool P2Asm::asm_pollfbw()
  * POLLXMT          {WC/WZ/WCZ}
  *</pre>
  */
-bool P2Asm::asm_pollxmt()
+bool P2Asm::asm_POLLXMT()
 {
     next();
     m_IR.set_opx24(p2_OPX24_POLLXMT);
@@ -9629,7 +9673,7 @@ bool P2Asm::asm_pollxmt()
  * POLLXFI          {WC/WZ/WCZ}
  *</pre>
  */
-bool P2Asm::asm_pollxfi()
+bool P2Asm::asm_POLLXFI()
 {
     next();
     m_IR.set_opx24(p2_OPX24_POLLXFI);
@@ -9644,7 +9688,7 @@ bool P2Asm::asm_pollxfi()
  * POLLXRO          {WC/WZ/WCZ}
  *</pre>
  */
-bool P2Asm::asm_pollxro()
+bool P2Asm::asm_POLLXRO()
 {
     next();
     m_IR.set_opx24(p2_OPX24_POLLXRO);
@@ -9659,7 +9703,7 @@ bool P2Asm::asm_pollxro()
  * POLLXRL          {WC/WZ/WCZ}
  *</pre>
  */
-bool P2Asm::asm_pollxrl()
+bool P2Asm::asm_POLLXRL()
 {
     next();
     m_IR.set_opx24(p2_OPX24_POLLXRL);
@@ -9674,7 +9718,7 @@ bool P2Asm::asm_pollxrl()
  * POLLATN          {WC/WZ/WCZ}
  *</pre>
  */
-bool P2Asm::asm_pollatn()
+bool P2Asm::asm_POLLATN()
 {
     next();
     m_IR.set_opx24(p2_OPX24_POLLATN);
@@ -9689,7 +9733,7 @@ bool P2Asm::asm_pollatn()
  * POLLQMT          {WC/WZ/WCZ}
  *</pre>
  */
-bool P2Asm::asm_pollqmt()
+bool P2Asm::asm_POLLQMT()
 {
     next();
     m_IR.set_opx24(p2_OPX24_POLLQMT);
@@ -9707,7 +9751,7 @@ bool P2Asm::asm_pollqmt()
  * C/Z = timeout.
  *</pre>
  */
-bool P2Asm::asm_waitint()
+bool P2Asm::asm_WAITINT()
 {
     next();
     m_IR.set_opx24(p2_OPX24_WAITINT);
@@ -9725,7 +9769,7 @@ bool P2Asm::asm_waitint()
  * C/Z = timeout.
  *</pre>
  */
-bool P2Asm::asm_waitct1()
+bool P2Asm::asm_WAITCT1()
 {
     next();
     m_IR.set_opx24(p2_OPX24_WAITCT1);
@@ -9743,7 +9787,7 @@ bool P2Asm::asm_waitct1()
  * C/Z = timeout.
  *</pre>
  */
-bool P2Asm::asm_waitct2()
+bool P2Asm::asm_WAITCT2()
 {
     next();
     m_IR.set_opx24(p2_OPX24_WAITCT2);
@@ -9761,7 +9805,7 @@ bool P2Asm::asm_waitct2()
  * C/Z = timeout.
  *</pre>
  */
-bool P2Asm::asm_waitct3()
+bool P2Asm::asm_WAITCT3()
 {
     next();
     m_IR.set_opx24(p2_OPX24_WAITCT3);
@@ -9779,7 +9823,7 @@ bool P2Asm::asm_waitct3()
  * C/Z = timeout.
  *</pre>
  */
-bool P2Asm::asm_waitse1()
+bool P2Asm::asm_WAITSE1()
 {
     next();
     m_IR.set_opx24(p2_OPX24_WAITSE1);
@@ -9797,7 +9841,7 @@ bool P2Asm::asm_waitse1()
  * C/Z = timeout.
  *</pre>
  */
-bool P2Asm::asm_waitse2()
+bool P2Asm::asm_WAITSE2()
 {
     next();
     m_IR.set_opx24(p2_OPX24_WAITSE2);
@@ -9815,7 +9859,7 @@ bool P2Asm::asm_waitse2()
  * C/Z = timeout.
  *</pre>
  */
-bool P2Asm::asm_waitse3()
+bool P2Asm::asm_WAITSE3()
 {
     next();
     m_IR.set_opx24(p2_OPX24_WAITSE3);
@@ -9833,7 +9877,7 @@ bool P2Asm::asm_waitse3()
  * C/Z = timeout.
  *</pre>
  */
-bool P2Asm::asm_waitse4()
+bool P2Asm::asm_WAITSE4()
 {
     next();
     m_IR.set_opx24(p2_OPX24_WAITSE4);
@@ -9851,7 +9895,7 @@ bool P2Asm::asm_waitse4()
  * C/Z = timeout.
  *</pre>
  */
-bool P2Asm::asm_waitpat()
+bool P2Asm::asm_WAITPAT()
 {
     next();
     m_IR.set_opx24(p2_OPX24_WAITPAT);
@@ -9869,7 +9913,7 @@ bool P2Asm::asm_waitpat()
  * C/Z = timeout.
  *</pre>
  */
-bool P2Asm::asm_waitfbw()
+bool P2Asm::asm_WAITFBW()
 {
     next();
     m_IR.set_opx24(p2_OPX24_WAITFBW);
@@ -9887,7 +9931,7 @@ bool P2Asm::asm_waitfbw()
  * C/Z = timeout.
  *</pre>
  */
-bool P2Asm::asm_waitxmt()
+bool P2Asm::asm_WAITXMT()
 {
     next();
     m_IR.set_opx24(p2_OPX24_WAITXMT);
@@ -9905,7 +9949,7 @@ bool P2Asm::asm_waitxmt()
  * C/Z = timeout.
  *</pre>
  */
-bool P2Asm::asm_waitxfi()
+bool P2Asm::asm_WAITXFI()
 {
     next();
     m_IR.set_opx24(p2_OPX24_WAITXFI);
@@ -9923,7 +9967,7 @@ bool P2Asm::asm_waitxfi()
  * C/Z = timeout.
  *</pre>
  */
-bool P2Asm::asm_waitxro()
+bool P2Asm::asm_WAITXRO()
 {
     next();
     m_IR.set_opx24(p2_OPX24_WAITXRO);
@@ -9941,7 +9985,7 @@ bool P2Asm::asm_waitxro()
  * C/Z = timeout.
  *</pre>
  */
-bool P2Asm::asm_waitxrl()
+bool P2Asm::asm_WAITXRL()
 {
     next();
     m_IR.set_opx24(p2_OPX24_WAITXRL);
@@ -9959,7 +10003,7 @@ bool P2Asm::asm_waitxrl()
  * C/Z = timeout.
  *</pre>
  */
-bool P2Asm::asm_waitatn()
+bool P2Asm::asm_WAITATN()
 {
     next();
     m_IR.set_opx24(p2_OPX24_WAITATN);
@@ -9974,7 +10018,7 @@ bool P2Asm::asm_waitatn()
  * ALLOWI
  *</pre>
  */
-bool P2Asm::asm_allowi()
+bool P2Asm::asm_ALLOWI()
 {
     next();
     m_IR.set_opx24(p2_OPX24_ALLOWI);
@@ -9989,7 +10033,7 @@ bool P2Asm::asm_allowi()
  * STALLI
  *</pre>
  */
-bool P2Asm::asm_stalli()
+bool P2Asm::asm_STALLI()
 {
     next();
     m_IR.set_opx24(p2_OPX24_STALLI);
@@ -10004,7 +10048,7 @@ bool P2Asm::asm_stalli()
  * TRGINT1
  *</pre>
  */
-bool P2Asm::asm_trgint1()
+bool P2Asm::asm_TRGINT1()
 {
     next();
     m_IR.set_opx24(p2_OPX24_TRGINT1);
@@ -10019,7 +10063,7 @@ bool P2Asm::asm_trgint1()
  * TRGINT2
  *</pre>
  */
-bool P2Asm::asm_trgint2()
+bool P2Asm::asm_TRGINT2()
 {
     next();
     m_IR.set_opx24(p2_OPX24_TRGINT2);
@@ -10034,7 +10078,7 @@ bool P2Asm::asm_trgint2()
  * TRGINT3
  *</pre>
  */
-bool P2Asm::asm_trgint3()
+bool P2Asm::asm_TRGINT3()
 {
     next();
     m_IR.set_opx24(p2_OPX24_TRGINT3);
@@ -10049,7 +10093,7 @@ bool P2Asm::asm_trgint3()
  * NIXINT1
  *</pre>
  */
-bool P2Asm::asm_nixint1()
+bool P2Asm::asm_NIXINT1()
 {
     next();
     m_IR.set_opx24(p2_OPX24_NIXINT1);
@@ -10064,7 +10108,7 @@ bool P2Asm::asm_nixint1()
  * NIXINT2
  *</pre>
  */
-bool P2Asm::asm_nixint2()
+bool P2Asm::asm_NIXINT2()
 {
     next();
     m_IR.set_opx24(p2_OPX24_NIXINT2);
@@ -10079,7 +10123,7 @@ bool P2Asm::asm_nixint2()
  * NIXINT3
  *</pre>
  */
-bool P2Asm::asm_nixint3()
+bool P2Asm::asm_NIXINT3()
 {
     next();
     m_IR.set_opx24(p2_OPX24_NIXINT3);
@@ -10094,7 +10138,7 @@ bool P2Asm::asm_nixint3()
  * SETINT1 {#}D
  *</pre>
  */
-bool P2Asm::asm_setint1()
+bool P2Asm::asm_SETINT1()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SETINT1);
@@ -10109,7 +10153,7 @@ bool P2Asm::asm_setint1()
  * SETINT2 {#}D
  *</pre>
  */
-bool P2Asm::asm_setint2()
+bool P2Asm::asm_SETINT2()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SETINT2);
@@ -10124,7 +10168,7 @@ bool P2Asm::asm_setint2()
  * SETINT3 {#}D
  *</pre>
  */
-bool P2Asm::asm_setint3()
+bool P2Asm::asm_SETINT3()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SETINT3);
@@ -10142,7 +10186,7 @@ bool P2Asm::asm_setint3()
  * Also used before MUXQ/COGINIT/QDIV/QFRAC/QROTATE/WAITxxx.
  *</pre>
  */
-bool P2Asm::asm_setq()
+bool P2Asm::asm_SETQ()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SETQ);
@@ -10159,7 +10203,7 @@ bool P2Asm::asm_setq()
  * Use before RDLONG/WRLONG/WMLONG to set LUT block transfer.
  *</pre>
  */
-bool P2Asm::asm_setq2()
+bool P2Asm::asm_SETQ2()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SETQ2);
@@ -10174,7 +10218,7 @@ bool P2Asm::asm_setq2()
  * PUSH    {#}D
  *</pre>
  */
-bool P2Asm::asm_push()
+bool P2Asm::asm_PUSH()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_PUSH);
@@ -10191,7 +10235,7 @@ bool P2Asm::asm_push()
  * C = K[31], Z = K[30], D = K.
  *</pre>
  */
-bool P2Asm::asm_pop()
+bool P2Asm::asm_POP()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_POP);
@@ -10208,7 +10252,7 @@ bool P2Asm::asm_pop()
  * C = D[31], Z = D[30], PC = D[19:0].
  *</pre>
  */
-bool P2Asm::asm_jmp()
+bool P2Asm::asm_JMP()
 {
     int idx = m_idx;
     next();
@@ -10217,7 +10261,7 @@ bool P2Asm::asm_jmp()
         P2Atom atom = parse_expression();
         if (atom.get_long() > COG_MASK) {
             m_idx = idx;
-            return asm_jmp_abs();
+            return asm_JMP_abs();
         }
         m_idx = idx + 1;
     }
@@ -10235,7 +10279,7 @@ bool P2Asm::asm_jmp()
  * C = D[31], Z = D[30], PC = D[19:0].
  *</pre>
  */
-bool P2Asm::asm_call()
+bool P2Asm::asm_CALL()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_CALL_RET);
@@ -10252,7 +10296,7 @@ bool P2Asm::asm_call()
  * C = K[31], Z = K[30], PC = K[19:0].
  *</pre>
  */
-bool P2Asm::asm_ret()
+bool P2Asm::asm_RET()
 {
     next();
     m_IR.set_im(true);
@@ -10271,7 +10315,7 @@ bool P2Asm::asm_ret()
  * C = D[31], Z = D[30], PC = D[19:0].
  *</pre>
  */
-bool P2Asm::asm_calla()
+bool P2Asm::asm_CALLA()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_CALLA_RETA);
@@ -10288,7 +10332,7 @@ bool P2Asm::asm_calla()
  * C = L[31], Z = L[30], PC = L[19:0].
  *</pre>
  */
-bool P2Asm::asm_reta()
+bool P2Asm::asm_RETA()
 {
     next();
     m_IR.set_im(true);
@@ -10307,7 +10351,7 @@ bool P2Asm::asm_reta()
  * C = D[31], Z = D[30], PC = D[19:0].
  *</pre>
  */
-bool P2Asm::asm_callb()
+bool P2Asm::asm_CALLB()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_CALLB_RETB);
@@ -10324,7 +10368,7 @@ bool P2Asm::asm_callb()
  * C = L[31], Z = L[30], PC = L[19:0].
  *</pre>
  */
-bool P2Asm::asm_retb()
+bool P2Asm::asm_RETB()
 {
     next();
     m_IR.set_im(true);
@@ -10344,7 +10388,7 @@ bool P2Asm::asm_retb()
  * For hubex, PC += D[17:0] << 2.
  *</pre>
  */
-bool P2Asm::asm_jmprel()
+bool P2Asm::asm_JMPREL()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_JMPREL);
@@ -10361,7 +10405,7 @@ bool P2Asm::asm_jmprel()
  * Subsequent instructions 0..31 get cancelled for each '1' bit in D[0]..D[31].
  *</pre>
  */
-bool P2Asm::asm_skip()
+bool P2Asm::asm_SKIP()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SKIP);
@@ -10378,7 +10422,7 @@ bool P2Asm::asm_skip()
  * Like SKIP, but instead of cancelling instructions, the PC leaps over them.
  *</pre>
  */
-bool P2Asm::asm_skipf()
+bool P2Asm::asm_SKIPF()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SKIPF);
@@ -10395,7 +10439,7 @@ bool P2Asm::asm_skipf()
  * PC = {10'b0, D[9:0]}.
  *</pre>
  */
-bool P2Asm::asm_execf()
+bool P2Asm::asm_EXECF()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_EXECF);
@@ -10410,7 +10454,7 @@ bool P2Asm::asm_execf()
  * GETPTR  D
  *</pre>
  */
-bool P2Asm::asm_getptr()
+bool P2Asm::asm_GETPTR()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_GETPTR);
@@ -10428,7 +10472,7 @@ bool P2Asm::asm_getptr()
  * Z = 0.
  *</pre>
  */
-bool P2Asm::asm_getbrk()
+bool P2Asm::asm_GETBRK()
 {
     next();
     m_IR.set_im(false);
@@ -10446,7 +10490,7 @@ bool P2Asm::asm_getbrk()
  * Cog D[3:0] must have asynchronous breakpoint enabled.
  *</pre>
  */
-bool P2Asm::asm_cogbrk()
+bool P2Asm::asm_COGBRK()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_COGBRK);
@@ -10463,7 +10507,7 @@ bool P2Asm::asm_cogbrk()
  * Else, trigger break if enabled, conditionally write break code to D[7:0].
  *</pre>
  */
-bool P2Asm::asm_brk()
+bool P2Asm::asm_BRK()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_BRK);
@@ -10478,7 +10522,7 @@ bool P2Asm::asm_brk()
  * SETLUTS {#}D
  *</pre>
  */
-bool P2Asm::asm_setluts()
+bool P2Asm::asm_SETLUTS()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SETLUTS);
@@ -10493,7 +10537,7 @@ bool P2Asm::asm_setluts()
  * SETCY   {#}D
  *</pre>
  */
-bool P2Asm::asm_setcy()
+bool P2Asm::asm_SETCY()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SETCY);
@@ -10508,7 +10552,7 @@ bool P2Asm::asm_setcy()
  * SETCI   {#}D
  *</pre>
  */
-bool P2Asm::asm_setci()
+bool P2Asm::asm_SETCI()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SETCI);
@@ -10523,7 +10567,7 @@ bool P2Asm::asm_setci()
  * SETCQ   {#}D
  *</pre>
  */
-bool P2Asm::asm_setcq()
+bool P2Asm::asm_SETCQ()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SETCQ);
@@ -10538,7 +10582,7 @@ bool P2Asm::asm_setcq()
  * SETCFRQ {#}D
  *</pre>
  */
-bool P2Asm::asm_setcfrq()
+bool P2Asm::asm_SETCFRQ()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SETCFRQ);
@@ -10553,7 +10597,7 @@ bool P2Asm::asm_setcfrq()
  * SETCMOD {#}D
  *</pre>
  */
-bool P2Asm::asm_setcmod()
+bool P2Asm::asm_SETCMOD()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SETCMOD);
@@ -10568,7 +10612,7 @@ bool P2Asm::asm_setcmod()
  * SETPIV  {#}D
  *</pre>
  */
-bool P2Asm::asm_setpiv()
+bool P2Asm::asm_SETPIV()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SETPIV);
@@ -10583,7 +10627,7 @@ bool P2Asm::asm_setpiv()
  * SETPIX  {#}D
  *</pre>
  */
-bool P2Asm::asm_setpix()
+bool P2Asm::asm_SETPIX()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SETPIX);
@@ -10598,7 +10642,7 @@ bool P2Asm::asm_setpix()
  * COGATN  {#}D
  *</pre>
  */
-bool P2Asm::asm_cogatn()
+bool P2Asm::asm_COGATN()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_COGATN);
@@ -10615,7 +10659,7 @@ bool P2Asm::asm_cogatn()
  * C/Z =          IN[D[5:0]].
  *</pre>
  */
-bool P2Asm::asm_testp_w()
+bool P2Asm::asm_TESTP_W()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_TESTP_W_DIRL);
@@ -10632,7 +10676,7 @@ bool P2Asm::asm_testp_w()
  * C/Z =         !IN[D[5:0]].
  *</pre>
  */
-bool P2Asm::asm_testpn_w()
+bool P2Asm::asm_TESTPN_W()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_TESTPN_W);
@@ -10649,7 +10693,7 @@ bool P2Asm::asm_testpn_w()
  * C/Z = C/Z AND  IN[D[5:0]].
  *</pre>
  */
-bool P2Asm::asm_testp_and()
+bool P2Asm::asm_TESTP_AND()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_TESTP_AND);
@@ -10666,7 +10710,7 @@ bool P2Asm::asm_testp_and()
  * C/Z = C/Z AND !IN[D[5:0]].
  *</pre>
  */
-bool P2Asm::asm_testpn_and()
+bool P2Asm::asm_TESTPN_AND()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_TESTPN_AND);
@@ -10683,7 +10727,7 @@ bool P2Asm::asm_testpn_and()
  * C/Z = C/Z OR   IN[D[5:0]].
  *</pre>
  */
-bool P2Asm::asm_testp_or()
+bool P2Asm::asm_TESTP_OR()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_TESTP_OR);
@@ -10700,7 +10744,7 @@ bool P2Asm::asm_testp_or()
  * C/Z = C/Z OR  !IN[D[5:0]].
  *</pre>
  */
-bool P2Asm::asm_testpn_or()
+bool P2Asm::asm_TESTPN_OR()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_TESTPN_OR);
@@ -10717,7 +10761,7 @@ bool P2Asm::asm_testpn_or()
  * C/Z = C/Z XOR  IN[D[5:0]].
  *</pre>
  */
-bool P2Asm::asm_testp_xor()
+bool P2Asm::asm_TESTP_XOR()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_TESTP_XOR);
@@ -10734,7 +10778,7 @@ bool P2Asm::asm_testp_xor()
  * C/Z = C/Z XOR !IN[D[5:0]].
  *</pre>
  */
-bool P2Asm::asm_testpn_xor()
+bool P2Asm::asm_TESTPN_XOR()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_TESTPN_XOR);
@@ -10745,16 +10789,16 @@ bool P2Asm::asm_testpn_xor()
  * @brief Test IN bit of pin D[5:0], SET/AND/OR/XOR nto C/Z.
  * @return true on success, or false on error
  */
-bool P2Asm::asm_testp()
+bool P2Asm::asm_TESTP()
 {
     if (find_tok(t_WC) || find_tok(t_WZ))
-        return asm_testp_w();
+        return asm_TESTP_W();
     if (find_tok(t_ANDC) || find_tok(t_ANDZ))
-        return asm_testp_and();
+        return asm_TESTP_AND();
     if (find_tok(t_ORC) || find_tok(t_ORZ))
-        return asm_testp_or();
+        return asm_TESTP_OR();
     if (find_tok(t_XORC) || find_tok(t_XORZ))
-        return asm_testp_xor();
+        return asm_TESTP_XOR();
     return false;
 }
 
@@ -10762,16 +10806,16 @@ bool P2Asm::asm_testp()
  * @brief Test !IN bit of pin D[5:0], SET, AND, OR, XOR into C/Z.
  * @return true on success, or false on error
  */
-bool P2Asm::asm_testpn()
+bool P2Asm::asm_TESTPN()
 {
     if (find_tok(t_WC) || find_tok(t_WZ))
-        return asm_testpn_w();
+        return asm_TESTPN_W();
     if (find_tok(t_ANDC) || find_tok(t_ANDZ))
-        return asm_testpn_and();
+        return asm_TESTPN_AND();
     if (find_tok(t_ORC) || find_tok(t_ORZ))
-        return asm_testpn_or();
+        return asm_TESTPN_OR();
     if (find_tok(t_XORC) || find_tok(t_XORZ))
-        return asm_testpn_xor();
+        return asm_TESTPN_XOR();
     return false;
 }
 
@@ -10785,7 +10829,7 @@ bool P2Asm::asm_testpn()
  * C,Z = DIR bit.
  *</pre>
  */
-bool P2Asm::asm_dirl()
+bool P2Asm::asm_DIRL()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_DIRL);
@@ -10802,7 +10846,7 @@ bool P2Asm::asm_dirl()
  * C,Z = DIR bit.
  *</pre>
  */
-bool P2Asm::asm_dirh()
+bool P2Asm::asm_DIRH()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_DIRH);
@@ -10819,7 +10863,7 @@ bool P2Asm::asm_dirh()
  * C,Z = DIR bit.
  *</pre>
  */
-bool P2Asm::asm_dirc()
+bool P2Asm::asm_DIRC()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_DIRC);
@@ -10836,7 +10880,7 @@ bool P2Asm::asm_dirc()
  * C,Z = DIR bit.
  *</pre>
  */
-bool P2Asm::asm_dirnc()
+bool P2Asm::asm_DIRNC()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_DIRNC);
@@ -10853,7 +10897,7 @@ bool P2Asm::asm_dirnc()
  * C,Z = DIR bit.
  *</pre>
  */
-bool P2Asm::asm_dirz()
+bool P2Asm::asm_DIRZ()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_DIRZ);
@@ -10870,7 +10914,7 @@ bool P2Asm::asm_dirz()
  * C,Z = DIR bit.
  *</pre>
  */
-bool P2Asm::asm_dirnz()
+bool P2Asm::asm_DIRNZ()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_DIRNZ);
@@ -10887,7 +10931,7 @@ bool P2Asm::asm_dirnz()
  * C,Z = DIR bit.
  *</pre>
  */
-bool P2Asm::asm_dirrnd()
+bool P2Asm::asm_DIRRND()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_DIRRND);
@@ -10904,7 +10948,7 @@ bool P2Asm::asm_dirrnd()
  * C,Z = DIR bit.
  *</pre>
  */
-bool P2Asm::asm_dirnot()
+bool P2Asm::asm_DIRNOT()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_DIRNOT);
@@ -10921,7 +10965,7 @@ bool P2Asm::asm_dirnot()
  * C,Z = OUT bit.
  *</pre>
  */
-bool P2Asm::asm_outl()
+bool P2Asm::asm_OUTL()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_OUTL);
@@ -10938,7 +10982,7 @@ bool P2Asm::asm_outl()
  * C,Z = OUT bit.
  *</pre>
  */
-bool P2Asm::asm_outh()
+bool P2Asm::asm_OUTH()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_OUTH);
@@ -10955,7 +10999,7 @@ bool P2Asm::asm_outh()
  * C,Z = OUT bit.
  *</pre>
  */
-bool P2Asm::asm_outc()
+bool P2Asm::asm_OUTC()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_OUTC);
@@ -10972,7 +11016,7 @@ bool P2Asm::asm_outc()
  * C,Z = OUT bit.
  *</pre>
  */
-bool P2Asm::asm_outnc()
+bool P2Asm::asm_OUTNC()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_OUTNC);
@@ -10989,7 +11033,7 @@ bool P2Asm::asm_outnc()
  * C,Z = OUT bit.
  *</pre>
  */
-bool P2Asm::asm_outz()
+bool P2Asm::asm_OUTZ()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_OUTZ);
@@ -11006,7 +11050,7 @@ bool P2Asm::asm_outz()
  * C,Z = OUT bit.
  *</pre>
  */
-bool P2Asm::asm_outnz()
+bool P2Asm::asm_OUTNZ()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_OUTNZ);
@@ -11023,7 +11067,7 @@ bool P2Asm::asm_outnz()
  * C,Z = OUT bit.
  *</pre>
  */
-bool P2Asm::asm_outrnd()
+bool P2Asm::asm_OUTRND()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_OUTRND);
@@ -11040,7 +11084,7 @@ bool P2Asm::asm_outrnd()
  * C,Z = OUT bit.
  *</pre>
  */
-bool P2Asm::asm_outnot()
+bool P2Asm::asm_OUTNOT()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_OUTNOT);
@@ -11058,7 +11102,7 @@ bool P2Asm::asm_outnot()
  * C,Z = OUT bit.
  *</pre>
  */
-bool P2Asm::asm_fltl()
+bool P2Asm::asm_FLTL()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_FLTL);
@@ -11076,7 +11120,7 @@ bool P2Asm::asm_fltl()
  * C,Z = OUT bit.
  *</pre>
  */
-bool P2Asm::asm_flth()
+bool P2Asm::asm_FLTH()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_FLTH);
@@ -11094,7 +11138,7 @@ bool P2Asm::asm_flth()
  * C,Z = OUT bit.
  *</pre>
  */
-bool P2Asm::asm_fltc()
+bool P2Asm::asm_FLTC()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_FLTC);
@@ -11112,7 +11156,7 @@ bool P2Asm::asm_fltc()
  * C,Z = OUT bit.
  *</pre>
  */
-bool P2Asm::asm_fltnc()
+bool P2Asm::asm_FLTNC()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_FLTNC);
@@ -11130,7 +11174,7 @@ bool P2Asm::asm_fltnc()
  * C,Z = OUT bit.
  *</pre>
  */
-bool P2Asm::asm_fltz()
+bool P2Asm::asm_FLTZ()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_FLTZ);
@@ -11148,7 +11192,7 @@ bool P2Asm::asm_fltz()
  * C,Z = OUT bit.
  *</pre>
  */
-bool P2Asm::asm_fltnz()
+bool P2Asm::asm_FLTNZ()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_FLTNZ);
@@ -11166,7 +11210,7 @@ bool P2Asm::asm_fltnz()
  * C,Z = OUT bit.
  *</pre>
  */
-bool P2Asm::asm_fltrnd()
+bool P2Asm::asm_FLTRND()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_FLTRND);
@@ -11184,7 +11228,7 @@ bool P2Asm::asm_fltrnd()
  * C,Z = OUT bit.
  *</pre>
  */
-bool P2Asm::asm_fltnot()
+bool P2Asm::asm_FLTNOT()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_FLTNOT);
@@ -11202,7 +11246,7 @@ bool P2Asm::asm_fltnot()
  * C,Z = OUT bit.
  *</pre>
  */
-bool P2Asm::asm_drvl()
+bool P2Asm::asm_DRVL()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_DRVL);
@@ -11220,7 +11264,7 @@ bool P2Asm::asm_drvl()
  * C,Z = OUT bit.
  *</pre>
  */
-bool P2Asm::asm_drvh()
+bool P2Asm::asm_DRVH()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_DRVH);
@@ -11238,7 +11282,7 @@ bool P2Asm::asm_drvh()
  * C,Z = OUT bit.
  *</pre>
  */
-bool P2Asm::asm_drvc()
+bool P2Asm::asm_DRVC()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_DRVC);
@@ -11256,7 +11300,7 @@ bool P2Asm::asm_drvc()
  * C,Z = OUT bit.
  *</pre>
  */
-bool P2Asm::asm_drvnc()
+bool P2Asm::asm_DRVNC()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_DRVNC);
@@ -11274,7 +11318,7 @@ bool P2Asm::asm_drvnc()
  * C,Z = OUT bit.
  *</pre>
  */
-bool P2Asm::asm_drvz()
+bool P2Asm::asm_DRVZ()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_DRVZ);
@@ -11292,7 +11336,7 @@ bool P2Asm::asm_drvz()
  * C,Z = OUT bit.
  *</pre>
  */
-bool P2Asm::asm_drvnz()
+bool P2Asm::asm_DRVNZ()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_DRVNZ);
@@ -11310,7 +11354,7 @@ bool P2Asm::asm_drvnz()
  * C,Z = OUT bit.
  *</pre>
  */
-bool P2Asm::asm_drvrnd()
+bool P2Asm::asm_DRVRND()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_DRVRND);
@@ -11328,7 +11372,7 @@ bool P2Asm::asm_drvrnd()
  * C,Z = OUT bit.
  *</pre>
  */
-bool P2Asm::asm_drvnot()
+bool P2Asm::asm_DRVNOT()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_DRVNOT);
@@ -11345,7 +11389,7 @@ bool P2Asm::asm_drvnot()
  * D = {S[31], S[27], S[23], S[19], ... S[12], S[8], S[4], S[0]}.
  *</pre>
  */
-bool P2Asm::asm_splitb()
+bool P2Asm::asm_SPLITB()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SPLITB);
@@ -11362,7 +11406,7 @@ bool P2Asm::asm_splitb()
  * D = {S[31], S[23], S[15], S[7], ... S[24], S[16], S[8], S[0]}.
  *</pre>
  */
-bool P2Asm::asm_mergeb()
+bool P2Asm::asm_MERGEB()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_MERGEB);
@@ -11379,7 +11423,7 @@ bool P2Asm::asm_mergeb()
  * D = {S[31], S[29], S[27], S[25], ... S[6], S[4], S[2], S[0]}.
  *</pre>
  */
-bool P2Asm::asm_splitw()
+bool P2Asm::asm_SPLITW()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SPLITW);
@@ -11396,7 +11440,7 @@ bool P2Asm::asm_splitw()
  * D = {S[31], S[15], S[30], S[14], ... S[17], S[1], S[16], S[0]}.
  *</pre>
  */
-bool P2Asm::asm_mergew()
+bool P2Asm::asm_MERGEW()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_MERGEW);
@@ -11414,7 +11458,7 @@ bool P2Asm::asm_mergew()
  * Forward pattern.
  *</pre>
  */
-bool P2Asm::asm_seussf()
+bool P2Asm::asm_SEUSSF()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SEUSSF);
@@ -11432,7 +11476,7 @@ bool P2Asm::asm_seussf()
  * Reverse pattern.
  *</pre>
  */
-bool P2Asm::asm_seussr()
+bool P2Asm::asm_SEUSSR()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SEUSSR);
@@ -11449,7 +11493,7 @@ bool P2Asm::asm_seussr()
  * D = {15'b0, S[31:27], S[23:18], S[15:11]}.
  *</pre>
  */
-bool P2Asm::asm_rgbsqz()
+bool P2Asm::asm_RGBSQZ()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_RGBSQZ);
@@ -11466,7 +11510,7 @@ bool P2Asm::asm_rgbsqz()
  * D = {S[15:11,15:13], S[10:5,10:9], S[4:0,4:2], 8'b0}.
  *</pre>
  */
-bool P2Asm::asm_rgbexp()
+bool P2Asm::asm_RGBEXP()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_RGBEXP);
@@ -11481,7 +11525,7 @@ bool P2Asm::asm_rgbexp()
  * XORO32  D
  *</pre>
  */
-bool P2Asm::asm_xoro32()
+bool P2Asm::asm_XORO32()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_XORO32);
@@ -11498,7 +11542,7 @@ bool P2Asm::asm_xoro32()
  * D = D[0:31].
  *</pre>
  */
-bool P2Asm::asm_rev()
+bool P2Asm::asm_REV()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_REV);
@@ -11516,7 +11560,7 @@ bool P2Asm::asm_rev()
  * C = D[1],  Z = D[0].
  *</pre>
  */
-bool P2Asm::asm_rczr()
+bool P2Asm::asm_RCZR()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_RCZR);
@@ -11534,7 +11578,7 @@ bool P2Asm::asm_rczr()
  * C = D[31], Z = D[30].
  *</pre>
  */
-bool P2Asm::asm_rczl()
+bool P2Asm::asm_RCZL()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_RCZL);
@@ -11551,7 +11595,7 @@ bool P2Asm::asm_rczl()
  * D = {31'b0,  C).
  *</pre>
  */
-bool P2Asm::asm_wrc()
+bool P2Asm::asm_WRC()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_WRC);
@@ -11568,7 +11612,7 @@ bool P2Asm::asm_wrc()
  * D = {31'b0, !C).
  *</pre>
  */
-bool P2Asm::asm_wrnc()
+bool P2Asm::asm_WRNC()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_WRNC);
@@ -11585,7 +11629,7 @@ bool P2Asm::asm_wrnc()
  * D = {31'b0,  Z).
  *</pre>
  */
-bool P2Asm::asm_wrz()
+bool P2Asm::asm_WRZ()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_WRZ);
@@ -11602,7 +11646,7 @@ bool P2Asm::asm_wrz()
  * D = {31'b0, !Z).
  *</pre>
  */
-bool P2Asm::asm_wrnz()
+bool P2Asm::asm_WRNZ()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_WRNZ_MODCZ);
@@ -11619,7 +11663,7 @@ bool P2Asm::asm_wrnz()
  * C = cccc[{C,Z}], Z = zzzz[{C,Z}].
  *</pre>
  */
-bool P2Asm::asm_modcz()
+bool P2Asm::asm_MODCZ()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_WRNZ_MODCZ);
@@ -11645,7 +11689,7 @@ bool P2Asm::asm_modcz()
  * C = cccc[{C,Z}].
  *</pre>
  */
-bool P2Asm::asm_modc()
+bool P2Asm::asm_MODC()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_WRNZ_MODCZ);
@@ -11667,7 +11711,7 @@ bool P2Asm::asm_modc()
  * Z = zzzz[{C,Z}].
  *</pre>
  */
-bool P2Asm::asm_modz()
+bool P2Asm::asm_MODZ()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_WRNZ_MODCZ);
@@ -11692,7 +11736,7 @@ bool P2Asm::asm_modz()
  * Pins D[5:2], enable D[6].
  *</pre>
  */
-bool P2Asm::asm_setscp()
+bool P2Asm::asm_SETSCP()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_SETSCP);
@@ -11710,7 +11754,7 @@ bool P2Asm::asm_setscp()
  * GETSCP  D
  *</pre>
  */
-bool P2Asm::asm_getscp()
+bool P2Asm::asm_GETSCP()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_GETSCP);
@@ -11727,7 +11771,7 @@ bool P2Asm::asm_getscp()
  * If R = 1, PC += A, else PC = A.
  *</pre>
  */
-bool P2Asm::asm_jmp_abs()
+bool P2Asm::asm_JMP_abs()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_JMP);
@@ -11744,7 +11788,7 @@ bool P2Asm::asm_jmp_abs()
  * If R = 1, PC += A, else PC = A.
  *</pre>
  */
-bool P2Asm::asm_call_abs()
+bool P2Asm::asm_CALL_abs()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_CALL_RET);
@@ -11761,7 +11805,7 @@ bool P2Asm::asm_call_abs()
  * If R = 1, PC += A, else PC = A.
  *</pre>
  */
-bool P2Asm::asm_calla_abs()
+bool P2Asm::asm_CALLA_abs()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_CALLA_RETA);
@@ -11778,7 +11822,7 @@ bool P2Asm::asm_calla_abs()
  * If R = 1, PC += A, else PC = A.
  *</pre>
  */
-bool P2Asm::asm_callb_abs()
+bool P2Asm::asm_CALLB_abs()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_CALLB_RETB);
@@ -11795,7 +11839,7 @@ bool P2Asm::asm_callb_abs()
  * If R = 1, PC += A, else PC = A.
  *</pre>
  */
-bool P2Asm::asm_calld_abs_pa()
+bool P2Asm::asm_CALLD_abs_PA()
 {
     next();
     m_IR.set_inst7(p2_CALLD_ABS_PA);
@@ -11812,7 +11856,7 @@ bool P2Asm::asm_calld_abs_pa()
  * If R = 1, PC += A, else PC = A.
  *</pre>
  */
-bool P2Asm::asm_calld_abs_pb()
+bool P2Asm::asm_CALLD_abs_PB()
 {
     next();
     m_IR.set_inst7(p2_CALLD_ABS_PB);
@@ -11829,7 +11873,7 @@ bool P2Asm::asm_calld_abs_pb()
  * If R = 1, PC += A, else PC = A.
  *</pre>
  */
-bool P2Asm::asm_calld_abs_ptra()
+bool P2Asm::asm_CALLD_abs_PTRA()
 {
     next();
     m_IR.set_inst7(p2_CALLD_ABS_PTRA);
@@ -11846,7 +11890,7 @@ bool P2Asm::asm_calld_abs_ptra()
  * If R = 1, PC += A, else PC = A.
  *</pre>
  */
-bool P2Asm::asm_calld_abs_ptrb()
+bool P2Asm::asm_CALLD_abs_PTRB()
 {
     next();
     m_IR.set_inst7(p2_CALLD_ABS_PTRB);
@@ -11863,7 +11907,7 @@ bool P2Asm::asm_calld_abs_ptrb()
  * If R = 1, address = PC + A, else address = A.
  *</pre>
  */
-bool P2Asm::asm_loc()
+bool P2Asm::asm_LOC()
 {
     next();
     const int idx = m_idx;
@@ -11902,7 +11946,7 @@ bool P2Asm::asm_loc()
  * AUGS    #N
  *</pre>
  */
-bool P2Asm::asm_augs()
+bool P2Asm::asm_AUGS()
 {
     next();
     m_IR.set_inst7(p2_AUGS_00);
@@ -11917,7 +11961,7 @@ bool P2Asm::asm_augs()
  * AUGD    #N
  *</pre>
  */
-bool P2Asm::asm_augd()
+bool P2Asm::asm_AUGD()
 {
     next();
     m_IR.set_inst7(p2_AUGD_00);

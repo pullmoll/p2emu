@@ -125,16 +125,16 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
     if (instruction) {
         // Dispatch to dasm_xxx() functions
         switch (IR.inst7()) {
-        case p2_ROR:           dasm_ror(instruction); break;
-        case p2_ROL:           dasm_rol(instruction); break;
-        case p2_SHR:           dasm_shr(instruction); break;
-        case p2_SHL:           dasm_shl(instruction); break;
-        case p2_RCR:           dasm_rcr(instruction); break;
-        case p2_RCL:           dasm_rcl(instruction); break;
-        case p2_SAR:           dasm_sar(instruction); break;
-        case p2_SAL:           dasm_sal(instruction); break;
-        case p2_ADD:           dasm_add(instruction); break;
-        case p2_ADDX:          dasm_addx(instruction); break;
+        case p2_ROR:           dasm_ROR(instruction); break;
+        case p2_ROL:           dasm_ROL(instruction); break;
+        case p2_SHR:           dasm_SHR(instruction); break;
+        case p2_SHL:           dasm_SHL(instruction); break;
+        case p2_RCR:           dasm_RCR(instruction); break;
+        case p2_RCL:           dasm_RCL(instruction); break;
+        case p2_SAR:           dasm_SAR(instruction); break;
+        case p2_SAL:           dasm_SAL(instruction); break;
+        case p2_ADD:           dasm_ADD(instruction); break;
+        case p2_ADDX:          dasm_ADDX(instruction); break;
         case p2_ADDS:          dasm_adds(instruction); break;
         case p2_ADDSX:         dasm_addsx(instruction); break;
         case p2_SUB:           dasm_sub(instruction); break;
@@ -1593,7 +1593,7 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_AUGD_01:
         case p2_AUGD_10:
         case p2_AUGD_11:
-            dasm_augd(instruction);
+            dasm_AUGD(instruction);
             break;
         }
         instruction->insert(0, cond);
@@ -2164,7 +2164,7 @@ void P2Dasm::format_IMM23(QString* instruction, p2_token_e inst)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_nop(QString* instruction)
+void P2Dasm::dasm_NOP(QString* instruction)
 {
     format_inst(instruction, t_NOP);
 }
@@ -2182,10 +2182,10 @@ void P2Dasm::dasm_nop(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_ror(QString* instruction)
+void P2Dasm::dasm_ROR(QString* instruction)
 {
     if (0 == IR.opcode()) {
-        dasm_nop(instruction);
+        dasm_NOP(instruction);
     } else {
         format_D_IM_S_WCZ(instruction, t_ROR);
     }
@@ -2204,7 +2204,7 @@ void P2Dasm::dasm_ror(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rol(QString* instruction)
+void P2Dasm::dasm_ROL(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_ROL);
 }
@@ -2222,7 +2222,7 @@ void P2Dasm::dasm_rol(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_shr(QString* instruction)
+void P2Dasm::dasm_SHR(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_SHR);
 }
@@ -2240,7 +2240,7 @@ void P2Dasm::dasm_shr(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_shl(QString* instruction)
+void P2Dasm::dasm_SHL(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_SHL);
 }
@@ -2258,7 +2258,7 @@ void P2Dasm::dasm_shl(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rcr(QString* instruction)
+void P2Dasm::dasm_RCR(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_RCR);
 }
@@ -2276,7 +2276,7 @@ void P2Dasm::dasm_rcr(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rcl(QString* instruction)
+void P2Dasm::dasm_RCL(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_RCL);
 }
@@ -2294,7 +2294,7 @@ void P2Dasm::dasm_rcl(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_sar(QString* instruction)
+void P2Dasm::dasm_SAR(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_SAR);
 }
@@ -2312,7 +2312,7 @@ void P2Dasm::dasm_sar(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_sal(QString* instruction)
+void P2Dasm::dasm_SAL(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_SAL);
 }
@@ -2330,7 +2330,7 @@ void P2Dasm::dasm_sal(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_add(QString* instruction)
+void P2Dasm::dasm_ADD(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_ADD);
 }
@@ -2348,7 +2348,7 @@ void P2Dasm::dasm_add(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_addx(QString* instruction)
+void P2Dasm::dasm_ADDX(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_ADDX);
 }
@@ -8660,7 +8660,7 @@ void P2Dasm::dasm_augs(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_augd(QString* instruction)
+void P2Dasm::dasm_AUGD(QString* instruction)
 {
     format_IMM23(instruction, t_AUGD);
 }

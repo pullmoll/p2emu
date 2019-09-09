@@ -38,49 +38,57 @@
 P2Atom::P2Atom(p2_union_e type)
     : m_trait(tr_none)
     , m_value()
+    , m_index()
 {
     m_value.set_type(type);
 }
 
 P2Atom::P2Atom(const P2Atom& other)
-    : m_trait(other.traits())
-    , m_value(other.value())
+    : m_trait(other.m_trait)
+    , m_value(other.m_value)
+    , m_index(other.m_index)
 {
 }
 
 P2Atom::P2Atom(bool value)
     : m_trait(tr_none)
     , m_value(value)
+    , m_index()
 {
 }
 
 P2Atom::P2Atom(p2_BYTE value)
     : m_trait(tr_none)
     , m_value(value)
+    , m_index()
 {
 }
 
 P2Atom::P2Atom(p2_WORD value)
     : m_trait(tr_none)
     , m_value(value)
+    , m_index()
 {
 }
 
 P2Atom::P2Atom(p2_LONG value)
     : m_trait(tr_none)
     , m_value(value)
+    , m_index()
 {
 }
 
 P2Atom::P2Atom(p2_QUAD value)
     : m_trait(tr_none)
     , m_value(value)
+    , m_index()
 {
 }
 
 P2Atom::P2Atom(p2_REAL value)
     : m_trait(tr_none)
     , m_value(value)
+    , m_index()
 {
 }
 
@@ -92,6 +100,7 @@ void P2Atom::clear(p2_union_e type)
     m_trait = tr_none;
     m_value.clear();
     m_value.set_type(type);
+    m_index.clear();
 }
 
 /**
@@ -140,6 +149,16 @@ p2_traits_e P2Atom::traits() const
 }
 
 /**
+ * @brief Return true, if the traits of the atom contain %trait
+ * @param trait Enumeration value from p2_traits_e
+ * @return true if set, or false otherwise
+ */
+bool P2Atom::has_trait(const p2_traits_e trait) const
+{
+    return p2_has_trait(m_trait, trait);
+}
+
+/**
  * @brief Return the size of the data in the atom
  * @return size of m_data
  */
@@ -172,24 +191,6 @@ const QString P2Atom::type_name() const
     return m_value.type_name();
 }
 
-void P2Atom::set_atom(const P2Atom& other)
-{
-    *this = other;
-}
-
-/**
- * @brief Set just the value of the atom, keeping its type
- * @param val new value
- */
-void P2Atom::set_value(const QVariant& val)
-{
-    if (val.canConvert(mt_P2Atom)) {
-        *this = qvariant_cast<P2Atom>(val);
-    } else {
-        m_value.set_value(val);
-    }
-}
-
 /**
  * @brief Set just the value of the atom, keeping its type
  * @param val new value
@@ -200,7 +201,7 @@ void P2Atom::set_index(const QVariant& val)
         P2Atom index = qvariant_cast<P2Atom>(val);
         m_index = index.m_value;
     } else {
-        m_index.set_value(val);
+        m_index.set(val);
     }
 }
 
@@ -233,94 +234,219 @@ bool P2Atom::set_traits(p2_traits_e trait)
  */
 bool P2Atom::add_trait(p2_traits_e trait)
 {
-    if (has_trait(m_trait, trait))
+    if (p2_has_trait(m_trait, trait))
         return false;
-    trait_set(m_trait, trait);
+    p2_set_trait(m_trait, trait);
     return true;
 }
 
+/**
+ * @brief Return the atom's value
+ * @return const reference to the value
+ */
 const P2Union& P2Atom::value() const
 {
     return m_value;
 }
 
 /**
+ * @brief Set the atom's value
+ * @param value const reference to a new value
+ */
+void P2Atom::set_value(const P2Union& value)
+{
+    m_value = value;
+}
+
+/**
+ * @brief Return the atom's index
+ * @return const reference to the index
+ */
+const P2Union& P2Atom::index() const
+{
+    return m_index;
+}
+
+/**
+ * @brief Return the atom's index as p2_LONG value
+ * @return value of the index (0 if not set)
+ */
+p2_LONG P2Atom::index_long() const
+{
+    return m_index.get_long();
+}
+
+/**
+ * @brief Set the atom value to %_bool
+ * @param _bool to set
+ */
+void P2Atom::set_bool(const bool& _bool)
+{
+    m_value.set_bool(_bool);
+}
+
+/**
+ * @brief Set the atom value to %_char
+ * @param _char to set
+ */
+void P2Atom::set_char(const char& _char)
+{
+    m_value.set_char(_char);
+}
+
+/**
+ * @brief Set the atom value to %_byte
+ * @param _byte to set
+ */
+void P2Atom::set_byte(const p2_BYTE& _byte)
+{
+    m_value.set_byte(_byte);
+}
+
+/**
+ * @brief Set the atom value to %_word
+ * @param _word to set
+ */
+void P2Atom::set_word(const p2_WORD& _word)
+{
+    m_value.set_word(_word);
+}
+
+/**
+ * @brief Set the atom value to %_long
+ * @param _long to set
+ */
+void P2Atom::set_long(const p2_LONG& _long)
+{
+    m_value.set_long(_long);
+}
+
+/**
+ * @brief Set the atom value to %_real
+ * @param _real to set
+ */
+void P2Atom::set_real(const p2_REAL& _real)
+{
+    m_value.set_real(_real);
+}
+
+/**
+ * @brief Set the atom value to %_bytes
+ * @param _bytes to set
+ */
+void P2Atom::set_chars(const p2_CHARS& _chars)
+{
+    m_value.set_chars(_chars);
+}
+
+/**
+ * @brief Set the atom value to %_bytes
+ * @param _bytes to set
+ */
+void P2Atom::set_bytes(const p2_BYTES& _bytes)
+{
+    m_value.set_bytes(_bytes);
+}
+
+/**
+ * @brief Set the atom value to %_words
+ * @param _bytes to set
+ */
+void P2Atom::set_words(const p2_WORDS& _words)
+{
+    m_value.set_words(_words);
+}
+
+/**
+ * @brief Set the atom value to %_longs
+ * @param _longs to set
+ */
+void P2Atom::set_longs(const p2_LONGS& _longs)
+{
+    m_value.set_longs(_longs);
+}
+
+/**
+ * @brief Set the atom value to %_array
+ * @param _array to set
+ */
+void P2Atom::set_array(const QByteArray& _array)
+{
+    m_value.set_array(_array);
+}
+
+/**
  * @brief Append a single p2_BYTE to this atom
  * @param _byte to append
- * @return true on success, or false on error
  */
-bool P2Atom::add_byte(const p2_BYTE& _byte)
+void P2Atom::add_byte(const p2_BYTE& _byte)
 {
     m_value.add_byte(_byte);
-    return true;
 }
 
 /**
  * @brief Append a single p2_WORD to this atom
  * @param _word to append
- * @return true on success, or false on error
  */
-bool P2Atom::add_word(const p2_WORD& _word)
+void P2Atom::add_word(const p2_WORD& _word)
 {
     m_value.add_word(_word);
-    return true;
 }
 
 /**
  * @brief Append a single p2_WORD to this atom
  * @param _long to append
- * @return true on success, or false on error
  */
-bool P2Atom::add_long(const p2_LONG& _long)
+void P2Atom::add_long(const p2_LONG& _long)
 {
     m_value.add_long(_long);
-    return true;
+}
+
+/**
+ * @brief Append a QVector<char> to this atom
+ * @param _chars to append
+ */
+void P2Atom::add_chars(const p2_CHARS& _chars)
+{
+    m_value.add_chars(_chars);
 }
 
 /**
  * @brief Append a QVector<p2_BYTE> to this atom
  * @param _bytes to append
- * @return true on success, or false on error
  */
-bool P2Atom::add_bytes(const p2_BYTES& _bytes)
+void P2Atom::add_bytes(const p2_BYTES& _bytes)
 {
     m_value.add_bytes(_bytes);
-    return true;
 }
 
 /**
  * @brief Append a QVector<p2_WORD> to this atom
  * @param _words to append
- * @return true on success, or false on error
  */
-bool P2Atom::add_words(const p2_WORDS& _words)
+void P2Atom::add_words(const p2_WORDS& _words)
 {
     m_value.add_words(_words);
-    return true;
 }
 
 /**
  * @brief Append a QVector<p2_LONG> to this atom
  * @param _longs to append
- * @return true on success, or false on error
  */
-bool P2Atom::add_longs(const p2_LONGS& _longs)
+void P2Atom::add_longs(const p2_LONGS& _longs)
 {
     m_value.add_longs(_longs);
-    return true;
 }
 
 /**
  * @brief Append contents of a QByteArray to this atom
  * @param data QByteArray to append
- * @return true on success, or false on error
  */
-bool P2Atom::add_array(const QByteArray& value)
+void P2Atom::add_array(const QByteArray& value)
 {
     p2_BYTES bytes(value.size());
     memcpy(bytes.data(), value.constData(), static_cast<size_t>(value.size()));
     m_value.add_bytes(bytes);
-    return true;
 }
 
 /**
@@ -700,7 +826,7 @@ void P2Atom::arith_mul(const P2Atom& atom)
         m_value.set(m_value.get_quad() * atom.get_quad());
         break;
     case ut_Real:
-        m_value.set(m_value.get_real() * atom.get<p2_REAL>());
+        m_value.set(m_value.get_real() * atom.get_real());
         break;
     case ut_String:
         Q_ASSERT(m_value.type() != ut_Invalid);
@@ -761,7 +887,7 @@ void P2Atom::arith_div(const P2Atom& atom)
         break;
     case ut_Real:
         {
-            p2_REAL divisor = atom.get<p2_REAL>();
+            p2_REAL divisor = atom.get_real();
             if (!qFuzzyIsNull(divisor))
                 m_value.set_real(m_value.get_real() / divisor);
         }
@@ -825,7 +951,7 @@ void P2Atom::arith_mod(const P2Atom& atom)
         break;
     case ut_Real:
         {
-            p2_REAL divisor = atom.get<p2_REAL>();
+            p2_REAL divisor = atom.get_real();
             if (!qFuzzyIsNull(divisor))
                 m_value.set_real(fmod(m_value.get_real(), divisor));
         }
@@ -864,7 +990,7 @@ void P2Atom::arith_add(const P2Atom& atom)
         m_value.set_quad(m_value.get_quad() + atom.get_quad());
         break;
     case ut_Real:
-        m_value.set_real(m_value.get_real() + atom.get<p2_REAL>());
+        m_value.set_real(m_value.get_real() + atom.get_real());
         break;
     case ut_String:
         Q_ASSERT(m_value.type() != ut_Invalid);
@@ -900,7 +1026,7 @@ void P2Atom::arith_sub(const P2Atom& atom)
         m_value.set_quad(m_value.get_quad() - atom.get_quad());
         break;
     case ut_Real:
-        m_value.set_real(m_value.get_real() - atom.get<p2_REAL>());
+        m_value.set_real(m_value.get_real() - atom.get_real());
         break;
     case ut_String:
         Q_ASSERT(m_value.type() != ut_Invalid);
@@ -1528,60 +1654,6 @@ P2Atom& P2Atom::operator ^= (const P2Atom& other) {
 P2Atom& P2Atom::operator |= (const P2Atom& other) {
     binary_or(other);
     return *this;
-}
-
-
-/**
- * @brief Format a LONG %data as hex digits according to %mask
- * @param data p2_LONG with data
- * @param mask p2_LONG with mask
- * @return formatted string
- */
-QString P2Atom::format_long_mask(const p2_LONG data, const p2_LONG mask)
-{
-    QString result;
-
-    // for each nibble
-    for (int shift = 32-4; shift >=0; shift -= 4) {
-        if (0x0f == ((mask >> shift) & 0x0f)) {
-            // the mask is set: append the nibble
-            result += QString("%1").arg((data >> shift) & 0x0f, 1, 16);
-        } else {
-            // the mask is not set: append a dash
-            result += QChar('-');
-        }
-    }
-    return result;
-}
-
-/**
- * @brief Format a P2Atom's data as string list of longs in hex
- * @param atom const reference to the P2Atom with data
- * @param addr starting address
- * @return QStringList with one or more formatted long values
- */
-QStringList P2Atom::format_data(const P2Atom& atom, const p2_LONG addr)
-{
-    QStringList result;
-    QString line;
-    const p2_BYTES bytes = atom.get_bytes();
-    p2_LONG offset = addr;
-    p2_LONG data = 0;
-    p2_LONG mask = 0;
-
-    for (int i = 0; i < bytes.count(); i++) {
-        const int shift = 8 * (offset & 3);
-        data |= static_cast<p2_LONG>(bytes[i]) << shift;
-        mask |= 0xffu << shift;
-        if (0 == (++offset & 3)) {
-            result += format_long_mask(data, mask);
-            mask = 0;
-        }
-    }
-
-    if (mask)
-        result += format_long_mask(data, mask);
-    return result;
 }
 
 QByteArray P2Atom::array(const P2Atom& atom)

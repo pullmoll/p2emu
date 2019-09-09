@@ -2,33 +2,11 @@
 #include <QVariant>
 #include "p2defs.h"
 
-class P2Union;
-Q_DECLARE_METATYPE(P2Union);
-
 static constexpr p2_BYTE null_BYTE = 0x00u;
 static constexpr p2_WORD null_WORD = 0x0000u;
 static constexpr p2_LONG null_LONG = 0x00000000u;
 static constexpr p2_QUAD null_QUAD = Q_UINT64_C(0);
 static constexpr p2_REAL null_REAL = 0.0;
-
-/**
- * @brief Union of the integral Propeller2 types to store in a QVector
- */
-typedef union {
-    bool _bool;
-    char _char;
-    p2_BYTE _byte;
-    p2_WORD _word;
-    p2_LONG _long;
-    p2_QUAD _quad;
-    p2_REAL _real;
-}   p2_union_t;
-
-Q_DECLARE_METATYPE(p2_union_t);
-
-typedef QPair<p2_union_e,p2_union_t> TypedVar;    //!< A typed union member
-Q_DECLARE_METATYPE(TypedVar);
-static const int mt_TypedVar = qMetaTypeId<TypedVar>();
 
 class P2Union : public QVector<TypedVar>
 {
@@ -57,7 +35,6 @@ public:
     QVariant get() const;
     void set(const QVariant& var);
     void add(const QVariant& var);
-    void set_value(const QVariant& var);
 
     bool get_bool() const;
     char get_char() const;
@@ -73,6 +50,7 @@ public:
     p2_LONGS get_longs(bool expand = false) const;
     p2_QUADS get_quads(bool expand = false) const;
     p2_REALS get_reals(bool expand = false) const;
+    QString get_string(bool expand = false) const;
 
     void set_bool(const bool& var);
     void set_char(const char& var);
@@ -92,6 +70,8 @@ public:
     void set_array(const QByteArray& var);
     void set_string(const QString& var);
 
+    void set_typed_var(const TypedVar& var);
+
     void add_bool(const bool& var);
     void add_char(const char& var);
     void add_byte(const p2_BYTE& var);
@@ -106,6 +86,8 @@ public:
     void add_longs(const p2_LONGS& var);
     void add_quads(const p2_QUADS& var);
     void add_reals(const p2_REALS& var);
+    void add_array(const QByteArray& var);
+    void add_string(const QString& var);
 
     static QString type_name(p2_union_e type);
 
@@ -124,3 +106,6 @@ private:
     static p2_QUADS get_quads(const TypedVar& tv, bool expand = false);
     static p2_REALS get_reals(const TypedVar& tv, bool expand = false);
 };
+
+Q_DECLARE_METATYPE(P2Union);
+static const int mt_P2Union = qMetaTypeId<P2Union>();

@@ -52,17 +52,17 @@ const QString template_str_description = QStringLiteral(" Some description strin
 
 const QString key_tv_asm = QStringLiteral("tvAsm");
 
-void trait_set(p2_traits_e& traits, const p2_traits_e set)
+void p2_set_trait(p2_traits_e& traits, const p2_traits_e set)
 {
     traits = static_cast<p2_traits_e>(traits | set);
 }
 
-void trait_clr(p2_traits_e& traits, const p2_traits_e clr)
+void p2_clr_trait(p2_traits_e& traits, const p2_traits_e clr)
 {
     traits = static_cast<p2_traits_e>(traits & ~clr);
 }
 
-bool has_trait(const p2_traits_e traits, const p2_traits_e has)
+bool p2_has_trait(const p2_traits_e traits, const p2_traits_e has)
 {
     return traits & has ? true : false;
 }

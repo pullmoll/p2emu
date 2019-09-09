@@ -167,8 +167,8 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
     const P2Symbol& symbol = m_table->symbol(name);
     const P2Word& definition = symbol.definition();
     const int definition_lineno = definition.lineno();
-    const P2Atom& atom = symbol.atom();
-    const p2_union_e type = atom.type();
+    const P2Union& value = symbol.value();
+    const p2_union_e type = value.type();
 
     switch (role) {
     case Qt::DisplayRole:
@@ -194,29 +194,28 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
             case ut_Invalid:
                 break;
             case ut_Bool:
-                result = atom.get_bool() ? QStringLiteral("true")
-                                        : QStringLiteral("false");
+                result = value.get_bool() ? QStringLiteral("true") : QStringLiteral("false");
                 break;
             case ut_Byte:
-                result = QString("$%1").arg(atom.get_byte(), 0, 16, QChar('0'));
+                result = QString("$%1").arg(value.get_byte(), 0, 16, QChar('0'));
                 break;
             case ut_Word:
-                result = QString("$%1").arg(atom.get_word(), 0, 16, QChar('0'));
+                result = QString("$%1").arg(value.get_word(), 0, 16, QChar('0'));
                 break;
             case ut_Addr:
-                result = QString("$%1").arg(atom.get_word(), 0, 16, QChar('0'));
+                result = QString("$%1").arg(value.get_word(), 0, 16, QChar('0'));
                 break;
             case ut_Long:
-                result = QString("$%1").arg(atom.get_word(), 0, 16, QChar('0'));
+                result = QString("$%1").arg(value.get_long(), 0, 16, QChar('0'));
                 break;
             case ut_Quad:
-                result = QString("$%1").arg(atom.get_word(), 0, 16, QChar('0'));
+                result = QString("$%1").arg(value.get_quad(), 0, 16, QChar('0'));
                 break;
             case ut_Real:
-                result = QString("%1").arg(atom.get_real());
+                result = QString("%1").arg(value.get_real());
                 break;
             case ut_String:
-                result = atom.string();
+                result = value.get_string();
                 break;
             }
             break;
@@ -253,7 +252,7 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
             break;
 
         case c_Value:
-            result = atom.get_long();
+            result = value.get_long();
             break;
         }
         break;

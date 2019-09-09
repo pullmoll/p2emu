@@ -84,15 +84,15 @@ public:
 
     void set_dst_imm(ImmFlag flag);
     const QVariant& augd() const;
-    void augd_clear();
+    void set_AUGD(const QVariant& value = QVariant());
     bool augd_valid() const;
-    template <typename T> T augd_value() const { return qvariant_cast<T>(m_augd) & AUG_MASK; }
+    p2_LONG augd_value() const;
 
     void set_src_imm(ImmFlag flag);
     const QVariant& augs() const;
-    void augs_clear();
+    void set_augs(const QVariant& value = QVariant());
     bool augs_valid() const;
-    template <typename T> T augs_value() const { return qvariant_cast<T>(m_augs) & AUG_MASK; }
+    p2_LONG augs_value() const;
 
     Error aug_error_code() const;
     p2_LONG aug_error_value() const;
@@ -182,8 +182,10 @@ private:
     Error m_error_code;             //!< error set when set_dst() or set_src() return false
     p2_LONG m_error_value;          //!< error value when set_dst() or set_src() return false
 
-    static P2Opcode make_augd(const P2Opcode& ir);
+    static P2Opcode make_AUGD(const P2Opcode& ir);
     static P2Opcode make_augs(const P2Opcode& ir);
 };
+
+
 
 Q_DECLARE_METATYPE(P2Opcode);

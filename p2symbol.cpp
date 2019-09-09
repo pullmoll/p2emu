@@ -34,15 +34,28 @@
 #include "p2symbol.h"
 
 /**
- * @brief P2Symbol constructo
+ * @brief P2Symbol constructor
  * @param name optional initial name
  * @param value optional initial value
  */
-P2Symbol::P2Symbol(const QString& name, const P2Atom& value)
+P2Symbol::P2Symbol(const QString& name, const P2Union& value)
     : m_name(name)
-    , m_atom(value)
+    , m_value(value)
     , m_references()
-{}
+{
+}
+
+/**
+ * @brief P2Symbol constructor
+ * @param name optional initial name
+ * @param atom optional initial atom
+ */
+P2Symbol::P2Symbol(const QString& name, const P2Atom& atom)
+    : m_name(name)
+    , m_value(atom.value())
+    , m_references()
+{
+}
 
 /**
  * @brief Return true, if the symbol value is null (undefined)
@@ -50,7 +63,7 @@ P2Symbol::P2Symbol(const QString& name, const P2Atom& value)
  */
 bool P2Symbol::isNull() const
 {
-    return m_atom.isEmpty();
+    return ut_Invalid == m_value.type() || m_value.isEmpty();
 }
 
 /**
@@ -72,12 +85,12 @@ const QString& P2Symbol::name() const
 }
 
 /**
- * @brief Return the symbol's atom
+ * @brief Return the symbol's value
  * @return const reference to the value
  */
-const P2Atom& P2Symbol::atom() const
+const P2Union& P2Symbol::value() const
 {
-    return m_atom;
+    return m_value;
 }
 
 /**
@@ -102,14 +115,10 @@ P2Word P2Symbol::definition() const
 /**
  * @brief Set a new value for the symbol
  * @param value new value
- * @return true if modified, false if unmodified
  */
-bool P2Symbol::set_atom(const P2Atom& value)
+void P2Symbol::set_value(const P2Union& value)
 {
-    if (m_atom.type() == value.type() && m_atom == value)
-        return false;
-    m_atom = value;
-    return true;
+    m_value = value;
 }
 
 /**
@@ -118,7 +127,7 @@ bool P2Symbol::set_atom(const P2Atom& value)
  */
 p2_union_e P2Symbol::type() const
 {
-    return m_atom.type();
+    return m_value.type();
 }
 
 /**
@@ -127,7 +136,7 @@ p2_union_e P2Symbol::type() const
  */
 const QString P2Symbol::type_name() const
 {
-    return m_atom.type_name();
+    return m_value.type_name();
 }
 
 /**
