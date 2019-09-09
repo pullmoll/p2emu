@@ -44,6 +44,8 @@
 #define DEBUG_CON   0 //! set to 1 to debug CON section parsing
 #define DEBUG_DAT   0 //! set to 1 to debug DAT section parsing
 
+#define V33MODE     1
+
 static const QString p2_section_dat = QStringLiteral("DAT");
 static const QString p2_section_con = QStringLiteral("CON");
 static const QString p2_section_pub = QStringLiteral("PUB");
@@ -79,6 +81,7 @@ static const QString p2_prefix_offs_const = QStringLiteral("_OFFS=");
  */
 P2Asm::P2Asm(QObject *parent)
     : QObject(parent)
+    , m_v33mode(false)
     , m_pass(0)
     , m_pathname(".")
     , m_source()
@@ -3767,84 +3770,146 @@ P2Atom P2Asm::parse_src(P2Opcode::ImmFlag flag)
  */
 bool P2Asm::parse_index(P2Atom& src, int scale)
 {
+    bool result = true;
     const bool ptrb = offs_PTRB == src.get_long();
-    const bool update = src.has_trait(tr_INC) || src.has_trait(tr_DEC);
+    const bool pre = src.has_trait(tr_PRE);
     const bool post = src.has_trait(tr_POST);
     const bool inc = src.has_trait(tr_INC);
     const bool dec = src.has_trait(tr_DEC);
-    const p2_LONG _long = src.index_long();
-
-    if (src.has_trait(tr_AUGMENTED)) {
-        /*
-         * Structure of the 23 bit augmented (AUGS) index
-         *
-         * This structure defines the 23 bits of S/#/PTRx with AUGS
-         * 0:   %000000000000AAAAAAAAAAA_AAAAAAAAA
-         * 1:   %000000001SUPNNNNNNNNNNN_NNNNNNNNN
-         * The topmost bit (sup) determines whether the
-         * less significant 23 bits are to be interpreted as:
-         * 0:   000AAAAAAAAAAA_AAAAAAAAA: structure defining the
-         *      + A: 20 bit of address ($000000…$fffff)
-         * 1:   SUPNNNNNNNNNNN_NNNNNNNNN: structure definining the
-         *      + S: PTRx false for PTRA, true for PTRB
-         *      + U: false to keep PTRx same, true to update PTRx (PTRx += INDEX)
-         *      + P: false to use PTRx + INDEX, true to use PTRx (post-modify)
-         *      + NNNNNNNNNNN_NNNNNNNNN: 20 bit unscaled index
-         */
-        p2_index23_t index = {0};
-        if (update || dec || inc) {
-            // signed value
-            const qint32 nnn = static_cast<qint32>(_long) + (inc ? 1 : 0) - (dec ? 1 : 0);
-            index.i.sup = true;
-            index.i.S = ptrb;
-            index.i.U = update;
-            index.i.P = post;
-            index.i.N = scale * nnn;
-        } else {
-            index.a.sup = false;
-            index.a.A = src.index_long();
-        }
-
-        m_IR.set_augs(index.aug);
-
-    } else {
-        /*
-         * Structure of the 9 bit non-augmented index
-         *
-         * This structure defines the 9 bits of S/#/PTRx without AUGS
-         * 0:   %0AAAAAAAA
-         * 1:   %1SUPNNNNN
-         * The topmost bit (%sup) determines whether the
-         * lower 8 bits are to be interpreted as:
-         * 0:   AAAAAAAA: 8 bits of address (0…255)
-         * 1:   SUPNNNNN: structure definining the
-         *      + S: PTRx false for PTRA, true for PTRB
-         *      + U: false to keep PTRx same, true to update PTRx (PTRx += INDEX*SCALE)
-         *      + P: false to use PTRx + INDEX*SCALE, true to use PTRx (post-modify)
-         *      + NNNNN: index -16…15 for simple offsets, 0…15 for ++'s, 0…16 for --'s
-         * SCALE is:
-         *      = 1: for RDBYTE/WRBYTE
-         *      = 2: for RDWORD/WRWORD
-         *      = 4: for RDLONG/WRLONG/WMLONG
-         */
-        p2_index9_t index = {0};
-        if (update || dec || inc || 0 == _long) {
-            // signed value
-            const qint32 nnn = static_cast<qint32>(_long) + (inc ? 1 : 0) - (dec ? 1 : 0);
-            index.i.sup = true;
-            index.i.S = ptrb;
-            index.i.U = update;
-            index.i.P = post;
-            index.i.N = static_cast<char>(nnn);
-        } else {
-            index.a.sup = false;
-            index.a.A = static_cast<uchar>(_long);
-        }
-        m_IR.set_src(index.src);
-    }
+    bool negate = false;
+    p2_index9_t index = {0};
+    p2_index23_t index_augs = {0};
 
     m_IR.set_im(true);
-    return true;
+    Q_UNUSED(scale)
+
+    index.i.sup = true;
+    /*
+     * Structure of the 9 bit non-augmented index
+     *
+     * This structure defines the 9 bits of S/#/PTRx without AUGS
+     * 0:   %0AAAAAAAA
+     * 1:   %1SUPNNNNN
+     * The topmost bit (%sup) determines whether the
+     * lower 8 bits are to be interpreted as:
+     * 0:   AAAAAAAA: 8 bits of address (0…255)
+     * 1:   SUPNNNNN: structure definining the
+     *      + S: PTRx false for PTRA, true for PTRB
+     *      + U: false to keep PTRx same, true to update PTRx (PTRx += INDEX*SCALE)
+     *      + P: false to use PTRx + INDEX*SCALE, true to use PTRx (post-modify)
+     *      + NNNNN: index -16…15 for simple offsets, 0…15 for ++'s, 0…16 for --'s
+     * SCALE is:
+     *      = 1: for RDBYTE/WRBYTE
+     *      = 2: for RDWORD/WRWORD
+     *      = 4: for RDLONG/WRLONG/WMLONG
+     */
+    if (pre && inc) {
+        index.i.U = true;
+        index.i.P = false;
+        index.i.N = 1;
+    }
+
+    if (pre && dec) {
+        negate = true;
+        index.i.U = true;
+        index.i.P = false;
+        index.i.N = -1;
+    }
+
+    index.i.S = ptrb;
+
+    if (post && inc) {
+        index.i.U = true;
+        index.i.P = true;
+        index.i.N = 1;
+    }
+
+    if (post && dec) {
+        negate = true;
+        index.i.U = true;
+        index.i.P = true;
+        index.i.N = -1;
+    }
+
+    if (src.has_trait(tr_INDEX)) {
+        p2_LONG value = src.index_long();
+
+        if (src.has_trait(tr_AUGMENTED)) {
+            /*
+             * Structure of the 23 bit augmented (AUGS) index
+             *
+             * This structure defines the 23 bits of S/#/PTRx with AUGS
+             * 0:   %000000000000AAAAAAAAAAA_AAAAAAAAA
+             * 1:   %000000001SUPNNNNNNNNNNN_NNNNNNNNN
+             * The topmost bit (sup) determines whether the
+             * less significant 23 bits are to be interpreted as:
+             * 0:   000AAAAAAAAAAA_AAAAAAAAA: structure defining the
+             *      + A: 20 bit of address ($000000…$fffff)
+             * 1:   SUPNNNNNNNNNNN_NNNNNNNNN: structure definining the
+             *      + S: PTRx false for PTRA, true for PTRB
+             *      + U: false to keep PTRx same, true to update PTRx (PTRx += INDEX)
+             *      + P: false to use PTRx + INDEX, true to use PTRx (post-modify)
+             *      + NNNNNNNNNNN_NNNNNNNNN: 20 bit unscaled index
+             */
+            if (negate)
+                value = -value;
+            const int ivalue = static_cast<qint32>(value);
+            if (ivalue < -0x80000 || ivalue > 0x7ffff) {
+                m_errors += tr("Pointer index $%1 is out of bounds.")
+                            .arg(value, 8, 16, QChar('0'));
+                emit Error(m_pass, m_lineno, m_errors.last());
+            }
+            index_augs.i.sup = index.i.sup;
+            index_augs.i.S = index.i.S;
+            index_augs.i.U = index.i.U;
+            index_augs.i.P = index.i.P;
+            index_augs.i.N = value & A20MASK;
+
+            m_IR.set_augs(index_augs.aug);
+
+        } else {
+
+            if (negate)
+                value = -value;
+            const int ivalue = static_cast<qint32>(value);
+
+            if (m_v33mode) {
+                if (index.i.U) {
+                    if (ivalue < -16 || ivalue > 16 || ivalue == 0) {
+                        m_errors += tr("Pointer index $%1 is invalid.")
+                                    .arg(value, 8, 16, QChar('0'));
+                        emit Error(m_pass, m_lineno, m_errors.last());
+                        result = false;
+                    }
+                    if (value == 16)
+                        value = 0;
+                    index.i.N = static_cast<char>(value & 31);
+                } else {
+                    if (ivalue < -32 || ivalue > 31) {
+                        m_errors += tr("Pointer index $%1 is invalid.")
+                                    .arg(value, 8, 16, QChar('0'));
+                        emit Error(m_pass, m_lineno, m_errors.last());
+                        result = false;
+                    }
+                    index.i.P = ivalue < 0;
+                    index.i.N = static_cast<char>(value & 31);
+                }
+            } else {
+                if (ivalue < -16 || ivalue > 15) {
+                    m_errors += tr("Pointer index $%1 is invalid.")
+                                .arg(value, 8, 16, QChar('0'));
+                    emit Error(m_pass, m_lineno, m_errors.last());
+                    result = false;
+                }
+                index.i.N = static_cast<char>(value & 31);
+            }
+
+            m_IR.set_augs();
+        }
+    }
+
+    m_IR.set_src(index.src);
+    return result;
 }
 
 /**

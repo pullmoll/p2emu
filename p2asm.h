@@ -117,6 +117,7 @@ public slots:
     bool set_source(const QStringList& source);
 
 private:
+    bool m_v33mode;                         //!< use V33 mode in index expressions?
     int m_pass;                             //!< current pass
     QString m_pathname;                     //!< current path name for FILE "filename.ext"
     QStringList m_source;                   //!< source code as QStringList
