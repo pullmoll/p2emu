@@ -5090,7 +5090,7 @@ bool P2Asm::asm_LONG()
 }
 
 /**
- * @brief Reserve a number of bytes of data
+ * @brief Reserve a number of LONGs(?) of data
  *
  * @return true on success, or false on error
  */
@@ -5103,12 +5103,11 @@ bool P2Asm::asm_RES()
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
         p2_LONG count = atom.get_long();
-        p2_BYTE b = 0;
-        while (count-- > 0)
-            m_data.add_byte(b);
+        p2_LONGS _longs(count ? count : 1, 0);
+        m_data.add_longs(_longs);
         optional_COMMA();
     }
-    m_data.set_type(ut_Byte);
+    m_data.set_type(ut_Long);
 
     return end_of_line();
 }

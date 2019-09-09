@@ -345,6 +345,7 @@ static constexpr QChar chr_rdangle(L'»');
 typedef union {
     bool _bool;
     char _char;
+    int _int;
     p2_BYTE _byte;
     p2_WORD _word;
     p2_LONG _long;
