@@ -36,20 +36,17 @@
 #include "p2defs.h"
 #include "p2atom.h"
 
-//! A pair of p2_LONG where the first is the PC, the second the ORGH address
-typedef QPair<p2_LONG,p2_LONG> p2_ORG_ORGH_t;
-
 /**
  * @brief The class P2Opcode is used to keep the data generated per line together.
  */
 class P2Opcode
 {
 public:
-    explicit P2Opcode(const p2_LONG opcode = 0, p2_ORG_ORGH_t org_orgh = p2_ORG_ORGH_t(0,0));
-    P2Opcode(const p2_inst5_e inst7, p2_ORG_ORGH_t org_orgh = p2_ORG_ORGH_t(0,0));
-    P2Opcode(const p2_inst7_e inst7, p2_ORG_ORGH_t org_orgh = p2_ORG_ORGH_t(0,0));
-    P2Opcode(const p2_inst8_e inst8, p2_ORG_ORGH_t org_orgh = p2_ORG_ORGH_t(0,0));
-    P2Opcode(const p2_inst9_e inst9, p2_ORG_ORGH_t org_orgh = p2_ORG_ORGH_t(0,0));
+    explicit P2Opcode(const p2_LONG opcode = 0, p2_ORIGIN_t origin = p2_ORIGIN_t({0,0}));
+    P2Opcode(const p2_INST5_e inst7, p2_ORIGIN_t origin = p2_ORIGIN_t({0,0}));
+    P2Opcode(const p2_INST7_e inst7, p2_ORIGIN_t origin = p2_ORIGIN_t({0,0}));
+    P2Opcode(const p2_INST8_e inst8, p2_ORIGIN_t origin = p2_ORIGIN_t({0,0}));
+    P2Opcode(const p2_INST9_e inst9, p2_ORIGIN_t origin = p2_ORIGIN_t({0,0}));
 
     enum Type {
         type_none,          //!< type of the contents is unspecified
@@ -75,12 +72,13 @@ public:
         src_augs_im,        //!< SRC constant larger than $1ff but im is not set for I
     };
 
-    void clear(const p2_LONG opcode = 0, p2_ORG_ORGH_t pc_orgh = p2_ORG_ORGH_t(0,0));
+    void clear(const p2_LONG opcode, p2_ORIGIN_t origin);
+    void clear(const p2_LONG opcode = 0, p2_LONG _cog = 0, p2_LONG _hub = 0);
 
     const P2Atom& equ() const;
-    const p2_ORG_ORGH_t org_orgh() const;
-    p2_LONG org() const;
-    p2_LONG orgh() const;
+    const p2_ORIGIN_t origin() const;
+    p2_LONG cogaddr() const;
+    p2_LONG hubaddr() const;
 
     void set_dst_imm(ImmFlag flag);
     const QVariant& augd() const;
@@ -103,12 +101,12 @@ public:
 
     p2_opcode_u ir() const;
     p2_LONG opcode() const;
-    p2_cond_e cond() const;
-    p2_inst7_e inst7() const;
-    p2_inst8_e inst8() const;
-    p2_inst9_e inst9() const;
-    p2_opsrc_e opsrc() const;
-    p2_opx24_e opx24() const;
+    p2_Cond_e cond() const;
+    p2_INST7_e inst7() const;
+    p2_INST8_e inst8() const;
+    p2_INST9_e inst9() const;
+    p2_OPSRC_e opsrc() const;
+    p2_OPX24_e opx24() const;
     bool wc() const;
     bool wz() const;
     bool im() const;
@@ -120,19 +118,20 @@ public:
     const P2Atom& data() const;
 
     void set_as_IR(bool on = true);
-    void set_org_orgh(p2_ORG_ORGH_t org_orgh);
+    void set_origin(p2_ORIGIN_t origin);
+    void set_origin(p2_LONG _org, p2_LONG _orgh);
     void set_data(const P2Atom& data);
     bool set_equ(const P2Atom& value);
 
     void set_opcode(const p2_LONG opcode);
-    void set_cond(const p2_cond_e cond);
-    void set_inst5(const p2_inst5_e inst);
-    void set_inst7(const p2_inst7_e inst);
-    void set_inst8(const p2_inst8_e inst);
-    void set_inst9(const p2_inst9_e inst);
-    void set_opdst(const p2_opdst_e inst);
-    void set_opsrc(const p2_opsrc_e inst);
-    void set_opx24(const p2_opx24_e inst);
+    void set_cond(const p2_Cond_e cond);
+    void set_inst5(const p2_INST5_e inst);
+    void set_inst7(const p2_INST7_e inst);
+    void set_inst8(const p2_INST8_e inst);
+    void set_inst9(const p2_INST9_e inst);
+    void set_opdst(const p2_OPDST_e inst);
+    void set_opsrc(const p2_OPSRC_e inst);
+    void set_opx24(const p2_OPX24_e inst);
     void set_dst(const p2_LONG dst);
     void set_src(const p2_LONG src);
     void set_dst_src(const p2_LONG dst, const p2_LONG src);
@@ -147,31 +146,31 @@ public:
     void set_nnn(const p2_LONG nnn);
     void set_nn(const p2_LONG nn);
     void set_n(const p2_LONG n);
-    bool set_dst(const P2Atom& value, const p2_LONG ORG, const p2_LONG ORGH);
-    bool set_src(const P2Atom& value, const p2_LONG ORG, const p2_LONG ORGH);
+    bool set_dst(const P2Atom& value, const p2_LONG cogaddr, const p2_LONG hubaddr);
+    bool set_src(const P2Atom& value, const p2_LONG cogaddr, const p2_LONG ORGH);
 
     static QString format_opcode_bin(const P2Opcode& ir);
     static QString format_opcode_byt(const P2Opcode& ir);
     static QString format_opcode_dec(const P2Opcode& ir);
     static QString format_opcode_hex(const P2Opcode& ir);
     static QString format_opcode_doc(const P2Opcode& ir);
-    static QString format_opcode(const P2Opcode& ir, p2_format_e fmt = fmt_bin);
+    static QString format_opcode(const P2Opcode& ir, p2_FORMAT_e fmt = fmt_bin);
 
     static QString format_assign_bin(const P2Opcode& ir, bool prefix = false);
     static QString format_assign_byt(const P2Opcode& ir, bool prefix = false);
     static QString format_assign_dec(const P2Opcode& ir, bool prefix = false);
     static QString format_assign_hex(const P2Opcode& ir, bool prefix = false);
-    static QString format_assign(const P2Opcode& ir, p2_format_e fmt = fmt_bin);
+    static QString format_assign(const P2Opcode& ir, p2_FORMAT_e fmt = fmt_bin);
 
     static QStringList format_data_bin(const P2Opcode& ir, bool prefix = false);
     static QStringList format_data_byt(const P2Opcode& ir, bool prefix = false);
     static QStringList format_data_dec(const P2Opcode& ir, bool prefix = false);
     static QStringList format_data_hex(const P2Opcode& ir, bool prefix = false);
-    static QString format_data(const P2Opcode& ir, p2_format_e fmt = fmt_bin);
+    static QString format_data(const P2Opcode& ir, p2_FORMAT_e fmt = fmt_bin);
 
 private:
     p2_opcode_u m_u;                //!< instruction opcode or assignment value
-    p2_ORG_ORGH_t m_org_orgh;       //!< QPair of the instruction's ORG and ORGH values
+    p2_ORIGIN_t m_origin;           //!< instruction's ORG and ORGH values
     Type m_type;                    //!< What type of information is stored in the opcode
     ImmFlag m_imm_dst;              //!< where to store destination (D) immediate flag
     ImmFlag m_imm_src;              //!< where to store source (S) immediate flag
@@ -183,7 +182,7 @@ private:
     p2_LONG m_error_value;          //!< error value when set_dst() or set_src() return false
 
     static P2Opcode make_AUGD(const P2Opcode& ir);
-    static P2Opcode make_augs(const P2Opcode& ir);
+    static P2Opcode make_AUGS(const P2Opcode& ir);
 };
 
 

@@ -122,8 +122,8 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
 
     const column_e column = static_cast<column_e>(index.column());
     const p2_LONG PC = static_cast<p2_LONG>(index.row());
-    const p2_LONG addr = PC * 4;
-    P2Opcode IR(m_dasm->rd_mem(addr), p2_ORG_ORGH_t(PC, addr));
+    const p2_LONG ORGH = PC * 4;
+    P2Opcode IR(m_dasm->rd_mem(ORGH), p2_ORIGIN_t({PC, ORGH}));
     QString opcode;
     QString instruction;
     QString description;
@@ -139,7 +139,7 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
             } else if (PC < 0x400) {
                 result = QString("LUT:%1").arg(PC - 0x200, 3, 16, QChar('0'));
             } else {
-                result = QString("%1").arg(addr, 6, 16, QChar('0'));
+                result = QString("%1").arg(ORGH, 6, 16, QChar('0'));
             }
             break;
         case c_Opcode: // Opcode string
@@ -264,7 +264,7 @@ void P2DasmModel::invalidate()
     endResetModel();
 }
 
-void P2DasmModel::setOpcodeFormat(p2_format_e format)
+void P2DasmModel::setOpcodeFormat(p2_FORMAT_e format)
 {
     if (format == m_format)
         return;

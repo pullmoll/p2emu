@@ -51,9 +51,10 @@ public:
     int count(const QString& name = QString()) const;
     bool contains(const QString& name) const;
     bool insert(const P2SymbolClass& symbol);
+    bool insert(const QString& name, const P2Atom& atom);
     bool insert(const QString& name, const P2Union& value);
     P2Symbol symbol(const QString& name) const;
-    p2_union_e type(const QString& name) const;
+    p2_Union_e type(const QString& name) const;
     P2Word definition(const QString& name) const;
     const QList<P2Symbol> references_in(int lineno) const;
     P2Word reference(const QString& name, int idx = 0) const;

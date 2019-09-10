@@ -37,31 +37,13 @@
 #include <QHash>
 #include <QtEndian>
 
-#include "p2tokens.h"
-
 /**
  * @file This file defines the basic constants, enumerations, and structure
  * of opcodes (instructions) and the bitfields contained therein of the
  * Parallax Inc. Propeller2 microprocessor / microcontroller.
  */
 
-/**
- * @brief enumeration defining the basic data types used with the Propeller2
- * These are all unsigned types as signed operations are just a specific
- * subset in few Propeller2 instuctions.
- */
-typedef enum {
-    ut_Invalid = -1,                        //!< Type is not set
-    ut_Bool,                                //!< Value is bool
-    ut_Byte,                                //!< Value is BYTE sized
-    ut_Word,                                //!< Value is WORD sized
-    ut_Addr,                                //!< Value is an address (Program Counter)
-    ut_Long,                                //!< Value is LONG sized
-    ut_Quad,                                //!< Value is QUAD sized
-    ut_Real,                                //!< Value is REAL sized (qreal can be float or double)
-    ut_String                               //!< Value is an array of char
-}   p2_union_e;
-Q_DECLARE_METATYPE(p2_union_e);
+#include "p2tokens.h"
 
 /*
  * Definitions for the basic types based on Qt5 types
@@ -69,54 +51,45 @@ Q_DECLARE_METATYPE(p2_union_e);
 
 typedef quint8 p2_BYTE;                     //!< Type of the Propeller2 BYTE
 Q_DECLARE_METATYPE(p2_BYTE);
-static constexpr int mt_BYTE = qMetaTypeId<p2_BYTE>();
 static constexpr int sz_BYTE = sizeof(p2_BYTE);
 
 typedef quint16 p2_WORD;                    //!< Type of the Propeller2 WORD
 Q_DECLARE_METATYPE(p2_WORD);
-static constexpr int mt_WORD = qMetaTypeId<p2_WORD>();
 static constexpr int sz_WORD = sizeof(p2_WORD);
 
 typedef quint32 p2_LONG;                    //!< Type of the Propeller2 LONG
 Q_DECLARE_METATYPE(p2_LONG);
-static constexpr int mt_LONG = qMetaTypeId<p2_LONG>();
 static constexpr int sz_LONG = sizeof(p2_LONG);
 
 typedef quint64 p2_QUAD;                    //!< Intermediate type (unsigned long long); not a Propeller2 type, but used in expressions
 Q_DECLARE_METATYPE(p2_QUAD);
-static constexpr int mt_QUAD = qMetaTypeId<p2_QUAD>();
 static constexpr int sz_QUAD = sizeof(p2_QUAD);
 
 typedef double p2_REAL;                     //!< Intermediate type (double); not a Propeller2 type, but used in expressions
 Q_DECLARE_METATYPE(p2_REAL);
-static constexpr int mt_REAL = qMetaTypeId<p2_REAL>();
 static constexpr int sz_REAL = sizeof(p2_REAL);
+
+//! A pair of p2_LONG where the first is the ORG, the second the ORGH address
+typedef struct { p2_LONG _cog; p2_LONG _hub; } p2_ORIGIN_t;
+Q_DECLARE_METATYPE(p2_ORIGIN_t);
 
 typedef QVector<p2_BYTE> p2_BYTES;          //!< Type for an array (QVector) of BYTEs (interpret as ut_Byte or ut_Bool)
 Q_DECLARE_METATYPE(p2_BYTES);
-static const int mt_BYTES = qMetaTypeId<p2_BYTES>();
 
 typedef QVector<p2_WORD> p2_WORDS;          //!< Type for an array (QVector) of WORDs (ut_Word)
 Q_DECLARE_METATYPE(p2_WORDS);
-static const int mt_WORDS = qMetaTypeId<p2_WORDS>();
 
 typedef QVector<p2_LONG> p2_LONGS;          //!< Type for an array (QVector) of LONGs (ut_Addr or ut_Long)
 Q_DECLARE_METATYPE(p2_LONGS);
-static const int mt_LONGS = qMetaTypeId<p2_LONGS>();
 
 typedef QVector<p2_QUAD> p2_QUADS;          //!< Type for an array (QVector) of QUADs (ut_Quad)
 Q_DECLARE_METATYPE(p2_QUADS);
-static const int mt_QUADS = qMetaTypeId<p2_QUADS>();
 
 typedef QVector<p2_REAL> p2_REALS;          //!< Type for an array (QVector) of REALs (ut_Real)
 Q_DECLARE_METATYPE(p2_REALS);
-static const int mt_REALS = qMetaTypeId<p2_REALS>();
 
 typedef QVector<char> p2_CHARS;             //!< Type for an array (vector) of chars (ut_String interpret as ut_Byte or char)
 Q_DECLARE_METATYPE(p2_CHARS);
-static const int mt_CHARS = qMetaTypeId<p2_CHARS>();
-
-typedef QPair<p2_LONG,p2_LONG> P2MatchMask; //! Type for a mask/match pair for P2DocOpcode and P2Doc
 
 //! Size of the HUB memory, i.e. address range, in bytes (this is 1MiB)
 static constexpr p2_LONG MEM_SIZE = 1u << 20;
@@ -341,6 +314,24 @@ static constexpr QChar chr_ldangle(L'«');
 static constexpr QChar chr_rdangle(L'»');
 
 /**
+ * @brief enumeration defining the basic data types used with the Propeller2
+ * These are all unsigned types as signed operations are just a specific
+ * subset in few Propeller2 instuctions.
+ */
+typedef enum {
+    ut_Invalid = -1,                        //!< Type is not set
+    ut_Bool,                                //!< Value is bool
+    ut_Byte,                                //!< Value is BYTE sized
+    ut_Word,                                //!< Value is WORD sized
+    ut_Addr,                                //!< Value is an address (Program Counter)
+    ut_Long,                                //!< Value is LONG sized
+    ut_Quad,                                //!< Value is QUAD sized
+    ut_Real,                                //!< Value is REAL sized (qreal can be float or double)
+    ut_String                               //!< Value is an array of char
+}   p2_Union_e;
+Q_DECLARE_METATYPE(p2_Union_e);
+
+/**
  * @brief Union of the integral Propeller2 types to store in a QVector
  */
 typedef union {
@@ -352,13 +343,24 @@ typedef union {
     p2_LONG _long;
     p2_QUAD _quad;
     p2_REAL _real;
-}   p2_union_t;
+    p2_LONG _addr[2];
+}   p2_Union_t;
+Q_DECLARE_METATYPE(p2_Union_t);
 
-Q_DECLARE_METATYPE(p2_union_t);
+class P2MatchMask : public QPair<p2_LONG,p2_LONG>
+{
+public:
+    P2MatchMask(p2_LONG mask = 0, p2_LONG match = 0)
+        : QPair<p2_LONG,p2_LONG>(mask, match)
+    {}
+    p2_LONG mask() const { return first; }
+    p2_LONG match() const { return second; }
+    void set_masked_match(const p2_LONG match) { second = match & first; }
+};
 
-typedef QPair<p2_union_e,p2_union_t> TypedVar;    //!< A typed union member
+//!< A typed union member
+typedef QPair<p2_Union_e,p2_Union_t> TypedVar;
 Q_DECLARE_METATYPE(TypedVar);
-static const int mt_TypedVar = qMetaTypeId<TypedVar>();
 
 //! P2Atom traits
 typedef enum {
@@ -374,11 +376,11 @@ typedef enum {
     tr_INC          = (1 <<  8),    //!< PTRA/PTRB with increment (++)
     tr_PRE          = (1 <<  9),    //!< PTRA/PTRB with pre inc/dec (--PTRx or ++PTRx)
     tr_POST         = (1 << 10),    //!< PTRA/PTRB with post inc/dec post (PTRx-- or PTRx++)
-}   p2_traits_e;
+}   p2_Traits_e;
 
-extern void p2_set_trait(p2_traits_e& traits, const p2_traits_e set);
-extern void p2_clr_trait(p2_traits_e& traits, const p2_traits_e clr);
-extern bool p2_has_trait(const p2_traits_e traits, const p2_traits_e has);
+extern void p2_set_trait(p2_Traits_e& traits, const p2_Traits_e set);
+extern void p2_clr_trait(p2_Traits_e& traits, const p2_Traits_e clr);
+extern bool p2_has_trait(const p2_Traits_e traits, const p2_Traits_e has);
 
 /**
  * @brief Enumeration of the 16 conditional execution modes
@@ -403,7 +405,7 @@ typedef enum {
     cc_c_or_nz,                 //!< if C == 1 or Z == 0
     cc_c_or_z,                  //!< if C == 1 or Z == 1
     cc_always                   //!< always (default)
-}   p2_cond_e;
+}   p2_Cond_e;
 
 /**
  * @brief Define an instruction with 5 bits in the p2_inst5_e enumeration
@@ -433,7 +435,7 @@ typedef enum {
     p2_LOC                      = INST5(1,1,1,0,1),
     p2_AUGS                     = INST5(1,1,1,1,0),
     p2_AUGD                     = INST5(1,1,1,1,1),
-}   p2_inst5_e;
+}   p2_INST5_e;
 
 /**
  * @brief Enumeration of the 128 possible instruction types in 7 bit instructions
@@ -602,7 +604,7 @@ typedef enum {
     p2_AUGD_10                  = INST7(1,1,1,1,1,1,0),
     p2_AUGD_11                  = INST7(1,1,1,1,1,1,1),
 
-}   p2_inst7_e;
+}   p2_INST7_e;
 
 Q_STATIC_ASSERT(p2_AUGD_11 == 127u);
 
@@ -644,7 +646,7 @@ typedef enum {
     p2_OPDST_JNXRL              = 0x01d,
     p2_OPDST_JNATN              = 0x01e,
     p2_OPDST_JNQMT              = 0x01f,
-}   p2_opdst_e;
+}   p2_OPDST_e;
 
 typedef enum {
     p2_OPSRC_HUBSET             = 0x000,
@@ -784,7 +786,7 @@ typedef enum {
     p2_OPSRC_SETSCP             = 0x070,
     p2_OPSRC_GETSCP             = 0x071,
     p2_OPSRC_INVALID            = 0x200
-}   p2_opsrc_e;
+}   p2_OPSRC_e;
 
 /**
  * @brief Enumeration of the p2_OPSRC_X24 instruction's D fields
@@ -833,7 +835,7 @@ typedef enum {
     p2_OPX24_NIXINT3            = 0x027,
 
     p2_OPX24_INVALID            = 0x200,
-}   p2_opx24_e;
+}   p2_OPX24_e;
 
 /**
  * @brief some specific opcodes tested for in the COG emulation
@@ -851,7 +853,7 @@ typedef enum {
     p2_OPCODE_WRLONG            = 0x063,
     p2_OPCODE_QMUL              = 0x068,
     p2_OPCODE_QVECTOR           = 0x06a,
-}   p2_opcode_e;
+}   p2_OPCODE_e;
 
 /**
  * @brief some specific mask and opcodes tested for in the COG emulation
@@ -871,7 +873,7 @@ typedef enum {
     p2_INSTR_GETQX              = 0x0d600018,
     p2_INSTR_GETQY              = 0x0d600019,
     p2_INSTR_WAITX              = 0x0d60001f,
-}   p2_instx1_e;
+}   p2_INSTX1_e;
 
 /**
  * @brief some specific opcodes tested for in the COG emulation
@@ -879,7 +881,7 @@ typedef enum {
 typedef enum {
     p2_INSTR_MASK2              = 0x0fe3e1ff,
     p2_INSTR_WAITXXX            = 0x0d602024,
-}   p2_instx2_e;
+}   p2_INSTX2_e;
 
 /**
  * @brief Enumeration of the 8 bit instruction types
@@ -933,7 +935,7 @@ typedef enum {
     p2_XCONT                    = INST8(p2_XCONT_REP,0),
     p2_REP                      = INST8(p2_XCONT_REP,1),
 
-}   p2_inst8_e;
+}   p2_INST8_e;
 
 /**
  * @brief Enumeration of the 9 bit instruction types
@@ -1100,7 +1102,7 @@ typedef enum {
     p2_GETBRK_WC                = INST9(p2_OPSRC_COGBRK,1,0),
     p2_GETBRK_WCZ               = INST9(p2_OPSRC_COGBRK,1,1),
 
-}   p2_inst9_e;
+}   p2_INST9_e;
 
 /**
  * @brief Structure of the Propeller2 opcode words with 5 bits instruction, WW, wc, wz, and im
@@ -1123,7 +1125,7 @@ typedef struct {
 #else
 #error "Unknown byte order!"
 #endif
-}   p2_opcode5_t;
+}   p2_Opcode5_t;
 
 /**
  * @brief Structure of the Propeller2 opcode words with 7 bits instruction, wc, wz, and im
@@ -1152,7 +1154,7 @@ typedef struct {
 #else
 #error "Unknown byte order!"
 #endif
-}   p2_opcode7_t;
+}   p2_Opcode7_t;
 
 /**
  * @brief Structure of the Propeller2 opcode words with 8 bits of instruction, wz, and im
@@ -1175,7 +1177,7 @@ typedef struct {
 #else
 #error "Unknown byte order!"
 #endif
-}   p2_opcode8_t;
+}   p2_Opcode8_t;
 
 /**
  * @brief Structure of the Propeller2 opcode words with 9 bits of instruction and im
@@ -1196,17 +1198,17 @@ typedef struct {
 #else
 #error "Unknown byte order!"
 #endif
-}   p2_opcode9_t;
+}   p2_Opcode9_t;
 
 /**
  * @brief Union of the opcode and the variants with 7, 8, and 9 bit instructions
  */
 typedef union {
     p2_LONG opcode;             //!< opcode as 32 bit word
-    p2_opcode5_t op5;           //!< ocpode as bit fields (version with 5 bits instruction)
-    p2_opcode7_t op7;           //!< ocpode as bit fields (version with 7 bits instruction)
-    p2_opcode8_t op8;           //!< ocpode as bit fields (version including WC)
-    p2_opcode9_t op9;           //!< ocpode as bit fields (version including WC and WZ)
+    p2_Opcode5_t op5;           //!< ocpode as bit fields (version with 5 bits instruction)
+    p2_Opcode7_t op7;           //!< ocpode as bit fields (version with 7 bits instruction)
+    p2_Opcode8_t op8;           //!< ocpode as bit fields (version including WC)
+    p2_Opcode9_t op9;           //!< ocpode as bit fields (version including WC and WZ)
 }   p2_opcode_u;
 
 
@@ -1263,7 +1265,7 @@ typedef union {
 #else
 #error "Unknown byte order!"
 #endif
-}   p2_index9_t;
+}   p2_Index9_t;
 
 /**
  * @brief Structure of the 23 bit augmented (AUGS) index
@@ -1317,7 +1319,7 @@ typedef union {
 #else
 #error "Unknown byte order!"
 #endif
-}   p2_index23_t;
+}   p2_Index23_t;
 
 /**
  * @brief Structure of the COG and the shadow registers in the last 16 LONGs
@@ -1340,7 +1342,7 @@ typedef struct {
     p2_LONG OUTB;               //!< output states for P63 ... P32
     p2_LONG INA;                //!< input states for P31 ... P0
     p2_LONG INB;                //!< input states for P63 ... P32
-}   p2_cogregs_t;
+}   p2_COGRegs_t;
 
 /**
  * @brief Offsets of the COG shadow registers
@@ -1362,8 +1364,8 @@ typedef enum {
     offs_OUTB,                  //!< offset of output states for P63 ... P32
     offs_INA,                   //!< offset of input states for P31 ... P0
     offs_INB,                   //!< offset of input states for P63 ... P32
-}   p2_cogregs_e;
-Q_DECLARE_METATYPE(p2_cogregs_e);
+}   p2_COGRegs_e;
+Q_DECLARE_METATYPE(p2_COGRegs_e);
 
 Q_STATIC_ASSERT(offs_INB == 0x1ff);
 
@@ -1372,15 +1374,15 @@ Q_STATIC_ASSERT(offs_INB == 0x1ff);
  */
 typedef union {
     p2_LONG RAM[512];
-    p2_cogregs_t REG;
-}   p2_cog_t;
+    p2_COGRegs_t REG;
+}   p2_COG_t;
 
 /**
  * @brief Structure of the LUT memory
  */
 typedef struct {
     p2_LONG RAM[512];
-}   p2_lut_t;
+}   p2_LUT_t;
 
 /**
  * @brief The 16 flag bits (interrupt sources) per COG
@@ -1402,7 +1404,7 @@ typedef struct {
     bool    f_XRL:1;            //!< XRL flag
     bool    f_ATN:1;            //!< ATN COG attention flag
     bool    f_QMT:1;            //!< QMT Q empty flag
-}   p2_flags_t;
+}   p2_FLAGS_t;
 
 /**
  * @brief PAT pattern matching mode enum
@@ -1413,16 +1415,16 @@ typedef enum {
     p2_PAT_PA_NE,               //!< match if (PA & mask) != match
     p2_PAT_PB_EQ,               //!< match if (PB & mask) == match
     p2_PAT_PB_NE                //!< match if (PB & mask) != match
-}   p2_pat_mode_e;
+}   p2_PAT_mode_e;
 
 /**
  * @brief PAT pattern matching data
  */
 typedef struct {
-    p2_pat_mode_e mode;         //!< pattern matching mode
+    p2_PAT_mode_e mode;         //!< pattern matching mode
     p2_LONG mask;               //!< mask value
     p2_LONG match;              //!< match value
-}   p2_pat_t;
+}   p2_PAT_t;
 
 /**
  * @brief PIN edge mode enum
@@ -1432,16 +1434,16 @@ typedef enum {
     p2_PIN_CHANGED_LO,          //!< match if pin changed to lo
     p2_PIN_CHANGED_HI,          //!< match if pin changed to hi
     p2_PIN_CHANGED              //!< match if pin changed
-}   p2_pin_mode_e;
+}   p2_PIN_mode_e;
 
 /**
  * @brief PIN pin edge data
  */
 typedef struct {
-    p2_pin_mode_e mode;         //!< pin edge mode
+    p2_PIN_mode_e mode;         //!< pin edge mode
     p2_LONG edge;               //!< pin edge type
     p2_LONG num;                //!< pin number
-}   p2_pin_t;
+}   p2_PIN_t;
 
 /**
  * @brief INT disable / active / source data
@@ -1459,15 +1461,15 @@ typedef struct {
     uint INT1_source:2;         //!< INT1 enabled source
     uint INT2_source:2;         //!< INT2 enabled source
     uint INT3_source:2;         //!< INT3 enabled source
-}   p2_int_flags_t;
+}   p2_INT_flags_t;
 
 /**
  * @brief union of INT flags and bits
  */
 typedef union {
     p2_LONG bits;               //!< interrupt flags as LONG
-    p2_int_flags_t flags;       //!< interrupt flags as bit masks
-}   p2_int_bits_u;
+    p2_INT_flags_t flags;       //!< interrupt flags as bit masks
+}   p2_INT_bits_u;
 
 /**
  * @brief LOCK edge mode enum
@@ -1477,17 +1479,17 @@ typedef enum {
     p2_LOCK_CHANGED_LO,         //!< match if LOCK changed to lo
     p2_LOCK_CHANGED_HI,         //!< match if LOCK changed to hi
     p2_LOCK_CHANGED             //!< match if LOCK changed
-}   p2_lock_mode_e;
+}   p2_LOCK_mode_e;
 
 /**
  * @brief LOCK edge data
  */
 typedef struct {
     p2_LONG num:4;              //!< LOCK COG id
-    p2_lock_mode_e mode:2;      //!< LOCK edge mode
+    p2_LOCK_mode_e mode:2;      //!< LOCK edge mode
     p2_LONG edge:2;             //!< LOCK edge
     p2_LONG prev:1;             //!< LOCK previous state
-}   p2_lock_t;
+}   p2_LOCK_t;
 
 /**
  * @brief WAIT wait reason enum
@@ -1500,15 +1502,15 @@ typedef enum {
     p2_WAIT_HUB,                //!< waiting for HUB access
     p2_WAIT_CACHE,              //!< waiting on FIFO cache to be filled
     p2_WAIT_FLAG                //!< waiting for a specific FLAG bit
-}   p2_wait_mode_e;
+}   p2_WAIT_mode_e;
 
 /**
  * @brief WAIT wait status
  */
 typedef struct {
     p2_LONG flag;               //!< non-zero if waiting
-    p2_wait_mode_e mode;        //!< current wait mode
-}   p2_wait_t;
+    p2_WAIT_mode_e mode;        //!< current wait mode
+}   p2_WAIT_t;
 
 /**
  * @brief FIFO configuration and status
@@ -1524,7 +1526,7 @@ typedef struct {
     p2_LONG mode;               //!< FIFO mode
     p2_LONG word;               //!< FIFO word
     p2_LONG flag;               //!< FIFO flags
-}   p2_fifo_t;
+}   p2_FIFO_t;
 
 /**
  * @brief Ummm.. not yet used. Meant to put in a structure what is in the instruction queue
@@ -1534,7 +1536,7 @@ typedef struct {
     p2_LONG R;
     p2_LONG D;
     p2_LONG S;
-}   p2_queue_t;
+}   p2_QUEUE_t;
 
 /**
  * @brief A globally used enumeration of display formats
@@ -1545,7 +1547,7 @@ typedef enum {
     fmt_dec,                    //!< display as decimal (who needs this?)
     fmt_hex,                    //!< display as hexadecimal
     fmt_doc,                    //!< display as excerpt of the P2Doc information
-}   p2_format_e;
+}   p2_FORMAT_e;
 
 extern const QString template_str_origin;
 extern const QString template_str_address;
@@ -1604,58 +1606,58 @@ typedef enum {
     tt_origin,          //!< origin control
     tt_data,            //!< data generating
     tt_regexp,          //!< pseudo token from lexing a string
-}   p2_t_type_e;
+}   p2_TOKENTYPE_e;
 
 /**
  * @brief The type for token type bitmasks
  * Since there are more than 32 types we need to use a 64 bit quantity for the mask
  */
-typedef quint64 p2_t_mask_t;
+typedef quint64 p2_TOKENMASK_t;
 
 /**
  * @brief Constants for the bit masks of token types
  */
-#define TTMASK(tt) static_cast<p2_t_mask_t>(Q_UINT64_C(1) << (tt))
+#define TTMASK(tt) static_cast<p2_TOKENMASK_t>(Q_UINT64_C(1) << (tt))
 
-static constexpr p2_t_mask_t tm_none        = 0;
-static constexpr p2_t_mask_t tm_comment     = TTMASK(tt_comment);
-static constexpr p2_t_mask_t tm_parens      = TTMASK(tt_parens);
-static constexpr p2_t_mask_t tm_brackets    = TTMASK(tt_brackets);
-static constexpr p2_t_mask_t tm_primary     = TTMASK(tt_primary);
-static constexpr p2_t_mask_t tm_unary       = TTMASK(tt_unary);
-static constexpr p2_t_mask_t tm_shiftop     = TTMASK(tt_shiftop);
-static constexpr p2_t_mask_t tm_binop_rev   = TTMASK(tt_binop_rev);
-static constexpr p2_t_mask_t tm_mulop       = TTMASK(tt_mulop);
-static constexpr p2_t_mask_t tm_addop       = TTMASK(tt_addop);
-static constexpr p2_t_mask_t tm_binop_and   = TTMASK(tt_binop_and);
-static constexpr p2_t_mask_t tm_binop_xor   = TTMASK(tt_binop_xor);
-static constexpr p2_t_mask_t tm_binop_or    = TTMASK(tt_binop_or);
-static constexpr p2_t_mask_t tm_binop_encod = TTMASK(tt_binop_encod);
-static constexpr p2_t_mask_t tm_binop_decod = TTMASK(tt_binop_decod);
-static constexpr p2_t_mask_t tm_relation    = TTMASK(tt_relation);
-static constexpr p2_t_mask_t tm_equality    = TTMASK(tt_equality);
-static constexpr p2_t_mask_t tm_logop_and   = TTMASK(tt_logop_and);
-static constexpr p2_t_mask_t tm_logop_or    = TTMASK(tt_logop_or);
-static constexpr p2_t_mask_t tm_ternary     = TTMASK(tt_ternary);
-static constexpr p2_t_mask_t tm_assignment  = TTMASK(tt_assignment);
-static constexpr p2_t_mask_t tm_delimiter   = TTMASK(tt_delimiter);
-static constexpr p2_t_mask_t tm_constant    = TTMASK(tt_constant);
-static constexpr p2_t_mask_t tm_function    = TTMASK(tt_function);
-static constexpr p2_t_mask_t tm_traits      = TTMASK(tt_traits);
-static constexpr p2_t_mask_t tm_conditional = TTMASK(tt_conditional);
-static constexpr p2_t_mask_t tm_modcz_param = TTMASK(tt_modcz_param);
-static constexpr p2_t_mask_t tm_mnemonic    = TTMASK(tt_mnemonic);
-static constexpr p2_t_mask_t tm_wcz_suffix  = TTMASK(tt_wcz_suffix);
-static constexpr p2_t_mask_t tm_section     = TTMASK(tt_section);
-static constexpr p2_t_mask_t tm_origin      = TTMASK(tt_origin);
-static constexpr p2_t_mask_t tm_data        = TTMASK(tt_data);
-static constexpr p2_t_mask_t tm_lexer       = TTMASK(tt_regexp);
+static constexpr p2_TOKENMASK_t tm_none        = 0;
+static constexpr p2_TOKENMASK_t tm_comment     = TTMASK(tt_comment);
+static constexpr p2_TOKENMASK_t tm_parens      = TTMASK(tt_parens);
+static constexpr p2_TOKENMASK_t tm_brackets    = TTMASK(tt_brackets);
+static constexpr p2_TOKENMASK_t tm_primary     = TTMASK(tt_primary);
+static constexpr p2_TOKENMASK_t tm_unary       = TTMASK(tt_unary);
+static constexpr p2_TOKENMASK_t tm_shiftop     = TTMASK(tt_shiftop);
+static constexpr p2_TOKENMASK_t tm_binop_rev   = TTMASK(tt_binop_rev);
+static constexpr p2_TOKENMASK_t tm_mulop       = TTMASK(tt_mulop);
+static constexpr p2_TOKENMASK_t tm_addop       = TTMASK(tt_addop);
+static constexpr p2_TOKENMASK_t tm_binop_and   = TTMASK(tt_binop_and);
+static constexpr p2_TOKENMASK_t tm_binop_xor   = TTMASK(tt_binop_xor);
+static constexpr p2_TOKENMASK_t tm_binop_or    = TTMASK(tt_binop_or);
+static constexpr p2_TOKENMASK_t tm_binop_encod = TTMASK(tt_binop_encod);
+static constexpr p2_TOKENMASK_t tm_binop_decod = TTMASK(tt_binop_decod);
+static constexpr p2_TOKENMASK_t tm_relation    = TTMASK(tt_relation);
+static constexpr p2_TOKENMASK_t tm_equality    = TTMASK(tt_equality);
+static constexpr p2_TOKENMASK_t tm_logop_and   = TTMASK(tt_logop_and);
+static constexpr p2_TOKENMASK_t tm_logop_or    = TTMASK(tt_logop_or);
+static constexpr p2_TOKENMASK_t tm_ternary     = TTMASK(tt_ternary);
+static constexpr p2_TOKENMASK_t tm_assignment  = TTMASK(tt_assignment);
+static constexpr p2_TOKENMASK_t tm_delimiter   = TTMASK(tt_delimiter);
+static constexpr p2_TOKENMASK_t tm_constant    = TTMASK(tt_constant);
+static constexpr p2_TOKENMASK_t tm_function    = TTMASK(tt_function);
+static constexpr p2_TOKENMASK_t tm_traits      = TTMASK(tt_traits);
+static constexpr p2_TOKENMASK_t tm_conditional = TTMASK(tt_conditional);
+static constexpr p2_TOKENMASK_t tm_modcz_param = TTMASK(tt_modcz_param);
+static constexpr p2_TOKENMASK_t tm_mnemonic    = TTMASK(tt_mnemonic);
+static constexpr p2_TOKENMASK_t tm_wcz_suffix  = TTMASK(tt_wcz_suffix);
+static constexpr p2_TOKENMASK_t tm_section     = TTMASK(tt_section);
+static constexpr p2_TOKENMASK_t tm_origin      = TTMASK(tt_origin);
+static constexpr p2_TOKENMASK_t tm_data        = TTMASK(tt_data);
+static constexpr p2_TOKENMASK_t tm_lexer       = TTMASK(tt_regexp);
 
-static constexpr p2_t_mask_t tm_primary_unary =
+static constexpr p2_TOKENMASK_t tm_primary_unary =
         tm_primary |
         tm_unary;
 
-static constexpr p2_t_mask_t tm_binop =
+static constexpr p2_TOKENMASK_t tm_binop =
         tm_binop_and |
         tm_binop_xor |
         tm_binop_or |
@@ -1663,7 +1665,7 @@ static constexpr p2_t_mask_t tm_binop =
         tm_binop_encod |
         tm_binop_decod;
 
-static constexpr p2_t_mask_t tm_operations =
+static constexpr p2_TOKENMASK_t tm_operations =
         tm_parens |
         tm_primary |
         tm_unary |
@@ -1681,7 +1683,7 @@ static constexpr p2_t_mask_t tm_operations =
         tm_logop_and |
         tm_logop_or;
 
-static constexpr p2_t_mask_t tm_expression =
+static constexpr p2_TOKENMASK_t tm_expression =
         tm_function |
         tm_operations |
         tm_constant;

@@ -84,7 +84,8 @@ static const QLatin1String key_column_source("hide_source");
 static const QLatin1String key_column_description("hide_description");
 static const QLatin1String key_font_size("font_size");
 static const QLatin1String key_splitter_source_percent("source_percent");
-static const QLatin1String key_splitter_results_percent("results_percent");
+static const QLatin1String key_splitter_symbols_percent("symbols_percent");
+static const QLatin1String key_splitter_errors_percent("errors_percent");
 
 static const QLatin1String key_source("source");
 static const QLatin1String key_directory("directory");
@@ -108,6 +109,8 @@ MainWindow::MainWindow(QWidget *parent)
     , m_asm_font_size(11)
     , m_dasm_font_size(11)
     , m_source_percent(80)
+    , m_symbols_percent(15)
+    , m_errors_percent(5)
 {
     qsrand(static_cast<uint>(QDateTime::currentMSecsSinceEpoch()));
     ui->setupUi(this);
@@ -128,6 +131,8 @@ MainWindow::MainWindow(QWidget *parent)
     // loadSource(QStringLiteral(":/spin2/spin2_interpreter.spin2"));
     loadSource(QStringLiteral(":/spin2/P2-qz80-rr032.spin2"));
     // loadSource(QStringLiteral(":/spin2/pointers.spin2"));
+    // loadSource(QStringLiteral(":/spin2/USBHost.spin2"));
+    // loadSource(QStringLiteral(":/spin2/VGA_640_x_480_8bpp.spin2"));
     loadObjectRandom();
 }
 
@@ -162,13 +167,12 @@ void MainWindow::restoreSettings()
 void MainWindow::saveSettingsAsm()
 {
     QSettings s;
-    QList<int> spl_sizes = ui->splSource->sizes();
+    QList<int> sizes = ui->splSource->sizes();
     QSize size = ui->tabAsm->size();
-    if (spl_sizes.count() > 1 && size.height() > 0) {
-        m_source_percent = spl_sizes[0] * 100 / size.height();
-        if (spl_sizes.count() > 2) {
-            m_results_percent = spl_sizes[1] * 100 / size.height();
-        }
+    if (size.height() > 0) {
+        m_source_percent = sizes.value(0) * 100 / size.height();
+        m_symbols_percent = sizes.value(1) * 100 / size.height();
+        m_errors_percent = sizes.value(2) * 100 / size.height();
     }
 
     s.beginGroup(grp_assembler);
@@ -185,7 +189,8 @@ void MainWindow::saveSettingsAsm()
     s.setValue(key_current_column, index.column());
     s.setValue(key_font_size, ui->tvAsm->font().pointSize());
     s.setValue(key_splitter_source_percent, m_source_percent);
-    s.setValue(key_splitter_results_percent, m_results_percent);
+    s.setValue(key_splitter_symbols_percent, m_symbols_percent);
+    s.setValue(key_splitter_errors_percent, m_errors_percent);
 
     s.endGroup();
 }
@@ -206,11 +211,12 @@ void MainWindow::restoreSettingsAsm()
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Errors, s.value(key_column_errors, false).toBool());
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Source, s.value(key_column_source, false).toBool());
     m_asm_font_size = s.value(key_font_size, 11).toInt();
-    m_source_percent = s.value(key_splitter_source_percent, m_source_percent).toInt();
-    m_results_percent = s.value(key_splitter_results_percent, m_results_percent).toInt();
+    m_source_percent = qBound(1,s.value(key_splitter_source_percent, m_source_percent).toInt(),100);
+    m_symbols_percent = qBound(1,s.value(key_splitter_symbols_percent, m_symbols_percent).toInt(),100);
+    m_errors_percent = qBound(1,s.value(key_splitter_errors_percent, m_errors_percent).toInt(),100);
     s.endGroup();
     setAsmFontSize(m_asm_font_size);
-    resize_source_results();
+    resizeSourceSplitter();
 }
 
 void MainWindow::saveSettingsDasm()
@@ -251,7 +257,8 @@ void MainWindow::saveSettingsPalette()
     QSettings s;
     s.beginGroup(grp_palette);
     s.remove(QStringLiteral(""));
-    foreach (P2Colors::p2_palette_e pal, Colors.palette().keys()) {
+    QHash<P2Colors::p2_palette_e,QColor> hash = Colors.hash();
+    foreach (P2Colors::p2_palette_e pal, hash.keys()) {
         QString key = Colors.palette_name(pal);
         QColor color = Colors.palette_color(pal);
         QString name = Colors.closest(color);
@@ -327,7 +334,7 @@ void MainWindow::goto_address()
 
 void MainWindow::setAsmOpcodes(int mode)
 {
-    p2_format_e format = static_cast<p2_format_e>(mode);
+    p2_FORMAT_e format = static_cast<p2_FORMAT_e>(mode);
     ui->action_Asm_Opcodes_bin->setChecked(format == fmt_bin);
     ui->action_Asm_Opcodes_byt->setChecked(format == fmt_byt);
     ui->action_Asm_Opcodes_dec->setChecked(format == fmt_dec);
@@ -385,7 +392,7 @@ void MainWindow::setAsmFontSize(int size)
 
 void MainWindow::setDasmOpcodes(int mode)
 {
-    p2_format_e format = static_cast<p2_format_e>(mode);
+    p2_FORMAT_e format = static_cast<p2_FORMAT_e>(mode);
     ui->action_Dasm_Opcodes_bin->setChecked(format == fmt_bin);
     ui->action_Dasm_Opcodes_byt->setChecked(format == fmt_byt);
     ui->action_Dasm_Opcodes_dec->setChecked(format == fmt_dec);
@@ -625,6 +632,8 @@ void MainWindow::assemble()
 {
     QStringList source = m_asm->source();
     ui->tbErrors->clear();
+    ui->splSource->widget(2)->setVisible(false);
+    m_num_errors = 0;
 
     qint64 t0 = QDateTime::currentMSecsSinceEpoch();
     if (m_asm->assemble(source)) {
@@ -640,8 +649,6 @@ void MainWindow::assemble()
         ui->tvAsm->resizeRowsToContents();
         ui->tvAsm->setCurrentIndex(idx);
         m_smodel->setTable(m_asm->symbols());
-
-        resize_source_results();
     }
 }
 
@@ -669,7 +676,8 @@ void MainWindow::print_error(int pass, int line, const QString& message)
                        .arg(QString::number(line));
     QString error = str_pass + str_line + message;
     ui->tbErrors->append(error);
-    resize_source_results();
+    m_num_errors++;
+    ui->splSource->widget(2)->setVisible(true);
 }
 
 void MainWindow::goto_line(const QUrl& url)
@@ -708,23 +716,22 @@ void MainWindow::goto_line_number()
     goto_line(url);
 }
 
-void MainWindow::resize_source_results(const int results_min, const int errors_min)
+void MainWindow::resizeSourceSplitter()
 {
-    QList<int> sizes = ui->splSource->sizes();
-    const int height = ui->tabAsm->height();
-    if (sizes.count() > 1 && sizes[1] < results_min) {
-        sizes.clear();
-        sizes.append(height * (100 - results_min) / 100);
-        sizes.append(height * results_min / 100);
-        ui->splSource->setSizes(sizes);
-        if (sizes.count() > 2 && sizes[2] < errors_min) {
-            sizes.clear();
-            sizes.append(height * (100 - results_min - errors_min) / 100);
-            sizes.append(height * results_min / 100);
-            sizes.append(height * errors_min / 100);
+    while (m_source_percent + m_symbols_percent + m_errors_percent > 100) {
+        if (m_errors_percent > m_symbols_percent) {
+            m_errors_percent--;
+        } else {
+            m_symbols_percent--;
         }
     }
-    ui->splSource->setSizes(sizes);
+    QList<int> resized = {m_source_percent, m_symbols_percent, m_errors_percent};
+    const QList<int> sizes = ui->splSource->sizes();
+    const int height = ui->tabAsm->height();
+    for (int i = 0; i < resized.count(); i++)
+        resized[i] = height * resized[i] / 100;
+    ui->splSource->setSizes(resized);
+    ui->splSource->widget(2)->setVisible(m_num_errors > 0);
 }
 
 void MainWindow::setDasmLowercase(bool check)
@@ -942,24 +949,7 @@ void MainWindow::setupStatusbar()
 
 void MainWindow::updateAsmColumnSizes()
 {
-    QFont font = ui->tvAsm->font();
-    QFontMetrics metrics(font);
-
-    QHeaderView* vh = ui->tvAsm->verticalHeader();
-    vh->setEnabled(true);
-    vh->setDefaultSectionSize(metrics.ascent() + metrics.descent());
-
-    QHeaderView* hh = ui->tvAsm->horizontalHeader();
-    hh->setContextMenuPolicy(Qt::CustomContextMenu);
-    hh->setStretchLastSection(true);
-    connect(hh, SIGNAL(customContextMenuRequested(QPoint)), SLOT(setAsmHeaderColums(QPoint)), Qt::UniqueConnection);
-
-    for (int i = 0; i < m_amodel->columnCount(); i++) {
-        QModelIndex index = m_amodel->index(0, i);
-        QSize size = m_amodel->sizeHint(index);
-        if (size.isValid())
-            ui->tvAsm->setColumnWidth(i, size.width());
-    }
+    ui->tvAsm->resizeColumnsToContents();
     ui->tvAsm->resizeRowsToContents();
 }
 
@@ -968,23 +958,7 @@ void MainWindow::updateAsmColumnSizes()
  */
 void MainWindow::updateDasmColumnSizes()
 {
-    QFont font = ui->tvDasm->font();
-    QFontMetrics metrics(font);
-
-    QHeaderView* vh = ui->tvDasm->verticalHeader();
-    vh->setEnabled(true);
-    vh->setDefaultSectionSize(metrics.ascent() + metrics.descent());
-
-    QHeaderView* hh = ui->tvDasm->horizontalHeader();
-    hh->setContextMenuPolicy(Qt::CustomContextMenu);
-    hh->setStretchLastSection(true);
-    connect(hh, SIGNAL(customContextMenuRequested(QPoint)), SLOT(setDasmHeaderColums(QPoint)), Qt::UniqueConnection);
-
-    for (int column = 0; column < m_dmodel->columnCount(); column++) {
-        QModelIndex index = m_dmodel->index(0, column);
-        QSize size = m_dmodel->sizeHint(index);
-        ui->tvDasm->setColumnWidth(column, size.width());
-    }
+    ui->tvDasm->resizeColumnsToContents();
 }
 
 void MainWindow::updateSymbolsColumnSizes()

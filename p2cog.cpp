@@ -444,7 +444,7 @@ void P2Cog::updateREP(p2_LONG instr, p2_LONG times)
  * @param cond condition
  * @return true if met, false otherwise
  */
-bool P2Cog::conditional(p2_cond_e cond)
+bool P2Cog::conditional(p2_Cond_e cond)
 {
     switch (cond) {
     case cc__ret_:        // execute always
@@ -490,7 +490,7 @@ bool P2Cog::conditional(p2_cond_e cond)
  */
 bool P2Cog::conditional(unsigned cond)
 {
-    return conditional(static_cast<p2_cond_e>(cond));
+    return conditional(static_cast<p2_Cond_e>(cond));
 }
 
 /**
@@ -658,9 +658,9 @@ void P2Cog::check_wait_int_state()
 p2_LONG P2Cog::check_wait_flag(p2_opcode_u IR, p2_LONG value1, p2_LONG value2, bool streamflag)
 {
     p2_LONG hubcycles;
-    const p2_instx1_e inst1 = static_cast<p2_instx1_e>(IR.opcode & p2_INSTR_MASK1);
-    const p2_instx2_e inst2 = static_cast<p2_instx2_e>(IR.opcode & p2_INSTR_MASK2);
-    const p2_opcode_e opcode = static_cast<p2_opcode_e>(IR.op7.inst);
+    const p2_INSTX1_e inst1 = static_cast<p2_INSTX1_e>(IR.opcode & p2_INSTR_MASK1);
+    const p2_INSTX2_e inst2 = static_cast<p2_INSTX2_e>(IR.opcode & p2_INSTR_MASK2);
+    const p2_OPCODE_e opcode = static_cast<p2_OPCODE_e>(IR.op7.inst);
 
     if (WAIT.flag) {
         switch (WAIT.mode) {
@@ -9599,8 +9599,8 @@ int P2Cog::op_WRNZ()
  */
 int P2Cog::op_MODCZ()
 {
-    const p2_cond_e cccc = static_cast<p2_cond_e>((IR.op7.dst >> 4) & 15);
-    const p2_cond_e zzzz = static_cast<p2_cond_e>((IR.op7.dst >> 0) & 15);
+    const p2_Cond_e cccc = static_cast<p2_Cond_e>((IR.op7.dst >> 4) & 15);
+    const p2_Cond_e zzzz = static_cast<p2_Cond_e>((IR.op7.dst >> 0) & 15);
     updateC(conditional(cccc));
     updateZ(conditional(zzzz));
     return 2;

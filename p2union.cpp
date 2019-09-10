@@ -46,6 +46,11 @@ P2Union::P2Union(p2_REAL r) : P2Union()
     set_real(r);
 }
 
+P2Union::P2Union(p2_LONG o, p2_LONG h)
+{
+    set_addr(o, h);
+}
+
 P2Union::P2Union(const QByteArray& ba) : P2Union()
 {
     set_array(ba);
@@ -72,7 +77,7 @@ int P2Union::unit() const
     case ut_Bool:    return sz_BYTE;
     case ut_Byte:    return sz_BYTE;
     case ut_Word:    return sz_WORD;
-    case ut_Addr:    return sz_LONG;
+    case ut_Addr:    return sz_QUAD;
     case ut_Long:    return sz_LONG;
     case ut_Quad:    return sz_QUAD;
     case ut_Real:    return sz_REAL;
@@ -102,6 +107,8 @@ int P2Union::usize() const
                 result += sz_WORD;
                 break;
             case ut_Addr:
+                result += sz_QUAD;
+                break;
             case ut_Long:
                 result += sz_LONG;
                 break;
@@ -120,7 +127,7 @@ int P2Union::usize() const
     return result;
 }
 
-p2_union_e P2Union::type() const
+p2_Union_e P2Union::type() const
 {
     return m_type;
 }
@@ -130,7 +137,7 @@ QString P2Union::type_name() const
     return type_name(m_type);
 }
 
-void P2Union::set_type(p2_union_e type)
+void P2Union::set_type(p2_Union_e type)
 {
     m_type = type;
 }
@@ -154,6 +161,7 @@ QVariant P2Union::get() const
     case ut_Word:
         return get_word();
     case ut_Addr:
+        return QVariant::fromValue(get_addr());
     case ut_Long:
         return get_long();
     case ut_Quad:
@@ -172,43 +180,43 @@ void P2Union::set(const QVariant& var)
         *this = qvariant_cast<P2Union>(var);
         return;
     }
-    if (var.canConvert(mt_CHARS)) {
+    if (var.canConvert(qMetaTypeId<p2_CHARS>())) {
         set_chars(qvariant_cast<p2_CHARS>(var));
         return;
     }
-    if (var.canConvert(mt_BYTES)) {
+    if (var.canConvert(qMetaTypeId<p2_BYTES>())) {
         set_bytes(qvariant_cast<p2_BYTES>(var));
         return;
     }
-    if (var.canConvert(mt_WORDS)) {
+    if (var.canConvert(qMetaTypeId<p2_WORDS>())) {
         set_words(qvariant_cast<p2_WORDS>(var));
         return;
     }
-    if (var.canConvert(mt_QUADS)) {
+    if (var.canConvert(qMetaTypeId<p2_QUADS>())) {
         set_quads(qvariant_cast<p2_QUADS>(var));
         return;
     }
-    if (var.canConvert(mt_REALS)) {
+    if (var.canConvert(qMetaTypeId<p2_REALS>())) {
         set_reals(qvariant_cast<p2_REALS>(var));
         return;
     }
-    if (var.canConvert(mt_BYTE)) {
+    if (var.canConvert(qMetaTypeId<p2_BYTE>())) {
         set_byte(qvariant_cast<p2_BYTE>(var));
         return;
     }
-    if (var.canConvert(mt_WORD)) {
+    if (var.canConvert(qMetaTypeId<p2_WORD>())) {
         set_word(qvariant_cast<p2_WORD>(var));
         return;
     }
-    if (var.canConvert(mt_LONG)) {
+    if (var.canConvert(qMetaTypeId<p2_LONG>())) {
         set_long(qvariant_cast<p2_LONG>(var));
         return;
     }
-    if (var.canConvert(mt_QUAD)) {
+    if (var.canConvert(qMetaTypeId<p2_QUAD>())) {
         set_quad(qvariant_cast<p2_QUAD>(var));
         return;
     }
-    if (var.canConvert(mt_REAL)) {
+    if (var.canConvert(qMetaTypeId<p2_REAL>())) {
         set_real(qvariant_cast<p2_REAL>(var));
         return;
     }
@@ -221,43 +229,47 @@ void P2Union::set(const QVariant& var)
 
 void P2Union::add(const QVariant& var)
 {
-    if (var.canConvert(mt_CHARS)) {
+    if (var.canConvert(qMetaTypeId<p2_CHARS>())) {
         add_chars(qvariant_cast<p2_CHARS>(var));
         return;
     }
-    if (var.canConvert(mt_BYTES)) {
+    if (var.canConvert(qMetaTypeId<p2_BYTES>())) {
         add_bytes(qvariant_cast<p2_BYTES>(var));
         return;
     }
-    if (var.canConvert(mt_WORDS)) {
+    if (var.canConvert(qMetaTypeId<p2_WORDS>())) {
         add_words(qvariant_cast<p2_WORDS>(var));
         return;
     }
-    if (var.canConvert(mt_QUADS)) {
+    if (var.canConvert(qMetaTypeId<p2_QUADS>())) {
         add_quads(qvariant_cast<p2_QUADS>(var));
         return;
     }
-    if (var.canConvert(mt_REALS)) {
+    if (var.canConvert(qMetaTypeId<p2_REALS>())) {
         add_reals(qvariant_cast<p2_REALS>(var));
         return;
     }
-    if (var.canConvert(mt_BYTE)) {
+    if (var.canConvert(qMetaTypeId<p2_BYTE>())) {
         add_byte(qvariant_cast<p2_BYTE>(var));
         return;
     }
-    if (var.canConvert(mt_WORD)) {
+    if (var.canConvert(qMetaTypeId<p2_WORD>())) {
         add_word(qvariant_cast<p2_WORD>(var));
         return;
     }
-    if (var.canConvert(mt_LONG)) {
+    if (var.canConvert(qMetaTypeId<p2_ORIGIN_t>())) {
+        add_addr(qvariant_cast<p2_ORIGIN_t>(var)._cog, qvariant_cast<p2_ORIGIN_t>(var)._hub);
+        return;
+    }
+    if (var.canConvert(qMetaTypeId<p2_LONG>())) {
         add_long(qvariant_cast<p2_LONG>(var));
         return;
     }
-    if (var.canConvert(mt_QUAD)) {
+    if (var.canConvert(qMetaTypeId<p2_QUAD>())) {
         add_quad(qvariant_cast<p2_QUAD>(var));
         return;
     }
-    if (var.canConvert(mt_REAL)) {
+    if (var.canConvert(qMetaTypeId<p2_REAL>())) {
         add_real(qvariant_cast<p2_REAL>(var));
         return;
     }
@@ -268,137 +280,63 @@ void P2Union::add(const QVariant& var)
     Q_ASSERT(var.isNull());
 }
 
-#if 0
-void P2Union::set_value(const QVariant& var)
-{
-    p2_union_e type = m_type;
-    if (var.canConvert(mt_TypedVar)) {
-        const TypedVar& tv = at(0);
-        set_value(QVariant::fromValue(tv.second));
-        m_type = type;
-        return;
-    }
-    if (var.canConvert(mt_CHARS)) {
-        set_chars(qvariant_cast<p2_CHARS>(var));
-        m_type = type;
-        return;
-    }
-    if (var.canConvert(mt_BYTES)) {
-        set_bytes(qvariant_cast<p2_BYTES>(var));
-        m_type = type;
-        return;
-    }
-    if (var.canConvert(mt_WORDS)) {
-        set_words(qvariant_cast<p2_WORDS>(var));
-        m_type = type;
-        return;
-    }
-    if (var.canConvert(mt_QUADS)) {
-        set_quads(qvariant_cast<p2_QUADS>(var));
-        m_type = type;
-        return;
-    }
-    if (var.canConvert(mt_REALS)) {
-        set_reals(qvariant_cast<p2_REALS>(var));
-        m_type = type;
-        return;
-    }
-
-    switch (type) {
-    case ut_Invalid:
-        set_real(qvariant_cast<p2_REAL>(var));
-        type = ut_Real;
-        break;
-    case ut_Bool:
-        set_bool(qvariant_cast<bool>(var));
-        break;
-    case ut_Byte:
-        set_byte(qvariant_cast<p2_BYTE>(var));
-        break;
-    case ut_Word:
-        set_word(qvariant_cast<p2_WORD>(var));
-        break;
-    case ut_Addr:
-        set_long(qvariant_cast<p2_LONG>(var));
-        break;
-    case ut_Long:
-        set_long(qvariant_cast<p2_LONG>(var));
-        break;
-    case ut_Quad:
-        set_quad(qvariant_cast<p2_QUAD>(var));
-        break;
-    case ut_Real:
-        set_real(qvariant_cast<p2_REAL>(var));
-        break;
-    case ut_String:
-        set_byte(qvariant_cast<p2_BYTE>(var));
-        break;
-    }
-    m_type = type;
-}
-#endif
-
 int P2Union::get_int() const
 {
-    if (isEmpty())
-        return int(0);
-    const TypedVar& tv = at(0);
+    const TypedVar tv = value(0);
     return tv.second._int;
 }
 
 bool P2Union::get_bool() const
 {
-    if (isEmpty())
-        return false;
-    const TypedVar& tv = at(0);
+    const TypedVar tv = value(0);
     return tv.second._bool;
 }
 
 char P2Union::get_char() const
 {
-    if (isEmpty())
-        return char(0);
-    const TypedVar& tv = at(0);
+    const TypedVar tv = value(0);
     return tv.second._char;
 }
 
 p2_BYTE P2Union::get_byte() const
 {
-    if (isEmpty())
-        return null_BYTE;
-    const TypedVar& tv = at(0);
+    const TypedVar tv = value(0);
     return tv.second._byte;
 }
 
 p2_WORD P2Union::get_word() const
 {
-    if (isEmpty())
-        return null_WORD;
-    const TypedVar& tv = at(0);
+    const TypedVar tv = value(0);
     return tv.second._word;
 }
 
 p2_LONG P2Union::get_long() const
 {
-    if (isEmpty())
-        return null_LONG;
-    const TypedVar& tv = at(0);
+    const TypedVar tv = value(0);
     return tv.second._long;
+}
+
+p2_ORIGIN_t P2Union::get_addr() const
+{
+    const TypedVar tv = value(0);
+    return p2_ORIGIN_t({tv.second._addr[0], tv.second._addr[1]});
+}
+
+p2_LONG P2Union::get_addr(bool hub) const
+{
+    const TypedVar tv = value(0);
+    return tv.second._addr[hub & 1];
 }
 
 p2_QUAD P2Union::get_quad() const
 {
-    if (isEmpty())
-        return null_QUAD;
-    const TypedVar& tv = at(0);
+    const TypedVar tv = value(0);
     return tv.second._quad;
 }
 
 p2_REAL P2Union::get_real() const
 {
-    if (isEmpty())
-        return null_REAL;
-    const TypedVar& tv = at(0);
+    const TypedVar tv = value(0);
     return tv.second._real;
 }
 
@@ -476,25 +414,18 @@ void P2Union::set_char(const char& var)
     m_type = ut_Byte;
 }
 
-void P2Union::set_byte(const p2_BYTE& var)
+void P2Union::set_byte(const p2_BYTE& _byte)
 {
     clear();
-    add_byte(var);
+    add_byte(_byte);
     m_type = ut_Byte;
 }
 
-void P2Union::set_word(const p2_WORD& var)
+void P2Union::set_word(const p2_WORD& _word)
 {
     clear();
-    add_word(var);
+    add_word(_word);
     m_type = ut_Word;
-}
-
-void P2Union::set_addr(const p2_LONG& var)
-{
-    clear();
-    add_long(var);
-    m_type = ut_Addr;
 }
 
 void P2Union::set_long(const p2_LONG& var)
@@ -502,6 +433,13 @@ void P2Union::set_long(const p2_LONG& var)
     clear();
     add_long(var);
     m_type = ut_Long;
+}
+
+void P2Union::set_addr(const p2_LONG& _cog, const p2_LONG& _hub)
+{
+    clear();
+    add_addr(_cog, _hub);
+    m_type = ut_Addr;
 }
 
 void P2Union::set_quad(const p2_QUAD& var)
@@ -518,210 +456,218 @@ void P2Union::set_real(const p2_REAL& var)
     m_type = ut_Real;
 }
 
-void P2Union::set_chars(const p2_CHARS& var)
+void P2Union::set_chars(const p2_CHARS& _chars)
 {
     clear();
-    add_chars(var);
+    add_chars(_chars);
     m_type = ut_String;
 }
 
-void P2Union::set_bytes(const p2_BYTES& var)
+void P2Union::set_bytes(const p2_BYTES& _bytes)
 {
     clear();
-    add_bytes(var);
+    add_bytes(_bytes);
     m_type = ut_String;
 }
 
-void P2Union::set_words(const p2_WORDS& var)
+void P2Union::set_words(const p2_WORDS& _words)
 {
     clear();
-    add_words(var);
+    add_words(_words);
     m_type = ut_Word;
 }
 
-void P2Union::set_longs(const p2_LONGS& var)
+void P2Union::set_longs(const p2_LONGS& _longs)
 {
     clear();
-    add_longs(var);
+    add_longs(_longs);
     m_type = ut_Long;
 }
 
-void P2Union::set_quads(const p2_QUADS& var)
+void P2Union::set_quads(const p2_QUADS& _quads)
 {
     clear();
-    add_quads(var);
+    add_quads(_quads);
     m_type = ut_Quad;
 }
 
-void P2Union::set_reals(const p2_REALS& var)
+void P2Union::set_reals(const p2_REALS& _reals)
 {
     clear();
-    add_reals(var);
+    add_reals(_reals);
     m_type = ut_Real;
 }
 
-void P2Union::set_array(const QByteArray& var)
+void P2Union::set_array(const QByteArray& _array)
 {
     clear();
-    add_array(var);
+    add_array(_array);
     m_type = ut_String;
 }
 
-void P2Union::set_string(const QString& var)
+void P2Union::set_string(const QString& _string)
 {
     clear();
-    add_string(var);
+    add_string(_string);
     m_type = ut_String;
 }
 
-void P2Union::set_typed_var(const TypedVar& var)
+void P2Union::set_typed_var(const TypedVar& _tv)
 {
-    const p2_union_e type = m_type;
-    set(QVariant::fromValue(var.second));
+    const p2_Union_e type = m_type;
+    set(QVariant::fromValue(_tv.second));
     m_type = type;
 }
 
-void P2Union::add_int(const int& var)
+void P2Union::add_int(const int& _int)
 {
     TypedVar v{ut_Long, {0}};
-    v.second._int = var;
+    v.second._int = _int;
     append(v);
 }
 
 
-void P2Union::add_bool(const bool& var)
+void P2Union::add_bool(const bool& _bool)
 {
     TypedVar v{ut_Byte, {0}};
-    v.second._bool = var;
+    v.second._bool = _bool;
     append(v);
 }
 
-void P2Union::add_char(const char& var)
+void P2Union::add_char(const char& _char)
 {
     TypedVar v{ut_Byte, {0}};
-    v.second._char = var;
+    v.second._char = _char;
     append(v);
 }
 
-void P2Union::add_byte(const p2_BYTE& var)
+void P2Union::add_byte(const p2_BYTE& _byte)
 {
     TypedVar v{ut_Byte, {0}};
-    v.second._byte = var;
+    v.second._byte = _byte;
     append(v);
 }
 
-void P2Union::add_word(const p2_WORD& var)
+void P2Union::add_word(const p2_WORD& _word)
 {
     TypedVar v{ut_Word, {0}};
-    v.second._word = var;
+    v.second._word = _word;
     append(v);
 }
 
-void P2Union::add_long(const p2_LONG& var)
+void P2Union::add_long(const p2_LONG& _long)
 {
     TypedVar v{ut_Long, {0}};
-    v.second._long = var;
+    v.second._long = _long;
     append(v);
 }
 
-void P2Union::add_quad(const p2_QUAD& var)
+void P2Union::add_addr(const p2_LONG& _cog, const p2_LONG& _hub)
+{
+    TypedVar v{ut_Addr, {0}};
+    v.second._addr[0] = _cog;
+    v.second._addr[1] = _hub;
+    append(v);
+}
+
+void P2Union::add_quad(const p2_QUAD& _quad)
 {
     TypedVar v{ut_Quad, {0}};
-    v.second._quad = var;
+    v.second._quad = _quad;
     append(v);
 }
 
-void P2Union::add_real(const p2_REAL& var)
+void P2Union::add_real(const p2_REAL& _real)
 {
     TypedVar v{ut_Real, {0}};
-    v.second._real = var;
+    v.second._real = _real;
     append(v);
 }
 
-void P2Union::add_chars(const p2_CHARS& var)
+void P2Union::add_chars(const p2_CHARS& _chars)
 {
     const int pos = size();
-    resize(pos + var.size());
+    resize(pos + _chars.size());
     TypedVar v{ut_Byte, {0}};
-    for (int i = 0; i < var.size(); i++) {
-        v.second._char = var[i];
+    for (int i = 0; i < _chars.size(); i++) {
+        v.second._char = _chars[i];
         replace(pos + i, v);
     }
 }
 
-void P2Union::add_bytes(const p2_BYTES& var)
+void P2Union::add_bytes(const p2_BYTES& _bytes)
 {
     const int pos = size();
-    resize(pos + var.size());
+    resize(pos + _bytes.size());
     TypedVar v{ut_Byte, {0}};
-    for (int i = 0; i < var.size(); i++) {
-        v.second._byte = var[i];
+    for (int i = 0; i < _bytes.size(); i++) {
+        v.second._byte = _bytes[i];
         replace(pos + i, v);
     }
 }
 
-void P2Union::add_words(const p2_WORDS& var)
+void P2Union::add_words(const p2_WORDS& _words)
 {
     const int pos = size();
-    resize(pos + var.size());
+    resize(pos + _words.size());
     TypedVar v{ut_Word, {0}};
-    for (int i = 0; i < var.size(); i++) {
-        v.second._word = var[i];
+    for (int i = 0; i < _words.size(); i++) {
+        v.second._word = _words[i];
         replace(pos + i, v);
     }
 }
 
-void P2Union::add_longs(const p2_LONGS& var)
+void P2Union::add_longs(const p2_LONGS& _longs)
 {
     const int pos = size();
-    resize(pos + var.size());
+    resize(pos + _longs.size());
     TypedVar v{ut_Long, {0}};
-    for (int i = 0; i < var.size(); i++) {
-        v.second._long = var[i];
+    for (int i = 0; i < _longs.size(); i++) {
+        v.second._long = _longs[i];
         replace(pos + i, v);
     }
 }
 
-void P2Union::add_quads(const p2_QUADS& var)
+void P2Union::add_quads(const p2_QUADS& _quads)
 {
     const int pos = size();
-    resize(pos + var.size());
+    resize(pos + _quads.size());
     TypedVar v{ut_Quad, {0}};
-    for (int i = 0; i < var.size(); i++) {
-        v.second._quad = var[i];
+    for (int i = 0; i < _quads.size(); i++) {
+        v.second._quad = _quads[i];
         replace(pos + i, v);
     }
 }
 
-void P2Union::add_reals(const p2_REALS& var)
+void P2Union::add_reals(const p2_REALS& _reals)
 {
     const int pos = size();
-    resize(pos + var.size());
+    resize(pos + _reals.size());
     TypedVar v{ut_Real, {0}};
-    for (int i = 0; i < var.size(); i++) {
-        v.second._real = var[i];
+    for (int i = 0; i < _reals.size(); i++) {
+        v.second._real = _reals[i];
         replace(pos + i, v);
     }
 }
 
-void P2Union::add_array(const QByteArray& var)
+void P2Union::add_array(const QByteArray& _array)
 {
     const int pos = size();
-    resize(pos + var.size());
+    resize(pos + _array.size());
     TypedVar v{ut_Byte, {0}};
-    for (int i = 0; i < var.size(); i++) {
-        v.second._char = var[i];
+    for (int i = 0; i < _array.size(); i++) {
+        v.second._char = _array[i];
         replace(pos + i, v);
     }
 }
 
-void P2Union::add_string(const QString& var)
+void P2Union::add_string(const QString& _string)
 {
     const int pos = size();
-    resize(pos + var.size());
+    resize(pos + _string.size());
     TypedVar v{ut_Byte, {0}};
-    for (int i = 0; i < var.size(); i++) {
-        v.second._char = var[i].toLatin1();
+    for (int i = 0; i < _string.size(); i++) {
+        v.second._char = _string[i].toLatin1();
         replace(pos +i, v);
     }
 }
@@ -1080,7 +1026,7 @@ QString P2Union::get_string(bool expand) const
     return QString::fromUtf8(chars);
 }
 
-QString P2Union::type_name(p2_union_e type)
+QString P2Union::type_name(p2_Union_e type)
 {
     switch (type) {
     case ut_Invalid:
@@ -1103,4 +1049,196 @@ QString P2Union::type_name(p2_union_e type)
         return QStringLiteral("String");
     }
     return QStringLiteral("<invalid>");
+}
+
+QString P2Union::str(bool with_type, p2_FORMAT_e fmt) const
+{
+    return str(*this, with_type, fmt);
+}
+
+QString P2Union::str(const P2Union& un, bool with_type, p2_FORMAT_e fmt)
+{
+    QString result;
+
+    if (with_type)
+        result = QString("<%1> ")
+                 .arg(un.type_name());
+    switch (un.type()) {
+    case ut_Invalid:
+        result = QLatin1String("<invalid>");
+        break;
+
+    case ut_Bool:
+        result += QString("%1")
+                  .arg(un.get_bool() ? "true" : "false");
+        break;
+
+    case ut_Byte:
+        {
+            p2_BYTE _byte = un.get_byte();
+            switch (fmt) {
+            case fmt_dec:
+                result += QString("%1")
+                          .arg(_byte);
+                break;
+            case fmt_bin:
+                result += QString("%%1")
+                          .arg(_byte, 8, 2, QChar('0'));
+                break;
+            case fmt_byt:
+            case fmt_hex:
+            default:
+                result += QString("$%1")
+                          .arg(_byte, 2, 16, QChar('0'));
+            }
+        }
+        break;
+
+    case ut_Word:
+        {
+            p2_WORD _word = un.get_word();
+            switch (fmt) {
+            case fmt_dec:
+                result += QString("%1")
+                          .arg(_word);
+                break;
+            case fmt_bin:
+                result += QString("%%1_%2")
+                          .arg(_word / 256u, 8, 2, QChar('0'))
+                          .arg(_word % 256u, 8, 2, QChar('0'));
+                break;
+            case fmt_byt:
+                result += QString("$%1 $%2")
+                          .arg(_word / 256u, 2, 16, QChar('0'))
+                          .arg(_word % 256u, 2, 16, QChar('0'));
+                break;
+            case fmt_hex:
+            default:
+                result += QString("$%1")
+                          .arg(_word, 4, 16, QChar('0'));
+            }
+        }
+        break;
+
+    case ut_Addr:
+        {
+            p2_LONG _hub = un.get_addr(hub);
+            p2_LONG _cog = un.get_addr(cog);
+            if (_cog < HUB_ADDR0)
+                _cog >>= 2;
+            switch (fmt) {
+            case fmt_dec:
+                result += QString("%1:%2")
+                          .arg(_hub)
+                          .arg(_cog);
+                break;
+            case fmt_bin:
+                result += QString("%%1_%2_%3_%4:%%5_%6_%7")
+                          .arg((_hub >> 24) & 0xff, 8, 2, QChar('0'))
+                          .arg((_hub >> 16) & 0xff, 8, 2, QChar('0'))
+                          .arg((_hub >>  8) & 0xff, 8, 2, QChar('0'))
+                          .arg((_hub >>  0) & 0xff, 8, 2, QChar('0'))
+                          .arg((_cog >> 16) & 0xff, 8, 2, QChar('0'))
+                          .arg((_cog >>  8) & 0xff, 8, 2, QChar('0'))
+                          .arg((_cog >>  0) & 0xff, 8, 2, QChar('0'))
+                          ;
+                break;
+            case fmt_byt:
+                result += QString("$%1 $%2 $%3:$%4 $%5 $%6 $%7")
+                          .arg((_hub >> 24) & 0xff, 2, 16, QChar('0'))
+                          .arg((_hub >> 16) & 0xff, 2, 16, QChar('0'))
+                          .arg((_hub >>  8) & 0xff, 2, 16, QChar('0'))
+                          .arg((_hub >>  0) & 0xff, 2, 16, QChar('0'))
+                          .arg((_cog >> 16) & 0xff, 2, 16, QChar('0'))
+                          .arg((_cog >>  8) & 0xff, 2, 16, QChar('0'))
+                          .arg((_cog >>  0) & 0xff, 2, 16, QChar('0'))
+                          ;
+                break;
+            case fmt_hex:
+            default:
+                result += QString("$%1:$%2")
+                          .arg(_hub, 5, 16, QChar('0'))
+                          .arg(_cog >> 2, 3, 16, QChar('0'))
+                          ;
+            }
+        }
+        break;
+
+    case ut_Long:
+        {
+            p2_LONG _long = un.get_long();
+            switch (fmt) {
+            case fmt_dec:
+                result += QString("%1")
+                          .arg(_long);
+                break;
+            case fmt_bin:
+                result += QString("%%1_%2_%3_%4")
+                          .arg((_long >> 24) & 0xff, 8, 2, QChar('0'))
+                          .arg((_long >> 16) & 0xff, 8, 2, QChar('0'))
+                          .arg((_long >>  8) & 0xff, 8, 2, QChar('0'))
+                          .arg((_long >>  0) & 0xff, 8, 2, QChar('0'));
+                break;
+            case fmt_byt:
+                result += QString("$%1 $%2 $%3 $%4")
+                          .arg((_long >> 24) & 0xff, 2, 16, QChar('0'))
+                          .arg((_long >> 16) & 0xff, 2, 16, QChar('0'))
+                          .arg((_long >>  8) & 0xff, 2, 16, QChar('0'))
+                          .arg((_long >>  0) & 0xff, 2, 16, QChar('0'));
+                break;
+            case fmt_hex:
+            default:
+                result += QString("$%1")
+                          .arg(_long, 0, 16, QChar('0'));
+            }
+        }
+        break;
+
+    case ut_Quad:
+        {
+            p2_QUAD _quad = un.get_quad();
+            switch (fmt) {
+            case fmt_dec:
+                result += QString("%1")
+                          .arg(_quad);
+                break;
+            case fmt_bin:
+                result += QString("%%1_%2_%3_%4_%5_%6_%7_%8")
+                          .arg((_quad >> 56) & 0xff, 8, 2, QChar('0'))
+                          .arg((_quad >> 48) & 0xff, 8, 2, QChar('0'))
+                          .arg((_quad >> 40) & 0xff, 8, 2, QChar('0'))
+                          .arg((_quad >> 32) & 0xff, 8, 2, QChar('0'))
+                          .arg((_quad >> 24) & 0xff, 8, 2, QChar('0'))
+                          .arg((_quad >> 16) & 0xff, 8, 2, QChar('0'))
+                          .arg((_quad >>  8) & 0xff, 8, 2, QChar('0'))
+                          .arg((_quad >>  0) & 0xff, 8, 2, QChar('0'));
+                break;
+            case fmt_byt:
+                result += QString("$%1 $%2 $%3 $%4 $%5 $%6 $%7 $%8")
+                          .arg((_quad >> 56) & 0xff, 2, 16, QChar('0'))
+                          .arg((_quad >> 48) & 0xff, 2, 16, QChar('0'))
+                          .arg((_quad >> 40) & 0xff, 2, 16, QChar('0'))
+                          .arg((_quad >> 32) & 0xff, 2, 16, QChar('0'))
+                          .arg((_quad >> 24) & 0xff, 2, 16, QChar('0'))
+                          .arg((_quad >> 16) & 0xff, 2, 16, QChar('0'))
+                          .arg((_quad >>  8) & 0xff, 2, 16, QChar('0'))
+                          .arg((_quad >>  0) & 0xff, 2, 16, QChar('0'));
+                break;
+            case fmt_hex:
+            default:
+                result += QString("$%1")
+                          .arg(_quad, 0, 16, QChar('0'));
+            }
+        }
+        break;
+
+    case ut_Real:
+        result += QString("%1").arg(un.get_real(), 2, 'f');
+        break;
+
+    case ut_String:
+        result += un.get_string();
+        break;
+    }
+    return result;
 }

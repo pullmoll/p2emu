@@ -48,7 +48,7 @@ QStringList P2OpcodeDelegate::opcodeLines(const QModelIndex& index) const
     QVariant data = model->data(index, Qt::EditRole);
 
     const P2Opcode IR = qvariant_cast<P2Opcode>(data);
-    p2_format_e format = qobject_cast<const P2AsmModel *>(model)
+    p2_FORMAT_e format = qobject_cast<const P2AsmModel *>(model)
                          ? qobject_cast<const P2AsmModel *>(model)->opcode_format()
                          : fmt_hex;
     QStringList text;
@@ -85,21 +85,30 @@ void P2OpcodeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
 
     // fill the background
     painter->setBackgroundMode(Qt::OpaqueMode);
-    if (focus) {
-        int size = painter->pen().width();
-        QBrush brush = opt.backgroundBrush;
-        brush.setColor(brush.color().darker(105));
-        painter->fillRect(opt.rect.adjusted(0,0,-size,-size), brush);
-        painter->drawRect(opt.rect);
-    } else {
-        painter->fillRect(opt.rect, opt.backgroundBrush);
-    }
+    painter->fillRect(opt.rect, opt.backgroundBrush);
 
+    QPalette pal = Colors.palette(P2Colors::p2_pal_source);
     painter->setBackgroundMode(Qt::TransparentMode);
     painter->setFont(opt.font);
-    painter->setPen(Colors.palette_color(P2Colors::p2_pal_source, focus));
+    painter->setPen(pal.windowText().color());
 
     painter->drawText(rect, flags, text);
+
+    if (focus) {
+        const QRect box = opt.rect;
+        QColor bgd = Colors.color("Light Blue");
+        bgd.setAlpha(50);
+        const QColor tl = bgd.lighter(110);
+        const QColor br = bgd.darker(110);
+        // painter->setBackgroundMode(Qt::OpaqueMode);
+        painter->fillRect(box, bgd);
+        painter->setPen(tl);
+        painter->drawLine(box.bottomLeft(), box.topLeft());
+        painter->drawLine(box.topLeft(), box.topRight());
+        painter->setPen(br);
+        painter->drawLine(box.bottomLeft(), box.bottomRight());
+        painter->drawLine(box.bottomRight(), box.topRight());
+    }
 
     painter->restore();
 }

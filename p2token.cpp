@@ -872,8 +872,8 @@ P2Token::P2Token()
     TN_ADD(t__REV,              tm_binop_rev, QStringLiteral("><"));
 
     // Encode / Decode
-    TN_ADD(t__ENCOD,            tm_binop_encod, QStringLiteral(">|"));
-    TN_ADD(t__DECOD,            tm_binop_decod, QStringLiteral("|<"));
+    TN_ADD(t__ENCOD,            tm_binop_encod, QStringLiteral("|<"));
+    TN_ADD(t__DECOD,            tm_binop_decod, QStringLiteral(">|"));
 
     // Set the logical operators
     TN_ADD(t__LOGAND,           tm_logop_and, QStringLiteral("&&"));
@@ -1013,13 +1013,13 @@ P2Token::P2Token()
     m_lookup_modcz.insert(t_MODCZ__SET,         cc_always);
 
     // Build the reverse QHash for string lookup
-    foreach(p2_token_e tok, m_token_string.keys())
+    foreach(p2_TOKEN_e tok, m_token_string.keys())
         foreach(const QString& str, m_token_string.values(tok))
             m_string_token.insert(str, tok);
 
     // Build the reverse QMultiHash for types lookup
-    foreach(p2_token_e tok, m_token_type.keys())
-        foreach(p2_t_mask_t mask, m_token_type.values(tok))
+    foreach(p2_TOKEN_e tok, m_token_type.keys())
+        foreach(p2_TOKENMASK_t mask, m_token_type.values(tok))
             m_type_token.insertMulti(mask, tok);
 
     m_t_type_name.insert(tt_none,           QStringLiteral("-"));
@@ -1059,7 +1059,7 @@ P2Token::P2Token()
  * @param tok one of p2_toke_e enum
  * @return QString in uppercase or lowercase
  */
-QString P2Token::string(p2_token_e tok, bool lowercase) const
+QString P2Token::string(p2_TOKEN_e tok, bool lowercase) const
 {
     QString str = m_token_string.value(tok);
     return lowercase ? str.toLower() : str;
@@ -1069,7 +1069,7 @@ QString P2Token::string(p2_token_e tok, bool lowercase) const
  * @brief Return a QString for the given token %tok's enumeration name
  * @param tok one of p2_toke_e enum
  */
-QString P2Token::enum_name(p2_token_e tok) const
+QString P2Token::enum_name(p2_TOKEN_e tok) const
 {
     return m_token_enum_name.value(tok);
 }
@@ -1099,7 +1099,7 @@ P2Words P2Token::tokenize(const QString* line, const int lineno, int& in_curly) 
     static QRegExp rx;
     static QString regex;
     P2Words words;
-    p2_token_e tok;
+    p2_TOKEN_e tok;
     const int len = line->length();
     int pos = 0;
     int lastpos = 0;
@@ -1296,9 +1296,9 @@ leave:
  * @param plen optional pointer to an int to receive the length of the token
  * @return p2_token_e enumeration value, or t_nothing if not a known string
  */
-p2_token_e P2Token::token(const QString& line, int pos, int& len, bool chop) const
+p2_TOKEN_e P2Token::token(const QString& line, int pos, int& len, bool chop) const
 {
-    p2_token_e tok = t_unknown;
+    p2_TOKEN_e tok = t_unknown;
     QStringRef ref(&line, pos, len);
 
     while (len > 0) {
@@ -1386,9 +1386,9 @@ p2_token_e P2Token::token(const QString& line, int pos, int& len, bool chop) con
  * @param typemask token type bit mask
  * @return true if token type is set, or false otherwise
  */
-bool P2Token::is_type(p2_token_e tok, p2_t_mask_t typemask) const
+bool P2Token::is_type(p2_TOKEN_e tok, p2_TOKENMASK_t typemask) const
 {
-    const p2_t_mask_t bits = m_token_type.value(tok, 0);
+    const p2_TOKENMASK_t bits = m_token_type.value(tok, 0);
     return (bits & typemask) ? true : false;
 }
 
@@ -1398,10 +1398,10 @@ bool P2Token::is_type(p2_token_e tok, p2_t_mask_t typemask) const
  * @param type token type
  * @return true if token type is set, or false otherwise
  */
-bool P2Token::is_type(p2_token_e tok, p2_t_type_e type) const
+bool P2Token::is_type(p2_TOKEN_e tok, p2_TOKENTYPE_e type) const
 {
-    const p2_t_mask_t bits = m_token_type.value(tok, 0);
-    const p2_t_mask_t mask = TTMASK(type);
+    const p2_TOKENMASK_t bits = m_token_type.value(tok, 0);
+    const p2_TOKENMASK_t mask = TTMASK(type);
     return (bits & mask) ? true : false;
 }
 
@@ -1411,9 +1411,9 @@ bool P2Token::is_type(p2_token_e tok, p2_t_type_e type) const
  * @param type token type
  * @return true if token type is set, or false otherwise
  */
-bool P2Token::is_type(const QString& str, p2_t_type_e type) const
+bool P2Token::is_type(const QString& str, p2_TOKENTYPE_e type) const
 {
-    const p2_token_e tok = m_string_token.value(str);
+    const p2_TOKEN_e tok = m_string_token.value(str);
     return is_type(tok, type);
 }
 
@@ -1423,14 +1423,14 @@ bool P2Token::is_type(const QString& str, p2_t_type_e type) const
  * @param typemask bit mask of token types
  * @return QStringList with the type names
  */
-QStringList P2Token::type_names(p2_t_mask_t typemask) const
+QStringList P2Token::type_names(p2_TOKENMASK_t typemask) const
 {
     QStringList list;
     for (int i = 0; i <= 64 && typemask != 0; i++, typemask >>= 1)
         if (typemask & 1)
-                list += m_t_type_name.value(static_cast<p2_t_type_e>(i));
+                list += m_t_type_name.value(static_cast<p2_TOKENTYPE_e>(i));
     if (list.isEmpty())
-        list += m_t_type_name.value(static_cast<p2_t_type_e>(tt_none));
+        list += m_t_type_name.value(static_cast<p2_TOKENTYPE_e>(tt_none));
     return list;
 }
 
@@ -1439,9 +1439,9 @@ QStringList P2Token::type_names(p2_t_mask_t typemask) const
  * @param tok token value
  * @return QStringList with the type names
  */
-QStringList P2Token::type_names(p2_token_e tok) const
+QStringList P2Token::type_names(p2_TOKEN_e tok) const
 {
-    const p2_t_mask_t typemask = m_token_type.value(tok, 0);
+    const p2_TOKENMASK_t typemask = m_token_type.value(tok, 0);
     return type_names(typemask);
 }
 
@@ -1456,10 +1456,10 @@ QStringList P2Token::type_names(p2_token_e tok) const
  * @param dflt default value, if no token from the list is found
  * @return token value, or dflt if none found
  */
-p2_token_e P2Token::at_token(int& pos, const QString& str, QList<p2_token_e> tokens, p2_token_e dflt) const
+p2_TOKEN_e P2Token::at_token(int& pos, const QString& str, QList<p2_TOKEN_e> tokens, p2_TOKEN_e dflt) const
 {
     int len = str.length() - pos;
-    p2_token_e tok = token(str.mid(pos), true, pos, len);
+    p2_TOKEN_e tok = token(str.mid(pos), true, pos, len);
     if (t_unknown == tok)
         return dflt;
     if (tokens.contains(tok)) {
@@ -1475,7 +1475,7 @@ p2_token_e P2Token::at_token(int& pos, const QString& str, QList<p2_token_e> tok
  * @param dflt default value, if no token from the list is found
  * @return token value, or dflt if none found
  */
-p2_token_e P2Token::at_token(const QString& str, QList<p2_token_e> tokens, p2_token_e dflt) const
+p2_TOKEN_e P2Token::at_token(const QString& str, QList<p2_TOKEN_e> tokens, p2_TOKEN_e dflt) const
 {
     int pos = 0;
     return at_token(pos, str, tokens, dflt);
@@ -1486,10 +1486,10 @@ p2_token_e P2Token::at_token(const QString& str, QList<p2_token_e> tokens, p2_to
  * @param tok token value
  * @return true if operation, or flags otherwise
  */
-bool P2Token::is_operation(p2_token_e tok) const
+bool P2Token::is_operation(p2_TOKEN_e tok) const
 {
     // Bit mask for operations
-    const p2_t_mask_t mask = m_token_type.value(tok, 0);
+    const p2_TOKENMASK_t mask = m_token_type.value(tok, 0);
     return (mask & tm_operations) ? true : false;
 }
 
@@ -1498,7 +1498,7 @@ bool P2Token::is_operation(p2_token_e tok) const
  * @param tok token value
  * @return true if conditional, or false otherwise
  */
-bool P2Token::is_conditional(p2_token_e tok) const
+bool P2Token::is_conditional(p2_TOKEN_e tok) const
 {
     return is_type(tok, tt_conditional);
 }
@@ -1508,7 +1508,7 @@ bool P2Token::is_conditional(p2_token_e tok) const
  * @param tok token value
  * @return true if MODCZ parameter, or false otherwise
  */
-bool P2Token::is_modcz_param(p2_token_e tok) const
+bool P2Token::is_modcz_param(p2_TOKEN_e tok) const
 {
     return is_type(tok, tt_modcz_param);
 }
@@ -1524,10 +1524,10 @@ bool P2Token::is_modcz_param(p2_token_e tok) const
  * @param dflt default token value to return if not found
  * @return token value if found, or dflt otherwise
  */
-p2_token_e P2Token::at_type(int& pos, const QString& str, p2_t_mask_t typemask, p2_token_e dflt) const
+p2_TOKEN_e P2Token::at_type(int& pos, const QString& str, p2_TOKENMASK_t typemask, p2_TOKEN_e dflt) const
 {
     int len = str.length() - pos;
-    p2_token_e tok = token(str, true, pos, len);
+    p2_TOKEN_e tok = token(str, true, pos, len);
 
     if (t_unknown == tok)
         return dflt;
@@ -1552,10 +1552,10 @@ p2_token_e P2Token::at_type(int& pos, const QString& str, p2_t_mask_t typemask, 
  * @param dflt default token value to return if not found
  * @return token value if found, or dflt otherwise
  */
-p2_token_e P2Token::at_type(int& pos, const QString& str, p2_t_type_e type, p2_token_e dflt) const
+p2_TOKEN_e P2Token::at_type(int& pos, const QString& str, p2_TOKENTYPE_e type, p2_TOKEN_e dflt) const
 {
     int len = str.length() - pos;
-    p2_token_e tok = token(str, true, pos, len);
+    p2_TOKEN_e tok = token(str, true, pos, len);
 
     if (t_unknown == tok)
         return dflt;
@@ -1577,7 +1577,7 @@ p2_token_e P2Token::at_type(int& pos, const QString& str, p2_t_type_e type, p2_t
  * @param dflt default token value to return if not found
  * @return token value if found, or dflt otherwise
  */
-p2_token_e P2Token::at_type(const QString& str, p2_t_type_e type, p2_token_e dflt) const
+p2_TOKEN_e P2Token::at_type(const QString& str, p2_TOKENTYPE_e type, p2_TOKEN_e dflt) const
 {
     int pos = 0;
     return at_type(pos, str, type, dflt);
@@ -1595,10 +1595,10 @@ p2_token_e P2Token::at_type(const QString& str, p2_t_type_e type, p2_token_e dfl
  * @return token value if found, or dflt otherwise
  */
 
-p2_token_e P2Token::at_types(int& pos, const QString& str, p2_t_mask_t typemask, p2_token_e dflt) const
+p2_TOKEN_e P2Token::at_types(int& pos, const QString& str, p2_TOKENMASK_t typemask, p2_TOKEN_e dflt) const
 {
     int len = str.length() - pos;
-    p2_token_e tok = token(str, true, pos, len);
+    p2_TOKEN_e tok = token(str, true, pos, len);
 
     if (t_unknown == tok)
         return dflt;
@@ -1625,11 +1625,11 @@ p2_token_e P2Token::at_types(int& pos, const QString& str, p2_t_mask_t typemask,
  * @param dflt default token value to return if not found
  * @return token value if found, or dflt otherwise
  */
-p2_token_e P2Token::at_types(int& pos, const QString& str, const QList<p2_t_type_e>& types, p2_token_e dflt) const
+p2_TOKEN_e P2Token::at_types(int& pos, const QString& str, const QList<p2_TOKENTYPE_e>& types, p2_TOKEN_e dflt) const
 {
     // Build bit mask for types
-    p2_t_mask_t typemask = tm_none;
-    foreach(const p2_t_type_e type, types)
+    p2_TOKENMASK_t typemask = tm_none;
+    foreach(const p2_TOKENTYPE_e type, types)
         typemask |= TTMASK(type);
     return at_types(pos, str, typemask, dflt);
 }
@@ -1641,7 +1641,7 @@ p2_token_e P2Token::at_types(int& pos, const QString& str, const QList<p2_t_type
  * @param dflt default token value to return if not found
  * @return token value if found, or dflt otherwise
  */
-p2_token_e P2Token::at_types(const QString& str, const QList<p2_t_type_e>& types, p2_token_e dflt) const
+p2_TOKEN_e P2Token::at_types(const QString& str, const QList<p2_TOKENTYPE_e>& types, p2_TOKEN_e dflt) const
 {
     int pos = 0;
     return at_types(pos, str, types, dflt);
@@ -1657,7 +1657,7 @@ p2_token_e P2Token::at_types(const QString& str, const QList<p2_t_type_e>& types
  * @param dflt default token value to return if not found
  * @return token value if found, or dflt otherwise
  */
-p2_token_e P2Token::at_conditional(int& pos, const QString& str, p2_token_e dflt) const
+p2_TOKEN_e P2Token::at_conditional(int& pos, const QString& str, p2_TOKEN_e dflt) const
 {
     return at_type(pos, str, tt_conditional, dflt);
 }
@@ -1668,7 +1668,7 @@ p2_token_e P2Token::at_conditional(int& pos, const QString& str, p2_token_e dflt
  * @param dflt default token value to return if not found
  * @return token value if found, or dflt otherwise
  */
-p2_token_e P2Token::at_conditional(const QString& str, p2_token_e dflt) const
+p2_TOKEN_e P2Token::at_conditional(const QString& str, p2_TOKEN_e dflt) const
 {
     int pos = 0;
     return at_conditional(pos, str, dflt);
@@ -1684,7 +1684,7 @@ p2_token_e P2Token::at_conditional(const QString& str, p2_token_e dflt) const
  * @param dflt default token value to return if not found
  * @return token value if found, or dflt otherwise
  */
-p2_token_e P2Token::at_modcz_param(int& pos, const QString& str, p2_token_e dflt) const
+p2_TOKEN_e P2Token::at_modcz_param(int& pos, const QString& str, p2_TOKEN_e dflt) const
 {
     return at_type(pos, str, tt_modcz_param, dflt);
 }
@@ -1695,7 +1695,7 @@ p2_token_e P2Token::at_modcz_param(int& pos, const QString& str, p2_token_e dflt
  * @param dflt default token value to return if not found
  * @return token value if found, or dflt otherwise
  */
-p2_token_e P2Token::at_modcz_param(const QString& str, p2_token_e dflt) const
+p2_TOKEN_e P2Token::at_modcz_param(const QString& str, p2_TOKEN_e dflt) const
 {
     int pos = 0;
     return at_modcz_param(pos, str, dflt);
@@ -1708,7 +1708,7 @@ p2_token_e P2Token::at_modcz_param(const QString& str, p2_token_e dflt) const
  * @param dflt default condition if token is not a conditional
  * @return One of the 16 p2_cond_e values
  */
-p2_cond_e P2Token::conditional(p2_token_e cond, p2_cond_e dflt) const
+p2_Cond_e P2Token::conditional(p2_TOKEN_e cond, p2_Cond_e dflt) const
 {
     return m_lookup_cond.value(cond, dflt);
 }
@@ -1719,10 +1719,10 @@ p2_cond_e P2Token::conditional(p2_token_e cond, p2_cond_e dflt) const
  * @param dflt default condition if string is not a conditional
  * @return One of the 16 p2_cond_e values
  */
-p2_cond_e P2Token::conditional(const QString& str, p2_cond_e dflt) const
+p2_Cond_e P2Token::conditional(const QString& str, p2_Cond_e dflt) const
 {
     int pos = 0;
-    p2_token_e cond = at_type(pos, str, tt_conditional);
+    p2_TOKEN_e cond = at_type(pos, str, tt_conditional);
     return m_lookup_cond.value(cond, dflt);
 }
 
@@ -1732,7 +1732,7 @@ p2_cond_e P2Token::conditional(const QString& str, p2_cond_e dflt) const
  * @param dflt default condition if token is not a MODCZ parameter
  * @return One of the 16 p2_cond_e values
  */
-p2_cond_e P2Token::modcz_param(p2_token_e cond, p2_cond_e dflt) const
+p2_Cond_e P2Token::modcz_param(p2_TOKEN_e cond, p2_Cond_e dflt) const
 {
     return m_lookup_modcz.value(cond, dflt);
 }
@@ -1743,10 +1743,10 @@ p2_cond_e P2Token::modcz_param(p2_token_e cond, p2_cond_e dflt) const
  * @param dflt default parameter if string is not a MODCZ parameter
  * @return One of the 16 p2_cond_e values
  */
-p2_cond_e P2Token::modcz_param(const QString& str, p2_cond_e dflt) const
+p2_Cond_e P2Token::modcz_param(const QString& str, p2_Cond_e dflt) const
 {
     int pos = 0;
-    p2_token_e cond = at_type(pos, str, tt_modcz_param);
+    p2_TOKEN_e cond = at_type(pos, str, tt_modcz_param);
     return m_lookup_modcz.value(cond, dflt);
 }
 
@@ -1755,9 +1755,9 @@ p2_cond_e P2Token::modcz_param(const QString& str, p2_cond_e dflt) const
  * @param tok token value
  * @param typemask bit mask with type(s) to set
  */
-void P2Token::tt_set(p2_token_e tok, p2_t_mask_t typemask)
+void P2Token::tt_set(p2_TOKEN_e tok, p2_TOKENMASK_t typemask)
 {
-    p2_t_mask_t mask = m_token_type.value(tok, 0) | typemask;
+    p2_TOKENMASK_t mask = m_token_type.value(tok, 0) | typemask;
     m_token_type.insert(tok, mask);
 }
 
@@ -1766,9 +1766,9 @@ void P2Token::tt_set(p2_token_e tok, p2_t_mask_t typemask)
  * @param tok token value
  * @param typemask bit mask with type(s) to clear
  */
-void P2Token::tt_clr(p2_token_e tok, p2_t_mask_t typemask)
+void P2Token::tt_clr(p2_TOKEN_e tok, p2_TOKENMASK_t typemask)
 {
-    p2_t_mask_t mask = m_token_type.value(tok, 0) & ~typemask;
+    p2_TOKENMASK_t mask = m_token_type.value(tok, 0) & ~typemask;
     m_token_type.insert(tok, mask);
 }
 
@@ -1778,7 +1778,7 @@ void P2Token::tt_clr(p2_token_e tok, p2_t_mask_t typemask)
  * @param typemask bit mask with type(s) to check for
  * @return true if any bit of typemask is set, or false otherwise
  */
-bool P2Token::tt_chk(p2_token_e tok, p2_t_mask_t typemask) const
+bool P2Token::tt_chk(p2_TOKEN_e tok, p2_TOKENMASK_t typemask) const
 {
     return m_token_type.value(tok, 0) & typemask ? true : false;
 }
@@ -1789,7 +1789,7 @@ bool P2Token::tt_chk(p2_token_e tok, p2_t_mask_t typemask) const
  * @param typemask token type bitmask
  * @param str string
  */
-void P2Token::tn_ADD(p2_token_e tok, const QString& enum_name, p2_t_mask_t typemask, const QString& string)
+void P2Token::tn_ADD(p2_TOKEN_e tok, const QString& enum_name, p2_TOKENMASK_t typemask, const QString& string)
 {
     m_token_enum_name.insert(tok, enum_name);
     m_token_string.insert(tok, string);

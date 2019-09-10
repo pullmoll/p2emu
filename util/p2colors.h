@@ -1,6 +1,40 @@
+/****************************************************************************
+ *
+ * Propeller2 emulator color palette for source delegate
+ *
+ * Copyright (C) 2019 Jürgen Buchmüller <pullmoll@t-online.de>
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ ****************************************************************************/
 #pragma once
 #include <QVariant>
 #include <QColor>
+#include <QPalette>
 #include <QHash>
 #include "p2token.h"
 
@@ -37,9 +71,13 @@ public:
     QString palette_name(p2_palette_e id = p2_pal_source) const;
     QStringList palette_names() const;
     p2_palette_e palette_key(const QString& name) const;
-    const QHash<p2_palette_e, QColor>& palette(bool reset_default = false);
-    QColor palette_color(p2_palette_e pal, bool darker = false) const;
-    QColor palette_color(p2_token_e tok, bool darker = false) const;
+    const QHash<p2_palette_e, QColor>& hash(bool reset_default = false);
+    QPalette palette(p2_palette_e pal) const;
+    QPalette palette(p2_TOKEN_e tok) const;
+    QColor palette_color(p2_palette_e pal) const;
+    QColor palette_color(p2_TOKEN_e tok) const;
+
+    static p2_palette_e pal_for_token(const p2_TOKEN_e tok);
 
 public slots:
     void set_palette_color(p2_palette_e pal, const QColor& color);

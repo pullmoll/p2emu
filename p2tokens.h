@@ -37,7 +37,7 @@
 /**
  * @brief enumeration of tokens used in mnemonics for the P2 assembler and disassembler
  */
-enum p2_token_e {
+enum p2_TOKEN_e {
     t_invalid = -1,     //!< undefined value
     t_none,             //!< no string
     t_unknown,          //!< nothing found
@@ -559,7 +559,7 @@ enum p2_token_e {
     // assignment
     t_ASSIGN,          //!< "="
 
-    // LUT shadow registers
+    // shadow registers
     t_DIRA,
     t_DIRB,
     t_INA,
@@ -636,11 +636,11 @@ enum p2_token_e {
     t__REV,             //!< "><"
 
     // encode/decode
-    t__ENCOD,          //!< "|<"
-    t__DECOD,          //!< ">|"
+    t__ENCOD,           //!< "|<"
+    t__DECOD,           //!< ">|"
 
     t__LOGAND,          //!< "&&"
     t__LOGOR,           //!< "||"
 };
 
-typedef QVector<p2_token_e> p2_token_v;
+typedef QVector<p2_TOKEN_e> p2_token_v;

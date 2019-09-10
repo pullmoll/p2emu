@@ -54,10 +54,11 @@ public:
     const QString& name() const;
     const P2Union& value() const;
     void set_value(const P2Union& value);
-    p2_union_e type() const;
+    p2_Union_e type() const;
     const QString type_name() const;
+
     P2Word definition() const;
-    P2Word reference(int idx = 0) const;
+    P2Word reference(int lineno = 0) const;
     void add_reference(int lineno, const P2Word& word);
     const p2_lineno_word_hash_t& references() const;
     QList<P2Word> references(const P2SymbolClass& sym) const;

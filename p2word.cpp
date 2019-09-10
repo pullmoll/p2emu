@@ -1,6 +1,6 @@
 #include "p2word.h"
 
-P2Word::P2Word(p2_token_e tok, const QStringRef& ref, int lineno)
+P2Word::P2Word(p2_TOKEN_e tok, const QStringRef& ref, int lineno)
     : m_ref(ref)
     , m_tok(tok)
     , m_lineno(lineno)
@@ -11,7 +11,7 @@ bool P2Word::isValid() const
     return t_invalid != m_tok;
 }
 
-p2_token_e P2Word::tok() const
+p2_TOKEN_e P2Word::tok() const
 {
     return m_tok;
 }
@@ -46,7 +46,7 @@ int P2Word::end() const
     return m_ref.position() + m_ref.length();
 }
 
-void P2Word::set_tok(p2_token_e tok)
+void P2Word::set_tok(p2_TOKEN_e tok)
 {
     m_tok = tok;
 }
@@ -56,7 +56,7 @@ void P2Word::set_lineno(const int line)
     m_lineno = line;
 }
 
-bool P2Word::remove(QVector<P2Word>& words, p2_token_e tok)
+bool P2Word::remove(QVector<P2Word>& words, p2_TOKEN_e tok)
 {
     int count = words.count();
     for (int i = 0; i < words.count(); i++) {

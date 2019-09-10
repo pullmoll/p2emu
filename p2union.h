@@ -20,6 +20,7 @@ public:
     explicit P2Union(p2_LONG l);
     explicit P2Union(p2_QUAD q);
     explicit P2Union(p2_REAL r);
+    explicit P2Union(p2_LONG o, p2_LONG h);
     explicit P2Union(const QByteArray& ba);
     explicit P2Union(p2_BYTES vb);
     explicit P2Union(p2_WORDS vw);
@@ -28,9 +29,9 @@ public:
 
     int unit() const;
     int usize() const;
-    p2_union_e type() const;
+    p2_Union_e type() const;
     QString type_name() const;
-    void set_type(p2_union_e type);
+    void set_type(p2_Union_e type);
     bool is_zero() const;
 
     QVariant get() const;
@@ -43,6 +44,8 @@ public:
     p2_BYTE get_byte() const;
     p2_WORD get_word() const;
     p2_LONG get_long() const;
+    p2_ORIGIN_t get_addr() const;
+    p2_LONG get_addr(bool hub) const;
     p2_QUAD get_quad() const;
     p2_REAL get_real() const;
 
@@ -57,46 +60,53 @@ public:
     void set_int(const int& var);
     void set_bool(const bool& var);
     void set_char(const char& var);
-    void set_byte(const p2_BYTE& var);
-    void set_word(const p2_WORD& var);
-    void set_addr(const p2_LONG& var);
-    void set_long(const p2_LONG& var);
-    void set_quad(const p2_QUAD& var);
-    void set_real(const p2_REAL& var);
+    void set_byte(const p2_BYTE& _byte);
+    void set_word(const p2_WORD& _word);
+    void set_addr(const p2_LONG& _cog, const p2_LONG& _hub);
+    void set_long(const p2_LONG& _long);
+    void set_quad(const p2_QUAD& _quad);
+    void set_real(const p2_REAL& _real);
 
-    void set_chars(const p2_CHARS& var);
-    void set_bytes(const p2_BYTES& var);
-    void set_words(const p2_WORDS& var);
-    void set_longs(const p2_LONGS& var);
-    void set_quads(const p2_QUADS& var);
-    void set_reals(const p2_REALS& var);
-    void set_array(const QByteArray& var);
-    void set_string(const QString& var);
+    void set_chars(const p2_CHARS& _chars);
+    void set_bytes(const p2_BYTES& _bytes);
+    void set_words(const p2_WORDS& _words);
+    void set_longs(const p2_LONGS& _longs);
+    void set_quads(const p2_QUADS& _quads);
+    void set_reals(const p2_REALS& _reals);
+    void set_array(const QByteArray& _array);
+    void set_string(const QString& _string);
 
     void set_typed_var(const TypedVar& var);
 
-    void add_int(const int& var);
-    void add_bool(const bool& var);
-    void add_char(const char& var);
-    void add_byte(const p2_BYTE& var);
-    void add_word(const p2_WORD& var);
-    void add_long(const p2_LONG& var);
-    void add_quad(const p2_QUAD& var);
-    void add_real(const p2_REAL& var);
+    void add_int(const int& _int);
+    void add_bool(const bool& _bool);
+    void add_char(const char& _char);
+    void add_byte(const p2_BYTE& _byte);
+    void add_word(const p2_WORD& _word);
+    void add_long(const p2_LONG& _long);
+    void add_addr(const p2_LONG& _cog, const p2_LONG& _hub);
+    void add_quad(const p2_QUAD& _quad);
+    void add_real(const p2_REAL& _real);
 
-    void add_chars(const p2_CHARS& var);
-    void add_bytes(const p2_BYTES& var);
-    void add_words(const p2_WORDS& var);
-    void add_longs(const p2_LONGS& var);
-    void add_quads(const p2_QUADS& var);
-    void add_reals(const p2_REALS& var);
-    void add_array(const QByteArray& var);
-    void add_string(const QString& var);
+    void add_chars(const p2_CHARS& _chars);
+    void add_bytes(const p2_BYTES& _bytes);
+    void add_words(const p2_WORDS& _words);
+    void add_longs(const p2_LONGS& _longs);
+    void add_quads(const p2_QUADS& _quads);
+    void add_reals(const p2_REALS& _reals);
+    void add_array(const QByteArray& _array);
+    void add_string(const QString& _string);
 
-    static QString type_name(p2_union_e type);
+    QString str(bool with_type = false, p2_FORMAT_e fmt = fmt_hex) const;
+
+    static QString type_name(p2_Union_e type);
+    static QString str(const P2Union& un, bool with_type = false, p2_FORMAT_e fmt = fmt_hex);
+
+    static constexpr bool cog = false;
+    static constexpr bool hub = true;
 
 private:
-    p2_union_e m_type;
+    p2_Union_e m_type;
 
     static QByteArray chain_bytes(const P2Union* pun, bool expand = false);
     static QByteArray chain_words(const P2Union* pun, bool expand = false);

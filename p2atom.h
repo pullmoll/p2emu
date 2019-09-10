@@ -70,34 +70,35 @@
 class P2Atom
 {
 public:
-    explicit P2Atom(p2_union_e type = ut_Invalid);
+    explicit P2Atom(p2_Union_e type = ut_Invalid);
     P2Atom(const P2Atom& other);
-    P2Atom(bool get);
-    P2Atom(p2_BYTE get);
-    P2Atom(p2_WORD get);
-    P2Atom(p2_LONG get);
-    P2Atom(p2_QUAD get);
-    P2Atom(p2_REAL get);
+    P2Atom(bool _bool);
+    P2Atom(p2_BYTE _byte);
+    P2Atom(p2_WORD _word);
+    P2Atom(p2_LONG _long);
+    P2Atom(p2_QUAD _quad);
+    P2Atom(p2_REAL _real);
+    P2Atom(p2_LONG _cog, p2_LONG _hub);
 
-    void clear(p2_union_e type = ut_Invalid);
+    void clear(p2_Union_e type = ut_Invalid);
     bool isNull() const;
     bool isEmpty() const;
     bool isZero() const;
     bool isValid() const;
-    p2_traits_e traits() const;
-    bool has_trait(const p2_traits_e trait) const;
+    p2_Traits_e traits() const;
+    bool has_trait(const p2_Traits_e trait) const;
 
     int size() const;
     int usize() const;
     int count() const;
 
-    p2_union_e type() const;
+    p2_Union_e type() const;
     const QString type_name() const;
-    void set_type(p2_union_e type);
+    void set_type(p2_Union_e type);
 
-    bool set_traits(p2_traits_e traits);
-    bool add_trait(p2_traits_e traits);
-    bool clr_trait(p2_traits_e traits);
+    bool set_traits(p2_Traits_e traits);
+    bool add_trait(p2_Traits_e traits);
+    bool clr_trait(p2_Traits_e traits);
 
     const P2Union& value() const;
     void set_value(const P2Union& value);
@@ -110,8 +111,9 @@ public:
     void set_char(const char& _char);
     void set_byte(const p2_BYTE& _byte);
     void set_word(const p2_WORD& _word);
-    void set_addr(const p2_LONG& _addr);
+    void set_addr(const p2_LONG& _cog, const p2_LONG& _hub);
     void set_long(const p2_LONG& _long);
+    void set_quad(const p2_QUAD& _quad);
     void set_real(const p2_REAL& _real);
     void set_chars(const p2_CHARS& _chars);
     void set_bytes(const p2_BYTES& _bytes);
@@ -127,18 +129,22 @@ public:
     void add_byte(const p2_BYTE& _byte);
     void add_word(const p2_WORD& _word);
     void add_long(const p2_LONG& _long);
+    void add_quad(const p2_QUAD& _quad);
+    void add_real(const p2_REAL& _real);
     void add_chars(const p2_CHARS& _chars);
     void add_bytes(const p2_BYTES& _bytes);
     void add_words(const p2_WORDS& _words);
     void add_longs(const p2_LONGS& _longs);
     void add_array(const QByteArray& get);
 
-    QString str(p2_format_e fmt = fmt_hex) const;
+    QString str(p2_FORMAT_e fmt = fmt_hex) const;
     bool get_bool() const;
     int get_int() const;
     p2_BYTE get_byte() const;
     p2_WORD get_word() const;
     p2_LONG get_long() const;
+    p2_ORIGIN_t get_addr() const;
+    p2_LONG get_addr(bool hub) const;
     p2_QUAD get_quad() const;
     p2_REAL get_real() const;
     QString string(bool expand = false) const;
@@ -152,8 +158,8 @@ public:
     void complement2(bool flag);
     void logical_not(bool flag);
     void make_bool(bool flag);
-    void unary_dec(const p2_LONG val);
-    void unary_inc(const p2_LONG val);
+    void unary_dec(const p2_LONG val = 1);
+    void unary_inc(const p2_LONG val = 1);
     void arith_mul(const P2Atom& atom);
     void arith_div(const P2Atom& atom);
     void arith_mod(const P2Atom& atom);
@@ -196,7 +202,7 @@ public:
     static QString string(const P2Atom& atom);
 
 private:
-    p2_traits_e m_trait;        //!< Traits for this atom
+    p2_Traits_e m_trait;        //!< Traits for this atom
     P2Union m_value;            //!< Actual value of this atom
     P2Union m_index;            //!< Optional index value of this atom
 };

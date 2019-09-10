@@ -1,3 +1,37 @@
+/****************************************************************************
+ *
+ * Propeller2 emulator color palette for source delegate
+ *
+ * Copyright (C) 2019 Jürgen Buchmüller <pullmoll@t-online.de>
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ ****************************************************************************/
+#include <QGuiApplication>
 #include <cmath>
 #include "p2colors.h"
 #include "p2util.h"
@@ -172,6 +206,12 @@ P2Colors::P2Colors()
         {QStringLiteral("Transparent"),         QColor(0x01,0x01,0x01,0x00)}
     };
 
+    foreach(const QString& name, QColor::colorNames()) {
+        QColor stdcolor = QColor(name);
+        if (m_named_colors.keys(stdcolor).isEmpty())
+            m_named_colors.insert(name, stdcolor);
+    }
+
     m_palette_names.insert(p2_pal_comment,      QStringLiteral("Comment"));
     m_palette_names.insert(p2_pal_instruction,  QStringLiteral("Instruction"));
     m_palette_names.insert(p2_pal_conditional,  QStringLiteral("Conditional"));
@@ -318,7 +358,7 @@ P2Colors::p2_palette_e P2Colors::palette_key(const QString& name) const
  * @param reset_default if true, reset to the default palette first
  * @return QHash of palette enumeration values and their QColor
  */
-const QHash<P2Colors::p2_palette_e, QColor>& P2Colors::palette(bool reset_default)
+const QHash<P2Colors::p2_palette_e, QColor>& P2Colors::hash(bool reset_default)
 {
     if (reset_default)
         reset_palette();
@@ -326,17 +366,40 @@ const QHash<P2Colors::p2_palette_e, QColor>& P2Colors::palette(bool reset_defaul
 }
 
 /**
+ * @brief Return a modified QPalette for %pal
+ * @param pal p2_palette_e value
+ * @return QPalette adjusted to color for %pal
+ */
+QPalette P2Colors::palette(P2Colors::p2_palette_e pal) const
+{
+    QPalette qpal = qApp->palette();
+    const QColor color = palette_color(pal);
+    const int gray = qGray(color.rgb());
+
+    qpal.setColor(QPalette::Active, QPalette::WindowText, color);
+    qpal.setColor(QPalette::Inactive, QPalette::WindowText, color.lighter(150));
+    qpal.setColor(QPalette::Disabled, QPalette::WindowText, QColor(gray,gray,gray));
+    return qpal;
+}
+
+/**
+ * @brief Return a modified QPalette for %tok
+ * @param tok parser token enumeration value
+ * @return QPalette adjusted to color for %tok
+ */
+QPalette P2Colors::palette(p2_TOKEN_e tok) const
+{
+    return palette(pal_for_token(tok));
+}
+
+/**
  * @brief Return a palette color for the palette enumeration value %pal
  * @param pal palette index from p2_palette_e
- * @param darker if true, make the color darker
  * @return QColor for the index
  */
-QColor P2Colors::palette_color(p2_palette_e pal, bool darker) const
+QColor P2Colors::palette_color(p2_palette_e pal) const
 {
-    QColor color = m_palette.value(pal, m_default_colors[p2_pal_source]);
-    if (darker)
-        color = color.darker(120);
-    return color;
+    return m_palette.value(pal, m_default_colors[p2_pal_source]);
 }
 
 /**
@@ -374,7 +437,17 @@ void P2Colors::set_palette_color(P2Colors::p2_palette_e pal, const QString& name
  * @param darker if true, make the color darker
  * @return QColor from the palette
  */
-QColor P2Colors::palette_color(p2_token_e tok, bool darker) const
+QColor P2Colors::palette_color(p2_TOKEN_e tok) const
+{
+    return palette_color(pal_for_token(tok));
+}
+
+/**
+ * @brief Return a p2_palette_e value for the token %tok
+ * @param tok token value to map
+ * @return p2_palette_e value to use
+ */
+P2Colors::p2_palette_e P2Colors::pal_for_token(const p2_TOKEN_e tok)
 {
     p2_palette_e pal = p2_pal_source;
 
@@ -438,7 +511,7 @@ QColor P2Colors::palette_color(p2_token_e tok, bool darker) const
             pal = p2_pal_expression;
         break;
     }
-    return palette_color(pal, darker);
+    return pal;
 }
 
 /**

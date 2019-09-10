@@ -71,13 +71,10 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
 
     // fill the background
     painter->setBackgroundMode(Qt::OpaqueMode);
-    QBrush brush = opt.backgroundBrush;
-    if (focus) {
-        QColor color = Colors.color(QStringLiteral("Light Blue"));
-        color.setAlpha(80);
-        brush.setColor(color.lighter(110));
-    }
-    painter->fillRect(opt.rect, brush);
+    QPalette palette = Colors.palette(P2Colors::p2_pal_source);
+    palette.setCurrentColorGroup(QPalette::Normal);
+    opt.backgroundBrush = palette.base();
+    painter->fillRect(opt.rect, opt.backgroundBrush);
 
     painter->setFont(opt.font);
     painter->setBackgroundMode(Qt::TransparentMode);
@@ -98,19 +95,19 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
         int pos = ref.position();
 
         // draw the character
-        p2_token_e tok = word.tok();
-        const QColor& color = Colors.palette_color(tok, focus);
+        p2_TOKEN_e tok = word.tok();
+        palette = Colors.palette(tok);
 
         if (highlite.isValid() && highlite.pos() == pos) {
             QRect box;
             foreach(const QRect& r, bounding.mid(pos, len))
                 box = box.united(r);
-            QColor lighter = color.lighter(150);
-            QColor darker = color.darker(150);
+            QColor lighter = palette.windowText().color();
+            QColor darker = palette.window().color();
             painter->fillRect(box, lighter);
             painter->setPen(darker);
         } else {
-            painter->setPen(color);
+            painter->setPen(palette.windowText().color());
         }
 
         pos = word.pos();
@@ -121,15 +118,19 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     }
 
     if (focus) {
-        QRect box = opt.rect;
-        QColor tl = opt.backgroundBrush.color().darker(120);
-        QColor br = opt.backgroundBrush.color().darker(110);
+        const QRect box = opt.rect;
+        QColor bgd = Colors.color("Light Blue");
+        bgd.setAlpha(50);
+        const QColor tl = bgd.lighter(110);
+        const QColor br = bgd.darker(110);
+        // painter->setBackgroundMode(Qt::OpaqueMode);
+        painter->fillRect(box, bgd);
         painter->setPen(tl);
-        painter->drawLine(box.bottomLeft(), opt.rect.topLeft());
-        painter->drawLine(box.topLeft(), opt.rect.topRight());
+        painter->drawLine(box.bottomLeft(), box.topLeft());
+        painter->drawLine(box.topLeft(), box.topRight());
         painter->setPen(br);
-        painter->drawLine(box.bottomLeft(), opt.rect.bottomRight());
-        painter->drawLine(box.bottomRight(), opt.rect.topRight());
+        painter->drawLine(box.bottomLeft(), box.bottomRight());
+        painter->drawLine(box.bottomRight(), box.topRight());
     }
 
     painter->restore();

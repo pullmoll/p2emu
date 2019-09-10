@@ -14,12 +14,12 @@ public:
     static p2_BYTE msb(p2_BYTE val);
     static uchar encode(p2_QUAD val);
     static uchar encode(p2_LONG val);
-    static uint encode(p2_WORD val);
-    static uint encode(p2_BYTE val);
-    static uint lzc(p2_QUAD val);
-    static uint lzc(p2_LONG val);
-    static uint lzc(p2_WORD val);
-    static uint lzc(p2_BYTE val);
+    static uchar encode(p2_WORD val);
+    static uchar encode(p2_BYTE val);
+    static uchar lzc(p2_QUAD val);
+    static uchar lzc(p2_LONG val);
+    static uchar lzc(p2_WORD val);
+    static uchar lzc(p2_BYTE val);
     static uchar ones(p2_QUAD val);
     static uchar ones(p2_LONG val);
     static uchar ones(p2_WORD val);

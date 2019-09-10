@@ -34,9 +34,9 @@
 #include "p2opcode.h"
 #include "p2doc.h"
 
-P2Opcode::P2Opcode(const p2_LONG opcode, p2_ORG_ORGH_t org_orgh)
+P2Opcode::P2Opcode(const p2_LONG opcode, p2_ORIGIN_t org_orgh)
     : m_u()
-    , m_org_orgh(org_orgh)
+    , m_origin(org_orgh)
     , m_type(type_none)
     , m_imm_dst(imm_none)
     , m_imm_src(imm_none)
@@ -50,9 +50,9 @@ P2Opcode::P2Opcode(const p2_LONG opcode, p2_ORG_ORGH_t org_orgh)
     m_u.opcode = opcode;
 }
 
-P2Opcode::P2Opcode(const p2_inst5_e inst5, p2_ORG_ORGH_t org_orgh)
+P2Opcode::P2Opcode(const p2_INST5_e inst5, p2_ORIGIN_t org_orgh)
     : m_u()
-    , m_org_orgh(org_orgh)
+    , m_origin(org_orgh)
     , m_type(type_none)
     , m_imm_dst(imm_none)
     , m_imm_src(imm_none)
@@ -66,9 +66,9 @@ P2Opcode::P2Opcode(const p2_inst5_e inst5, p2_ORG_ORGH_t org_orgh)
     set_inst5(inst5);
 }
 
-P2Opcode::P2Opcode(const p2_inst7_e inst7, p2_ORG_ORGH_t org_orgh)
+P2Opcode::P2Opcode(const p2_INST7_e inst7, p2_ORIGIN_t org_orgh)
     : m_u()
-    , m_org_orgh(org_orgh)
+    , m_origin(org_orgh)
     , m_type(type_none)
     , m_imm_dst(imm_none)
     , m_imm_src(imm_none)
@@ -82,9 +82,9 @@ P2Opcode::P2Opcode(const p2_inst7_e inst7, p2_ORG_ORGH_t org_orgh)
     set_inst7(inst7);
 }
 
-P2Opcode::P2Opcode(const p2_inst8_e inst8, p2_ORG_ORGH_t org_orgh)
+P2Opcode::P2Opcode(const p2_INST8_e inst8, p2_ORIGIN_t org_orgh)
     : m_u()
-    , m_org_orgh(org_orgh)
+    , m_origin(org_orgh)
     , m_type(type_none)
     , m_imm_dst(imm_none)
     , m_imm_src(imm_none)
@@ -98,9 +98,9 @@ P2Opcode::P2Opcode(const p2_inst8_e inst8, p2_ORG_ORGH_t org_orgh)
     set_inst8(inst8);
 }
 
-P2Opcode::P2Opcode(const p2_inst9_e inst9, p2_ORG_ORGH_t org_orgh)
+P2Opcode::P2Opcode(const p2_INST9_e inst9, p2_ORIGIN_t org_orgh)
     : m_u()
-    , m_org_orgh(org_orgh)
+    , m_origin(org_orgh)
     , m_type(type_none)
     , m_imm_dst(imm_none)
     , m_imm_src(imm_none)
@@ -118,10 +118,10 @@ P2Opcode::P2Opcode(const p2_inst9_e inst9, p2_ORG_ORGH_t org_orgh)
  * @brief clear the members to their initial state
  * @param opcode optional opcode
  */
-void P2Opcode::clear(const p2_LONG opcode, p2_ORG_ORGH_t pc_orgh)
+void P2Opcode::clear(const p2_LONG opcode, p2_ORIGIN_t origin)
 {
     m_u.opcode = opcode;
-    m_org_orgh = pc_orgh;
+    m_origin = origin;
     m_type = type_none;
     m_imm_dst = imm_none;
     m_imm_src = imm_none;
@@ -131,6 +131,11 @@ void P2Opcode::clear(const p2_LONG opcode, p2_ORG_ORGH_t pc_orgh)
     m_equ.clear();
     m_error_code = err_none;
     m_error_value = 0;
+}
+
+void P2Opcode::clear(const p2_LONG opcode, p2_LONG _cog, p2_LONG _hub)
+{
+    clear(opcode, p2_ORIGIN_t({_cog,_hub}));
 }
 
 /**
@@ -149,27 +154,27 @@ const P2Atom& P2Opcode::equ() const
  * @brief Return the current ORG/ORGH pair
  * @return QPair<p2_LONG,p2_LONG> with ORG in first, ORGH in second
  */
-const p2_ORG_ORGH_t P2Opcode::org_orgh() const
+const p2_ORIGIN_t P2Opcode::origin() const
 {
-    return m_org_orgh;
+    return m_origin;
 }
 
 /**
  * @brief Return the current ORG
  * @return p2_LONG with ORG
  */
-p2_LONG P2Opcode::org() const
+p2_LONG P2Opcode::cogaddr() const
 {
-    return m_org_orgh.first;
+    return m_origin._cog;
 }
 
 /**
  * @brief Return the current ORGH
  * @return p2_LONG with ORGH
  */
-p2_LONG P2Opcode::orgh() const
+p2_LONG P2Opcode::hubaddr() const
 {
-    return m_org_orgh.second;
+    return m_origin._hub;
 }
 
 /**
@@ -309,46 +314,46 @@ p2_LONG P2Opcode::opcode() const
  * @brief Return the current condition (IF_...)
  * @return
  */
-p2_cond_e P2Opcode::cond() const
+p2_Cond_e P2Opcode::cond() const
 {
-    return static_cast<p2_cond_e>(m_u.op7.cond);
+    return static_cast<p2_Cond_e>(m_u.op7.cond);
 }
 
 /**
  * @brief Return the current instruction's 7 bit inst value
  * @return p2_inst7_e enumeration value
  */
-p2_inst7_e P2Opcode::inst7() const
+p2_INST7_e P2Opcode::inst7() const
 {
-    return static_cast<p2_inst7_e>(m_u.op7.inst);
+    return static_cast<p2_INST7_e>(m_u.op7.inst);
 }
 
 /**
  * @brief Return the current instruction's 8 bit inst value
  * @return p2_inst8_e enumeration value
  */
-p2_inst8_e P2Opcode::inst8() const
+p2_INST8_e P2Opcode::inst8() const
 {
-    return static_cast<p2_inst8_e>(m_u.op8.inst);
+    return static_cast<p2_INST8_e>(m_u.op8.inst);
 }
 
 /**
  * @brief Return the current instruction's 9 bit inst value
  * @return p2_inst9_e enumeration value
  */
-p2_inst9_e P2Opcode::inst9() const
+p2_INST9_e P2Opcode::inst9() const
 {
-    return static_cast<p2_inst9_e>(m_u.op9.inst);
+    return static_cast<p2_INST9_e>(m_u.op9.inst);
 }
 
 /**
  * @brief Return the current instruction's opsrc value
  * @return p2_opsrc_e enumeration value; p2_OPSRC_INVALID if not a p2_OPSRC instruction
  */
-p2_opsrc_e P2Opcode::opsrc() const
+p2_OPSRC_e P2Opcode::opsrc() const
 {
     if (p2_OPSRC == inst7())
-        return static_cast<p2_opsrc_e>(m_u.op7.src);
+        return static_cast<p2_OPSRC_e>(m_u.op7.src);
     return p2_OPSRC_INVALID;
 }
 
@@ -356,10 +361,10 @@ p2_opsrc_e P2Opcode::opsrc() const
  * @brief Return the current instruction's opx24 value
  * @return p2_opx24_e enumeration value; p2_OPX24_INVALID if not a p2_OPSRC / p2_OPSRC_X24 instruction
  */
-p2_opx24_e P2Opcode::opx24() const
+p2_OPX24_e P2Opcode::opx24() const
 {
     if (p2_OPSRC_X24 == opsrc())
-        return static_cast<p2_opx24_e>(m_u.op7.dst);
+        return static_cast<p2_OPX24_e>(m_u.op7.dst);
     return p2_OPX24_INVALID;
 }
 
@@ -464,12 +469,21 @@ void P2Opcode::set_as_IR(bool on)
 }
 
 /**
- * @brief Set the current ORG/ORGH pair
- * @param org_orgh pair of p2_LONG with ORG (first) and ORGH (second) values
+ * @brief Set the current ORG/ORGH
+ * @param origin pair of p2_LONG with ORG and ORGH values
  */
-void P2Opcode::set_org_orgh(p2_ORG_ORGH_t org_orgh)
+void P2Opcode::set_origin(p2_ORIGIN_t origin)
 {
-    m_org_orgh = org_orgh;
+    m_origin = origin;
+}
+
+/**
+ * @brief Set the current ORG/ORGH pair
+ * @param origin pair of p2_LONG with ORG and ORGH values
+ */
+void P2Opcode::set_origin(p2_LONG _org, p2_LONG _orgh)
+{
+    m_origin = p2_ORIGIN_t({_org,_orgh});
 }
 
 /**
@@ -510,7 +524,7 @@ void P2Opcode::set_opcode(const p2_LONG opcode)
  * @brief Set the opcode's cond field to %cond
  * @param cond p2_cond_e enumeration value
  */
-void P2Opcode::set_cond(const p2_cond_e cond)
+void P2Opcode::set_cond(const p2_Cond_e cond)
 {
     m_u.op7.cond = cond;
 }
@@ -519,7 +533,7 @@ void P2Opcode::set_cond(const p2_cond_e cond)
  * @brief Set the opcode's instruction field to a 5 bit enumeration value
  * @param inst p2_inst5_e instruction to set
  */
-void P2Opcode::set_inst5(const p2_inst5_e inst)
+void P2Opcode::set_inst5(const p2_INST5_e inst)
 {
     m_u.op5.inst = static_cast<uint>(inst);
 }
@@ -528,7 +542,7 @@ void P2Opcode::set_inst5(const p2_inst5_e inst)
  * @brief Set the opcode's instruction field to a 7 bit enumeration value
  * @param inst p2_inst7_e instruction to set
  */
-void P2Opcode::set_inst7(const p2_inst7_e inst)
+void P2Opcode::set_inst7(const p2_INST7_e inst)
 {
     m_u.op7.inst = static_cast<uint>(inst);
 }
@@ -537,7 +551,7 @@ void P2Opcode::set_inst7(const p2_inst7_e inst)
  * @brief Set the opcode's instruction field to a 8 bit enumeration value
  * @param inst p2_inst8_e instruction to set
  */
-void P2Opcode::set_inst8(const p2_inst8_e inst)
+void P2Opcode::set_inst8(const p2_INST8_e inst)
 {
     m_u.op8.inst = static_cast<uint>(inst);
 }
@@ -546,7 +560,7 @@ void P2Opcode::set_inst8(const p2_inst8_e inst)
  * @brief Set the opcode's instruction field to a 9 bit enumeration value
  * @param inst p2_inst9_e instruction to set
  */
-void P2Opcode::set_inst9(const p2_inst9_e inst)
+void P2Opcode::set_inst9(const p2_INST9_e inst)
 {
     m_u.op9.inst = static_cast<uint>(inst);
 }
@@ -556,7 +570,7 @@ void P2Opcode::set_inst9(const p2_inst9_e inst)
  * Also set the instruction's 9 bit field to p2_OPDST
  * @param inst instruction to set
  */
-void P2Opcode::set_opdst(const p2_opdst_e inst)
+void P2Opcode::set_opdst(const p2_OPDST_e inst)
 {
     set_inst9(p2_OPDST);
     m_u.op7.dst = static_cast<uint>(inst);
@@ -567,7 +581,7 @@ void P2Opcode::set_opdst(const p2_opdst_e inst)
  * Also set the instruction's 7 bit field to p2_OPSRC
  * @param inst instruction to set
  */
-void P2Opcode::set_opsrc(const p2_opsrc_e inst)
+void P2Opcode::set_opsrc(const p2_OPSRC_e inst)
 {
     set_inst7(p2_OPSRC);
     m_u.op7.src = static_cast<uint>(inst);
@@ -578,7 +592,7 @@ void P2Opcode::set_opsrc(const p2_opsrc_e inst)
  * Also set the instruction's 7 bit field to p2_OPDST, and source to p2_OPSRC_X24.
  * @param inst instruction to set
  */
-void P2Opcode::set_opx24(const p2_opx24_e inst)
+void P2Opcode::set_opx24(const p2_OPX24_e inst)
 {
     set_opsrc(p2_OPSRC_X24);
     m_u.op7.dst = static_cast<uint>(inst);
@@ -744,21 +758,24 @@ void P2Opcode::set_n(const p2_LONG n)
 /**
  * @brief Set the opcode's dst field and possibly set the AUGD value
  * @param atom value to set
- * @param ORG origin
- * @param ORGH origin high (output address)
+ * @param cogaddr COG address
+ * @param hubaddr HUB address (output address)
  * @return true on success, or false on error
  */
-bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH)
+bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG hubaddr)
 {
     bool result = true;
-    p2_traits_e traits = atom.traits();
-    p2_LONG value = atom.get_long();
+    p2_Traits_e traits = atom.traits();
+    p2_LONG value = atom.get_addr(false) / 4;
 
     if (p2_has_trait(traits, tr_RELATIVE))
-        value = atom.get_long();    // FIXME: huh?
+        value = (atom.get_addr(false) - cogaddr) / 4;
 
     if (p2_has_trait(traits, tr_ADDRESS_HUB))
-        value = atom.get_long() - ORG + ORGH;
+        value = atom.get_addr(true);
+
+    if (p2_has_trait(traits, tr_RELATIVE_HUB))
+        value = atom.get_addr(true) - hubaddr;
 
     if (p2_has_trait(traits, tr_AUGMENTED)) {
         switch (m_imm_dst) {
@@ -774,7 +791,7 @@ bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH
     }
 
     m_u.op7.dst = value & COG_MASK;
-    if (value > COG_MASK || p2_has_trait(traits, tr_AUGMENTED) || p2_has_trait(traits, tr_RELATIVE_HUB)) {
+    if (value > COG_MASK || p2_has_trait(traits, tr_AUGMENTED)) {
         switch (m_imm_dst) {
         case imm_none:
             break;
@@ -803,21 +820,24 @@ bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH
 /**
  * @brief Set the opcode's src field and possibly set the AUGS value
  * @param atom value to set
- * @param ORG origin
- * @param ORGH origin high (output address)
+ * @param cogaddr COG address
+ * @param hubaddr HUB address (output address)
  * @return true on success, or false on error
  */
-bool P2Opcode::set_src(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH)
+bool P2Opcode::set_src(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG hubaddr)
 {
     bool result = true;
-    p2_traits_e traits = atom.traits();
-    p2_LONG value = atom.get_long();
+    p2_Traits_e traits = atom.traits();
+    p2_LONG value = atom.get_addr(false) / 4;
 
     if (p2_has_trait(traits, tr_RELATIVE))
-        value = atom.get_long();    // FIXME: huh?
+        value = (atom.get_addr(false) - cogaddr) / 4;
 
     if (p2_has_trait(traits, tr_ADDRESS_HUB))
-        value = atom.get_long() - ORG + ORGH;
+        value = atom.get_addr(true);
+
+    if (p2_has_trait(traits, tr_RELATIVE_HUB))
+        value = atom.get_addr(true) - hubaddr;
 
     if (p2_has_trait(traits, tr_AUGMENTED)) {
         switch (m_imm_src) {
@@ -833,7 +853,7 @@ bool P2Opcode::set_src(const P2Atom& atom, const p2_LONG ORG, const p2_LONG ORGH
     }
 
     m_u.op7.src = value & COG_MASK;
-    if (value > COG_MASK || p2_has_trait(traits, tr_AUGMENTED) || p2_has_trait(traits, tr_RELATIVE_HUB)) {
+    if (value > COG_MASK || p2_has_trait(traits, tr_AUGMENTED)) {
         switch (m_imm_src) {
         case imm_none:
             break;
@@ -929,25 +949,25 @@ QString P2Opcode::format_opcode_doc(const P2Opcode& ir)
 
 P2Opcode P2Opcode::make_AUGD(const P2Opcode& ir)
 {
-    P2Opcode IR(p2_AUGD, p2_ORG_ORGH_t(ir.org_orgh()));
+    P2Opcode IR(p2_AUGD, ir.origin());
     p2_LONG value = ir.augd_value();
     IR.set_cond(ir.cond()); // FIXME: use cond of ir?
     IR.set_imm23(value);
-    IR.set_org_orgh(IR.org_orgh());
+    IR.set_origin(IR.origin());
     return IR;
 }
 
-P2Opcode P2Opcode::make_augs(const P2Opcode& ir)
+P2Opcode P2Opcode::make_AUGS(const P2Opcode& ir)
 {
-    P2Opcode IR(p2_AUGS, p2_ORG_ORGH_t(ir.org_orgh()));
+    P2Opcode IR(p2_AUGS, ir.origin());
     p2_LONG value = ir.augs_value();
     IR.set_cond(ir.cond()); // FIXME: use cond of ir?
     IR.set_imm23(value);
-    IR.set_org_orgh(IR.org_orgh());
+    IR.set_origin(IR.origin());
     return IR;
 }
 
-QString P2Opcode::format_opcode(const P2Opcode& ir, p2_format_e fmt)
+QString P2Opcode::format_opcode(const P2Opcode& ir, p2_FORMAT_e fmt)
 {
     QStringList list;
     switch (fmt) {
@@ -955,35 +975,35 @@ QString P2Opcode::format_opcode(const P2Opcode& ir, p2_format_e fmt)
         if (ir.augd_valid())
             list += format_opcode_bin(make_AUGD(ir));
         if (ir.augs_valid())
-            list += format_opcode_bin(make_augs(ir));
+            list += format_opcode_bin(make_AUGS(ir));
         list += format_opcode_bin(ir);
         break;
     case fmt_byt:
         if (ir.augd_valid())
             list += format_opcode_byt(make_AUGD(ir));
         if (ir.augs_valid())
-            list += format_opcode_byt(make_augs(ir));
+            list += format_opcode_byt(make_AUGS(ir));
         list += format_opcode_byt(ir);
         break;
     case fmt_dec:
         if (ir.augd_valid())
             list += format_opcode_dec(make_AUGD(ir));
         if (ir.augs_valid())
-            list += format_opcode_dec(make_augs(ir));
+            list += format_opcode_dec(make_AUGS(ir));
         list += format_opcode_dec(ir);
         break;
     case fmt_hex:
         if (ir.augd_valid())
             list += format_opcode_hex(make_AUGD(ir));
         if (ir.augs_valid())
-            list += format_opcode_hex(make_augs(ir));
+            list += format_opcode_hex(make_AUGS(ir));
         list += format_opcode_hex(ir);
         break;
     case fmt_doc:
         if (ir.augd_valid())
             list += format_opcode_doc(make_AUGD(ir));
         if (ir.augs_valid())
-            list += format_opcode_doc(make_augs(ir));
+            list += format_opcode_doc(make_AUGS(ir));
         list += format_opcode_doc(ir);
         break;
     }
@@ -1163,7 +1183,7 @@ QString P2Opcode::format_assign_hex(const P2Opcode& ir, bool prefix)
     return result;
 }
 
-QString P2Opcode::format_assign(const P2Opcode& ir, p2_format_e fmt)
+QString P2Opcode::format_assign(const P2Opcode& ir, p2_FORMAT_e fmt)
 {
     QStringList list;
     if (ir.is_assign()) {
@@ -1236,7 +1256,7 @@ static p2_BYTES align_data_long(const P2Opcode& ir, p2_BYTES& bytes)
     mask.fill(0xff, bytes.size());
 
     // inset 00s for unused positions in LONGs
-    const int offs = ir.orgh() & 3;
+    const int offs = ir.hubaddr() & 3;
     if (offs > 0) {
         bytes.insert(0, offs, 0x00);
         mask.insert(0, offs, 0x00);
@@ -1353,7 +1373,7 @@ QStringList P2Opcode::format_data_hex(const P2Opcode& ir, bool prefix)
     return result;
 }
 
-QString P2Opcode::format_data(const P2Opcode& ir, p2_format_e fmt)
+QString P2Opcode::format_data(const P2Opcode& ir, p2_FORMAT_e fmt)
 {
     QStringList list;
     if (!ir.data().isEmpty()) {

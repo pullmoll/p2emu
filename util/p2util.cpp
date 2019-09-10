@@ -133,7 +133,7 @@ uchar P2Util::encode(p2_LONG val)
  * @param val value
  * @return position of top most 1 bit
  */
-uint P2Util::encode(p2_WORD val)
+uchar P2Util::encode(p2_WORD val)
 {
     val |= (val >> 1);
     val |= (val >> 2);
@@ -147,7 +147,7 @@ uint P2Util::encode(p2_WORD val)
  * @param val value
  * @return position of top most 1 bit
  */
-uint P2Util::encode(p2_BYTE val)
+uchar P2Util::encode(p2_BYTE val)
 {
     val |= (val >> 1);
     val |= (val >> 2);
@@ -160,7 +160,7 @@ uint P2Util::encode(p2_BYTE val)
  * @param val value to inspect
  * @return the number of leading zero bits
  */
-uint P2Util::lzc(p2_QUAD val)
+uchar P2Util::lzc(p2_QUAD val)
 {
     val |= (val >> 1);
     val |= (val >> 2);
@@ -176,7 +176,7 @@ uint P2Util::lzc(p2_QUAD val)
  * @param val value to inspect
  * @return the number of leading zero bits
  */
-uint P2Util::lzc(p2_LONG val)
+uchar P2Util::lzc(p2_LONG val)
 {
     val |= (val >> 1);
     val |= (val >> 2);
@@ -191,7 +191,7 @@ uint P2Util::lzc(p2_LONG val)
  * @param val value to inspect
  * @return the number of leading zero bits
  */
-uint P2Util::lzc(p2_WORD val)
+uchar P2Util::lzc(p2_WORD val)
 {
     val |= (val >> 1);
     val |= (val >> 2);
@@ -205,7 +205,7 @@ uint P2Util::lzc(p2_WORD val)
  * @param val value to inspect
  * @return the number of leading zero bits
  */
-uint P2Util::lzc(p2_BYTE val)
+uchar P2Util::lzc(p2_BYTE val)
 {
     val |= (val >> 1);
     val |= (val >> 2);

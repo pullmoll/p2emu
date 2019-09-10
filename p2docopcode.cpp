@@ -1,6 +1,6 @@
 #include "p2docopcode.h"
 
-P2DocOpcodeClass::P2DocOpcodeClass(P2MatchMask mm, const char* pat, const char* func)
+P2DocOpcodeClass::P2DocOpcodeClass(const P2MatchMask& mm, const char* pat, const char* func)
     : m_matchmask(mm)
     , m_func(func)
     , m_pattern(pat)
@@ -15,10 +15,20 @@ P2DocOpcodeClass::P2DocOpcodeClass(P2MatchMask mm, const char* pat, const char* 
 
 bool P2DocOpcodeClass::isDefined() const
 {
-    return m_matchmask.second != 0;
+    return m_matchmask.first != 0;   // mask is non-zero?
 }
 
-P2MatchMask P2DocOpcodeClass::matchmask() const
+p2_LONG P2DocOpcodeClass::mask() const
+{
+    return m_matchmask.mask();
+}
+
+p2_LONG P2DocOpcodeClass::match() const
+{
+    return m_matchmask.match();
+}
+
+const P2MatchMask& P2DocOpcodeClass::matchmask() const
 {
     return m_matchmask;
 }
@@ -51,7 +61,7 @@ const QStringList P2DocOpcodeClass::descr() const
     return descr;
 }
 
-p2_token_e P2DocOpcodeClass::token() const
+p2_TOKEN_e P2DocOpcodeClass::token() const
 {
     return m_token;
 }
@@ -81,17 +91,17 @@ void P2DocOpcodeClass::add_descr(const char* descr)
     m_descr += descr;
 }
 
-void P2DocOpcodeClass::set_token(p2_token_e token)
+void P2DocOpcodeClass::set_token(p2_TOKEN_e token)
 {
     m_token = token;
 }
 
-void P2DocOpcodeClass::set_params(p2_token_e token, p2_mandatory_e mandatory)
+void P2DocOpcodeClass::set_params(p2_TOKEN_e token, p2_mandatory_e mandatory)
 {
     m_params = P2DocParams() = {P2DocParam(token,mandatory)};
 }
 
-void P2DocOpcodeClass::add_param(p2_token_e token, p2_mandatory_e mandatory)
+void P2DocOpcodeClass::add_param(p2_TOKEN_e token, p2_mandatory_e mandatory)
 {
     m_params += P2DocParam(token, mandatory);
 }

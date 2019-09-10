@@ -96,12 +96,12 @@ const P2Union& P2SymbolClass::value() const
 
 /**
  * @brief Return the %idx'th reference line number
- * @param idx index into references; 0 == line number where defined
- * @return line number, or -1 if not referenced / defined or %idx >= number of references
+ * @param lineno line number
+ * @return P2Word where referenced, empty P2Word if not in the hash
  */
-P2Word P2SymbolClass::reference(int idx) const
+P2Word P2SymbolClass::reference(int lineno) const
 {
-    return m_references.value(idx);
+    return m_references.value(lineno);
 }
 
 /**
@@ -126,7 +126,7 @@ void P2SymbolClass::set_value(const P2Union& value)
  * @brief Return the type of the value in this symbol
  * @return QVariant::Type of the value
  */
-p2_union_e P2SymbolClass::type() const
+p2_Union_e P2SymbolClass::type() const
 {
     return m_value.type();
 }

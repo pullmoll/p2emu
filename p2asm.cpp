@@ -44,21 +44,19 @@
 #define DEBUG_CON   0 //! set to 1 to debug CON section parsing
 #define DEBUG_DAT   0 //! set to 1 to debug DAT section parsing
 
-#define V33MODE     1
-
 static const QString p2_section_dat = QStringLiteral("DAT");
 static const QString p2_section_con = QStringLiteral("CON");
 static const QString p2_section_pub = QStringLiteral("PUB");
 static const QString p2_section_pri = QStringLiteral("PRI");
 static const QString p2_section_var = QStringLiteral("VAR");
 
-static const QString p2_prefix_bin_const = QStringLiteral("»%b=");
-static const QString p2_prefix_byt_const = QStringLiteral("»%y=");
-static const QString p2_prefix_dec_const = QStringLiteral("»%d=");
-static const QString p2_prefix_hex_const = QStringLiteral("»%x=");
-static const QString p2_prefix_str_const = QStringLiteral("»%s=");
-static const QString p2_prefix_real_const = QStringLiteral("»%f=");
-static const QString p2_prefix_offs_const = QStringLiteral("»%p=");
+static const QString p2_prefix_bin_const = QStringLiteral("»%b« ");
+static const QString p2_prefix_byt_const = QStringLiteral("»%y« ");
+static const QString p2_prefix_dec_const = QStringLiteral("»%d« ");
+static const QString p2_prefix_hex_const = QStringLiteral("»%x« ");
+static const QString p2_prefix_str_const = QStringLiteral("»%s« ");
+static const QString p2_prefix_real_const = QStringLiteral("»%f« ");
+static const QString p2_prefix_offs_const = QStringLiteral("»%p« ");
 
 
 #if DEBUG_EXPR
@@ -86,7 +84,7 @@ P2Asm::P2Asm(QObject *parent)
     , m_pathname(".")
     , m_source()
     , m_listing()
-    , m_hash_PC()
+    , m_hash_ORIGIN()
     , m_hash_IR()
     , m_hash_words()
     , m_hash_error()
@@ -95,8 +93,9 @@ P2Asm::P2Asm(QObject *parent)
     , m_in_curly(0)
     , m_lineptr(nullptr)
     , m_errors()
-    , m_ORG(0)
-    , m_ORGH(0)
+    , m_hubmode(false)
+    , m_cogaddr(0)
+    , m_hubaddr(0)
     , m_advance(4)
     , m_IR()
     , m_data()
@@ -143,14 +142,15 @@ void P2Asm::pass_clear()
     // next pass
     m_pass++;
     m_listing.clear();
-    m_hash_PC.clear();
+    m_hash_ORIGIN.clear();
     m_hash_IR.clear();
     m_hash_error.clear();
     m_lineno = 0;
     m_in_curly = 0;
     m_errors.clear();
-    m_ORG = 0;
-    m_ORGH = 0;
+    m_hubmode = false;
+    m_cogaddr = 0;
+    m_hubaddr = 0;
     m_advance = 0;
     m_IR.clear();
     m_data.clear();
@@ -179,7 +179,7 @@ void P2Asm::line_clear()
     m_words.clear();
     m_data.clear();
     m_advance = 0;
-    m_IR.clear(0, p2_ORG_ORGH_t(m_ORG, m_ORGH));
+    m_IR.clear(0, p2_ORIGIN_t({m_cogaddr, m_hubaddr}));
 }
 
 /**
@@ -273,9 +273,9 @@ int P2Asm::count() const
  * @brief Return a const reference to the has of ORG and ORGH values per line
  * @return const reference to the hash
  */
-const p2_org_orgh_hash_t& P2Asm::PC_ORGH_hash() const
+const p2_ORIGIN_hash_t& P2Asm::ORIGIN_hash() const
 {
-    return m_hash_PC;
+    return m_hash_ORIGIN;
 }
 
 /**
@@ -283,9 +283,9 @@ const p2_org_orgh_hash_t& P2Asm::PC_ORGH_hash() const
  * @param lineno line number
  * @return pair of values
  */
-p2_ORG_ORGH_t P2Asm::get_PC_ORGH(int lineno) const
+p2_ORIGIN_t P2Asm::get_ORIGIN(int lineno) const
 {
-    return m_hash_PC.value(lineno);
+    return m_hash_ORIGIN.value(lineno);
 }
 
 /**
@@ -293,9 +293,9 @@ p2_ORG_ORGH_t P2Asm::get_PC_ORGH(int lineno) const
  * @param lineno line number
  * @return true if available, or false otherwise
  */
-bool P2Asm::has_PC_ORGH(int lineno) const
+bool P2Asm::has_ORIGIN(int lineno) const
 {
-    return m_hash_PC.contains(lineno);
+    return m_hash_ORIGIN.contains(lineno);
 }
 
 /**
@@ -366,10 +366,10 @@ const P2SymbolTable& P2Asm::symbols() const
     return m_symbols;
 }
 
-p2_cond_e P2Asm::conditional()
+p2_Cond_e P2Asm::conditional()
 {
-    p2_cond_e result = cc_always;
-    p2_token_e cond = curr_tok();
+    p2_Cond_e result = cc_always;
+    p2_TOKEN_e cond = curr_tok();
     if (Token.is_type(cond, tm_conditional)) {
         result = Token.conditional(cond, cc_always);
         next();
@@ -377,11 +377,11 @@ p2_cond_e P2Asm::conditional()
     return result;
 }
 
-p2_cond_e P2Asm::parse_modcz()
+p2_Cond_e P2Asm::parse_modcz()
 {
-    p2_token_e cond = curr_tok();
+    p2_TOKEN_e cond = curr_tok();
     if (Token.is_type(cond, tm_modcz_param)) {
-        p2_cond_e result = Token.modcz_param(cond, cc_clr);
+        p2_Cond_e result = Token.modcz_param(cond, cc_clr);
         next();
         return result;
     }
@@ -391,13 +391,13 @@ p2_cond_e P2Asm::parse_modcz()
         emit Error(m_pass, m_lineno, m_errors.last());
         return cc_clr;
     }
-    p2_LONG value = atom.get_long();
-    if (value > 15) {
+    int value = atom.get_int();
+    if (value < 0 || value > 15) {
         m_errors += tr("Expected MODCZ immediate in range 0…15.");
         emit Error(m_pass, m_lineno, m_errors.last());
         return cc_clr;
     }
-    return static_cast<p2_cond_e>(value);
+    return static_cast<p2_Cond_e>(value);
 }
 
 /**
@@ -426,17 +426,14 @@ bool P2Asm::tokenize()
  * @brief Return the current P2Word
  * @return const reference to the current word
  */
-const P2Word& P2Asm::curr_word() const
+P2Word P2Asm::curr_word() const
 {
-    static const P2Word empty = P2Word();
-    if (m_idx >= m_cnt)
-        return empty;
-    return m_words[m_idx];
+    return m_words.value(m_idx);
 }
 
 /**
  * @brief Return the current P2Word's QStringRef
- * @return const reference to the current word
+ * @return QStringRef of the current word
  */
 const QStringRef P2Asm::curr_ref() const
 {
@@ -445,7 +442,7 @@ const QStringRef P2Asm::curr_ref() const
 
 /**
  * @brief Return the current P2Word's QString
- * @return const reference to the current word
+ * @return QString of the current word
  */
 const QString P2Asm::curr_str() const
 {
@@ -456,9 +453,45 @@ const QString P2Asm::curr_str() const
  * @brief Return the current P2Word's token
  * @return token enumeration value
  */
-p2_token_e P2Asm::curr_tok() const
+p2_TOKEN_e P2Asm::curr_tok() const
 {
     return curr_word().tok();
+}
+
+/**
+ * @brief Return the next P2Word
+ * @return const reference to the next word
+ */
+P2Word P2Asm::next_word() const
+{
+    return m_words.value(m_idx + 1);
+}
+
+/**
+ * @brief Return the next P2Word's QStringRef
+ * @return QStringRef of the next word
+ */
+const QStringRef P2Asm::next_ref() const
+{
+    return next_word().ref();
+}
+
+/**
+ * @brief Return the next P2Word's QString
+ * @return QString of the next word
+ */
+const QString P2Asm::next_str() const
+{
+    return next_word().str();
+}
+
+/**
+ * @brief Return the next P2Word's token
+ * @return token enumeration value
+ */
+p2_TOKEN_e P2Asm::next_tok() const
+{
+    return next_word().tok();
 }
 
 /**
@@ -476,7 +509,7 @@ bool P2Asm::next()
  */
 bool P2Asm::prev()
 {
-    return --m_idx >= 0;
+    return 0 == m_idx ? false : --m_idx >= 0;
 }
 
 /**
@@ -493,7 +526,7 @@ bool P2Asm::define_symbol(const QString& symbol, const P2Atom& atom)
 
     if (sym.isNull()) {
         // Not defined yet
-        m_symbols->insert(symbol, atom.value());
+        m_symbols->insert(symbol, atom);
         m_symbols->add_reference(m_lineno, symbol, word);
         return true;
     }
@@ -510,22 +543,11 @@ bool P2Asm::define_symbol(const QString& symbol, const P2Atom& atom)
     }
 
     // Already defined
-    const P2Union& old_value = sym->value();
-    if (ut_Real == old_value.type()) {
-        const p2_REAL value = old_value.get_real();
-        m_errors += tr("Symbol '%1' already defined in line #%2 (Value: %3).")
-                  .arg(symbol)
-                  .arg(sym->definition().lineno())
-                  .arg(value, 2, 'f');
-    } else {
-        const p2_LONG value = old_value.get_long();
-        m_errors += tr("Symbol '%1' already defined in line #%2 (Value: %3, $%4, %%5).")
-                    .arg(symbol)
-                    .arg(sym->definition().lineno())
-                    .arg(value)
-                    .arg(value, 6, 16, QChar('0'))
-                    .arg(value, 32, 2, QChar('0'));
-    }
+    const P2Union& value = sym->value();
+    m_errors += tr("Symbol '%1' already defined in line #%2 (%3).")
+                .arg(symbol)
+                .arg(sym->definition().lineno())
+                .arg(value.str(true, fmt_hex));
     return false;
 }
 
@@ -654,10 +676,8 @@ bool P2Asm::assemble_dat_section()
         }
 
         if (!m_symbol.isEmpty()) {
-            const p2_LONG org = m_ORG < HUB_ADDR0 ? m_ORG / 4 : m_ORG;
             // defining a symbol at the current PC
-            P2Atom atom(org);
-            atom.set_type(ut_Addr);
+            P2Atom atom(m_cogaddr, m_hubaddr);
             define_symbol(m_symbol, atom);
         }
         break;
@@ -686,7 +706,7 @@ bool P2Asm::assemble_dat_section()
             next();
             break;
 
-        case t_DAT:
+        case t_DAT: // redundant
             success = asm_DAT();
             break;
 
@@ -2251,6 +2271,7 @@ bool P2Asm::assemble_pass()
             case pub_section:
             case pri_section:
             case var_section:
+                // TODO: what's the difference?
                 success = assemble_dat_section();
                 break;
             }
@@ -2339,7 +2360,7 @@ int P2Asm::commata_left() const
  * @brief Return true, if %tok is found in the following words
  * @return true if %tok is found, or false otherwise
  */
-bool P2Asm::find_tok(p2_token_e tok) const
+bool P2Asm::find_tok(p2_TOKEN_e tok) const
 {
     for (int i = m_idx; i < m_cnt; i++)
         if (tok == m_words[i].tok())
@@ -2355,20 +2376,20 @@ bool P2Asm::find_tok(p2_token_e tok) const
 QStringList P2Asm::results_instruction(bool wr_mem)
 {
     QStringList output;
-    p2_LONG org = m_ORG;
-    p2_LONG orgh = m_ORGH;
+    p2_LONG org = m_cogaddr;
+    p2_LONG orgh = m_hubaddr;
 
     QString* lineptr = m_lineptr;
     Q_ASSERT(m_advance == 4);
 
-    m_IR.set_org_orgh(p2_ORG_ORGH_t(m_ORG, m_ORGH));
-    m_hash_PC.insert(m_lineno, p2_ORG_ORGH_t(m_ORG, m_ORGH));
+    m_IR.set_origin(m_cogaddr, m_hubaddr);
+    m_hash_ORIGIN.insert(m_lineno, m_IR.origin());
     m_hash_IR.insert(m_lineno, m_IR);
 
     // Do we need to generate an AUGD instruction?
     if (m_IR.augd_valid()) {
         p2_LONG value = m_IR.augd_value();
-        P2Opcode IR(p2_AUGD, p2_ORG_ORGH_t(org, orgh));
+        P2Opcode IR(p2_AUGD, p2_ORIGIN_t({org, orgh}));
         IR.set_imm23(value);
 
         if (m_pass > 1) {
@@ -2385,7 +2406,7 @@ QStringList P2Asm::results_instruction(bool wr_mem)
 
         org += 4;
         orgh += 4;
-        m_IR.set_org_orgh(IR.org_orgh());
+        m_IR.set_origin(IR.origin());
         m_advance += 4;
         m_IR.set_augd();
         lineptr = nullptr;
@@ -2394,7 +2415,7 @@ QStringList P2Asm::results_instruction(bool wr_mem)
     // Do we need to generate an AUGS instruction?
     if (m_IR.augs_valid()) {
         p2_LONG value = m_IR.augs_value();
-        P2Opcode IR(p2_AUGS, p2_ORG_ORGH_t(org, orgh));
+        P2Opcode IR(p2_AUGS, p2_ORIGIN_t({org, orgh}));
         IR.set_imm23(value);
 
         if (m_pass > 1) {
@@ -2411,7 +2432,7 @@ QStringList P2Asm::results_instruction(bool wr_mem)
 
         org += 4;
         orgh += 4;
-        m_IR.set_org_orgh(IR.org_orgh());
+        m_IR.set_origin(IR.origin());
         m_advance += 4;
         m_IR.set_augs();
         lineptr = nullptr;
@@ -2444,7 +2465,7 @@ QString P2Asm::results_assignment()
     if (m_pass > 1) {
         output = QString("%1 %2 <%3> %4")
                  .arg(m_lineno, -6)
-                 .arg(m_ORG, 6, 16, QChar('0'))
+                 .arg(m_cogaddr, 6, 16, QChar('0'))
                  .arg(m_IR.opcode(), 8, 16, QChar('0'))
                  .arg(*m_lineptr);
     }
@@ -2459,16 +2480,16 @@ QString P2Asm::results_assignment()
 QStringList P2Asm::results_data(bool wr_mem)
 {
     QStringList output;
-    p2_ORG_ORGH_t org_orgh(m_ORG, m_ORGH);
+    p2_ORIGIN_t origin({m_cogaddr, m_hubaddr});
 
     m_IR.set_data(m_data);
-    m_IR.set_org_orgh(org_orgh);
-    m_hash_PC.insert(m_lineno, org_orgh);
+    m_IR.set_origin(origin);
+    m_hash_ORIGIN.insert(m_lineno, origin);
     m_hash_IR.insert(m_lineno, m_IR);
 
     const p2_BYTES& _bytes = m_data.get_bytes(true);
     if (wr_mem) {
-        p2_LONG addr = m_ORGH;
+        p2_LONG addr = m_hubaddr;
         foreach(p2_BYTE b, _bytes) {
             if (addr >= MEM_SIZE)
                 break;
@@ -2495,7 +2516,7 @@ QString P2Asm::results_comment()
     if (m_pass > 1) {
         output = QString("%1 %2 -%3- %4")
                  .arg(m_lineno, -6)
-                 .arg(m_ORG, 6, 16, QChar('0'))
+                 .arg(m_cogaddr, 6, 16, QChar('0'))
                  .arg(QStringLiteral("--------"))
                  .arg(*m_lineptr);
     }
@@ -2525,8 +2546,8 @@ void P2Asm::results()
     }
 
     // Calculate next ORG and PC values by adding m_advance
-    m_ORGH += m_advance;
-    m_ORG += m_advance;
+    m_hubaddr += m_advance;
+    m_cogaddr += m_advance;
 
     if (!m_words.isEmpty())
         m_hash_words.insert(m_lineno, m_words);
@@ -2742,10 +2763,10 @@ bool P2Asm::str_const(P2Atom& atom, const QString& str)
 }
 
 /**
- * @brief Find a symbol name using either %func, or %func and %sym appended
+ * @brief Find a symbol name in section %sect with name %func
  * @param sect primary section where to search
  * @param func name of the function
- * @param local name of a local symbol
+ * @param all_sections if true, search in all sections
  * @return QString with the name of the symbol
  */
 QString P2Asm::find_symbol(Section sect, const QString& func, bool all_sections)
@@ -2768,7 +2789,7 @@ QString P2Asm::find_symbol(Section sect, const QString& func, bool all_sections)
         }
     }
 
-    // use original section
+    // not found, use original section
     symbol = QString("%1::%2")
              .arg(section.toUpper())
              .arg(func.toUpper());
@@ -2776,9 +2797,8 @@ QString P2Asm::find_symbol(Section sect, const QString& func, bool all_sections)
 }
 
 /**
- * @brief Find a symbol name using either %func, or %func and %sym appended
- * @param sect primary section where to search
- * @param func name of the function
+ * @brief Find a symbol name using current function in %sect and %local appended
+ * @param sect section where to search
  * @param local name of a local symbol
  * @return QString with the name of the symbol
  */
@@ -2794,6 +2814,31 @@ QString P2Asm::find_locsym(Section sect, const QString& local)
     if (m_symbols->contains(symbol))
         return symbol;
     return symbol;
+}
+
+/**
+ * @brief Get a symbol in section %sect with name %func
+ * @param sect primary section where to search
+ * @param func name of the function
+ * @param all_sections if true, search in all sections
+ * @return P2Symbol for the symbol
+ */
+P2Symbol P2Asm::get_symbol(P2Asm::Section sect, const QString& func, bool all_sections)
+{
+    QString symbol = find_symbol(sect, func, all_sections);
+    return m_symbols->symbol(symbol);
+}
+
+/**
+ * @brief Get a symbol using current function in %sect and %local appended
+ * @param sect section where to search
+ * @param local name of a local symbol
+ * @return QString with the name of the symbol
+ */
+P2Symbol P2Asm::get_locsym(P2Asm::Section sect, const QString& local)
+{
+    QString symbol = find_locsym(sect, local);
+    return m_symbols->symbol(symbol);
 }
 
 /**
@@ -2818,7 +2863,6 @@ void P2Asm::add_const_symbol(const QString& pfx, const P2Word& word, const P2Ato
  */
 bool P2Asm::parse_atom(P2Atom& atom, int level)
 {
-    QString symbol;
     P2Symbol sym;
 
     if (eol())
@@ -2826,7 +2870,7 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
 
     const P2Word& word = curr_word();
     QString str = word.str();
-    p2_token_e tok = word.tok();
+    p2_TOKEN_e tok = word.tok();
 
     switch (tok) {
     case t__FLOAT:
@@ -2882,62 +2926,60 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
         break;
 
     case t_locsym:
-        symbol = find_locsym(m_section, str);
-        sym = m_symbols->symbol(symbol);
+        sym = get_locsym(m_section, str);
         if (!sym.isNull()) {
-            m_symbols->add_reference(m_lineno, symbol, word);
+            m_symbols->add_reference(m_lineno, sym->name(), word);
             atom.set_value(sym->value());
-            DBG_EXPR(" atom found locsym: %s = %s", qPrintable(symbol), qPrintable(atom.str()));
+            DBG_EXPR(" atom found locsym: %s = %s", qPrintable(sym->name()), qPrintable(atom.str()));
             break;
         }
-        DBG_EXPR(" atom undefined locsym: %s", qPrintable(symbol));
+        DBG_EXPR(" atom undefined locsym: %s", qPrintable(str));
         break;
 
     case t_symbol:
-        symbol = find_symbol(m_section, str, true);
-        sym = m_symbols->symbol(symbol);
+        sym = get_symbol(m_section, str, true);
         if (!sym.isNull()) {
-            m_symbols->add_reference(m_lineno, symbol, word);
+            m_symbols->add_reference(m_lineno, sym->name(), word);
             atom.set_value(sym->value());
-            DBG_EXPR(" atom found symbol: %s = %s", qPrintable(symbol), qPrintable(atom.str()));
+            DBG_EXPR(" atom found symbol: %s = %s", qPrintable(sym->name()), qPrintable(atom.str()));
             break;
         }
-        DBG_EXPR(" atom undefined symbol: %s", qPrintable(symbol));
+        DBG_EXPR(" atom undefined symbol: %s", qPrintable(str));
         break;
 
     case t_bin_const:
         DBG_EXPR(" atom bin const: %s", qPrintable(str));
         bin_const(atom, str);
         add_const_symbol(p2_prefix_bin_const, word, atom);
-        DBG_EXPR(" atom bin atom = %s", qPrintable(atom.str()));
+        DBG_EXPR(" atom bin const = %s", qPrintable(atom.str()));
         break;
 
     case t_byt_const:
         DBG_EXPR(" atom byt const: %s", qPrintable(str));
         byt_const(atom, str);
         add_const_symbol(p2_prefix_byt_const, word, atom);
-        DBG_EXPR(" atom byt atom = %s", qPrintable(atom.str()));
+        DBG_EXPR(" atom byt const = %s", qPrintable(atom.str()));
         break;
 
     case t_dec_const:
         DBG_EXPR(" atom dec const: %s", qPrintable(str));
         dec_const(atom, str);
         add_const_symbol(p2_prefix_dec_const, word, atom);
-        DBG_EXPR(" atom dec atom = %s", qPrintable(atom.str()));
+        DBG_EXPR(" atom dec const = %s", qPrintable(atom.str()));
         break;
 
     case t_hex_const:
         DBG_EXPR(" atom hex const: %s", qPrintable(str));
         hex_const(atom, str);
         add_const_symbol(p2_prefix_hex_const, word, atom);
-        DBG_EXPR(" atom hex atom = %s", qPrintable(atom.str()));
+        DBG_EXPR(" atom hex const = %s", qPrintable(atom.str()));
         break;
 
     case t_str_const:
         DBG_EXPR(" atom str const: %s", qPrintable(str));
         str_const(atom, str);
         add_const_symbol(p2_prefix_str_const, word, atom);
-        DBG_EXPR(" atom str atom = %s", qPrintable(atom.str()));
+        DBG_EXPR(" atom str const = %s", qPrintable(atom.str()));
         break;
 
     case t_real_const:
@@ -2945,37 +2987,37 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
         real_const(atom, str);
         atom.set_type(ut_Real);
         add_const_symbol(p2_prefix_real_const, word, atom);
-        DBG_EXPR(" atom real atom = %s", qPrintable(atom.str()));
+        DBG_EXPR(" atom real const = %s", qPrintable(atom.str()));
         break;
 
     case t_DIRA:
         DBG_EXPR(" atom DIRA: %s", qPrintable(str));
         atom.set_type(ut_Addr);
-        atom.set_value(P2Union(offs_DIRA));
+        atom.set_value(P2Union(offs_DIRA, offs_DIRA));
         add_const_symbol(p2_prefix_offs_const, word, atom);
-        DBG_EXPR(" atom DIRA atom = %s", qPrintable(atom.str()));
+        DBG_EXPR(" atom DIRA const = %s", qPrintable(atom.str()));
         break;
 
     case t_DIRB:
         DBG_EXPR(" atom DIRB: %s", qPrintable(str));
         atom.set_type(ut_Addr);
-        atom.set_value(P2Union(offs_DIRB));
+        atom.set_value(P2Union(offs_DIRB, offs_DIRB));
         add_const_symbol(p2_prefix_offs_const, word, atom);
-        DBG_EXPR(" atom DIRB atom = %s", qPrintable(atom.str()));
+        DBG_EXPR(" atom DIRB const = %s", qPrintable(atom.str()));
         break;
 
     case t_INA:
         DBG_EXPR(" atom INA: %s", qPrintable(str));
         atom.set_type(ut_Addr);
-        atom.set_value(P2Union(offs_INA));
+        atom.set_value(P2Union(offs_INA, offs_INA));
         add_const_symbol(p2_prefix_offs_const, word, atom);
-        DBG_EXPR(" atom INA atom = %s", qPrintable(atom.str()));
+        DBG_EXPR(" atom INA const = %s", qPrintable(atom.str()));
         break;
 
     case t_INB:
         DBG_EXPR(" atom INB: %s", qPrintable(str));
         atom.set_type(ut_Addr);
-        atom.set_value(P2Union(offs_INB));
+        atom.set_value(P2Union(offs_INB, offs_INB));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom INB atom = %s", qPrintable(atom.str()));
         break;
@@ -2983,7 +3025,7 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_OUTA:
         DBG_EXPR(" atom OUTA: %s", qPrintable(str));
         atom.set_type(ut_Addr);
-        atom.set_value(P2Union(offs_OUTA));
+        atom.set_value(P2Union(offs_OUTA, offs_OUTA));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom OUTA atom = %s", qPrintable(atom.str()));
         break;
@@ -2991,7 +3033,7 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_OUTB:
         DBG_EXPR(" atom OUTB: %s", qPrintable(str));
         atom.set_type(ut_Addr);
-        atom.set_value(P2Union(offs_OUTB));
+        atom.set_value(P2Union(offs_OUTB, offs_OUTB));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom OUTB atom = %s", qPrintable(atom.str()));
         break;
@@ -2999,7 +3041,7 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_PA:
         DBG_EXPR(" atom PA: %s", qPrintable(str));
         atom.set_type(ut_Addr);
-        atom.set_value(P2Union(offs_PA));
+        atom.set_value(P2Union(offs_PA, offs_PA));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom PA atom = %s", qPrintable(atom.str()));
         break;
@@ -3007,7 +3049,7 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_PB:
         DBG_EXPR(" atom PB: %s", qPrintable(str));
         atom.set_type(ut_Addr);
-        atom.set_value(P2Union(offs_PB));
+        atom.set_value(P2Union(offs_PB, offs_PB));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom PB atom = %s", qPrintable(atom.str()));
         break;
@@ -3019,7 +3061,7 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_PTRA_predec:
         DBG_EXPR(" atom PTRA: %s", qPrintable(str));
         atom.set_type(ut_Addr);
-        atom.set_value(P2Union(offs_PTRA));
+        atom.set_value(P2Union(offs_PTRA, offs_PTRA));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         if (t_PTRA_preinc == tok || t_PTRA_predec == tok)
             atom.add_trait(tr_PRE);
@@ -3039,7 +3081,7 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_PTRB_predec:
         DBG_EXPR(" atom PTRB: %s", qPrintable(str));
         atom.set_type(ut_Addr);
-        atom.set_value(P2Union(offs_PTRB));
+        atom.set_value(P2Union(offs_PTRB, offs_PTRB));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         if (t_PTRB_preinc == tok || t_PTRB_predec == tok)
             atom.add_trait(tr_PRE);
@@ -3054,9 +3096,8 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
 
     case t_DOLLAR:
         DBG_EXPR(" atom current PC: %s", qPrintable(str));
-        atom.set_type(ut_Addr);
-        atom.set_value(P2Union(m_ORG / 4));    // FIXME: use m_ORG or m_ORG/4 ?
-        DBG_EXPR(" atom $ atom = %s", qPrintable(atom.str()));
+        atom.set_addr(m_cogaddr, m_hubaddr);
+        DBG_EXPR(" atom $ addr = %s", qPrintable(atom.str()));
         break;
 
     default:
@@ -3083,7 +3124,7 @@ bool P2Asm::parse_primary(P2Atom& atom, int level)
     p2_LONG inc_by = 0;
     p2_LONG dec_by = 0;
 
-    p2_token_e op = curr_tok();
+    p2_TOKEN_e op = curr_tok();
     while (Token.is_type(op, tm_primary)) {
 
         switch (op) {
@@ -3132,7 +3173,7 @@ bool P2Asm::parse_unary(P2Atom& atom, int level)
     bool do_complement2 = false;
     bool do_complement1 = false;
 
-    p2_token_e op = curr_tok();
+    p2_TOKEN_e op = curr_tok();
     while (Token.is_type(op, tm_unary)) {
 
         switch (op) {
@@ -3195,7 +3236,7 @@ bool P2Asm::parse_mulops(P2Atom& atom, int level)
         return true;
     }
 
-    p2_token_e op = curr_tok();
+    p2_TOKEN_e op = curr_tok();
     while (Token.is_type(op, tm_mulop)) {
 
         if (!next()) {
@@ -3267,7 +3308,7 @@ bool P2Asm::parse_shiftops(P2Atom& atom, int level)
         return true;
     }
 
-    p2_token_e op = curr_tok();
+    p2_TOKEN_e op = curr_tok();
     while (Token.is_type(op, tm_shiftop)) {
 
         if (!next()) {
@@ -3334,7 +3375,7 @@ bool P2Asm::parse_addops(P2Atom& atom, int level)
         return true;
     }
 
-    p2_token_e op = curr_tok();
+    p2_TOKEN_e op = curr_tok();
     while (Token.is_type(op, tm_addop)) {
 
         if (!next()) {
@@ -3401,7 +3442,7 @@ bool P2Asm::parse_binops(P2Atom& atom, int level)
         return true;
     }
 
-    p2_token_e op = curr_tok();
+    p2_TOKEN_e op = curr_tok();
     while (Token.is_type(op, tm_binop)) {
 
         if (!next()) {
@@ -3474,10 +3515,10 @@ bool P2Asm::parse_binops(P2Atom& atom, int level)
     return true;
 }
 
-p2_traits_e P2Asm::parse_traits()
+p2_Traits_e P2Asm::parse_traits()
 {
-    p2_token_e tok = curr_tok();
-    p2_traits_e trait = tr_none;
+    p2_TOKEN_e tok = curr_tok();
+    p2_Traits_e trait = tr_none;
     while (Token.is_type(tok, tm_traits)) {
 
         switch (tok) {
@@ -3538,10 +3579,10 @@ P2Atom P2Asm::parse_expression(int level)
         return atom;
     }
 
-    p2_traits_e traits = parse_traits();
+    p2_Traits_e traits = parse_traits();
 
     // Check for subexpression enclosed in parenthesis
-    p2_token_e tok = curr_tok();
+    p2_TOKEN_e tok = curr_tok();
     while (Token.is_type(tok, tm_parens)) {
 
         switch (tok) {
@@ -3744,7 +3785,7 @@ P2Atom P2Asm::parse_dst(P2Opcode::ImmFlag flag)
 {
     m_IR.set_dst_imm(flag);
     P2Atom dst = parse_expression();
-    if (!m_IR.set_dst(dst, m_ORG, m_ORGH))
+    if (!m_IR.set_dst(dst, m_cogaddr, m_hubaddr))
             error_dst_or_src();
     return dst;
 }
@@ -3757,7 +3798,7 @@ P2Atom P2Asm::parse_src(P2Opcode::ImmFlag flag)
 {
     m_IR.set_src_imm(flag);
     P2Atom src = parse_expression();
-    if (!m_IR.set_src(src, m_ORG, m_ORGH))
+    if (!m_IR.set_src(src, m_cogaddr, m_hubaddr))
         error_dst_or_src();
     return src;
 }
@@ -3778,8 +3819,8 @@ bool P2Asm::parse_index(int scale, P2Atom& src)
     const bool negate = src.has_trait(tr_DEC);
     const p2_LONG value = negate ? -src.index_long() : src.index_long();
     const int svalue = static_cast<qint32>(value);
-    p2_index9_t index = {0};
-    p2_index23_t index_augs = {0};
+    p2_Index9_t index = {0};
+    p2_Index23_t index_augs = {0};
 
     m_IR.set_wz(false);
     m_IR.set_im(true);
@@ -3903,7 +3944,7 @@ P2Atom P2Asm::parse_src_ptrx(int scale, P2Opcode::ImmFlag flag)
 {
     m_IR.set_src_imm(flag);
     P2Atom src = parse_expression();
-    if (!m_IR.set_src(src, m_ORG, m_ORGH))
+    if (!m_IR.set_src(src, m_cogaddr, m_hubaddr))
         error_dst_or_src();
     if (offs_PTRA == src.get_long() || offs_PTRB == src.get_long())
         parse_index(scale, src);
@@ -3974,7 +4015,7 @@ void P2Asm::optional_COMMA()
 bool P2Asm::optional_WCZ()
 {
     while (skip_comments()) {
-        p2_token_e tok = curr_tok();
+        p2_TOKEN_e tok = curr_tok();
         switch (tok) {
         case t_WC:
             m_IR.set_wc();
@@ -4012,7 +4053,7 @@ bool P2Asm::optional_WC()
 {
     if (!skip_comments())
         return true;
-    p2_token_e tok = m_words.value(m_idx).tok();
+    p2_TOKEN_e tok = m_words.value(m_idx).tok();
     switch (tok) {
     case t_WC:
         m_IR.set_wc();
@@ -4037,7 +4078,7 @@ bool P2Asm::optional_WZ()
 {
     if (!skip_comments())
         return true;
-    p2_token_e tok = m_words.value(m_idx).tok();
+    p2_TOKEN_e tok = m_words.value(m_idx).tok();
     switch (tok) {
     case t_WZ:
         m_IR.set_wz();
@@ -4062,7 +4103,7 @@ bool P2Asm::mandatory_ANDC_ANDZ()
 {
     if (!skip_comments())
         return false;
-    p2_token_e tok = m_words.value(m_idx).tok();
+    p2_TOKEN_e tok = m_words.value(m_idx).tok();
     switch (tok) {
     case t_ANDC:
         m_IR.set_wc();
@@ -4091,7 +4132,7 @@ bool P2Asm::mandatory_ORC_ORZ()
 {
     if (!skip_comments())
         return false;
-    p2_token_e tok = m_words.value(m_idx).tok();
+    p2_TOKEN_e tok = m_words.value(m_idx).tok();
     switch (tok) {
     case t_ORC:
         m_IR.set_wc();
@@ -4120,7 +4161,7 @@ bool P2Asm::mandatory_XORC_XORZ()
 {
     if (!skip_comments())
         return false;
-    p2_token_e tok = m_words.value(m_idx).tok();
+    p2_TOKEN_e tok = m_words.value(m_idx).tok();
     switch (tok) {
     case t_XORC:
         m_IR.set_wc();
@@ -4644,18 +4685,10 @@ bool P2Asm::parse_PC_A20()
 {
     P2Atom atom = parse_expression();
     p2_LONG addr = atom.get_long();
-    if (0 == (atom.traits() & tr_ABSOLUTE)) {
-        // Check if a relative address is shorter
-        p2_LONG base = m_ORG < LUT_ADDR0 ? COG_ADDR0 : LUT_ADDR0;
-        p2_LONG raddr = base < addr ? addr - base : base - addr;
-        if (raddr < HUB_ADDR0)
-            raddr = raddr / 4;
-        if (raddr < addr) {
-            m_IR.set_r20(raddr);
-        } else {
-            m_IR.set_a20(addr);
-        }
+    if (atom.has_trait(tr_ABSOLUTE)) {
+        m_IR.set_a20(addr);
     } else {
+        // TODO: Check if a relative address is shorter ?
         m_IR.set_a20(addr);
     }
 
@@ -4687,10 +4720,11 @@ bool P2Asm::asm_assign()
     m_advance = 0;      // Don't advance PC
     P2Atom atom = parse_expression();
     P2Symbol sym = m_symbols->symbol(m_symbol);
-    if (sym.isNull())
-        m_symbols->insert(m_symbol, atom.value());
-    else
+    if (sym.isNull()) {
+        m_symbols->insert(m_symbol, atom);
+    } else {
         m_symbols->set_value(m_symbol, atom.value());
+    }
     m_IR.set_equ(atom);
     if (con_section != m_section) {
         m_errors += tr("Not in constant section (CON) but found %1.")
@@ -4825,7 +4859,7 @@ bool P2Asm::asm_ALIGNW()
 {
     next();
     m_IR.set_as_IR(false);
-    m_advance = 1u - (m_ORG & 1u);
+    m_advance = 1u - (m_cogaddr & 1u);
     return end_of_line();
 }
 
@@ -4838,8 +4872,8 @@ bool P2Asm::asm_ALIGNL()
 {
     next();
     m_IR.set_as_IR(false);
-    if (m_ORG & 3u)
-        m_advance = 4u - (m_ORG & 3u);
+    if (m_cogaddr & 3u)
+        m_advance = 4u - (m_cogaddr & 3u);
     return end_of_line();
 }
 
@@ -4860,9 +4894,10 @@ bool P2Asm::asm_ORG()
                     .arg(QLatin1String("$1ff"));
         emit Error(m_pass, m_lineno, m_errors.last());
     } else {
-        m_ORG = value;
+        m_cogaddr = value;
     }
-    m_IR.set_equ(m_ORG);
+    m_hubmode = false;
+    m_IR.set_equ(m_cogaddr);
     m_symbols->set_value(m_symbol, P2Union(value));
     return end_of_line();
 }
@@ -4886,12 +4921,13 @@ bool P2Asm::asm_ORGF()
         emit Error(m_pass, m_lineno, m_errors.last());
         value = 0;
     }
-    for (p2_LONG pc = m_ORG; pc < value; pc += 4) {
+    for (p2_LONG pc = m_cogaddr; pc < value; pc += 4) {
         p2_LONG empty = 0;
         m_data.add_long(empty);
     }
-    m_advance = m_data.usize();
-    m_IR.set_equ(m_ORG);
+    m_hubmode = false;
+    m_advance = m_data.size();
+    m_IR.set_equ(m_cogaddr);
     m_symbols->set_value(m_symbol, P2Union(value));
     return end_of_line();
 }
@@ -4916,8 +4952,9 @@ bool P2Asm::asm_ORGH()
         emit Error(m_pass, m_lineno, m_errors.last());
         value = MEM_SIZE;
     }
-    m_ORGH = value;
-    m_IR.set_equ(m_ORGH);
+    m_hubmode = true;
+    m_hubaddr = value;
+    m_IR.set_equ(m_hubaddr);
     m_symbols->set_value(m_symbol, P2Union(value));
     return end_of_line();
 }
@@ -4933,7 +4970,7 @@ bool P2Asm::asm_FIT()
     m_IR.set_as_IR(false);
     P2Atom atom = parse_expression();
     const p2_LONG fit = atom.isNull() ? HUB_ADDR0 : atom.get_long();
-    const p2_LONG org = m_ORG / 4;
+    const p2_LONG org = m_cogaddr / 4;
     if (fit < org) {
         m_errors += tr("Code does not fit below $%1 (ORG is $%2)")
                   .arg(fit, 0, 16)
@@ -5080,7 +5117,7 @@ bool P2Asm::asm_LONG()
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
         p2_LONG _long = atom.get_long();
-        p2_LONG count = atom.index_long();
+        p2_LONG count = atom.index_long() & 1023;   // XXX: fix "$1f0 - $" type expressions
         m_data.set_type(ut_Long);
         m_data.add_long(_long);
         if (count > 0) {
@@ -5107,7 +5144,7 @@ bool P2Asm::asm_RES()
 
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
-        p2_LONG count = atom.get_long();
+        int count = atom.get_int();
         p2_LONGS _longs(count ? count : 1, 0);
         m_data.add_longs(_longs);
         optional_COMMA();
@@ -10310,17 +10347,10 @@ bool P2Asm::asm_POP()
  */
 bool P2Asm::asm_JMP()
 {
-    int idx = m_idx;
+    p2_TOKEN_e tok = next_tok();
+    if (t_IMMEDIATE == tok || t_AUGMENTED == tok)
+        return asm_JMP_ABS();
     next();
-    p2_token_e tok = curr_tok();
-    if (t_IMMEDIATE == tok || t_AUGMENTED == tok) {
-        P2Atom atom = parse_expression();
-        if (atom.get_long() > COG_MASK) {
-            m_idx = idx;
-            return asm_JMP_abs();
-        }
-        m_idx = idx + 1;
-    }
     m_IR.set_opsrc(p2_OPSRC_JMP);
     return parse_IM_D_WCZ();
 }
@@ -10337,6 +10367,9 @@ bool P2Asm::asm_JMP()
  */
 bool P2Asm::asm_CALL()
 {
+    p2_TOKEN_e tok = next_tok();
+    if (t_IMMEDIATE == tok || t_AUGMENTED == tok)
+        return asm_CALL_ABS();
     next();
     m_IR.set_opsrc(p2_OPSRC_CALL_RET);
     return parse_IM_D_WCZ();
@@ -11724,12 +11757,12 @@ bool P2Asm::asm_MODCZ()
     next();
     m_IR.set_opsrc(p2_OPSRC_WRNZ_MODCZ);
 
-    p2_cond_e cccc = parse_modcz();
+    p2_Cond_e cccc = parse_modcz();
     if (!mandatory_COMMA())
         return false;
 
-    p2_cond_e zzzz = parse_modcz();
-    m_IR.set_dst(static_cast<p2_LONG>((cccc << 4) | zzzz), m_ORG, m_ORGH);
+    p2_Cond_e zzzz = parse_modcz();
+    m_IR.set_dst(static_cast<p2_LONG>((cccc << 4) | zzzz), m_cogaddr, m_hubaddr);
 
     optional_WCZ();
     return end_of_line();
@@ -11750,8 +11783,8 @@ bool P2Asm::asm_MODC()
     next();
     m_IR.set_opsrc(p2_OPSRC_WRNZ_MODCZ);
 
-    p2_cond_e cccc = parse_modcz();
-    m_IR.set_dst(static_cast<p2_LONG>(cccc << 4), m_ORG, m_ORGH);
+    p2_Cond_e cccc = parse_modcz();
+    m_IR.set_dst(static_cast<p2_LONG>(cccc << 4), m_cogaddr, m_hubaddr);
 
     optional_WCZ();
     return end_of_line();
@@ -11772,8 +11805,8 @@ bool P2Asm::asm_MODZ()
     next();
     m_IR.set_opsrc(p2_OPSRC_WRNZ_MODCZ);
 
-    p2_cond_e zzzz = parse_modcz();
-    m_IR.set_dst(static_cast<p2_LONG>(zzzz), m_ORG, m_ORGH);
+    p2_Cond_e zzzz = parse_modcz();
+    m_IR.set_dst(static_cast<p2_LONG>(zzzz), m_cogaddr, m_hubaddr);
 
     optional_WCZ();
     return end_of_line();
@@ -11827,7 +11860,7 @@ bool P2Asm::asm_GETSCP()
  * If R = 1, PC += A, else PC = A.
  *</pre>
  */
-bool P2Asm::asm_JMP_abs()
+bool P2Asm::asm_JMP_ABS()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_JMP);
@@ -11844,7 +11877,7 @@ bool P2Asm::asm_JMP_abs()
  * If R = 1, PC += A, else PC = A.
  *</pre>
  */
-bool P2Asm::asm_CALL_abs()
+bool P2Asm::asm_CALL_ABS()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_CALL_RET);
@@ -11861,7 +11894,7 @@ bool P2Asm::asm_CALL_abs()
  * If R = 1, PC += A, else PC = A.
  *</pre>
  */
-bool P2Asm::asm_CALLA_abs()
+bool P2Asm::asm_CALLA_ABS()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_CALLA_RETA);
@@ -11878,7 +11911,7 @@ bool P2Asm::asm_CALLA_abs()
  * If R = 1, PC += A, else PC = A.
  *</pre>
  */
-bool P2Asm::asm_CALLB_abs()
+bool P2Asm::asm_CALLB_ABS()
 {
     next();
     m_IR.set_opsrc(p2_OPSRC_CALLB_RETB);
@@ -11895,7 +11928,7 @@ bool P2Asm::asm_CALLB_abs()
  * If R = 1, PC += A, else PC = A.
  *</pre>
  */
-bool P2Asm::asm_CALLD_abs_PA()
+bool P2Asm::asm_CALLD_ABS_PA()
 {
     next();
     m_IR.set_inst7(p2_CALLD_ABS_PA);
@@ -11912,7 +11945,7 @@ bool P2Asm::asm_CALLD_abs_PA()
  * If R = 1, PC += A, else PC = A.
  *</pre>
  */
-bool P2Asm::asm_CALLD_abs_PB()
+bool P2Asm::asm_CALLD_ABS_PB()
 {
     next();
     m_IR.set_inst7(p2_CALLD_ABS_PB);
@@ -11929,7 +11962,7 @@ bool P2Asm::asm_CALLD_abs_PB()
  * If R = 1, PC += A, else PC = A.
  *</pre>
  */
-bool P2Asm::asm_CALLD_abs_PTRA()
+bool P2Asm::asm_CALLD_ABS_PTRA()
 {
     next();
     m_IR.set_inst7(p2_CALLD_ABS_PTRA);
@@ -11946,7 +11979,7 @@ bool P2Asm::asm_CALLD_abs_PTRA()
  * If R = 1, PC += A, else PC = A.
  *</pre>
  */
-bool P2Asm::asm_CALLD_abs_PTRB()
+bool P2Asm::asm_CALLD_ABS_PTRB()
 {
     next();
     m_IR.set_inst7(p2_CALLD_ABS_PTRB);

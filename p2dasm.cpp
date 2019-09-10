@@ -50,7 +50,7 @@ P2Dasm::P2Dasm(const P2Cog* cog, QObject* parent)
 {
 }
 
-p2_token_e P2Dasm::conditional(p2_cond_e cond)
+p2_TOKEN_e P2Dasm::conditional(p2_Cond_e cond)
 {
     switch (cond) {
     case cc__ret_:        // execute always
@@ -90,9 +90,9 @@ p2_token_e P2Dasm::conditional(p2_cond_e cond)
     return t_invalid;
 }
 
-p2_token_e P2Dasm::conditional(unsigned cond)
+p2_TOKEN_e P2Dasm::conditional(unsigned cond)
 {
-    return conditional(static_cast<p2_cond_e>(cond));
+    return conditional(static_cast<p2_Cond_e>(cond));
 }
 
 bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* brief)
@@ -1682,7 +1682,7 @@ QString P2Dasm::format_bin(uint num, int digits)
  * @param instruction pointer to string where to store the result
  * @param inst instruction token (mnemonic)
  */
-void P2Dasm::format_inst(QString* instruction, p2_token_e inst)
+void P2Dasm::format_inst(QString* instruction, p2_TOKEN_e inst)
 {
     Q_ASSERT(nullptr != instruction);
     *instruction = Token.string(inst, m_lowercase);
@@ -1693,11 +1693,11 @@ void P2Dasm::format_inst(QString* instruction, p2_token_e inst)
  * @param instruction pointer to string where to store the result
  * @param with
  */
-void P2Dasm::format_WCZ(QString* instruction, p2_token_e wcz)
+void P2Dasm::format_WCZ(QString* instruction, p2_TOKEN_e wcz)
 {
     Q_ASSERT(nullptr != instruction);
 
-    p2_token_e wc, wz;
+    p2_TOKEN_e wc, wz;
     switch (wcz) {
     case t_ANDC:
     case t_ANDZ:
@@ -1733,7 +1733,7 @@ void P2Dasm::format_WCZ(QString* instruction, p2_token_e wcz)
     }
 }
 
-void P2Dasm::format_WC(QString* instruction, p2_token_e wc)
+void P2Dasm::format_WC(QString* instruction, p2_TOKEN_e wc)
 {
     Q_ASSERT(nullptr != instruction);
     if (IR.wc()) {
@@ -1742,7 +1742,7 @@ void P2Dasm::format_WC(QString* instruction, p2_token_e wc)
     }
 }
 
-void P2Dasm::format_WZ(QString* instruction, p2_token_e wz)
+void P2Dasm::format_WZ(QString* instruction, p2_TOKEN_e wz)
 {
     Q_ASSERT(nullptr != instruction);
     if (IR.wz()) {
@@ -1760,7 +1760,7 @@ void P2Dasm::format_WZ(QString* instruction, p2_token_e wz)
  * @param inst instruction token (mnemonic)
  * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
  */
-void P2Dasm::format_D_IM_S_WCZ(QString* instruction, p2_token_e inst, p2_token_e wcz)
+void P2Dasm::format_D_IM_S_WCZ(QString* instruction, p2_TOKEN_e inst, p2_TOKEN_e wcz)
 {
     Q_ASSERT(nullptr != instruction);
     if (!IR.im() && IR.dst() == IR.src()) {
@@ -1787,7 +1787,7 @@ void P2Dasm::format_D_IM_S_WCZ(QString* instruction, p2_token_e inst, p2_token_e
  * @param inst instruction token (mnemonic)
  * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
  */
-void P2Dasm::format_D_IM_S_WC(QString* instruction, p2_token_e inst)
+void P2Dasm::format_D_IM_S_WC(QString* instruction, p2_TOKEN_e inst)
 {
     Q_ASSERT(nullptr != instruction);
     if (!IR.im() && IR.dst() == IR.src()) {
@@ -1814,7 +1814,7 @@ void P2Dasm::format_D_IM_S_WC(QString* instruction, p2_token_e inst)
  * @param inst instruction token (mnemonic)
  * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
  */
-void P2Dasm::format_D_IM_S_WZ(QString* instruction, p2_token_e inst, p2_token_e with)
+void P2Dasm::format_D_IM_S_WZ(QString* instruction, p2_TOKEN_e inst, p2_TOKEN_e with)
 {
     Q_ASSERT(nullptr != instruction);
     if (!IR.im() && IR.dst() == IR.src()) {
@@ -1841,7 +1841,7 @@ void P2Dasm::format_D_IM_S_WZ(QString* instruction, p2_token_e inst, p2_token_e 
  * @param inst instruction token (mnemonic)
  * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
  */
-void P2Dasm::format_WZ_D_IM_S(QString* instruction, p2_token_e inst)
+void P2Dasm::format_WZ_D_IM_S(QString* instruction, p2_TOKEN_e inst)
 {
     Q_ASSERT(nullptr != instruction);
     if (!IR.wz() && !IR.im() && IR.dst() == IR.src()) {
@@ -1867,7 +1867,7 @@ void P2Dasm::format_WZ_D_IM_S(QString* instruction, p2_token_e inst)
  * @param instruction pointer to string where to store the result
  * @param inst instruction token (mnemonic)
  */
-void P2Dasm::format_WZ_D_IM_S_WC(QString* instruction, p2_token_e inst)
+void P2Dasm::format_WZ_D_IM_S_WC(QString* instruction, p2_TOKEN_e inst)
 {
     Q_ASSERT(nullptr != instruction);
     if (!IR.wz() && !IR.im() && IR.dst() == IR.src()) {
@@ -1894,7 +1894,7 @@ void P2Dasm::format_WZ_D_IM_S_WC(QString* instruction, p2_token_e inst)
  * @param instruction pointer to string where to store the result
  * @param inst instruction token (mnemonic)
  */
-void P2Dasm::format_D_IM_S_NNN(QString* instruction, p2_token_e inst, uint max)
+void P2Dasm::format_D_IM_S_NNN(QString* instruction, p2_TOKEN_e inst, uint max)
 {
     Q_ASSERT(nullptr != instruction);
     uint nnn = (IR.opcode() >> p2_shift_NNN) & max;
@@ -1914,7 +1914,7 @@ void P2Dasm::format_D_IM_S_NNN(QString* instruction, p2_token_e inst, uint max)
  * @param instruction pointer to string where to store the result
  * @param inst instruction token (mnemonic)
  */
-void P2Dasm::format_D_IMM_S(QString* instruction, p2_token_e inst)
+void P2Dasm::format_D_IMM_S(QString* instruction, p2_TOKEN_e inst)
 {
     Q_ASSERT(nullptr != instruction);
     *instruction = QString("%1%2,%3%4")
@@ -1933,7 +1933,7 @@ void P2Dasm::format_D_IMM_S(QString* instruction, p2_token_e inst)
  * @param inst instruction token (mnemonic)
  * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
  */
-void P2Dasm::format_D_CZ(QString* instruction, p2_token_e inst, p2_token_e with)
+void P2Dasm::format_D_CZ(QString* instruction, p2_TOKEN_e inst, p2_TOKEN_e with)
 {
     Q_ASSERT(nullptr != instruction);
     *instruction = QString("%1%2")
@@ -1951,7 +1951,7 @@ void P2Dasm::format_D_CZ(QString* instruction, p2_token_e inst, p2_token_e with)
  * @param inst instruction token (mnemonic)
  * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
  */
-void P2Dasm::format_CZ(QString* instruction, p2_token_e inst, p2_token_e with)
+void P2Dasm::format_CZ(QString* instruction, p2_TOKEN_e inst, p2_TOKEN_e with)
 {
     Q_ASSERT(nullptr != instruction);
     *instruction = QString("%1")
@@ -1969,7 +1969,7 @@ void P2Dasm::format_CZ(QString* instruction, p2_token_e inst, p2_token_e with)
  * @param inst instruction token (mnemonic)
  * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
  */
-void P2Dasm::format_MODCZ_WCZ(QString* instruction, p2_token_e inst, p2_token_e with)
+void P2Dasm::format_MODCZ_WCZ(QString* instruction, p2_TOKEN_e inst, p2_TOKEN_e with)
 {
     Q_ASSERT(nullptr != instruction);
     const uint cccc = (IR.dst() >> 4) & 15;
@@ -2001,7 +2001,7 @@ void P2Dasm::format_MODCZ_WCZ(QString* instruction, p2_token_e inst, p2_token_e 
  * @param instruction pointer to string where to store the result
  * @param inst instruction token (mnemonic)
  */
-void P2Dasm::format_D(QString* instruction, p2_token_e inst)
+void P2Dasm::format_D(QString* instruction, p2_TOKEN_e inst)
 {
     Q_ASSERT(nullptr != instruction);
     *instruction = QString("%1%2")
@@ -2017,7 +2017,7 @@ void P2Dasm::format_D(QString* instruction, p2_token_e inst)
  * @param instruction pointer to string where to store the result
  * @param inst instruction token (mnemonic)
  */
-void P2Dasm::format_WZ_D(QString* instruction, p2_token_e inst)
+void P2Dasm::format_WZ_D(QString* instruction, p2_TOKEN_e inst)
 {
     Q_ASSERT(nullptr != instruction);
     *instruction = QString("%1%2%3")
@@ -2034,7 +2034,7 @@ void P2Dasm::format_WZ_D(QString* instruction, p2_token_e inst)
  * @param instruction pointer to string where to store the result
  * @param inst instruction token (mnemonic)
  */
-void P2Dasm::format_IM_D(QString* instruction, p2_token_e inst)
+void P2Dasm::format_IM_D(QString* instruction, p2_TOKEN_e inst)
 {
     Q_ASSERT(nullptr != instruction);
     *instruction = QString("%1%2%3")
@@ -2052,7 +2052,7 @@ void P2Dasm::format_IM_D(QString* instruction, p2_token_e inst)
  * @param inst instruction token (mnemonic)
  * @param with token before {C,Z,CZ} i.e. W, AND, OR, XOR
  */
-void P2Dasm::format_IM_D_WCZ(QString* instruction, p2_token_e inst, p2_token_e with)
+void P2Dasm::format_IM_D_WCZ(QString* instruction, p2_TOKEN_e inst, p2_TOKEN_e with)
 {
     Q_ASSERT(nullptr != instruction);
     *instruction = QString("%1%2%3")
@@ -2070,7 +2070,7 @@ void P2Dasm::format_IM_D_WCZ(QString* instruction, p2_token_e inst, p2_token_e w
  * @param instruction pointer to string where to store the result
  * @param inst instruction token (mnemonic)
  */
-void P2Dasm::format_IM_D_WC(QString* instruction, p2_token_e inst)
+void P2Dasm::format_IM_D_WC(QString* instruction, p2_TOKEN_e inst)
 {
     Q_ASSERT(nullptr != instruction);
     *instruction = QString("%1%2%3")
@@ -2088,7 +2088,7 @@ void P2Dasm::format_IM_D_WC(QString* instruction, p2_token_e inst)
  * @param instruction pointer to string where to store the result
  * @param inst instruction token (mnemonic)
  */
-void P2Dasm::format_IM_S(QString* instruction, p2_token_e inst)
+void P2Dasm::format_IM_S(QString* instruction, p2_TOKEN_e inst)
 {
     Q_ASSERT(nullptr != instruction);
     *instruction = QString("%1%2%3")
@@ -2105,7 +2105,7 @@ void P2Dasm::format_IM_S(QString* instruction, p2_token_e inst)
  * @param instruction pointer to string where to store the result
  * @param inst instruction token (mnemonic)
  */
-void P2Dasm::format_IM_S_WC(QString* instruction, p2_token_e inst)
+void P2Dasm::format_IM_S_WC(QString* instruction, p2_TOKEN_e inst)
 {
     Q_ASSERT(nullptr != instruction);
     *instruction = QString("%1%2%3")
@@ -2124,7 +2124,7 @@ void P2Dasm::format_IM_S_WC(QString* instruction, p2_token_e inst)
  * @param inst instruction token (mnemonic)
  * @param dest destination token (PA, PB, PTRA, PTRB)
  */
-void P2Dasm::format_PC_A20(QString* instruction, p2_token_e inst, p2_token_e dest)
+void P2Dasm::format_PC_A20(QString* instruction, p2_TOKEN_e inst, p2_TOKEN_e dest)
 {
     Q_ASSERT(nullptr != instruction);
     const p2_LONG aaaa = IR.opcode() & A20MASK;
@@ -2145,7 +2145,7 @@ void P2Dasm::format_PC_A20(QString* instruction, p2_token_e inst, p2_token_e des
  * @param instruction pointer to string where to store the result
  * @param inst instruction token (mnemonic)
  */
-void P2Dasm::format_IMM23(QString* instruction, p2_token_e inst)
+void P2Dasm::format_IMM23(QString* instruction, p2_TOKEN_e inst)
 {
     Q_ASSERT(nullptr != instruction);
     const p2_LONG nnnn = (IR.opcode() << AUG_SHIFT) & AUG_MASK;

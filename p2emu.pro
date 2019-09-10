@@ -88,6 +88,7 @@ HEADERS += \
 	models/p2dasmmodel.h \
 	models/p2symbolsmodel.h \
 	util/p2colors.h \
+	util/p2html.h \
 	util/p2util.h \
 	views/p2cogview.h \
 	views/p2hubview.h

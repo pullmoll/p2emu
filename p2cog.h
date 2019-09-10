@@ -48,15 +48,15 @@ public:
     p2_opcode_u rd_IR() const { return IR; }
     p2_LONG rd_ID() const { return ID; }
     p2_LONG rd_PC() const { return PC; }
-    p2_wait_t rd_WAIT() const { return WAIT; }
-    p2_flags_t rd_FLAGS() const { return FLAGS; }
+    p2_WAIT_t rd_WAIT() const { return WAIT; }
+    p2_FLAGS_t rd_FLAGS() const { return FLAGS; }
     p2_LONG rd_CT1() const { return CT1; }
     p2_LONG rd_CT2() const { return CT2; }
     p2_LONG rd_CT3() const { return CT3; }
-    p2_pat_t rd_PAT() const { return PAT; }
-    p2_pin_t rd_PIN() const { return PIN; }
-    p2_int_bits_u rd_INT() const { return INT; }
-    p2_lock_t rd_LOCK() const { return LOCK; }
+    p2_PAT_t rd_PAT() const { return PAT; }
+    p2_PIN_t rd_PIN() const { return PIN; }
+    p2_INT_bits_u rd_INT() const { return INT; }
+    p2_LOCK_t rd_LOCK() const { return LOCK; }
     p2_LONG rd_D() const { return D; }
     p2_LONG rd_S() const { return S; }
     p2_LONG rd_Q() const { return Q; }
@@ -81,22 +81,22 @@ private:
     P2Hub* HUB;             //!< pointer to the HUB, i.e. the parent of this P2Cog
     p2_LONG ID;             //!< COG ID (0 … number of COGs - 1)
     p2_LONG PC;             //!< program counter
-    p2_wait_t WAIT;         //!< waiting conidition
-    p2_flags_t FLAGS;       //!< flags register
+    p2_WAIT_t WAIT;         //!< waiting conidition
+    p2_FLAGS_t FLAGS;       //!< flags register
     p2_LONG CT1;            //!< counter CT1 value
     p2_LONG CT2;            //!< counter CT2 value
     p2_LONG CT3;            //!< counter CT3 value
-    p2_pat_t PAT;           //!< PAT mode, mask, and match
-    p2_pin_t PIN;           //!< PIN mode, mask, and match
-    p2_int_bits_u INT;      //!< INT disable / active / source bits union
-    p2_lock_t LOCK;         //!<
+    p2_PAT_t PAT;           //!< PAT mode, mask, and match
+    p2_PIN_t PIN;           //!< PIN mode, mask, and match
+    p2_INT_bits_u INT;      //!< INT disable / active / source bits union
+    p2_LOCK_t LOCK;         //!<
     p2_opcode_u IR;         //!< instruction register
     p2_LONG D;              //!< value of D
     p2_LONG S;              //!< value of S
     p2_LONG Q;              //!< value of Q
     p2_LONG C;              //!< current carry flag
     p2_LONG Z;              //!< current zero flag
-    p2_fifo_t FIFO;         //!< stream FIFO
+    p2_FIFO_t FIFO;         //!< stream FIFO
     p2_LONG K;              //!< stack pointer (0 … 7)
     p2_LONG STACK[8];       //!< stack of 8 levels
     QVariant S_next;        //!< next instruction's S value
@@ -122,8 +122,8 @@ private:
     p2_LONG WRL_mask;       //!<
     p2_LONG WRL_flags0;     //!<
     p2_LONG WRL_flags1;     //!<
-    p2_cog_t COG;           //!< COG memory (512 longs)
-    p2_lut_t LUT;           //!< LUT memory (512 longs) and shadow registers
+    p2_COG_t COG;           //!< COG memory (512 longs)
+    p2_LUT_t LUT;           //!< LUT memory (512 longs) and shadow registers
     uchar *MEM;             //!< HUB memory pointer
     p2_LONG MEMSIZE;        //!< HUB memory size
 
@@ -189,7 +189,7 @@ private:
         return static_cast<p2_LONG>(val);
     }
 
-    bool conditional(p2_cond_e cond);
+    bool conditional(p2_Cond_e cond);
     bool conditional(unsigned cond);
     p2_LONG fifo_level();
     void check_interrupt_flags();

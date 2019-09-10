@@ -97,6 +97,17 @@ bool P2SymbolTableClass::insert(const QString& name, const P2Union& value)
 }
 
 /**
+ * @brief Insert a symbol name / atom into the symbol table
+ * @param name name of the new symbol
+ * @param atom atom of the new symbol
+ * @return false if the symbol was already in the table, or true if inserted
+ */
+bool P2SymbolTableClass::insert(const QString& name, const P2Atom& atom)
+{
+    return insert(P2SymbolClass(name, atom));
+}
+
+/**
  * @brief Set an existing symbol to a new value
  * @param name symbol name
  * @param value new symbol value
@@ -112,7 +123,7 @@ bool P2SymbolTableClass::set_value(const QString& name, const P2Union& value)
 
 /**
  * @brief Return a copy of the P2Symbol with %name
- * @param name name of the symbol
+ * @param name of the symbol
  * @return P2Symbol which may be empty, if the symbol name is not in the has
  */
 P2Symbol P2SymbolTableClass::symbol(const QString& name) const
@@ -120,7 +131,12 @@ P2Symbol P2SymbolTableClass::symbol(const QString& name) const
     return m_symbols.value(name);
 }
 
-p2_union_e P2SymbolTableClass::type(const QString& name) const
+/**
+ * @brief Return the type of a symbol's value
+ * @param name of the symbol
+ * @return Type of symbol value
+ */
+p2_Union_e P2SymbolTableClass::type(const QString& name) const
 {
     return m_symbols.value(name)->type();
 }

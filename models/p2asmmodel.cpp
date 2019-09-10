@@ -187,11 +187,11 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     const bool has_errors = !errors.isEmpty();
     const P2Words& words = m_asm->words(lineno);
 
-    const bool has_PC = m_asm->has_PC_ORGH(lineno);
-    const p2_ORG_ORGH_t PC_orgh = has_PC ? m_asm->get_PC_ORGH(lineno)
-                                        : p2_ORG_ORGH_t();
-    const p2_LONG PC = PC_orgh.first;
-    const p2_LONG ORGH = PC_orgh.second;
+    const bool has_ORIGIN = m_asm->has_ORIGIN(lineno);
+    const p2_ORIGIN_t origin = has_ORIGIN ? m_asm->get_ORIGIN(lineno)
+                                       : p2_ORIGIN_t();
+    const p2_LONG cogaddr = origin._cog;
+    const p2_LONG hubaddr = origin._hub;
 
     const bool has_IR = m_asm->has_IR(lineno);
     const P2Opcode& IR = m_asm->get_IR(lineno);
@@ -200,20 +200,20 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     case Qt::DisplayRole:
         switch (column) {
         case c_Origin: // Address as COG[xxx], LUT[xxx], or xxxxxx in RAM
-            if (!has_PC)
+            if (!has_ORIGIN)
                 break;
-            result = QString("%1").arg(ORGH, 6, 16, QChar('0'));
+            result = QString("%1").arg(hubaddr, 6, 16, QChar('0'));
             break;
 
         case c_Address:
-            if (!has_PC)
+            if (!has_ORIGIN)
                 break;
-            if (PC < LUT_ADDR0) {
-                result = QString("COG:%1").arg(PC / 4, 3, 16, QChar('0'));
-            } else if (PC < HUB_ADDR0) {
-                result = QString("LUT:%1").arg((PC - LUT_ADDR0) / 4, 3, 16, QChar('0'));
+            if (cogaddr < LUT_ADDR0) {
+                result = QString("COG:%1").arg(cogaddr / 4, 3, 16, QChar('0'));
+            } else if (cogaddr < HUB_ADDR0) {
+                result = QString("LUT:%1").arg((cogaddr - LUT_ADDR0) / 4, 3, 16, QChar('0'));
             } else {
-                result = QString("%1").arg(PC, 7, 16, QChar('0'));
+                result = QString("%1").arg(cogaddr, 6, 16, QChar('0'));
             }
             break;
 
@@ -235,8 +235,13 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
             break;
 
         case c_Symbols:
-            if (has_symbols)
-                result = QString::number(symbols->references_in(lineno).count());
+            if (has_symbols) {
+                QList<P2Symbol> refs = symbols->references_in(lineno);
+                if (refs.isEmpty())
+                    result = QStringLiteral("-");
+                else
+                    result = QString::number(refs.count());
+            }
             break;
 
         case c_Source:  // Source code
@@ -259,13 +264,13 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     case Qt::EditRole:
         switch (column) {
         case c_Origin:
-            if (has_PC)
-                result = QVariant::fromValue(PC_orgh.second);
+            if (has_ORIGIN)
+                result = QVariant::fromValue(origin._hub);
             break;
 
         case c_Address:
-            if (has_PC)
-                result = QVariant::fromValue(PC_orgh.first);
+            if (has_ORIGIN)
+                result = QVariant::fromValue(origin._cog);
             break;
 
         case c_Opcode:
@@ -485,7 +490,7 @@ QList<P2AsmModel::column_e> P2AsmModel::columns()
     return columns;
 }
 
-p2_format_e P2AsmModel::opcode_format() const
+p2_FORMAT_e P2AsmModel::opcode_format() const
 {
     return m_format;
 }
@@ -496,7 +501,7 @@ void P2AsmModel::invalidate()
     endResetModel();
 }
 
-void P2AsmModel::setOpcodeFormat(p2_format_e format)
+void P2AsmModel::setOpcodeFormat(p2_FORMAT_e format)
 {
     if (format == m_format)
         return;
@@ -663,23 +668,18 @@ QString P2AsmModel::symbolsToolTip(const P2SymbolTable& symbols, const QList<P2S
     html += html_th(tr("Line #"));
     html += html_th(tr("Section::name"));
     html += html_th(tr("Type"));
-    html += html_th(tr("Value (dec)"));
-    html += html_th(tr("Value (hex)"));
-    html += html_th(tr("Value (bin)"));
+    html += html_th(tr("Value"));
     html += html_end_tr();
 
     for (int i = 0; i < symrefs.count(); i++) {
         const P2Symbol symbol = symrefs[i];
         const P2Word& word = symbols->reference(symbol->name());
         const P2Union& value = symbol->value();
-        p2_LONG val = value.get_long();
         html += html_start_tr();
         html += html_td(QString::number(word.lineno()));
         html += html_td(symbol->name());
         html += html_td(symbol->type_name());
-        html += html_td(QString("%1").arg(val));
-        html += html_td(QString("$%1").arg(val, 8, 16, QChar('0')));
-        html += html_td(QString("%%1").arg(val, 32, 2, QChar('0')));
+        html += html_td(value.str(false, fmt_hex));
         html += html_end_tr();
     }
     html += html_end();

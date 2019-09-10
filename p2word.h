@@ -5,28 +5,28 @@
 class P2Word
 {
 public:
-    explicit P2Word(p2_token_e tok = t_invalid,
+    explicit P2Word(p2_TOKEN_e tok = t_invalid,
                     const QStringRef& ref = QStringRef(),
                     int lineno = 0);
 
     bool isValid() const;
     const QStringRef ref() const;
     const QString str() const;
-    p2_token_e tok() const;
+    p2_TOKEN_e tok() const;
     int lineno() const;
     int pos() const;
     int len() const;
     int end() const;
 
-    void set_tok(p2_token_e tok);
+    void set_tok(p2_TOKEN_e tok);
     void set_lineno(const int lineno);
 
-    static bool remove(QVector<P2Word>& words, p2_token_e tok);
+    static bool remove(QVector<P2Word>& words, p2_TOKEN_e tok);
 
     bool operator==(const P2Word& other) const;
 private:
     QStringRef m_ref;
-    p2_token_e m_tok;
+    p2_TOKEN_e m_tok;
     int m_lineno;
 };
 

@@ -87,7 +87,7 @@ void P2CogView::updateView()
     ui->cb_C->setChecked(m_cog->rd_C());
     ui->cb_Z->setChecked(m_cog->rd_Z());
 
-    const p2_flags_t flags = m_cog->rd_FLAGS();
+    const p2_FLAGS_t flags = m_cog->rd_FLAGS();
     ui->cb_INT->setChecked(flags.f_INT);            // INT interrupt flag
     ui->cb_CT1->setChecked(flags.f_CT1);            // CT1 counter flag
     ui->cb_CT2->setChecked(flags.f_CT2);            // CT2 counter flag
@@ -109,7 +109,7 @@ void P2CogView::updateView()
     ui->le_CT2->setText(hex(m_cog->rd_CT2()));
     ui->le_CT3->setText(hex(m_cog->rd_CT3()));
 
-    p2_pat_t pat = m_cog->rd_PAT();
+    p2_PAT_t pat = m_cog->rd_PAT();
     switch (pat.mode) {
     case p2_PAT_NONE:
         ui->le_PAT_mode->setText(tr("OFF"));
@@ -130,7 +130,7 @@ void P2CogView::updateView()
     ui->le_PAT_mask->setText(QString("%1").arg(pat.mask, 8, 16, QChar('0')));
     ui->le_PAT_match->setText(QString("%1").arg(pat.match, 8, 16, QChar('0')));
 
-    p2_pin_t pin = m_cog->rd_PIN();
+    p2_PIN_t pin = m_cog->rd_PIN();
     switch (pin.mode) {
     case p2_PIN_NONE:
         ui->le_PIN_mode->setText(tr("OFF"));

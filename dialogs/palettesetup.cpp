@@ -6,8 +6,8 @@
 PaletteSetup::PaletteSetup(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::PaletteSetup)
-    , m_original_palette(Colors.palette())
-    , m_modified_palette(m_original_palette)
+    , m_original_palette(Colors.hash())
+    , m_modified_palette(Colors.hash())
 {
     ui->setupUi(this);
     setup_combo_boxes();
@@ -35,7 +35,7 @@ void PaletteSetup::syntax_changed(int row)
 {
     QVariant var = ui->cb_syntax->itemData(row, Qt::UserRole);
     P2Colors::p2_palette_e pal = qvariant_cast<P2Colors::p2_palette_e>(var);
-    QColor color(Colors.palette_color(pal, false));
+    QColor color(Colors.palette_color(pal));
 
     const int idx = ui->cb_colors->findData(color, Qt::DecorationRole);
     ui->cb_colors->setCurrentIndex(idx);
@@ -111,7 +111,8 @@ void PaletteSetup::original_palette()
 
 void PaletteSetup::reset_palette()
 {
-    m_modified_palette = m_original_palette = Colors.palette(true);
+    m_modified_palette = m_original_palette = Colors.hash(true);
+    Colors.set_palette(m_modified_palette);
     emit changedPalette();
     reinit_combo_boxes();
 }
