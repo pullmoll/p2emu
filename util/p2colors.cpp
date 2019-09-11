@@ -44,20 +44,20 @@ static bool color_compare(const QColor& c1, const QColor& c2)
     qreal h2, v2, s2, a2;
     c1.getHsvF(&h1, &s1, &v1, &a1);
     c2.getHsvF(&h2, &s2, &v2, &a2);
-    const qreal val1 = (1000.0 * h1 + 100.0 * v1 + 10.0 * s1 + a1) * a1;
-    const qreal val2 = (1000.0 * h2 + 100.0 * v2 + 10.0 * s2 + a2) * a2;
+    const qreal val1 = (1000.0 * h1 + 100.0 * v1 + 10.0 * s1 + (1.0 - a1));
+    const qreal val2 = (1000.0 * h2 + 100.0 * v2 + 10.0 * s2 + (1.0 - a2));
     return val1 < val2;
 }
 
 P2Colors::P2Colors()
-    : m_named_colors()
+    : m_name_color()
     , m_palette()
-    , m_color_names()
+    , m_color_names_lexicographic()
     , m_color_values()
     , m_colors_hue_sat_lum()
     , m_palette_names()
 {
-    m_named_colors = {
+    m_name_color = {
         {QStringLiteral("Alice Blue"),          QColor(0xF0,0xF8,0xFF,0xFF)},
         {QStringLiteral("Antique White"),       QColor(0xFA,0xEB,0xD7,0xFF)},
         {QStringLiteral("Aqua"),                QColor(0x00,0xFF,0xFF,0xFF)},
@@ -203,14 +203,10 @@ P2Colors::P2Colors()
         {QStringLiteral("White Smoke"),         QColor(0xF5,0xF5,0xF5,0xFF)},
         {QStringLiteral("Yellow"),              QColor(0xFF,0xFF,0x00,0xFF)},
         {QStringLiteral("Yellow Green"),        QColor(0x9A,0xCD,0x32,0xFF)},
-        {QStringLiteral("Transparent"),         QColor(0x01,0x01,0x01,0x00)}
+        {QStringLiteral("Transparent"),         QColor(0x00,0x00,0x00,0x00)}
     };
 
-    foreach(const QString& name, QColor::colorNames()) {
-        QColor stdcolor = QColor(name);
-        if (m_named_colors.keys(stdcolor).isEmpty())
-            m_named_colors.insert(name, stdcolor);
-    }
+    setup_tables();
 
     m_palette_names.insert(p2_pal_comment,      QStringLiteral("Comment"));
     m_palette_names.insert(p2_pal_instruction,  QStringLiteral("Instruction"));
@@ -228,7 +224,6 @@ P2Colors::P2Colors()
     m_palette_names.insert(p2_pal_hex_const,    QStringLiteral("Hexadecimal_constant"));
     m_palette_names.insert(p2_pal_real_const,   QStringLiteral("Real_constant"));
     m_palette_names.insert(p2_pal_source,       QStringLiteral("Source"));
-
     reset_palette();
 }
 
@@ -239,17 +234,11 @@ P2Colors::P2Colors()
  */
 QStringList P2Colors::color_names(bool sort_by_hue_sat_lum) const
 {
-    if (m_color_names.isEmpty())
-        setup_tables();
     QStringList list;
     if (sort_by_hue_sat_lum) {
-        for (int i = 0; i < m_colors_hue_sat_lum.count(); i++) {
-            const QColor& color = m_colors_hue_sat_lum[i];
-            QString name = m_named_colors.key(color.rgb());
-            list.append(name);
-        }
+        list = m_color_names_hue_sat_lum;
     } else {
-        list = m_color_names;
+        list = m_color_names_lexicographic;
     }
     return list;
 }
@@ -261,9 +250,7 @@ QStringList P2Colors::color_names(bool sort_by_hue_sat_lum) const
  */
 QColor P2Colors::color(const QString& name) const
 {
-    if (m_color_names.isEmpty())
-        setup_tables();
-    return m_named_colors.value(name, Qt::black);
+    return m_name_color.value(name, Qt::black);
 }
 
 /**
@@ -273,9 +260,7 @@ QColor P2Colors::color(const QString& name) const
  */
 QColor P2Colors::color_at(int idx) const
 {
-    if (m_color_names.isEmpty())
-        setup_tables();
-    return color(m_color_names.value(idx));
+    return color(m_color_names_lexicographic.value(idx));
 }
 
 /**
@@ -285,9 +270,7 @@ QColor P2Colors::color_at(int idx) const
  */
 int P2Colors::color_index(const QString& name) const
 {
-    if (m_color_names.isEmpty())
-        setup_tables();
-    return m_color_names.indexOf(name);
+    return m_color_names_lexicographic.indexOf(name);
 }
 
 /**
@@ -297,18 +280,15 @@ int P2Colors::color_index(const QString& name) const
  */
 QString P2Colors::closest(QColor color) const
 {
-    if (m_color_names.isEmpty())
-        setup_tables();
-
-    if (!m_named_colors.key(color).isEmpty())
-        return m_named_colors.key(color);
+    if (m_color_name.contains(color.rgba()))
+        return m_color_name[color.rgba()];
 
     int i = 0;
     int bestidx = -1;
     qreal bestdist = 99999.0;
     i = 0;
-    foreach(const QString& name, m_color_names) {
-        QColor known = m_named_colors[name];
+    foreach(const QString& name, m_color_names_lexicographic) {
+        QColor known = m_name_color[name];
         const qreal dr = qAbs(known.redF() - color.redF());
         const qreal dg = qAbs(known.greenF() - color.greenF());
         const qreal db = qAbs(known.blueF() - color.blueF());
@@ -321,7 +301,7 @@ QString P2Colors::closest(QColor color) const
         i++;
     }
     Q_ASSERT(bestidx >= 0);
-    return m_color_names.value(bestidx);
+    return m_color_names_lexicographic.value(bestidx);
 }
 
 /**
@@ -428,7 +408,7 @@ void P2Colors::set_palette_color(P2Colors::p2_palette_e pal, const QColor& color
  */
 void P2Colors::set_palette_color(P2Colors::p2_palette_e pal, const QString& name)
 {
-    m_palette.insert(pal, m_named_colors.value(name));
+    m_palette.insert(pal, m_name_color.value(name));
 }
 
 /**
@@ -517,19 +497,38 @@ P2Colors::p2_palette_e P2Colors::pal_for_token(const p2_TOKEN_e tok)
 /**
  * @brief Setup and sort the tables
  */
-void P2Colors::setup_tables() const
+void P2Colors::setup_tables()
 {
-    // m_color_names is sorted lexicographically
-    m_color_names = m_named_colors.keys();
-    std::sort(m_color_names.begin(), m_color_names.end());
+    // Add Qt5 default color names which have no entry
+    foreach(const QString& name, QColor::colorNames()) {
+        QColor stdcolor = QColor(name);
+        if (m_name_color.keys(stdcolor).isEmpty())
+            m_name_color.insert(name, stdcolor);
+    }
+
+    // Build the reverse hash for color to name lookup
+    foreach(const QString& name, m_name_color.keys()) {
+        QColor color = m_name_color.value(name);
+        m_color_name.insert(color.rgba(), name);
+    }
+
+    m_color_names_lexicographic = m_name_color.keys();
+    // m_color_names_lexicographic is sorted lexicographically
+    std::sort(m_color_names_lexicographic.begin(), m_color_names_lexicographic.end());
 
     m_color_values.clear();
-    for (int i = 0; i < m_color_names.size(); ++i)
-        m_color_values += m_named_colors.value(m_color_names[i]);
+    for (int i = 0; i < m_color_names_lexicographic.size(); ++i)
+        m_color_values += m_name_color.value(m_color_names_lexicographic[i]);
 
-    // Sort by base colors and ascending luminance
     m_colors_hue_sat_lum = m_color_values;
+    // m_colors_hue_sat_lum is sorted by hue, saturation, and luminance
     std::sort(m_colors_hue_sat_lum.begin(), m_colors_hue_sat_lum.end(), color_compare);
+
+    // Fill m_color_names_hue_sat_lum
+    for (int i = 0; i < m_colors_hue_sat_lum.count(); i++) {
+        quint32 rgba = m_colors_hue_sat_lum[i].rgba();
+        m_color_names_hue_sat_lum.append(m_color_name.value(rgba));
+    }
 }
 
 /**
@@ -537,22 +536,22 @@ void P2Colors::setup_tables() const
  */
 void P2Colors::reset_palette()
 {
-    m_default_colors.insert(p2_pal_source,        m_named_colors.value("Black"));
-    m_default_colors.insert(p2_pal_comment,       m_named_colors.value("Dark Olive Green"));
-    m_default_colors.insert(p2_pal_str_const,     m_named_colors.value("Cadet Blue"));
-    m_default_colors.insert(p2_pal_bin_const,     m_named_colors.value("Dark Blue"));
-    m_default_colors.insert(p2_pal_byt_const,     m_named_colors.value("Deep Sky Blue"));
-    m_default_colors.insert(p2_pal_dec_const,     m_named_colors.value("Sky Blue"));
-    m_default_colors.insert(p2_pal_hex_const,     m_named_colors.value("Blue"));
-    m_default_colors.insert(p2_pal_real_const,    m_named_colors.value("Powder Blue"));
-    m_default_colors.insert(p2_pal_locsym,        m_named_colors.value("Orange Red"));
-    m_default_colors.insert(p2_pal_symbol,        m_named_colors.value("Dark Orange"));
-    m_default_colors.insert(p2_pal_expression,    m_named_colors.value("Orange"));
-    m_default_colors.insert(p2_pal_section,       m_named_colors.value("Cyan"));
-    m_default_colors.insert(p2_pal_conditional,   m_named_colors.value("Violet"));
-    m_default_colors.insert(p2_pal_instruction,   m_named_colors.value("Dark Cyan"));
-    m_default_colors.insert(p2_pal_modcz_param,   m_named_colors.value("Medium Violet Red"));
-    m_default_colors.insert(p2_pal_wcz_suffix,    m_named_colors.value("Pale Violet Red"));
+    m_default_colors.insert(p2_pal_source,        m_name_color.value("Black"));
+    m_default_colors.insert(p2_pal_comment,       m_name_color.value("Dark Olive Green"));
+    m_default_colors.insert(p2_pal_str_const,     m_name_color.value("Cadet Blue"));
+    m_default_colors.insert(p2_pal_bin_const,     m_name_color.value("Dark Blue"));
+    m_default_colors.insert(p2_pal_byt_const,     m_name_color.value("Deep Sky Blue"));
+    m_default_colors.insert(p2_pal_dec_const,     m_name_color.value("Sky Blue"));
+    m_default_colors.insert(p2_pal_hex_const,     m_name_color.value("Blue"));
+    m_default_colors.insert(p2_pal_real_const,    m_name_color.value("Powder Blue"));
+    m_default_colors.insert(p2_pal_locsym,        m_name_color.value("Orange Red"));
+    m_default_colors.insert(p2_pal_symbol,        m_name_color.value("Dark Orange"));
+    m_default_colors.insert(p2_pal_expression,    m_name_color.value("Orange"));
+    m_default_colors.insert(p2_pal_section,       m_name_color.value("Cyan"));
+    m_default_colors.insert(p2_pal_conditional,   m_name_color.value("Violet"));
+    m_default_colors.insert(p2_pal_instruction,   m_name_color.value("Dark Cyan"));
+    m_default_colors.insert(p2_pal_modcz_param,   m_name_color.value("Medium Violet Red"));
+    m_default_colors.insert(p2_pal_wcz_suffix,    m_name_color.value("Pale Violet Red"));
 
     m_palette = m_default_colors;
 }

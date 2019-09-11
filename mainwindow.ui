@@ -357,6 +357,11 @@
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="action_Quit">
+   <property name="icon">
+    <iconset>
+     <normalon>:/icons/quit.png</normalon>
+    </iconset>
+   </property>
    <property name="text">
     <string>&amp;Quit</string>
    </property>
@@ -657,6 +662,11 @@
    </property>
   </action>
   <action name="action_Palette_setup">
+   <property name="icon">
+    <iconset>
+     <normalon>:/icons/palette.png</normalon>
+    </iconset>
+   </property>
    <property name="text">
     <string>Palette &amp;setup …</string>
    </property>

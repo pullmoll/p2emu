@@ -573,57 +573,57 @@ QDomDocumentFragment P2Doc::doc_opcode(QDomDocument& doc, P2DocOpcode op) const
     QDomElement h2, pre, table, tr, td, tt, strong;
     QDomText text;
 
-    h2 = html(doc,"h2");
-    text = doc_text(doc, QString("%1: %2")
+    h2 = p2_html(doc,"h2");
+    text = p2_text(doc, QString("%1: %2")
                     .arg(Token.string(op->token()))
                     .arg(op->brief()));
     h2.appendChild(text);
     node.appendChild(h2);
 
-    pre = html(doc,"pre");
-    table = html(doc,"table");
+    pre = p2_html(doc,"pre");
+    table = p2_html(doc,"table");
     table.setAttribute("width", "95%");
 
-    tr = html(doc,"tr");
-    td = html(doc,"td");
+    tr = p2_html(doc,"tr");
+    td = p2_html(doc,"td");
     td.setAttribute("width", "10%");
-    text = doc_text(doc, QStringLiteral("Mask"));
+    text = p2_text(doc, QStringLiteral("Mask"));
     td.appendChild(text);
     tr.appendChild(td);
 
-    td = html(doc,"td");
-    tt = html(doc,"tt");
-    text = doc_text(doc, format_pattern(op->mask(), QChar('-'), QChar('X')));
+    td = p2_html(doc,"td");
+    tt = p2_html(doc,"tt");
+    text = p2_text(doc, format_pattern(op->mask(), QChar('-'), QChar('X')));
     tt.appendChild(text);
     td.appendChild(tt);
     tr.appendChild(td);
     table.appendChild(tr);
 
-    tr = html(doc,"tr");
-    td = html(doc,"td");
+    tr = p2_html(doc,"tr");
+    td = p2_html(doc,"td");
     td.setAttribute("width", "10%");
-    text = doc_text(doc, QStringLiteral("Match"));
+    text = p2_text(doc, QStringLiteral("Match"));
     td.appendChild(text);
     tr.appendChild(td);
 
-    td = html(doc,"td");
-    tt = html(doc,"tt");
-    text = doc_text(doc, format_pattern(op->match()));
+    td = p2_html(doc,"td");
+    tt = p2_html(doc,"tt");
+    text = p2_text(doc, format_pattern(op->match()));
     tt.appendChild(text);
     td.appendChild(tt);
     tr.appendChild(td);
     table.appendChild(tr);
 
-    tr = html(doc,"tr");
-    td = html(doc,"td");
+    tr = p2_html(doc,"tr");
+    td = p2_html(doc,"td");
     td.setAttribute("width", "10%");
-    text = doc_text(doc, QStringLiteral("Pattern"));
+    text = p2_text(doc, QStringLiteral("Pattern"));
     td.appendChild(text);
     tr.appendChild(td);
 
-    td = html(doc,"td");
-    tt = html(doc,"tt");
-    text = doc_text(doc, op->pattern());
+    td = p2_html(doc,"td");
+    tt = p2_html(doc,"tt");
+    text = p2_text(doc, op->pattern());
     tt.appendChild(text);
     td.appendChild(tt);
     tr.appendChild(td);
@@ -631,17 +631,17 @@ QDomDocumentFragment P2Doc::doc_opcode(QDomDocument& doc, P2DocOpcode op) const
 
     node.appendChild(table);
 
-    strong = html(doc,"strong");
-    pre = html(doc,"pre");
-    text = doc_text(doc, QString("    %1").arg(op->instr()));
+    strong = p2_html(doc,"strong");
+    pre = p2_html(doc,"pre");
+    text = p2_text(doc, QString("    %1").arg(op->instr()));
     pre.appendChild(text);
     strong.appendChild(pre);
     node.appendChild(strong);
 
     if (!op->descr().isEmpty()) {
-        pre = html(doc,"pre");
+        pre = p2_html(doc,"pre");
         foreach(const QString& line, op->descr()) {
-            text = doc_text(doc, QString("%1\n").arg(line));
+            text = p2_text(doc, QString("%1\n").arg(line));
             pre.appendChild(text);
         }
         node.appendChild(pre);
@@ -661,18 +661,18 @@ const QStringList P2Doc::html_opcode(const p2_LONG opcode) const
     QDomElement tr, td, hr;
     QDomText text;
 
-    root = html(doc,"html");
-    head = html(doc,"head");
-    title = html(doc,"title");
-    title.appendChild(doc_text(doc, QStringLiteral("Propeller2 opcode")));
+    root = p2_html(doc,"html");
+    head = p2_html(doc,"head");
+    title = p2_html(doc,"title");
+    title.appendChild(p2_text(doc, QStringLiteral("Propeller2 opcode")));
     head.appendChild(title);
     root.appendChild(head);
 
-    body = html(doc,"body");
-    table = html(doc,"table");
+    body = p2_html(doc,"body");
+    table = p2_html(doc,"table");
     table.setAttribute("width", "95%");
-    tr = html(doc,"tr");
-    td = html(doc,"td");
+    tr = p2_html(doc,"tr");
+    td = p2_html(doc,"td");
     td.appendChild(doc_opcode(doc, op));
     tr.appendChild(td);
     table.appendChild(tr);
@@ -702,16 +702,16 @@ const QStringList P2Doc::html_opcodes() const
     QDomElement tr, td, hr;
     QDomText text;
 
-    root = html(doc,"html");
-    head = html(doc,"head");
-    title = html(doc,"title");
-    text = doc_text(doc, QStringLiteral("Propeller2 opcodes"));
+    root = p2_html(doc,"html");
+    head = p2_html(doc,"head");
+    title = p2_html(doc,"title");
+    text = p2_text(doc, QStringLiteral("Propeller2 opcodes"));
     title.appendChild(text);
     head.appendChild(title);
     root.appendChild(head);
 
-    body = html(doc,"body");
-    table = html(doc,"table");
+    body = p2_html(doc,"body");
+    table = p2_html(doc,"table");
     table.setAttribute("width", "95%");
 
 
@@ -723,16 +723,16 @@ const QStringList P2Doc::html_opcodes() const
     foreach(const P2MatchMask matchmask, opcodes.values()) {
         foreach(P2DocOpcode op, m_opcodes.values(matchmask)) {
 
-            tr = html(doc,"tr");
-            td = html(doc,"td");
-            hr = html(doc,"hr");
+            tr = p2_html(doc,"tr");
+            td = p2_html(doc,"td");
+            hr = p2_html(doc,"hr");
             hr.setAttribute("width", "95%");
             td.appendChild(hr);
             tr.appendChild(td);
             table.appendChild(tr);
 
-            tr = html(doc,"tr");
-            td = html(doc,"td");
+            tr = p2_html(doc,"tr");
+            td = p2_html(doc,"td");
             td.appendChild(doc_opcode(doc, op));
             tr.appendChild(td);
             table.appendChild(tr);

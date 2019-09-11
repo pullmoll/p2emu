@@ -38,12 +38,12 @@ P2Opcode::P2Opcode(const p2_LONG opcode, p2_ORIGIN_t org_orgh)
     : m_u()
     , m_origin(org_orgh)
     , m_type(type_none)
-    , m_imm_dst(imm_none)
-    , m_imm_src(imm_none)
+    , m_dst_imm(ignore)
+    , m_src_imm(ignore)
     , m_augd()
     , m_augs()
     , m_data()
-    , m_equ()
+    , m_assigned()
     , m_error_code(err_none)
     , m_error_value(0)
 {
@@ -54,12 +54,12 @@ P2Opcode::P2Opcode(const p2_INST5_e inst5, p2_ORIGIN_t org_orgh)
     : m_u()
     , m_origin(org_orgh)
     , m_type(type_none)
-    , m_imm_dst(imm_none)
-    , m_imm_src(imm_none)
+    , m_dst_imm(ignore)
+    , m_src_imm(ignore)
     , m_augd()
     , m_augs()
     , m_data()
-    , m_equ()
+    , m_assigned()
     , m_error_code(err_none)
     , m_error_value(0)
 {
@@ -70,12 +70,12 @@ P2Opcode::P2Opcode(const p2_INST7_e inst7, p2_ORIGIN_t org_orgh)
     : m_u()
     , m_origin(org_orgh)
     , m_type(type_none)
-    , m_imm_dst(imm_none)
-    , m_imm_src(imm_none)
+    , m_dst_imm(ignore)
+    , m_src_imm(ignore)
     , m_augd()
     , m_augs()
     , m_data()
-    , m_equ()
+    , m_assigned()
     , m_error_code(err_none)
     , m_error_value(0)
 {
@@ -86,12 +86,12 @@ P2Opcode::P2Opcode(const p2_INST8_e inst8, p2_ORIGIN_t org_orgh)
     : m_u()
     , m_origin(org_orgh)
     , m_type(type_none)
-    , m_imm_dst(imm_none)
-    , m_imm_src(imm_none)
+    , m_dst_imm(ignore)
+    , m_src_imm(ignore)
     , m_augd()
     , m_augs()
     , m_data()
-    , m_equ()
+    , m_assigned()
     , m_error_code(err_none)
     , m_error_value(0)
 {
@@ -102,12 +102,12 @@ P2Opcode::P2Opcode(const p2_INST9_e inst9, p2_ORIGIN_t org_orgh)
     : m_u()
     , m_origin(org_orgh)
     , m_type(type_none)
-    , m_imm_dst(imm_none)
-    , m_imm_src(imm_none)
+    , m_dst_imm(ignore)
+    , m_src_imm(ignore)
     , m_augd()
     , m_augs()
     , m_data()
-    , m_equ()
+    , m_assigned()
     , m_error_code(err_none)
     , m_error_value(0)
 {
@@ -123,12 +123,12 @@ void P2Opcode::clear(const p2_LONG opcode, p2_ORIGIN_t origin)
     m_u.opcode = opcode;
     m_origin = origin;
     m_type = type_none;
-    m_imm_dst = imm_none;
-    m_imm_src = imm_none;
+    m_dst_imm = ignore;
+    m_src_imm = ignore;
     m_augd.clear();
     m_augs.clear();
     m_data.clear();
-    m_equ.clear();
+    m_assigned.clear();
     m_error_code = err_none;
     m_error_value = 0;
 }
@@ -142,12 +142,11 @@ void P2Opcode::clear(const p2_LONG opcode, p2_LONG _cog, p2_LONG _hub)
  * @brief Return the current assignment (equals), if any
  * @return const reference to the P2Atom with the value, or invalid P2Atom
  */
-const P2Atom& P2Opcode::equ() const
+P2Atom P2Opcode::assigned() const
 {
-    static P2Atom empty;
     if (type_assign != m_type)
-        return empty;
-    return m_equ;
+        return P2Atom();
+    return m_assigned;
 }
 
 /**
@@ -183,7 +182,7 @@ p2_LONG P2Opcode::hubaddr() const
  */
 void P2Opcode::set_dst_imm(P2Opcode::ImmFlag flag)
 {
-    m_imm_dst = flag;
+    m_dst_imm = flag;
 }
 
 /**
@@ -227,7 +226,7 @@ bool P2Opcode::augd_valid() const
  */
 void P2Opcode::set_src_imm(P2Opcode::ImmFlag flag)
 {
-    m_imm_src = flag;
+    m_src_imm = flag;
 }
 
 /**
@@ -501,13 +500,13 @@ void P2Opcode::set_data(const P2Atom& data)
 /**
  * @brief Set the opcode's assignment (equals) value
  * Also sets IR mode to false, EQU mode to true.
- * @param value const reference to the P2Atom keeping the value
+ * @param atom const reference to the P2Atom keeping the value
  * @return true on success (currently always)
  */
-bool P2Opcode::set_equ(const P2Atom& value)
+bool P2Opcode::set_assign(const P2Atom& atom)
 {
     m_type = type_assign;
-    m_equ = value;
+    m_assigned = atom;
     return true;
 }
 
@@ -702,24 +701,24 @@ void P2Opcode::set_im(bool on)
  */
 void P2Opcode::set_im_flags(bool on)
 {
-    switch (m_imm_src) {
-    case imm_none:
+    switch (m_src_imm) {
+    case ignore:
         break;
-    case imm_to_im:
+    case immediate_I:
         set_im(on);
         break;
-    case imm_to_wz:
+    case immediate_L:
         Q_ASSERT_X(false, "set WZ for SRC?", "This is wrong");
         set_wz(on);
         break;
     }
-    switch (m_imm_dst) {
-    case imm_none:
+    switch (m_dst_imm) {
+    case ignore:
         break;
-    case imm_to_im:
+    case immediate_I:
         set_im(on);
         break;
-    case imm_to_wz:
+    case immediate_L:
         set_wz(on);
         break;
     }
@@ -764,59 +763,56 @@ void P2Opcode::set_n(const p2_LONG n)
  */
 bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG hubaddr)
 {
+    const bool hubmode = atom.has_trait(static_cast<p2_Traits_e>(tr_HUBMODE | tr_HUBADDRESS));
+    const bool relative = atom.has_trait(tr_RELATIVE) && !atom.has_trait(tr_AUGMENTED);
+    p2_LONG value = atom.get_addr(hubmode ? p2_hub : p2_cog);
     bool result = true;
-    p2_LONG value = atom.get_addr(p2_cog);
 
-    if (atom.has_trait(tr_IMMEDIATE))
-        value = atom.get_addr(p2_cog) / 4;
-
-    if (atom.has_trait(tr_RELATIVE))
-        value = atom.get_addr(p2_cog) - cogaddr;
-
-    if (atom.has_trait(tr_ADDRESS_HUB))
+    if (atom.has_trait(tr_AUGMENTED))
         value = atom.get_addr(p2_hub);
 
-    if (atom.has_trait(tr_RELATIVE_HUB))
-        value = atom.get_addr(p2_hub) - hubaddr;
-
-    if (atom.has_trait(tr_AUGMENTED)) {
-        value = atom.get_addr(p2_hub);
-        switch (m_imm_dst) {
-        case imm_none:
-            break;
-        case imm_to_im:
-            set_im();
-            break;
-        case imm_to_wz:
-            set_wz();
-            break;
+    if (relative) {
+        if (hubmode) {
+            value -= hubaddr;
+        } else {
+            value -= cogaddr;
         }
     }
 
-    m_augd.clear();
-    if (value >= HUB_ADDR0 || atom.has_trait(tr_AUGMENTED)) {
-        m_u.op7.dst = value & COG_MASK;
-        switch (m_imm_dst) {
-        case imm_none:
-            break;
-        case imm_to_im:
-            if (!im()) {
-                m_error_code = dst_augd_im;
-                m_error_value = value;
-                result = false;
-            }
-            break;
-        case imm_to_wz:
-            if (!wz()) {
-                m_error_code = dst_augd_wz;
-                m_error_value = value;
-                result = false;
-            }
-            break;
+    m_augs.clear();
+    if (relative) {
+        if (value < 0x00000400 || value >= 0xfffffc00) {
+            m_u.op7.src = static_cast<p2_LONG>(value / sz_LONG) & COG_MASK;
+        } else {
+            m_error_code = src_relative;
+            m_error_value = value;
+            result = false;
         }
-        m_augd = value & ~COG_MASK;
     } else {
-        m_u.op7.dst = value & COG_MASK;
+        if (value >= HUB_ADDR0 || atom.has_trait(tr_AUGMENTED)) {
+            m_u.op7.dst = value & COG_MASK;
+            switch (m_dst_imm) {
+            case ignore:
+                break;
+            case immediate_I:
+                if (!im()) {
+                    m_error_code = dst_augd_im;
+                    m_error_value = value;
+                    result = false;
+                }
+                break;
+            case immediate_L:
+                if (!wz()) {
+                    m_error_code = dst_augd_wz;
+                    m_error_value = value;
+                    result = false;
+                }
+                break;
+            }
+            m_augd = value & ~COG_MASK;
+        } else {
+            m_u.op7.dst = (value / sz_LONG) & COG_MASK;
+        }
     }
     return result;
 }
@@ -830,75 +826,72 @@ bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG 
  */
 bool P2Opcode::set_src(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG hubaddr)
 {
+    const bool hubmode = atom.has_trait(static_cast<p2_Traits_e>(tr_HUBMODE | tr_HUBADDRESS));
+    const bool relative = atom.has_trait(tr_RELATIVE) && !atom.has_trait(tr_AUGMENTED);
+    p2_LONG value = atom.get_addr(hubmode ? p2_hub : p2_cog);
     bool result = true;
-    p2_LONG value = atom.get_addr(p2_cog);
 
-    if (atom.has_trait(tr_IMMEDIATE))
-        value = atom.get_addr(p2_cog) / 4;
+    if (atom.has_trait(tr_AUGMENTED))
+        value = atom.get_addr(p2_hub);
 
-    if (atom.has_trait(tr_RELATIVE))
-        value = atom.get_addr(false) - cogaddr;
-
-    if (atom.has_trait(tr_ADDRESS_HUB))
-        value = atom.get_addr(true);
-
-    if (atom.has_trait(tr_RELATIVE_HUB))
-        value = atom.get_addr(true) - hubaddr;
-
-    if (atom.has_trait(tr_AUGMENTED)) {
-        value = atom.get_addr(true);
-        switch (m_imm_src) {
-        case imm_none:
-            break;
-        case imm_to_im:
-            set_im();
-            break;
-        case imm_to_wz:
-            set_wz();
-            break;
+    if (relative) {
+        if (hubmode) {
+            value -= hubaddr;
+        } else {
+            value -= cogaddr;
         }
     }
 
     m_augs.clear();
-    if (value >= HUB_ADDR0 || atom.has_trait(tr_AUGMENTED)) {
-        m_u.op7.src = value & COG_MASK;
-        switch (m_imm_src) {
-        case imm_none:
-            break;
-        case imm_to_im:
-            if (!im()) {
-                m_error_code = src_augs_im;
-                m_error_value = value;
-                result = false;
-            }
-            break;
-        case imm_to_wz:
-            Q_ASSERT_X(m_imm_src == imm_to_wz, "impossible instruction WZ for S", "set_src");
-            break;
+    if (relative) {
+        if (value < 0x00000400 || value >= 0xfffffc00) {
+            m_u.op7.src = static_cast<p2_LONG>(value / sz_LONG) & COG_MASK;
+        } else {
+            m_error_code = src_relative;
+            m_error_value = value;
+            result = false;
         }
-        m_augs = value & ~COG_MASK;
     } else {
-        m_u.op7.src = (value / 4) & COG_MASK;
+        if (value >= HUB_ADDR0 || atom.has_trait(tr_AUGMENTED)) {
+            m_u.op7.src = value & COG_MASK;
+            switch (m_src_imm) {
+            case ignore:
+                break;
+            case immediate_I:
+                if (!im()) {
+                    m_error_code = src_augs_im;
+                    m_error_value = value;
+                    result = false;
+                }
+                break;
+            case immediate_L:
+                Q_ASSERT_X(m_src_imm == immediate_L, "impossible instruction WZ for S", "set_src");
+                break;
+            }
+            m_augs = value & ~COG_MASK;
+        } else {
+            m_u.op7.src = (value / sz_LONG) & COG_MASK;
+        }
     }
     return result;
 }
 
-static QString bin(const p2_QUAD val, int digits)
+static inline QString bin(const p2_QUAD val, int digits)
 {
     return QString("%1").arg(val, digits, 2, QChar('0'));
 }
 
-static QString byt(const p2_QUAD val, int digits)
+static inline QString byt(const p2_QUAD val, int digits)
 {
     return QString("%1").arg(val, digits, 16, QChar('0'));
 }
 
-static QString dec(const p2_QUAD val, int digits)
+static inline QString dec(const p2_QUAD val, int digits)
 {
     return QString("%1").arg(val, digits, 10, QChar('0'));
 }
 
-static QString hex(const p2_QUAD val, int digits)
+static inline QString hex(const p2_QUAD val, int digits)
 {
     return QString("%1").arg(val, digits, 16, QChar('0'));
 }
@@ -923,9 +916,9 @@ QString P2Opcode::format_opcode_bin(const P2Opcode& ir)
 
 }
 
-QString P2Opcode::format_opcode_byt(const P2Opcode& ir)
+QString P2Opcode::format_opcode_bit(const P2Opcode& ir)
 {
-    return QString("%1'%2'%3%4%5'%6'%7")
+    return QString("%1 %2 %3%4%5 %6 %7")
             .arg(byt(ir.cond(),  1))
             .arg(byt(ir.inst7(), 2))
             .arg(byt(ir.wc(),    1))
@@ -986,12 +979,12 @@ QString P2Opcode::format_opcode(const P2Opcode& ir, p2_FORMAT_e fmt)
             list += format_opcode_bin(make_AUGS(ir));
         list += format_opcode_bin(ir);
         break;
-    case fmt_byt:
+    case fmt_bit:
         if (ir.augd_valid())
-            list += format_opcode_byt(make_AUGD(ir));
+            list += format_opcode_bit(make_AUGD(ir));
         if (ir.augs_valid())
-            list += format_opcode_byt(make_AUGS(ir));
-        list += format_opcode_byt(ir);
+            list += format_opcode_bit(make_AUGS(ir));
+        list += format_opcode_bit(ir);
         break;
     case fmt_dec:
         if (ir.augd_valid())
@@ -1021,10 +1014,10 @@ QString P2Opcode::format_opcode(const P2Opcode& ir, p2_FORMAT_e fmt)
 QString P2Opcode::format_assign_bin(const P2Opcode& ir, bool prefix)
 {
     QString result("=");
-    p2_QUAD data = ir.equ().get_quad();
+    p2_QUAD data = ir.assigned().get_quad();
     if (prefix)
         result += QStringLiteral("%");
-    switch (ir.equ().type()) {
+    switch (ir.assigned().type()) {
     case ut_Invalid:
         break;
     case ut_Bool:
@@ -1059,23 +1052,23 @@ QString P2Opcode::format_assign_bin(const P2Opcode& ir, bool prefix)
                   .arg(bin((data >>  0) & 0xff, 8));
         break;
     case ut_Real:
-        result += QString("%1").arg(ir.equ().get_real(), 0, 'f');
+        result += QString("%1").arg(ir.assigned().get_real(), 0, 'f');
         break;
     case ut_String:
-        result += ir.equ().string();
+        result += ir.assigned().string();
         break;
     }
     return result;
 }
 
-QString P2Opcode::format_assign_byt(const P2Opcode& ir, bool prefix)
+QString P2Opcode::format_assign_bit(const P2Opcode& ir, bool prefix)
 {
     QString result("=");
-    p2_QUAD data = ir.equ().get_quad();
+    p2_QUAD data = ir.assigned().get_quad();
     if (prefix)
         result += QStringLiteral("%%");
     // FF_FF_FF_FF
-    switch (ir.equ().type()) {
+    switch (ir.assigned().type()) {
     case ut_Invalid:
         break;
     case ut_Bool:
@@ -1110,10 +1103,10 @@ QString P2Opcode::format_assign_byt(const P2Opcode& ir, bool prefix)
                   .arg(byt((data >>  0) & 0xff, 2));
         break;
     case ut_Real:
-        result += QString("%1").arg(ir.equ().get_real(), 0, 'f');
+        result += QString("%1").arg(ir.assigned().get_real(), 0, 'f');
         break;
     case ut_String:
-        result += ir.equ().string();
+        result += ir.assigned().string();
         break;
     }
     return result;
@@ -1122,10 +1115,10 @@ QString P2Opcode::format_assign_byt(const P2Opcode& ir, bool prefix)
 QString P2Opcode::format_assign_dec(const P2Opcode& ir, bool prefix)
 {
     QString result("=");
-    p2_QUAD data = ir.equ().get_quad();
+    p2_QUAD data = ir.assigned().get_quad();
     Q_UNUSED(prefix)
     // 4294967295
-    switch (ir.equ().type()) {
+    switch (ir.assigned().type()) {
     case ut_Invalid:
         break;
     case ut_Bool:
@@ -1149,7 +1142,7 @@ QString P2Opcode::format_assign_dec(const P2Opcode& ir, bool prefix)
         result += QString("%1").arg(ir.data().get_real(), 0, 'f');
         break;
     case ut_String:
-        result += ir.equ().string();
+        result += ir.assigned().string();
         break;
     }
     return result;
@@ -1158,7 +1151,7 @@ QString P2Opcode::format_assign_dec(const P2Opcode& ir, bool prefix)
 QString P2Opcode::format_assign_hex(const P2Opcode& ir, bool prefix)
 {
     QString result("=");
-    p2_QUAD data = ir.equ().get_quad();
+    p2_QUAD data = ir.assigned().get_quad();
     if (prefix)
         result += QStringLiteral("$");
     switch (ir.data().type()) {
@@ -1185,7 +1178,7 @@ QString P2Opcode::format_assign_hex(const P2Opcode& ir, bool prefix)
         result += QString("%1").arg(ir.data().get_real(), 0, 'f');
         break;
     case ut_String:
-        result += ir.equ().string();
+        result += ir.assigned().string();
         break;
     }
     return result;
@@ -1199,8 +1192,8 @@ QString P2Opcode::format_assign(const P2Opcode& ir, p2_FORMAT_e fmt)
         case fmt_bin:
             list += format_assign_bin(ir);
             break;
-        case fmt_byt:
-            list += format_assign_byt(ir);
+        case fmt_bit:
+            list += format_assign_bit(ir);
             break;
         case fmt_dec:
             list += format_assign_dec(ir);
@@ -1279,7 +1272,7 @@ static p2_BYTES align_data_long(const P2Opcode& ir, p2_BYTES& bytes)
     return mask;
 }
 
-QStringList P2Opcode::format_data_bin(const P2Opcode& ir, bool prefix)
+QStringList P2Opcode::format_data_bin(const P2Opcode& ir, bool prefix, int* limit)
 {
     p2_BYTES bytes;
     p2_BYTES mask = align_data_long(ir, bytes);
@@ -1301,12 +1294,16 @@ QStringList P2Opcode::format_data_bin(const P2Opcode& ir, bool prefix)
         } else {
             line += chr_skip_digit;
         }
+        if (limit && i >= *limit) {
+            *limit = mask.size();
+            break;
+        }
     }
 
     return result;
 }
 
-QStringList P2Opcode::format_data_byt(const P2Opcode& ir, bool prefix)
+QStringList P2Opcode::format_data_bit(const P2Opcode& ir, bool prefix, int* limit)
 {
     p2_BYTES bytes;
     p2_BYTES mask = align_data_long(ir, bytes);
@@ -1327,12 +1324,16 @@ QStringList P2Opcode::format_data_byt(const P2Opcode& ir, bool prefix)
         } else {
             line += chr_comma;
         }
+        if (limit && i >= *limit) {
+            *limit = mask.size();
+            break;
+        }
     }
 
     return result;
 }
 
-QStringList P2Opcode::format_data_dec(const P2Opcode& ir, bool prefix)
+QStringList P2Opcode::format_data_dec(const P2Opcode& ir, bool prefix, int* limit)
 {
     p2_BYTES bytes;
     p2_BYTES mask = align_data_long(ir, bytes);
@@ -1352,12 +1353,16 @@ QStringList P2Opcode::format_data_dec(const P2Opcode& ir, bool prefix)
         } else {
             line += chr_comma;
         }
+        if (limit && i >= *limit) {
+            *limit = mask.size();
+            break;
+        }
     }
 
     return result;
 }
 
-QStringList P2Opcode::format_data_hex(const P2Opcode& ir, bool prefix)
+QStringList P2Opcode::format_data_hex(const P2Opcode& ir, bool prefix, int* limit)
 {
     p2_BYTES bytes;
     p2_BYTES mask = align_data_long(ir, bytes);
@@ -1376,28 +1381,32 @@ QStringList P2Opcode::format_data_hex(const P2Opcode& ir, bool prefix)
             result += line;
             line.clear();
         }
+        if (limit && i >= *limit) {
+            *limit = mask.size();
+            break;
+        }
     }
 
     return result;
 }
 
-QString P2Opcode::format_data(const P2Opcode& ir, p2_FORMAT_e fmt)
+QString P2Opcode::format_data(const P2Opcode& ir, p2_FORMAT_e fmt, int* limit)
 {
     QStringList list;
     if (!ir.data().isEmpty()) {
         switch (fmt) {
         case fmt_bin:
-            list += format_data_bin(ir);
+            list += format_data_bin(ir, false, limit);
             break;
-        case fmt_byt:
-            list += format_data_byt(ir);
+        case fmt_bit:
+            list += format_data_bit(ir, false, limit);
             break;
         case fmt_dec:
-            list += format_data_dec(ir);
+            list += format_data_dec(ir, false, limit);
             break;
         case fmt_hex:
         default:
-            list += format_data_hex(ir);
+            list += format_data_hex(ir, false, limit);
             break;
         }
     }

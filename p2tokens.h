@@ -591,8 +591,7 @@ enum p2_TOKEN_e {
     t_AUGMENTED,        //!< "##"
     t_RELATIVE,         //!< "@"
     t_ABSOLUTE,         //!< "\"
-    t_ADDRESS_HUB,      //!< "#@"
-    t_RELATIVE_HUB,     //!< "##@"
+    t_HUBADDRESS,       //!< "#@"
 
     // relations
     t__LE,              //!< "<="

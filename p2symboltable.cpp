@@ -112,6 +112,21 @@ bool P2SymbolTableClass::set_value(const QString& name, const P2Union& value)
 }
 
 /**
+ * @brief Set an existing symbol to a new atom
+ * @param name symbol name
+ * @param atom new symbol atom
+ * @return true if the value could be set, false if the table does not contain %name
+ */
+bool P2SymbolTableClass::set_atom(const QString& name, const P2Atom& atom)
+{
+    P2Symbol symbol = m_symbols.value(name);
+    if (symbol.isNull())
+        return false;
+    symbol->set_atom(atom);
+    return true;
+}
+
+/**
  * @brief Return a copy of the P2Symbol with %name
  * @param name of the symbol
  * @return P2Symbol which may be empty, if the symbol name is not in the has

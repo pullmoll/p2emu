@@ -336,7 +336,7 @@ void MainWindow::setAsmOpcodes(int mode)
 {
     p2_FORMAT_e format = static_cast<p2_FORMAT_e>(mode);
     ui->action_Asm_Opcodes_bin->setChecked(format == fmt_bin);
-    ui->action_Asm_Opcodes_byt->setChecked(format == fmt_byt);
+    ui->action_Asm_Opcodes_byt->setChecked(format == fmt_bit);
     ui->action_Asm_Opcodes_dec->setChecked(format == fmt_dec);
     ui->action_Asm_Opcodes_hex->setChecked(format == fmt_hex);
     m_amodel->setOpcodeFormat(format);
@@ -394,7 +394,7 @@ void MainWindow::setDasmOpcodes(int mode)
 {
     p2_FORMAT_e format = static_cast<p2_FORMAT_e>(mode);
     ui->action_Dasm_Opcodes_bin->setChecked(format == fmt_bin);
-    ui->action_Dasm_Opcodes_byt->setChecked(format == fmt_byt);
+    ui->action_Dasm_Opcodes_byt->setChecked(format == fmt_bit);
     ui->action_Dasm_Opcodes_dec->setChecked(format == fmt_dec);
     ui->action_Dasm_Opcodes_hex->setChecked(format == fmt_hex);
     m_dmodel->setOpcodeFormat(format);
@@ -875,7 +875,7 @@ void MainWindow::setupToolbars()
     // Assembler toolbar
     ui->action_Asm_Opcodes_bin->setData(fmt_bin);
     ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_bin);
-    ui->action_Asm_Opcodes_byt->setData(fmt_byt);
+    ui->action_Asm_Opcodes_byt->setData(fmt_bit);
     ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_byt);
     ui->action_Asm_Opcodes_dec->setData(fmt_dec);
     ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_dec);
@@ -905,7 +905,7 @@ void MainWindow::setupToolbars()
     // Disassembler toolbar
     ui->action_Dasm_Opcodes_bin->setData(fmt_bin);
     ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_bin);
-    ui->action_Dasm_Opcodes_byt->setData(fmt_byt);
+    ui->action_Dasm_Opcodes_byt->setData(fmt_bit);
     ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_byt);
     ui->action_Dasm_Opcodes_dec->setData(fmt_dec);
     ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_dec);

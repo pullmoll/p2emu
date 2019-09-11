@@ -57,25 +57,27 @@ public:
 
     //! enumeration of possible targets for the immediate (#) prefix(es)
     enum ImmFlag {
-        imm_none,           //!< don't care about immediate
-        imm_to_im,          //!< if immediate mode, set the immediate (im) flag in IR
-        imm_to_wz           //!< if immediate mode, set the with-zero (wz) flag in IR
+        ignore,             //!< don't care about immediate
+        immediate_I,        //!< if immediate mode, set the immediate I flag in IR
+        immediate_L         //!< if immediate mode, set the with-zero L (Z) flag in IR
     };
 
     //! enumeration of possible results from setting the AUGD and/or AUGS flags
     enum Error {
         err_none,           //!< no error when creating AUGD and/or AUGS values
         dst_augd_none,      //!< DST constant larger than $1ff but no imediate mode
-        dst_augd_im,        //!< DST constant larger than $1ff but im is not set for L
-        dst_augd_wz,        //!< DST constant larger than $1ff but wz is not set for L
+        dst_augd_im,        //!< DST constant larger than $1ff but I is not set for I
+        dst_augd_wz,        //!< DST constant larger than $1ff but Z is not set for L
+        dst_relative,       //!< DST relative range error: -$100 … $0FF
         src_augs_none,      //!< SRC constant larger than $1ff but no imediate mode
-        src_augs_im,        //!< SRC constant larger than $1ff but im is not set for I
+        src_augs_im,        //!< SRC constant larger than $1ff but I is not set for I
+        src_relative,       //!< SRC relative range error: -$100 … $0FF
     };
 
     void clear(const p2_LONG opcode, p2_ORIGIN_t origin);
     void clear(const p2_LONG opcode = 0, p2_LONG _cog = 0, p2_LONG _hub = 0);
 
-    const P2Atom& equ() const;
+    P2Atom assigned() const;
     const p2_ORIGIN_t origin() const;
     p2_LONG cogaddr() const;
     p2_LONG hubaddr() const;
@@ -121,7 +123,7 @@ public:
     void set_origin(p2_ORIGIN_t origin);
     void set_origin(p2_LONG _org, p2_LONG _orgh);
     void set_data(const P2Atom& data);
-    bool set_equ(const P2Atom& value);
+    bool set_assign(const P2Atom& atom);
 
     void set_opcode(const p2_LONG opcode);
     void set_cond(const p2_Cond_e cond);
@@ -150,34 +152,34 @@ public:
     bool set_src(const P2Atom& value, const p2_LONG cogaddr, const p2_LONG ORGH);
 
     static QString format_opcode_bin(const P2Opcode& ir);
-    static QString format_opcode_byt(const P2Opcode& ir);
+    static QString format_opcode_bit(const P2Opcode& ir);
     static QString format_opcode_dec(const P2Opcode& ir);
     static QString format_opcode_hex(const P2Opcode& ir);
     static QString format_opcode_doc(const P2Opcode& ir);
     static QString format_opcode(const P2Opcode& ir, p2_FORMAT_e fmt = fmt_bin);
 
     static QString format_assign_bin(const P2Opcode& ir, bool prefix = false);
-    static QString format_assign_byt(const P2Opcode& ir, bool prefix = false);
+    static QString format_assign_bit(const P2Opcode& ir, bool prefix = false);
     static QString format_assign_dec(const P2Opcode& ir, bool prefix = false);
     static QString format_assign_hex(const P2Opcode& ir, bool prefix = false);
     static QString format_assign(const P2Opcode& ir, p2_FORMAT_e fmt = fmt_bin);
 
-    static QStringList format_data_bin(const P2Opcode& ir, bool prefix = false);
-    static QStringList format_data_byt(const P2Opcode& ir, bool prefix = false);
-    static QStringList format_data_dec(const P2Opcode& ir, bool prefix = false);
-    static QStringList format_data_hex(const P2Opcode& ir, bool prefix = false);
-    static QString format_data(const P2Opcode& ir, p2_FORMAT_e fmt = fmt_bin);
+    static QStringList format_data_bin(const P2Opcode& ir, bool prefix = false, int* limit = nullptr);
+    static QStringList format_data_bit(const P2Opcode& ir, bool prefix = false, int* limit = nullptr);
+    static QStringList format_data_dec(const P2Opcode& ir, bool prefix = false, int* limit = nullptr);
+    static QStringList format_data_hex(const P2Opcode& ir, bool prefix = false, int* limit = nullptr);
+    static QString format_data(const P2Opcode& ir, p2_FORMAT_e fmt = fmt_bin, int* limit = nullptr);
 
 private:
     p2_opcode_u m_u;                //!< instruction opcode or assignment value
     p2_ORIGIN_t m_origin;           //!< instruction's ORG and ORGH values
     Type m_type;                    //!< What type of information is stored in the opcode
-    ImmFlag m_imm_dst;              //!< where to store destination (D) immediate flag
-    ImmFlag m_imm_src;              //!< where to store source (S) immediate flag
+    ImmFlag m_dst_imm;              //!< where to store destination (D) immediate flag
+    ImmFlag m_src_imm;              //!< where to store source (S) immediate flag
     QVariant m_augd;                //!< optional value in case an AUGD is required
     QVariant m_augs;                //!< optional value in case an AUGS is required
     P2Atom m_data;                  //!< optional data generated from BYTE, WORD, LONG, FILE, etc.
-    P2Atom m_equ;                   //!< optional atom from an assignment (=)
+    P2Atom m_assigned;              //!< optional atom from an assignment (=) or ORG/ORGF/ORGH/FIT value
     Error m_error_code;             //!< error set when set_dst() or set_src() return false
     p2_LONG m_error_value;          //!< error value when set_dst() or set_src() return false
 

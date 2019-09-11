@@ -823,8 +823,7 @@ P2Token::P2Token()
     TN_ADD(t_AUGMENTED,         tm_traits, QLatin1String("##"));
     TN_ADD(t_RELATIVE,          tm_traits, QLatin1String("@"));
     TN_ADD(t_ABSOLUTE,          tm_traits, QLatin1String("\\"));
-    TN_ADD(t_ADDRESS_HUB,       tm_traits, QLatin1String("#@"));
-    TN_ADD(t_RELATIVE_HUB,      tm_traits, QLatin1String("##@"));
+    TN_ADD(t_HUBADDRESS,       tm_traits, QLatin1String("#@"));
 
     // Sub expression in parens
     TN_ADD(t__LPAREN,           tm_parens, QLatin1String("("));
@@ -1138,8 +1137,7 @@ P2Words P2Token::tokenize(const QString* line, const int lineno, int& in_curly) 
         list += QRegExp::escape(m_token_string.value(t_AUGMENTED));         // augmented (##)
         list += QRegExp::escape(m_token_string.value(t_RELATIVE));          // relative (@)
         list += QRegExp::escape(m_token_string.value(t_ABSOLUTE));          // absolute (\)
-        list += QRegExp::escape(m_token_string.value(t_ADDRESS_HUB));       // address HUB (#@)
-        list += QRegExp::escape(m_token_string.value(t_RELATIVE_HUB));      // relative HUB (@@@)
+        list += QRegExp::escape(m_token_string.value(t_HUBADDRESS));        // use HUB address (#@)
         list += QRegExp::escape(m_token_string.value(t_DOLLAR));            // dollar ($)
         list += QRegExp::escape(m_token_string.value(t_COMMA));             // comma (,)
         list += QRegExp::escape(m_token_string.value(t__LBRACKET));         // left bracket ([) (index expression start)

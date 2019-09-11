@@ -497,6 +497,16 @@ void P2Atom::add_long(const p2_LONG _long)
 }
 
 /**
+ * @brief Append a single p2_HUBADDR_t to this atom
+ * @param _cog address to append
+ * @param _hub address to append
+ */
+void P2Atom::add_addr(const p2_LONG _cog, const p2_LONG _hub)
+{
+    m_value.add_addr(_cog, _hub);
+}
+
+/**
  * @brief Append a single p2_QUAD to this atom
  * @param _quad to append
  */

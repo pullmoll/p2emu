@@ -30,10 +30,11 @@ private slots:
     void clicked(QAbstractButton* button);
     void apply_palette();
     void original_palette();
-    void reset_palette();
+    void restore_default_palette();
 
 private:
     Ui::PaletteSetup *ui;
+    void setup_buttons();
     void setup_combo_boxes();
     void reinit_combo_boxes();
     QHash<P2Colors::p2_palette_e, QColor> m_original_palette;

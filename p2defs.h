@@ -371,12 +371,12 @@ Q_DECLARE_METATYPE(P2TypedValue);
 //! P2Atom traits
 typedef enum {
     tr_none         = 0,            //!< no special trait
-    tr_IMMEDIATE    = (1 <<  0),    //!< expression started with '#'
-    tr_RELATIVE     = (1 <<  1),    //!< expression started with '@'
-    tr_ABSOLUTE     = (1 <<  2),    //!< expression contained a '\'
-    tr_ADDRESS_HUB  = (1 <<  3),    //!< expression started with '#@'
-    tr_AUGMENTED    = (1 <<  4),    //!< expression started with '##'
-    tr_RELATIVE_HUB = (1 <<  5),    //!< expression started with '##@'
+    tr_HUBMODE      = (1 <<  0),    //!< symbol was defined in hubmode
+    tr_IMMEDIATE    = (1 <<  1),    //!< expression started with '#'
+    tr_RELATIVE     = (1 <<  2),    //!< expression started with '@'
+    tr_ABSOLUTE     = (1 <<  3),    //!< expression contained a '\'
+    tr_HUBADDRESS   = (1 <<  4),    //!< expression started with '#@'
+    tr_AUGMENTED    = (1 <<  5),    //!< expression started with '##'
     tr_INDEX        = (1 <<  6),    //!< expression contains an index: '[' expr ']'
     tr_DEC          = (1 <<  7),    //!< PTRA/PTRB with decrement (--)
     tr_INC          = (1 <<  8),    //!< PTRA/PTRB with increment (++)
@@ -1549,7 +1549,7 @@ typedef struct {
  */
 typedef enum {
     fmt_bin,                    //!< display as binary
-    fmt_byt,                    //!< display as "byt" (that is hex fragments of about 8 bits, sometimes less, sometimes more)
+    fmt_bit,                    //!< display as "byt" (that is hex fragments of about 8 bits, sometimes less, sometimes more)
     fmt_dec,                    //!< display as decimal (who needs this?)
     fmt_hex,                    //!< display as hexadecimal
     fmt_doc,                    //!< display as excerpt of the P2Doc information

@@ -64,6 +64,7 @@ public:
     const QMultiHash<int, QString>& references() const;
 
     P2Union atom(const QString& name) const;
+    bool set_atom(const QString& name, const P2Atom& atom);
     bool set_value(const QString& name, const P2Union& symbol);
     bool add_reference(int lineno, const QString& name, const P2Word& word);
 

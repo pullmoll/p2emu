@@ -10,6 +10,7 @@ PaletteSetup::PaletteSetup(QWidget *parent)
     , m_modified_palette(Colors.hash())
 {
     ui->setupUi(this);
+    setup_buttons();
     setup_combo_boxes();
     syntax_changed(0);
 }
@@ -83,11 +84,11 @@ void PaletteSetup::clicked(QAbstractButton* button)
         original_palette();
         QDialog::reject();
         break;
-    case QDialogButtonBox::Discard:
-        reset_palette();
-        break;
     case QDialogButtonBox::Reset:
         original_palette();
+        break;
+    case QDialogButtonBox::RestoreDefaults:
+        restore_default_palette();
         break;
     default:
         break;
@@ -109,12 +110,17 @@ void PaletteSetup::original_palette()
     reinit_combo_boxes();
 }
 
-void PaletteSetup::reset_palette()
+void PaletteSetup::restore_default_palette()
 {
-    m_modified_palette = m_original_palette = Colors.hash(true);
+    m_modified_palette = Colors.hash(true);
     Colors.set_palette(m_modified_palette);
     emit changedPalette();
     reinit_combo_boxes();
+}
+
+void PaletteSetup::setup_buttons()
+{
+    connect(ui->buttonBox, SIGNAL(clicked(QAbstractButton*)), SLOT(clicked(QAbstractButton*)));
 }
 
 void PaletteSetup::setup_combo_boxes()

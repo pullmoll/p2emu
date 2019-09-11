@@ -186,12 +186,15 @@ p2_LONG P2Union::get_long() const
 p2_LONG P2Union::get_addr(bool hub) const
 {
     const P2TypedValue tv = value(0);
-    if (ut_Addr == tv.type)
-        return tv.value._addr[hub & 1];
-    qDebug("get_addr(%s) for %s: %#x",
-           hub ? "hub" : "cog",
-           qPrintable(type_name(tv.type)), tv.value._long);
-    return hub ? tv.value._long : tv.value._long * 4;
+    p2_LONG addr;
+    if (ut_Addr == tv.type) {
+        addr = tv.value._addr[hub & 1];
+    } else if (hub) {
+        addr = tv.value._long;
+    } else {
+        addr = tv.value._long * sz_LONG;    // scale COG constant by sz_LONG
+    }
+    return addr;
 }
 
 p2_QUAD P2Union::get_quad() const
@@ -204,59 +207,6 @@ p2_REAL P2Union::get_real() const
 {
     const P2TypedValue tv = value(0);
     return tv.value._real;
-}
-
-static inline QByteArray one_byte_array(const QVariant& v)
-{
-    char _char = qvariant_cast<char>(v);
-    return QByteArray(1, _char);
-}
-
-static inline QByteArray one_word_array(const QVariant& v)
-{
-    p2_WORD _word = qvariant_cast<p2_WORD>(v);
-    char sz[2] = {
-        static_cast<char>(_word>>0),
-        static_cast<char>(_word>>8)
-    };
-    return QByteArray(sz, 2);
-}
-
-static inline QByteArray one_long_array(const QVariant& v)
-{
-    p2_LONG _long = qvariant_cast<p2_LONG>(v);
-    char sz[4] = {
-        static_cast<char>(_long>>0),
-        static_cast<char>(_long>>8),
-        static_cast<char>(_long>>16),
-        static_cast<char>(_long>>24)
-    };
-    return QByteArray(sz, 4);
-}
-
-static inline QByteArray one_quad_array(const QVariant& v)
-{
-    p2_QUAD _quad = qvariant_cast<p2_QUAD>(v);
-    char sz[8] = {
-        static_cast<char>(_quad>>0),
-        static_cast<char>(_quad>>8),
-        static_cast<char>(_quad>>16),
-        static_cast<char>(_quad>>24),
-        static_cast<char>(_quad>>32),
-        static_cast<char>(_quad>>40),
-        static_cast<char>(_quad>>48),
-        static_cast<char>(_quad>>56)
-    };
-    return QByteArray(sz, 8);
-}
-
-static inline QByteArray one_real_array(const QVariant& v)
-{
-    union {
-        p2_REAL _real;
-        p2_QUAD _quad;
-    }   u = {qvariant_cast<p2_REAL>(v)};
-    return one_quad_array(u._quad);
 }
 
 void P2Union::set_int(const int var)
@@ -551,66 +501,89 @@ void P2Union::add_typed_var(const P2TypedValue& _tv)
  */
 QByteArray P2Union::chain_bytes(const P2Union* pun, bool expand)
 {
-    QByteArray result;
+    int size = 4096;
+    int pos = 0;
+    QByteArray result(size, 0x00);
     QVariant list = QVariant::fromValue(pun->toList());
     if (list.canConvert<QVariantList>()) {
         QSequentialIterable it = list.value<QSequentialIterable>();
-        if (expand) {
-            foreach(const QVariant& v, it) {
-                P2TypedValue tv = qvariant_cast<P2TypedValue>(v);
+        foreach(const QVariant& v, it) {
+            P2TypedValue tv = qvariant_cast<P2TypedValue>(v);
+            if (expand) {
                 switch (tv.type) {
                 case ut_Invalid:
-                    Q_ASSERT(tv.type != ut_Invalid);
-                    break;
                 case ut_Bool:
-                    result += one_byte_array(tv.value._bool);
+                    result[pos++] = tv.value._bool;
                     break;
                 case ut_Byte:
-                    result += one_byte_array(tv.value._byte);
+                    result[pos++] = static_cast<char>(tv.value._byte);
                     break;
                 case ut_Word:
-                    result += one_word_array(tv.value._word);
+                    result[pos++] = static_cast<char>(tv.value._word >> 0);
+                    result[pos++] = static_cast<char>(tv.value._word >> 8);
                     break;
                 case ut_Addr:
-                    result += one_long_array(tv.value._long);
+                    result[pos++] = static_cast<char>(tv.value._addr[0] >>  0);
+                    result[pos++] = static_cast<char>(tv.value._addr[0] >>  8);
+                    result[pos++] = static_cast<char>(tv.value._addr[0] >> 16);
+                    result[pos++] = static_cast<char>(tv.value._addr[0] >> 24);
+                    result[pos++] = static_cast<char>(tv.value._addr[1] >>  0);
+                    result[pos++] = static_cast<char>(tv.value._addr[1] >>  8);
+                    result[pos++] = static_cast<char>(tv.value._addr[1] >> 16);
+                    result[pos++] = static_cast<char>(tv.value._addr[1] >> 24);
                     break;
                 case ut_Long:
-                    result += one_long_array(tv.value._long);
+                    result[pos++] = static_cast<char>(tv.value._long >>  0);
+                    result[pos++] = static_cast<char>(tv.value._long >>  8);
+                    result[pos++] = static_cast<char>(tv.value._long >> 16);
+                    result[pos++] = static_cast<char>(tv.value._long >> 24);
                     break;
                 case ut_Quad:
-                    result += one_quad_array(tv.value._quad);
+                    result[pos++] = static_cast<char>(tv.value._quad >>  0);
+                    result[pos++] = static_cast<char>(tv.value._quad >>  8);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 16);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 24);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 32);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 40);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 48);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 56);
                     break;
                 case ut_Real:
-                    result += one_real_array(tv.value._real);
+                    result[pos++] = static_cast<char>(tv.value._quad >>  0);
+                    result[pos++] = static_cast<char>(tv.value._quad >>  8);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 16);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 24);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 32);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 40);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 48);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 56);
                     break;
                 case ut_String:
-                    result += one_byte_array(tv.value._byte);
+                    result[pos++] = tv.value._char;
+                    break;
+                }
+            } else {
+                switch (tv.type) {
+                case ut_Invalid:
+                case ut_Bool:
+                case ut_Byte:
+                case ut_Word:
+                case ut_Addr:
+                case ut_Long:
+                case ut_Quad:
+                case ut_Real:
+                case ut_String:
+                    result[pos++] = tv.value._char;
                     break;
                 }
             }
-        } else {
-            foreach(const QVariant& v, it) {
-                P2TypedValue tv = qvariant_cast<P2TypedValue>(v);
-                switch (tv.type) {
-                case ut_Invalid:
-                    Q_ASSERT(tv.type != ut_Invalid);
-                    break;
-                case ut_Bool:
-                case ut_Byte:
-                case ut_Word:
-                case ut_Addr:
-                case ut_Long:
-                case ut_Quad:
-                case ut_Real:
-                case ut_String:
-                    result += tv.value._char;
-                    break;
-                }
-            }
+            if (pos >= size)
+                result.resize(size += 4096);
         }
     } else {
         Q_ASSERT_X(false, "Cannot use QSequentialIterable", "chain_bytes");
     }
+    result.truncate(pos);
     return result;
 }
 
@@ -622,66 +595,96 @@ QByteArray P2Union::chain_bytes(const P2Union* pun, bool expand)
  */
 QByteArray P2Union::chain_words(const P2Union* pun, bool expand)
 {
-    QByteArray result;
+    int size = 4096;
+    int pos = 0;
+    QByteArray result(size, 0x00);
     QVariant list = QVariant::fromValue(pun->toList());
     if (list.canConvert<QVariantList>()) {
         QSequentialIterable it = list.value<QSequentialIterable>();
-        if (expand) {
-            foreach(const QVariant& v, it) {
-                P2TypedValue tv = qvariant_cast<P2TypedValue>(v);
+        foreach(const QVariant& v, it) {
+            P2TypedValue tv = qvariant_cast<P2TypedValue>(v);
+            if (expand) {
                 switch (tv.type) {
                 case ut_Invalid:
-                    Q_ASSERT(tv.type != ut_Invalid);
-                    break;
                 case ut_Bool:
-                    result += one_word_array(tv.value._bool);
+                    result[pos++] = tv.value._bool;
+                    result[pos++] = 0;
                     break;
                 case ut_Byte:
-                    result += one_word_array(tv.value._byte);
+                    result[pos++] = static_cast<char>(tv.value._byte);
+                    result[pos++] = 0;
                     break;
                 case ut_Word:
-                    result += one_word_array(tv.value._word);
+                    result[pos++] = static_cast<char>(tv.value._word >> 0);
+                    result[pos++] = static_cast<char>(tv.value._word >> 8);
                     break;
                 case ut_Addr:
-                    result += one_long_array(tv.value._long);
+                    result[pos++] = static_cast<char>(tv.value._addr[0] >>  0);
+                    result[pos++] = static_cast<char>(tv.value._addr[0] >>  8);
+                    result[pos++] = static_cast<char>(tv.value._addr[0] >> 16);
+                    result[pos++] = static_cast<char>(tv.value._addr[0] >> 24);
+                    result[pos++] = static_cast<char>(tv.value._addr[1] >>  0);
+                    result[pos++] = static_cast<char>(tv.value._addr[1] >>  8);
+                    result[pos++] = static_cast<char>(tv.value._addr[1] >> 16);
+                    result[pos++] = static_cast<char>(tv.value._addr[1] >> 24);
                     break;
                 case ut_Long:
-                    result += one_long_array(tv.value._long);
+                    result[pos++] = static_cast<char>(tv.value._long >>  0);
+                    result[pos++] = static_cast<char>(tv.value._long >>  8);
+                    result[pos++] = static_cast<char>(tv.value._long >> 16);
+                    result[pos++] = static_cast<char>(tv.value._long >> 24);
                     break;
                 case ut_Quad:
-                    result += one_quad_array(tv.value._quad);
+                    result[pos++] = static_cast<char>(tv.value._quad >>  0);
+                    result[pos++] = static_cast<char>(tv.value._quad >>  8);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 16);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 24);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 32);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 40);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 48);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 56);
                     break;
                 case ut_Real:
-                    result += one_real_array(tv.value._real);
+                    result[pos++] = static_cast<char>(tv.value._quad >>  0);
+                    result[pos++] = static_cast<char>(tv.value._quad >>  8);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 16);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 24);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 32);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 40);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 48);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 56);
                     break;
                 case ut_String:
-                    result += one_word_array(tv.value._byte);
+                    result[pos++] = tv.value._char;
+                    result[pos++] = 0;
                     break;
                 }
-            }
-        } else {
-            foreach(const QVariant& v, it) {
-                P2TypedValue tv = qvariant_cast<P2TypedValue>(v);
+            } else {
                 switch (tv.type) {
                 case ut_Invalid:
-                    Q_ASSERT(tv.type != ut_Invalid);
-                    break;
                 case ut_Bool:
                 case ut_Byte:
+                case ut_String:
+                    result[pos++] = tv.value._char;
+                    result[pos++] = 0;
+                    break;
                 case ut_Word:
                 case ut_Addr:
                 case ut_Long:
                 case ut_Quad:
                 case ut_Real:
-                case ut_String:
-                    result += one_word_array(tv.value._word);
+                    result[pos++] = static_cast<char>(tv.value._word >> 0);
+                    result[pos++] = static_cast<char>(tv.value._word >> 8);
                     break;
                 }
             }
         }
+        if (pos >= size)
+            result.resize(size += 4096);
     } else {
         Q_ASSERT_X(false, "Cannot use QSequentialIterable", "chain_words");
     }
+    result.truncate(pos);
     return result;
 }
 
@@ -693,131 +696,273 @@ QByteArray P2Union::chain_words(const P2Union* pun, bool expand)
  */
 QByteArray P2Union::chain_longs(const P2Union* pun, bool expand)
 {
-    QByteArray result;
+    int size = 4096;
+    int pos = 0;
+    QByteArray result(size, 0x00);
     QVariant list = QVariant::fromValue(pun->toList());
     if (list.canConvert<QVariantList>()) {
         QSequentialIterable it = list.value<QSequentialIterable>();
-        if (expand) {
-            foreach(const QVariant& v, it) {
-                P2TypedValue tv = qvariant_cast<P2TypedValue>(v);
+        foreach(const QVariant& v, it) {
+            P2TypedValue tv = qvariant_cast<P2TypedValue>(v);
+            if (expand) {
                 switch (tv.type) {
                 case ut_Invalid:
                     Q_ASSERT(tv.type != ut_Invalid);
                     break;
                 case ut_Bool:
-                    result += one_long_array(tv.value._bool);
+                    result[pos++] = tv.value._bool;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
                     break;
                 case ut_Byte:
-                    result += one_long_array(tv.value._byte);
+                    result[pos++] = static_cast<char>(tv.value._byte);
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
                     break;
                 case ut_Word:
-                    result += one_long_array(tv.value._word);
+                    result[pos++] = static_cast<char>(tv.value._word >> 0);
+                    result[pos++] = static_cast<char>(tv.value._word >> 8);
+                    result[pos++] = 0;
+                    result[pos++] = 0;
                     break;
                 case ut_Addr:
-                    result += one_long_array(tv.value._long);
+                    result[pos++] = static_cast<char>(tv.value._addr[0] >>  0);
+                    result[pos++] = static_cast<char>(tv.value._addr[0] >>  8);
+                    result[pos++] = static_cast<char>(tv.value._addr[0] >> 16);
+                    result[pos++] = static_cast<char>(tv.value._addr[0] >> 24);
+                    result[pos++] = static_cast<char>(tv.value._addr[1] >>  0);
+                    result[pos++] = static_cast<char>(tv.value._addr[1] >>  8);
+                    result[pos++] = static_cast<char>(tv.value._addr[1] >> 16);
+                    result[pos++] = static_cast<char>(tv.value._addr[1] >> 24);
                     break;
                 case ut_Long:
-                    result += one_long_array(tv.value._long);
+                    result[pos++] = static_cast<char>(tv.value._long >>  0);
+                    result[pos++] = static_cast<char>(tv.value._long >>  8);
+                    result[pos++] = static_cast<char>(tv.value._long >> 16);
+                    result[pos++] = static_cast<char>(tv.value._long >> 24);
                     break;
                 case ut_Quad:
-                    result += one_quad_array(tv.value._quad);
+                    result[pos++] = static_cast<char>(tv.value._quad >>  0);
+                    result[pos++] = static_cast<char>(tv.value._quad >>  8);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 16);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 24);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 32);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 40);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 48);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 56);
                     break;
                 case ut_Real:
-                    result += one_real_array(tv.value._real);
+                    result[pos++] = static_cast<char>(tv.value._quad >>  0);
+                    result[pos++] = static_cast<char>(tv.value._quad >>  8);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 16);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 24);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 32);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 40);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 48);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 56);
                     break;
                 case ut_String:
-                    result += one_long_array(tv.value._byte);
+                    result[pos++] = tv.value._char;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
                     break;
                 }
-            }
-        } else {
-            foreach(const QVariant& v, it) {
-                P2TypedValue tv = qvariant_cast<P2TypedValue>(v);
+            } else {
                 switch (tv.type) {
                 case ut_Invalid:
                     Q_ASSERT(tv.type != ut_Invalid);
                     break;
                 case ut_Bool:
                 case ut_Byte:
+                case ut_String:
+                    result[pos++] = tv.value._char;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    break;
                 case ut_Word:
+                    result[pos++] = static_cast<char>(tv.value._long >>  0);
+                    result[pos++] = static_cast<char>(tv.value._long >>  8);
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    break;
                 case ut_Addr:
                 case ut_Long:
                 case ut_Quad:
                 case ut_Real:
-                case ut_String:
-                    result += one_long_array(tv.value._long);
+                    result[pos++] = static_cast<char>(tv.value._long >>  0);
+                    result[pos++] = static_cast<char>(tv.value._long >>  8);
+                    result[pos++] = static_cast<char>(tv.value._long >> 16);
+                    result[pos++] = static_cast<char>(tv.value._long >> 24);
                     break;
                 }
             }
+            if (pos >= size)
+                result.resize(size += 4096);
         }
     } else {
-        Q_ASSERT_X(false, "Cannot use QSequentialIterable", "chain_longs");
+        Q_ASSERT_X(false, "Cannot use QSequentialIterable", "chain_words");
     }
+    result.truncate(pos);
     return result;
 }
 
 QByteArray P2Union::chain_quads(const P2Union* pun, bool expand)
 {
-    QByteArray result;
+    int size = 4096;
+    int pos = 0;
+    QByteArray result(size, 0x00);
     QVariant list = QVariant::fromValue(pun->toList());
     if (list.canConvert<QVariantList>()) {
         QSequentialIterable it = list.value<QSequentialIterable>();
-        if (expand) {
-            foreach(const QVariant& v, it) {
-                P2TypedValue tv = qvariant_cast<P2TypedValue>(v);
+        foreach(const QVariant& v, it) {
+            P2TypedValue tv = qvariant_cast<P2TypedValue>(v);
+            if (expand) {
                 switch (tv.type) {
                 case ut_Invalid:
-                    Q_ASSERT(tv.type != ut_Invalid);
-                    break;
                 case ut_Bool:
-                    result += one_quad_array(tv.value._bool);
+                    result[pos++] = tv.value._bool;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
                     break;
                 case ut_Byte:
-                    result += one_quad_array(tv.value._byte);
+                    result[pos++] = static_cast<char>(tv.value._byte);
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
                     break;
                 case ut_Word:
-                    result += one_quad_array(tv.value._word);
+                    result[pos++] = static_cast<char>(tv.value._word >> 0);
+                    result[pos++] = static_cast<char>(tv.value._word >> 8);
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
                     break;
                 case ut_Addr:
-                    result += one_quad_array(tv.value._long);
+                    result[pos++] = static_cast<char>(tv.value._addr[0] >>  0);
+                    result[pos++] = static_cast<char>(tv.value._addr[0] >>  8);
+                    result[pos++] = static_cast<char>(tv.value._addr[0] >> 16);
+                    result[pos++] = static_cast<char>(tv.value._addr[0] >> 24);
+                    result[pos++] = static_cast<char>(tv.value._addr[1] >>  0);
+                    result[pos++] = static_cast<char>(tv.value._addr[1] >>  8);
+                    result[pos++] = static_cast<char>(tv.value._addr[1] >> 16);
+                    result[pos++] = static_cast<char>(tv.value._addr[1] >> 24);
                     break;
                 case ut_Long:
-                    result += one_quad_array(tv.value._long);
+                    result[pos++] = static_cast<char>(tv.value._long >>  0);
+                    result[pos++] = static_cast<char>(tv.value._long >>  8);
+                    result[pos++] = static_cast<char>(tv.value._long >> 16);
+                    result[pos++] = static_cast<char>(tv.value._long >> 24);
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
                     break;
                 case ut_Quad:
-                    result += one_quad_array(tv.value._quad);
+                    result[pos++] = static_cast<char>(tv.value._quad >>  0);
+                    result[pos++] = static_cast<char>(tv.value._quad >>  8);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 16);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 24);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 32);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 40);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 48);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 56);
                     break;
                 case ut_Real:
-                    result += one_real_array(tv.value._real);
+                    result[pos++] = static_cast<char>(tv.value._quad >>  0);
+                    result[pos++] = static_cast<char>(tv.value._quad >>  8);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 16);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 24);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 32);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 40);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 48);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 56);
                     break;
                 case ut_String:
-                    result += one_quad_array(tv.value._byte);
+                    result[pos++] = tv.value._char;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    break;
+                }
+            } else {
+                switch (tv.type) {
+                case ut_Invalid:
+                case ut_Bool:
+                case ut_Byte:
+                case ut_String:
+                    result[pos++] = tv.value._char;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    break;
+                case ut_Word:
+                    result[pos++] = static_cast<char>(tv.value._word >> 0);
+                    result[pos++] = static_cast<char>(tv.value._word >> 8);
+                    break;
+                case ut_Addr:
+                    result[pos++] = static_cast<char>(tv.value._addr[0] >>  0);
+                    result[pos++] = static_cast<char>(tv.value._addr[0] >>  8);
+                    result[pos++] = static_cast<char>(tv.value._addr[0] >> 16);
+                    result[pos++] = static_cast<char>(tv.value._addr[0] >> 24);
+                    result[pos++] = static_cast<char>(tv.value._addr[1] >>  0);
+                    result[pos++] = static_cast<char>(tv.value._addr[1] >>  8);
+                    result[pos++] = static_cast<char>(tv.value._addr[1] >> 16);
+                    result[pos++] = static_cast<char>(tv.value._addr[1] >> 24);
+                    break;
+                case ut_Long:
+                    result[pos++] = static_cast<char>(tv.value._long >>  0);
+                    result[pos++] = static_cast<char>(tv.value._long >>  8);
+                    result[pos++] = static_cast<char>(tv.value._long >> 16);
+                    result[pos++] = static_cast<char>(tv.value._long >> 24);
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    result[pos++] = 0;
+                    break;
+                case ut_Quad:
+                case ut_Real:
+                    result[pos++] = static_cast<char>(tv.value._quad >>  0);
+                    result[pos++] = static_cast<char>(tv.value._quad >>  8);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 16);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 24);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 32);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 40);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 48);
+                    result[pos++] = static_cast<char>(tv.value._quad >> 56);
                     break;
                 }
             }
-        } else {
-            foreach(const QVariant& v, it) {
-                P2TypedValue tv = qvariant_cast<P2TypedValue>(v);
-                switch (tv.type) {
-                case ut_Invalid:
-                    Q_ASSERT(tv.type != ut_Invalid);
-                    break;
-                case ut_Bool:
-                case ut_Byte:
-                case ut_Word:
-                case ut_Addr:
-                case ut_Long:
-                case ut_Quad:
-                case ut_Real:
-                case ut_String:
-                    result += one_quad_array(tv.value._long);
-                    break;
-                }
-            }
+            if (pos >= size)
+                result.resize(size += 4096);
         }
     } else {
-        Q_ASSERT_X(false, "Cannot use QSequentialIterable", "chain_quads");
+        Q_ASSERT_X(false, "Cannot use QSequentialIterable", "chain_words");
     }
+    result.truncate(pos);
     return result;
 }
 
@@ -927,6 +1072,26 @@ QString P2Union::str(bool with_type, p2_FORMAT_e fmt) const
     return str(*this, with_type, fmt);
 }
 
+static inline QString bin(const p2_QUAD val, int digits = 0)
+{
+    return QString("%1").arg(val, digits, 2, QChar('0'));
+}
+
+static inline QString byt(const p2_QUAD val, int digits = 0)
+{
+    return QString("%1").arg(val, digits, 16, QChar('0'));
+}
+
+static inline QString dec(const p2_QUAD val, int digits = 0)
+{
+    return QString("%1").arg(val, digits, 10, QChar('0'));
+}
+
+static inline QString hex(const p2_QUAD val, int digits = 0)
+{
+    return QString("%1").arg(val, digits, 16, QChar('0'));
+}
+
 QString P2Union::str(const P2Union& un, bool with_type, p2_FORMAT_e fmt)
 {
     QString result;
@@ -949,18 +1114,20 @@ QString P2Union::str(const P2Union& un, bool with_type, p2_FORMAT_e fmt)
             p2_BYTE _byte = un.get_byte();
             switch (fmt) {
             case fmt_dec:
-                result += QString("%1")
-                          .arg(_byte);
+                result += dec(_byte,0);
                 break;
             case fmt_bin:
                 result += QString("%%1")
-                          .arg(_byte, 8, 2, QChar('0'));
+                          .arg(bin(_byte,8));
                 break;
-            case fmt_byt:
+            case fmt_bit:
+                result += QString("$%1")
+                          .arg(hex(_byte,2));
+                break;
             case fmt_hex:
             default:
                 result += QString("$%1")
-                          .arg(_byte, 2, 16, QChar('0'));
+                          .arg(hex(_byte,2));
             }
         }
         break;
@@ -975,18 +1142,18 @@ QString P2Union::str(const P2Union& un, bool with_type, p2_FORMAT_e fmt)
                 break;
             case fmt_bin:
                 result += QString("%%1_%2")
-                          .arg(_word / 256u, 8, 2, QChar('0'))
-                          .arg(_word % 256u, 8, 2, QChar('0'));
+                          .arg(bin(_word / 256u, 8))
+                          .arg(bin(_word % 256u, 8));
                 break;
-            case fmt_byt:
-                result += QString("$%1 $%2")
-                          .arg(_word / 256u, 2, 16, QChar('0'))
-                          .arg(_word % 256u, 2, 16, QChar('0'));
+            case fmt_bit:
+                result += QString("$%1_%2")
+                          .arg(hex(_word / 256u, 2))
+                          .arg(hex(_word % 256u, 2));
                 break;
             case fmt_hex:
             default:
                 result += QString("$%1")
-                          .arg(_word, 4, 16, QChar('0'));
+                          .arg(hex(_word, 4));
             }
         }
         break;
@@ -1000,37 +1167,34 @@ QString P2Union::str(const P2Union& un, bool with_type, p2_FORMAT_e fmt)
             switch (fmt) {
             case fmt_dec:
                 result += QString("%1:%2")
-                          .arg(_hub)
-                          .arg(_cog);
+                          .arg(dec(_hub,0))
+                          .arg(dec(_cog,0));
                 break;
             case fmt_bin:
                 result += QString("%%1_%2_%3_%4:%%5_%6_%7")
-                          .arg((_hub >> 24) & 0xff, 8, 2, QChar('0'))
-                          .arg((_hub >> 16) & 0xff, 8, 2, QChar('0'))
-                          .arg((_hub >>  8) & 0xff, 8, 2, QChar('0'))
-                          .arg((_hub >>  0) & 0xff, 8, 2, QChar('0'))
-                          .arg((_cog >> 16) & 0xff, 8, 2, QChar('0'))
-                          .arg((_cog >>  8) & 0xff, 8, 2, QChar('0'))
-                          .arg((_cog >>  0) & 0xff, 8, 2, QChar('0'))
-                          ;
+                          .arg(bin((_hub >> 24) & 0xff, 8))
+                          .arg(bin((_hub >> 16) & 0xff, 8))
+                          .arg(bin((_hub >>  8) & 0xff, 8))
+                          .arg(bin((_hub >>  0) & 0xff, 8))
+                          .arg(bin((_cog >> 16) & 0xff, 8))
+                          .arg(bin((_cog >>  8) & 0xff, 8))
+                          .arg(bin((_cog >>  0) & 0xff, 8));
                 break;
-            case fmt_byt:
-                result += QString("$%1 $%2 $%3:$%4 $%5 $%6 $%7")
-                          .arg((_hub >> 24) & 0xff, 2, 16, QChar('0'))
-                          .arg((_hub >> 16) & 0xff, 2, 16, QChar('0'))
-                          .arg((_hub >>  8) & 0xff, 2, 16, QChar('0'))
-                          .arg((_hub >>  0) & 0xff, 2, 16, QChar('0'))
-                          .arg((_cog >> 16) & 0xff, 2, 16, QChar('0'))
-                          .arg((_cog >>  8) & 0xff, 2, 16, QChar('0'))
-                          .arg((_cog >>  0) & 0xff, 2, 16, QChar('0'))
-                          ;
+            case fmt_bit:
+                result += QString("$%1_%2_%3_%4:%5_%6_%7")
+                          .arg(hex((_hub >> 24) & 0xff, 2))
+                          .arg(hex((_hub >> 16) & 0xff, 2))
+                          .arg(hex((_hub >>  8) & 0xff, 2))
+                          .arg(hex((_hub >>  0) & 0xff, 2))
+                          .arg(hex((_cog >> 16) & 0xff, 2))
+                          .arg(hex((_cog >>  8) & 0xff, 2))
+                          .arg(hex((_cog >>  0) & 0xff, 2));
                 break;
             case fmt_hex:
             default:
-                result += QString("$%1:$%2")
-                          .arg(_hub, 5, 16, QChar('0'))
-                          .arg(_cog >> 2, 3, 16, QChar('0'))
-                          ;
+                result += QString("$%1:%2")
+                          .arg(hex(_hub, 5))
+                          .arg(hex(_cog / sz_LONG, 3));
             }
         }
         break;
@@ -1041,26 +1205,26 @@ QString P2Union::str(const P2Union& un, bool with_type, p2_FORMAT_e fmt)
             switch (fmt) {
             case fmt_dec:
                 result += QString("%1")
-                          .arg(_long);
+                          .arg(dec(_long, 0));
                 break;
             case fmt_bin:
                 result += QString("%%1_%2_%3_%4")
-                          .arg((_long >> 24) & 0xff, 8, 2, QChar('0'))
-                          .arg((_long >> 16) & 0xff, 8, 2, QChar('0'))
-                          .arg((_long >>  8) & 0xff, 8, 2, QChar('0'))
-                          .arg((_long >>  0) & 0xff, 8, 2, QChar('0'));
+                          .arg(bin((_long >> 24) & 0xff, 8))
+                          .arg(bin((_long >> 16) & 0xff, 8))
+                          .arg(bin((_long >>  8) & 0xff, 8))
+                          .arg(bin((_long >>  0) & 0xff, 8));
                 break;
-            case fmt_byt:
-                result += QString("$%1 $%2 $%3 $%4")
-                          .arg((_long >> 24) & 0xff, 2, 16, QChar('0'))
-                          .arg((_long >> 16) & 0xff, 2, 16, QChar('0'))
-                          .arg((_long >>  8) & 0xff, 2, 16, QChar('0'))
-                          .arg((_long >>  0) & 0xff, 2, 16, QChar('0'));
+            case fmt_bit:
+                result += QString("$%1_%2_%3_%4")
+                          .arg(hex((_long >> 24) & 0xff, 2))
+                          .arg(hex((_long >> 16) & 0xff, 2))
+                          .arg(hex((_long >>  8) & 0xff, 2))
+                          .arg(hex((_long >>  0) & 0xff, 2));
                 break;
             case fmt_hex:
             default:
                 result += QString("$%1")
-                          .arg(_long, 0, 16, QChar('0'));
+                          .arg(hex(_long, 0));
             }
         }
         break;
@@ -1075,25 +1239,25 @@ QString P2Union::str(const P2Union& un, bool with_type, p2_FORMAT_e fmt)
                 break;
             case fmt_bin:
                 result += QString("%%1_%2_%3_%4_%5_%6_%7_%8")
-                          .arg((_quad >> 56) & 0xff, 8, 2, QChar('0'))
-                          .arg((_quad >> 48) & 0xff, 8, 2, QChar('0'))
-                          .arg((_quad >> 40) & 0xff, 8, 2, QChar('0'))
-                          .arg((_quad >> 32) & 0xff, 8, 2, QChar('0'))
-                          .arg((_quad >> 24) & 0xff, 8, 2, QChar('0'))
-                          .arg((_quad >> 16) & 0xff, 8, 2, QChar('0'))
-                          .arg((_quad >>  8) & 0xff, 8, 2, QChar('0'))
-                          .arg((_quad >>  0) & 0xff, 8, 2, QChar('0'));
+                          .arg(bin((_quad >> 56) & 0xff, 8))
+                          .arg(bin((_quad >> 48) & 0xff, 8))
+                          .arg(bin((_quad >> 40) & 0xff, 8))
+                          .arg(bin((_quad >> 32) & 0xff, 8))
+                          .arg(bin((_quad >> 24) & 0xff, 8))
+                          .arg(bin((_quad >> 16) & 0xff, 8))
+                          .arg(bin((_quad >>  8) & 0xff, 8))
+                          .arg(bin((_quad >>  0) & 0xff, 8));
                 break;
-            case fmt_byt:
-                result += QString("$%1 $%2 $%3 $%4 $%5 $%6 $%7 $%8")
-                          .arg((_quad >> 56) & 0xff, 2, 16, QChar('0'))
-                          .arg((_quad >> 48) & 0xff, 2, 16, QChar('0'))
-                          .arg((_quad >> 40) & 0xff, 2, 16, QChar('0'))
-                          .arg((_quad >> 32) & 0xff, 2, 16, QChar('0'))
-                          .arg((_quad >> 24) & 0xff, 2, 16, QChar('0'))
-                          .arg((_quad >> 16) & 0xff, 2, 16, QChar('0'))
-                          .arg((_quad >>  8) & 0xff, 2, 16, QChar('0'))
-                          .arg((_quad >>  0) & 0xff, 2, 16, QChar('0'));
+            case fmt_bit:
+                result += QString("$%1_%2_%3_%4_%5_%6_%7_%8")
+                          .arg(hex((_quad >> 56) & 0xff, 2))
+                          .arg(hex((_quad >> 48) & 0xff, 2))
+                          .arg(hex((_quad >> 40) & 0xff, 2))
+                          .arg(hex((_quad >> 32) & 0xff, 2))
+                          .arg(hex((_quad >> 24) & 0xff, 2))
+                          .arg(hex((_quad >> 16) & 0xff, 2))
+                          .arg(hex((_quad >>  8) & 0xff, 2))
+                          .arg(hex((_quad >>  0) & 0xff, 2));
                 break;
             case fmt_hex:
             default:
@@ -1104,7 +1268,8 @@ QString P2Union::str(const P2Union& un, bool with_type, p2_FORMAT_e fmt)
         break;
 
     case ut_Real:
-        result += QString("%1").arg(un.get_real(), 2, 'f');
+        result += QString("%1")
+                  .arg(un.get_real(), 2, 'f');
         break;
 
     case ut_String:

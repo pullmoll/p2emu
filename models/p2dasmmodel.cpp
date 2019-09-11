@@ -238,7 +238,7 @@ QSize P2DasmModel::sizeHint(const QModelIndex& index, const QString& text) const
         switch (m_format) {
         case fmt_bin:
             return metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_bin : text);
-        case fmt_byt:
+        case fmt_bit:
             return metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_byt : text);
         case fmt_dec:
             return metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_dec : text);

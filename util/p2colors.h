@@ -85,14 +85,16 @@ public slots:
     void set_palette(const QHash<p2_palette_e, QColor>& palette_color);
 
 private:
-    QHash<QString,QColor> m_named_colors;
-    mutable QHash<p2_palette_e,QColor> m_palette;
-    mutable QStringList m_color_names;
-    mutable QVector<QColor> m_color_values;
-    mutable QVector<QColor> m_colors_hue_sat_lum;
+    QHash<QString,QColor> m_name_color;
+    QHash<quint32,QString> m_color_name;
+    QHash<p2_palette_e,QColor> m_palette;
+    QStringList m_color_names_lexicographic;
+    QStringList m_color_names_hue_sat_lum;
+    QVector<QColor> m_color_values;
+    QVector<QColor> m_colors_hue_sat_lum;
     QMap<p2_palette_e,QString> m_palette_names;
-    QHash<p2_palette_e,QColor> m_default_colors;
-    void setup_tables() const;
+    mutable QHash<p2_palette_e,QColor> m_default_colors;
+    void setup_tables();
     void reset_palette();
 };
 

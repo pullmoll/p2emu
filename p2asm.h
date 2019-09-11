@@ -134,6 +134,7 @@ private:
     QStringList m_errors;                   //!< error message(s) from parameters parser
     bool m_hubmode;                         //!< true if current address mode is HUB
     p2_LONG m_cogaddr;                      //!< current program counter (origin of the instruction)
+    p2_LONG m_coglimit;                     //!< current limit for m_cogaddr
     p2_LONG m_hubaddr;                      //!< current origin, i.e. where the data is stored (COG, LUT, or HUB)
     p2_LONG m_advance;                      //!< advance by n longs
     P2Opcode m_IR;                          //!< current opcode with instruction register
@@ -215,13 +216,13 @@ private:
     bool encode_ptr_index(P2Atom& index);
 
     bool error_dst_or_src();
-    P2Atom parse_dst(P2Opcode::ImmFlag flag = P2Opcode::imm_none);
-    P2Atom parse_src(P2Opcode::ImmFlag flag = P2Opcode::imm_none);
-    P2Atom parse_src_ptrx(int scale = 1, P2Opcode::ImmFlag flag = P2Opcode::imm_to_im);
+    P2Atom parse_dst(P2Opcode::ImmFlag flag = P2Opcode::ignore);
+    P2Atom parse_src(P2Opcode::ImmFlag flag = P2Opcode::ignore);
+    P2Atom parse_src_ptrx(int scale = 1, P2Opcode::ImmFlag flag = P2Opcode::immediate_I);
     bool parse_index(int scale, P2Atom& src);
     bool end_of_line();
     bool mandatory_COMMA();
-    void optional_COMMA();
+    bool optional_COMMA();
     bool optional_WCZ();
     bool optional_WC();
     bool optional_WZ();

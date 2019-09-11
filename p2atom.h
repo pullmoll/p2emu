@@ -112,8 +112,8 @@ public:
     void set_char(const char _char);
     void set_byte(const p2_BYTE _byte);
     void set_word(const p2_WORD _word);
-    void set_addr(const p2_LONG _cog, const p2_LONG _hub);
     void set_long(const p2_LONG _long);
+    void set_addr(const p2_LONG _cog, const p2_LONG _hub);
     void set_quad(const p2_QUAD _quad);
     void set_real(const p2_REAL _real);
     void set_chars(const p2_CHARS& _chars);
@@ -128,6 +128,7 @@ public:
     void add_byte(const p2_BYTE _byte);
     void add_word(const p2_WORD _word);
     void add_long(const p2_LONG _long);
+    void add_addr(const p2_LONG _cog, const p2_LONG _hub);
     void add_quad(const p2_QUAD _quad);
     void add_real(const p2_REAL _real);
     void add_chars(const p2_CHARS& _chars);

@@ -33,10 +33,12 @@
  ****************************************************************************/
 #include "p2asmmodel.h"
 #include "p2util.h"
+#include "p2html.h"
 
-static const QString style_nowrap = QStringLiteral("style='white-space:nowrap;'");
-static const QString style_left = QStringLiteral("style='text-align:left;'");
-static const QString style_padding = QStringLiteral("style='padding:0px 4px 0px 4px;'");
+static const QLatin1String style("style");
+static const QLatin1String style_nowrap("white-space:nowrap;");
+static const QLatin1String style_left("text-align:left;");
+static const QLatin1String style_padding("padding:0px 4px 0px 4px;");
 
 P2AsmModel::P2AsmModel(P2Asm* p2asm, QObject *parent)
     : QAbstractTableModel(parent)
@@ -302,11 +304,11 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     case Qt::ToolTipRole:
         switch (column) {
         case c_Origin:
-            result = tr("This column shows the address where code/data is emitted to.");
+            result = tr("This column shows the HUB address.");
             break;
 
         case c_Address:
-            result = tr("This column shows the address of the program counter (PC).");
+            result = tr("This column shows the COG address.");
             break;
 
         case c_Opcode:
@@ -425,7 +427,7 @@ QSize P2AsmModel::sizeHint(const QModelIndex& index, const QString& text) const
         case fmt_bin:
             size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_bin : text);
             break;
-        case fmt_byt:
+        case fmt_bit:
             size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_byt : text);
             break;
         case fmt_dec:
@@ -527,134 +529,154 @@ void P2AsmModel::set_highlight(const QModelIndex& index, const P2Symbol& symbol,
     m_highlight_word = word;
 }
 
-
-static const QStringList html_head()
-{
-    QStringList html;
-    html += QStringLiteral("<html>");
-    html += QStringLiteral("<body>");
-    html += QString("<table>");
-    return html;
-}
-
-static const QStringList html_end()
-{
-    QStringList html;
-    html += QStringLiteral("</table>");
-    html += QStringLiteral("</body");
-    html += QStringLiteral("</html>");
-    return html;
-}
-
-static const QString html_start_tr()
-{
-    return QString("<tr %1>")
-            .arg(style_padding);
-
-}
-
-static const QString html_end_tr()
-{
-    return QStringLiteral("</tr>");
-
-}
-
-static const QString html_th(const QString& text)
-{
-    return QString("<th %1 %2 %3><tt>%4</tt></th>")
-            .arg(style_padding)
-            .arg(style_nowrap)
-            .arg(style_left)
-            .arg(text);
-
-}
-
-static const QString html_td(const QString& text)
-{
-    return QString("<td %1 %2><tt>%3</tt></td>")
-            .arg(style_padding)
-            .arg(style_nowrap)
-            .arg(text);
-}
-
 QString P2AsmModel::opcodeToolTip(const P2Opcode& IR) const
 {
-    QStringList html = html_head();
+    QDomDocument doc;
+
+    QDomElement table = p2_html(doc, "table");
+    QDomElement tr, th, td, tt;
     QString title1;
     QString title2;
-    QStringList lines;
-    QStringList comments;
+    QStringList column1;
+    QStringList column2;
 
     if (IR.is_instruction()) {
-        title1 = tr("Opcode");
-        lines += P2Opcode::format_opcode(IR, m_format).split(QChar::LineFeed);
-        title2 = tr("Brief");
-        comments += P2Opcode::format_opcode(IR, fmt_doc).split(QChar::LineFeed);
+        title1 = this->tr("Opcode");
+        column1 += P2Opcode::format_opcode(IR, m_format).split(QChar::LineFeed);
+        title2 = this->tr("Brief");
+        column2 += P2Opcode::format_opcode(IR, fmt_doc).split(QChar::LineFeed);
     }
 
     if (IR.is_assign()) {
-        title1 = tr("Assigment");
-        lines += P2Opcode::format_assign(IR, m_format).split(QChar::LineFeed);
+        title1 = this->tr("Assigment");
+        column1 += P2Opcode::format_assign(IR, m_format).split(QChar::LineFeed);
     }
 
-    if (lines.isEmpty() && !IR.data().isEmpty()) {
-        title1 = tr("Data");
-        lines += P2Opcode::format_data(IR, m_format).split(QChar::LineFeed);
+    if (IR.is_data()) {
+        title1 = this->tr("Data");
+        int limit = 32;
+        QStringList lines = P2Opcode::format_data(IR, m_format, &limit).split(QChar::LineFeed);
+        if (limit != 32)
+            lines += this->tr("%1 more …").arg(limit - 32);
+        column1 += lines;
     }
 
     // heading
-    html += html_start_tr();
-    html += html_th(title1);
-    if (!title2.isEmpty())
-        html += html_th(title2);
-    html += html_end_tr();
+    tr = p2_html(doc, "tr");
 
-    for (int i = 0; i < lines.count(); i++) {
-        const QString& line = lines[i];
-        html += html_start_tr();
-        html += html_td(line);
-        if (!comments.isEmpty())
-            html += html_td(comments.value(i));
-        html += html_end_tr();
+    th = p2_html(doc, "th");
+    tt = p2_html(doc, "tt");
+    tt.appendChild(p2_text(doc, title1));
+    th.appendChild(tt);
+    tr.appendChild(th);
+
+    if (!title2.isEmpty()) {
+        th = p2_html(doc, "th");
+        tt = p2_html(doc, "tt");
+        tt.appendChild(p2_text(doc, title2));
+        th.appendChild(tt);
+        tr.appendChild(th);
     }
 
-    html += html_end();
-    return html.join(QChar::LineFeed);
+    table.appendChild(tr);
+
+    // table rows
+    for (int i = 0; i < column1.count(); i++) {
+        const QString& line = column1[i];
+        tr = p2_html(doc, "tr");
+        td = p2_html(doc, "td");
+        td.setAttribute(style, style_nowrap);
+        tt = p2_html(doc, "tt");
+        tt.appendChild(p2_text(doc, line));
+        td.appendChild(tt);
+        tr.appendChild(td);
+
+        if (!column2.isEmpty()) {
+            td = p2_html(doc, "td");
+            td.setAttribute(style, style_nowrap);
+            tt = p2_html(doc, "tt");
+            tt.appendChild(p2_text(doc, column2.value(i)));
+            td.appendChild(tt);
+            tr.appendChild(td);
+        }
+        table.appendChild(tr);
+    }
+    doc.appendChild(table);
+    return doc.toString(1);
 }
 
 QString P2AsmModel::tokenToolTip(const P2Words& words) const
 {
-    QStringList html = html_head();
+    QDomDocument doc;
+
+    QStringList headings;
+    headings += tr("Token");
+    headings += tr("Type");
+    headings += tr("Pos");
+    headings += tr("Len");
+    headings += tr("Source code");
+
+    QDomElement table = p2_html(doc, "table");
+    QDomElement tr, th, td, tt;
 
     // heading
-    html += html_start_tr();
-    html += html_th(tr("Token"));
-    html += html_th(tr("Type"));
-    html += html_th(tr("Pos"));
-    html += html_th(tr("Len"));
-    html += html_th(tr("Source code"));
-    html += html_end_tr();
+    tr = p2_html(doc, "tr");
 
+    foreach(const QString& heading, headings) {
+        th = p2_html(doc, "th");
+        th.setAttribute(style, QString("%1 %2").arg(style_left).arg(style_nowrap));
+        tt = p2_html(doc, "tt");
+        tt.appendChild(p2_text(doc, heading));
+        th.appendChild(tt);
+        tr.appendChild(th);
+    }
+
+    table.appendChild(tr);
+
+    // table rows
     for (int i = 0; i < words.count(); i++) {
         const P2Word& word = words[i];
-        const QString& token_id = QString("%1").arg(word.tok(), 3, 16, QChar('0'));
-        const QString& token_str = P2Util::esc(Token.enum_name(word.tok()));
-        const QString& token_id_str = QString("%1: %2").arg(token_id).arg(token_str);
-        const QString& type_names = P2Util::esc(Token.type_names(word.tok()).join(QChar::Space));
-        const QString& pos = QString("@%1").arg(word.pos());
-        const QString& len = QString("+%1").arg(word.len());
-        const QString& source = P2Util::esc(word.str());
 
-        html += html_start_tr();
-        html += html_td(token_id_str);
-        html += html_td(type_names);
-        html += html_td(pos);
-        html += html_td(len);
-        html += html_td(source);
-        html += html_end_tr();
+        tr = p2_html(doc, "tr");
+        td = p2_html(doc, "td");
+        td.setAttribute(style, style_nowrap);
+        tt = p2_html(doc, "tt");
+        tt.appendChild(p2_text(doc, Token.enum_name(word.tok())));
+        td.appendChild(tt);
+        tr.appendChild(td);
+
+        td = p2_html(doc, "td");
+        td.setAttribute(style, style_nowrap);
+        tt = p2_html(doc, "tt");
+        tt.appendChild(p2_text(doc, Token.type_names(word.tok()).join(QChar::Space)));
+        td.appendChild(tt);
+        tr.appendChild(td);
+
+        td = p2_html(doc, "td");
+        td.setAttribute(style, style_nowrap);
+        tt = p2_html(doc, "tt");
+        tt.appendChild(p2_text(doc, QString("@%1").arg(word.pos())));
+        td.appendChild(tt);
+        tr.appendChild(td);
+
+        td = p2_html(doc, "td");
+        td.setAttribute(style, style_nowrap);
+        tt = p2_html(doc, "tt");
+        tt.appendChild(p2_text(doc, QString("+%1").arg(word.len())));
+        td.appendChild(tt);
+        tr.appendChild(td);
+
+        td = p2_html(doc, "td");
+        td.setAttribute(style, style_nowrap);
+        tt = p2_html(doc, "tt");
+        tt.appendChild(p2_text(doc, word.str()));
+        td.appendChild(tt);
+        tr.appendChild(td);
+
+        table.appendChild(tr);
     }
-    html += html_end();
-    return html.join(QChar::LineFeed);
+    doc.appendChild(table);
+    return doc.toString(1);
 }
 
 QString P2AsmModel::symbolsToolTip(const P2SymbolTable& symbols, const QList<P2Symbol>& symrefs) const
@@ -662,41 +684,114 @@ QString P2AsmModel::symbolsToolTip(const P2SymbolTable& symbols, const QList<P2S
     if (symbols.isNull())
         return QString();
 
-    QStringList html = html_head();
-    // heading
-    html += html_start_tr();
-    html += html_th(tr("Line #"));
-    html += html_th(tr("Section::name"));
-    html += html_th(tr("Type"));
-    html += html_th(tr("Value"));
-    html += html_end_tr();
+    QDomDocument doc;
 
+    QDomElement table = p2_html(doc, "table");
+    QDomElement tr, th, td, tt;
+    QDomText text;
+
+    // heading
+    tr = p2_html(doc, "tr");
+
+    th = p2_html(doc, "th");
+    th.setAttribute(style, QString("%1 %2").arg(style_left).arg(style_nowrap));
+    tt = p2_html(doc, "tt");
+    tt.appendChild(p2_text(doc, this->tr("Line #")));
+    th.appendChild(tt);
+    tr.appendChild(th);
+
+    th = p2_html(doc, "th");
+    th.setAttribute(style, QString("%1 %2").arg(style_left).arg(style_nowrap));
+    tt = p2_html(doc, "tt");
+    tt.appendChild(p2_text(doc, this->tr("Section::name")));
+    th.appendChild(tt);
+    tr.appendChild(th);
+
+    th = p2_html(doc, "th");
+    th.setAttribute(style, QString("%1 %2").arg(style_left).arg(style_nowrap));
+    tt = p2_html(doc, "tt");
+    tt.appendChild(p2_text(doc, this->tr("Type")));
+    th.appendChild(tt);
+    tr.appendChild(th);
+
+    th = p2_html(doc, "th");
+    th.setAttribute(style, QString("%1 %2").arg(style_left).arg(style_nowrap));
+    tt = p2_html(doc, "tt");
+    tt.appendChild(p2_text(doc, this->tr("Value")));
+    th.appendChild(tt);
+    tr.appendChild(th);
+
+    table.appendChild(tr);
+
+    // table rows
     for (int i = 0; i < symrefs.count(); i++) {
         const P2Symbol symbol = symrefs[i];
         const P2Word& word = symbols->reference(symbol->name());
         const P2Union& value = symbol->value();
-        html += html_start_tr();
-        html += html_td(QString::number(word.lineno()));
-        html += html_td(symbol->name());
-        html += html_td(symbol->type_name());
-        html += html_td(value.str(false, fmt_hex));
-        html += html_end_tr();
+
+        tr = p2_html(doc, "tr");
+
+        td = p2_html(doc, "td");
+        td.setAttribute(style, style_nowrap);
+        tt = p2_html(doc, "tt");
+        tt.appendChild(p2_text(doc, QString::number(word.lineno())));
+        td.appendChild(tt);
+        tr.appendChild(td);
+
+        td = p2_html(doc, "td");
+        td.setAttribute(style, style_nowrap);
+        tt = p2_html(doc, "tt");
+        tt.appendChild(p2_text(doc, symbol->name()));
+        td.appendChild(tt);
+        tr.appendChild(td);
+
+        td = p2_html(doc, "td");
+        td.setAttribute(style, style_nowrap);
+        tt = p2_html(doc, "tt");
+        tt.appendChild(p2_text(doc, symbol->type_name()));
+        td.appendChild(tt);
+        tr.appendChild(td);
+
+        td = p2_html(doc, "td");
+        td.setAttribute(style, style_nowrap);
+        tt = p2_html(doc, "tt");
+        tt.appendChild(p2_text(doc, value.str(false, fmt_hex)));
+        td.appendChild(tt);
+        tr.appendChild(td);
+
+        table.appendChild(tr);
     }
-    html += html_end();
-    return html.join(QChar::LineFeed);
+    doc.appendChild(table);
+    return doc.toString(1);
 }
 
 QString P2AsmModel::errorsToolTip(const QStringList& list) const
 {
-    QStringList html = html_head();
-    html += html_start_tr();
-    html += html_th(tr("Error message"));
-    html += html_end_tr();
+    QDomDocument doc;
+
+    QDomElement table = p2_html(doc, "table");
+    QDomElement tr, th, td, tt;
+
+    // heading
+    tr = p2_html(doc, "tr");
+    th = p2_html(doc, "th");
+    th.setAttribute(style, QString("%1 %2").arg(style_left).arg(style_nowrap));
+    tt = p2_html(doc, "tt");
+    tt.appendChild(p2_text(doc, this->tr("Error message")));
+    th.appendChild(tt);
+    tr.appendChild(th);
+    table.appendChild(tr);
+
     foreach (const QString& error, list) {
-        html += html_start_tr();
-        html += html_td(error);
-        html += html_end_tr();
+        tr = p2_html(doc, "tr");
+        td = p2_html(doc, "td");
+        td.setAttribute(style, style_nowrap);
+        tt = p2_html(doc, "tt");
+        tt.appendChild(p2_text(doc, error));
+        td.appendChild(tt);
+        tr.appendChild(td);
+        table.appendChild(tr);
     }
-    html += html_end();
-    return html.join(QChar::LineFeed);
+    doc.appendChild(table);
+    return doc.toString(1);
 }

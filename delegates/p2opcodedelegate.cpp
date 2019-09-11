@@ -60,7 +60,11 @@ QStringList P2OpcodeDelegate::opcodeLines(const QModelIndex& index) const
         text += P2Opcode::format_assign(IR, format);
 
     if (IR.is_data()) {
-        text += P2Opcode::format_data(IR, format);
+        int limit = 32;
+        QStringList lines = P2Opcode::format_data(IR, format, &limit).split(QChar::LineFeed);
+        if (limit != 32)
+            lines += tr("%1 more …").arg(limit - 32);
+        text += lines.join(QChar::LineFeed);
     }
     return text;
 }

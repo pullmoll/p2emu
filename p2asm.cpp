@@ -94,8 +94,9 @@ P2Asm::P2Asm(QObject *parent)
     , m_lineptr(nullptr)
     , m_errors()
     , m_hubmode(false)
-    , m_cogaddr(0)
-    , m_hubaddr(0)
+    , m_cogaddr(0x000)
+    , m_coglimit(0x200)
+    , m_hubaddr(0x0000)
     , m_advance(4)
     , m_IR()
     , m_data()
@@ -149,12 +150,13 @@ void P2Asm::pass_clear()
     m_in_curly = 0;
     m_errors.clear();
     m_hubmode = false;
-    m_cogaddr = 0;
-    m_hubaddr = 0;
-    m_advance = 0;
+    m_cogaddr = 0x000;
+    m_coglimit = 0x200;
+    m_hubaddr = 0x000;
+    m_advance = 4;
     m_IR.clear();
     m_data.clear();
-    m_enum.clear();
+    m_enum = P2Atom(0u);
     m_words.clear();
     m_instr = t_invalid;
     m_symbol.clear();
@@ -581,8 +583,7 @@ bool P2Asm::assemble_con_section()
         if (!m_symbol.isEmpty()) {
             // defining a symbol with the current enumeration value
             define_symbol(m_symbol, m_enum);
-            // increase enumerator
-            m_enum.unary_inc(1);
+            m_enum.unary_inc(1);    // increase enumerator
         }
         break;
     }
@@ -678,6 +679,10 @@ bool P2Asm::assemble_dat_section()
         if (!m_symbol.isEmpty()) {
             // defining a symbol at the current PC
             P2Atom atom(m_cogaddr, m_hubaddr);
+            if (m_hubmode)
+                atom.add_trait(tr_HUBMODE);
+            else
+                atom.clr_trait(tr_HUBMODE);
             define_symbol(m_symbol, atom);
         }
         break;
@@ -3540,14 +3545,9 @@ p2_Traits_e P2Asm::parse_traits()
             p2_set_trait(traits, tr_ABSOLUTE);
             next();
             break;
-        case t_ADDRESS_HUB:
-            DBG_EXPR(" trait address HUB: %s", qPrintable(Token.string(tok)));
-            p2_set_trait(traits, tr_ADDRESS_HUB);
-            next();
-            break;
-        case t_RELATIVE_HUB:
-            DBG_EXPR(" trait relative HUB: %s", qPrintable(Token.string(tok)));
-            p2_set_trait(traits, tr_RELATIVE_HUB);
+        case t_HUBADDRESS:
+            DBG_EXPR(" trait HUB address: %s", qPrintable(Token.string(tok)));
+            p2_set_trait(traits, tr_HUBADDRESS);
             next();
             break;
         default:
@@ -3661,7 +3661,7 @@ P2Atom P2Asm::parse_expression(int level)
     }
 
     // Set immediate flag according to traits
-    if (traits & (tr_IMMEDIATE | tr_AUGMENTED | tr_ADDRESS_HUB | tr_RELATIVE_HUB)) {
+    if (traits & (tr_IMMEDIATE | tr_AUGMENTED | tr_HUBADDRESS)) {
         m_IR.set_im_flags(true);
     }
 
@@ -3753,6 +3753,13 @@ bool P2Asm::error_dst_or_src()
                          .arg(QStringLiteral("L")));
         break;
 
+    case P2Opcode::dst_relative:
+        m_errors += tr("%1 relative $%2 out of range -$%3 … +$%4.")
+                    .arg(QStringLiteral("DST"))
+                    .arg(m_IR.aug_error_value(), 0, 16)
+                    .arg(0x100, 3, 16, QChar('0'))
+                    .arg(0x0ff, 3, 16, QChar('0'));
+        break;
 
     case P2Opcode::src_augs_none:
         m_errors += tr("%1 constant $%2 is > $1ff but %3.")
@@ -3768,6 +3775,14 @@ bool P2Asm::error_dst_or_src()
                     .arg(tr("%1 is not set for %2")
                          .arg(QStringLiteral("IM"))
                          .arg(QStringLiteral("I")));
+        break;
+
+    case P2Opcode::src_relative:
+        m_errors += tr("%1 relative $%2 out of range -$%3 … +$%4.")
+                    .arg(QStringLiteral("SRC"))
+                    .arg(m_IR.aug_error_value(), 0, 16)
+                    .arg(0x100, 3, 16, QChar('0'))
+                    .arg(0x0ff, 3, 16, QChar('0'));
         break;
     }
     emit Error(m_pass, m_lineno, m_errors.last());
@@ -3995,13 +4010,14 @@ bool P2Asm::mandatory_COMMA()
  * @brief An optional comma is skipped
  *
  */
-void P2Asm::optional_COMMA()
+bool P2Asm::optional_COMMA()
 {
     if (!skip_comments())
-        return;
+        return false;
     if (t_COMMA != curr_tok())
-        return;
+        return false;
     next();
+    return true;
 }
 
 /**
@@ -4204,7 +4220,7 @@ bool P2Asm::parse_D_IM_S()
         P2Atom dst = parse_dst();
         if (!mandatory_COMMA())
             return false;
-        P2Atom src = parse_src(P2Opcode::imm_to_im);
+        P2Atom src = parse_src(P2Opcode::immediate_I);
     }
     return end_of_line();
 }
@@ -4225,7 +4241,7 @@ bool P2Asm::parse_D_IM_S_PTRx_WCZ(int scale)
         P2Atom dst = parse_dst();
         if (!mandatory_COMMA())
             return false;
-        P2Atom src = parse_src_ptrx(scale, P2Opcode::imm_to_im);
+        P2Atom src = parse_src_ptrx(scale, P2Opcode::immediate_I);
     }
     optional_WCZ();
     return end_of_line();
@@ -4247,7 +4263,7 @@ bool P2Asm::parse_D_IM_S_PTRx(int scale)
         P2Atom dst = parse_dst();
         if (!mandatory_COMMA())
             return false;
-        P2Atom src = parse_src_ptrx(scale, P2Opcode::imm_to_im);
+        P2Atom src = parse_src_ptrx(scale, P2Opcode::immediate_I);
     }
     return end_of_line();
 }
@@ -4293,7 +4309,7 @@ bool P2Asm::parse_D()
  */
 bool P2Asm::parse_WZ_D()
 {
-    P2Atom dst = parse_dst(P2Opcode::imm_to_wz);
+    P2Atom dst = parse_dst(P2Opcode::immediate_L);
     return end_of_line();
 }
 
@@ -4304,7 +4320,7 @@ bool P2Asm::parse_WZ_D()
  */
 bool P2Asm::parse_IM_D()
 {
-    P2Atom dst = parse_dst(P2Opcode::imm_to_im);
+    P2Atom dst = parse_dst(P2Opcode::immediate_I);
     return end_of_line();
 }
 
@@ -4315,7 +4331,7 @@ bool P2Asm::parse_IM_D()
  */
 bool P2Asm::parse_IM_D_WCZ()
 {
-    P2Atom dst = parse_dst(P2Opcode::imm_to_im);
+    P2Atom dst = parse_dst(P2Opcode::immediate_I);
     optional_WCZ();
     return end_of_line();
 }
@@ -4327,7 +4343,7 @@ bool P2Asm::parse_IM_D_WCZ()
  */
 bool P2Asm::parse_IM_D_WC()
 {
-    P2Atom dst = parse_dst(P2Opcode::imm_to_im);
+    P2Atom dst = parse_dst(P2Opcode::immediate_I);
     optional_WC();
     return end_of_line();
 }
@@ -4339,7 +4355,7 @@ bool P2Asm::parse_IM_D_WC()
  */
 bool P2Asm::parse_IM_D_ANDC_ANDZ()
 {
-    P2Atom dst = parse_dst(P2Opcode::imm_to_im);
+    P2Atom dst = parse_dst(P2Opcode::immediate_I);
     mandatory_ANDC_ANDZ();
     return end_of_line();
 }
@@ -4351,7 +4367,7 @@ bool P2Asm::parse_IM_D_ANDC_ANDZ()
  */
 bool P2Asm::parse_IM_D_ORC_ORZ()
 {
-    P2Atom dst = parse_dst(P2Opcode::imm_to_im);
+    P2Atom dst = parse_dst(P2Opcode::immediate_I);
     mandatory_ORC_ORZ();
     return end_of_line();
 }
@@ -4363,7 +4379,7 @@ bool P2Asm::parse_IM_D_ORC_ORZ()
  */
 bool P2Asm::parse_IM_D_XORC_XORZ()
 {
-    P2Atom dst = parse_dst(P2Opcode::imm_to_im);
+    P2Atom dst = parse_dst(P2Opcode::immediate_I);
     mandatory_XORC_XORZ();
     return end_of_line();
 }
@@ -4385,7 +4401,7 @@ bool P2Asm::parse_D_IM_S_WCZ()
         P2Atom dst = parse_dst();
         if (!mandatory_COMMA())
             return false;
-        P2Atom src = parse_src(P2Opcode::imm_to_im);
+        P2Atom src = parse_src(P2Opcode::immediate_I);
     }
 
     optional_WCZ();
@@ -4409,7 +4425,7 @@ bool P2Asm::parse_D_IM_S_ANDCZ()
         P2Atom dst = parse_dst();
         if (!mandatory_COMMA())
             return false;
-        P2Atom src = parse_src(P2Opcode::imm_to_im);
+        P2Atom src = parse_src(P2Opcode::immediate_I);
     }
     mandatory_ANDC_ANDZ();
     return end_of_line();
@@ -4432,7 +4448,7 @@ bool P2Asm::parse_D_IM_S_ORCZ()
         P2Atom dst = parse_dst();
         if (!mandatory_COMMA())
             return false;
-        P2Atom src = parse_src(P2Opcode::imm_to_im);
+        P2Atom src = parse_src(P2Opcode::immediate_I);
     }
 
     mandatory_ORC_ORZ();
@@ -4456,7 +4472,7 @@ bool P2Asm::parse_D_IM_S_XORCZ()
         P2Atom dst = parse_dst();
         if (!mandatory_COMMA())
             return false;
-        P2Atom src = parse_src(P2Opcode::imm_to_im);
+        P2Atom src = parse_src(P2Opcode::immediate_I);
     }
 
     mandatory_XORC_XORZ();
@@ -4480,7 +4496,7 @@ bool P2Asm::parse_D_IM_S_WC()
         P2Atom dst = parse_dst();
         if (!mandatory_COMMA())
             return false;
-        P2Atom src = parse_src(P2Opcode::imm_to_im);
+        P2Atom src = parse_src(P2Opcode::immediate_I);
     }
 
     optional_WC();
@@ -4504,7 +4520,7 @@ bool P2Asm::parse_D_IM_S_WZ()
         P2Atom dst = parse_dst();
         if (!mandatory_COMMA())
             return false;
-        P2Atom src = parse_src(P2Opcode::imm_to_im);
+        P2Atom src = parse_src(P2Opcode::immediate_I);
     }
 
     optional_WZ();
@@ -4525,10 +4541,10 @@ bool P2Asm::parse_WZ_D_IM_S()
         m_idx = idx;
         P2Atom src = parse_src();
     } else {
-        P2Atom dst = parse_dst(P2Opcode::imm_to_wz);
+        P2Atom dst = parse_dst(P2Opcode::immediate_L);
         if (!mandatory_COMMA())
             return false;
-        P2Atom src = parse_src(P2Opcode::imm_to_im);
+        P2Atom src = parse_src(P2Opcode::immediate_I);
     }
     return end_of_line();
 }
@@ -4547,10 +4563,10 @@ bool P2Asm::parse_WZ_D_IM_S_PTRx(int scale)
         m_idx = idx;
         P2Atom src = parse_src();
     } else {
-        P2Atom dst = parse_dst(P2Opcode::imm_to_wz);
+        P2Atom dst = parse_dst(P2Opcode::immediate_L);
         if (!mandatory_COMMA())
             return false;
-        P2Atom src = parse_src_ptrx(scale, P2Opcode::imm_to_im);
+        P2Atom src = parse_src_ptrx(scale, P2Opcode::immediate_I);
     }
     return end_of_line();
 }
@@ -4569,10 +4585,10 @@ bool P2Asm::parse_WZ_D_IM_S_WC()
         m_idx = idx;
         P2Atom src = parse_src();
     } else {
-        P2Atom dst = parse_dst(P2Opcode::imm_to_wz);
+        P2Atom dst = parse_dst(P2Opcode::immediate_L);
         if (!mandatory_COMMA())
             return false;
-        P2Atom src = parse_src(P2Opcode::imm_to_im);
+        P2Atom src = parse_src(P2Opcode::immediate_I);
     }
     return optional_WC();
 }
@@ -4587,7 +4603,7 @@ bool P2Asm::parse_D_IM_S_NNN(uint max)
     P2Atom dst = parse_dst();
     if (!mandatory_COMMA())
         return false;
-    P2Atom src = parse_src(P2Opcode::imm_to_im);
+    P2Atom src = parse_src(P2Opcode::immediate_I);
     if (!mandatory_COMMA())
         return false;
     if (m_idx < m_cnt) {
@@ -4620,7 +4636,7 @@ bool P2Asm::parse_D_IM_S_NNN(uint max)
  */
 bool P2Asm::parse_IM_S()
 {
-    P2Atom src = parse_src(P2Opcode::imm_to_im);
+    P2Atom src = parse_src(P2Opcode::immediate_I);
     return end_of_line();
 }
 
@@ -4631,7 +4647,7 @@ bool P2Asm::parse_IM_S()
  */
 bool P2Asm::parse_IM_S_WC()
 {
-    P2Atom src = parse_src(P2Opcode::imm_to_im);
+    P2Atom src = parse_src(P2Opcode::immediate_I);
     optional_WC();
     return end_of_line();
 }
@@ -4716,13 +4732,8 @@ bool P2Asm::asm_assign()
     next();
     m_advance = 0;      // Don't advance PC
     P2Atom atom = parse_expression();
-    P2Symbol sym = m_symbols->symbol(m_symbol);
-    if (sym.isNull()) {
-        m_symbols->insert(m_symbol, atom);
-    } else {
-        m_symbols->set_value(m_symbol, atom.value());
-    }
-    m_IR.set_equ(atom);
+    m_symbols->set_atom(m_symbol, atom);
+    m_IR.set_assign(atom);
     if (con_section != m_section) {
         m_errors += tr("Not in constant section (CON) but found %1.")
                     .arg(tr("assignment"));
@@ -4752,7 +4763,7 @@ bool P2Asm::asm_enum_initial()
     next();             // skip over "#"
     m_advance = 0;      // Don't advance PC
     P2Atom atom = parse_expression();
-    m_IR.set_equ(atom);
+    m_IR.set_assign(atom);
 
     if (con_section != m_section) {
         m_errors += tr("Not in constant section (CON) but found %1.")
@@ -4800,7 +4811,7 @@ bool P2Asm::asm_enum_continue()
     m_advance = 0;      // Don't advance PC
     m_IR.set_as_IR(false);
     P2Atom atom = m_enum;
-    m_IR.set_equ(atom);
+    m_IR.set_assign(atom);
 
 
     if (con_section != m_section) {
@@ -4884,18 +4895,38 @@ bool P2Asm::asm_ORG()
     next();
     m_advance = 0;      // Don't advance PC
     P2Atom atom = parse_expression();
-    p2_LONG value = atom.get_addr(p2_cog);
-    if (value >= HUB_ADDR0) {
-        m_errors += tr("COG origin ($%1) exceeds limit $%2.")
-                    .arg(value / 4, 0, 16, QChar('0'))
-                    .arg(0x1ff, 3, 16, QChar('0'));
+    p2_LONG value = atom.get_long();
+    p2_LONG limit = (value < COG_SIZE ? COG_SIZE : COG_SIZE + LUT_SIZE) - 1;
+    if (optional_COMMA()) {
+        // limit specified
+        P2Atom atom2 = parse_expression();
+        limit = atom2.get_long();
+    }
+
+    if (limit > 0 && limit < COG_SIZE + LUT_SIZE) {
+        m_coglimit = limit;
+    } else {
+        m_errors += tr("COG limit ($%1) exceeds $%2.")
+                    .arg(limit, 0, 16, QChar('0'))
+                    .arg(COG_SIZE + LUT_SIZE - 1, 3, 16, QChar('0'));
         emit Error(m_pass, m_lineno, m_errors.last());
+        limit = COG_SIZE + LUT_SIZE;
+    }
+
+    if (value >= limit) {
+        m_errors += tr("COG origin ($%1) exceeds limit $%2.")
+                    .arg(value, 0, 16, QChar('0'))
+                    .arg(limit, 3, 16, QChar('0'));
+        emit Error(m_pass, m_lineno, m_errors.last());
+        value = m_cogaddr;
     } else {
         m_cogaddr = value;
     }
+
     m_hubmode = false;
-    m_IR.set_equ(m_cogaddr);
-    m_symbols->set_value(m_symbol, P2Union(value));
+    m_IR.set_assign(m_cogaddr);
+    if (!m_symbol.isEmpty())
+        m_symbols->set_atom(m_symbol, atom);
     return end_of_line();
 }
 
@@ -4910,22 +4941,34 @@ bool P2Asm::asm_ORGF()
     m_advance = 0;      // Don't advance PC
     m_IR.set_as_IR(false);
     P2Atom atom = parse_expression();
-    p2_LONG value = atom.get_addr(p2_cog);
+
+    if (m_hubmode) {
+        m_errors += tr("%1 found in HUB mode.")
+                    .arg(Token.string(t_ORGF));
+        emit Error(m_pass, m_lineno, m_errors.last());
+        m_idx = m_cnt;
+        return end_of_line();
+    }
+
+    p2_LONG value = atom.get_long();
     if (value >= HUB_ADDR0) {
         m_errors += tr("COG origin ($%1) exceeds limit $%2.")
                     .arg(value / 4, 0, 16, QChar('0'))
                     .arg(0x1ff, 3, 16, QChar('0'));
         emit Error(m_pass, m_lineno, m_errors.last());
-        value = 0;
+        value = m_cogaddr;
+        atom.set_value(P2Union(value));
     }
-    for (p2_LONG pc = m_cogaddr; pc < value; pc += 4) {
-        p2_LONG empty = 0;
-        m_data.add_long(empty);
-    }
+
+    for (p2_LONG pc = m_cogaddr; pc < value; pc += 4)
+        m_data.add_long(0);
+
     m_hubmode = false;
     m_advance = m_data.size();
-    m_IR.set_equ(m_cogaddr);
-    m_symbols->set_value(m_symbol, P2Union(value));
+    m_IR.set_assign(atom);
+    if (!m_symbol.isEmpty())
+        m_symbols->set_value(m_symbol, atom.value());
+
     return end_of_line();
 }
 
@@ -4940,7 +4983,7 @@ bool P2Asm::asm_ORGH()
     m_advance = 0;      // Don't advance PC
     m_IR.set_as_IR(false);
     P2Atom atom = parse_expression();
-    p2_LONG value = atom.isEmpty() ? HUB_ADDR0 : atom.get_addr(p2_hub);
+    p2_LONG value = atom.isEmpty() ? m_hubaddr : atom.get_long();
     if (value <= HUB_ADDR0)
         value *= 4;
     if (value >= MEM_SIZE) {
@@ -4950,10 +4993,11 @@ bool P2Asm::asm_ORGH()
         value = MEM_SIZE;
     }
     m_hubmode = true;
-    m_cogaddr = value;  // TODO: correct?
     m_hubaddr = value;
-    m_IR.set_equ(m_hubaddr);
-    m_symbols->set_value(m_symbol, P2Union(value));
+    m_IR.set_assign(m_hubaddr);
+    if (!m_symbol.isEmpty())
+        m_symbols->set_value(m_symbol, P2Union(value));
+
     return end_of_line();
 }
 
