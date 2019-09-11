@@ -592,8 +592,8 @@ void P2Atom::complement1(bool flag)
         m_value.set_word(~m_value.get_word());
         break;
     case ut_Addr:
-        m_value.set_addr(~m_value.get_addr(false),
-                         ~m_value.get_addr(true));
+        m_value.set_addr(~m_value.get_addr(p2_cog),
+                         ~m_value.get_addr(p2_hub));
         break;
     case ut_Long:
         m_value.set_long(~m_value.get_long());
@@ -640,8 +640,8 @@ void P2Atom::complement2(bool flag)
         m_value.set_word(-m_value.get_word());
         break;
     case ut_Addr:
-        m_value.set_addr(-m_value.get_addr(false),
-                         -m_value.get_addr(true));
+        m_value.set_addr(-m_value.get_addr(p2_cog),
+                         -m_value.get_addr(p2_hub));
         break;
     case ut_Long:
         m_value.set_long(-m_value.get_long());
@@ -681,8 +681,8 @@ void P2Atom::logical_not(bool flag)
         m_value.set_word(!m_value.get_word());
         break;
     case ut_Addr:
-        m_value.set_addr(!m_value.get_addr(false),
-                         !m_value.get_addr(true));
+        m_value.set_addr(!m_value.get_addr(p2_cog),
+                         !m_value.get_addr(p2_hub));
         break;
     case ut_Long:
         m_value.set_long(!m_value.get_long());
@@ -741,8 +741,8 @@ void P2Atom::unary_dec(const p2_LONG val)
         m_value.set_word(static_cast<p2_WORD>(m_value.get_word() - val));
         break;
     case ut_Addr:
-        m_value.set_addr(m_value.get_addr(false) - val,
-                         m_value.get_addr(true) - val);
+        m_value.set_addr(m_value.get_addr(p2_cog) - val,
+                         m_value.get_addr(p2_hub) - val);
         break;
     case ut_Long:
         m_value.set_long(m_value.get_long() - val);
@@ -793,8 +793,8 @@ void P2Atom::unary_inc(const p2_LONG val)
         m_value.set_word(static_cast<p2_WORD>(m_value.get_word() + val));
         break;
     case ut_Addr:
-        m_value.set_addr(m_value.get_addr(false) + val,
-                         m_value.get_addr(true) + val);
+        m_value.set_addr(m_value.get_addr(p2_cog) + val,
+                         m_value.get_addr(p2_hub) + val);
         break;
     case ut_Long:
         m_value.set_long(m_value.get_long() + val);
@@ -845,8 +845,8 @@ void P2Atom::arith_mul(const P2Atom& atom)
         m_value.set_word(m_value.get_word() * atom.get_word());
         break;
     case ut_Addr:
-        m_value.set_addr(m_value.get_addr(false) * atom.get_long(),
-                         m_value.get_addr(true) * atom.get_long());
+        m_value.set_addr(m_value.get_addr(p2_cog) * atom.get_addr(p2_cog),
+                         m_value.get_addr(p2_hub) * atom.get_addr(p2_hub));
         break;
     case ut_Long:
         m_value.set_long(m_value.get_long() * atom.get_long());
@@ -906,10 +906,10 @@ void P2Atom::arith_div(const P2Atom& atom)
         break;
     case ut_Addr:
         {
-            p2_LONG divisor = atom.get_long();
+            p2_LONG divisor = atom.get_addr(p2_cog);
             if (0 != divisor)
-                m_value.set_addr(m_value.get_addr(false) / divisor,
-                                 m_value.get_addr(true) / divisor);
+                m_value.set_addr(m_value.get_addr(p2_cog) / divisor,
+                                 m_value.get_addr(p2_hub) / divisor);
         }
         break;
     case ut_Long:
@@ -978,10 +978,10 @@ void P2Atom::arith_mod(const P2Atom& atom)
         break;
     case ut_Addr:
         {
-            p2_LONG divisor = atom.get_long();
+            p2_LONG divisor = atom.get_addr(p2_cog);
             if (0 != divisor)
-                m_value.set_addr(m_value.get_addr(false) % divisor,
-                                 m_value.get_addr(true) % divisor);
+                m_value.set_addr(m_value.get_addr(p2_cog) % divisor,
+                                 m_value.get_addr(p2_hub) % divisor);
         }
         break;
     case ut_Long:
@@ -1037,8 +1037,8 @@ void P2Atom::arith_add(const P2Atom& atom)
         m_value.set_word(m_value.get_word() + atom.get_word());
         break;
     case ut_Addr:
-        m_value.set_addr(m_value.get_addr(false) + atom.get_long(),
-                         m_value.get_addr(true) + atom.get_long());
+        m_value.set_addr(m_value.get_addr(p2_cog) + atom.get_addr(p2_cog),
+                         m_value.get_addr(p2_hub) + atom.get_addr(p2_hub));
         break;
     case ut_Long:
         m_value.set_long(m_value.get_long() + atom.get_long());
@@ -1087,8 +1087,8 @@ void P2Atom::arith_sub(const P2Atom& atom)
         m_value.set_word(m_value.get_word() - atom.get_word());
         break;
     case ut_Addr:
-        m_value.set_addr(m_value.get_addr(false) - atom.get_long(),
-                         m_value.get_addr(true) - atom.get_long());
+        m_value.set_addr(m_value.get_addr(p2_cog) - atom.get_addr(p2_cog),
+                         m_value.get_addr(p2_hub) - atom.get_addr(p2_hub));
         break;
     case ut_Long:
         m_value.set_long(m_value.get_long() - atom.get_long());
@@ -1136,8 +1136,8 @@ void P2Atom::binary_shl(const P2Atom& atom)
         m_value.set_word(static_cast<p2_WORD>(m_value.get_word() << atom.get_word()));
         break;
     case ut_Addr:
-        m_value.set_addr(m_value.get_addr(false) << atom.get_long(),
-                         m_value.get_addr(true) << atom.get_long());
+        m_value.set_addr(m_value.get_addr(p2_cog) << atom.get_addr(p2_cog),
+                         m_value.get_addr(p2_hub) << atom.get_addr(p2_hub));
         break;
     case ut_Long:
         m_value.set_long(m_value.get_long() << atom.get_long());
@@ -1194,8 +1194,8 @@ void P2Atom::binary_shr(const P2Atom& atom)
         m_value.set_word(m_value.get_word() >> atom.get_word());
         break;
     case ut_Addr:
-        m_value.set_addr(m_value.get_addr(false) >> atom.get_long(),
-                         m_value.get_addr(true) >> atom.get_long());
+        m_value.set_addr(m_value.get_addr(p2_cog) >> atom.get_addr(p2_cog),
+                         m_value.get_addr(p2_hub) >> atom.get_addr(p2_hub));
         break;
     case ut_Long:
         m_value.set_long(m_value.get_long() >> atom.get_long());
@@ -1248,8 +1248,8 @@ void P2Atom::binary_and(const P2Atom& atom)
         m_value.set_word(m_value.get_word() & atom.get_word());
         break;
     case ut_Addr:
-        m_value.set_addr(m_value.get_addr(false) & atom.get_long(),
-                         m_value.get_addr(true) & atom.get_long());
+        m_value.set_addr(m_value.get_addr(p2_cog) & atom.get_addr(p2_cog),
+                         m_value.get_addr(p2_hub) & atom.get_addr(p2_hub));
         break;
     case ut_Long:
         m_value.set_long(m_value.get_long() & atom.get_long());
@@ -1294,8 +1294,8 @@ void P2Atom::binary_xor(const P2Atom& atom)
         m_value.set_word(m_value.get_word() ^ atom.get_word());
         break;
     case ut_Addr:
-        m_value.set_addr(m_value.get_addr(false) ^ atom.get_long(),
-                         m_value.get_addr(true) ^ atom.get_long());
+        m_value.set_addr(m_value.get_addr(p2_cog) ^ atom.get_addr(p2_cog),
+                         m_value.get_addr(p2_hub) ^ atom.get_addr(p2_hub));
         break;
     case ut_Long:
         m_value.set_long(m_value.get_long() ^ atom.get_long());
@@ -1340,8 +1340,8 @@ void P2Atom::binary_or(const P2Atom& atom)
         m_value.set_word(m_value.get_word() | atom.get_word());
         break;
     case ut_Addr:
-        m_value.set_addr(m_value.get_addr(false) | atom.get_long(),
-                         m_value.get_addr(true) | atom.get_long());
+        m_value.set_addr(m_value.get_addr(p2_cog) | atom.get_addr(p2_cog),
+                         m_value.get_addr(p2_hub) | atom.get_addr(p2_hub));
         break;
     case ut_Long:
         m_value.set_long(m_value.get_long() | atom.get_long());
@@ -1382,8 +1382,8 @@ void P2Atom::binary_rev()
         m_value.set_word(P2Util::reverse(m_value.get_word()));
         break;
     case ut_Addr:
-        m_value.set_addr(P2Util::reverse(m_value.get_addr(false)),
-                         P2Util::reverse(m_value.get_addr(true)));
+        m_value.set_addr(P2Util::reverse(m_value.get_addr(p2_cog)),
+                         P2Util::reverse(m_value.get_addr(p2_hub)));
         break;
     case ut_Long:
         m_value.set_long(P2Util::reverse(m_value.get_long()));
@@ -1415,8 +1415,8 @@ void P2Atom::reverse(const P2Atom& atom)
         m_value.set_word(static_cast<p2_WORD>(P2Util::reverse(m_value.get_quad(), atom.get_long())));
         break;
     case ut_Addr:
-        m_value.set_addr(static_cast<p2_LONG>(P2Util::reverse(m_value.get_addr(false), atom.get_long())),
-                         static_cast<p2_LONG>(P2Util::reverse(m_value.get_addr(true), atom.get_long())));
+        m_value.set_addr(static_cast<p2_LONG>(P2Util::reverse(m_value.get_addr(p2_cog), atom.get_addr(p2_cog))),
+                         static_cast<p2_LONG>(P2Util::reverse(m_value.get_addr(p2_hub), atom.get_addr(p2_hub))));
         break;
     case ut_Long:
         m_value.set_long(static_cast<p2_LONG>(P2Util::reverse(m_value.get_quad(), atom.get_long())));
@@ -1642,7 +1642,7 @@ bool P2Atom::operator==(const P2Atom& other)
     case ut_Word:
         return m_value.get_word() == other.m_value.get_word();
     case ut_Addr:
-        return m_value.get_addr(true) == other.m_value.get_addr(true);
+        return m_value.get_addr(p2_hub) == other.m_value.get_addr(p2_hub);
     case ut_Long:
         return m_value.get_long() == other.m_value.get_long();
     case ut_Quad:
@@ -1672,7 +1672,7 @@ bool P2Atom::operator<(const P2Atom& other)
     case ut_Word:
         return m_value.get_word() < other.m_value.get_word();
     case ut_Addr:
-        return m_value.get_addr(true) < other.m_value.get_addr(true);
+        return m_value.get_addr(p2_hub) < other.m_value.get_addr(p2_hub);
     case ut_Long:
         return m_value.get_long() < other.m_value.get_long();
     case ut_Quad:
@@ -1697,7 +1697,7 @@ bool P2Atom::operator<=(const P2Atom& other)
     case ut_Word:
         return m_value.get_word() <= other.m_value.get_word();
     case ut_Addr:
-        return m_value.get_addr(true) <= other.m_value.get_addr(true);
+        return m_value.get_addr(p2_hub) <= other.m_value.get_addr(p2_hub);
     case ut_Long:
         return m_value.get_long() <= other.m_value.get_long();
     case ut_Quad:
@@ -1722,7 +1722,7 @@ bool P2Atom::operator>(const P2Atom& other)
     case ut_Word:
         return m_value.get_word() > other.m_value.get_word();
     case ut_Addr:
-        return m_value.get_addr(true) > other.m_value.get_addr(true);
+        return m_value.get_addr(p2_hub) > other.m_value.get_addr(p2_hub);
     case ut_Long:
         return m_value.get_long() > other.m_value.get_long();
     case ut_Quad:
@@ -1747,7 +1747,7 @@ bool P2Atom::operator>=(const P2Atom& other)
     case ut_Word:
         return m_value.get_word() >= other.m_value.get_word();
     case ut_Addr:
-        return m_value.get_addr(true) >= other.m_value.get_addr(true);
+        return m_value.get_addr(p2_hub) >= other.m_value.get_addr(p2_hub);
     case ut_Long:
         return m_value.get_long() >= other.m_value.get_long();
     case ut_Quad:

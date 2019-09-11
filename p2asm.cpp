@@ -2623,24 +2623,19 @@ bool P2Asm::eol()
  */
 P2Atom P2Asm::make_atom()
 {
-    P2Atom atom;
     switch (m_instr) {
     case t_BYTE:
-        atom.set_type(ut_Byte);
-        break;
+        return P2Atom(ut_Byte);
     case t_WORD:
-        atom.set_type(ut_Word);
-        break;
+        return P2Atom(ut_Word);
     case t_LONG:
-        atom.set_type(ut_Long);
-        break;
+        return P2Atom(ut_Long);
     case t_FILE:
-        atom.set_type(ut_String);
-        break;
+        return P2Atom(ut_String);
     default:
-        atom.set_type(ut_Long);
+        break;
     }
-    return atom;
+    return P2Atom(ut_Addr);
 }
 
 /**
