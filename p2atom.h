@@ -73,20 +73,18 @@ public:
     explicit P2Atom(p2_Union_e type = ut_Invalid);
     P2Atom(const P2Atom& other);
     P2Atom(bool _bool);
-    P2Atom(p2_BYTE _byte);
-    P2Atom(p2_WORD _word);
-    P2Atom(p2_LONG _long);
-    P2Atom(p2_QUAD _quad);
-    P2Atom(p2_REAL _real);
-    P2Atom(p2_LONG _cog, p2_LONG _hub);
+    P2Atom(const p2_BYTE _byte);
+    P2Atom(const p2_WORD _word);
+    P2Atom(const p2_LONG _long);
+    P2Atom(const p2_QUAD _quad);
+    P2Atom(const p2_REAL _real);
+    P2Atom(const p2_LONG _cog, const p2_LONG _hub);
 
     void clear(p2_Union_e type = ut_Invalid);
     bool isNull() const;
     bool isEmpty() const;
     bool isZero() const;
     bool isValid() const;
-    p2_Traits_e traits() const;
-    bool has_trait(const p2_Traits_e trait) const;
 
     int size() const;
     int usize() const;
@@ -96,41 +94,42 @@ public:
     const QString type_name() const;
     void set_type(p2_Union_e type);
 
+    p2_Traits_e traits() const;
     bool set_traits(p2_Traits_e traits);
     bool add_trait(p2_Traits_e traits);
     bool clr_trait(p2_Traits_e traits);
+    bool has_trait(const p2_Traits_e trait) const;
 
-    const P2Union& value() const;
-    void set_value(const P2Union& value);
+    const P2Union value() const;
+    void set_value(const P2Union value);
 
-    const P2Union& index() const;
+    const P2Union index() const;
+    void set_index(const QVariant val);
     p2_LONG index_long() const;
 
-    void set_int(const int& _int);
-    void set_bool(const bool& _bool);
-    void set_char(const char& _char);
-    void set_byte(const p2_BYTE& _byte);
-    void set_word(const p2_WORD& _word);
-    void set_addr(const p2_LONG& _cog, const p2_LONG& _hub);
-    void set_long(const p2_LONG& _long);
-    void set_quad(const p2_QUAD& _quad);
-    void set_real(const p2_REAL& _real);
+    void set_int(const int _int);
+    void set_bool(const bool _bool);
+    void set_char(const char _char);
+    void set_byte(const p2_BYTE _byte);
+    void set_word(const p2_WORD _word);
+    void set_addr(const p2_LONG _cog, const p2_LONG _hub);
+    void set_long(const p2_LONG _long);
+    void set_quad(const p2_QUAD _quad);
+    void set_real(const p2_REAL _real);
     void set_chars(const p2_CHARS& _chars);
     void set_bytes(const p2_BYTES& _bytes);
     void set_words(const p2_WORDS& _words);
     void set_longs(const p2_LONGS& _longs);
     void set_array(const QByteArray& _array);
 
-    void set_index(const QVariant& val);
-
-    void add_int(const int& _int);
-    void add_bool(const bool& _bool);
-    void add_char(const char& _char);
-    void add_byte(const p2_BYTE& _byte);
-    void add_word(const p2_WORD& _word);
-    void add_long(const p2_LONG& _long);
-    void add_quad(const p2_QUAD& _quad);
-    void add_real(const p2_REAL& _real);
+    void add_int(const int _int);
+    void add_bool(const bool _bool);
+    void add_char(const char _char);
+    void add_byte(const p2_BYTE _byte);
+    void add_word(const p2_WORD _word);
+    void add_long(const p2_LONG _long);
+    void add_quad(const p2_QUAD _quad);
+    void add_real(const p2_REAL _real);
     void add_chars(const p2_CHARS& _chars);
     void add_bytes(const p2_BYTES& _bytes);
     void add_words(const p2_WORDS& _words);
@@ -143,7 +142,6 @@ public:
     p2_BYTE get_byte() const;
     p2_WORD get_word() const;
     p2_LONG get_long() const;
-    p2_ORIGIN_t get_addr() const;
     p2_LONG get_addr(bool hub) const;
     p2_QUAD get_quad() const;
     p2_REAL get_real() const;
@@ -182,6 +180,7 @@ public:
     bool operator<=(const P2Atom& other);
     bool operator>(const P2Atom& other);
     bool operator>=(const P2Atom& other);
+
     P2Atom& operator~();
     P2Atom& operator-();
     P2Atom& operator!();

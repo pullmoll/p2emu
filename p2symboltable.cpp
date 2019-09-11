@@ -86,17 +86,6 @@ bool P2SymbolTableClass::insert(const P2SymbolClass& symbol)
 }
 
 /**
- * @brief Insert a symbol name / value into the symbol table
- * @param name name of the new symbol
- * @param value initial value of the new symbol
- * @return false if the symbol was already in the table, or true if inserted
- */
-bool P2SymbolTableClass::insert(const QString& name, const P2Union& value)
-{
-    return insert(P2SymbolClass(name, value));
-}
-
-/**
  * @brief Insert a symbol name / atom into the symbol table
  * @param name name of the new symbol
  * @param atom atom of the new symbol
@@ -115,9 +104,10 @@ bool P2SymbolTableClass::insert(const QString& name, const P2Atom& atom)
  */
 bool P2SymbolTableClass::set_value(const QString& name, const P2Union& value)
 {
-    if (!m_symbols.contains(name))
+    P2Symbol symbol = m_symbols.value(name);
+    if (symbol.isNull())
         return false;
-    m_symbols[name]->set_value(value);
+    symbol->set_value(value);
     return true;
 }
 
@@ -196,12 +186,11 @@ bool P2SymbolTableClass::add_reference(int lineno, const QString& name, const P2
  * @brief Return a symbol's value
  * The symbol values are stored as P2Union
  */
-const P2Union& P2SymbolTableClass::atom(const QString& name) const
+P2Union P2SymbolTableClass::atom(const QString& name) const
 {
-    static const P2Union empty;
-    const P2Symbol sym = m_symbols.value(name);
+    P2Symbol sym = m_symbols.value(name);
     if (sym.isNull())
-        return empty;
+        return P2Union(0);
     return sym->value();
 }
 

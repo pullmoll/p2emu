@@ -98,8 +98,8 @@ void P2OpcodeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
         const QRect box = opt.rect;
         QColor bgd = Colors.color("Light Blue");
         bgd.setAlpha(50);
-        const QColor tl = bgd.lighter(110);
-        const QColor br = bgd.darker(110);
+        const QColor tl = bgd.lighter(140);
+        const QColor br = bgd.darker(140);
         // painter->setBackgroundMode(Qt::OpaqueMode);
         painter->fillRect(box, bgd);
         painter->setPen(tl);

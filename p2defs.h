@@ -104,10 +104,10 @@ static constexpr p2_LONG COG_SHIFT = 9;
 static constexpr p2_LONG COG_SIZE = 1u << COG_SHIFT;
 
 //! Mask for the COG memory LONGs
-static constexpr p2_LONG COG_MASK = (COG_SIZE-1);
+static constexpr p2_LONG COG_MASK = COG_SIZE-1;
 
 //! Lowest LUT memory address (in BYTEs)
-static constexpr p2_LONG LUT_ADDR0 = (COG_ADDR0+COG_SIZE*4u);
+static constexpr p2_LONG LUT_ADDR0 = COG_ADDR0+COG_SIZE*4u;
 
 //! COG shift value
 static constexpr p2_LONG LUT_SHIFT = 9;
@@ -116,10 +116,10 @@ static constexpr p2_LONG LUT_SHIFT = 9;
 static constexpr p2_LONG LUT_SIZE = 1u << LUT_SHIFT;
 
 //! Mask for the LUT memory LONGs
-static constexpr p2_LONG LUT_MASK = (LUT_SIZE-1);
+static constexpr p2_LONG LUT_MASK = LUT_SIZE-1;
 
 //! Lowest HUB memory address (in BYTEs)
-static constexpr p2_LONG HUB_ADDR0 = (LUT_ADDR0+LUT_SIZE*4);
+static constexpr p2_LONG HUB_ADDR0 = LUT_ADDR0+LUT_SIZE*4;
 
 //! The most significant bit in a 32 bit word
 static constexpr p2_LONG MSB = 1u << 31;
@@ -331,6 +331,9 @@ typedef enum {
 }   p2_Union_e;
 Q_DECLARE_METATYPE(p2_Union_e);
 
+static constexpr bool p2_cog = false;
+static constexpr bool p2_hub = true;
+
 /**
  * @brief Union of the integral Propeller2 types to store in a QVector
  */
@@ -359,17 +362,20 @@ public:
 };
 
 //!< A typed union member
-typedef QPair<p2_Union_e,p2_Union_t> TypedVar;
-Q_DECLARE_METATYPE(TypedVar);
+typedef struct {
+    p2_Union_e type;
+    p2_Union_t value;
+} P2TypedValue;
+Q_DECLARE_METATYPE(P2TypedValue);
 
 //! P2Atom traits
 typedef enum {
     tr_none         = 0,            //!< no special trait
     tr_IMMEDIATE    = (1 <<  0),    //!< expression started with '#'
-    tr_AUGMENTED    = (1 <<  1),    //!< expression started with '##'
-    tr_RELATIVE     = (1 <<  2),    //!< expression started with '@'
-    tr_ABSOLUTE     = (1 <<  3),    //!< expression contained a '\'
-    tr_ADDRESS_HUB  = (1 <<  4),    //!< expression started with '#@'
+    tr_RELATIVE     = (1 <<  1),    //!< expression started with '@'
+    tr_ABSOLUTE     = (1 <<  2),    //!< expression contained a '\'
+    tr_ADDRESS_HUB  = (1 <<  3),    //!< expression started with '#@'
+    tr_AUGMENTED    = (1 <<  4),    //!< expression started with '##'
     tr_RELATIVE_HUB = (1 <<  5),    //!< expression started with '##@'
     tr_INDEX        = (1 <<  6),    //!< expression contains an index: '[' expr ']'
     tr_DEC          = (1 <<  7),    //!< PTRA/PTRB with decrement (--)

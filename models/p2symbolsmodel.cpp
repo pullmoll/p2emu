@@ -175,8 +175,8 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
     const bool has_symbol = !symbol.isNull();
     const P2Word& definition = has_symbol ? symbol->definition() : P2Word();
     const int definition_lineno = definition.lineno();
-    const P2Union& value = has_symbol ? symbol->value() : P2Union();
-    const p2_Union_e type = value.type();
+    const P2Atom& atom = has_symbol ? symbol->atom() : P2Atom();
+    const p2_Union_e type = atom.type();
 
     switch (role) {
     case Qt::DisplayRole:
@@ -199,7 +199,7 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
             break;
 
         case c_Value:
-            result = P2Union::str(value);
+            result = atom.str();
             break;
         }
         break;
@@ -226,7 +226,7 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
             break;
 
         case c_Value:
-            result = QVariant::fromValue(value);
+            result = QVariant::fromValue(atom);
             break;
         }
         break;

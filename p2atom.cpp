@@ -56,37 +56,37 @@ P2Atom::P2Atom(bool _bool)
     m_value.set_bool(_bool);
 }
 
-P2Atom::P2Atom(p2_BYTE _byte)
+P2Atom::P2Atom(const p2_BYTE _byte)
     : P2Atom()
 {
     m_value.set_byte(_byte);
 }
 
-P2Atom::P2Atom(p2_WORD _word)
+P2Atom::P2Atom(const p2_WORD _word)
     : P2Atom()
 {
     m_value.set_word(_word);
 }
 
-P2Atom::P2Atom(p2_LONG _long)
+P2Atom::P2Atom(const p2_LONG _long)
     : P2Atom()
 {
     m_value.set_long(_long);
 }
 
-P2Atom::P2Atom(p2_QUAD _quad)
+P2Atom::P2Atom(const p2_QUAD _quad)
     : P2Atom()
 {
     m_value.set_quad(_quad);
 }
 
-P2Atom::P2Atom(p2_REAL _real)
+P2Atom::P2Atom(const p2_REAL _real)
     : P2Atom()
 {
     m_value.set_real(_real);
 }
 
-P2Atom::P2Atom(p2_LONG _cog, p2_LONG _hub)
+P2Atom::P2Atom(const p2_LONG _cog, const p2_LONG _hub)
     : P2Atom()
 {
     m_value.set_addr(_cog, _hub);
@@ -140,25 +140,6 @@ bool P2Atom::isValid() const
 }
 
 /**
- * @brief Return the traits of the atom
- * @return Enumeration value from p2_traits_e
- */
-p2_Traits_e P2Atom::traits() const
-{
-    return m_trait;
-}
-
-/**
- * @brief Return true, if the traits of the atom contain %trait
- * @param trait Enumeration value from p2_traits_e
- * @return true if set, or false otherwise
- */
-bool P2Atom::has_trait(const p2_Traits_e trait) const
-{
-    return p2_has_trait(m_trait, trait);
-}
-
-/**
  * @brief Return the size of the data in the atom in bytes
  * @return size of m_value in bytes
  */
@@ -203,7 +184,7 @@ const QString P2Atom::type_name() const
  * @brief Set the index of the atom
  * @param val new index value
  */
-void P2Atom::set_index(const QVariant& val)
+void P2Atom::set_index(const QVariant val)
 {
     if (val.canConvert(mt_P2Atom)) {
         P2Atom index = qvariant_cast<P2Atom>(val);
@@ -224,6 +205,15 @@ void P2Atom::set_index(const QVariant& val)
 void P2Atom::set_type(p2_Union_e type)
 {
     m_value.set_type(type);
+}
+
+/**
+ * @brief Return the traits of the atom
+ * @return Enumeration value from p2_traits_e
+ */
+p2_Traits_e P2Atom::traits() const
+{
+    return m_trait;
 }
 
 /**
@@ -266,10 +256,20 @@ bool P2Atom::clr_trait(p2_Traits_e trait)
 }
 
 /**
+ * @brief Return true, if the traits of the atom contain %trait
+ * @param trait Enumeration value from p2_traits_e
+ * @return true if set, or false otherwise
+ */
+bool P2Atom::has_trait(const p2_Traits_e trait) const
+{
+    return p2_has_trait(m_trait, trait);
+}
+
+/**
  * @brief Return the atom's value
  * @return const reference to the value
  */
-const P2Union& P2Atom::value() const
+const P2Union P2Atom::value() const
 {
     return m_value;
 }
@@ -278,7 +278,7 @@ const P2Union& P2Atom::value() const
  * @brief Set the atom's value
  * @param value const reference to a new value
  */
-void P2Atom::set_value(const P2Union& value)
+void P2Atom::set_value(const P2Union value)
 {
     m_value = value;
 }
@@ -287,7 +287,7 @@ void P2Atom::set_value(const P2Union& value)
  * @brief Return the atom's index
  * @return const reference to the index
  */
-const P2Union& P2Atom::index() const
+const P2Union P2Atom::index() const
 {
     return m_index;
 }
@@ -306,7 +306,7 @@ p2_LONG P2Atom::index_long() const
  * NB: The atom's value type becomes ut_Long
  * @param _int to set
  */
-void P2Atom::set_int(const int& _int)
+void P2Atom::set_int(const int _int)
 {
     m_value.set_int(_int);
 }
@@ -316,7 +316,7 @@ void P2Atom::set_int(const int& _int)
  * NB: The atom's value type becomes ut_Bool
  * @param _bool to set
  */
-void P2Atom::set_bool(const bool& _bool)
+void P2Atom::set_bool(const bool _bool)
 {
     m_value.set_bool(_bool);
 }
@@ -326,7 +326,7 @@ void P2Atom::set_bool(const bool& _bool)
  * NB: The atom's value type becomes ut_Byte
  * @param _char to set
  */
-void P2Atom::set_char(const char& _char)
+void P2Atom::set_char(const char _char)
 {
     m_value.set_char(_char);
 }
@@ -336,7 +336,7 @@ void P2Atom::set_char(const char& _char)
  * NB: The atom's value type becomes ut_Byte
  * @param _byte to set
  */
-void P2Atom::set_byte(const p2_BYTE& _byte)
+void P2Atom::set_byte(const p2_BYTE _byte)
 {
     m_value.set_byte(_byte);
 }
@@ -346,7 +346,7 @@ void P2Atom::set_byte(const p2_BYTE& _byte)
  * NB: The atom's value type becomes ut_Word
  * @param _word to set
  */
-void P2Atom::set_word(const p2_WORD& _word)
+void P2Atom::set_word(const p2_WORD _word)
 {
     m_value.set_word(_word);
 }
@@ -356,7 +356,7 @@ void P2Atom::set_word(const p2_WORD& _word)
  * NB: The atom's value type becomes ut_Long
  * @param _long to set
  */
-void P2Atom::set_long(const p2_LONG& _long)
+void P2Atom::set_long(const p2_LONG _long)
 {
     m_value.set_long(_long);
 }
@@ -367,7 +367,7 @@ void P2Atom::set_long(const p2_LONG& _long)
  * @param _cog address to set
  * @param _hub address to set
  */
-void P2Atom::set_addr(const p2_LONG& _cog, const p2_LONG& _hub)
+void P2Atom::set_addr(const p2_LONG _cog, const p2_LONG _hub)
 {
     m_value.set_addr(_cog, _hub);
 }
@@ -377,7 +377,7 @@ void P2Atom::set_addr(const p2_LONG& _cog, const p2_LONG& _hub)
  * NB: The atom's value type becomes ut_Quad
  * @param _quadto set
  */
-void P2Atom::set_quad(const p2_QUAD& _quad)
+void P2Atom::set_quad(const p2_QUAD _quad)
 {
     m_value.set_quad(_quad);
 }
@@ -387,7 +387,7 @@ void P2Atom::set_quad(const p2_QUAD& _quad)
  * NB: The atom's value type becomes ut_Real
  * @param _real to set
  */
-void P2Atom::set_real(const p2_REAL& _real)
+void P2Atom::set_real(const p2_REAL _real)
 {
     m_value.set_real(_real);
 }
@@ -446,7 +446,7 @@ void P2Atom::set_array(const QByteArray& _array)
  * @brief Append a single int to this atom
  * @param _int to append
  */
-void P2Atom::add_int(const int& _int)
+void P2Atom::add_int(const int _int)
 {
     m_value.add_int(_int);
 }
@@ -455,7 +455,7 @@ void P2Atom::add_int(const int& _int)
  * @brief Append a single bool to this atom
  * @param _bool to append
  */
-void P2Atom::add_bool(const bool& _bool)
+void P2Atom::add_bool(const bool _bool)
 {
     m_value.add_bool(_bool);
 }
@@ -464,7 +464,7 @@ void P2Atom::add_bool(const bool& _bool)
  * @brief Append a single char to this atom
  * @param _char to append
  */
-void P2Atom::add_char(const char& _char)
+void P2Atom::add_char(const char _char)
 {
     m_value.add_char(_char);
 }
@@ -473,7 +473,7 @@ void P2Atom::add_char(const char& _char)
  * @brief Append a single p2_BYTE to this atom
  * @param _byte to append
  */
-void P2Atom::add_byte(const p2_BYTE& _byte)
+void P2Atom::add_byte(const p2_BYTE _byte)
 {
     m_value.add_byte(_byte);
 }
@@ -482,7 +482,7 @@ void P2Atom::add_byte(const p2_BYTE& _byte)
  * @brief Append a single p2_WORD to this atom
  * @param _word to append
  */
-void P2Atom::add_word(const p2_WORD& _word)
+void P2Atom::add_word(const p2_WORD _word)
 {
     m_value.add_word(_word);
 }
@@ -491,7 +491,7 @@ void P2Atom::add_word(const p2_WORD& _word)
  * @brief Append a single p2_LONG to this atom
  * @param _long to append
  */
-void P2Atom::add_long(const p2_LONG& _long)
+void P2Atom::add_long(const p2_LONG _long)
 {
     m_value.add_long(_long);
 }
@@ -500,7 +500,7 @@ void P2Atom::add_long(const p2_LONG& _long)
  * @brief Append a single p2_QUAD to this atom
  * @param _quad to append
  */
-void P2Atom::add_quad(const p2_QUAD& _quad)
+void P2Atom::add_quad(const p2_QUAD _quad)
 {
     m_value.add_quad(_quad);
 }
@@ -509,7 +509,7 @@ void P2Atom::add_quad(const p2_QUAD& _quad)
  * @brief Append a single p2_REAL to this atom
  * @param _real to append
  */
-void P2Atom::add_real(const p2_REAL& _real)
+void P2Atom::add_real(const p2_REAL _real)
 {
     m_value.add_real(_real);
 }
@@ -1448,8 +1448,8 @@ void P2Atom::encode(const P2Atom& atom)
         m_value.set_word(P2Util::encode(atom.get_word()));
         break;
     case ut_Addr:
-        m_value.set_addr(P2Util::encode(atom.get_addr(false)),
-                         P2Util::encode(atom.get_addr(true)));
+        m_value.set_addr(P2Util::encode(atom.get_addr(p2_cog)),
+                         P2Util::encode(atom.get_addr(p2_hub)));
         break;
     case ut_Long:
         m_value.set_long(P2Util::encode(atom.get_long()));
@@ -1481,8 +1481,8 @@ void P2Atom::decode(const P2Atom& atom)
         m_value.set_word(P2Util::lzc(atom.get_word()));
         break;
     case ut_Addr:
-        m_value.set_addr(P2Util::lzc(atom.get_addr(false)),
-                         P2Util::lzc(atom.get_addr(true)));
+        m_value.set_addr(P2Util::lzc(atom.get_addr(p2_cog)),
+                         P2Util::lzc(atom.get_addr(p2_hub)));
         break;
     case ut_Long:
         m_value.set_long(P2Util::lzc(atom.get_long()));
@@ -1545,25 +1545,12 @@ p2_LONG P2Atom::get_long() const
 }
 
 /**
- * @brief Return address as a pair of longs
- * @return One p2_ORIGIN_t
- */
-p2_ORIGIN_t P2Atom::get_addr() const
-{
-    if (ut_Addr == m_value.type())
-        return m_value.get_addr();
-    return p2_ORIGIN_t({m_value.get_long()<<2,0});
-}
-
-/**
  * @brief Return address as a long for COG (false) or HUB (true)
  * @return One p2_ORIGIN_t
  */
 p2_LONG P2Atom::get_addr(bool hub) const
 {
-    if (ut_Addr == m_value.type())
-        return m_value.get_addr(hub);
-    return m_value.get_long() << (hub ? 0 : 2);
+    return m_value.get_addr(hub);
 }
 
 /**

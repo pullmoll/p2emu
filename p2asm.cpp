@@ -2853,7 +2853,7 @@ void P2Asm::add_const_symbol(const QString& pfx, const P2Word& word, const P2Ato
                      .arg(pfx)
                      .arg(word.str().toUpper());
     if (!m_symbols->contains(symbol))
-        m_symbols->insert(symbol, atom.value());
+        m_symbols->insert(symbol, atom);
     m_symbols->add_reference(m_lineno, symbol, word);
 }
 
@@ -3515,53 +3515,55 @@ bool P2Asm::parse_binops(P2Atom& atom, int level)
     return true;
 }
 
+/**
+ * @brief Parse leading traits before an expression
+ * @return Bit mask of p2_Traits_e found
+ */
 p2_Traits_e P2Asm::parse_traits()
 {
-    p2_TOKEN_e tok = curr_tok();
-    p2_Traits_e trait = tr_none;
-    while (Token.is_type(tok, tm_traits)) {
+    p2_Traits_e traits = tr_none;
+    while (Token.is_type(curr_tok(), tm_traits)) {
 
-        switch (tok) {
+        switch (curr_tok()) {
         case t_IMMEDIATE:
             DBG_EXPR(" trait immediate: %s", qPrintable(Token.string(tok)));
-            p2_set_trait(trait, tr_IMMEDIATE);
+            p2_set_trait(traits, tr_IMMEDIATE);
             next();
             break;
         case t_AUGMENTED:
             DBG_EXPR(" trait force AUGS/AUGD: %s", qPrintable(Token.string(tok)));
-            p2_set_trait(trait, tr_AUGMENTED);
+            p2_set_trait(traits, tr_AUGMENTED);
             next();
             break;
         case t_RELATIVE:
             DBG_EXPR(" trait relative: %s", qPrintable(Token.string(tok)));
-            p2_set_trait(trait, tr_RELATIVE);
+            p2_set_trait(traits, tr_RELATIVE);
             next();
             break;
         case t_ABSOLUTE:
             DBG_EXPR(" trait absolute: %s", qPrintable(Token.string(tok)));
-            p2_set_trait(trait, tr_ABSOLUTE);
+            p2_set_trait(traits, tr_ABSOLUTE);
             next();
             break;
         case t_ADDRESS_HUB:
             DBG_EXPR(" trait address HUB: %s", qPrintable(Token.string(tok)));
-            p2_set_trait(trait, tr_ADDRESS_HUB);
+            p2_set_trait(traits, tr_ADDRESS_HUB);
             next();
             break;
         case t_RELATIVE_HUB:
             DBG_EXPR(" trait relative HUB: %s", qPrintable(Token.string(tok)));
-            p2_set_trait(trait, tr_RELATIVE_HUB);
+            p2_set_trait(traits, tr_RELATIVE_HUB);
             next();
             break;
         default:
-            break;
+            Q_ASSERT_X(false, "traits", "Invalid trait");
+            return traits;
         }
 
         if (eol())
-            return trait;
-
-        tok = curr_tok();
+            break;
     }
-    return trait;
+    return traits;
 }
 
 /**
@@ -3664,7 +3666,7 @@ P2Atom P2Asm::parse_expression(int level)
     }
 
     // Set immediate flag according to traits
-    if ((traits & tr_IMMEDIATE) || (traits & tr_AUGMENTED) || (traits & tr_ADDRESS_HUB) || (traits & tr_RELATIVE_HUB)) {
+    if (traits & (tr_IMMEDIATE | tr_AUGMENTED | tr_ADDRESS_HUB | tr_RELATIVE_HUB)) {
         m_IR.set_im_flags(true);
     }
 
@@ -4670,7 +4672,7 @@ bool P2Asm::parse_PTRx_PC_A20()
         return false;
 
     P2Atom atom = parse_expression();
-    p2_LONG addr = atom.get_long();
+    p2_LONG addr = atom.get_addr(p2_hub);
     m_IR.set_a20(addr);
 
     return end_of_line();
@@ -4684,7 +4686,7 @@ bool P2Asm::parse_PTRx_PC_A20()
 bool P2Asm::parse_PC_A20()
 {
     P2Atom atom = parse_expression();
-    p2_LONG addr = atom.get_long();
+    p2_LONG addr = atom.get_addr(p2_hub);
     if (atom.has_trait(tr_ABSOLUTE)) {
         m_IR.set_a20(addr);
     } else {
@@ -4703,7 +4705,7 @@ bool P2Asm::parse_PC_A20()
 bool P2Asm::parse_IMM23()
 {
     P2Atom atom = parse_expression();
-    p2_LONG addr = atom.get_long();
+    p2_LONG addr = atom.get_addr(p2_hub);
     m_IR.set_imm23(addr);
 
     return end_of_line();
@@ -4887,11 +4889,11 @@ bool P2Asm::asm_ORG()
     next();
     m_advance = 0;      // Don't advance PC
     P2Atom atom = parse_expression();
-    p2_LONG value = atom.isEmpty() ? 0 : 4 * atom.get_long();
+    p2_LONG value = atom.get_addr(p2_cog);
     if (value >= HUB_ADDR0) {
-        m_errors += tr("COG origin ($%1) exceeds limit %2.")
-                    .arg(value, 0, 16, QChar('0'))
-                    .arg(QLatin1String("$1ff"));
+        m_errors += tr("COG origin ($%1) exceeds limit $%2.")
+                    .arg(value / 4, 0, 16, QChar('0'))
+                    .arg(0x1ff, 3, 16, QChar('0'));
         emit Error(m_pass, m_lineno, m_errors.last());
     } else {
         m_cogaddr = value;
@@ -4913,11 +4915,11 @@ bool P2Asm::asm_ORGF()
     m_advance = 0;      // Don't advance PC
     m_IR.set_as_IR(false);
     P2Atom atom = parse_expression();
-    p2_LONG value = atom.isEmpty() ? 0 : 4 * atom.get_long();
+    p2_LONG value = atom.get_addr(p2_cog);
     if (value >= HUB_ADDR0) {
-        m_errors += tr("COG origin ($%1) exceeds limit %2.")
-                    .arg(value, 0, 16, QChar('0'))
-                    .arg(QLatin1String("$1ff"));
+        m_errors += tr("COG origin ($%1) exceeds limit $%2.")
+                    .arg(value / 4, 0, 16, QChar('0'))
+                    .arg(0x1ff, 3, 16, QChar('0'));
         emit Error(m_pass, m_lineno, m_errors.last());
         value = 0;
     }
@@ -4943,7 +4945,7 @@ bool P2Asm::asm_ORGH()
     m_advance = 0;      // Don't advance PC
     m_IR.set_as_IR(false);
     P2Atom atom = parse_expression();
-    p2_LONG value = atom.isEmpty() ? HUB_ADDR0 : atom.get_long();
+    p2_LONG value = atom.isEmpty() ? HUB_ADDR0 : atom.get_addr(p2_hub);
     if (value <= HUB_ADDR0)
         value *= 4;
     if (value >= MEM_SIZE) {
@@ -4953,6 +4955,7 @@ bool P2Asm::asm_ORGH()
         value = MEM_SIZE;
     }
     m_hubmode = true;
+    m_cogaddr = value;  // TODO: correct?
     m_hubaddr = value;
     m_IR.set_equ(m_hubaddr);
     m_symbols->set_value(m_symbol, P2Union(value));
@@ -4969,12 +4972,12 @@ bool P2Asm::asm_FIT()
     m_advance = 0;
     m_IR.set_as_IR(false);
     P2Atom atom = parse_expression();
-    const p2_LONG fit = atom.isNull() ? HUB_ADDR0 : atom.get_long();
-    const p2_LONG org = m_cogaddr / 4;
+    const p2_LONG fit = atom.isNull() ? HUB_ADDR0 : atom.get_addr(p2_cog);
+    const p2_LONG org = m_cogaddr;
     if (fit < org) {
         m_errors += tr("Code does not fit below $%1 (ORG is $%2)")
-                  .arg(fit, 0, 16)
-                  .arg(org, 0, 16);
+                  .arg(fit / 4, 0, 16)
+                  .arg(org / 4, 0, 16);
         emit Error(m_pass, m_lineno, m_errors.last());
     }
     return end_of_line();

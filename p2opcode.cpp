@@ -759,25 +759,28 @@ void P2Opcode::set_n(const p2_LONG n)
  * @brief Set the opcode's dst field and possibly set the AUGD value
  * @param atom value to set
  * @param cogaddr COG address
- * @param hubaddr HUB address (output address)
+ * @param hubaddr HUB address
  * @return true on success, or false on error
  */
 bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG hubaddr)
 {
     bool result = true;
-    p2_Traits_e traits = atom.traits();
-    p2_LONG value = atom.get_addr(false) / 4;
+    p2_LONG value = atom.get_addr(p2_cog);
 
-    if (p2_has_trait(traits, tr_RELATIVE))
-        value = (atom.get_addr(false) - cogaddr) / 4;
+    if (atom.has_trait(tr_IMMEDIATE))
+        value = atom.get_addr(p2_cog) / 4;
 
-    if (p2_has_trait(traits, tr_ADDRESS_HUB))
-        value = atom.get_addr(true);
+    if (atom.has_trait(tr_RELATIVE))
+        value = atom.get_addr(p2_cog) - cogaddr;
 
-    if (p2_has_trait(traits, tr_RELATIVE_HUB))
-        value = atom.get_addr(true) - hubaddr;
+    if (atom.has_trait(tr_ADDRESS_HUB))
+        value = atom.get_addr(p2_hub);
 
-    if (p2_has_trait(traits, tr_AUGMENTED)) {
+    if (atom.has_trait(tr_RELATIVE_HUB))
+        value = atom.get_addr(p2_hub) - hubaddr;
+
+    if (atom.has_trait(tr_AUGMENTED)) {
+        value = atom.get_addr(p2_hub);
         switch (m_imm_dst) {
         case imm_none:
             break;
@@ -790,8 +793,9 @@ bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG 
         }
     }
 
-    m_u.op7.dst = value & COG_MASK;
-    if (value > COG_MASK || p2_has_trait(traits, tr_AUGMENTED)) {
+    m_augd.clear();
+    if (value >= HUB_ADDR0 || atom.has_trait(tr_AUGMENTED)) {
+        m_u.op7.dst = value & COG_MASK;
         switch (m_imm_dst) {
         case imm_none:
             break;
@@ -812,7 +816,7 @@ bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG 
         }
         m_augd = value & ~COG_MASK;
     } else {
-        m_augd.clear();
+        m_u.op7.dst = value & COG_MASK;
     }
     return result;
 }
@@ -821,25 +825,28 @@ bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG 
  * @brief Set the opcode's src field and possibly set the AUGS value
  * @param atom value to set
  * @param cogaddr COG address
- * @param hubaddr HUB address (output address)
+ * @param hubaddr HUB address
  * @return true on success, or false on error
  */
 bool P2Opcode::set_src(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG hubaddr)
 {
     bool result = true;
-    p2_Traits_e traits = atom.traits();
-    p2_LONG value = atom.get_addr(false) / 4;
+    p2_LONG value = atom.get_addr(p2_cog);
 
-    if (p2_has_trait(traits, tr_RELATIVE))
-        value = (atom.get_addr(false) - cogaddr) / 4;
+    if (atom.has_trait(tr_IMMEDIATE))
+        value = atom.get_addr(p2_cog) / 4;
 
-    if (p2_has_trait(traits, tr_ADDRESS_HUB))
+    if (atom.has_trait(tr_RELATIVE))
+        value = atom.get_addr(false) - cogaddr;
+
+    if (atom.has_trait(tr_ADDRESS_HUB))
         value = atom.get_addr(true);
 
-    if (p2_has_trait(traits, tr_RELATIVE_HUB))
+    if (atom.has_trait(tr_RELATIVE_HUB))
         value = atom.get_addr(true) - hubaddr;
 
-    if (p2_has_trait(traits, tr_AUGMENTED)) {
+    if (atom.has_trait(tr_AUGMENTED)) {
+        value = atom.get_addr(true);
         switch (m_imm_src) {
         case imm_none:
             break;
@@ -852,8 +859,9 @@ bool P2Opcode::set_src(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG 
         }
     }
 
-    m_u.op7.src = value & COG_MASK;
-    if (value > COG_MASK || p2_has_trait(traits, tr_AUGMENTED)) {
+    m_augs.clear();
+    if (value >= HUB_ADDR0 || atom.has_trait(tr_AUGMENTED)) {
+        m_u.op7.src = value & COG_MASK;
         switch (m_imm_src) {
         case imm_none:
             break;
@@ -870,7 +878,7 @@ bool P2Opcode::set_src(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG 
         }
         m_augs = value & ~COG_MASK;
     } else {
-        m_augs.clear();
+        m_u.op7.src = (value / 4) & COG_MASK;
     }
     return result;
 }

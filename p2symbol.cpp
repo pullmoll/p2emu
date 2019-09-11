@@ -37,23 +37,11 @@
 /**
  * @brief P2SymbolClass constructor
  * @param name optional initial name
- * @param value optional initial value
- */
-P2SymbolClass::P2SymbolClass(const QString& name, const P2Union& value)
-    : m_name(name)
-    , m_value(value)
-    , m_references()
-{
-}
-
-/**
- * @brief P2SymbolClass constructor
- * @param name optional initial name
  * @param atom optional initial atom
  */
 P2SymbolClass::P2SymbolClass(const QString& name, const P2Atom& atom)
     : m_name(name)
-    , m_value(atom.value())
+    , m_atom(atom)
     , m_references()
 {
 }
@@ -64,7 +52,7 @@ P2SymbolClass::P2SymbolClass(const QString& name, const P2Atom& atom)
  */
 bool P2SymbolClass::isNull() const
 {
-    return ut_Invalid == m_value.type() || m_value.isEmpty();
+    return ut_Invalid == m_atom.type() || m_atom.isEmpty();
 }
 
 /**
@@ -86,12 +74,21 @@ const QString& P2SymbolClass::name() const
 }
 
 /**
- * @brief Return the symbol's value
- * @return const reference to the value
+ * @brief Return the symbol's atom
+ * @return const reference to the atom
  */
-const P2Union& P2SymbolClass::value() const
+const P2Atom& P2SymbolClass::atom() const
 {
-    return m_value;
+    return m_atom;
+}
+
+/**
+ * @brief Return the symbol's value
+ * @return P2Union with the value
+ */
+P2Union P2SymbolClass::value() const
+{
+    return m_atom.value();
 }
 
 /**
@@ -114,12 +111,21 @@ P2Word P2SymbolClass::definition() const
 }
 
 /**
+ * @brief Set a new atom for the symbol
+ * @param atom new atom
+ */
+void P2SymbolClass::set_atom(const P2Atom& value)
+{
+    m_atom = value;
+}
+
+/**
  * @brief Set a new value for the symbol
  * @param value new value
  */
 void P2SymbolClass::set_value(const P2Union& value)
 {
-    m_value = value;
+    m_atom.set_value(value);
 }
 
 /**
@@ -128,7 +134,7 @@ void P2SymbolClass::set_value(const P2Union& value)
  */
 p2_Union_e P2SymbolClass::type() const
 {
-    return m_value.type();
+    return m_atom.type();
 }
 
 /**
@@ -137,7 +143,7 @@ p2_Union_e P2SymbolClass::type() const
  */
 const QString P2SymbolClass::type_name() const
 {
-    return m_value.type_name();
+    return m_atom.type_name();
 }
 
 /**

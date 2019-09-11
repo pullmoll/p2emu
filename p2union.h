@@ -8,7 +8,7 @@ static constexpr p2_LONG null_LONG = 0x00000000u;
 static constexpr p2_QUAD null_QUAD = Q_UINT64_C(0);
 static constexpr p2_REAL null_REAL = 0.0;
 
-class P2Union : public QVector<TypedVar>
+class P2Union : public QVector<P2TypedValue>
 {
 public:
     explicit P2Union();
@@ -34,18 +34,13 @@ public:
     void set_type(p2_Union_e type);
     bool is_zero() const;
 
-    QVariant get() const;
-    void set(const QVariant& var);
-    void add(const QVariant& var);
-
     int get_int() const;
     bool get_bool() const;
     char get_char() const;
     p2_BYTE get_byte() const;
     p2_WORD get_word() const;
     p2_LONG get_long() const;
-    p2_ORIGIN_t get_addr() const;
-    p2_LONG get_addr(bool hub) const;
+    p2_LONG get_addr(bool p2_hub) const;
     p2_QUAD get_quad() const;
     p2_REAL get_real() const;
 
@@ -57,15 +52,15 @@ public:
     p2_REALS get_reals(bool expand = false) const;
     QString get_string(bool expand = false) const;
 
-    void set_int(const int& var);
-    void set_bool(const bool& var);
-    void set_char(const char& var);
-    void set_byte(const p2_BYTE& _byte);
-    void set_word(const p2_WORD& _word);
-    void set_addr(const p2_LONG& _cog, const p2_LONG& _hub);
-    void set_long(const p2_LONG& _long);
-    void set_quad(const p2_QUAD& _quad);
-    void set_real(const p2_REAL& _real);
+    void set_int(const int var);
+    void set_bool(const bool var);
+    void set_char(const char var);
+    void set_byte(const p2_BYTE _byte);
+    void set_word(const p2_WORD _word);
+    void set_addr(const p2_LONG _cog, const p2_LONG _hub);
+    void set_long(const p2_LONG _long);
+    void set_quad(const p2_QUAD _quad);
+    void set_real(const p2_REAL _real);
 
     void set_chars(const p2_CHARS& _chars);
     void set_bytes(const p2_BYTES& _bytes);
@@ -76,17 +71,17 @@ public:
     void set_array(const QByteArray& _array);
     void set_string(const QString& _string);
 
-    void set_typed_var(const TypedVar& var);
+    void set_typed_var(const P2TypedValue& var);
 
-    void add_int(const int& _int);
-    void add_bool(const bool& _bool);
-    void add_char(const char& _char);
-    void add_byte(const p2_BYTE& _byte);
-    void add_word(const p2_WORD& _word);
-    void add_long(const p2_LONG& _long);
-    void add_addr(const p2_LONG& _cog, const p2_LONG& _hub);
-    void add_quad(const p2_QUAD& _quad);
-    void add_real(const p2_REAL& _real);
+    void add_int(const int _int);
+    void add_bool(const bool _bool);
+    void add_char(const char _char);
+    void add_byte(const p2_BYTE _byte);
+    void add_word(const p2_WORD _word);
+    void add_long(const p2_LONG _long);
+    void add_addr(const p2_LONG _cog, const p2_LONG _hub);
+    void add_quad(const p2_QUAD _quad);
+    void add_real(const p2_REAL _real);
 
     void add_chars(const p2_CHARS& _chars);
     void add_bytes(const p2_BYTES& _bytes);
@@ -97,13 +92,12 @@ public:
     void add_array(const QByteArray& _array);
     void add_string(const QString& _string);
 
+    void add_typed_var(const P2TypedValue& var);
+
     QString str(bool with_type = false, p2_FORMAT_e fmt = fmt_hex) const;
 
     static QString type_name(p2_Union_e type);
     static QString str(const P2Union& un, bool with_type = false, p2_FORMAT_e fmt = fmt_hex);
-
-    static constexpr bool cog = false;
-    static constexpr bool hub = true;
 
 private:
     p2_Union_e m_type;
@@ -113,12 +107,12 @@ private:
     static QByteArray chain_longs(const P2Union* pun, bool expand = false);
     static QByteArray chain_quads(const P2Union* pun, bool expand = false);
 
-    static p2_CHARS get_chars(const TypedVar& tv, bool expand = false);
-    static p2_BYTES get_bytes(const TypedVar& tv, bool expand = false);
-    static p2_WORDS get_words(const TypedVar& tv, bool expand = false);
-    static p2_LONGS get_longs(const TypedVar& tv, bool expand = false);
-    static p2_QUADS get_quads(const TypedVar& tv, bool expand = false);
-    static p2_REALS get_reals(const TypedVar& tv, bool expand = false);
+    static p2_CHARS get_chars(const P2TypedValue& tv, bool expand = false);
+    static p2_BYTES get_bytes(const P2TypedValue& tv, bool expand = false);
+    static p2_WORDS get_words(const P2TypedValue& tv, bool expand = false);
+    static p2_LONGS get_longs(const P2TypedValue& tv, bool expand = false);
+    static p2_QUADS get_quads(const P2TypedValue& tv, bool expand = false);
+    static p2_REALS get_reals(const P2TypedValue& tv, bool expand = false);
 };
 
 Q_DECLARE_METATYPE(P2Union);

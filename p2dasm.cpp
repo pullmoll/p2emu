@@ -1530,7 +1530,8 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
                 dasm_getscp(instruction);
                 break;
             default:
-                Q_ASSERT_X(IR.opsrc() == p2_OPSRC_INVALID, "invalid opcode", "opsrc()");
+                // Q_ASSERT_X(IR.opsrc() == p2_OPSRC_INVALID, "invalid opcode", "opsrc()");
+                break;
             }
             break;
 

@@ -1,7 +1,7 @@
 #include "p2union.h"
 
 P2Union::P2Union()
-    : QVector<TypedVar>()
+    : QVector<P2TypedValue>()
     , m_type(ut_Invalid)
 {
 }
@@ -94,10 +94,10 @@ int P2Union::usize() const
     if (list.canConvert<QVariantList>()) {
         QSequentialIterable it = list.value<QSequentialIterable>();
         foreach(const QVariant& v, it) {
-            TypedVar tv = qvariant_cast<TypedVar>(v);
-            switch (tv.first) {
+            P2TypedValue tv = qvariant_cast<P2TypedValue>(v);
+            switch (tv.type) {
             case ut_Invalid:
-                Q_ASSERT(tv.first != ut_Invalid);
+                Q_ASSERT(tv.type != ut_Invalid);
                 break;
             case ut_Bool:
             case ut_Byte:
@@ -147,197 +147,63 @@ bool P2Union::is_zero() const
     return true;
 }
 
-QVariant P2Union::get() const
-{
-    if (isEmpty())
-        return QVariant();
-    switch (m_type) {
-    case ut_Invalid:
-        return QVariant();
-    case ut_Bool:
-        return get_bool();
-    case ut_Byte:
-        return get_byte();
-    case ut_Word:
-        return get_word();
-    case ut_Addr:
-        return QVariant::fromValue(get_addr());
-    case ut_Long:
-        return get_long();
-    case ut_Quad:
-        return get_quad();
-    case ut_Real:
-        return get_real();
-    case ut_String:
-        return QVariant::fromValue(get_bytes());
-    }
-    return QVariant();
-}
-
-void P2Union::set(const QVariant& var)
-{
-    if (var.canConvert(mt_P2Union)) {
-        *this = qvariant_cast<P2Union>(var);
-        return;
-    }
-    if (var.canConvert(qMetaTypeId<p2_CHARS>())) {
-        set_chars(qvariant_cast<p2_CHARS>(var));
-        return;
-    }
-    if (var.canConvert(qMetaTypeId<p2_BYTES>())) {
-        set_bytes(qvariant_cast<p2_BYTES>(var));
-        return;
-    }
-    if (var.canConvert(qMetaTypeId<p2_WORDS>())) {
-        set_words(qvariant_cast<p2_WORDS>(var));
-        return;
-    }
-    if (var.canConvert(qMetaTypeId<p2_QUADS>())) {
-        set_quads(qvariant_cast<p2_QUADS>(var));
-        return;
-    }
-    if (var.canConvert(qMetaTypeId<p2_REALS>())) {
-        set_reals(qvariant_cast<p2_REALS>(var));
-        return;
-    }
-    if (var.canConvert(qMetaTypeId<p2_BYTE>())) {
-        set_byte(qvariant_cast<p2_BYTE>(var));
-        return;
-    }
-    if (var.canConvert(qMetaTypeId<p2_WORD>())) {
-        set_word(qvariant_cast<p2_WORD>(var));
-        return;
-    }
-    if (var.canConvert(qMetaTypeId<p2_LONG>())) {
-        set_long(qvariant_cast<p2_LONG>(var));
-        return;
-    }
-    if (var.canConvert(qMetaTypeId<p2_QUAD>())) {
-        set_quad(qvariant_cast<p2_QUAD>(var));
-        return;
-    }
-    if (var.canConvert(qMetaTypeId<p2_REAL>())) {
-        set_real(qvariant_cast<p2_REAL>(var));
-        return;
-    }
-    if (var.canConvert(QVariant::Bool)) {
-        set_bool(qvariant_cast<p2_BYTE>(var));
-        return;
-    }
-    Q_ASSERT(var.isNull());
-}
-
-void P2Union::add(const QVariant& var)
-{
-    if (var.canConvert(qMetaTypeId<p2_CHARS>())) {
-        add_chars(qvariant_cast<p2_CHARS>(var));
-        return;
-    }
-    if (var.canConvert(qMetaTypeId<p2_BYTES>())) {
-        add_bytes(qvariant_cast<p2_BYTES>(var));
-        return;
-    }
-    if (var.canConvert(qMetaTypeId<p2_WORDS>())) {
-        add_words(qvariant_cast<p2_WORDS>(var));
-        return;
-    }
-    if (var.canConvert(qMetaTypeId<p2_QUADS>())) {
-        add_quads(qvariant_cast<p2_QUADS>(var));
-        return;
-    }
-    if (var.canConvert(qMetaTypeId<p2_REALS>())) {
-        add_reals(qvariant_cast<p2_REALS>(var));
-        return;
-    }
-    if (var.canConvert(qMetaTypeId<p2_BYTE>())) {
-        add_byte(qvariant_cast<p2_BYTE>(var));
-        return;
-    }
-    if (var.canConvert(qMetaTypeId<p2_WORD>())) {
-        add_word(qvariant_cast<p2_WORD>(var));
-        return;
-    }
-    if (var.canConvert(qMetaTypeId<p2_ORIGIN_t>())) {
-        add_addr(qvariant_cast<p2_ORIGIN_t>(var)._cog, qvariant_cast<p2_ORIGIN_t>(var)._hub);
-        return;
-    }
-    if (var.canConvert(qMetaTypeId<p2_LONG>())) {
-        add_long(qvariant_cast<p2_LONG>(var));
-        return;
-    }
-    if (var.canConvert(qMetaTypeId<p2_QUAD>())) {
-        add_quad(qvariant_cast<p2_QUAD>(var));
-        return;
-    }
-    if (var.canConvert(qMetaTypeId<p2_REAL>())) {
-        add_real(qvariant_cast<p2_REAL>(var));
-        return;
-    }
-    if (var.canConvert(QVariant::Bool)) {
-        add_bool(qvariant_cast<p2_BYTE>(var));
-        return;
-    }
-    Q_ASSERT(var.isNull());
-}
-
 int P2Union::get_int() const
 {
-    const TypedVar tv = value(0);
-    return tv.second._int;
+    const P2TypedValue tv = value(0);
+    return tv.value._int;
 }
 
 bool P2Union::get_bool() const
 {
-    const TypedVar tv = value(0);
-    return tv.second._bool;
+    const P2TypedValue tv = value(0);
+    return tv.value._bool;
 }
 
 char P2Union::get_char() const
 {
-    const TypedVar tv = value(0);
-    return tv.second._char;
+    const P2TypedValue tv = value(0);
+    return tv.value._char;
 }
 
 p2_BYTE P2Union::get_byte() const
 {
-    const TypedVar tv = value(0);
-    return tv.second._byte;
+    const P2TypedValue tv = value(0);
+    return tv.value._byte;
 }
 
 p2_WORD P2Union::get_word() const
 {
-    const TypedVar tv = value(0);
-    return tv.second._word;
+    const P2TypedValue tv = value(0);
+    return tv.value._word;
 }
 
 p2_LONG P2Union::get_long() const
 {
-    const TypedVar tv = value(0);
-    return tv.second._long;
-}
-
-p2_ORIGIN_t P2Union::get_addr() const
-{
-    const TypedVar tv = value(0);
-    return p2_ORIGIN_t({tv.second._addr[0], tv.second._addr[1]});
+    const P2TypedValue tv = value(0);
+    return tv.value._long;
 }
 
 p2_LONG P2Union::get_addr(bool hub) const
 {
-    const TypedVar tv = value(0);
-    return tv.second._addr[hub & 1];
+    const P2TypedValue tv = value(0);
+    if (ut_Addr == tv.type)
+        return tv.value._addr[hub & 1];
+    qDebug("get_addr(%s) for %s: %#x",
+           hub ? "hub" : "cog",
+           qPrintable(type_name(tv.type)), tv.value._long);
+    return hub ? tv.value._long : tv.value._long * 4;
 }
 
 p2_QUAD P2Union::get_quad() const
 {
-    const TypedVar tv = value(0);
-    return tv.second._quad;
+    const P2TypedValue tv = value(0);
+    return tv.value._quad;
 }
 
 p2_REAL P2Union::get_real() const
 {
-    const TypedVar tv = value(0);
-    return tv.second._real;
+    const P2TypedValue tv = value(0);
+    return tv.value._real;
 }
 
 static inline QByteArray one_byte_array(const QVariant& v)
@@ -393,63 +259,63 @@ static inline QByteArray one_real_array(const QVariant& v)
     return one_quad_array(u._quad);
 }
 
-void P2Union::set_int(const int& var)
+void P2Union::set_int(const int var)
 {
     clear();
     add_int(var);
     m_type = ut_Long;
 }
 
-void P2Union::set_bool(const bool& var)
+void P2Union::set_bool(const bool var)
 {
     clear();
     add_bool(var);
     m_type = ut_Bool;
 }
 
-void P2Union::set_char(const char& var)
+void P2Union::set_char(const char var)
 {
     clear();
     add_char(var);
     m_type = ut_Byte;
 }
 
-void P2Union::set_byte(const p2_BYTE& _byte)
+void P2Union::set_byte(const p2_BYTE _byte)
 {
     clear();
     add_byte(_byte);
     m_type = ut_Byte;
 }
 
-void P2Union::set_word(const p2_WORD& _word)
+void P2Union::set_word(const p2_WORD _word)
 {
     clear();
     add_word(_word);
     m_type = ut_Word;
 }
 
-void P2Union::set_long(const p2_LONG& var)
+void P2Union::set_long(const p2_LONG var)
 {
     clear();
     add_long(var);
     m_type = ut_Long;
 }
 
-void P2Union::set_addr(const p2_LONG& _cog, const p2_LONG& _hub)
+void P2Union::set_addr(const p2_LONG _cog, const p2_LONG _hub)
 {
     clear();
     add_addr(_cog, _hub);
     m_type = ut_Addr;
 }
 
-void P2Union::set_quad(const p2_QUAD& var)
+void P2Union::set_quad(const p2_QUAD var)
 {
     clear();
     add_quad(var);
     m_type = ut_Quad;
 }
 
-void P2Union::set_real(const p2_REAL& var)
+void P2Union::set_real(const p2_REAL var)
 {
     clear();
     add_real(var);
@@ -512,75 +378,75 @@ void P2Union::set_string(const QString& _string)
     m_type = ut_String;
 }
 
-void P2Union::set_typed_var(const TypedVar& _tv)
+void P2Union::set_typed_var(const P2TypedValue& _tv)
 {
-    const p2_Union_e type = m_type;
-    set(QVariant::fromValue(_tv.second));
-    m_type = type;
+    clear();
+    add_typed_var(_tv);
+    m_type = _tv.type;
 }
 
-void P2Union::add_int(const int& _int)
+void P2Union::add_int(const int _int)
 {
-    TypedVar v{ut_Long, {0}};
-    v.second._int = _int;
+    P2TypedValue v{ut_Long, {0}};
+    v.value._int = _int;
     append(v);
 }
 
 
-void P2Union::add_bool(const bool& _bool)
+void P2Union::add_bool(const bool _bool)
 {
-    TypedVar v{ut_Byte, {0}};
-    v.second._bool = _bool;
+    P2TypedValue v{ut_Byte, {0}};
+    v.value._bool = _bool;
     append(v);
 }
 
-void P2Union::add_char(const char& _char)
+void P2Union::add_char(const char _char)
 {
-    TypedVar v{ut_Byte, {0}};
-    v.second._char = _char;
+    P2TypedValue v{ut_Byte, {0}};
+    v.value._char = _char;
     append(v);
 }
 
-void P2Union::add_byte(const p2_BYTE& _byte)
+void P2Union::add_byte(const p2_BYTE _byte)
 {
-    TypedVar v{ut_Byte, {0}};
-    v.second._byte = _byte;
+    P2TypedValue v{ut_Byte, {0}};
+    v.value._byte = _byte;
     append(v);
 }
 
-void P2Union::add_word(const p2_WORD& _word)
+void P2Union::add_word(const p2_WORD _word)
 {
-    TypedVar v{ut_Word, {0}};
-    v.second._word = _word;
+    P2TypedValue v{ut_Word, {0}};
+    v.value._word = _word;
     append(v);
 }
 
-void P2Union::add_long(const p2_LONG& _long)
+void P2Union::add_long(const p2_LONG _long)
 {
-    TypedVar v{ut_Long, {0}};
-    v.second._long = _long;
+    P2TypedValue v{ut_Long, {0}};
+    v.value._long = _long;
     append(v);
 }
 
-void P2Union::add_addr(const p2_LONG& _cog, const p2_LONG& _hub)
+void P2Union::add_addr(const p2_LONG _cog, const p2_LONG _hub)
 {
-    TypedVar v{ut_Addr, {0}};
-    v.second._addr[0] = _cog;
-    v.second._addr[1] = _hub;
+    P2TypedValue v{ut_Addr, {0}};
+    v.value._addr[0] = _cog;
+    v.value._addr[1] = _hub;
     append(v);
 }
 
-void P2Union::add_quad(const p2_QUAD& _quad)
+void P2Union::add_quad(const p2_QUAD _quad)
 {
-    TypedVar v{ut_Quad, {0}};
-    v.second._quad = _quad;
+    P2TypedValue v{ut_Quad, {0}};
+    v.value._quad = _quad;
     append(v);
 }
 
-void P2Union::add_real(const p2_REAL& _real)
+void P2Union::add_real(const p2_REAL _real)
 {
-    TypedVar v{ut_Real, {0}};
-    v.second._real = _real;
+    P2TypedValue v{ut_Real, {0}};
+    v.value._real = _real;
     append(v);
 }
 
@@ -588,9 +454,9 @@ void P2Union::add_chars(const p2_CHARS& _chars)
 {
     const int pos = size();
     resize(pos + _chars.size());
-    TypedVar v{ut_Byte, {0}};
+    P2TypedValue v{ut_Byte, {0}};
     for (int i = 0; i < _chars.size(); i++) {
-        v.second._char = _chars[i];
+        v.value._char = _chars[i];
         replace(pos + i, v);
     }
 }
@@ -599,9 +465,9 @@ void P2Union::add_bytes(const p2_BYTES& _bytes)
 {
     const int pos = size();
     resize(pos + _bytes.size());
-    TypedVar v{ut_Byte, {0}};
+    P2TypedValue v{ut_Byte, {0}};
     for (int i = 0; i < _bytes.size(); i++) {
-        v.second._byte = _bytes[i];
+        v.value._byte = _bytes[i];
         replace(pos + i, v);
     }
 }
@@ -610,9 +476,9 @@ void P2Union::add_words(const p2_WORDS& _words)
 {
     const int pos = size();
     resize(pos + _words.size());
-    TypedVar v{ut_Word, {0}};
+    P2TypedValue v{ut_Word, {0}};
     for (int i = 0; i < _words.size(); i++) {
-        v.second._word = _words[i];
+        v.value._word = _words[i];
         replace(pos + i, v);
     }
 }
@@ -621,9 +487,9 @@ void P2Union::add_longs(const p2_LONGS& _longs)
 {
     const int pos = size();
     resize(pos + _longs.size());
-    TypedVar v{ut_Long, {0}};
+    P2TypedValue v{ut_Long, {0}};
     for (int i = 0; i < _longs.size(); i++) {
-        v.second._long = _longs[i];
+        v.value._long = _longs[i];
         replace(pos + i, v);
     }
 }
@@ -632,9 +498,9 @@ void P2Union::add_quads(const p2_QUADS& _quads)
 {
     const int pos = size();
     resize(pos + _quads.size());
-    TypedVar v{ut_Quad, {0}};
+    P2TypedValue v{ut_Quad, {0}};
     for (int i = 0; i < _quads.size(); i++) {
-        v.second._quad = _quads[i];
+        v.value._quad = _quads[i];
         replace(pos + i, v);
     }
 }
@@ -643,9 +509,9 @@ void P2Union::add_reals(const p2_REALS& _reals)
 {
     const int pos = size();
     resize(pos + _reals.size());
-    TypedVar v{ut_Real, {0}};
+    P2TypedValue v{ut_Real, {0}};
     for (int i = 0; i < _reals.size(); i++) {
-        v.second._real = _reals[i];
+        v.value._real = _reals[i];
         replace(pos + i, v);
     }
 }
@@ -654,9 +520,9 @@ void P2Union::add_array(const QByteArray& _array)
 {
     const int pos = size();
     resize(pos + _array.size());
-    TypedVar v{ut_Byte, {0}};
+    P2TypedValue v{ut_Byte, {0}};
     for (int i = 0; i < _array.size(); i++) {
-        v.second._char = _array[i];
+        v.value._char = _array[i];
         replace(pos + i, v);
     }
 }
@@ -665,11 +531,16 @@ void P2Union::add_string(const QString& _string)
 {
     const int pos = size();
     resize(pos + _string.size());
-    TypedVar v{ut_Byte, {0}};
+    P2TypedValue v{ut_Byte, {0}};
     for (int i = 0; i < _string.size(); i++) {
-        v.second._char = _string[i].toLatin1();
+        v.value._char = _string[i].toLatin1();
         replace(pos +i, v);
     }
+}
+
+void P2Union::add_typed_var(const P2TypedValue& _tv)
+{
+    append(_tv);
 }
 
 /**
@@ -686,43 +557,43 @@ QByteArray P2Union::chain_bytes(const P2Union* pun, bool expand)
         QSequentialIterable it = list.value<QSequentialIterable>();
         if (expand) {
             foreach(const QVariant& v, it) {
-                TypedVar tv = qvariant_cast<TypedVar>(v);
-                switch (tv.first) {
+                P2TypedValue tv = qvariant_cast<P2TypedValue>(v);
+                switch (tv.type) {
                 case ut_Invalid:
-                    Q_ASSERT(tv.first != ut_Invalid);
+                    Q_ASSERT(tv.type != ut_Invalid);
                     break;
                 case ut_Bool:
-                    result += one_byte_array(tv.second._bool);
+                    result += one_byte_array(tv.value._bool);
                     break;
                 case ut_Byte:
-                    result += one_byte_array(tv.second._byte);
+                    result += one_byte_array(tv.value._byte);
                     break;
                 case ut_Word:
-                    result += one_word_array(tv.second._word);
+                    result += one_word_array(tv.value._word);
                     break;
                 case ut_Addr:
-                    result += one_long_array(tv.second._long);
+                    result += one_long_array(tv.value._long);
                     break;
                 case ut_Long:
-                    result += one_long_array(tv.second._long);
+                    result += one_long_array(tv.value._long);
                     break;
                 case ut_Quad:
-                    result += one_quad_array(tv.second._quad);
+                    result += one_quad_array(tv.value._quad);
                     break;
                 case ut_Real:
-                    result += one_real_array(tv.second._real);
+                    result += one_real_array(tv.value._real);
                     break;
                 case ut_String:
-                    result += one_byte_array(tv.second._byte);
+                    result += one_byte_array(tv.value._byte);
                     break;
                 }
             }
         } else {
             foreach(const QVariant& v, it) {
-                TypedVar tv = qvariant_cast<TypedVar>(v);
-                switch (tv.first) {
+                P2TypedValue tv = qvariant_cast<P2TypedValue>(v);
+                switch (tv.type) {
                 case ut_Invalid:
-                    Q_ASSERT(tv.first != ut_Invalid);
+                    Q_ASSERT(tv.type != ut_Invalid);
                     break;
                 case ut_Bool:
                 case ut_Byte:
@@ -732,7 +603,7 @@ QByteArray P2Union::chain_bytes(const P2Union* pun, bool expand)
                 case ut_Quad:
                 case ut_Real:
                 case ut_String:
-                    result += tv.second._char;
+                    result += tv.value._char;
                     break;
                 }
             }
@@ -757,43 +628,43 @@ QByteArray P2Union::chain_words(const P2Union* pun, bool expand)
         QSequentialIterable it = list.value<QSequentialIterable>();
         if (expand) {
             foreach(const QVariant& v, it) {
-                TypedVar tv = qvariant_cast<TypedVar>(v);
-                switch (tv.first) {
+                P2TypedValue tv = qvariant_cast<P2TypedValue>(v);
+                switch (tv.type) {
                 case ut_Invalid:
-                    Q_ASSERT(tv.first != ut_Invalid);
+                    Q_ASSERT(tv.type != ut_Invalid);
                     break;
                 case ut_Bool:
-                    result += one_word_array(tv.second._bool);
+                    result += one_word_array(tv.value._bool);
                     break;
                 case ut_Byte:
-                    result += one_word_array(tv.second._byte);
+                    result += one_word_array(tv.value._byte);
                     break;
                 case ut_Word:
-                    result += one_word_array(tv.second._word);
+                    result += one_word_array(tv.value._word);
                     break;
                 case ut_Addr:
-                    result += one_long_array(tv.second._long);
+                    result += one_long_array(tv.value._long);
                     break;
                 case ut_Long:
-                    result += one_long_array(tv.second._long);
+                    result += one_long_array(tv.value._long);
                     break;
                 case ut_Quad:
-                    result += one_quad_array(tv.second._quad);
+                    result += one_quad_array(tv.value._quad);
                     break;
                 case ut_Real:
-                    result += one_real_array(tv.second._real);
+                    result += one_real_array(tv.value._real);
                     break;
                 case ut_String:
-                    result += one_word_array(tv.second._byte);
+                    result += one_word_array(tv.value._byte);
                     break;
                 }
             }
         } else {
             foreach(const QVariant& v, it) {
-                TypedVar tv = qvariant_cast<TypedVar>(v);
-                switch (tv.first) {
+                P2TypedValue tv = qvariant_cast<P2TypedValue>(v);
+                switch (tv.type) {
                 case ut_Invalid:
-                    Q_ASSERT(tv.first != ut_Invalid);
+                    Q_ASSERT(tv.type != ut_Invalid);
                     break;
                 case ut_Bool:
                 case ut_Byte:
@@ -803,7 +674,7 @@ QByteArray P2Union::chain_words(const P2Union* pun, bool expand)
                 case ut_Quad:
                 case ut_Real:
                 case ut_String:
-                    result += one_word_array(tv.second._word);
+                    result += one_word_array(tv.value._word);
                     break;
                 }
             }
@@ -828,43 +699,43 @@ QByteArray P2Union::chain_longs(const P2Union* pun, bool expand)
         QSequentialIterable it = list.value<QSequentialIterable>();
         if (expand) {
             foreach(const QVariant& v, it) {
-                TypedVar tv = qvariant_cast<TypedVar>(v);
-                switch (tv.first) {
+                P2TypedValue tv = qvariant_cast<P2TypedValue>(v);
+                switch (tv.type) {
                 case ut_Invalid:
-                    Q_ASSERT(tv.first != ut_Invalid);
+                    Q_ASSERT(tv.type != ut_Invalid);
                     break;
                 case ut_Bool:
-                    result += one_long_array(tv.second._bool);
+                    result += one_long_array(tv.value._bool);
                     break;
                 case ut_Byte:
-                    result += one_long_array(tv.second._byte);
+                    result += one_long_array(tv.value._byte);
                     break;
                 case ut_Word:
-                    result += one_long_array(tv.second._word);
+                    result += one_long_array(tv.value._word);
                     break;
                 case ut_Addr:
-                    result += one_long_array(tv.second._long);
+                    result += one_long_array(tv.value._long);
                     break;
                 case ut_Long:
-                    result += one_long_array(tv.second._long);
+                    result += one_long_array(tv.value._long);
                     break;
                 case ut_Quad:
-                    result += one_quad_array(tv.second._quad);
+                    result += one_quad_array(tv.value._quad);
                     break;
                 case ut_Real:
-                    result += one_real_array(tv.second._real);
+                    result += one_real_array(tv.value._real);
                     break;
                 case ut_String:
-                    result += one_long_array(tv.second._byte);
+                    result += one_long_array(tv.value._byte);
                     break;
                 }
             }
         } else {
             foreach(const QVariant& v, it) {
-                TypedVar tv = qvariant_cast<TypedVar>(v);
-                switch (tv.first) {
+                P2TypedValue tv = qvariant_cast<P2TypedValue>(v);
+                switch (tv.type) {
                 case ut_Invalid:
-                    Q_ASSERT(tv.first != ut_Invalid);
+                    Q_ASSERT(tv.type != ut_Invalid);
                     break;
                 case ut_Bool:
                 case ut_Byte:
@@ -874,7 +745,7 @@ QByteArray P2Union::chain_longs(const P2Union* pun, bool expand)
                 case ut_Quad:
                 case ut_Real:
                 case ut_String:
-                    result += one_long_array(tv.second._long);
+                    result += one_long_array(tv.value._long);
                     break;
                 }
             }
@@ -893,43 +764,43 @@ QByteArray P2Union::chain_quads(const P2Union* pun, bool expand)
         QSequentialIterable it = list.value<QSequentialIterable>();
         if (expand) {
             foreach(const QVariant& v, it) {
-                TypedVar tv = qvariant_cast<TypedVar>(v);
-                switch (tv.first) {
+                P2TypedValue tv = qvariant_cast<P2TypedValue>(v);
+                switch (tv.type) {
                 case ut_Invalid:
-                    Q_ASSERT(tv.first != ut_Invalid);
+                    Q_ASSERT(tv.type != ut_Invalid);
                     break;
                 case ut_Bool:
-                    result += one_quad_array(tv.second._bool);
+                    result += one_quad_array(tv.value._bool);
                     break;
                 case ut_Byte:
-                    result += one_quad_array(tv.second._byte);
+                    result += one_quad_array(tv.value._byte);
                     break;
                 case ut_Word:
-                    result += one_quad_array(tv.second._word);
+                    result += one_quad_array(tv.value._word);
                     break;
                 case ut_Addr:
-                    result += one_quad_array(tv.second._long);
+                    result += one_quad_array(tv.value._long);
                     break;
                 case ut_Long:
-                    result += one_quad_array(tv.second._long);
+                    result += one_quad_array(tv.value._long);
                     break;
                 case ut_Quad:
-                    result += one_quad_array(tv.second._quad);
+                    result += one_quad_array(tv.value._quad);
                     break;
                 case ut_Real:
-                    result += one_real_array(tv.second._real);
+                    result += one_real_array(tv.value._real);
                     break;
                 case ut_String:
-                    result += one_quad_array(tv.second._byte);
+                    result += one_quad_array(tv.value._byte);
                     break;
                 }
             }
         } else {
             foreach(const QVariant& v, it) {
-                TypedVar tv = qvariant_cast<TypedVar>(v);
-                switch (tv.first) {
+                P2TypedValue tv = qvariant_cast<P2TypedValue>(v);
+                switch (tv.type) {
                 case ut_Invalid:
-                    Q_ASSERT(tv.first != ut_Invalid);
+                    Q_ASSERT(tv.type != ut_Invalid);
                     break;
                 case ut_Bool:
                 case ut_Byte:
@@ -939,7 +810,7 @@ QByteArray P2Union::chain_quads(const P2Union* pun, bool expand)
                 case ut_Quad:
                 case ut_Real:
                 case ut_String:
-                    result += one_quad_array(tv.second._long);
+                    result += one_quad_array(tv.value._long);
                     break;
                 }
             }
@@ -1122,8 +993,8 @@ QString P2Union::str(const P2Union& un, bool with_type, p2_FORMAT_e fmt)
 
     case ut_Addr:
         {
-            p2_LONG _hub = un.get_addr(hub);
-            p2_LONG _cog = un.get_addr(cog);
+            p2_LONG _hub = un.get_addr(p2_hub);
+            p2_LONG _cog = un.get_addr(p2_cog);
             if (_cog < HUB_ADDR0)
                 _cog >>= 2;
             switch (fmt) {
