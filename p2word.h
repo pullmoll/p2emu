@@ -5,9 +5,9 @@
 class P2Word
 {
 public:
-    explicit P2Word(p2_TOKEN_e tok = t_invalid,
-                    const QStringRef& ref = QStringRef(),
-                    int lineno = 0);
+    explicit P2Word(int lineno = 0,
+                    p2_TOKEN_e tok = t_invalid,
+                    const QStringRef& ref = QStringRef());
 
     bool isValid() const;
     const QStringRef ref() const;
@@ -25,9 +25,9 @@ public:
 
     bool operator==(const P2Word& other) const;
 private:
+    int m_lineno;
     QStringRef m_ref;
     p2_TOKEN_e m_tok;
-    int m_lineno;
 };
 Q_DECLARE_METATYPE(P2Word);
 

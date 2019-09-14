@@ -611,6 +611,7 @@ LOCSYM      "."[A-Z_]?[A-Z0-9_]+
 
 int yywrap(void)
 {
+    Q_UNUSED(yyunput)
     return true;
 }
 
@@ -674,7 +675,7 @@ p2_words_hash_t p2flex_source(QVector<const QString*> source)
             break;
         default:
             // insert word for token into hash
-            word_hash.insert(lineno, P2Word(tok, ref, lineno));
+            word_hash.insert(lineno, P2Word(lineno, tok, ref));
             yycolumn += yyleng;
         }
         res = yylex();
@@ -688,6 +689,5 @@ p2_words_hash_t p2flex_source(QVector<const QString*> source)
             std::sort(words.begin(), words.end(), p2flex_compare_pos);
         words_hash.insert(lineno, words);
     }
-
     return words_hash;
 }
