@@ -3,9 +3,8 @@
 #include "p2word.h"
 
 static QVector<const QString*> p_lines;
-static p2_word_hash_t p_words;
 static int yycolumn = 0;
-static int curly_depth = 0;
+static int curly = 0;
 
 %}
 
@@ -16,25 +15,40 @@ static int curly_depth = 0;
 %option nodefault
 %option yylineno
 
-%s curly
+%s CURLY
+
+STRCONST      \"[^\"]*\"
+BINCONST    "%"[_]?[01_]+
+BYTCONST    "%%"[_]*[0-3_]+
+DECCONST    [0-9]+[0-9_]*
+REALCONST   [0-9]+[0-9_]*"."[0-9_]*
+HEXCONST    "$"[0-9A-F_]+
+SYMBOL      [A-Z_]?[A-Z0-9_]+
+LOCSYM      "."[A-Z_]?[A-Z0-9_]+
 
 %%
+<CURLY>[\n]             { return t_EOL; }
+<CURLY>[ \t]+           { return t_none; }
+<CURLY>"'"[^\n]+        { return t_comment_eol; }
+<CURLY>[ \t]*{STRCONST} { return t_comment_eol; }
+<CURLY>[^\n{}]+         { return t_comment_eol; }
+<CURLY>"}"              {
+                            for (int i = 0; i < yyleng; i++)
+                                if ('}' == yytext[i])
+                                    --curly;
+                            if (0 == curly)
+                                BEGIN(INITIAL);
+                            return t_comment_eol;
+                        }
 [ \t]+                  { return t_none; }
 [\n]			{ return t_EOL; }
 "{"[^\n}]*		{
+                            if (0 == curly)
+                                BEGIN(CURLY);
                             for (int i = 0; i < yyleng; i++)
-                                curly_depth += '{' == yytext[i];
-                            if (curly_depth > 0)
-                                BEGIN(curly);
+                                if ('{' == yytext[i])
+                                    curly++;
                             return t_comment_lcurly;
-                        }
-"}"                     {
-                            for (int i = 0; i < yyleng; i++)
-                                curly_depth -= '}' == yytext[i];
-                            if (curly_depth <= 0)
-                                BEGIN(INITIAL);
-                            return curly_depth > 0 ? t_comment_eol
-                                                   : t_comment_rcurly;
                         }
 "ABS"                   { return t_ABS; }
 "ADD"                   { return t_ADD; }
@@ -585,15 +599,14 @@ static int curly_depth = 0;
 "||"			{ return t_EXPR_LOGOR; }
 "'"[^\n]*               { return t_comment_eol; }
 "{"[^}\n]*"}"           { return t_comment_curly; }
-"\""[^"]*"\""		{ return t_str_const; }
-"%"[_]?[01_]+		{ return t_bin_const; }
-"%%"[_]*[0-3_]+		{ return t_byt_const; }
-[0-9]+[0-9_]*           { return t_dec_const; }
-"$"[0-9A-F_]+		{ return t_hex_const; }
-[0-9]+[0-9_]*"."[0-9_]+	{ return t_real_const; }
-[A-Z_]?[A-Z0-9_]+	{ return t_symbol; }
-\.[A-Z_]?[A-Z0-9_]+	{ return t_locsym; }
-<curly>[^\n}]+          { return t_comment_eol; }
+{BINCONST}		{ return t_bin_const; }
+{BYTCONST}		{ return t_byt_const; }
+{DECCONST}              { return t_dec_const; }
+{HEXCONST}		{ return t_hex_const; }
+{REALCONST}             { return t_real_const; }
+{STRCONST}		{ return t_str_const; }
+{SYMBOL}                { return t_symbol; }
+{LOCSYM}                { return t_locsym; }
 <*>.			{
                             const int lineno = yylineno;
                             const int pos = yycolumn;
@@ -611,11 +624,13 @@ static bool p2flex_compare_pos(const P2Word& w1, const P2Word& w2)
     return w1.pos() < w2.pos();
 }
 
-p2_words_hash_t p2flex_source(const QVector<const QString*>& source)
+p2_words_hash_t p2flex_source(QVector<const QString*> source)
 {
     p2_words_hash_t words_hash;
+    p2_word_hash_t word_hash;
+    p_lines.clear();
     p_lines = source;
-    p_words.clear();
+    word_hash.clear();
 
     // Put each source line, terminated with QChar::LineFeed,
     // into a single byte buffer
@@ -630,7 +645,7 @@ p2_words_hash_t p2flex_source(const QVector<const QString*>& source)
 
     // reset local state
     yycolumn = 0;
-    curly_depth = 0;
+    curly = 0;
 
     YY_BUFFER_STATE buff = yy_scan_buffer(buffer.data(), buffer.length());
     // Begin lexing the buffer
@@ -642,6 +657,7 @@ p2_words_hash_t p2flex_source(const QVector<const QString*>& source)
         const int len = yyleng;
         const QString* line = p_lines.value(lineno-1, nullptr);
         QStringRef ref(line, pos, len);
+
         if (nullptr == line) {
             qDebug("%s: lineno=%d beyond p_lines=%d",
                __func__, lineno, p_lines.count());
@@ -660,18 +676,18 @@ p2_words_hash_t p2flex_source(const QVector<const QString*>& source)
             break;
         default:
             // insert word for token into hash
-            p_words.insert(lineno, P2Word(tok, ref, lineno));
+            word_hash.insert(lineno, P2Word(tok, ref, lineno));
             yycolumn += yyleng;
         }
         res = yylex();
     }
+    yy_flush_buffer(buff);
     yy_delete_buffer(buff);
-    YY_FLUSH_BUFFER;
 
     // Now extract the tokens per line and sort them left-to-right
     for (int i = 0; i < p_lines.count(); i++) {
         const int lineno = i + 1;
-        QList<P2Word> words = p_words.values(lineno);
+        QList<P2Word> words = word_hash.values(lineno);
         if (words.count() > 1)
             std::sort(words.begin(), words.end(), p2flex_compare_pos);
         words_hash.insert(lineno, words);

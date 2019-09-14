@@ -41,7 +41,7 @@
 #include "p2flex.h"
 #include "p2util.h"
 
-extern p2_words_hash_t p2flex_source(const QVector<const QString*>& source);
+extern p2_words_hash_t p2flex_source(QVector<const QString*> source);
 
 #define DEBUG_EXPR  0 //! set to 1 to debug expression parsing
 #define DEBUG_CON   0 //! set to 1 to debug CON section parsing
@@ -53,13 +53,13 @@ static const QString p2_section_pub = QStringLiteral("PUB");
 static const QString p2_section_pri = QStringLiteral("PRI");
 static const QString p2_section_var = QStringLiteral("VAR");
 
-static const QString p2_prefix_bin_const = QStringLiteral("»%b« ");
-static const QString p2_prefix_byt_const = QStringLiteral("»%y« ");
-static const QString p2_prefix_dec_const = QStringLiteral("»%d« ");
-static const QString p2_prefix_hex_const = QStringLiteral("»%x« ");
-static const QString p2_prefix_str_const = QStringLiteral("»%s« ");
-static const QString p2_prefix_real_const = QStringLiteral("»%f« ");
-static const QString p2_prefix_offs_const = QStringLiteral("»%p« ");
+static const QString p2_prefix_offs_const = QStringLiteral("COG::");
+static const QString p2_prefix_bin_const = QStringLiteral("bin::");
+static const QString p2_prefix_byt_const = QStringLiteral("byt::");
+static const QString p2_prefix_dec_const = QStringLiteral("dec::");
+static const QString p2_prefix_hex_const = QStringLiteral("hex::");
+static const QString p2_prefix_str_const = QStringLiteral("str::");
+static const QString p2_prefix_real_const = QStringLiteral("flt::");
 
 
 #if DEBUG_EXPR
@@ -2993,8 +2993,8 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
 
     case t_PA:
         DBG_EXPR(" atom PA: %s", qPrintable(str));
+        atom.set_value(P2Union(sz_LONG * offs_PA, offs_PA));
         atom.set_type(ut_Addr);
-        atom.set_value(P2Union(offs_PA*sz_LONG, offs_PA));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom PA atom = %s", qPrintable(atom.str()));
         break;
@@ -3002,7 +3002,7 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_PB:
         DBG_EXPR(" atom PB: %s", qPrintable(str));
         atom.set_type(ut_Addr);
-        atom.set_value(P2Union(offs_PB*sz_LONG, offs_PB));
+        atom.set_value(P2Union(sz_LONG * offs_PB, offs_PB));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom PB atom = %s", qPrintable(atom.str()));
         break;
@@ -3014,7 +3014,7 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_PTRA_predec:
         DBG_EXPR(" atom PTRA: %s", qPrintable(str));
         atom.set_type(ut_Addr);
-        atom.set_value(P2Union(offs_PTRA*sz_LONG, offs_PTRA));
+        atom.set_value(P2Union(sz_LONG * offs_PTRA, offs_PTRA));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         if (t_PTRA_preinc == tok || t_PTRA_predec == tok)
             atom.add_trait(tr_PRE);
@@ -3034,7 +3034,7 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_PTRB_predec:
         DBG_EXPR(" atom PTRB: %s", qPrintable(str));
         atom.set_type(ut_Addr);
-        atom.set_value(P2Union(offs_PTRB*sz_LONG, offs_PTRB));
+        atom.set_value(P2Union(sz_LONG * offs_PTRB, offs_PTRB));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         if (t_PTRB_preinc == tok || t_PTRB_predec == tok)
             atom.add_trait(tr_PRE);
@@ -3050,7 +3050,7 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_DIRA:
         DBG_EXPR(" atom DIRA: %s", qPrintable(str));
         atom.set_type(ut_Addr);
-        atom.set_value(P2Union(offs_DIRA*sz_LONG, offs_DIRA));
+        atom.set_value(P2Union(sz_LONG * offs_DIRA, offs_DIRA));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom DIRA const = %s", qPrintable(atom.str()));
         break;
@@ -3058,7 +3058,7 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_DIRB:
         DBG_EXPR(" atom DIRB: %s", qPrintable(str));
         atom.set_type(ut_Addr);
-        atom.set_value(P2Union(offs_DIRB*sz_LONG, offs_DIRB));
+        atom.set_value(P2Union(sz_LONG * offs_DIRB, offs_DIRB));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom DIRB const = %s", qPrintable(atom.str()));
         break;
@@ -3066,7 +3066,7 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_OUTA:
         DBG_EXPR(" atom OUTA: %s", qPrintable(str));
         atom.set_type(ut_Addr);
-        atom.set_value(P2Union(offs_OUTA*sz_LONG, offs_OUTA));
+        atom.set_value(P2Union(sz_LONG * offs_OUTA, offs_OUTA));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom OUTA atom = %s", qPrintable(atom.str()));
         break;
@@ -3074,7 +3074,7 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_OUTB:
         DBG_EXPR(" atom OUTB: %s", qPrintable(str));
         atom.set_type(ut_Addr);
-        atom.set_value(P2Union(offs_OUTB*sz_LONG, offs_OUTB));
+        atom.set_value(P2Union(sz_LONG * offs_OUTB, offs_OUTB));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom OUTB atom = %s", qPrintable(atom.str()));
         break;
@@ -3082,7 +3082,7 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_INA:
         DBG_EXPR(" atom INA: %s", qPrintable(str));
         atom.set_type(ut_Addr);
-        atom.set_value(P2Union(offs_INA*sz_LONG, offs_INA));
+        atom.set_value(P2Union(sz_LONG * offs_INA, offs_INA));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom INA const = %s", qPrintable(atom.str()));
         break;
@@ -3090,7 +3090,7 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_INB:
         DBG_EXPR(" atom INB: %s", qPrintable(str));
         atom.set_type(ut_Addr);
-        atom.set_value(P2Union(offs_INB*sz_LONG, offs_INB));
+        atom.set_value(P2Union(sz_LONG * offs_INB, offs_INB));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom INB atom = %s", qPrintable(atom.str()));
         break;
@@ -12039,28 +12039,44 @@ bool P2Asm::asm_CALLD_ABS_PTRB()
 bool P2Asm::asm_LOC()
 {
     next();
+    const p2_TOKEN_e tok = curr_tok();
     const int idx = m_idx;
     P2Atom ptr = parse_dst();
     m_IR.set_inst5(p2_LOC);
-    switch (ptr.get_long()) {
-    case offs_PA:
+    switch (tok) {
+    case t_PA:
         m_IR.set_inst7(p2_LOC_PA);
         break;
-    case offs_PB:
+    case t_PB:
         m_IR.set_inst7(p2_LOC_PB);
         break;
-    case offs_PTRA:
+    case t_PTRA:
         m_IR.set_inst7(p2_LOC_PTRA);
         break;
-    case offs_PTRB:
+    case t_PTRB:
         m_IR.set_inst7(p2_LOC_PTRB);
         break;
     default:
-        m_idx = idx;
-        m_errors += tr("Invalid pointer '%1'; expected one of %2.")
-                  .arg(curr_str())
-                  .arg(tr("PA, PB, PTRA, or PTRB"));
-        emit Error(m_pass, m_lineno, m_errors.last());
+        switch (ptr.get_long()) {
+        case offs_PA:
+            m_IR.set_inst7(p2_LOC_PA);
+            break;
+        case offs_PB:
+            m_IR.set_inst7(p2_LOC_PB);
+            break;
+        case offs_PTRA:
+            m_IR.set_inst7(p2_LOC_PTRA);
+            break;
+        case offs_PTRB:
+            m_IR.set_inst7(p2_LOC_PTRB);
+            break;
+        default:
+            m_idx = idx;
+            m_errors += tr("Invalid pointer '%1'; expected one of %2.")
+                      .arg(curr_str())
+                      .arg(tr("PA, PB, PTRA, or PTRB"));
+            emit Error(m_pass, m_lineno, m_errors.last());
+        }
     }
     if (!mandatory_COMMA())
         return false;
