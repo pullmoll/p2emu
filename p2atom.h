@@ -96,6 +96,7 @@ public:
 
     p2_Traits_e traits() const;
     bool set_traits(p2_Traits_e traits);
+    bool set_trait(p2_Traits_e trait, bool on);
     bool add_trait(p2_Traits_e traits);
     bool clr_trait(p2_Traits_e traits);
     bool has_trait(const p2_Traits_e trait) const;

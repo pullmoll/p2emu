@@ -539,6 +539,13 @@ LOCSYM      "."[A-Z_]?[A-Z0-9_]+
 "_SET"                  return t_MODCZ__SET;
 
 "="			return t_ASSIGN;
+"IJMP3"                 return t_IJMP3;
+"IRET3"                 return t_IRET3;
+"IJMP2"                 return t_IJMP2;
+"IRET2"                 return t_IRET2;
+"IJMP1"                 return t_IJMP1;
+"IRET1"                 return t_IRET1;
+"PB"                    return t_PB;
 "PA"                    return t_PA;
 "PB"                    return t_PB;
 "--PTRA"		return t_PTRA_predec;

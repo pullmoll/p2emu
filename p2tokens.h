@@ -560,6 +560,12 @@ enum p2_TOKEN_e {
     t_ASSIGN,          //!< "="
 
     // shadow registers
+    t_IJMP3,
+    t_IRET3,
+    t_IJMP2,
+    t_IRET2,
+    t_IJMP1,
+    t_IRET1,
     t_PA,
     t_PB,
     t_PTRA,

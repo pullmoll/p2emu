@@ -230,6 +230,21 @@ bool P2Atom::set_traits(p2_Traits_e trait)
 }
 
 /**
+ * @brief Add or clear a trat depending on the %on flag
+ * @param trait trait to modify
+ * @param on if true, add trait, otherwise clear it
+ * @return true
+ */
+bool P2Atom::set_trait(p2_Traits_e trait, bool on)
+{
+    if (on)
+        add_trait(trait);
+    else
+        clr_trait(trait);
+    return true;
+}
+
+/**
  * @brief Add a trait to the atom's trait
  * @param trait trait to add
  * @return true if added, false if not changed
@@ -875,15 +890,10 @@ void P2Atom::arith_mul(const P2Atom& atom)
     case ut_String:
         //Q_ASSERT(m_value.type() == ut_Invalid);
         {
-            p2_BYTES lvalue = get_bytes();
-            p2_BYTES rvalue = atom.get_bytes();
-            uint carry = 0;
-            for (int i = 0; i < lvalue.count(); i++) {
-                uint byte = lvalue[i] * rvalue.value(i) + carry;
-                lvalue[i] = static_cast<p2_BYTE>(byte);
-                carry = byte >> 8;
-            }
-            set_bytes(lvalue);
+            p2_QUAD multiplicand = get_quad();
+            p2_QUAD factor = atom.get_quad();
+            m_value.set_quad(multiplicand * factor);
+            m_value.set_type(ut_String);
         }
         break;
     }
@@ -1039,48 +1049,54 @@ void P2Atom::arith_mod(const P2Atom& atom)
  */
 void P2Atom::arith_add(const P2Atom& atom)
 {
-    switch (m_value.type()) {
-    case ut_Invalid:
-        break;
-    case ut_Bool:
-        m_value.set_bool((m_value.get_bool() + atom.get_bool()) & true);
-        break;
-    case ut_Byte:
-        m_value.set_byte(m_value.get_byte() + atom.get_byte());
-        break;
-    case ut_Word:
-        m_value.set_word(m_value.get_word() + atom.get_word());
-        break;
-    case ut_Addr:
+    if (ut_Addr != m_value.type() && ut_Addr == atom.type()) {
+        // convert m_value to ut_Addr
         m_value.set_addr(m_value.get_addr(p2_cog) + atom.get_addr(p2_cog),
                          m_value.get_addr(p2_hub) + atom.get_addr(p2_hub));
-        break;
-    case ut_Long:
-        m_value.set_long(m_value.get_long() + atom.get_long());
-        break;
-    case ut_Quad:
-        m_value.set_quad(m_value.get_quad() + atom.get_quad());
-        break;
-    case ut_Real:
-        m_value.set_real(m_value.get_real() + atom.get_real());
-        break;
-    case ut_String:
-        //Q_ASSERT(m_value.type() == ut_Invalid);
-        {
-            p2_BYTES lvalue = get_bytes();
-            p2_BYTES rvalue = atom.get_bytes();
-            uint carry = 0;
-            for (int i = 0; i < lvalue.count(); i++) {
-                uint byte = lvalue[i] + rvalue.value(i) + carry;
-                lvalue[i] = static_cast<p2_BYTE>(byte);
-                carry = byte >> 8;
-            }
-            if (carry)
-                lvalue.append(static_cast<p2_BYTE>(carry));
-            set_bytes(lvalue);
-        }
-        break;
+        return;
     }
+        switch (m_value.type()) {
+        case ut_Invalid:
+            break;
+        case ut_Bool:
+            m_value.set_bool((m_value.get_bool() + atom.get_bool()) & true);
+            break;
+        case ut_Byte:
+            m_value.set_byte(m_value.get_byte() + atom.get_byte());
+            break;
+        case ut_Word:
+            m_value.set_word(m_value.get_word() + atom.get_word());
+            break;
+        case ut_Addr:
+            m_value.set_addr(m_value.get_addr(p2_cog) + atom.get_addr(p2_cog),
+                             m_value.get_addr(p2_hub) + atom.get_addr(p2_hub));
+            break;
+        case ut_Long:
+            m_value.set_long(m_value.get_long() + atom.get_long());
+            break;
+        case ut_Quad:
+            m_value.set_quad(m_value.get_quad() + atom.get_quad());
+            break;
+        case ut_Real:
+            m_value.set_real(m_value.get_real() + atom.get_real());
+            break;
+        case ut_String:
+            //Q_ASSERT(m_value.type() == ut_Invalid);
+            {
+                p2_BYTES lvalue = get_bytes();
+                p2_BYTES rvalue = atom.get_bytes();
+                uint carry = 0;
+                for (int i = 0; i < lvalue.count(); i++) {
+                    uint byte = lvalue[i] + rvalue.value(i) + carry;
+                    lvalue[i] = static_cast<p2_BYTE>(byte);
+                    carry = byte >> 8;
+                }
+                if (carry)
+                    lvalue.append(static_cast<p2_BYTE>(carry));
+                set_bytes(lvalue);
+            }
+            break;
+        }
 }
 
 /**
@@ -1089,47 +1105,53 @@ void P2Atom::arith_add(const P2Atom& atom)
  */
 void P2Atom::arith_sub(const P2Atom& atom)
 {
-    switch (m_value.type()) {
-    case ut_Invalid:
-        break;
-    case ut_Bool:
-        m_value.set_bool((m_value.get_bool() - atom.get_bool()) & true);
-        break;
-    case ut_Byte:
-        m_value.set_byte(m_value.get_byte() - atom.get_byte());
-        break;
-    case ut_Word:
-        m_value.set_word(m_value.get_word() - atom.get_word());
-        break;
-    case ut_Addr:
+    if (ut_Addr != m_value.type() && ut_Addr == atom.type()) {
+        // convert m_value to ut_Addr
         m_value.set_addr(m_value.get_addr(p2_cog) - atom.get_addr(p2_cog),
                          m_value.get_addr(p2_hub) - atom.get_addr(p2_hub));
-        break;
-    case ut_Long:
-        m_value.set_long(m_value.get_long() - atom.get_long());
-        break;
-    case ut_Quad:
-        m_value.set_quad(m_value.get_quad() - atom.get_quad());
-        break;
-    case ut_Real:
-        m_value.set_real(m_value.get_real() - atom.get_real());
-        break;
-    case ut_String:
-        //Q_ASSERT(m_value.type() == ut_Invalid);
-        {
-            p2_BYTES lvalue = get_bytes();
-            p2_BYTES rvalue = atom.get_bytes();
-            uint borrow = 0;
-            for (int i = 0; i < lvalue.count(); i++) {
-                uint byte = lvalue[i] - rvalue.value(i) - borrow;
-                lvalue[i] = static_cast<p2_BYTE>(byte);
-                borrow = byte >> 8;
-            }
-            // FIXME: undeflow borrow?
-            set_bytes(lvalue);
-        }
-        break;
+        return;
     }
+        switch (m_value.type()) {
+        case ut_Invalid:
+            break;
+        case ut_Bool:
+            m_value.set_bool((m_value.get_bool() - atom.get_bool()) & true);
+            break;
+        case ut_Byte:
+            m_value.set_byte(m_value.get_byte() - atom.get_byte());
+            break;
+        case ut_Word:
+            m_value.set_word(m_value.get_word() - atom.get_word());
+            break;
+        case ut_Addr:
+            m_value.set_addr(m_value.get_addr(p2_cog) - atom.get_addr(p2_cog),
+                             m_value.get_addr(p2_hub) - atom.get_addr(p2_hub));
+            break;
+        case ut_Long:
+            m_value.set_long(m_value.get_long() - atom.get_long());
+            break;
+        case ut_Quad:
+            m_value.set_quad(m_value.get_quad() - atom.get_quad());
+            break;
+        case ut_Real:
+            m_value.set_real(m_value.get_real() - atom.get_real());
+            break;
+        case ut_String:
+            //Q_ASSERT(m_value.type() == ut_Invalid);
+            {
+                p2_BYTES lvalue = get_bytes();
+                p2_BYTES rvalue = atom.get_bytes();
+                uint borrow = 0;
+                for (int i = 0; i < lvalue.count(); i++) {
+                    uint byte = lvalue[i] - rvalue.value(i) - borrow;
+                    lvalue[i] = static_cast<p2_BYTE>(byte);
+                    borrow = byte >> 8;
+                }
+                // FIXME: undeflow borrow?
+                set_bytes(lvalue);
+            }
+            break;
+        }
 }
 
 /**
@@ -1138,56 +1160,62 @@ void P2Atom::arith_sub(const P2Atom& atom)
  */
 void P2Atom::binary_shl(const P2Atom& atom)
 {
-    switch (m_value.type()) {
-    case ut_Invalid:
-        break;
-    case ut_Bool:
-        m_value.set_bool(false);
-        break;
-    case ut_Byte:
-        m_value.set_byte(static_cast<p2_BYTE>(m_value.get_byte() << atom.get_byte()));
-        break;
-    case ut_Word:
-        m_value.set_word(static_cast<p2_WORD>(m_value.get_word() << atom.get_word()));
-        break;
-    case ut_Addr:
+    if (ut_Addr != m_value.type() && ut_Addr == atom.type()) {
+        // convert m_value to ut_Addr
         m_value.set_addr(m_value.get_addr(p2_cog) << atom.get_addr(p2_cog),
                          m_value.get_addr(p2_hub) << atom.get_addr(p2_hub));
-        break;
-    case ut_Long:
-        m_value.set_long(m_value.get_long() << atom.get_long());
-        break;
-    case ut_Quad:
-        m_value.set_quad(m_value.get_quad() << atom.get_long());
-        break;
-    case ut_Real:
-        m_value.set_real(qRound(m_value.get_real()) << atom.get_long());
-        break;
-    case ut_String:
-        //Q_ASSERT(m_value.type() == ut_Invalid);
-        {
-            p2_BYTES lvalue = get_bytes();
-            p2_LONG rvalue = atom.get_long();
-            uint carry = 0;
-            int start = 0;
-            while (rvalue >= 8) {
-                lvalue.insert(0, rvalue / 8, 0x00);
-                start = rvalue / 8;
-                rvalue %= 8;
-            }
-            if (rvalue) {
-                for (int i = start; i < lvalue.count(); i++) {
-                    uint byte = static_cast<uint>(lvalue[i] << rvalue) + carry;
-                    lvalue[i] = static_cast<p2_BYTE>(byte);
-                    carry = byte >> 8;
-                }
-            }
-            if (carry)
-                lvalue.append(static_cast<p2_BYTE>(carry));
-            set_bytes(lvalue);
-        }
-        break;
+        return;
     }
+        switch (m_value.type()) {
+        case ut_Invalid:
+            break;
+        case ut_Bool:
+            m_value.set_bool(false);
+            break;
+        case ut_Byte:
+            m_value.set_byte(static_cast<p2_BYTE>(m_value.get_byte() << atom.get_byte()));
+            break;
+        case ut_Word:
+            m_value.set_word(static_cast<p2_WORD>(m_value.get_word() << atom.get_word()));
+            break;
+        case ut_Addr:
+            m_value.set_addr(m_value.get_addr(p2_cog) << atom.get_addr(p2_cog),
+                             m_value.get_addr(p2_hub) << atom.get_addr(p2_hub));
+            break;
+        case ut_Long:
+            m_value.set_long(m_value.get_long() << atom.get_long());
+            break;
+        case ut_Quad:
+            m_value.set_quad(m_value.get_quad() << atom.get_long());
+            break;
+        case ut_Real:
+            m_value.set_real(qRound(m_value.get_real()) << atom.get_long());
+            break;
+        case ut_String:
+            //Q_ASSERT(m_value.type() == ut_Invalid);
+            {
+                p2_BYTES lvalue = get_bytes();
+                p2_LONG rvalue = atom.get_long();
+                uint carry = 0;
+                int start = 0;
+                while (rvalue >= 8) {
+                    lvalue.insert(0, rvalue / 8, 0x00);
+                    start = rvalue / 8;
+                    rvalue %= 8;
+                }
+                if (rvalue) {
+                    for (int i = start; i < lvalue.count(); i++) {
+                        uint byte = static_cast<uint>(lvalue[i] << rvalue) + carry;
+                        lvalue[i] = static_cast<p2_BYTE>(byte);
+                        carry = byte >> 8;
+                    }
+                }
+                if (carry)
+                    lvalue.append(static_cast<p2_BYTE>(carry));
+                set_bytes(lvalue);
+            }
+            break;
+        }
 }
 
 /**
@@ -1196,52 +1224,58 @@ void P2Atom::binary_shl(const P2Atom& atom)
  */
 void P2Atom::binary_shr(const P2Atom& atom)
 {
-    switch (m_value.type()) {
-    case ut_Invalid:
-        break;
-    case ut_Bool:
-        m_value.set_bool(false);
-        break;
-    case ut_Byte:
-        m_value.set_byte(m_value.get_byte() >> atom.get_byte());
-        break;
-    case ut_Word:
-        m_value.set_word(m_value.get_word() >> atom.get_word());
-        break;
-    case ut_Addr:
+    if (ut_Addr != m_value.type() && ut_Addr == atom.type()) {
+        // convert m_value to ut_Addr
         m_value.set_addr(m_value.get_addr(p2_cog) >> atom.get_addr(p2_cog),
                          m_value.get_addr(p2_hub) >> atom.get_addr(p2_hub));
-        break;
-    case ut_Long:
-        m_value.set_long(m_value.get_long() >> atom.get_long());
-        break;
-    case ut_Quad:
-        m_value.set_quad(m_value.get_quad() >> atom.get_long());
-        break;
-    case ut_Real:
-        m_value.set_real(qRound(m_value.get_real()) >> atom.get_long());
-        break;
-    case ut_String:
-        //Q_ASSERT(m_value.type() == ut_Invalid);
-        {
-            p2_BYTES lvalue = get_bytes();
-            p2_LONG rvalue = atom.get_long();
-            uint carry = 0;
-            while (rvalue >= 8) {
-                lvalue.remove(0, rvalue / 8);
-                rvalue %= 8;
-            }
-            if (rvalue) {
-                for (int i = lvalue.count() - 1; i >= 0; --i) {
-                    uint byte = carry + static_cast<uint>(lvalue[i] >> rvalue);
-                    lvalue[i] = static_cast<p2_BYTE>(byte);
-                    carry = byte & ~0xffu;
-                }
-            }
-            set_bytes(lvalue);
-        }
-        break;
+        return;
     }
+        switch (m_value.type()) {
+        case ut_Invalid:
+            break;
+        case ut_Bool:
+            m_value.set_bool(false);
+            break;
+        case ut_Byte:
+            m_value.set_byte(m_value.get_byte() >> atom.get_byte());
+            break;
+        case ut_Word:
+            m_value.set_word(m_value.get_word() >> atom.get_word());
+            break;
+        case ut_Addr:
+            m_value.set_addr(m_value.get_addr(p2_cog) >> atom.get_addr(p2_cog),
+                             m_value.get_addr(p2_hub) >> atom.get_addr(p2_hub));
+            break;
+        case ut_Long:
+            m_value.set_long(m_value.get_long() >> atom.get_long());
+            break;
+        case ut_Quad:
+            m_value.set_quad(m_value.get_quad() >> atom.get_long());
+            break;
+        case ut_Real:
+            m_value.set_real(qRound(m_value.get_real()) >> atom.get_long());
+            break;
+        case ut_String:
+            //Q_ASSERT(m_value.type() == ut_Invalid);
+            {
+                p2_BYTES lvalue = get_bytes();
+                p2_LONG rvalue = atom.get_long();
+                uint carry = 0;
+                while (rvalue >= 8) {
+                    lvalue.remove(0, rvalue / 8);
+                    rvalue %= 8;
+                }
+                if (rvalue) {
+                    for (int i = lvalue.count() - 1; i >= 0; --i) {
+                        uint byte = carry + static_cast<uint>(lvalue[i] >> rvalue);
+                        lvalue[i] = static_cast<p2_BYTE>(byte);
+                        carry = byte & ~0xffu;
+                    }
+                }
+                set_bytes(lvalue);
+            }
+            break;
+        }
 }
 
 /**
@@ -1250,44 +1284,50 @@ void P2Atom::binary_shr(const P2Atom& atom)
  */
 void P2Atom::binary_and(const P2Atom& atom)
 {
-    switch (m_value.type()) {
-    case ut_Invalid:
-        break;
-    case ut_Bool:
-        m_value.set_bool(m_value.get_bool() & atom.get_bool());
-        break;
-    case ut_Byte:
-        m_value.set_byte(m_value.get_byte() & atom.get_byte());
-        break;
-    case ut_Word:
-        m_value.set_word(m_value.get_word() & atom.get_word());
-        break;
-    case ut_Addr:
+    if (ut_Addr != m_value.type() && ut_Addr == atom.type()) {
+        // convert m_value to ut_Addr
         m_value.set_addr(m_value.get_addr(p2_cog) & atom.get_addr(p2_cog),
                          m_value.get_addr(p2_hub) & atom.get_addr(p2_hub));
-        break;
-    case ut_Long:
-        m_value.set_long(m_value.get_long() & atom.get_long());
-        break;
-    case ut_Quad:
-        m_value.set_quad(m_value.get_quad() & atom.get_quad());
-        break;
-    case ut_Real:
-        m_value.set_real(m_value.get_quad() & atom.get_quad());
-        break;
-    case ut_String:
-        //Q_ASSERT(m_value.type() == ut_Invalid);
-        {
-            p2_BYTES lvalue = get_bytes();
-            p2_BYTES rvalue = atom.get_bytes();
-            for (int i = 0; i < lvalue.count(); i++) {
-                uint byte = lvalue[i] & rvalue.value(i);
-                lvalue[i] = static_cast<p2_BYTE>(byte);
-            }
-            set_bytes(lvalue);
-        }
-        break;
+        return;
     }
+        switch (m_value.type()) {
+        case ut_Invalid:
+            break;
+        case ut_Bool:
+            m_value.set_bool(m_value.get_bool() & atom.get_bool());
+            break;
+        case ut_Byte:
+            m_value.set_byte(m_value.get_byte() & atom.get_byte());
+            break;
+        case ut_Word:
+            m_value.set_word(m_value.get_word() & atom.get_word());
+            break;
+        case ut_Addr:
+            m_value.set_addr(m_value.get_addr(p2_cog) & atom.get_addr(p2_cog),
+                             m_value.get_addr(p2_hub) & atom.get_addr(p2_hub));
+            break;
+        case ut_Long:
+            m_value.set_long(m_value.get_long() & atom.get_long());
+            break;
+        case ut_Quad:
+            m_value.set_quad(m_value.get_quad() & atom.get_quad());
+            break;
+        case ut_Real:
+            m_value.set_real(m_value.get_quad() & atom.get_quad());
+            break;
+        case ut_String:
+            //Q_ASSERT(m_value.type() == ut_Invalid);
+            {
+                p2_BYTES lvalue = get_bytes();
+                p2_BYTES rvalue = atom.get_bytes();
+                for (int i = 0; i < lvalue.count(); i++) {
+                    uint byte = lvalue[i] & rvalue.value(i);
+                    lvalue[i] = static_cast<p2_BYTE>(byte);
+                }
+                set_bytes(lvalue);
+            }
+            break;
+        }
 }
 
 /**
@@ -1296,6 +1336,12 @@ void P2Atom::binary_and(const P2Atom& atom)
  */
 void P2Atom::binary_xor(const P2Atom& atom)
 {
+    if (ut_Addr != m_value.type() && ut_Addr == atom.type()) {
+        // convert m_value to ut_Addr
+        m_value.set_addr(m_value.get_addr(p2_cog) ^ atom.get_addr(p2_cog),
+                         m_value.get_addr(p2_hub) ^ atom.get_addr(p2_hub));
+        return;
+    }
     switch (m_value.type()) {
     case ut_Invalid:
         break;
@@ -1342,6 +1388,12 @@ void P2Atom::binary_xor(const P2Atom& atom)
  */
 void P2Atom::binary_or(const P2Atom& atom)
 {
+    if (ut_Addr != m_value.type() && ut_Addr == atom.type()) {
+        // convert m_value to ut_Addr
+        m_value.set_addr(m_value.get_addr(p2_cog) | atom.get_addr(p2_cog),
+                         m_value.get_addr(p2_hub) | atom.get_addr(p2_hub));
+        return;
+    }
     switch (m_value.type()) {
     case ut_Invalid:
         break;

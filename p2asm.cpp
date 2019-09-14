@@ -679,10 +679,7 @@ bool P2Asm::assemble_dat_section()
         if (!m_symbol.isEmpty()) {
             // defining a symbol at the current PC
             P2Atom atom(m_cogaddr, m_hubaddr);
-            if (m_hubmode)
-                atom.add_trait(tr_HUBMODE);
-            else
-                atom.clr_trait(tr_HUBMODE);
+            atom.set_trait(tr_HUBMODE, m_hubmode);
             define_symbol(m_symbol, atom);
         }
         break;
@@ -2933,6 +2930,12 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
             atom.set_value(sym->value());
             DBG_EXPR(" atom found locsym: %s = %s", qPrintable(sym->name()), qPrintable(atom.str()));
             break;
+        } else if (m_pass > 1) {
+            QString symbol = find_locsym(m_section, str);
+            m_errors += tr("Undefined %1 symbol %2.")
+                        .arg(tr("local"))
+                        .arg(symbol);
+            emit Error(m_pass, m_lineno, m_errors.last());
         }
         DBG_EXPR(" atom undefined locsym: %s", qPrintable(str));
         break;
@@ -2944,6 +2947,12 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
             atom.set_value(sym->value());
             DBG_EXPR(" atom found symbol: %s = %s", qPrintable(sym->name()), qPrintable(atom.str()));
             break;
+        } else if (m_pass > 1) {
+            QString symbol = find_symbol(m_section, str, true);
+            m_errors += tr("Undefined %1 symbol %2.")
+                        .arg(tr("global"))
+                        .arg(symbol);
+            emit Error(m_pass, m_lineno, m_errors.last());
         }
         DBG_EXPR(" atom undefined symbol: %s", qPrintable(str));
         break;
@@ -2991,17 +3000,57 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
         DBG_EXPR(" atom real const = %s", qPrintable(atom.str()));
         break;
 
+    case t_IJMP3:
+        DBG_EXPR(" atom IJMP3: %s", qPrintable(str));
+        atom.set_value(P2Union(sz_LONG * offs_IJMP3, offs_IJMP3));
+        add_const_symbol(p2_prefix_offs_const, word, atom);
+        DBG_EXPR(" atom IJMP3 atom = %s", qPrintable(atom.str()));
+        break;
+
+    case t_IRET3:
+        DBG_EXPR(" atom IRET3: %s", qPrintable(str));
+        atom.set_value(P2Union(sz_LONG * offs_IRET3, offs_IRET3));
+        add_const_symbol(p2_prefix_offs_const, word, atom);
+        DBG_EXPR(" atom IRET3 atom = %s", qPrintable(atom.str()));
+        break;
+
+    case t_IJMP2:
+        DBG_EXPR(" atom IJMP2: %s", qPrintable(str));
+        atom.set_value(P2Union(sz_LONG * offs_IJMP2, offs_IJMP2));
+        add_const_symbol(p2_prefix_offs_const, word, atom);
+        DBG_EXPR(" atom IJMP2 atom = %s", qPrintable(atom.str()));
+        break;
+
+    case t_IRET2:
+        DBG_EXPR(" atom IRET2: %s", qPrintable(str));
+        atom.set_value(P2Union(sz_LONG * offs_IRET2, offs_IRET2));
+        add_const_symbol(p2_prefix_offs_const, word, atom);
+        DBG_EXPR(" atom IRET2 atom = %s", qPrintable(atom.str()));
+        break;
+
+    case t_IJMP1:
+        DBG_EXPR(" atom IJMP1: %s", qPrintable(str));
+        atom.set_value(P2Union(sz_LONG * offs_IJMP1, offs_IJMP1));
+        add_const_symbol(p2_prefix_offs_const, word, atom);
+        DBG_EXPR(" atom IJMP1 atom = %s", qPrintable(atom.str()));
+        break;
+
+    case t_IRET1:
+        DBG_EXPR(" atom IRET1: %s", qPrintable(str));
+        atom.set_value(P2Union(sz_LONG * offs_IRET1, offs_IRET1));
+        add_const_symbol(p2_prefix_offs_const, word, atom);
+        DBG_EXPR(" atom IRET1 atom = %s", qPrintable(atom.str()));
+        break;
+
     case t_PA:
         DBG_EXPR(" atom PA: %s", qPrintable(str));
         atom.set_value(P2Union(sz_LONG * offs_PA, offs_PA));
-        atom.set_type(ut_Addr);
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom PA atom = %s", qPrintable(atom.str()));
         break;
 
     case t_PB:
         DBG_EXPR(" atom PB: %s", qPrintable(str));
-        atom.set_type(ut_Addr);
         atom.set_value(P2Union(sz_LONG * offs_PB, offs_PB));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom PB atom = %s", qPrintable(atom.str()));
@@ -3013,7 +3062,6 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_PTRA_preinc:
     case t_PTRA_predec:
         DBG_EXPR(" atom PTRA: %s", qPrintable(str));
-        atom.set_type(ut_Addr);
         atom.set_value(P2Union(sz_LONG * offs_PTRA, offs_PTRA));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         if (t_PTRA_preinc == tok || t_PTRA_predec == tok)
@@ -3033,7 +3081,6 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_PTRB_preinc:
     case t_PTRB_predec:
         DBG_EXPR(" atom PTRB: %s", qPrintable(str));
-        atom.set_type(ut_Addr);
         atom.set_value(P2Union(sz_LONG * offs_PTRB, offs_PTRB));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         if (t_PTRB_preinc == tok || t_PTRB_predec == tok)
@@ -3049,7 +3096,6 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
 
     case t_DIRA:
         DBG_EXPR(" atom DIRA: %s", qPrintable(str));
-        atom.set_type(ut_Addr);
         atom.set_value(P2Union(sz_LONG * offs_DIRA, offs_DIRA));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom DIRA const = %s", qPrintable(atom.str()));
@@ -3057,7 +3103,6 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
 
     case t_DIRB:
         DBG_EXPR(" atom DIRB: %s", qPrintable(str));
-        atom.set_type(ut_Addr);
         atom.set_value(P2Union(sz_LONG * offs_DIRB, offs_DIRB));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom DIRB const = %s", qPrintable(atom.str()));
@@ -3065,7 +3110,6 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
 
     case t_OUTA:
         DBG_EXPR(" atom OUTA: %s", qPrintable(str));
-        atom.set_type(ut_Addr);
         atom.set_value(P2Union(sz_LONG * offs_OUTA, offs_OUTA));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom OUTA atom = %s", qPrintable(atom.str()));
@@ -3073,7 +3117,6 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
 
     case t_OUTB:
         DBG_EXPR(" atom OUTB: %s", qPrintable(str));
-        atom.set_type(ut_Addr);
         atom.set_value(P2Union(sz_LONG * offs_OUTB, offs_OUTB));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom OUTB atom = %s", qPrintable(atom.str()));
@@ -3081,7 +3124,6 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
 
     case t_INA:
         DBG_EXPR(" atom INA: %s", qPrintable(str));
-        atom.set_type(ut_Addr);
         atom.set_value(P2Union(sz_LONG * offs_INA, offs_INA));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom INA const = %s", qPrintable(atom.str()));
@@ -3089,7 +3131,6 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
 
     case t_INB:
         DBG_EXPR(" atom INB: %s", qPrintable(str));
-        atom.set_type(ut_Addr);
         atom.set_value(P2Union(sz_LONG * offs_INB, offs_INB));
         add_const_symbol(p2_prefix_offs_const, word, atom);
         DBG_EXPR(" atom INB atom = %s", qPrintable(atom.str()));
@@ -4996,12 +5037,12 @@ bool P2Asm::asm_FIT()
     m_advance = 0;
     m_IR.set_as_IR(false);
     P2Atom atom = parse_expression();
-    const p2_LONG fit = atom.isNull() ? COG_SIZE : atom.get_addr(p2_hub);
+    const p2_LONG fit = atom.isNull() ? COG_SIZE : atom.get_addr(p2_cog) / sz_LONG;
     const p2_LONG org = m_cogaddr / sz_LONG;
     if (fit < org) {
         m_errors += tr("Code does not fit below $%1 (ORG is $%2)")
-                  .arg(fit / 4, 0, 16)
-                  .arg(org / 4, 0, 16);
+                  .arg(fit, 0, 16)
+                  .arg(org, 0, 16);
         emit Error(m_pass, m_lineno, m_errors.last());
     }
     m_IR.set_assign(atom);
@@ -5144,10 +5185,11 @@ bool P2Asm::asm_LONG()
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
         p2_LONG _long = atom.get_long();
-        p2_LONG count = atom.index_long() & 1023;   // XXX: fix "$1f0 - $" type expressions
+        // FIXME: fix "$1f0 - $" type expressions
+        p2_LONG count = atom.index_long() / sz_LONG;
         m_data.set_type(ut_Long);
         m_data.add_long(_long);
-        if (count > 0) {
+        if (count > 0 && count < 4096) {
             Q_ASSERT(count < 4096);
             while (count-- > 1)
                 m_data.add_long(_long);
