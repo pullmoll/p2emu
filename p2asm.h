@@ -211,8 +211,6 @@ private:
     p2_Traits_e parse_traits();
     P2Atom parse_expression(int level = 0);
 
-    bool encode_ptr_index(P2Atom& index);
-
     bool error_dst_or_src();
     P2Atom parse_dst(P2Opcode::ImmFlag flag = P2Opcode::ignore);
     P2Atom parse_src(P2Opcode::ImmFlag flag = P2Opcode::ignore);

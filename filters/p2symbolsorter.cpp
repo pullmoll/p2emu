@@ -11,22 +11,24 @@ bool P2SymbolSorter::lessThan(const QModelIndex& l_index, const QModelIndex& r_i
 {
     QVariant l_data = sourceModel()->data(l_index, Qt::EditRole);
     QVariant r_data = sourceModel()->data(r_index, Qt::EditRole);
-    if (l_data.userType() == qMetaTypeId<P2Word>()) {
+    if (l_data.canConvert<P2Word>()) {
         const P2Word& l = qvariant_cast<P2Word>(l_data);
         const P2Word& r = qvariant_cast<P2Word>(r_data);
         return l.lineno() < r.lineno();
     }
-    if (l_data.userType() == qMetaTypeId<P2Symbol>()) {
+    if (l_data.canConvert<P2Symbol>()) {
         const P2Symbol l = qvariant_cast<P2Symbol>(l_data);
         const P2Symbol r = qvariant_cast<P2Symbol>(r_data);
-        return l->definition().lineno() < r->definition().lineno();
+        if (l_index.column() == P2SymbolsModel::c_Definition)
+            return l->definition().lineno() < r->definition().lineno();
+        return l->name() < r->name();
     }
-    if (l_data.userType() == qMetaTypeId<p2_Union_e>()) {
+    if (l_data.canConvert<p2_Union_e>()) {
         const p2_Union_e l = qvariant_cast<p2_Union_e>(l_data);
         const p2_Union_e r = qvariant_cast<p2_Union_e>(r_data);
         return l < r;
     }
-    if (l_data.userType() == qMetaTypeId<P2Atom>()) {
+    if (l_data.canConvert<P2Atom>()) {
         const P2Atom l = qvariant_cast<P2Atom>(l_data);
         const P2Atom r = qvariant_cast<P2Atom>(r_data);
         if (l.type() == r.type()) {

@@ -45,6 +45,7 @@ int main(int argc, char *argv[])
     a.setOrganizationName(QStringLiteral("PullMoll"));
     a.setOrganizationDomain(QStringLiteral("https://propeller2.voidlinux.de/"));
 
+#if 0
     QTranslator translator;
      // look up e.g. :/translations/p2emu.de.qm
     const QString filename = QLatin1String("p2emu");
@@ -54,6 +55,7 @@ int main(int argc, char *argv[])
     bool ok = translator.load(QLocale(), filename, prefix, directory, suffix);
     if (ok)
         a.installTranslator(&translator);
+#endif
     MainWindow w;
     w.show();
 

@@ -118,16 +118,14 @@ private slots:
     void print_error(int pass, int lineno, const QString& message);
     void goto_line(const QUrl& url);
     void goto_line_number();
+    void goto_definition(const QModelIndex& index);
     void resizeSourceSplitter();
 private:
     Ui::MainWindow *ui;
     QVector<P2CogView*> m_vcog;
     P2Hub* m_hub;
     P2Asm* m_asm;
-    P2AsmModel* m_amodel;
     P2Dasm* m_dasm;
-    P2DasmModel* m_dmodel;
-    P2SymbolsModel* m_smodel;
 
     QFont m_font;
     int m_num_errors;
@@ -136,6 +134,10 @@ private:
     int m_source_percent;
     int m_symbols_percent;
     int m_errors_percent;
+
+    P2AsmModel* asm_model();
+    P2DasmModel* dasm_model();
+    P2SymbolsModel* sym_model();
 
     void setupAssembler();
     void setupDisassembler();

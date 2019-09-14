@@ -30,7 +30,7 @@ LOCSYM      "."[A-Z_]?[A-Z0-9_]+
 <CURLY>[ \t]+           return t_none;
 <CURLY>"'"[^\n]+        return t_comment_eol;
 <CURLY>[ \t]*{STRCONST} return t_comment_eol;
-<CURLY>[^\n{}]+         return t_comment_eol;
+<CURLY>[^\n{}]+         return t_comment_curly;
 <CURLY>"}"+             {
                             for (int i = 0; i < yyleng; i++)
                                 if ('}' == yytext[i])

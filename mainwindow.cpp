@@ -101,10 +101,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_vcog()
     , m_hub(new P2Hub(ncogs, this))
     , m_asm(new P2Asm(this))
-    , m_amodel(new P2AsmModel(m_asm))
     , m_dasm(new P2Dasm(m_hub->cog(0)))
-    , m_dmodel(new P2DasmModel(m_dasm))
-    , m_smodel(new P2SymbolsModel())
     , m_font(QLatin1String("Source Code Pro"), 9)
     , m_asm_font_size(11)
     , m_dasm_font_size(11)
@@ -167,6 +164,7 @@ void MainWindow::restoreSettings()
 
 void MainWindow::saveSettingsAsm()
 {
+    const P2AsmModel* amodel = asm_model();
     QSettings s;
     QList<int> sizes = ui->splSource->sizes();
     QSize size = ui->tabAsm->size();
@@ -177,7 +175,7 @@ void MainWindow::saveSettingsAsm()
     }
 
     s.beginGroup(grp_assembler);
-    s.setValue(key_opcodes, m_amodel->opcode_format());
+    s.setValue(key_opcodes, amodel->opcode_format());
     s.setValue(key_column_origin, ui->tvAsm->isColumnHidden(P2AsmModel::c_Origin));
     s.setValue(key_column_address, ui->tvAsm->isColumnHidden(P2AsmModel::c_Address));
     s.setValue(key_column_opcode, ui->tvAsm->isColumnHidden(P2AsmModel::c_Opcode));
@@ -198,12 +196,13 @@ void MainWindow::saveSettingsAsm()
 
 void MainWindow::restoreSettingsAsm()
 {
+    P2AsmModel* amodel = asm_model();
     QSettings s;
     s.beginGroup(grp_assembler);
     setAsmOpcodes(s.value(key_opcodes, fmt_bin).toInt());
     int row = s.value(key_current_row).toInt();
     int column = s.value(key_current_row).toInt();
-    ui->tvAsm->setCurrentIndex(m_amodel->index(row, column));
+    ui->tvAsm->setCurrentIndex(amodel->index(row, column));
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Origin, s.value(key_column_origin, false).toBool());
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Address, s.value(key_column_address, false).toBool());
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Opcode, s.value(key_column_opcode, false).toBool());
@@ -222,9 +221,10 @@ void MainWindow::restoreSettingsAsm()
 
 void MainWindow::saveSettingsDasm()
 {
+    const P2DasmModel* dmodel = dasm_model();
     QSettings s;
     s.beginGroup(grp_disassembler);
-    s.setValue(key_opcodes, m_dmodel->opcode_format());
+    s.setValue(key_opcodes, dmodel->opcode_format());
     s.setValue(key_lowercase, ui->action_Dasm_Lowercase->isChecked());
     s.setValue(key_column_address, ui->tvDasm->isColumnHidden(P2DasmModel::c_Address));
     s.setValue(key_column_opcode, ui->tvDasm->isColumnHidden(P2DasmModel::c_Opcode));
@@ -335,12 +335,13 @@ void MainWindow::goto_address()
 
 void MainWindow::setAsmOpcodes(int mode)
 {
+    P2AsmModel* amodel = asm_model();
     p2_FORMAT_e format = static_cast<p2_FORMAT_e>(mode);
     ui->action_Asm_Opcodes_bin->setChecked(format == fmt_bin);
     ui->action_Asm_Opcodes_byt->setChecked(format == fmt_bit);
     ui->action_Asm_Opcodes_dec->setChecked(format == fmt_dec);
     ui->action_Asm_Opcodes_hex->setChecked(format == fmt_hex);
-    m_amodel->setOpcodeFormat(format);
+    amodel->setOpcodeFormat(format);
     updateAsmColumnSizes();
 }
 
@@ -374,31 +375,36 @@ void MainWindow::decAsmFontSize()
 void MainWindow::setAsmFontSize(int size)
 {
     ui->tvAsm->setUpdatesEnabled(false);
-    ui->tvSymbols->setUpdatesEnabled(false);
+    ui->tvSym->setUpdatesEnabled(false);
 
     QFont font = ui->tvAsm->font();
     font.setPointSize(size);
     ui->tvAsm->setFont(font);
-    m_amodel->setFont(font);
+    P2AsmModel* amodel = asm_model();
+    if (amodel)
+        amodel->setFont(font);
 
-    ui->tvSymbols->setFont(font);
-    m_smodel->setFont(font);
+    ui->tvSym->setFont(font);
+    P2SymbolsModel* smodel = sym_model();
+    if (smodel)
+        smodel->setFont(font);
 
     updateAsmColumnSizes();
     updateSymbolsColumnSizes();
 
-    ui->tvSymbols->setUpdatesEnabled(true);
+    ui->tvSym->setUpdatesEnabled(true);
     ui->tvAsm->setUpdatesEnabled(true);
 }
 
 void MainWindow::setDasmOpcodes(int mode)
 {
+    P2DasmModel* dmodel = dasm_model();
     p2_FORMAT_e format = static_cast<p2_FORMAT_e>(mode);
     ui->action_Dasm_Opcodes_bin->setChecked(format == fmt_bin);
     ui->action_Dasm_Opcodes_byt->setChecked(format == fmt_bit);
     ui->action_Dasm_Opcodes_dec->setChecked(format == fmt_dec);
     ui->action_Dasm_Opcodes_hex->setChecked(format == fmt_hex);
-    m_dmodel->setOpcodeFormat(format);
+    dmodel->setOpcodeFormat(format);
     updateDasmColumnSizes();
 }
 
@@ -431,12 +437,13 @@ void MainWindow::decDasmFontSize()
 
 void MainWindow::setDasmFontSize(int size)
 {
+    P2DasmModel* dmodel = dasm_model();
     ui->tvDasm->setUpdatesEnabled(false);
 
     QFont font = ui->tvDasm->font();
     font.setPointSize(size);
     ui->tvDasm->setFont(font);
-    m_dmodel->setFont(font);
+    dmodel->setFont(font);
     updateDasmColumnSizes();
 
     ui->tvDasm->setUpdatesEnabled(true);
@@ -444,11 +451,12 @@ void MainWindow::setDasmFontSize(int size)
 
 void MainWindow::setAsmHeaderColums(const QPoint& pos)
 {
-    QList<P2AsmModel::column_e> columns = m_amodel->columns();
+    P2AsmModel* amodel = asm_model();
+    QList<P2AsmModel::column_e> columns = amodel->columns();
 
     QMenu m(tr("Select columns"));
     foreach(P2AsmModel::column_e column, columns) {
-        QAction* act = new QAction(m_amodel->headerData(column, Qt::Horizontal).toString());
+        QAction* act = new QAction(amodel->headerData(column, Qt::Horizontal).toString());
         act->setData(column);
         act->setCheckable(true);
         act->setChecked(!ui->tvAsm->isColumnHidden(column));
@@ -467,11 +475,12 @@ void MainWindow::setAsmHeaderColums(const QPoint& pos)
 
 void MainWindow::setDasmHeaderColums(const QPoint& pos)
 {
-    QList<P2DasmModel::column_e> columns = m_dmodel->columns();
+    const P2DasmModel* dmodel = dasm_model();
+    QList<P2DasmModel::column_e> columns = dmodel->columns();
 
     QMenu m(tr("Select columns"));
     foreach(P2DasmModel::column_e column, columns) {
-        QAction* act = new QAction(m_dmodel->headerData(column, Qt::Horizontal).toString());
+        QAction* act = new QAction(dmodel->headerData(column, Qt::Horizontal).toString());
         act->setData(column);
         act->setCheckable(true);
         act->setChecked(!ui->tvDasm->isColumnHidden(column));
@@ -490,25 +499,28 @@ void MainWindow::setDasmHeaderColums(const QPoint& pos)
 
 void MainWindow::setSymbolsHeaderColums(const QPoint& pos)
 {
-    QList<P2SymbolsModel::column_e> columns = m_smodel->columns();
+    P2SymbolsModel* smodel = sym_model();
+    if (!smodel)
+        return;
+    QList<P2SymbolsModel::column_e> columns = smodel ->columns();
 
     QMenu m(tr("Select columns"));
     foreach(P2SymbolsModel::column_e column, columns) {
-        QAction* act = new QAction(m_smodel->headerData(column, Qt::Horizontal).toString());
+        QAction* act = new QAction(smodel ->headerData(column, Qt::Horizontal).toString());
         act->setData(column);
         act->setCheckable(true);
-        act->setChecked(!ui->tvSymbols->isColumnHidden(column));
+        act->setChecked(!ui->tvSym->isColumnHidden(column));
         m.addAction(act);
     }
 
     // Popup menu
-    QHeaderView* hv = ui->tvSymbols->horizontalHeader();
+    QHeaderView* hv = ui->tvSym->horizontalHeader();
     QAction* act = m.exec(hv->mapToGlobal(pos));
     if (!act)
         return;
     // hide or show the selected column
     P2SymbolsModel::column_e column = static_cast<P2SymbolsModel::column_e>(act->data().toInt());
-    ui->tvSymbols->setColumnHidden(column, !act->isChecked());
+    ui->tvSym->setColumnHidden(column, !act->isChecked());
 }
 
 void MainWindow::hubSingleStep()
@@ -520,13 +532,16 @@ void MainWindow::hubSingleStep()
 
 void MainWindow::loadObject(const QString& filename)
 {
+    P2DasmModel* dmodel = dasm_model();
+    if (!dmodel)
+        return;
     QFileInfo info(filename);
     ui->tabWidget->setTabText(1, QString("%1 [%2]").arg(tr("Disassembler")).arg(info.fileName()));
 
     if (!info.path().startsWith(QChar(':')))
         m_hub->set_pathname(info.path());
     m_hub->load_obj(filename);
-    m_dmodel->invalidate();
+    dmodel->invalidate();
     updateDasmColumnSizes();
     ui->tvDasm->update();
 }
@@ -599,16 +614,17 @@ void MainWindow::openSource(const QString& sourcefile)
 
 void MainWindow::loadSource(const QString& filename)
 {
+    P2AsmModel* amodel = asm_model();
     QFileInfo info(filename);
     ui->tabWidget->setTabText(0, QString("%1 [%2]").arg(tr("Assembler")).arg(info.fileName()));
 
     if (!info.path().startsWith(QChar(':')))
         m_asm->set_pathname(info.path());
     m_asm->load(filename);
-    m_amodel->invalidate();
+    amodel->invalidate();
     updateAsmColumnSizes();
     updateSymbolsColumnSizes();
-    ui->tvAsm->setCurrentIndex(m_amodel->index(0, P2AsmModel::c_Source));
+    ui->tvAsm->setCurrentIndex(amodel->index(0, P2AsmModel::c_Source));
     ui->tvAsm->update();
 
     QLabel* lbl_lines = ui->toolbarAsm->findChild<QLabel*>(key_lines);
@@ -632,6 +648,7 @@ void MainWindow::loadSourceRandom()
 
 void MainWindow::assemble()
 {
+    P2AsmModel* amodel = asm_model();
     QStringList source = m_asm->source();
     ui->tbErrors->clear();
     ui->splSource->widget(2)->setVisible(false);
@@ -647,15 +664,18 @@ void MainWindow::assemble()
         // Inspect result
         const QModelIndex idx = ui->tvAsm->currentIndex();
 
-        m_amodel->invalidate();
+        amodel->invalidate();
         ui->tvAsm->resizeRowsToContents();
         ui->tvAsm->setCurrentIndex(idx);
-        m_smodel->setTable(m_asm->symbols());
+        P2SymbolsModel* smodel = sym_model();
+        if (smodel)
+            smodel->setTable(m_asm->symbols());
     }
 }
 
 void MainWindow::palette_setup()
 {
+    P2AsmModel* amodel = asm_model();
     QLayout* layout = ui->verticalLayout_2;
     PaletteSetup* dlg = layout->findChild<PaletteSetup *>(QStringLiteral("PaletteSetup"));
     if (dlg) {
@@ -663,7 +683,7 @@ void MainWindow::palette_setup()
     } else {
         dlg = new PaletteSetup(this);
         layout->addWidget(dlg);
-        connect(dlg, SIGNAL(changedPalette()), m_amodel, SLOT(invalidate()));
+        connect(dlg, SIGNAL(changedPalette()), amodel, SLOT(invalidate()));
     }
 }
 
@@ -684,6 +704,7 @@ void MainWindow::print_error(int pass, int line, const QString& message)
 
 void MainWindow::goto_line(const QUrl& url)
 {
+    P2AsmModel* amodel = asm_model();
     const P2SymbolTable& table = m_asm->symbols();
     const QString& path = url.path();
     const QString& name = url.query();
@@ -700,8 +721,8 @@ void MainWindow::goto_line(const QUrl& url)
             word = words[i];
 
     if (path == key_tv_asm) {
-        const QModelIndex idx = m_amodel->index(lineno - 1, P2AsmModel::c_Source);
-        m_amodel->set_highlight(idx, symbol, word);
+        const QModelIndex idx = amodel->index(lineno - 1, P2AsmModel::c_Source);
+        amodel->set_highlight(idx, symbol, word);
         ui->tvAsm->setCurrentIndex(idx);
         ui->tvAsm->viewport()->repaint();
         // ui->tvAsm->setFocus(Qt::OtherFocusReason);
@@ -716,6 +737,25 @@ void MainWindow::goto_line_number()
     QUrl url(key_tv_asm);
     url.setFragment(QString::number(dlg.number()));
     goto_line(url);
+}
+
+void MainWindow::goto_definition(const QModelIndex& index)
+{
+    const QAbstractItemModel* model = index.model();
+    const P2SymbolsModel::column_e column = static_cast<P2SymbolsModel::column_e>(index.column());
+    switch (column) {
+    case P2SymbolsModel::c_Definition:
+        {
+            QVariant var_sym = model->data(model->index(index.row(), P2SymbolsModel::c_Name), Qt::EditRole);
+            if (var_sym.canConvert(qMetaTypeId<P2Symbol>())){
+                P2Symbol sym = qvariant_cast<P2Symbol>(var_sym);
+                goto_line(sym->url(sym->definition()));
+            }
+        }
+        break;
+    default:
+        break;
+    }
 }
 
 void MainWindow::resizeSourceSplitter()
@@ -736,13 +776,35 @@ void MainWindow::resizeSourceSplitter()
     ui->splSource->widget(2)->setVisible(m_num_errors > 0);
 }
 
+P2AsmModel* MainWindow::asm_model()
+{
+    P2AsmModel* amodel = qobject_cast<P2AsmModel*>(ui->tvAsm->model());
+    return amodel;
+}
+
+P2DasmModel* MainWindow::dasm_model()
+{
+    P2DasmModel* dmodel = qobject_cast<P2DasmModel*>(ui->tvDasm->model());
+    return dmodel;
+}
+
+P2SymbolsModel* MainWindow::sym_model()
+{
+    P2SymbolsModel* smodel = nullptr;
+    P2SymbolSorter* sorter = qobject_cast<P2SymbolSorter*>(ui->tvSym->model());
+    if (sorter)
+        smodel = qobject_cast<P2SymbolsModel*>(sorter->sourceModel());
+    return smodel;
+}
+
 void MainWindow::setDasmLowercase(bool check)
 {
+    P2DasmModel* dmodel = dasm_model();
     ui->action_Dasm_Lowercase->setChecked(check);
     m_dasm->set_lowercase(check);
     p2_LONG PC = m_hub->cog(0)->rd_PC();
     int row = static_cast<int>((PC < HUB_ADDR0) ? PC : PC / 4);
-    m_dmodel->invalidate();
+    dmodel->invalidate();
     ui->tvDasm->selectRow(row);
 }
 
@@ -775,23 +837,26 @@ void MainWindow::setupAssembler()
     ui->tvAsm->setItemDelegateForColumn(P2AsmModel::c_Source, new P2SourceDelegate);
     delete sd;
 
-    QAbstractItemDelegate* ss = ui->tvSymbols->itemDelegateForColumn(P2SymbolsModel::c_References);
+    QAbstractItemDelegate* ss = ui->tvSym->itemDelegateForColumn(P2SymbolsModel::c_References);
     P2ReferencesDelegate* delegate = new P2ReferencesDelegate;
     connect(delegate, SIGNAL(urlSelected(QUrl)), SLOT(goto_line(QUrl)));
-    ui->tvSymbols->setItemDelegateForColumn(P2SymbolsModel::c_References, delegate);
+    ui->tvSym->setItemDelegateForColumn(P2SymbolsModel::c_References, delegate);
     delete ss;
 
-    ui->tvAsm->setModel(m_amodel);
+    ui->tvAsm->setModel(new P2AsmModel(m_asm));
 
+    P2SymbolsModel* smodel = new P2SymbolsModel;
     P2SymbolSorter* sorter = new P2SymbolSorter(this);
-    sorter->setSourceModel(m_smodel);
-    ui->tvSymbols->setModel(sorter);
-    ui->tvSymbols->setSortingEnabled(true);
+    sorter->setSourceModel(smodel);
+    ui->tvSym->setModel(sorter);
+    ui->tvSym->setSortingEnabled(true);
+    connect(ui->tvSym, SIGNAL(clicked(const QModelIndex &)), SLOT(goto_definition(const QModelIndex &)), Qt::UniqueConnection);
+    connect(ui->tvSym, SIGNAL(activated(const QModelIndex &)), SLOT(goto_definition(const QModelIndex &)), Qt::UniqueConnection);
 }
 
 void MainWindow::setupDisassembler()
 {
-    ui->tvDasm->setModel(m_dmodel);
+    ui->tvDasm->setModel(new P2DasmModel(m_dasm));
     updateDasmColumnSizes();
 }
 
@@ -811,7 +876,7 @@ void MainWindow::setupFonts()
 
     font.setPointSize(m_asm_font_size);
     ui->tvAsm->setFont(font);
-    ui->tvSymbols->setFont(font);
+    ui->tvSym->setFont(font);
     ui->tbErrors->setFont(font);
 
     font.setPointSize(m_dasm_font_size);
@@ -965,22 +1030,18 @@ void MainWindow::updateDasmColumnSizes()
 
 void MainWindow::updateSymbolsColumnSizes()
 {
-    QFont font = ui->tvSymbols->font();
+    QFont font = ui->tvSym->font();
     QFontMetrics metrics(font);
 
-    QHeaderView* vh = ui->tvSymbols->verticalHeader();
+    QHeaderView* vh = ui->tvSym->verticalHeader();
     vh->setEnabled(true);
     vh->setDefaultSectionSize(metrics.ascent() + metrics.descent());
 
-    QHeaderView* hh = ui->tvSymbols->horizontalHeader();
+    QHeaderView* hh = ui->tvSym->horizontalHeader();
     hh->setContextMenuPolicy(Qt::CustomContextMenu);
     hh->setStretchLastSection(true);
     connect(hh, SIGNAL(customContextMenuRequested(QPoint)), SLOT(setSymbolsHeaderColums(QPoint)), Qt::UniqueConnection);
-
-    for (int i = 0; i < m_smodel->columnCount(); i++) {
-        QSize size = m_smodel->sizeHint(static_cast<P2SymbolsModel::column_e>(i));
-        ui->tvSymbols->setColumnWidth(i, size.width());
-    }
+    ui->tvSym->resizeColumnsToContents();
 }
 
 void MainWindow::setupCogView()

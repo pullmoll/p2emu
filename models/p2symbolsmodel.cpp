@@ -210,7 +210,7 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
     case Qt::EditRole:
         switch (column) {
         case c_Name:
-            result = name;
+            result = QVariant::fromValue(symbol);
             break;
 
         case c_Definition:

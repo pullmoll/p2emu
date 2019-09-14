@@ -3699,21 +3699,6 @@ P2Atom P2Asm::parse_expression(int level)
 }
 
 /**
- * @brief Encode a PTRA/PTRB with or without pre/post inc/dec index expression
- * @param index const reference to the P2Atom with the index value
- * @return true on success, or false on error
- */
-bool P2Asm::encode_ptr_index(P2Atom& index)
-{
-    if (index.isEmpty())
-        return true;
-    // TODO: encode ...
-    p2_LONG value = index.get_long();
-    Q_UNUSED(value)
-    return false;
-}
-
-/**
  * @brief Check for the type of error of P2Opcode::set_dst() or P2Opcode::set_src()
  * @return true if no error, or false for error
  */
@@ -3957,7 +3942,7 @@ P2Atom P2Asm::parse_src_ptrx(int scale, P2Opcode::ImmFlag flag)
     P2Atom src = parse_expression();
     if (!m_IR.set_src(src, m_cogaddr, m_hubaddr))
         error_dst_or_src();
-    if (offs_PTRA == src.get_long() || offs_PTRB == src.get_long())
+    if (offs_PTRA == src.get_addr(p2_hub) || offs_PTRB == src.get_addr(p2_hub))
         parse_index(scale, src);
     return src;
 }
@@ -4919,7 +4904,7 @@ bool P2Asm::asm_ORG()
         emit Error(m_pass, m_lineno, m_errors.last());
         value = m_cogaddr;
     } else {
-        m_cogaddr = value;
+        m_cogaddr = sz_LONG * value;
     }
 
     m_hubmode = false;
@@ -4992,6 +4977,7 @@ bool P2Asm::asm_ORGH()
         value = MEM_SIZE;
     }
     m_hubmode = true;
+    m_cogaddr = value;  // FIXME: correct?
     m_hubaddr = value;
     m_IR.set_assign(m_hubaddr);
     if (!m_symbol.isEmpty())
@@ -5018,6 +5004,7 @@ bool P2Asm::asm_FIT()
                   .arg(org / 4, 0, 16);
         emit Error(m_pass, m_lineno, m_errors.last());
     }
+    m_IR.set_assign(atom);
     return end_of_line();
 }
 
