@@ -259,6 +259,9 @@ static constexpr p2_LONG p2_mask_opx24 = p2_mask_inst7 | p2_mask_D | p2_mask_S;
 //! Just a name for a commonly used character: separates arguments of an instruction
 static constexpr QChar chr_comma(',');
 
+//! Just a name for a commonly used character: introduces a local symbol
+static constexpr QChar chr_period('.');
+
 //! Just a name for a commonly used character: the rest of the line is comment
 static constexpr QChar chr_apostrophe('\'');
 
@@ -272,7 +275,7 @@ static constexpr QChar chr_dquote('"');
 static constexpr QChar chr_skip_digit('_');
 
 //! Just a name for a commonly used character: string escape and also trait of an argument
-static constexpr QChar str_escape('\\');
+static constexpr QChar chr_escape('\\');
 
 //! Just a name for a commonly used character: start of higher precedence subexpression
 static constexpr QChar chr_lparen('(');
@@ -387,6 +390,7 @@ typedef enum {
 extern void p2_set_trait(p2_Traits_e& traits, const p2_Traits_e set);
 extern void p2_clr_trait(p2_Traits_e& traits, const p2_Traits_e clr);
 extern bool p2_has_trait(const p2_Traits_e traits, const p2_Traits_e has);
+extern bool p2_has_trait(const p2_Traits_e traits, const int has);
 
 /**
  * @brief Enumeration of the 16 conditional execution modes
@@ -1612,58 +1616,58 @@ typedef enum {
     tt_origin,          //!< origin control
     tt_data,            //!< data generating
     tt_regexp,          //!< pseudo token from lexing a string
-}   p2_TOKENTYPE_e;
+}   p2_TOKTYPE_e;
 
 /**
  * @brief The type for token type bitmasks
  * Since there are more than 32 types we need to use a 64 bit quantity for the mask
  */
-typedef quint64 p2_TOKENMASK_t;
+typedef quint64 p2_TOKMASK_t;
 
 /**
  * @brief Constants for the bit masks of token types
  */
-#define TTMASK(tt) static_cast<p2_TOKENMASK_t>(Q_UINT64_C(1) << (tt))
+#define TTMASK(tt) static_cast<p2_TOKMASK_t>(Q_UINT64_C(1) << (tt))
 
-static constexpr p2_TOKENMASK_t tm_none        = 0;
-static constexpr p2_TOKENMASK_t tm_comment     = TTMASK(tt_comment);
-static constexpr p2_TOKENMASK_t tm_parens      = TTMASK(tt_parens);
-static constexpr p2_TOKENMASK_t tm_brackets    = TTMASK(tt_brackets);
-static constexpr p2_TOKENMASK_t tm_primary     = TTMASK(tt_primary);
-static constexpr p2_TOKENMASK_t tm_unary       = TTMASK(tt_unary);
-static constexpr p2_TOKENMASK_t tm_shiftop     = TTMASK(tt_shiftop);
-static constexpr p2_TOKENMASK_t tm_binop_rev   = TTMASK(tt_binop_rev);
-static constexpr p2_TOKENMASK_t tm_mulop       = TTMASK(tt_mulop);
-static constexpr p2_TOKENMASK_t tm_addop       = TTMASK(tt_addop);
-static constexpr p2_TOKENMASK_t tm_binop_and   = TTMASK(tt_binop_and);
-static constexpr p2_TOKENMASK_t tm_binop_xor   = TTMASK(tt_binop_xor);
-static constexpr p2_TOKENMASK_t tm_binop_or    = TTMASK(tt_binop_or);
-static constexpr p2_TOKENMASK_t tm_binop_encod = TTMASK(tt_binop_encod);
-static constexpr p2_TOKENMASK_t tm_binop_decod = TTMASK(tt_binop_decod);
-static constexpr p2_TOKENMASK_t tm_relation    = TTMASK(tt_relation);
-static constexpr p2_TOKENMASK_t tm_equality    = TTMASK(tt_equality);
-static constexpr p2_TOKENMASK_t tm_logop_and   = TTMASK(tt_logop_and);
-static constexpr p2_TOKENMASK_t tm_logop_or    = TTMASK(tt_logop_or);
-static constexpr p2_TOKENMASK_t tm_ternary     = TTMASK(tt_ternary);
-static constexpr p2_TOKENMASK_t tm_assignment  = TTMASK(tt_assignment);
-static constexpr p2_TOKENMASK_t tm_delimiter   = TTMASK(tt_delimiter);
-static constexpr p2_TOKENMASK_t tm_constant    = TTMASK(tt_constant);
-static constexpr p2_TOKENMASK_t tm_function    = TTMASK(tt_function);
-static constexpr p2_TOKENMASK_t tm_traits      = TTMASK(tt_traits);
-static constexpr p2_TOKENMASK_t tm_conditional = TTMASK(tt_conditional);
-static constexpr p2_TOKENMASK_t tm_modcz_param = TTMASK(tt_modcz_param);
-static constexpr p2_TOKENMASK_t tm_mnemonic    = TTMASK(tt_mnemonic);
-static constexpr p2_TOKENMASK_t tm_wcz_suffix  = TTMASK(tt_wcz_suffix);
-static constexpr p2_TOKENMASK_t tm_section     = TTMASK(tt_section);
-static constexpr p2_TOKENMASK_t tm_origin      = TTMASK(tt_origin);
-static constexpr p2_TOKENMASK_t tm_data        = TTMASK(tt_data);
-static constexpr p2_TOKENMASK_t tm_lexer       = TTMASK(tt_regexp);
+static constexpr p2_TOKMASK_t tm_none        = 0;
+static constexpr p2_TOKMASK_t tm_comment     = TTMASK(tt_comment);
+static constexpr p2_TOKMASK_t tm_parens      = TTMASK(tt_parens);
+static constexpr p2_TOKMASK_t tm_brackets    = TTMASK(tt_brackets);
+static constexpr p2_TOKMASK_t tm_primary     = TTMASK(tt_primary);
+static constexpr p2_TOKMASK_t tm_unary       = TTMASK(tt_unary);
+static constexpr p2_TOKMASK_t tm_shiftop     = TTMASK(tt_shiftop);
+static constexpr p2_TOKMASK_t tm_binop_rev   = TTMASK(tt_binop_rev);
+static constexpr p2_TOKMASK_t tm_mulop       = TTMASK(tt_mulop);
+static constexpr p2_TOKMASK_t tm_addop       = TTMASK(tt_addop);
+static constexpr p2_TOKMASK_t tm_binop_and   = TTMASK(tt_binop_and);
+static constexpr p2_TOKMASK_t tm_binop_xor   = TTMASK(tt_binop_xor);
+static constexpr p2_TOKMASK_t tm_binop_or    = TTMASK(tt_binop_or);
+static constexpr p2_TOKMASK_t tm_binop_encod = TTMASK(tt_binop_encod);
+static constexpr p2_TOKMASK_t tm_binop_decod = TTMASK(tt_binop_decod);
+static constexpr p2_TOKMASK_t tm_relation    = TTMASK(tt_relation);
+static constexpr p2_TOKMASK_t tm_equality    = TTMASK(tt_equality);
+static constexpr p2_TOKMASK_t tm_logop_and   = TTMASK(tt_logop_and);
+static constexpr p2_TOKMASK_t tm_logop_or    = TTMASK(tt_logop_or);
+static constexpr p2_TOKMASK_t tm_ternary     = TTMASK(tt_ternary);
+static constexpr p2_TOKMASK_t tm_assignment  = TTMASK(tt_assignment);
+static constexpr p2_TOKMASK_t tm_delimiter   = TTMASK(tt_delimiter);
+static constexpr p2_TOKMASK_t tm_constant    = TTMASK(tt_constant);
+static constexpr p2_TOKMASK_t tm_function    = TTMASK(tt_function);
+static constexpr p2_TOKMASK_t tm_traits      = TTMASK(tt_traits);
+static constexpr p2_TOKMASK_t tm_conditional = TTMASK(tt_conditional);
+static constexpr p2_TOKMASK_t tm_modcz_param = TTMASK(tt_modcz_param);
+static constexpr p2_TOKMASK_t tm_mnemonic    = TTMASK(tt_mnemonic);
+static constexpr p2_TOKMASK_t tm_wcz_suffix  = TTMASK(tt_wcz_suffix);
+static constexpr p2_TOKMASK_t tm_section     = TTMASK(tt_section);
+static constexpr p2_TOKMASK_t tm_origin      = TTMASK(tt_origin);
+static constexpr p2_TOKMASK_t tm_data        = TTMASK(tt_data);
+static constexpr p2_TOKMASK_t tm_lexer       = TTMASK(tt_regexp);
 
-static constexpr p2_TOKENMASK_t tm_primary_unary =
+static constexpr p2_TOKMASK_t tm_primary_unary =
         tm_primary |
         tm_unary;
 
-static constexpr p2_TOKENMASK_t tm_binop =
+static constexpr p2_TOKMASK_t tm_binop =
         tm_binop_and |
         tm_binop_xor |
         tm_binop_or |
@@ -1671,7 +1675,7 @@ static constexpr p2_TOKENMASK_t tm_binop =
         tm_binop_encod |
         tm_binop_decod;
 
-static constexpr p2_TOKENMASK_t tm_operations =
+static constexpr p2_TOKMASK_t tm_operations =
         tm_parens |
         tm_primary |
         tm_unary |
@@ -1689,7 +1693,7 @@ static constexpr p2_TOKENMASK_t tm_operations =
         tm_logop_and |
         tm_logop_or;
 
-static constexpr p2_TOKENMASK_t tm_expression =
+static constexpr p2_TOKMASK_t tm_expression =
         tm_function |
         tm_operations |
         tm_constant;

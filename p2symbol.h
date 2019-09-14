@@ -61,7 +61,7 @@ public:
     P2Word definition() const;
     P2Word reference(int lineno = 0) const;
     void add_reference(int lineno, const P2Word& word);
-    const p2_lineno_word_hash_t& references() const;
+    const p2_word_hash_t& references() const;
     QList<P2Word> references(const P2SymbolClass& sym) const;
     QUrl url(const P2Word& word) const;
 
@@ -71,7 +71,7 @@ private:
     QString m_name;
     P2Atom m_atom;
     P2Word m_definition;
-    p2_lineno_word_hash_t m_references;
+    p2_word_hash_t m_references;
 };
 
 typedef QSharedPointer<P2SymbolClass> P2Symbol;

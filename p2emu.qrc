@@ -3,6 +3,49 @@
 	<file>doc/P2 instruction set.csv</file>
 	<file>doc/instructions_v33g.txt</file>
 	<file>bin/ROM_Booter_v33_01j.bin</file>
+	<file>bin/MainLoader.obj</file>
+	<file>bin/NTSC_256_x_192.obj</file>
+	<file>bin/NTSC_256_x_192_interrupt.obj</file>
+	<file>bin/ROM_137PBJ.obj</file>
+	<file>bin/ROM_Booter_v32.obj</file>
+	<file>bin/SD2_test_121a.obj</file>
+	<file>bin/USBHost.obj</file>
+	<file>bin/VGA_640_x_480_4bpp1.obj</file>
+	<file>bin/VGA_640_x_480_8bpp.obj</file>
+	<file>bin/VGA_640_x_480_16bpp.obj</file>
+	<file>bin/all_cogs_blink.obj</file>
+	<file>bin/bas.obj</file>
+	<file>bin/blink.obj</file>
+	<file>bin/blinkit.obj</file>
+	<file>bin/chess.obj</file>
+	<file>bin/crcbit_crcnib.obj</file>
+	<file>bin/dry.obj</file>
+	<file>bin/echo1.obj</file>
+	<file>bin/echo2.obj</file>
+	<file>bin/fibo.obj</file>
+	<file>bin/fibo1.obj</file>
+	<file>bin/fibo2.obj</file>
+	<file>bin/fibo3.obj</file>
+	<file>bin/lock_test.obj</file>
+	<file>bin/ml.obj</file>
+	<file>bin/p2pfth.obj</file>
+	<file>bin/pointers.obj</file>
+	<file>bin/prefix.obj</file>
+	<file>bin/printf.obj</file>
+	<file>bin/programmer.obj</file>
+	<file>bin/sin_cos_dacs.obj</file>
+	<file>bin/single_step.obj</file>
+	<file>bin/smartpin_pwm.obj</file>
+	<file>bin/smartpin_serial_turnaround.obj</file>
+	<file>bin/smartpin_usb_turnaround.obj</file>
+	<file>bin/spin2_interpreter.obj</file>
+	<file>bin/test1.obj</file>
+	<file>bin/testjmploc.obj</file>
+	<file>bin/testops.obj</file>
+	<file>bin/tt.obj</file>
+	<file>bin/xbyte.obj</file>
+	<file>bin/xoro32.obj</file>
+	<file>bin/xoroshiro128plus.obj</file>
 	<file>icons/go_to.png</file>
 	<file>icons/go_to_cog.png</file>
 	<file>icons/go_to_lut.png</file>
@@ -71,48 +114,6 @@
 	<file>spin2/xbyte.spin2</file>
 	<file>spin2/xoro32.spin2</file>
 	<file>spin2/xoroshiro128plus.spin2</file>
-	<file>bin/MainLoader.obj</file>
-	<file>bin/NTSC_256_x_192.obj</file>
-	<file>bin/NTSC_256_x_192_interrupt.obj</file>
-	<file>bin/ROM_137PBJ.obj</file>
-	<file>bin/ROM_Booter_v32.obj</file>
-	<file>bin/SD2_test_121a.obj</file>
-	<file>bin/USBHost.obj</file>
-	<file>bin/VGA_640_x_480_4bpp1.obj</file>
-	<file>bin/VGA_640_x_480_8bpp.obj</file>
-	<file>bin/VGA_640_x_480_16bpp.obj</file>
-	<file>bin/all_cogs_blink.obj</file>
-	<file>bin/bas.obj</file>
-	<file>bin/blink.obj</file>
-	<file>bin/blinkit.obj</file>
-	<file>bin/chess.obj</file>
-	<file>bin/crcbit_crcnib.obj</file>
-	<file>bin/dry.obj</file>
-	<file>bin/echo1.obj</file>
-	<file>bin/echo2.obj</file>
-	<file>bin/fibo.obj</file>
-	<file>bin/fibo1.obj</file>
-	<file>bin/fibo2.obj</file>
-	<file>bin/fibo3.obj</file>
-	<file>bin/lock_test.obj</file>
-	<file>bin/ml.obj</file>
-	<file>bin/p2pfth.obj</file>
-	<file>bin/pointers.obj</file>
-	<file>bin/prefix.obj</file>
-	<file>bin/printf.obj</file>
-	<file>bin/programmer.obj</file>
-	<file>bin/sin_cos_dacs.obj</file>
-	<file>bin/single_step.obj</file>
-	<file>bin/smartpin_pwm.obj</file>
-	<file>bin/smartpin_serial_turnaround.obj</file>
-	<file>bin/smartpin_usb_turnaround.obj</file>
-	<file>bin/spin2_interpreter.obj</file>
-	<file>bin/test1.obj</file>
-	<file>bin/testjmploc.obj</file>
-	<file>bin/testops.obj</file>
-	<file>bin/tt.obj</file>
-	<file>bin/xbyte.obj</file>
-	<file>bin/xoro32.obj</file>
-	<file>bin/xoroshiro128plus.obj</file>
+	<file>translations/p2emu.de.qm</file>
     </qresource>
 </RCC>

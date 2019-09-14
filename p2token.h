@@ -32,9 +32,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 #pragma once
-#include <QFlag>
 #include <QString>
 #include <QMultiHash>
+#include <QRegularExpression>
 #include "p2defs.h"
 #include "p2word.h"
 #include "p2tokens.h"
@@ -46,14 +46,12 @@ public:
 
     QString string(p2_TOKEN_e tok, bool lowercase = false) const;
     QString enum_name(p2_TOKEN_e tok) const;
-    p2_TOKEN_e token(const QString& line, int pos, int& len, bool chop = false) const;
+    p2_TOKEN_e token(QStringRef& ref) const;
 
-    P2Words tokenize(const QString* line, const int lineno, int& in_curly) const;
-
-    bool is_type(p2_TOKEN_e tok, p2_TOKENMASK_t typemask) const;
-    bool is_type(p2_TOKEN_e tok, p2_TOKENTYPE_e type) const;
-    bool is_type(const QString& str, p2_TOKENTYPE_e type) const;
-    QStringList type_names(p2_TOKENMASK_t typemask) const;
+    bool is_type(p2_TOKEN_e tok, p2_TOKMASK_t typemask) const;
+    bool is_type(p2_TOKEN_e tok, p2_TOKTYPE_e type) const;
+    bool is_type(const QString& str, p2_TOKTYPE_e type) const;
+    QStringList type_names(p2_TOKMASK_t typemask) const;
     QStringList type_names(p2_TOKEN_e tok) const;
 
     bool is_operation(p2_TOKEN_e tok) const;
@@ -64,13 +62,13 @@ public:
     bool is_conditional(p2_TOKEN_e tok) const;
     bool is_modcz_param(p2_TOKEN_e tok) const;
 
-    p2_TOKEN_e at_type(int& pos, const QString& str, p2_TOKENMASK_t typemask, p2_TOKEN_e dflt = t_invalid) const;
-    p2_TOKEN_e at_type(int& pos, const QString& str, p2_TOKENTYPE_e type, p2_TOKEN_e dflt = t_invalid) const;
-    p2_TOKEN_e at_type(const QString& str, p2_TOKENTYPE_e type, p2_TOKEN_e dflt = t_invalid) const;
+    p2_TOKEN_e at_type(int& pos, const QString& str, p2_TOKMASK_t typemask, p2_TOKEN_e dflt = t_invalid) const;
+    p2_TOKEN_e at_type(int& pos, const QString& str, p2_TOKTYPE_e type, p2_TOKEN_e dflt = t_invalid) const;
+    p2_TOKEN_e at_type(const QString& str, p2_TOKTYPE_e type, p2_TOKEN_e dflt = t_invalid) const;
 
-    p2_TOKEN_e at_types(int& pos, const QString& str, p2_TOKENMASK_t typemask, p2_TOKEN_e dflt = t_invalid) const;
-    p2_TOKEN_e at_types(int& pos, const QString& str, const QList<p2_TOKENTYPE_e>& types, p2_TOKEN_e dflt = t_invalid) const;
-    p2_TOKEN_e at_types(const QString& str, const QList<p2_TOKENTYPE_e>& types, p2_TOKEN_e dflt = t_invalid) const;
+    p2_TOKEN_e at_types(int& pos, const QString& str, p2_TOKMASK_t typemask, p2_TOKEN_e dflt = t_invalid) const;
+    p2_TOKEN_e at_types(int& pos, const QString& str, const QList<p2_TOKTYPE_e>& types, p2_TOKEN_e dflt = t_invalid) const;
+    p2_TOKEN_e at_types(const QString& str, const QList<p2_TOKTYPE_e>& types, p2_TOKEN_e dflt = t_invalid) const;
 
     p2_TOKEN_e at_conditional(int& pos, const QString& str, p2_TOKEN_e dflt = t_invalid) const;
     p2_TOKEN_e at_conditional(const QString& str, p2_TOKEN_e dflt = t_invalid) const;
@@ -85,30 +83,30 @@ public:
     p2_Cond_e modcz_param(const QString& str, p2_Cond_e dflt = cc_clr) const;
 
 private:
+    QRegularExpression m_rx;                            //!< regular expression used to find tokens
+    QRegExp m_rx_comment_curly;
+    QRegExp m_rx_comment_eol;
+    QRegExp m_rx_bin_const;
+    QRegExp m_rx_byt_const;
+    QRegExp m_rx_dec_const;
+    QRegExp m_rx_hex_const;
+    QRegExp m_rx_str_const;
+    QRegExp m_rx_real_const;
+    QRegExp m_rx_locsym;
+    QRegExp m_rx_symbol;
     QHash<p2_TOKEN_e, QString> m_token_enum_name;       //!< QHash for token value to enum name lookup
     QHash<p2_TOKEN_e, QString> m_token_string;          //!< QHash for token value to string lookup
     QHash<QString, p2_TOKEN_e> m_string_token;          //!< QHash for token string to value lookup
-    QHash<p2_TOKEN_e, p2_TOKENMASK_t> m_token_type;        //!< QHash for token value to type mask lookup
-    QMultiHash<p2_TOKENMASK_t, p2_TOKEN_e> m_type_token;   //!< QMultiHash for token type mask to token(s) lookup
+    QHash<p2_TOKEN_e, p2_TOKMASK_t> m_token_type;       //!< QHash for token value to type mask lookup
+    QMultiHash<p2_TOKMASK_t, p2_TOKEN_e> m_type_token;  //!< QMultiHash for token type mask to token(s) lookup
     QHash<p2_TOKEN_e, p2_Cond_e> m_lookup_cond;         //!< QHash for conditionals to condition bits lookup
     QHash<p2_TOKEN_e, p2_Cond_e> m_lookup_modcz;        //!< QHash for MODCZ parameters to condition bits lookup
-    QHash<p2_TOKENTYPE_e, QString> m_t_type_name;          //!< QHash for token type mask to type name(s) lookup
+    QHash<p2_TOKTYPE_e, QString> m_t_type_name;         //!< QHash for token type mask to type name(s) lookup
 
-    QRegExp rx_comment_eol;                             //!< regular expression for a comment until end-of-line
-    QRegExp rx_comment_curly;                           //!< regular expression for a comment in curly braces
-    QRegExp rx_symbol;                                  //!< regular expression for a symbol name
-    QRegExp rx_locsym;                                  //!< regular expression for a local symbol name
-    QRegExp rx_bin_const;                               //!< regular expression for a binary constant
-    QRegExp rx_byt_const;                               //!< regular expression for a byt constant
-    QRegExp rx_hex_const;                               //!< regular expression for a hexadecimal constant
-    QRegExp rx_dec_const;                               //!< regular expression for a decimal constant
-    QRegExp rx_str_const;                               //!< regular expression for a string constant
-    QRegExp rx_real_const;                              //!< regular expression for a real constant (double)
-
-    void tt_set(p2_TOKEN_e tok, p2_TOKENMASK_t typemask);
-    void tt_clr(p2_TOKEN_e tok, p2_TOKENMASK_t typemask);
-    bool tt_chk(p2_TOKEN_e tok, p2_TOKENMASK_t typemask) const;
-    void tn_ADD(p2_TOKEN_e tok, const QString& enum_name, p2_TOKENMASK_t typemask, const QString& string);
+    void tt_set(p2_TOKEN_e tok, p2_TOKMASK_t typemask);
+    void tt_clr(p2_TOKEN_e tok, p2_TOKMASK_t typemask);
+    bool tt_chk(p2_TOKEN_e tok, p2_TOKMASK_t typemask) const;
+    void tn_add(p2_TOKEN_e tok, const QString& enum_name, p2_TOKMASK_t typemask, const QString& string);
 };
 
 extern P2Token Token;

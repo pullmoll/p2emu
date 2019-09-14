@@ -29,8 +29,15 @@ private:
     p2_TOKEN_e m_tok;
     int m_lineno;
 };
-
-typedef QMultiHash<int,P2Word> p2_lineno_word_hash_t;
-typedef QList<P2Word> P2Words;
 Q_DECLARE_METATYPE(P2Word);
+
+typedef QList<P2Word> P2Words;
 Q_DECLARE_METATYPE(P2Words);
+
+//! A QHash of (multiple) P2Word per line number
+typedef QMultiHash<int,P2Word> p2_word_hash_t;
+Q_DECLARE_METATYPE(p2_word_hash_t);
+
+//! A QHash of the list of P2Word per line number
+typedef QHash<int,P2Words> p2_words_hash_t;
+Q_DECLARE_METATYPE(p2_words_hash_t);

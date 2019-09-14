@@ -39,13 +39,15 @@
  */
 enum p2_TOKEN_e {
     t_invalid = -1,     //!< undefined value
-    t_none,             //!< no string
+    t_EOB,              //!< end of buffer
+    t_EOL,              //!< end of line
+    t_none,             //!< whitespace
     t_unknown,          //!< nothing found
 
-    t_comment,          //!< token is a comment
+    t_comment_curly,    //!< token is a comment ({...})
     t_comment_eol,      //!< token is a comment until end of line (')
-    t_comment_lcurly,   //!< token is a comment ({)
-    t_comment_rcurly,   //!< token is a comment (})
+    t_comment_lcurly,   //!< token is start of a comment ({)
+    t_comment_rcurly,   //!< token is end of a comment (})
     t_str_const,        //!< token is a string starting with doublequote (")
     t_bin_const,        //!< token is a binary value (%)
     t_byt_const,        //!< token is a byte index (i.e. base 4) value (%%)
@@ -246,8 +248,6 @@ enum p2_TOKEN_e {
     t_OUTNZ,
     t_OUTRND,
     t_OUTZ,
-    t_PA,
-    t_PB,
     t_POLLATN,
     t_POLLCT1,
     t_POLLCT2,
@@ -560,12 +560,8 @@ enum p2_TOKEN_e {
     t_ASSIGN,          //!< "="
 
     // shadow registers
-    t_DIRA,
-    t_DIRB,
-    t_INA,
-    t_INB,
-    t_OUTA,
-    t_OUTB,
+    t_PA,
+    t_PB,
     t_PTRA,
     t_PTRA_postinc,
     t_PTRA_postdec,
@@ -576,11 +572,17 @@ enum p2_TOKEN_e {
     t_PTRB_postdec,
     t_PTRB_preinc,
     t_PTRB_predec,
+    t_DIRA,
+    t_DIRB,
+    t_OUTA,
+    t_OUTB,
+    t_INA,
+    t_INB,
 
     // conversion functions
-    t__FLOAT,           //!< float(integer)
-    t__ROUND,           //!< round(real)
-    t__TRUNC,           //!< trunc(real)
+    t_FUNC_FLOAT,       //!< float(integer)
+    t_FUNC_ROUND,       //!< round(real)
+    t_FUNC_TRUNC,       //!< trunc(real)
 
     // origin (PC)
     t_DOLLAR,           //!< "$"
@@ -593,53 +595,54 @@ enum p2_TOKEN_e {
     t_ABSOLUTE,         //!< "\"
     t_HUBADDRESS,       //!< "#@"
 
-    // relations
-    t__LE,              //!< "<="
-    t__LT,              //!< "<"
-    t__GE,              //!< ">="
-    t__GT,              //!< ">"
-    t__EQ,              //!< "=="
-    t__NE,              //!< "!="
+    // expressions: relations
+    t_EXPR_LE,          //!< "<="
+    t_EXPR_LT,          //!< "<"
+    t_EXPR_GE,          //!< ">="
+    t_EXPR_GT,          //!< ">"
+    t_EXPR_EQ,          //!< "=="
+    t_EXPR_NE,          //!< "!="
 
-    // parenthesis
-    t__LPAREN,          //!< "("
-    t__RPAREN,          //!< ")"
-    t__LBRACKET,        //!< "["
-    t__RBRACKET,        //!< "]"
+    // expressions: parenthesis
+    t_EXPR_LPAREN,      //!< "("
+    t_EXPR_RPAREN,      //!< ")"
+    t_EXPR_LBRACKET,    //!< "["
+    t_EXPR_RBRACKET,    //!< "]"
 
-    // primary ops
-    t__INC,             //!< "++"
-    t__DEC,             //!< "--"
+    // expressions: primary ops
+    t_EXPR_INC,         //!< "++"
+    t_EXPR_DEC,         //!< "--"
 
-    // unary ops
-    t__NEG,             //!< "!"
-    t__NOT,             //!< "~"
+    // expressions: unary ops
+    t_EXPR_NEG,         //!< "!"
+    t_EXPR_NOT,         //!< "~"
 
-    // multiplication ops
-    t__MUL,             //!< "*"
-    t__DIV,             //!< "/"
-    t__MOD,             //!< "%"
+    // expressions: multiplication ops
+    t_EXPR_MUL,         //!< "*"
+    t_EXPR_DIV,         //!< "/"
+    t_EXPR_MOD,         //!< "%"
 
-    // addition ops
-    t__PLUS,            //!< "+"
-    t__MINUS,           //!< "-"
+    // expressions: addition ops
+    t_EXPR_PLUS,        //!< "+"
+    t_EXPR_MINUS,       //!< "-"
 
-    // shift ops
-    t__SHL,             //!< "<<"
-    t__SHR,             //!< ">>"
+    // expressions: shift ops
+    t_EXPR_SHL,         //!< "<<"
+    t_EXPR_SHR,         //!< ">>"
 
-    // binary ops
-    t__AND,             //!< "&"
-    t__OR,              //!< "|"
-    t__XOR,             //!< "^"
-    t__REV,             //!< "><"
+    // expressions: binary ops
+    t_EXPR_AND,         //!< "&"
+    t_EXPR_OR,          //!< "|"
+    t_EXPR_XOR,         //!< "^"
+    t_EXPR_REV,         //!< "><"
 
-    // encode/decode
-    t__ENCOD,           //!< "|<"
-    t__DECOD,           //!< ">|"
+    // expressions: encode/decode ops
+    t_EXPR_ENCOD,       //!< "|<"
+    t_EXPR_DECOD,       //!< ">|"
 
-    t__LOGAND,          //!< "&&"
-    t__LOGOR,           //!< "||"
+    // expressions: logical ops
+    t_EXPR_LOGAND,      //!< "&&"
+    t_EXPR_LOGOR,       //!< "||"
 };
 
 typedef QVector<p2_TOKEN_e> p2_token_v;

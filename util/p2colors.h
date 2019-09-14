@@ -44,6 +44,7 @@ public:
     P2Colors();
 
     enum p2_palette_e {
+        p2_pal_background,
         p2_pal_source,
         p2_pal_comment,
         p2_pal_str_const,
@@ -86,7 +87,7 @@ public slots:
 
 private:
     QHash<QString,QColor> m_name_color;
-    QHash<quint32,QString> m_color_name;
+    QHash<QRgb,QString> m_color_name;
     QHash<p2_palette_e,QColor> m_palette;
     QStringList m_color_names_lexicographic;
     QStringList m_color_names_hue_sat_lum;

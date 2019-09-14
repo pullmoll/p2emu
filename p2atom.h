@@ -99,6 +99,7 @@ public:
     bool add_trait(p2_Traits_e traits);
     bool clr_trait(p2_Traits_e traits);
     bool has_trait(const p2_Traits_e trait) const;
+    bool has_trait(const int trait) const;
 
     const P2Union value() const;
     void set_value(const P2Union value);
@@ -137,7 +138,7 @@ public:
     void add_longs(const p2_LONGS& _longs);
     void add_array(const QByteArray& get);
 
-    QString str(p2_FORMAT_e fmt = fmt_hex) const;
+    QString str(bool with_type = false, p2_FORMAT_e fmt = fmt_hex) const;
     bool get_bool() const;
     int get_int() const;
     p2_BYTE get_byte() const;

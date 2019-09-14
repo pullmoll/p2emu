@@ -33,6 +33,7 @@
  ****************************************************************************/
 #include "mainwindow.h"
 #include <QApplication>
+#include <QTranslator>
 #include "p2token.h"
 
 int main(int argc, char *argv[])
@@ -44,6 +45,15 @@ int main(int argc, char *argv[])
     a.setOrganizationName(QStringLiteral("PullMoll"));
     a.setOrganizationDomain(QStringLiteral("https://propeller2.voidlinux.de/"));
 
+    QTranslator translator;
+     // look up e.g. :/translations/p2emu.de.qm
+    const QString filename = QLatin1String("p2emu");
+    const QString prefix = QLatin1String(".");
+    const QString directory = QLatin1String(":/translations");
+    const QString suffix = QLatin1String(".qm");
+    bool ok = translator.load(QLocale(), filename, prefix, directory, suffix);
+    if (ok)
+        a.installTranslator(&translator);
     MainWindow w;
     w.show();
 

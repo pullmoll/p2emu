@@ -66,3 +66,8 @@ bool p2_has_trait(const p2_Traits_e traits, const p2_Traits_e has)
 {
     return traits & has ? true : false;
 }
+
+bool p2_has_trait(const p2_Traits_e traits, const int has)
+{
+    return traits & has ? true : false;
+}

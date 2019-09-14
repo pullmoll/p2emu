@@ -101,7 +101,7 @@ void P2ReferencesDelegate::setEditorData(QWidget* editor, const QModelIndex& ind
     }
 
     // add a zeroth item with the number of references to not select anything at first
-    cb->addItem(tr("%1 refs").arg(urlmap.count()));
+    cb->addItem(tr("%n refs", "Number of references", urlmap.count()));
     qobject_cast<QStandardItemModel*>(cb->model())->item(0)->setEnabled(false);
 
     // Fill the QComboBox with items
@@ -140,7 +140,7 @@ void P2ReferencesDelegate::paint(QPainter* painter, const QStyleOptionViewItem& 
     const QAbstractItemModel* model = index.model();
     QVariant data = model->data(index, Qt::EditRole);
     const P2Symbol symbol = qvariant_cast<P2Symbol>(data);
-    const p2_lineno_word_hash_t& hash = symbol->references();
+    const p2_word_hash_t& hash = symbol->references();
     QStyleOptionViewItem opt(option);
     QString text;
     int flags = Qt::AlignRight | Qt::AlignVCenter |

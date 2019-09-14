@@ -119,7 +119,7 @@ RESOURCES += \
 	p2emu.qrc
 
 TRANSLATIONS += \
-	p2emu.de.ts
+	translations/p2emu.de.ts
 
 DISTFILES += \
 	P2-qz80-rr032.spin2 \
@@ -178,4 +178,17 @@ DISTFILES += \
 	spin2/tt.spin2 \
 	spin2/xbyte.spin2 \
 	spin2/xoro32.spin2 \
-	spin2/xoroshiro128plus.spin2
+	spin2/xoroshiro128plus.spin2 \
+	translations/p2emu.de.qm
+
+FLEXSOURCES += \
+	p2flex.l
+
+flexsource.input = FLEXSOURCES
+flexsource.output = ${QMAKE_FILE_BASE}.cpp
+flexsource.commands = flex --header-file=${QMAKE_FILE_BASE}.h -o ${QMAKE_FILE_BASE}.cpp ${QMAKE_FILE_IN}
+flexsource.variable_out = SOURCES
+flexsource.name = Flex Sources ${QMAKE_FILE_IN}
+flexsource.CONFIG += target_predeps
+
+QMAKE_EXTRA_COMPILERS += flexsource

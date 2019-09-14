@@ -265,6 +265,11 @@ bool P2Atom::has_trait(const p2_Traits_e trait) const
     return p2_has_trait(m_trait, trait);
 }
 
+bool P2Atom::has_trait(const int trait) const
+{
+    return p2_has_trait(m_trait, static_cast<p2_Traits_e>(trait));
+}
+
 /**
  * @brief Return the atom's value
  * @return const reference to the value
@@ -575,9 +580,9 @@ void P2Atom::add_array(const QByteArray& value)
  * @brief Format the atom's value as a string respecting the type
  * @return QString with value
  */
-QString P2Atom::str(p2_FORMAT_e fmt) const
+QString P2Atom::str(bool with_type, p2_FORMAT_e fmt) const
 {
-    return m_value.str(true, fmt);
+    return m_value.str(with_type, fmt);
 }
 
 /**

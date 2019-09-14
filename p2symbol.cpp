@@ -165,7 +165,7 @@ void P2SymbolClass::add_reference(int lineno, const P2Word& word)
  *
  * @return QList<int> with line numbers
  */
-const p2_lineno_word_hash_t& P2SymbolClass::references() const
+const p2_word_hash_t& P2SymbolClass::references() const
 {
     return m_references;
 }

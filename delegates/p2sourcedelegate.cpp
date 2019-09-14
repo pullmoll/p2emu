@@ -93,6 +93,8 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
         const QStringRef ref = word.ref();
         const int len = ref.length();
         int pos = ref.position();
+        if (pos + len > ref.string()->length())
+            continue;
 
         // draw the character
         p2_TOKEN_e tok = word.tok();

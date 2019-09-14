@@ -199,7 +199,7 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
             break;
 
         case c_Value:
-            result = atom.str();
+            result = atom.str(false);
             break;
         }
         break;

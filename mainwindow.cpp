@@ -128,8 +128,8 @@ MainWindow::MainWindow(QWidget *parent)
     restoreSettings();
     setupFonts();
 
-    // loadSource(QStringLiteral(":/spin2/spin2_interpreter.spin2"));
-    loadSource(QStringLiteral(":/spin2/P2-qz80-rr032.spin2"));
+    loadSource(QStringLiteral(":/spin2/spin2_interpreter.spin2"));
+    // loadSource(QStringLiteral(":/spin2/P2-qz80-rr032.spin2"));
     // loadSource(QStringLiteral(":/spin2/pointers.spin2"));
     // loadSource(QStringLiteral(":/spin2/USBHost.spin2"));
     // loadSource(QStringLiteral(":/spin2/VGA_640_x_480_8bpp.spin2"));
@@ -570,7 +570,8 @@ void MainWindow::openSource(const QString& sourcefile)
             << QUrl::fromLocalFile(propeller2_path)
             << QUrl::fromLocalFile(appdata_path);
 
-        dlg.exec();
+        if (QDialog::Accepted != dlg.exec())
+            return;
         QStringList selected = dlg.selectedFiles();
         if (selected.isEmpty())
             return;

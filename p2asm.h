@@ -49,9 +49,6 @@ typedef QHash<int,p2_ORIGIN_t> p2_ORIGIN_hash_t;
 //! A QHash of P2Opcode per line number
 typedef QHash<int,P2Opcode> p2_opcode_hash_t;
 
-//! A QHash of P2Words per line number
-typedef QHash<int,P2Words> p2_words_hash_t;
-
 //! A QHash of QStringList with errors per line number
 typedef QHash<int,QStringList> p2_error_hash_t;
 
@@ -122,6 +119,7 @@ private:
     int m_pass;                             //!< current pass
     QString m_pathname;                     //!< current path name for FILE "filename.ext"
     QStringList m_source;                   //!< source code as QStringList
+    QVector<const QString*> m_sourceptr;    //!< pointers to strings in m_source
     QStringList m_listing;                  //!< listing as QStringList
     p2_ORIGIN_hash_t m_hash_ORIGIN;         //!< optional ORIGINs per line (ORG and ORGH)
     p2_opcode_hash_t m_hash_IR;             //!< optional P2Opcode per line
@@ -130,7 +128,7 @@ private:
     P2SymbolTable m_symbols;                //!< symbol table
     int m_lineno;                           //!< current line number
     int m_in_curly;                         //!< parser inside curly braces comment level
-    QString* m_lineptr;                     //!< pointer to current line of source
+    const QString* m_lineptr;               //!< pointer to current line of source
     QStringList m_errors;                   //!< error message(s) from parameters parser
     bool m_hubmode;                         //!< true if current address mode is HUB
     p2_LONG m_cogaddr;                      //!< current program counter (origin of the instruction)
@@ -167,7 +165,7 @@ private:
     QString expand_tabs(const QString& src);
     bool skip_comments();
     bool eol();
-    bool tokenize();
+    bool get_words();
 
     P2Word curr_word() const;
     const QStringRef curr_ref() const;

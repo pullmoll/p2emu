@@ -53,6 +53,7 @@ P2Colors::P2Colors()
     : m_name_color()
     , m_palette()
     , m_color_names_lexicographic()
+    , m_color_names_hue_sat_lum()
     , m_color_values()
     , m_colors_hue_sat_lum()
     , m_palette_names()
@@ -208,6 +209,7 @@ P2Colors::P2Colors()
 
     setup_tables();
 
+    m_palette_names.insert(p2_pal_background,   QStringLiteral("Background"));
     m_palette_names.insert(p2_pal_comment,      QStringLiteral("Comment"));
     m_palette_names.insert(p2_pal_instruction,  QStringLiteral("Instruction"));
     m_palette_names.insert(p2_pal_conditional,  QStringLiteral("Conditional"));
@@ -353,9 +355,11 @@ const QHash<P2Colors::p2_palette_e, QColor>& P2Colors::hash(bool reset_default)
 QPalette P2Colors::palette(P2Colors::p2_palette_e pal) const
 {
     QPalette qpal = qApp->palette();
+    const QColor background = palette_color(p2_pal_background);
     const QColor color = palette_color(pal);
     const int gray = qGray(color.rgb());
 
+    qpal.setBrush(QPalette::Base, QBrush(background));
     qpal.setColor(QPalette::Active, QPalette::WindowText, color);
     qpal.setColor(QPalette::Inactive, QPalette::WindowText, color.lighter(150));
     qpal.setColor(QPalette::Disabled, QPalette::WindowText, QColor(gray,gray,gray));
@@ -432,7 +436,7 @@ P2Colors::p2_palette_e P2Colors::pal_for_token(const p2_TOKEN_e tok)
     p2_palette_e pal = p2_pal_source;
 
     switch (tok) {
-    case t_comment:
+    case t_comment_curly:
     case t_comment_eol:
     case t_comment_lcurly:
     case t_comment_rcurly:
@@ -536,22 +540,23 @@ void P2Colors::setup_tables()
  */
 void P2Colors::reset_palette()
 {
-    m_default_colors.insert(p2_pal_source,        m_name_color.value("Black"));
-    m_default_colors.insert(p2_pal_comment,       m_name_color.value("Dark Olive Green"));
-    m_default_colors.insert(p2_pal_str_const,     m_name_color.value("Cadet Blue"));
-    m_default_colors.insert(p2_pal_bin_const,     m_name_color.value("Dark Blue"));
-    m_default_colors.insert(p2_pal_byt_const,     m_name_color.value("Deep Sky Blue"));
-    m_default_colors.insert(p2_pal_dec_const,     m_name_color.value("Sky Blue"));
-    m_default_colors.insert(p2_pal_hex_const,     m_name_color.value("Blue"));
-    m_default_colors.insert(p2_pal_real_const,    m_name_color.value("Powder Blue"));
-    m_default_colors.insert(p2_pal_locsym,        m_name_color.value("Orange Red"));
-    m_default_colors.insert(p2_pal_symbol,        m_name_color.value("Dark Orange"));
-    m_default_colors.insert(p2_pal_expression,    m_name_color.value("Orange"));
-    m_default_colors.insert(p2_pal_section,       m_name_color.value("Cyan"));
-    m_default_colors.insert(p2_pal_conditional,   m_name_color.value("Violet"));
-    m_default_colors.insert(p2_pal_instruction,   m_name_color.value("Dark Cyan"));
-    m_default_colors.insert(p2_pal_modcz_param,   m_name_color.value("Medium Violet Red"));
-    m_default_colors.insert(p2_pal_wcz_suffix,    m_name_color.value("Pale Violet Red"));
+    m_default_colors.insert(p2_pal_background,      m_name_color.value("White"));
+    m_default_colors.insert(p2_pal_source,          m_name_color.value("Black"));
+    m_default_colors.insert(p2_pal_comment,         m_name_color.value("Dark Olive Green"));
+    m_default_colors.insert(p2_pal_str_const,       m_name_color.value("Cadet Blue"));
+    m_default_colors.insert(p2_pal_bin_const,       m_name_color.value("Dark Blue"));
+    m_default_colors.insert(p2_pal_byt_const,       m_name_color.value("Deep Sky Blue"));
+    m_default_colors.insert(p2_pal_dec_const,       m_name_color.value("Sky Blue"));
+    m_default_colors.insert(p2_pal_hex_const,       m_name_color.value("Blue"));
+    m_default_colors.insert(p2_pal_real_const,      m_name_color.value("Powder Blue"));
+    m_default_colors.insert(p2_pal_locsym,          m_name_color.value("Orange Red"));
+    m_default_colors.insert(p2_pal_symbol,          m_name_color.value("Dark Orange"));
+    m_default_colors.insert(p2_pal_expression,      m_name_color.value("Orange"));
+    m_default_colors.insert(p2_pal_section,         m_name_color.value("Cyan"));
+    m_default_colors.insert(p2_pal_conditional,     m_name_color.value("Violet"));
+    m_default_colors.insert(p2_pal_instruction,     m_name_color.value("Dark Cyan"));
+    m_default_colors.insert(p2_pal_modcz_param,     m_name_color.value("Medium Violet Red"));
+    m_default_colors.insert(p2_pal_wcz_suffix,      m_name_color.value("Pale Violet Red"));
 
     m_palette = m_default_colors;
 }

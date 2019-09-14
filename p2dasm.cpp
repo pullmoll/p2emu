@@ -123,53 +123,53 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
     }
 
     if (instruction) {
-        // Dispatch to dasm_xxx() functions
+        // Dispatch to da_xxx() functions
         switch (IR.inst7()) {
-        case p2_ROR:           dasm_ROR(instruction); break;
-        case p2_ROL:           dasm_ROL(instruction); break;
-        case p2_SHR:           dasm_SHR(instruction); break;
-        case p2_SHL:           dasm_SHL(instruction); break;
-        case p2_RCR:           dasm_RCR(instruction); break;
-        case p2_RCL:           dasm_RCL(instruction); break;
-        case p2_SAR:           dasm_SAR(instruction); break;
-        case p2_SAL:           dasm_SAL(instruction); break;
-        case p2_ADD:           dasm_ADD(instruction); break;
-        case p2_ADDX:          dasm_ADDX(instruction); break;
-        case p2_ADDS:          dasm_adds(instruction); break;
-        case p2_ADDSX:         dasm_addsx(instruction); break;
-        case p2_SUB:           dasm_sub(instruction); break;
-        case p2_SUBX:          dasm_subx(instruction); break;
-        case p2_SUBS:          dasm_subs(instruction); break;
-        case p2_SUBSX:         dasm_subsx(instruction); break;
-        case p2_CMP:           dasm_cmp(instruction); break;
-        case p2_CMPX:          dasm_cmpx(instruction); break;
-        case p2_CMPS:          dasm_cmps(instruction); break;
-        case p2_CMPSX:         dasm_cmpsx(instruction); break;
-        case p2_CMPR:          dasm_cmpr(instruction); break;
-        case p2_CMPM:          dasm_cmpm(instruction); break;
-        case p2_SUBR:          dasm_subr(instruction); break;
-        case p2_CMPSUB:        dasm_cmpsub(instruction); break;
-        case p2_FGE:           dasm_fge(instruction); break;
-        case p2_FLE:           dasm_fle(instruction); break;
-        case p2_FGES:          dasm_fges(instruction); break;
-        case p2_FLES:          dasm_fles(instruction); break;
-        case p2_SUMC:          dasm_sumc(instruction); break;
-        case p2_SUMNC:         dasm_sumnc(instruction); break;
-        case p2_SUMZ:          dasm_sumz(instruction); break;
-        case p2_SUMNZ:         dasm_sumnz(instruction); break;
+        case p2_ROR:           da_ROR(instruction); break;
+        case p2_ROL:           da_ROL(instruction); break;
+        case p2_SHR:           da_SHR(instruction); break;
+        case p2_SHL:           da_SHL(instruction); break;
+        case p2_RCR:           da_RCR(instruction); break;
+        case p2_RCL:           da_RCL(instruction); break;
+        case p2_SAR:           da_SAR(instruction); break;
+        case p2_SAL:           da_SAL(instruction); break;
+        case p2_ADD:           da_ADD(instruction); break;
+        case p2_ADDX:          da_ADDX(instruction); break;
+        case p2_ADDS:          da_ADDS(instruction); break;
+        case p2_ADDSX:         da_ADDSX(instruction); break;
+        case p2_SUB:           da_SUB(instruction); break;
+        case p2_SUBX:          da_SUBX(instruction); break;
+        case p2_SUBS:          da_subs(instruction); break;
+        case p2_SUBSX:         da_subsx(instruction); break;
+        case p2_CMP:           da_cmp(instruction); break;
+        case p2_CMPX:          da_cmpx(instruction); break;
+        case p2_CMPS:          da_cmps(instruction); break;
+        case p2_CMPSX:         da_cmpsx(instruction); break;
+        case p2_CMPR:          da_cmpr(instruction); break;
+        case p2_CMPM:          da_cmpm(instruction); break;
+        case p2_SUBR:          da_subr(instruction); break;
+        case p2_CMPSUB:        da_cmpsub(instruction); break;
+        case p2_FGE:           da_fge(instruction); break;
+        case p2_FLE:           da_fle(instruction); break;
+        case p2_FGES:          da_fges(instruction); break;
+        case p2_FLES:          da_fles(instruction); break;
+        case p2_SUMC:          da_sumc(instruction); break;
+        case p2_SUMNC:         da_sumnc(instruction); break;
+        case p2_SUMZ:          da_sumz(instruction); break;
+        case p2_SUMNZ:          da_sumnz(instruction); break;
         case p2_TESTB_W_BITL:
             switch (IR.inst9()) {
             case p2_BITL:
-                dasm_bitl(instruction);
+                da_bitl(instruction);
                 break;
             case p2_TESTB_WZ:
-                dasm_testb_w(instruction);
+                da_testb_w(instruction);
                 break;
             case p2_TESTB_WC:
-                dasm_testb_w(instruction);
+                da_testb_w(instruction);
                 break;
             case p2_BITL_WCZ:
-                dasm_bitl(instruction);
+                da_bitl(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst9_e", "TESTB WC/WZ or BITL {WCZ}");
@@ -179,16 +179,16 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_TESTBN_W_BITH:
             switch (IR.inst9()) {
             case p2_BITH:
-                dasm_bith(instruction);
+                da_bith(instruction);
                 break;
             case p2_TESTBN_WZ:
-                dasm_testbn_w(instruction);
+                da_testbn_w(instruction);
                 break;
             case p2_TESTBN_WC:
-                dasm_testbn_w(instruction);
+                da_testbn_w(instruction);
                 break;
             case p2_BITH_WCZ:
-                dasm_bith(instruction);
+                da_bith(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst9_e", "TESTBN WC/WZ or BITH {WCZ}");
@@ -198,16 +198,16 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_TESTB_AND_BITC:
             switch (IR.inst9()) {
             case p2_BITC:
-                dasm_bitc(instruction);
+                da_bitc(instruction);
                 break;
             case p2_TESTB_ANDZ:
-                dasm_testb_and(instruction);
+                da_testb_and(instruction);
                 break;
             case p2_TESTB_ANDC:
-                dasm_testb_and(instruction);
+                da_testb_and(instruction);
                 break;
             case p2_BITC_WCZ:
-                dasm_bitc(instruction);
+                da_bitc(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst9_e", "TESTB ANDC/ANDZ or BITC {WCZ}");
@@ -217,16 +217,16 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_TESTBN_AND_BITNC:
             switch (IR.inst9()) {
             case p2_BITNC:
-                dasm_bitnc(instruction);
+                da_bitnc(instruction);
                 break;
             case p2_TESTBN_ANDZ:
-                dasm_testbn_and(instruction);
+                da_testbn_and(instruction);
                 break;
             case p2_TESTBN_ANDC:
-                dasm_testbn_and(instruction);
+                da_testbn_and(instruction);
                 break;
             case p2_BITNC_WCZ:
-                dasm_bitnc(instruction);
+                da_bitnc(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst9_e", "TESTBN ANDC/ANDZ or BITNC {WCZ}");
@@ -236,16 +236,16 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_TESTB_OR_BITZ:
             switch (IR.inst9()) {
             case p2_BITZ:
-                dasm_bitz(instruction);
+                da_bitz(instruction);
                 break;
             case p2_TESTB_ORZ:
-                dasm_testb_or(instruction);
+                da_testb_or(instruction);
                 break;
             case p2_TESTB_ORC:
-                dasm_testb_or(instruction);
+                da_testb_or(instruction);
                 break;
             case p2_BITZ_WCZ:
-                dasm_bitz(instruction);
+                da_bitz(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst9_e", "TESTB ORC/ORZ or BITZ {WCZ}");
@@ -255,16 +255,16 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_TESTBN_OR_BITNZ:
             switch (IR.inst9()) {
             case p2_BITNZ:
-                dasm_bitnz(instruction);
+                da_bitnz(instruction);
                 break;
             case p2_TESTBN_ORZ:
-                dasm_testbn_or(instruction);
+                da_testbn_or(instruction);
                 break;
             case p2_TESTBN_ORC:
-                dasm_testbn_or(instruction);
+                da_testbn_or(instruction);
                 break;
             case p2_BITNZ_WCZ:
-                dasm_bitnz(instruction);
+                da_bitnz(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst9_e", "TESTBN ORC/ORZ or BITNZ {WCZ}");
@@ -274,16 +274,16 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_TESTB_XOR_BITRND:
             switch (IR.inst9()) {
             case p2_BITRND:
-                dasm_bitl(instruction);
+                da_bitl(instruction);
                 break;
             case p2_TESTB_XORZ:
-                dasm_testb_xor(instruction);
+                da_testb_xor(instruction);
                 break;
             case p2_TESTB_XORC:
-                dasm_testb_xor(instruction);
+                da_testb_xor(instruction);
                 break;
             case p2_BITRND_WCZ:
-                dasm_bitl(instruction);
+                da_bitl(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst9_e", "TESTB XORC/XORZ or BITRND {WCZ}");
@@ -293,16 +293,16 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_TESTBN_XOR_BITNOT:
             switch (IR.inst9()) {
             case p2_BITNOT:
-                dasm_bitnot(instruction);
+                da_bitnot(instruction);
                 break;
             case p2_TESTB_XORZ:
-                dasm_testbn_xor(instruction);
+                da_testbn_xor(instruction);
                 break;
             case p2_TESTB_XORC:
-                dasm_testbn_xor(instruction);
+                da_testbn_xor(instruction);
                 break;
             case p2_BITNOT_WCZ:
-                dasm_bitnot(instruction);
+                da_bitnot(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst9_e", "TESTB XORC/XORZ or BITRND {WCZ}");
@@ -310,141 +310,141 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
             break;
 
         case p2_AND:
-            dasm_and(instruction);
+            da_and(instruction);
             break;
 
         case p2_ANDN:
-            dasm_andn(instruction);
+            da_andn(instruction);
             break;
 
         case p2_OR:
-            dasm_or(instruction);
+            da_or(instruction);
             break;
 
         case p2_XOR:
-            dasm_xor(instruction);
+            da_xor(instruction);
             break;
 
         case p2_MUXC:
-            dasm_muxc(instruction);
+            da_muxc(instruction);
             break;
 
         case p2_MUXNC:
-            dasm_muxnc(instruction);
+            da_muxnc(instruction);
             break;
 
         case p2_MUXZ:
-            dasm_muxz(instruction);
+            da_muxz(instruction);
             break;
 
         case p2_MUXNZ:
-            dasm_muxnz(instruction);
+            da_muxnz(instruction);
             break;
 
         case p2_MOV:
-            dasm_mov(instruction);
+            da_mov(instruction);
             break;
 
         case p2_NOT:
-            dasm_not(instruction);
+            da_not(instruction);
             break;
 
         case p2_ABS:
-            dasm_abs(instruction);
+            da_abs(instruction);
             break;
 
         case p2_NEG:
-            dasm_neg(instruction);
+            da_neg(instruction);
             break;
 
         case p2_NEGC:
-            dasm_negc(instruction);
+            da_negc(instruction);
             break;
 
         case p2_NEGNC:
-            dasm_negnc(instruction);
+            da_negnc(instruction);
             break;
 
         case p2_NEGZ:
-            dasm_negz(instruction);
+            da_negz(instruction);
             break;
 
         case p2_NEGNZ:
-            dasm_negnz(instruction);
+            da_negnz(instruction);
             break;
 
         case p2_INCMOD:
-            dasm_incmod(instruction);
+            da_incmod(instruction);
             break;
 
         case p2_DECMOD:
-            dasm_decmod(instruction);
+            da_decmod(instruction);
             break;
 
         case p2_ZEROX:
-            dasm_zerox(instruction);
+            da_zerox(instruction);
             break;
 
         case p2_SIGNX:
-            dasm_signx(instruction);
+            da_signx(instruction);
             break;
 
         case p2_ENCOD:
-            dasm_encod(instruction);
+            da_encod(instruction);
             break;
 
         case p2_ONES:
-            dasm_ones(instruction);
+            da_ones(instruction);
             break;
 
         case p2_TEST:
-            dasm_test(instruction);
+            da_test(instruction);
             break;
 
         case p2_TESTN:
-            dasm_testn(instruction);
+            da_testn(instruction);
             break;
 
         case p2_SETNIB_0:
         case p2_SETNIB_1:
-            dasm_setnib(instruction);
+            da_setnib(instruction);
             break;
 
         case p2_GETNIB_0:
         case p2_GETNIB_1:
-            dasm_getnib(instruction);
+            da_getnib(instruction);
             break;
 
         case p2_ROLNIB_0:
         case p2_ROLNIB_1:
-            dasm_rolnib(instruction);
+            da_rolnib(instruction);
             break;
 
         case p2_SETBYTE:
-            dasm_setbyte(instruction);
+            da_setbyte(instruction);
             break;
 
         case p2_GETBYTE:
-            dasm_getbyte(instruction);
+            da_getbyte(instruction);
             break;
 
         case p2_ROLBYTE:
-            dasm_rolbyte(instruction);
+            da_rolbyte(instruction);
             break;
 
         case p2_SETWORD_GETWORD:
             switch (IR.inst9()) {
             case p2_SETWORD_ALTSW:
-                dasm_setword_altsw(instruction);
+                da_setword_altsw(instruction);
                 break;
             case p2_SETWORD:
-                dasm_setword(instruction);
+                da_setword(instruction);
                 break;
             case p2_GETWORD_ALTGW:
-                dasm_getword_altgw(instruction);
+                da_getword_altgw(instruction);
                 break;
             case p2_GETWORD:
-                dasm_getword(instruction);
+                da_getword(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst9_e", "SETWORD/GETWORD");
@@ -455,27 +455,27 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
             switch (IR.inst9()) {
             case p2_ROLWORD_ALTGW:
                 if (IR.src() == 0) {
-                    dasm_rolword_altgw(instruction);
+                    da_rolword_altgw(instruction);
                     break;
                 }
-                dasm_rolword(instruction);
+                da_rolword(instruction);
                 break;
             case p2_ROLWORD:
-                dasm_rolword(instruction);
+                da_rolword(instruction);
                 break;
             case p2_ALTSN:
                 if (IR.src() == 0 && IR.im() == 1) {
-                    dasm_altsn_d(instruction);
+                    da_altsn_d(instruction);
                     break;
                 }
-                dasm_altsn(instruction);
+                da_altsn(instruction);
                 break;
             case p2_ALTGN:
                 if (IR.src() == 0 && IR.im() == 1) {
-                    dasm_altgn_d(instruction);
+                    da_altgn_d(instruction);
                     break;
                 }
-                dasm_altgn(instruction);
+                da_altgn(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst9_e", "ROLWORD/ALTSN/ALTGN");
@@ -486,31 +486,31 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
             switch (IR.inst9()) {
             case p2_ALTSB:
                 if (IR.src() == 0 && IR.im() == 1) {
-                    dasm_altsb_d(instruction);
+                    da_altsb_d(instruction);
                     break;
                 }
-                dasm_altsb(instruction);
+                da_altsb(instruction);
                 break;
             case p2_ALTGB:
                 if (IR.src() == 0 && IR.im() == 1) {
-                    dasm_altgb_d(instruction);
+                    da_altgb_d(instruction);
                     break;
                 }
-                dasm_altgb(instruction);
+                da_altgb(instruction);
                 break;
             case p2_ALTSW:
                 if (IR.src() == 0 && IR.im() == 1) {
-                    dasm_altsw_d(instruction);
+                    da_altsw_d(instruction);
                     break;
                 }
-                dasm_altsw(instruction);
+                da_altsw(instruction);
                 break;
             case p2_ALTGW:
                 if (IR.src() == 0 && IR.im() == 1) {
-                    dasm_altgw_d(instruction);
+                    da_altgw_d(instruction);
                     break;
                 }
-                dasm_altgw(instruction);
+                da_altgw(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst9_e", "ALTSB/ALTGB/ALTSW/ALTGW");
@@ -521,31 +521,31 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
             switch (IR.inst9()) {
             case p2_ALTR:
                 if (IR.src() == 0 && IR.im() == 1) {
-                    dasm_altr_d(instruction);
+                    da_altr_d(instruction);
                     break;
                 }
-                dasm_altr(instruction);
+                da_altr(instruction);
                 break;
             case p2_ALTD:
                 if (IR.src() == 0 && IR.im() == 1) {
-                    dasm_altd_d(instruction);
+                    da_altd_d(instruction);
                     break;
                 }
-                dasm_altd(instruction);
+                da_altd(instruction);
                 break;
             case p2_ALTS:
                 if (IR.src() == 0 && IR.im() == 1) {
-                    dasm_alts_d(instruction);
+                    da_alts_d(instruction);
                     break;
                 }
-                dasm_alts(instruction);
+                da_alts(instruction);
                 break;
             case p2_ALTB:
                 if (IR.src() == 0 && IR.im() == 1) {
-                    dasm_altb_d(instruction);
+                    da_altb_d(instruction);
                     break;
                 }
-                dasm_altb(instruction);
+                da_altb(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst9_e", "ALTR/ALTD/ALTS/ALTB");
@@ -556,19 +556,19 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
             switch (IR.inst9()) {
             case p2_ALTI:
                 if (IR.im() == 1 && IR.src() == 0x164 /* 101100100 */) {
-                    dasm_alti_d(instruction);
+                    da_alti_d(instruction);
                     break;
                 }
-                dasm_alti(instruction);
+                da_alti(instruction);
                 break;
             case p2_SETR:
-                dasm_setr(instruction);
+                da_setr(instruction);
                 break;
             case p2_SETD:
-                dasm_setd(instruction);
+                da_setd(instruction);
                 break;
             case p2_SETS:
-                dasm_sets(instruction);
+                da_sets(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst9_e", "ALTI/SETR/SETD/SETS");
@@ -579,23 +579,23 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
             switch (IR.inst9()) {
             case p2_DECOD:
                 if (IR.im() == 0 && IR.src() == IR.dst()) {
-                    dasm_decod_d(instruction);
+                    da_decod_d(instruction);
                     break;
                 }
-                dasm_decod(instruction);
+                da_decod(instruction);
                 break;
             case p2_BMASK:
                 if (IR.im() == 0 && IR.src() == IR.dst()) {
-                    dasm_bmask_d(instruction);
+                    da_bmask_d(instruction);
                     break;
                 }
-                dasm_bmask(instruction);
+                da_bmask(instruction);
                 break;
             case p2_CRCBIT:
-                dasm_crcbit(instruction);
+                da_crcbit(instruction);
                 break;
             case p2_CRCNIB:
-                dasm_crcnib(instruction);
+                da_crcnib(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst9_e", "DECOD/BMASK/CRCBIT/CRCNIB");
@@ -605,16 +605,16 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_MUX_NITS_NIBS_Q_MOVBYTS:
             switch (IR.inst9()) {
             case p2_MUXNITS:
-                dasm_muxnits(instruction);
+                da_muxnits(instruction);
                 break;
             case p2_MUXNIBS:
-                dasm_muxnibs(instruction);
+                da_muxnibs(instruction);
                 break;
             case p2_MUXQ:
-                dasm_muxq(instruction);
+                da_muxq(instruction);
                 break;
             case p2_MOVBYTS:
-                dasm_movbyts(instruction);
+                da_movbyts(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst9_e", "MUXNITS/MUXNIBS/MUXQ/MOVBYTS");
@@ -624,10 +624,10 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_MUL_MULS:
             switch (IR.inst8()) {
             case p2_MUL:
-                dasm_mul(instruction);
+                da_mul(instruction);
                 break;
             case p2_MULS:
-                dasm_muls(instruction);
+                da_muls(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst8_e", "MUL/MULS");
@@ -637,10 +637,10 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_SCA_SCAS:
             switch (IR.inst8()) {
             case p2_SCA:
-                dasm_sca(instruction);
+                da_sca(instruction);
                 break;
             case p2_SCAS:
-                dasm_scas(instruction);
+                da_scas(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst8_e", "SCA/SCAS");
@@ -650,16 +650,16 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_XXXPIX:
             switch (IR.inst9()) {
             case p2_ADDPIX:
-                dasm_addpix(instruction);
+                da_addpix(instruction);
                 break;
             case p2_MULPIX:
-                dasm_mulpix(instruction);
+                da_mulpix(instruction);
                 break;
             case p2_BLNPIX:
-                dasm_blnpix(instruction);
+                da_blnpix(instruction);
                 break;
             case p2_MIXPIX:
-                dasm_mixpix(instruction);
+                da_mixpix(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst9_e", "ADDPIX/MULPIX/BLNPIX/MIXPIX");
@@ -669,16 +669,16 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_WMLONG_ADDCTx:
             switch (IR.inst9()) {
             case p2_ADDCT1:
-                dasm_addct1(instruction);
+                da_addct1(instruction);
                 break;
             case p2_ADDCT2:
-                dasm_addct2(instruction);
+                da_addct2(instruction);
                 break;
             case p2_ADDCT3:
-                dasm_addct3(instruction);
+                da_addct3(instruction);
                 break;
             case p2_WMLONG:
-                dasm_wmlong(instruction);
+                da_wmlong(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst9_e", "ADDCT1/ADDCT2/ADDCT3/WMLONG");
@@ -688,10 +688,10 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_RQPIN_RDPIN:
             switch (IR.inst8()) {
             case p2_RQPIN:
-                dasm_rqpin(instruction);
+                da_rqpin(instruction);
                 break;
             case p2_RDPIN:
-                dasm_rdpin(instruction);
+                da_rdpin(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst8_e", "RQPIN/RDPIN");
@@ -699,32 +699,32 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
             break;
 
         case p2_RDLUT:
-            dasm_rdlut(instruction);
+            da_rdlut(instruction);
             break;
 
         case p2_RDBYTE:
-            dasm_rdbyte(instruction);
+            da_rdbyte(instruction);
             break;
 
         case p2_RDWORD:
-            dasm_rdword(instruction);
+            da_rdword(instruction);
             break;
 
         case p2_RDLONG:
-            dasm_rdlong(instruction);
+            da_rdlong(instruction);
             break;
 
         case p2_CALLD:
-            dasm_calld(instruction);
+            da_calld(instruction);
             break;
 
         case p2_CALLPA_CALLPB:
             switch (IR.inst8()) {
             case p2_CALLPA:
-                dasm_callpa(instruction);
+                da_callpa(instruction);
                 break;
             case p2_CALLPB:
-                dasm_callpb(instruction);
+                da_callpb(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst8_e", "CALLPA/CALLPA");
@@ -734,16 +734,16 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_DJZ_DJNZ_DJF_DJNF:
             switch (IR.inst9()) {
             case p2_DJZ:
-                dasm_djz(instruction);
+                da_djz(instruction);
                 break;
             case p2_DJNZ:
-                dasm_djnz(instruction);
+                da_djnz(instruction);
                 break;
             case p2_DJF:
-                dasm_djf(instruction);
+                da_djf(instruction);
                 break;
             case p2_DJNF:
-                dasm_djnf(instruction);
+                da_djnf(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst9_e", "DJZ/DJNZ/DJF/DJNF");
@@ -753,16 +753,16 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_IJZ_IJNZ_TJZ_TJNZ:
             switch (IR.inst9()) {
             case p2_IJZ:
-                dasm_ijz(instruction);
+                da_ijz(instruction);
                 break;
             case p2_IJNZ:
-                dasm_ijnz(instruction);
+                da_ijnz(instruction);
                 break;
             case p2_TJZ:
-                dasm_tjz(instruction);
+                da_tjz(instruction);
                 break;
             case p2_TJNZ:
-                dasm_tjnz(instruction);
+                da_tjnz(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst9_e", "IJZ/IJNZ/TJZ/TJNZ");
@@ -772,16 +772,16 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_TJF_TJNF_TJS_TJNS:
             switch (IR.inst9()) {
             case p2_TJF:
-                dasm_tjf(instruction);
+                da_tjf(instruction);
                 break;
             case p2_TJNF:
-                dasm_tjnf(instruction);
+                da_tjnf(instruction);
                 break;
             case p2_TJS:
-                dasm_tjs(instruction);
+                da_tjs(instruction);
                 break;
             case p2_TJNS:
-                dasm_tjns(instruction);
+                da_tjns(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst9_e", "TJF/TJNF/TJS/TJNS");
@@ -793,105 +793,105 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
             case p2_TJV_OPDST:
                 switch (IR.inst9()) {
                 case p2_TJV:
-                    dasm_tjv(instruction);
+                    da_tjv(instruction);
                     break;
                 case p2_OPDST:
                     switch (IR.dst()) {
                     case p2_OPDST_JINT:
-                        dasm_jint(instruction);
+                        da_jint(instruction);
                         break;
                     case p2_OPDST_JCT1:
-                        dasm_jct1(instruction);
+                        da_jct1(instruction);
                         break;
                     case p2_OPDST_JCT2:
-                        dasm_jct2(instruction);
+                        da_jct2(instruction);
                         break;
                     case p2_OPDST_JCT3:
-                        dasm_jct3(instruction);
+                        da_jct3(instruction);
                         break;
                     case p2_OPDST_JSE1:
-                        dasm_jse1(instruction);
+                        da_jse1(instruction);
                         break;
                     case p2_OPDST_JSE2:
-                        dasm_jse2(instruction);
+                        da_jse2(instruction);
                         break;
                     case p2_OPDST_JSE3:
-                        dasm_jse3(instruction);
+                        da_jse3(instruction);
                         break;
                     case p2_OPDST_JSE4:
-                        dasm_jse4(instruction);
+                        da_jse4(instruction);
                         break;
                     case p2_OPDST_JPAT:
-                        dasm_jpat(instruction);
+                        da_jpat(instruction);
                         break;
                     case p2_OPDST_JFBW:
-                        dasm_jfbw(instruction);
+                        da_jfbw(instruction);
                         break;
                     case p2_OPDST_JXMT:
-                        dasm_jxmt(instruction);
+                        da_jxmt(instruction);
                         break;
                     case p2_OPDST_JXFI:
-                        dasm_jxfi(instruction);
+                        da_jxfi(instruction);
                         break;
                     case p2_OPDST_JXRO:
-                        dasm_jxro(instruction);
+                        da_jxro(instruction);
                         break;
                     case p2_OPDST_JXRL:
-                        dasm_jxrl(instruction);
+                        da_jxrl(instruction);
                         break;
                     case p2_OPDST_JATN:
-                        dasm_jatn(instruction);
+                        da_jatn(instruction);
                         break;
                     case p2_OPDST_JQMT:
-                        dasm_jqmt(instruction);
+                        da_jqmt(instruction);
                         break;
                     case p2_OPDST_JNINT:
-                        dasm_jnint(instruction);
+                        da_jnint(instruction);
                         break;
                     case p2_OPDST_JNCT1:
-                        dasm_jnct1(instruction);
+                        da_jnct1(instruction);
                         break;
                     case p2_OPDST_JNCT2:
-                        dasm_jnct2(instruction);
+                        da_jnct2(instruction);
                         break;
                     case p2_OPDST_JNCT3:
-                        dasm_jnct3(instruction);
+                        da_jnct3(instruction);
                         break;
                     case p2_OPDST_JNSE1:
-                        dasm_jnse1(instruction);
+                        da_jnse1(instruction);
                         break;
                     case p2_OPDST_JNSE2:
-                        dasm_jnse2(instruction);
+                        da_jnse2(instruction);
                         break;
                     case p2_OPDST_JNSE3:
-                        dasm_jnse3(instruction);
+                        da_jnse3(instruction);
                         break;
                     case p2_OPDST_JNSE4:
-                        dasm_jnse4(instruction);
+                        da_jnse4(instruction);
                         break;
                     case p2_OPDST_JNPAT:
-                        dasm_jnpat(instruction);
+                        da_jnpat(instruction);
                         break;
                     case p2_OPDST_JNFBW:
-                        dasm_jnfbw(instruction);
+                        da_jnfbw(instruction);
                         break;
                     case p2_OPDST_JNXMT:
-                        dasm_jnxmt(instruction);
+                        da_jnxmt(instruction);
                         break;
                     case p2_OPDST_JNXFI:
-                        dasm_jnxfi(instruction);
+                        da_jnxfi(instruction);
                         break;
                     case p2_OPDST_JNXRO:
-                        dasm_jnxro(instruction);
+                        da_jnxro(instruction);
                         break;
                     case p2_OPDST_JNXRL:
-                        dasm_jnxrl(instruction);
+                        da_jnxrl(instruction);
                         break;
                     case p2_OPDST_JNATN:
-                        dasm_jnatn(instruction);
+                        da_jnatn(instruction);
                         break;
                     case p2_OPDST_JNQMT:
-                        dasm_jnqmt(instruction);
+                        da_jnqmt(instruction);
                         break;
                     default:
                         // TODO: invalid D value
@@ -906,7 +906,7 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
                 switch (IR.inst9()) {
                 case p2_1011110_10:
                 case p2_1011110_11:
-                    dasm_1011110_1(instruction);
+                    da_1011110_1(instruction);
                     break;
                 default:
                     Q_ASSERT_X(false, "p2_inst9_e", "TJV/OPDST/1011110_10/1011110_11");
@@ -920,10 +920,10 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_empty_SETPAT:
             switch (IR.inst8()) {
             case p2_1011111_0:
-                dasm_1011111_0(instruction);
+                da_1011111_0(instruction);
                 break;
             case p2_SETPAT:
-                dasm_setpat(instruction);
+                da_setpat(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst8_e", "1011111_0/SETPAT");
@@ -934,13 +934,13 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
             switch (IR.inst8()) {
             case p2_WRPIN:
                 if (IR.wz() == 1 && IR.dst() == 1) {
-                    dasm_akpin(instruction);
+                    da_akpin(instruction);
                     break;
                 }
-                dasm_wrpin(instruction);
+                da_wrpin(instruction);
                 break;
             case p2_WXPIN:
-                dasm_wxpin(instruction);
+                da_wxpin(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst8_e", "WRPIN/AKPIN/WXPIN");
@@ -950,10 +950,10 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_WYPIN_WRLUT:
             switch (IR.inst8()) {
             case p2_WYPIN:
-                dasm_wypin(instruction);
+                da_wypin(instruction);
                 break;
             case p2_WRLUT:
-                dasm_wrlut(instruction);
+                da_wrlut(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst8_e", "WYPIN/WRLUT");
@@ -963,10 +963,10 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_WRBYTE_WRWORD:
             switch (IR.inst8()) {
             case p2_WRBYTE:
-                dasm_wrbyte(instruction);
+                da_wrbyte(instruction);
                 break;
             case p2_WRWORD:
-                dasm_wrword(instruction);
+                da_wrword(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst8_e", "WRBYTE/WRWORD");
@@ -976,10 +976,10 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_WRLONG_RDFAST:
             switch (IR.inst8()) {
             case p2_WRLONG:
-                dasm_wrlong(instruction);
+                da_wrlong(instruction);
                 break;
             case p2_RDFAST:
-                dasm_rdfast(instruction);
+                da_rdfast(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst8_e", "WRLONG/RDFAST");
@@ -989,10 +989,10 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_WRFAST_FBLOCK:
             switch (IR.inst8()) {
             case p2_WRFAST:
-                dasm_wrfast(instruction);
+                da_wrfast(instruction);
                 break;
             case p2_FBLOCK:
-                dasm_fblock(instruction);
+                da_fblock(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst8_e", "WRFAST/FBLOCK");
@@ -1003,13 +1003,13 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
             switch (IR.inst8()) {
             case p2_XINIT:
                 if (IR.wz() == 1 && IR.im() == 1 && IR.src() == 0 && IR.dst() == 0) {
-                    dasm_xstop(instruction);
+                    da_xstop(instruction);
                     break;
                 }
-                dasm_xinit(instruction);
+                da_xinit(instruction);
                 break;
             case p2_XZERO:
-                dasm_xzero(instruction);
+                da_xzero(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst8_e", "XINIT/XSTOP/XZERO");
@@ -1019,10 +1019,10 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_XCONT_REP:
             switch (IR.inst8()) {
             case p2_XCONT:
-                dasm_xcont(instruction);
+                da_xcont(instruction);
                 break;
             case p2_REP:
-                dasm_rep(instruction);
+                da_rep(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst8_e", "XCONT/REP");
@@ -1030,16 +1030,16 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
             break;
 
         case p2_COGINIT:
-            dasm_coginit(instruction);
+            da_coginit(instruction);
             break;
 
         case p2_QMUL_QDIV:
             switch (IR.inst8()) {
             case p2_QMUL:
-                dasm_qmul(instruction);
+                da_qmul(instruction);
                 break;
             case p2_QDIV:
-                dasm_qdiv(instruction);
+                da_qdiv(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst8_e", "QMUL/QDIV");
@@ -1049,10 +1049,10 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_QFRAC_QSQRT:
             switch (IR.inst8()) {
             case p2_QFRAC:
-                dasm_qfrac(instruction);
+                da_qfrac(instruction);
                 break;
             case p2_QSQRT:
-                dasm_qsqrt(instruction);
+                da_qsqrt(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst8_e", "QFRAC/QSQRT");
@@ -1062,10 +1062,10 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_QROTATE_QVECTOR:
             switch (IR.inst8()) {
             case p2_QROTATE:
-                dasm_qrotate(instruction);
+                da_qrotate(instruction);
                 break;
             case p2_QVECTOR:
-                dasm_qvector(instruction);
+                da_qvector(instruction);
                 break;
             default:
                 Q_ASSERT_X(false, "p2_inst8_e", "QROTATE/QVECTOR");
@@ -1075,459 +1075,459 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
         case p2_OPSRC:
             switch (IR.opsrc()) {
             case p2_OPSRC_HUBSET:
-                dasm_hubset(instruction);
+                da_hubset(instruction);
                 break;
             case p2_OPSRC_COGID:
-                dasm_cogid(instruction);
+                da_cogid(instruction);
                 break;
             case p2_OPSRC_COGSTOP:
-                dasm_cogstop(instruction);
+                da_cogstop(instruction);
                 break;
             case p2_OPSRC_LOCKNEW:
-                dasm_locknew(instruction);
+                da_locknew(instruction);
                 break;
             case p2_OPSRC_LOCKRET:
-                dasm_lockret(instruction);
+                da_lockret(instruction);
                 break;
             case p2_OPSRC_LOCKTRY:
-                dasm_locktry(instruction);
+                da_locktry(instruction);
                 break;
             case p2_OPSRC_LOCKREL:
-                dasm_lockrel(instruction);
+                da_lockrel(instruction);
                 break;
             case p2_OPSRC_QLOG:
-                dasm_qlog(instruction);
+                da_qlog(instruction);
                 break;
             case p2_OPSRC_QEXP:
-                dasm_qexp(instruction);
+                da_qexp(instruction);
                 break;
             case p2_OPSRC_RFBYTE:
-                dasm_rfbyte(instruction);
+                da_rfbyte(instruction);
                 break;
             case p2_OPSRC_RFWORD:
-                dasm_rfword(instruction);
+                da_rfword(instruction);
                 break;
             case p2_OPSRC_RFLONG:
-                dasm_rflong(instruction);
+                da_rflong(instruction);
                 break;
             case p2_OPSRC_RFVAR:
-                dasm_rfvar(instruction);
+                da_rfvar(instruction);
                 break;
             case p2_OPSRC_RFVARS:
-                dasm_rfvars(instruction);
+                da_rfvars(instruction);
                 break;
             case p2_OPSRC_WFBYTE:
-                dasm_wfbyte(instruction);
+                da_wfbyte(instruction);
                 break;
             case p2_OPSRC_WFWORD:
-                dasm_wfword(instruction);
+                da_wfword(instruction);
                 break;
             case p2_OPSRC_WFLONG:
-                dasm_wflong(instruction);
+                da_wflong(instruction);
                 break;
             case p2_OPSRC_GETQX:
-                dasm_getqx(instruction);
+                da_getqx(instruction);
                 break;
             case p2_OPSRC_GETQY:
-                dasm_getqy(instruction);
+                da_getqy(instruction);
                 break;
             case p2_OPSRC_GETCT:
-                dasm_getct(instruction);
+                da_getct(instruction);
                 break;
             case p2_OPSRC_GETRND:
-                (IR.dst() == 0) ? dasm_getrnd_cz(instruction)
-                                   : dasm_getrnd(instruction);
+                (IR.dst() == 0) ? da_getrnd_cz(instruction)
+                                   : da_getrnd(instruction);
                 break;
             case p2_OPSRC_SETDACS:
-                dasm_setdacs(instruction);
+                da_setdacs(instruction);
                 break;
             case p2_OPSRC_SETXFRQ:
-                dasm_setxfrq(instruction);
+                da_setxfrq(instruction);
                 break;
             case p2_OPSRC_GETXACC:
-                dasm_getxacc(instruction);
+                da_getxacc(instruction);
                 break;
             case p2_OPSRC_WAITX:
-                dasm_waitx(instruction);
+                da_waitx(instruction);
                 break;
             case p2_OPSRC_SETSE1:
-                dasm_setse1(instruction);
+                da_setse1(instruction);
                 break;
             case p2_OPSRC_SETSE2:
-                dasm_setse2(instruction);
+                da_setse2(instruction);
                 break;
             case p2_OPSRC_SETSE3:
-                dasm_setse3(instruction);
+                da_setse3(instruction);
                 break;
             case p2_OPSRC_SETSE4:
-                dasm_setse4(instruction);
+                da_setse4(instruction);
                 break;
             case p2_OPSRC_X24:
                 switch (IR.dst()) {
                 case p2_OPX24_POLLINT:
-                    dasm_pollint(instruction);
+                    da_pollint(instruction);
                     break;
                 case p2_OPX24_POLLCT1:
-                    dasm_pollct1(instruction);
+                    da_pollct1(instruction);
                     break;
                 case p2_OPX24_POLLCT2:
-                    dasm_pollct2(instruction);
+                    da_pollct2(instruction);
                     break;
                 case p2_OPX24_POLLCT3:
-                    dasm_pollct3(instruction);
+                    da_pollct3(instruction);
                     break;
                 case p2_OPX24_POLLSE1:
-                    dasm_pollse1(instruction);
+                    da_pollse1(instruction);
                     break;
                 case p2_OPX24_POLLSE2:
-                    dasm_pollse2(instruction);
+                    da_pollse2(instruction);
                     break;
                 case p2_OPX24_POLLSE3:
-                    dasm_pollse3(instruction);
+                    da_pollse3(instruction);
                     break;
                 case p2_OPX24_POLLSE4:
-                    dasm_pollse4(instruction);
+                    da_pollse4(instruction);
                     break;
                 case p2_OPX24_POLLPAT:
-                    dasm_pollpat(instruction);
+                    da_pollpat(instruction);
                     break;
                 case p2_OPX24_POLLFBW:
-                    dasm_pollfbw(instruction);
+                    da_pollfbw(instruction);
                     break;
                 case p2_OPX24_POLLXMT:
-                    dasm_pollxmt(instruction);
+                    da_pollxmt(instruction);
                     break;
                 case p2_OPX24_POLLXFI:
-                    dasm_pollxfi(instruction);
+                    da_pollxfi(instruction);
                     break;
                 case p2_OPX24_POLLXRO:
-                    dasm_pollxro(instruction);
+                    da_pollxro(instruction);
                     break;
                 case p2_OPX24_POLLXRL:
-                    dasm_pollxrl(instruction);
+                    da_pollxrl(instruction);
                     break;
                 case p2_OPX24_POLLATN:
-                    dasm_pollatn(instruction);
+                    da_pollatn(instruction);
                     break;
                 case p2_OPX24_POLLQMT:
-                    dasm_pollqmt(instruction);
+                    da_pollqmt(instruction);
                     break;
                 case p2_OPX24_WAITINT:
-                    dasm_waitint(instruction);
+                    da_waitint(instruction);
                     break;
                 case p2_OPX24_WAITCT1:
-                    dasm_waitct1(instruction);
+                    da_waitct1(instruction);
                     break;
                 case p2_OPX24_WAITCT2:
-                    dasm_waitct2(instruction);
+                    da_waitct2(instruction);
                     break;
                 case p2_OPX24_WAITCT3:
-                    dasm_waitct3(instruction);
+                    da_waitct3(instruction);
                     break;
                 case p2_OPX24_WAITSE1:
-                    dasm_waitse1(instruction);
+                    da_waitse1(instruction);
                     break;
                 case p2_OPX24_WAITSE2:
-                    dasm_waitse2(instruction);
+                    da_waitse2(instruction);
                     break;
                 case p2_OPX24_WAITSE3:
-                    dasm_waitse3(instruction);
+                    da_waitse3(instruction);
                     break;
                 case p2_OPX24_WAITSE4:
-                    dasm_waitse4(instruction);
+                    da_waitse4(instruction);
                     break;
                 case p2_OPX24_WAITPAT:
-                    dasm_waitpat(instruction);
+                    da_waitpat(instruction);
                     break;
                 case p2_OPX24_WAITFBW:
-                    dasm_waitfbw(instruction);
+                    da_waitfbw(instruction);
                     break;
                 case p2_OPX24_WAITXMT:
-                    dasm_waitxmt(instruction);
+                    da_waitxmt(instruction);
                     break;
                 case p2_OPX24_WAITXFI:
-                    dasm_waitxfi(instruction);
+                    da_waitxfi(instruction);
                     break;
                 case p2_OPX24_WAITXRO:
-                    dasm_waitxro(instruction);
+                    da_waitxro(instruction);
                     break;
                 case p2_OPX24_WAITXRL:
-                    dasm_waitxrl(instruction);
+                    da_waitxrl(instruction);
                     break;
                 case p2_OPX24_WAITATN:
-                    dasm_waitatn(instruction);
+                    da_waitatn(instruction);
                     break;
                 case p2_OPX24_ALLOWI:
-                    dasm_allowi(instruction);
+                    da_allowi(instruction);
                     break;
                 case p2_OPX24_STALLI:
-                    dasm_stalli(instruction);
+                    da_stalli(instruction);
                     break;
                 case p2_OPX24_TRGINT1:
-                    dasm_trgint1(instruction);
+                    da_trgint1(instruction);
                     break;
                 case p2_OPX24_TRGINT2:
-                    dasm_trgint2(instruction);
+                    da_trgint2(instruction);
                     break;
                 case p2_OPX24_TRGINT3:
-                    dasm_trgint3(instruction);
+                    da_trgint3(instruction);
                     break;
                 case p2_OPX24_NIXINT1:
-                    dasm_nixint1(instruction);
+                    da_nixint1(instruction);
                     break;
                 case p2_OPX24_NIXINT2:
-                    dasm_nixint2(instruction);
+                    da_nixint2(instruction);
                     break;
                 case p2_OPX24_NIXINT3:
-                    dasm_nixint3(instruction);
+                    da_nixint3(instruction);
                     break;
                 }
                 break;
             case p2_OPSRC_SETINT1:
-                dasm_setint1(instruction);
+                da_setint1(instruction);
                 break;
             case p2_OPSRC_SETINT2:
-                dasm_setint2(instruction);
+                da_setint2(instruction);
                 break;
             case p2_OPSRC_SETINT3:
-                dasm_setint3(instruction);
+                da_setint3(instruction);
                 break;
             case p2_OPSRC_SETQ:
-                dasm_setq(instruction);
+                da_setq(instruction);
                 break;
             case p2_OPSRC_SETQ2:
-                dasm_setq2(instruction);
+                da_setq2(instruction);
                 break;
             case p2_OPSRC_PUSH:
-                dasm_push(instruction);
+                da_push(instruction);
                 break;
             case p2_OPSRC_POP:
-                dasm_pop(instruction);
+                da_pop(instruction);
                 break;
             case p2_OPSRC_JMP:
-                dasm_jmp(instruction);
+                da_jmp(instruction);
                 break;
             case p2_OPSRC_CALL_RET:
-                (IR.im() == 0) ? dasm_call(instruction)
-                               : dasm_ret(instruction);
+                (IR.im() == 0) ? da_call(instruction)
+                               : da_ret(instruction);
                 break;
             case p2_OPSRC_CALLA_RETA:
-                (IR.im() == 0) ? dasm_calla(instruction)
-                               : dasm_reta(instruction);
+                (IR.im() == 0) ? da_calla(instruction)
+                               : da_reta(instruction);
                 break;
             case p2_OPSRC_CALLB_RETB:
-                (IR.im() == 0) ? dasm_callb(instruction)
-                               : dasm_retb(instruction);
+                (IR.im() == 0) ? da_callb(instruction)
+                               : da_retb(instruction);
                 break;
             case p2_OPSRC_JMPREL:
-                dasm_jmprel(instruction);
+                da_jmprel(instruction);
                 break;
             case p2_OPSRC_SKIP:
-                dasm_skip(instruction);
+                da_skip(instruction);
                 break;
             case p2_OPSRC_SKIPF:
-                dasm_skipf(instruction);
+                da_skipf(instruction);
                 break;
             case p2_OPSRC_EXECF:
-                dasm_execf(instruction);
+                da_execf(instruction);
                 break;
             case p2_OPSRC_GETPTR:
-                dasm_getptr(instruction);
+                da_getptr(instruction);
                 break;
             case p2_OPSRC_COGBRK:
-                (IR.wc() == 0 && IR.wz() == 0) ? dasm_cogbrk(instruction)
-                                               : dasm_getbrk(instruction);
+                (IR.wc() == 0 && IR.wz() == 0) ? da_cogbrk(instruction)
+                                               : da_getbrk(instruction);
                 break;
             case p2_OPSRC_BRK:
-                dasm_brk(instruction);
+                da_brk(instruction);
                 break;
             case p2_OPSRC_SETLUTS:
-                dasm_setluts(instruction);
+                da_setluts(instruction);
                 break;
             case p2_OPSRC_SETCY:
-                dasm_setcy(instruction);
+                da_setcy(instruction);
                 break;
             case p2_OPSRC_SETCI:
-                dasm_setci(instruction);
+                da_setci(instruction);
                 break;
             case p2_OPSRC_SETCQ:
-                dasm_setcq(instruction);
+                da_setcq(instruction);
                 break;
             case p2_OPSRC_SETCFRQ:
-                dasm_setcfrq(instruction);
+                da_setcfrq(instruction);
                 break;
             case p2_OPSRC_SETCMOD:
-                dasm_setcmod(instruction);
+                da_setcmod(instruction);
                 break;
             case p2_OPSRC_SETPIV:
-                dasm_setpiv(instruction);
+                da_setpiv(instruction);
                 break;
             case p2_OPSRC_SETPIX:
-                dasm_setpix(instruction);
+                da_setpix(instruction);
                 break;
             case p2_OPSRC_COGATN:
-                dasm_cogatn(instruction);
+                da_cogatn(instruction);
                 break;
             case p2_OPSRC_TESTP_W_DIRL:
-                (IR.wc() != IR.wz()) ? dasm_testp_w(instruction)
-                                     : dasm_dirl(instruction);
+                (IR.wc() != IR.wz()) ? da_testp_w(instruction)
+                                     : da_dirl(instruction);
                 break;
             case p2_OPSRC_TESTPN_W_DIRH:
-                (IR.wc() != IR.wz()) ? dasm_testpn_w(instruction)
-                                     : dasm_dirh(instruction);
+                (IR.wc() != IR.wz()) ? da_testpn_w(instruction)
+                                     : da_dirh(instruction);
                 break;
             case p2_OPSRC_TESTP_AND_DIRC:
-                (IR.wc() != IR.wz()) ? dasm_testp_and(instruction)
-                                     : dasm_dirc(instruction);
+                (IR.wc() != IR.wz()) ? da_testp_and(instruction)
+                                     : da_dirc(instruction);
                 break;
             case p2_OPSRC_TESTPN_AND_DIRNC:
-                (IR.wc() != IR.wz()) ? dasm_testpn_and(instruction)
-                                     : dasm_dirnc(instruction);
+                (IR.wc() != IR.wz()) ? da_testpn_and(instruction)
+                                     : da_dirnc(instruction);
                 break;
             case p2_OPSRC_TESTP_OR_DIRZ:
-                (IR.wc() != IR.wz()) ? dasm_testp_or(instruction)
-                                     : dasm_dirz(instruction);
+                (IR.wc() != IR.wz()) ? da_testp_or(instruction)
+                                     : da_dirz(instruction);
                 break;
             case p2_OPSRC_TESTPN_OR_DIRNZ:
-                (IR.wc() != IR.wz()) ? dasm_testpn_or(instruction)
-                                     : dasm_dirnz(instruction);
+                (IR.wc() != IR.wz()) ? da_testpn_or(instruction)
+                                     : da_dirnz(instruction);
                 break;
             case p2_OPSRC_TESTP_XOR_DIRRND:
-                (IR.wc() != IR.wz()) ? dasm_testp_xor(instruction)
-                                     : dasm_dirrnd(instruction);
+                (IR.wc() != IR.wz()) ? da_testp_xor(instruction)
+                                     : da_dirrnd(instruction);
                 break;
             case p2_OPSRC_TESTPN_XOR_DIRNOT:
-                (IR.wc() != IR.wz()) ? dasm_testpn_xor(instruction)
-                                     : dasm_dirnot(instruction);
+                (IR.wc() != IR.wz()) ? da_testpn_xor(instruction)
+                                     : da_dirnot(instruction);
                 break;
             case p2_OPSRC_OUTL:
-                dasm_outl(instruction);
+                da_outl(instruction);
                 break;
             case p2_OPSRC_OUTH:
-                dasm_outh(instruction);
+                da_outh(instruction);
                 break;
             case p2_OPSRC_OUTC:
-                dasm_outc(instruction);
+                da_outc(instruction);
                 break;
             case p2_OPSRC_OUTNC:
-                dasm_outnc(instruction);
+                da_outnc(instruction);
                 break;
             case p2_OPSRC_OUTZ:
-                dasm_outz(instruction);
+                da_outz(instruction);
                 break;
             case p2_OPSRC_OUTNZ:
-                dasm_outnz(instruction);
+                da_outnz(instruction);
                 break;
             case p2_OPSRC_OUTRND:
-                dasm_outrnd(instruction);
+                da_outrnd(instruction);
                 break;
             case p2_OPSRC_OUTNOT:
-                dasm_outnot(instruction);
+                da_outnot(instruction);
                 break;
             case p2_OPSRC_FLTL:
-                dasm_fltl(instruction);
+                da_fltl(instruction);
                 break;
             case p2_OPSRC_FLTH:
-                dasm_flth(instruction);
+                da_flth(instruction);
                 break;
             case p2_OPSRC_FLTC:
-                dasm_fltc(instruction);
+                da_fltc(instruction);
                 break;
             case p2_OPSRC_FLTNC:
-                dasm_fltnc(instruction);
+                da_fltnc(instruction);
                 break;
             case p2_OPSRC_FLTZ:
-                dasm_fltz(instruction);
+                da_fltz(instruction);
                 break;
             case p2_OPSRC_FLTNZ:
-                dasm_fltnz(instruction);
+                da_fltnz(instruction);
                 break;
             case p2_OPSRC_FLTRND:
-                dasm_fltrnd(instruction);
+                da_fltrnd(instruction);
                 break;
             case p2_OPSRC_FLTNOT:
-                dasm_fltnot(instruction);
+                da_fltnot(instruction);
                 break;
             case p2_OPSRC_DRVL:
-                dasm_drvl(instruction);
+                da_drvl(instruction);
                 break;
             case p2_OPSRC_DRVH:
-                dasm_drvh(instruction);
+                da_drvh(instruction);
                 break;
             case p2_OPSRC_DRVC:
-                dasm_drvc(instruction);
+                da_drvc(instruction);
                 break;
             case p2_OPSRC_DRVNC:
-                dasm_drvnc(instruction);
+                da_drvnc(instruction);
                 break;
             case p2_OPSRC_DRVZ:
-                dasm_drvz(instruction);
+                da_drvz(instruction);
                 break;
             case p2_OPSRC_DRVNZ:
-                dasm_drvnz(instruction);
+                da_drvnz(instruction);
                 break;
             case p2_OPSRC_DRVRND:
-                dasm_drvrnd(instruction);
+                da_drvrnd(instruction);
                 break;
             case p2_OPSRC_DRVNOT:
-                dasm_drvnot(instruction);
+                da_drvnot(instruction);
                 break;
             case p2_OPSRC_SPLITB:
-                dasm_splitb(instruction);
+                da_splitb(instruction);
                 break;
             case p2_OPSRC_MERGEB:
-                dasm_mergeb(instruction);
+                da_mergeb(instruction);
                 break;
             case p2_OPSRC_SPLITW:
-                dasm_splitw(instruction);
+                da_splitw(instruction);
                 break;
             case p2_OPSRC_MERGEW:
-                dasm_mergew(instruction);
+                da_mergew(instruction);
                 break;
             case p2_OPSRC_SEUSSF:
-                dasm_seussf(instruction);
+                da_seussf(instruction);
                 break;
             case p2_OPSRC_SEUSSR:
-                dasm_seussr(instruction);
+                da_seussr(instruction);
                 break;
             case p2_OPSRC_RGBSQZ:
-                dasm_rgbsqz(instruction);
+                da_rgbsqz(instruction);
                 break;
             case p2_OPSRC_RGBEXP:
-                dasm_rgbexp(instruction);
+                da_rgbexp(instruction);
                 break;
             case p2_OPSRC_XORO32:
-                dasm_xoro32(instruction);
+                da_xoro32(instruction);
                 break;
             case p2_OPSRC_REV:
-                dasm_rev(instruction);
+                da_rev(instruction);
                 break;
             case p2_OPSRC_RCZR:
-                dasm_rczr(instruction);
+                da_rczr(instruction);
                 break;
             case p2_OPSRC_RCZL:
-                dasm_rczl(instruction);
+                da_rczl(instruction);
                 break;
             case p2_OPSRC_WRC:
-                dasm_wrc(instruction);
+                da_wrc(instruction);
                 break;
             case p2_OPSRC_WRNC:
-                dasm_wrnc(instruction);
+                da_wrnc(instruction);
                 break;
             case p2_OPSRC_WRZ:
-                dasm_wrz(instruction);
+                da_wrz(instruction);
                 break;
             case p2_OPSRC_WRNZ_MODCZ:
                 if (IR.wc() | IR.wz())
-                    dasm_modcz(instruction);
+                    da_modcz(instruction);
                 else
-                    dasm_wrnz(instruction);
+                    da_wrnz(instruction);
                 break;
             case p2_OPSRC_SETSCP:
-                dasm_setscp(instruction);
+                da_setscp(instruction);
                 break;
             case p2_OPSRC_GETSCP:
-                dasm_getscp(instruction);
+                da_getscp(instruction);
                 break;
             default:
                 // Q_ASSERT_X(IR.opsrc() == p2_OPSRC_INVALID, "invalid opcode", "opsrc()");
@@ -1536,65 +1536,65 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
             break;
 
         case p2_JMP_ABS:
-            dasm_jmp_abs(instruction);
+            da_jmp_abs(instruction);
             break;
 
         case p2_CALL_ABS:
-            dasm_call_abs(instruction);
+            da_call_abs(instruction);
             break;
 
         case p2_CALLA_ABS:
-            dasm_calla_abs(instruction);
+            da_calla_abs(instruction);
             break;
 
         case p2_CALLB_ABS:
-            dasm_callb_abs(instruction);
+            da_callb_abs(instruction);
             break;
 
         case p2_CALLD_ABS_PA:
-            dasm_calld_abs_pa(instruction);
+            da_calld_abs_pa(instruction);
             break;
 
         case p2_CALLD_ABS_PB:
-            dasm_calld_abs_pb(instruction);
+            da_calld_abs_pb(instruction);
             break;
 
         case p2_CALLD_ABS_PTRA:
-            dasm_calld_abs_ptra(instruction);
+            da_calld_abs_ptra(instruction);
             break;
 
         case p2_CALLD_ABS_PTRB:
-            dasm_calld_abs_ptrb(instruction);
+            da_calld_abs_ptrb(instruction);
             break;
 
         case p2_LOC_PA:
-            dasm_loc_pa(instruction);
+            da_loc_pa(instruction);
             break;
 
         case p2_LOC_PB:
-            dasm_loc_pb(instruction);
+            da_loc_pb(instruction);
             break;
 
         case p2_LOC_PTRA:
-            dasm_loc_ptra(instruction);
+            da_loc_ptra(instruction);
             break;
 
         case p2_LOC_PTRB:
-            dasm_loc_ptrb(instruction);
+            da_loc_ptrb(instruction);
             break;
 
         case p2_AUGS_00:
         case p2_AUGS_01:
         case p2_AUGS_10:
         case p2_AUGS_11:
-            dasm_augs(instruction);
+            da_augs(instruction);
             break;
 
         case p2_AUGD_00:
         case p2_AUGD_01:
         case p2_AUGD_10:
         case p2_AUGD_11:
-            dasm_AUGD(instruction);
+            da_AUGD(instruction);
             break;
         }
         instruction->insert(0, cond);
@@ -2165,7 +2165,7 @@ void P2Dasm::format_IMM23(QString* instruction, p2_TOKEN_e inst)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_NOP(QString* instruction)
+void P2Dasm::da_NOP(QString* instruction)
 {
     format_inst(instruction, t_NOP);
 }
@@ -2183,10 +2183,10 @@ void P2Dasm::dasm_NOP(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_ROR(QString* instruction)
+void P2Dasm::da_ROR(QString* instruction)
 {
     if (0 == IR.opcode()) {
-        dasm_NOP(instruction);
+        da_NOP(instruction);
     } else {
         format_D_IM_S_WCZ(instruction, t_ROR);
     }
@@ -2205,7 +2205,7 @@ void P2Dasm::dasm_ROR(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_ROL(QString* instruction)
+void P2Dasm::da_ROL(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_ROL);
 }
@@ -2223,7 +2223,7 @@ void P2Dasm::dasm_ROL(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_SHR(QString* instruction)
+void P2Dasm::da_SHR(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_SHR);
 }
@@ -2241,7 +2241,7 @@ void P2Dasm::dasm_SHR(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_SHL(QString* instruction)
+void P2Dasm::da_SHL(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_SHL);
 }
@@ -2259,7 +2259,7 @@ void P2Dasm::dasm_SHL(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_RCR(QString* instruction)
+void P2Dasm::da_RCR(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_RCR);
 }
@@ -2277,7 +2277,7 @@ void P2Dasm::dasm_RCR(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_RCL(QString* instruction)
+void P2Dasm::da_RCL(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_RCL);
 }
@@ -2295,7 +2295,7 @@ void P2Dasm::dasm_RCL(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_SAR(QString* instruction)
+void P2Dasm::da_SAR(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_SAR);
 }
@@ -2313,7 +2313,7 @@ void P2Dasm::dasm_SAR(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_SAL(QString* instruction)
+void P2Dasm::da_SAL(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_SAL);
 }
@@ -2331,7 +2331,7 @@ void P2Dasm::dasm_SAL(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_ADD(QString* instruction)
+void P2Dasm::da_ADD(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_ADD);
 }
@@ -2349,7 +2349,7 @@ void P2Dasm::dasm_ADD(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_ADDX(QString* instruction)
+void P2Dasm::da_ADDX(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_ADDX);
 }
@@ -2367,7 +2367,7 @@ void P2Dasm::dasm_ADDX(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_adds(QString* instruction)
+void P2Dasm::da_ADDS(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_ADDS);
 }
@@ -2385,7 +2385,7 @@ void P2Dasm::dasm_adds(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_addsx(QString* instruction)
+void P2Dasm::da_ADDSX(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_ADDSX);
 }
@@ -2403,7 +2403,7 @@ void P2Dasm::dasm_addsx(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_sub(QString* instruction)
+void P2Dasm::da_SUB(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_SUB);
 }
@@ -2421,7 +2421,7 @@ void P2Dasm::dasm_sub(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_subx(QString* instruction)
+void P2Dasm::da_SUBX(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_SUBX);
 }
@@ -2439,7 +2439,7 @@ void P2Dasm::dasm_subx(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_subs(QString* instruction)
+void P2Dasm::da_subs(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_SUBS);
 }
@@ -2457,7 +2457,7 @@ void P2Dasm::dasm_subs(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_subsx(QString* instruction)
+void P2Dasm::da_subsx(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_SUBSX);
 }
@@ -2474,7 +2474,7 @@ void P2Dasm::dasm_subsx(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_cmp(QString* instruction)
+void P2Dasm::da_cmp(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_CMP);
 }
@@ -2491,7 +2491,7 @@ void P2Dasm::dasm_cmp(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_cmpx(QString* instruction)
+void P2Dasm::da_cmpx(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_CMPX);
 }
@@ -2508,7 +2508,7 @@ void P2Dasm::dasm_cmpx(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_cmps(QString* instruction)
+void P2Dasm::da_cmps(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_CMPS);
 }
@@ -2525,7 +2525,7 @@ void P2Dasm::dasm_cmps(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_cmpsx(QString* instruction)
+void P2Dasm::da_cmpsx(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_CMPSX);
 }
@@ -2542,7 +2542,7 @@ void P2Dasm::dasm_cmpsx(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_cmpr(QString* instruction)
+void P2Dasm::da_cmpr(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_CMPR);
 }
@@ -2559,7 +2559,7 @@ void P2Dasm::dasm_cmpr(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_cmpm(QString* instruction)
+void P2Dasm::da_cmpm(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_CMPM);
 }
@@ -2577,7 +2577,7 @@ void P2Dasm::dasm_cmpm(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_subr(QString* instruction)
+void P2Dasm::da_subr(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_SUBR);
 }
@@ -2594,7 +2594,7 @@ void P2Dasm::dasm_subr(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_cmpsub(QString* instruction)
+void P2Dasm::da_cmpsub(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_CMPSUB);
 }
@@ -2611,7 +2611,7 @@ void P2Dasm::dasm_cmpsub(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_fge(QString* instruction)
+void P2Dasm::da_fge(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_FGE);
 }
@@ -2628,7 +2628,7 @@ void P2Dasm::dasm_fge(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_fle(QString* instruction)
+void P2Dasm::da_fle(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_FLE);
 }
@@ -2645,7 +2645,7 @@ void P2Dasm::dasm_fle(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_fges(QString* instruction)
+void P2Dasm::da_fges(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_FGES);
 }
@@ -2662,7 +2662,7 @@ void P2Dasm::dasm_fges(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_fles(QString* instruction)
+void P2Dasm::da_fles(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_FLES);
 }
@@ -2680,7 +2680,7 @@ void P2Dasm::dasm_fles(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_sumc(QString* instruction)
+void P2Dasm::da_sumc(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_SUMC);
 }
@@ -2698,7 +2698,7 @@ void P2Dasm::dasm_sumc(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_sumnc(QString* instruction)
+void P2Dasm::da_sumnc(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_SUMNC);
 }
@@ -2716,7 +2716,7 @@ void P2Dasm::dasm_sumnc(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_sumz(QString* instruction)
+void P2Dasm::da_sumz(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_SUMZ);
 }
@@ -2734,7 +2734,7 @@ void P2Dasm::dasm_sumz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_sumnz(QString* instruction)
+void P2Dasm::da_sumnz(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_SUMNZ);
 }
@@ -2750,7 +2750,7 @@ void P2Dasm::dasm_sumnz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_testb_w(QString* instruction)
+void P2Dasm::da_testb_w(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_TESTB);
 }
@@ -2766,7 +2766,7 @@ void P2Dasm::dasm_testb_w(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_testbn_w(QString* instruction)
+void P2Dasm::da_testbn_w(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_TESTBN);
 }
@@ -2782,7 +2782,7 @@ void P2Dasm::dasm_testbn_w(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_testb_and(QString* instruction)
+void P2Dasm::da_testb_and(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_TESTB, t_AND);
 }
@@ -2798,7 +2798,7 @@ void P2Dasm::dasm_testb_and(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_testbn_and(QString* instruction)
+void P2Dasm::da_testbn_and(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_TESTBN, t_AND);
 }
@@ -2814,7 +2814,7 @@ void P2Dasm::dasm_testbn_and(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_testb_or(QString* instruction)
+void P2Dasm::da_testb_or(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_TESTB, t_OR);
 }
@@ -2830,7 +2830,7 @@ void P2Dasm::dasm_testb_or(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_testbn_or(QString* instruction)
+void P2Dasm::da_testbn_or(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_TESTBN, t_OR);
 }
@@ -2846,7 +2846,7 @@ void P2Dasm::dasm_testbn_or(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_testb_xor(QString* instruction)
+void P2Dasm::da_testb_xor(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_TESTB, t_XOR);
 }
@@ -2862,7 +2862,7 @@ void P2Dasm::dasm_testb_xor(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_testbn_xor(QString* instruction)
+void P2Dasm::da_testbn_xor(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_TESTBN, t_XOR);
 }
@@ -2877,7 +2877,7 @@ void P2Dasm::dasm_testbn_xor(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_bitl(QString* instruction)
+void P2Dasm::da_bitl(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_BITL);
 }
@@ -2892,7 +2892,7 @@ void P2Dasm::dasm_bitl(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_bith(QString* instruction)
+void P2Dasm::da_bith(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_BITH);
 }
@@ -2907,7 +2907,7 @@ void P2Dasm::dasm_bith(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_bitc(QString* instruction)
+void P2Dasm::da_bitc(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_BITC);
 }
@@ -2922,7 +2922,7 @@ void P2Dasm::dasm_bitc(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_bitnc(QString* instruction)
+void P2Dasm::da_bitnc(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_BITNC);
 }
@@ -2937,7 +2937,7 @@ void P2Dasm::dasm_bitnc(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_bitz(QString* instruction)
+void P2Dasm::da_bitz(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_BITZ);
 }
@@ -2952,7 +2952,7 @@ void P2Dasm::dasm_bitz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_bitnz(QString* instruction)
+void P2Dasm::da_bitnz(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_BITNZ);
 }
@@ -2967,7 +2967,7 @@ void P2Dasm::dasm_bitnz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_bitrnd(QString* instruction)
+void P2Dasm::da_bitrnd(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_BITRND);
 }
@@ -2982,7 +2982,7 @@ void P2Dasm::dasm_bitrnd(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_bitnot(QString* instruction)
+void P2Dasm::da_bitnot(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_BITNOT);
 }
@@ -3000,7 +3000,7 @@ void P2Dasm::dasm_bitnot(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_and(QString* instruction)
+void P2Dasm::da_and(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_AND);
 }
@@ -3018,7 +3018,7 @@ void P2Dasm::dasm_and(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_andn(QString* instruction)
+void P2Dasm::da_andn(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_ANDN);
 }
@@ -3036,7 +3036,7 @@ void P2Dasm::dasm_andn(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_or(QString* instruction)
+void P2Dasm::da_or(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_OR);
 }
@@ -3054,7 +3054,7 @@ void P2Dasm::dasm_or(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_xor(QString* instruction)
+void P2Dasm::da_xor(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_XOR);
 }
@@ -3072,7 +3072,7 @@ void P2Dasm::dasm_xor(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_muxc(QString* instruction)
+void P2Dasm::da_muxc(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_MUXC);
 }
@@ -3090,7 +3090,7 @@ void P2Dasm::dasm_muxc(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_muxnc(QString* instruction)
+void P2Dasm::da_muxnc(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_MUXNC);
 }
@@ -3108,7 +3108,7 @@ void P2Dasm::dasm_muxnc(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_muxz(QString* instruction)
+void P2Dasm::da_muxz(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_MUXZ);
 }
@@ -3126,7 +3126,7 @@ void P2Dasm::dasm_muxz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_muxnz(QString* instruction)
+void P2Dasm::da_muxnz(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_MUXNZ);
 }
@@ -3144,7 +3144,7 @@ void P2Dasm::dasm_muxnz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_mov(QString* instruction)
+void P2Dasm::da_mov(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_MOV);
 }
@@ -3162,7 +3162,7 @@ void P2Dasm::dasm_mov(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_not(QString* instruction)
+void P2Dasm::da_not(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_NOT);
 }
@@ -3180,7 +3180,7 @@ void P2Dasm::dasm_not(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_abs(QString* instruction)
+void P2Dasm::da_abs(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_ABS);
 }
@@ -3198,7 +3198,7 @@ void P2Dasm::dasm_abs(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_neg(QString* instruction)
+void P2Dasm::da_neg(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_NEG);
 }
@@ -3216,7 +3216,7 @@ void P2Dasm::dasm_neg(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_negc(QString* instruction)
+void P2Dasm::da_negc(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_NEGC);
 }
@@ -3234,7 +3234,7 @@ void P2Dasm::dasm_negc(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_negnc(QString* instruction)
+void P2Dasm::da_negnc(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_NEGNC);
 }
@@ -3252,7 +3252,7 @@ void P2Dasm::dasm_negnc(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_negz(QString* instruction)
+void P2Dasm::da_negz(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_NEGZ);
 }
@@ -3270,7 +3270,7 @@ void P2Dasm::dasm_negz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_negnz(QString* instruction)
+void P2Dasm::da_negnz(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_NEGNZ);
 }
@@ -3287,7 +3287,7 @@ void P2Dasm::dasm_negnz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_incmod(QString* instruction)
+void P2Dasm::da_incmod(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_INCMOD);
 }
@@ -3304,7 +3304,7 @@ void P2Dasm::dasm_incmod(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_decmod(QString* instruction)
+void P2Dasm::da_decmod(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_DECMOD);
 }
@@ -3321,7 +3321,7 @@ void P2Dasm::dasm_decmod(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_zerox(QString* instruction)
+void P2Dasm::da_zerox(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_ZEROX);
 }
@@ -3338,7 +3338,7 @@ void P2Dasm::dasm_zerox(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_signx(QString* instruction)
+void P2Dasm::da_signx(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_SIGNX);
 }
@@ -3356,7 +3356,7 @@ void P2Dasm::dasm_signx(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_encod(QString* instruction)
+void P2Dasm::da_encod(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_ENCOD);
 }
@@ -3374,7 +3374,7 @@ void P2Dasm::dasm_encod(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_ones(QString* instruction)
+void P2Dasm::da_ones(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_ONES);
 }
@@ -3391,7 +3391,7 @@ void P2Dasm::dasm_ones(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_test(QString* instruction)
+void P2Dasm::da_test(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_TEST);
 }
@@ -3408,7 +3408,7 @@ void P2Dasm::dasm_test(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_testn(QString* instruction)
+void P2Dasm::da_testn(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_TESTN);
 }
@@ -3423,7 +3423,7 @@ void P2Dasm::dasm_testn(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setnib(QString* instruction)
+void P2Dasm::da_setnib(QString* instruction)
 {
     format_D_IM_S_NNN(instruction, t_SETNIB);
 }
@@ -3438,7 +3438,7 @@ void P2Dasm::dasm_setnib(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setnib_altsn(QString* instruction)
+void P2Dasm::da_setnib_altsn(QString* instruction)
 {
     format_IM_S(instruction, t_SETNIB);
 }
@@ -3454,7 +3454,7 @@ void P2Dasm::dasm_setnib_altsn(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_getnib(QString* instruction)
+void P2Dasm::da_getnib(QString* instruction)
 {
     format_D_IM_S_NNN(instruction, t_GETNIB);
 }
@@ -3469,7 +3469,7 @@ void P2Dasm::dasm_getnib(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_getnib_altgn(QString* instruction)
+void P2Dasm::da_getnib_altgn(QString* instruction)
 {
     format_IM_S(instruction, t_GETNIB);
 }
@@ -3485,7 +3485,7 @@ void P2Dasm::dasm_getnib_altgn(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rolnib(QString* instruction)
+void P2Dasm::da_rolnib(QString* instruction)
 {
     format_D_IM_S_NNN(instruction, t_ROLNIB);
 }
@@ -3500,7 +3500,7 @@ void P2Dasm::dasm_rolnib(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rolnib_altgn(QString* instruction)
+void P2Dasm::da_rolnib_altgn(QString* instruction)
 {
     format_D(instruction, t_ROLNIB);
 }
@@ -3515,7 +3515,7 @@ void P2Dasm::dasm_rolnib_altgn(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setbyte(QString* instruction)
+void P2Dasm::da_setbyte(QString* instruction)
 {
     format_D_IM_S_NNN(instruction, t_SETBYTE, 3);
 }
@@ -3530,7 +3530,7 @@ void P2Dasm::dasm_setbyte(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setbyte_altsb(QString* instruction)
+void P2Dasm::da_setbyte_altsb(QString* instruction)
 {
     format_IM_S(instruction, t_SETBYTE);
 }
@@ -3546,7 +3546,7 @@ void P2Dasm::dasm_setbyte_altsb(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_getbyte(QString* instruction)
+void P2Dasm::da_getbyte(QString* instruction)
 {
     format_D_IM_S_NNN(instruction, t_GETBYTE, 3);
 }
@@ -3561,7 +3561,7 @@ void P2Dasm::dasm_getbyte(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_getbyte_altgb(QString* instruction)
+void P2Dasm::da_getbyte_altgb(QString* instruction)
 {
     format_D(instruction, t_GETBYTE);
 }
@@ -3577,7 +3577,7 @@ void P2Dasm::dasm_getbyte_altgb(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rolbyte(QString* instruction)
+void P2Dasm::da_rolbyte(QString* instruction)
 {
     format_D_IM_S_NNN(instruction, t_ROLBYTE);
 }
@@ -3592,7 +3592,7 @@ void P2Dasm::dasm_rolbyte(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rolbyte_altgb(QString* instruction)
+void P2Dasm::da_rolbyte_altgb(QString* instruction)
 {
     format_D(instruction, t_ROLBYTE);
 }
@@ -3607,7 +3607,7 @@ void P2Dasm::dasm_rolbyte_altgb(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setword(QString* instruction)
+void P2Dasm::da_setword(QString* instruction)
 {
     format_D_IM_S_NNN(instruction, t_SETWORD, 1);
 }
@@ -3622,7 +3622,7 @@ void P2Dasm::dasm_setword(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setword_altsw(QString* instruction)
+void P2Dasm::da_setword_altsw(QString* instruction)
 {
     format_IM_S(instruction, t_SETWORD);
 }
@@ -3638,7 +3638,7 @@ void P2Dasm::dasm_setword_altsw(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_getword(QString* instruction)
+void P2Dasm::da_getword(QString* instruction)
 {
     format_D_IM_S_NNN(instruction, t_GETWORD, 1);
 }
@@ -3653,7 +3653,7 @@ void P2Dasm::dasm_getword(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_getword_altgw(QString* instruction)
+void P2Dasm::da_getword_altgw(QString* instruction)
 {
     format_IM_S(instruction, t_GETWORD);
 }
@@ -3669,7 +3669,7 @@ void P2Dasm::dasm_getword_altgw(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rolword(QString* instruction)
+void P2Dasm::da_rolword(QString* instruction)
 {
     format_D_IM_S_NNN(instruction, t_ROLWORD, 1);
 }
@@ -3684,7 +3684,7 @@ void P2Dasm::dasm_rolword(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rolword_altgw(QString* instruction)
+void P2Dasm::da_rolword_altgw(QString* instruction)
 {
     format_D(instruction, t_ROLWORD);
 }
@@ -3701,7 +3701,7 @@ void P2Dasm::dasm_rolword_altgw(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_altsn(QString* instruction)
+void P2Dasm::da_altsn(QString* instruction)
 {
     format_D_IMM_S(instruction, t_ALTSN);
 }
@@ -3717,7 +3717,7 @@ void P2Dasm::dasm_altsn(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_altsn_d(QString* instruction)
+void P2Dasm::da_altsn_d(QString* instruction)
 {
     format_D(instruction, t_ALTSN);
 }
@@ -3734,7 +3734,7 @@ void P2Dasm::dasm_altsn_d(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_altgn(QString* instruction)
+void P2Dasm::da_altgn(QString* instruction)
 {
     format_D_IMM_S(instruction, t_ALTGN);
 }
@@ -3750,7 +3750,7 @@ void P2Dasm::dasm_altgn(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_altgn_d(QString* instruction)
+void P2Dasm::da_altgn_d(QString* instruction)
 {
     format_D(instruction, t_ALTGN);
 }
@@ -3767,7 +3767,7 @@ void P2Dasm::dasm_altgn_d(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_altsb(QString* instruction)
+void P2Dasm::da_altsb(QString* instruction)
 {
     format_D_IMM_S(instruction, t_ALTSB);
 }
@@ -3783,7 +3783,7 @@ void P2Dasm::dasm_altsb(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_altsb_d(QString* instruction)
+void P2Dasm::da_altsb_d(QString* instruction)
 {
     format_D(instruction, t_ALTSB);
 }
@@ -3800,7 +3800,7 @@ void P2Dasm::dasm_altsb_d(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_altgb(QString* instruction)
+void P2Dasm::da_altgb(QString* instruction)
 {
     format_D_IMM_S(instruction, t_ALTGB);
 }
@@ -3816,7 +3816,7 @@ void P2Dasm::dasm_altgb(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_altgb_d(QString* instruction)
+void P2Dasm::da_altgb_d(QString* instruction)
 {
     format_D(instruction, t_ALTGB);
 }
@@ -3833,7 +3833,7 @@ void P2Dasm::dasm_altgb_d(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_altsw(QString* instruction)
+void P2Dasm::da_altsw(QString* instruction)
 {
     format_D_IMM_S(instruction, t_ALTSW);
 }
@@ -3849,7 +3849,7 @@ void P2Dasm::dasm_altsw(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_altsw_d(QString* instruction)
+void P2Dasm::da_altsw_d(QString* instruction)
 {
     format_D(instruction, t_ALTSW);
 }
@@ -3866,7 +3866,7 @@ void P2Dasm::dasm_altsw_d(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_altgw(QString* instruction)
+void P2Dasm::da_altgw(QString* instruction)
 {
     format_D_IMM_S(instruction, t_ALTGW);
 }
@@ -3882,7 +3882,7 @@ void P2Dasm::dasm_altgw(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_altgw_d(QString* instruction)
+void P2Dasm::da_altgw_d(QString* instruction)
 {
     format_D(instruction, t_ALTGW);
 }
@@ -3898,7 +3898,7 @@ void P2Dasm::dasm_altgw_d(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_altr(QString* instruction)
+void P2Dasm::da_altr(QString* instruction)
 {
     format_D_IMM_S(instruction, t_ALTR);
 }
@@ -3913,7 +3913,7 @@ void P2Dasm::dasm_altr(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_altr_d(QString* instruction)
+void P2Dasm::da_altr_d(QString* instruction)
 {
     format_D(instruction, t_ALTD);
 }
@@ -3929,7 +3929,7 @@ void P2Dasm::dasm_altr_d(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_altd(QString* instruction)
+void P2Dasm::da_altd(QString* instruction)
 {
     format_D_IMM_S(instruction, t_ALTD);
 }
@@ -3944,7 +3944,7 @@ void P2Dasm::dasm_altd(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_altd_d(QString* instruction)
+void P2Dasm::da_altd_d(QString* instruction)
 {
     format_D(instruction, t_ALTD);
 }
@@ -3960,7 +3960,7 @@ void P2Dasm::dasm_altd_d(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_alts(QString* instruction)
+void P2Dasm::da_alts(QString* instruction)
 {
     format_D_IMM_S(instruction, t_ALTS);
 }
@@ -3975,7 +3975,7 @@ void P2Dasm::dasm_alts(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_alts_d(QString* instruction)
+void P2Dasm::da_alts_d(QString* instruction)
 {
     format_D(instruction, t_ALTS);
 }
@@ -3991,7 +3991,7 @@ void P2Dasm::dasm_alts_d(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_altb(QString* instruction)
+void P2Dasm::da_altb(QString* instruction)
 {
     format_D_IMM_S(instruction, t_ALTB);
 }
@@ -4006,7 +4006,7 @@ void P2Dasm::dasm_altb(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_altb_d(QString* instruction)
+void P2Dasm::da_altb_d(QString* instruction)
 {
     format_D(instruction, t_ALTB);
 }
@@ -4022,7 +4022,7 @@ void P2Dasm::dasm_altb_d(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_alti(QString* instruction)
+void P2Dasm::da_alti(QString* instruction)
 {
     format_D_IMM_S(instruction, t_ALTI);
 }
@@ -4038,7 +4038,7 @@ void P2Dasm::dasm_alti(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_alti_d(QString* instruction)
+void P2Dasm::da_alti_d(QString* instruction)
 {
     format_D(instruction, t_ALTI);
 }
@@ -4054,7 +4054,7 @@ void P2Dasm::dasm_alti_d(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setr(QString* instruction)
+void P2Dasm::da_setr(QString* instruction)
 {
     format_D_IMM_S(instruction, t_SETR);
 }
@@ -4070,7 +4070,7 @@ void P2Dasm::dasm_setr(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setd(QString* instruction)
+void P2Dasm::da_setd(QString* instruction)
 {
     format_D_IMM_S(instruction, t_SETD);
 }
@@ -4086,7 +4086,7 @@ void P2Dasm::dasm_setd(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_sets(QString* instruction)
+void P2Dasm::da_sets(QString* instruction)
 {
     format_D_IMM_S(instruction, t_SETS);
 }
@@ -4102,7 +4102,7 @@ void P2Dasm::dasm_sets(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_decod(QString* instruction)
+void P2Dasm::da_decod(QString* instruction)
 {
     format_D_IMM_S(instruction, t_DECOD);
 }
@@ -4118,7 +4118,7 @@ void P2Dasm::dasm_decod(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_decod_d(QString* instruction)
+void P2Dasm::da_decod_d(QString* instruction)
 {
     format_D(instruction, t_DECOD);
 }
@@ -4134,7 +4134,7 @@ void P2Dasm::dasm_decod_d(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_bmask(QString* instruction)
+void P2Dasm::da_bmask(QString* instruction)
 {
     format_D_IMM_S(instruction, t_BMASK);
 }
@@ -4150,7 +4150,7 @@ void P2Dasm::dasm_bmask(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_bmask_d(QString* instruction)
+void P2Dasm::da_bmask_d(QString* instruction)
 {
     format_D(instruction, t_BMASK);
 }
@@ -4166,7 +4166,7 @@ void P2Dasm::dasm_bmask_d(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_crcbit(QString* instruction)
+void P2Dasm::da_crcbit(QString* instruction)
 {
     format_D_IMM_S(instruction, t_CRCBIT);
 }
@@ -4184,7 +4184,7 @@ void P2Dasm::dasm_crcbit(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_crcnib(QString* instruction)
+void P2Dasm::da_crcnib(QString* instruction)
 {
     format_D_IMM_S(instruction, t_CRCNIB);
 }
@@ -4199,7 +4199,7 @@ void P2Dasm::dasm_crcnib(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_muxnits(QString* instruction)
+void P2Dasm::da_muxnits(QString* instruction)
 {
     format_D_IMM_S(instruction, t_MUXNITS);
 }
@@ -4214,7 +4214,7 @@ void P2Dasm::dasm_muxnits(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_muxnibs(QString* instruction)
+void P2Dasm::da_muxnibs(QString* instruction)
 {
     format_D_IMM_S(instruction, t_MUXNIBS);
 }
@@ -4231,7 +4231,7 @@ void P2Dasm::dasm_muxnibs(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_muxq(QString* instruction)
+void P2Dasm::da_muxq(QString* instruction)
 {
     format_D_IMM_S(instruction, t_MUXQ);
 }
@@ -4247,7 +4247,7 @@ void P2Dasm::dasm_muxq(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_movbyts(QString* instruction)
+void P2Dasm::da_movbyts(QString* instruction)
 {
     format_D_IMM_S(instruction, t_MOVBYTS);
 }
@@ -4263,7 +4263,7 @@ void P2Dasm::dasm_movbyts(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_mul(QString* instruction)
+void P2Dasm::da_mul(QString* instruction)
 {
     format_D_IM_S_WZ(instruction, t_MUL);
 }
@@ -4279,7 +4279,7 @@ void P2Dasm::dasm_mul(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_muls(QString* instruction)
+void P2Dasm::da_muls(QString* instruction)
 {
     format_D_IM_S_WZ(instruction, t_MULS);
 }
@@ -4295,7 +4295,7 @@ void P2Dasm::dasm_muls(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_sca(QString* instruction)
+void P2Dasm::da_sca(QString* instruction)
 {
     format_D_IM_S_WZ(instruction, t_SCA);
 }
@@ -4312,7 +4312,7 @@ void P2Dasm::dasm_sca(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_scas(QString* instruction)
+void P2Dasm::da_scas(QString* instruction)
 {
     format_D_IM_S_WZ(instruction, t_SCAS);
 }
@@ -4327,7 +4327,7 @@ void P2Dasm::dasm_scas(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_addpix(QString* instruction)
+void P2Dasm::da_addpix(QString* instruction)
 {
     format_D_IMM_S(instruction, t_ADDPIX);
 }
@@ -4342,7 +4342,7 @@ void P2Dasm::dasm_addpix(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_mulpix(QString* instruction)
+void P2Dasm::da_mulpix(QString* instruction)
 {
     format_D_IMM_S(instruction, t_MULPIX);
 }
@@ -4357,7 +4357,7 @@ void P2Dasm::dasm_mulpix(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_blnpix(QString* instruction)
+void P2Dasm::da_blnpix(QString* instruction)
 {
     format_D_IMM_S(instruction, t_BLNPIX);
 }
@@ -4372,7 +4372,7 @@ void P2Dasm::dasm_blnpix(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_mixpix(QString* instruction)
+void P2Dasm::da_mixpix(QString* instruction)
 {
     format_D_IMM_S(instruction, t_MIXPIX);
 }
@@ -4388,7 +4388,7 @@ void P2Dasm::dasm_mixpix(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_addct1(QString* instruction)
+void P2Dasm::da_addct1(QString* instruction)
 {
     format_D_IMM_S(instruction, t_ADDCT1);
 }
@@ -4404,7 +4404,7 @@ void P2Dasm::dasm_addct1(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_addct2(QString* instruction)
+void P2Dasm::da_addct2(QString* instruction)
 {
     format_D_IMM_S(instruction, t_ADDCT2);
 }
@@ -4420,7 +4420,7 @@ void P2Dasm::dasm_addct2(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_addct3(QString* instruction)
+void P2Dasm::da_addct3(QString* instruction)
 {
     format_D_IMM_S(instruction, t_ADDCT3);
 }
@@ -4436,7 +4436,7 @@ void P2Dasm::dasm_addct3(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_wmlong(QString* instruction)
+void P2Dasm::da_wmlong(QString* instruction)
 {
     format_D_IMM_S(instruction, t_WMLONG);
 }
@@ -4452,7 +4452,7 @@ void P2Dasm::dasm_wmlong(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rqpin(QString* instruction)
+void P2Dasm::da_rqpin(QString* instruction)
 {
     format_D_IM_S_WC(instruction, t_RQPIN);
 }
@@ -4468,7 +4468,7 @@ void P2Dasm::dasm_rqpin(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rdpin(QString* instruction)
+void P2Dasm::da_rdpin(QString* instruction)
 {
     format_D_IM_S_WC(instruction, t_RDPIN);
 }
@@ -4485,7 +4485,7 @@ void P2Dasm::dasm_rdpin(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rdlut(QString* instruction)
+void P2Dasm::da_rdlut(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_RDLUT);
 }
@@ -4502,7 +4502,7 @@ void P2Dasm::dasm_rdlut(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rdbyte(QString* instruction)
+void P2Dasm::da_rdbyte(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_RDBYTE);
 }
@@ -4519,7 +4519,7 @@ void P2Dasm::dasm_rdbyte(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rdword(QString* instruction)
+void P2Dasm::da_rdword(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_RDWORD);
 }
@@ -4536,7 +4536,7 @@ void P2Dasm::dasm_rdword(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rdlong(QString* instruction)
+void P2Dasm::da_rdlong(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_RDLONG);
 }
@@ -4553,7 +4553,7 @@ void P2Dasm::dasm_rdlong(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_popa(QString* instruction)
+void P2Dasm::da_popa(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_POPA);
 }
@@ -4570,7 +4570,7 @@ void P2Dasm::dasm_popa(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_popb(QString* instruction)
+void P2Dasm::da_popb(QString* instruction)
 {
     format_D_IM_S_WCZ(instruction, t_POPB);
 }
@@ -4586,39 +4586,39 @@ void P2Dasm::dasm_popb(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_calld(QString* instruction)
+void P2Dasm::da_calld(QString* instruction)
 {
     if (IR.wc() && IR.wz()) {
         if (IR.dst() == offs_IJMP3 && IR.src() == offs_IRET3) {
-            dasm_resi3(instruction);
+            da_resi3(instruction);
             return;
         }
         if (IR.dst() == offs_IJMP2 && IR.src() == offs_IRET2) {
-            dasm_resi2(instruction);
+            da_resi2(instruction);
             return;
         }
         if (IR.dst() == offs_IJMP1 && IR.src() == offs_IRET1) {
-            dasm_resi1(instruction);
+            da_resi1(instruction);
             return;
         }
         if (IR.dst() == offs_INA && IR.src() == offs_INB) {
-            dasm_resi0(instruction);
+            da_resi0(instruction);
             return;
         }
         if (IR.dst() == offs_INB && IR.src() == offs_IRET3) {
-            dasm_reti3(instruction);
+            da_reti3(instruction);
             return;
         }
         if (IR.dst() == offs_INB && IR.src() == offs_IRET2) {
-            dasm_reti2(instruction);
+            da_reti2(instruction);
             return;
         }
         if (IR.dst() == offs_INB && IR.src() == offs_IRET1) {
-            dasm_reti1(instruction);
+            da_reti1(instruction);
             return;
         }
         if (IR.dst() == offs_INB && IR.src() == offs_INB) {
-            dasm_reti0(instruction);
+            da_reti0(instruction);
             return;
         }
     }
@@ -4636,7 +4636,7 @@ void P2Dasm::dasm_calld(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_resi3(QString* instruction)
+void P2Dasm::da_resi3(QString* instruction)
 {
     format_inst(instruction, t_RESI3);
 }
@@ -4652,7 +4652,7 @@ void P2Dasm::dasm_resi3(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_resi2(QString* instruction)
+void P2Dasm::da_resi2(QString* instruction)
 {
     format_inst(instruction, t_RESI2);
 }
@@ -4668,7 +4668,7 @@ void P2Dasm::dasm_resi2(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_resi1(QString* instruction)
+void P2Dasm::da_resi1(QString* instruction)
 {
     format_inst(instruction, t_RESI1);
 }
@@ -4684,7 +4684,7 @@ void P2Dasm::dasm_resi1(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_resi0(QString* instruction)
+void P2Dasm::da_resi0(QString* instruction)
 {
     format_inst(instruction, t_RESI0);
 }
@@ -4700,7 +4700,7 @@ void P2Dasm::dasm_resi0(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_reti3(QString* instruction)
+void P2Dasm::da_reti3(QString* instruction)
 {
     format_inst(instruction, t_RETI3);
 }
@@ -4716,7 +4716,7 @@ void P2Dasm::dasm_reti3(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_reti2(QString* instruction)
+void P2Dasm::da_reti2(QString* instruction)
 {
     format_inst(instruction, t_RETI2);
 }
@@ -4732,7 +4732,7 @@ void P2Dasm::dasm_reti2(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_reti1(QString* instruction)
+void P2Dasm::da_reti1(QString* instruction)
 {
     format_inst(instruction, t_RETI1);
 }
@@ -4748,7 +4748,7 @@ void P2Dasm::dasm_reti1(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_reti0(QString* instruction)
+void P2Dasm::da_reti0(QString* instruction)
 {
     format_inst(instruction, t_RETI0);
 }
@@ -4763,7 +4763,7 @@ void P2Dasm::dasm_reti0(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_callpa(QString* instruction)
+void P2Dasm::da_callpa(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_CALLPA);
 }
@@ -4778,7 +4778,7 @@ void P2Dasm::dasm_callpa(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_callpb(QString* instruction)
+void P2Dasm::da_callpb(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_CALLPB);
 }
@@ -4793,7 +4793,7 @@ void P2Dasm::dasm_callpb(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_djz(QString* instruction)
+void P2Dasm::da_djz(QString* instruction)
 {
     format_D_IMM_S(instruction, t_DJZ);
 }
@@ -4808,7 +4808,7 @@ void P2Dasm::dasm_djz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_djnz(QString* instruction)
+void P2Dasm::da_djnz(QString* instruction)
 {
     format_D_IMM_S(instruction, t_DJNZ);
 }
@@ -4823,7 +4823,7 @@ void P2Dasm::dasm_djnz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_djf(QString* instruction)
+void P2Dasm::da_djf(QString* instruction)
 {
     format_D_IMM_S(instruction, t_DJF);
 }
@@ -4838,7 +4838,7 @@ void P2Dasm::dasm_djf(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_djnf(QString* instruction)
+void P2Dasm::da_djnf(QString* instruction)
 {
     format_D_IMM_S(instruction, t_DJNF);
 }
@@ -4853,7 +4853,7 @@ void P2Dasm::dasm_djnf(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_ijz(QString* instruction)
+void P2Dasm::da_ijz(QString* instruction)
 {
     format_D_IMM_S(instruction, t_IJZ);
 }
@@ -4868,7 +4868,7 @@ void P2Dasm::dasm_ijz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_ijnz(QString* instruction)
+void P2Dasm::da_ijnz(QString* instruction)
 {
     format_D_IMM_S(instruction, t_IJNZ);
 }
@@ -4883,7 +4883,7 @@ void P2Dasm::dasm_ijnz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_tjz(QString* instruction)
+void P2Dasm::da_tjz(QString* instruction)
 {
     format_D_IMM_S(instruction, t_TJZ);
 }
@@ -4898,7 +4898,7 @@ void P2Dasm::dasm_tjz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_tjnz(QString* instruction)
+void P2Dasm::da_tjnz(QString* instruction)
 {
     format_D_IMM_S(instruction, t_TJNZ);
 }
@@ -4913,7 +4913,7 @@ void P2Dasm::dasm_tjnz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_tjf(QString* instruction)
+void P2Dasm::da_tjf(QString* instruction)
 {
     format_D_IMM_S(instruction, t_TJF);
 }
@@ -4928,7 +4928,7 @@ void P2Dasm::dasm_tjf(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_tjnf(QString* instruction)
+void P2Dasm::da_tjnf(QString* instruction)
 {
     format_D_IMM_S(instruction, t_TJNF);
 }
@@ -4943,7 +4943,7 @@ void P2Dasm::dasm_tjnf(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_tjs(QString* instruction)
+void P2Dasm::da_tjs(QString* instruction)
 {
     format_D_IMM_S(instruction, t_TJS);
 }
@@ -4958,7 +4958,7 @@ void P2Dasm::dasm_tjs(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_tjns(QString* instruction)
+void P2Dasm::da_tjns(QString* instruction)
 {
     format_D_IMM_S(instruction, t_TJNS);
 }
@@ -4973,7 +4973,7 @@ void P2Dasm::dasm_tjns(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_tjv(QString* instruction)
+void P2Dasm::da_tjv(QString* instruction)
 {
     format_D_IMM_S(instruction, t_TJV);
 }
@@ -4988,7 +4988,7 @@ void P2Dasm::dasm_tjv(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jint(QString* instruction)
+void P2Dasm::da_jint(QString* instruction)
 {
     format_IM_S(instruction, t_JINT);
 }
@@ -5003,7 +5003,7 @@ void P2Dasm::dasm_jint(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jct1(QString* instruction)
+void P2Dasm::da_jct1(QString* instruction)
 {
     format_IM_S(instruction, t_JCT1);
 }
@@ -5018,7 +5018,7 @@ void P2Dasm::dasm_jct1(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jct2(QString* instruction)
+void P2Dasm::da_jct2(QString* instruction)
 {
     format_IM_S(instruction, t_JCT2);
 }
@@ -5033,7 +5033,7 @@ void P2Dasm::dasm_jct2(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jct3(QString* instruction)
+void P2Dasm::da_jct3(QString* instruction)
 {
     format_IM_S(instruction, t_JCT3);
 }
@@ -5048,7 +5048,7 @@ void P2Dasm::dasm_jct3(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jse1(QString* instruction)
+void P2Dasm::da_jse1(QString* instruction)
 {
     format_IM_S(instruction, t_JSE1);
 }
@@ -5063,7 +5063,7 @@ void P2Dasm::dasm_jse1(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jse2(QString* instruction)
+void P2Dasm::da_jse2(QString* instruction)
 {
     format_IM_S(instruction, t_JSE2);
 }
@@ -5078,7 +5078,7 @@ void P2Dasm::dasm_jse2(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jse3(QString* instruction)
+void P2Dasm::da_jse3(QString* instruction)
 {
     format_IM_S(instruction, t_JSE3);
 }
@@ -5093,7 +5093,7 @@ void P2Dasm::dasm_jse3(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jse4(QString* instruction)
+void P2Dasm::da_jse4(QString* instruction)
 {
     format_IM_S(instruction, t_JSE4);
 }
@@ -5108,7 +5108,7 @@ void P2Dasm::dasm_jse4(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jpat(QString* instruction)
+void P2Dasm::da_jpat(QString* instruction)
 {
     format_IM_S(instruction, t_JPAT);
 }
@@ -5123,7 +5123,7 @@ void P2Dasm::dasm_jpat(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jfbw(QString* instruction)
+void P2Dasm::da_jfbw(QString* instruction)
 {
     format_IM_S(instruction, t_JFBW);
 }
@@ -5138,7 +5138,7 @@ void P2Dasm::dasm_jfbw(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jxmt(QString* instruction)
+void P2Dasm::da_jxmt(QString* instruction)
 {
     format_IM_S(instruction, t_JXMT);
 }
@@ -5153,7 +5153,7 @@ void P2Dasm::dasm_jxmt(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jxfi(QString* instruction)
+void P2Dasm::da_jxfi(QString* instruction)
 {
     format_IM_S(instruction, t_JXFI);
 }
@@ -5168,7 +5168,7 @@ void P2Dasm::dasm_jxfi(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jxro(QString* instruction)
+void P2Dasm::da_jxro(QString* instruction)
 {
     format_IM_S(instruction, t_JXRO);
 }
@@ -5183,7 +5183,7 @@ void P2Dasm::dasm_jxro(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jxrl(QString* instruction)
+void P2Dasm::da_jxrl(QString* instruction)
 {
     format_IM_S(instruction, t_JXRL);
 }
@@ -5198,7 +5198,7 @@ void P2Dasm::dasm_jxrl(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jatn(QString* instruction)
+void P2Dasm::da_jatn(QString* instruction)
 {
     format_IM_S(instruction, t_JATN);
 }
@@ -5213,7 +5213,7 @@ void P2Dasm::dasm_jatn(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jqmt(QString* instruction)
+void P2Dasm::da_jqmt(QString* instruction)
 {
     format_IM_S(instruction, t_JQMT);
 }
@@ -5228,7 +5228,7 @@ void P2Dasm::dasm_jqmt(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jnint(QString* instruction)
+void P2Dasm::da_jnint(QString* instruction)
 {
     format_IM_S(instruction, t_JNINT);
 }
@@ -5243,7 +5243,7 @@ void P2Dasm::dasm_jnint(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jnct1(QString* instruction)
+void P2Dasm::da_jnct1(QString* instruction)
 {
     format_IM_S(instruction, t_JNCT1);
 }
@@ -5258,7 +5258,7 @@ void P2Dasm::dasm_jnct1(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jnct2(QString* instruction)
+void P2Dasm::da_jnct2(QString* instruction)
 {
     format_IM_S(instruction, t_JNCT2);
 }
@@ -5273,7 +5273,7 @@ void P2Dasm::dasm_jnct2(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jnct3(QString* instruction)
+void P2Dasm::da_jnct3(QString* instruction)
 {
     format_IM_S(instruction, t_JNCT3);
 }
@@ -5288,7 +5288,7 @@ void P2Dasm::dasm_jnct3(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jnse1(QString* instruction)
+void P2Dasm::da_jnse1(QString* instruction)
 {
     format_IM_S(instruction, t_JNSE1);
 }
@@ -5303,7 +5303,7 @@ void P2Dasm::dasm_jnse1(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jnse2(QString* instruction)
+void P2Dasm::da_jnse2(QString* instruction)
 {
     format_IM_S(instruction, t_JNSE2);
 }
@@ -5318,7 +5318,7 @@ void P2Dasm::dasm_jnse2(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jnse3(QString* instruction)
+void P2Dasm::da_jnse3(QString* instruction)
 {
     format_IM_S(instruction, t_JNSE3);
 }
@@ -5333,7 +5333,7 @@ void P2Dasm::dasm_jnse3(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jnse4(QString* instruction)
+void P2Dasm::da_jnse4(QString* instruction)
 {
     format_IM_S(instruction, t_JNSE4);
 }
@@ -5348,7 +5348,7 @@ void P2Dasm::dasm_jnse4(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jnpat(QString* instruction)
+void P2Dasm::da_jnpat(QString* instruction)
 {
     format_IM_S(instruction, t_JNPAT);
 }
@@ -5363,7 +5363,7 @@ void P2Dasm::dasm_jnpat(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jnfbw(QString* instruction)
+void P2Dasm::da_jnfbw(QString* instruction)
 {
     format_IM_S(instruction, t_JNFBW);
 }
@@ -5378,7 +5378,7 @@ void P2Dasm::dasm_jnfbw(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jnxmt(QString* instruction)
+void P2Dasm::da_jnxmt(QString* instruction)
 {
     format_IM_S(instruction, t_JNXMT);
 }
@@ -5393,7 +5393,7 @@ void P2Dasm::dasm_jnxmt(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jnxfi(QString* instruction)
+void P2Dasm::da_jnxfi(QString* instruction)
 {
     format_IM_S(instruction, t_JNXFI);
 }
@@ -5408,7 +5408,7 @@ void P2Dasm::dasm_jnxfi(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jnxro(QString* instruction)
+void P2Dasm::da_jnxro(QString* instruction)
 {
     format_IM_S(instruction, t_JNXRO);
 }
@@ -5423,7 +5423,7 @@ void P2Dasm::dasm_jnxro(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jnxrl(QString* instruction)
+void P2Dasm::da_jnxrl(QString* instruction)
 {
     format_IM_S(instruction, t_JNXRL);
 }
@@ -5438,7 +5438,7 @@ void P2Dasm::dasm_jnxrl(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jnatn(QString* instruction)
+void P2Dasm::da_jnatn(QString* instruction)
 {
     format_IM_S(instruction, t_JNATN);
 }
@@ -5453,7 +5453,7 @@ void P2Dasm::dasm_jnatn(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jnqmt(QString* instruction)
+void P2Dasm::da_jnqmt(QString* instruction)
 {
     format_IM_S(instruction, t_JNQMT);
 }
@@ -5468,7 +5468,7 @@ void P2Dasm::dasm_jnqmt(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_1011110_1(QString* instruction)
+void P2Dasm::da_1011110_1(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_empty);
 }
@@ -5483,7 +5483,7 @@ void P2Dasm::dasm_1011110_1(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_1011111_0(QString* instruction)
+void P2Dasm::da_1011111_0(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_empty);
 }
@@ -5499,7 +5499,7 @@ void P2Dasm::dasm_1011111_0(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setpat(QString* instruction)
+void P2Dasm::da_setpat(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_SETPAT);
 }
@@ -5514,7 +5514,7 @@ void P2Dasm::dasm_setpat(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_wrpin(QString* instruction)
+void P2Dasm::da_wrpin(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_WRPIN);
 }
@@ -5529,7 +5529,7 @@ void P2Dasm::dasm_wrpin(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_akpin(QString* instruction)
+void P2Dasm::da_akpin(QString* instruction)
 {
     format_IM_S(instruction, t_AKPIN);
 }
@@ -5544,7 +5544,7 @@ void P2Dasm::dasm_akpin(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_wxpin(QString* instruction)
+void P2Dasm::da_wxpin(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_WXPIN);
 }
@@ -5559,7 +5559,7 @@ void P2Dasm::dasm_wxpin(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_wypin(QString* instruction)
+void P2Dasm::da_wypin(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_WYPIN);
 }
@@ -5574,7 +5574,7 @@ void P2Dasm::dasm_wypin(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_wrlut(QString* instruction)
+void P2Dasm::da_wrlut(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_WRLUT);
 }
@@ -5589,7 +5589,7 @@ void P2Dasm::dasm_wrlut(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_wrbyte(QString* instruction)
+void P2Dasm::da_wrbyte(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_WRBYTE);
 }
@@ -5604,7 +5604,7 @@ void P2Dasm::dasm_wrbyte(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_wrword(QString* instruction)
+void P2Dasm::da_wrword(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_WRWORD);
 }
@@ -5620,7 +5620,7 @@ void P2Dasm::dasm_wrword(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_wrlong(QString* instruction)
+void P2Dasm::da_wrlong(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_WRLONG);
 }
@@ -5635,7 +5635,7 @@ void P2Dasm::dasm_wrlong(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_pusha(QString* instruction)
+void P2Dasm::da_pusha(QString* instruction)
 {
     format_WZ_D(instruction, t_PUSHA);
 }
@@ -5650,7 +5650,7 @@ void P2Dasm::dasm_pusha(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_pushb(QString* instruction)
+void P2Dasm::da_pushb(QString* instruction)
 {
     format_WZ_D(instruction, t_PUSHB);
 }
@@ -5666,7 +5666,7 @@ void P2Dasm::dasm_pushb(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rdfast(QString* instruction)
+void P2Dasm::da_rdfast(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_RDFAST);
 }
@@ -5682,7 +5682,7 @@ void P2Dasm::dasm_rdfast(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_wrfast(QString* instruction)
+void P2Dasm::da_wrfast(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_WRFAST);
 }
@@ -5698,7 +5698,7 @@ void P2Dasm::dasm_wrfast(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_fblock(QString* instruction)
+void P2Dasm::da_fblock(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_FBLOCK);
 }
@@ -5713,7 +5713,7 @@ void P2Dasm::dasm_fblock(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_xinit(QString* instruction)
+void P2Dasm::da_xinit(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_XINIT);
 }
@@ -5728,7 +5728,7 @@ void P2Dasm::dasm_xinit(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_xstop(QString* instruction)
+void P2Dasm::da_xstop(QString* instruction)
 {
     format_inst(instruction, t_XSTOP);
 }
@@ -5743,7 +5743,7 @@ void P2Dasm::dasm_xstop(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_xzero(QString* instruction)
+void P2Dasm::da_xzero(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_XZERO);
 }
@@ -5758,7 +5758,7 @@ void P2Dasm::dasm_xzero(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_xcont(QString* instruction)
+void P2Dasm::da_xcont(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_XCONT);
 }
@@ -5775,7 +5775,7 @@ void P2Dasm::dasm_xcont(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rep(QString* instruction)
+void P2Dasm::da_rep(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_REP);
 }
@@ -5792,7 +5792,7 @@ void P2Dasm::dasm_rep(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_coginit(QString* instruction)
+void P2Dasm::da_coginit(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_COGINIT);
 }
@@ -5808,7 +5808,7 @@ void P2Dasm::dasm_coginit(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_qmul(QString* instruction)
+void P2Dasm::da_qmul(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_QMUL);
 }
@@ -5824,7 +5824,7 @@ void P2Dasm::dasm_qmul(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_qdiv(QString* instruction)
+void P2Dasm::da_qdiv(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_QDIV);
 }
@@ -5840,7 +5840,7 @@ void P2Dasm::dasm_qdiv(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_qfrac(QString* instruction)
+void P2Dasm::da_qfrac(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_QFRAC);
 }
@@ -5856,7 +5856,7 @@ void P2Dasm::dasm_qfrac(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_qsqrt(QString* instruction)
+void P2Dasm::da_qsqrt(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_QSQRT);
 }
@@ -5872,7 +5872,7 @@ void P2Dasm::dasm_qsqrt(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_qrotate(QString* instruction)
+void P2Dasm::da_qrotate(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_QROTATE);
 }
@@ -5888,7 +5888,7 @@ void P2Dasm::dasm_qrotate(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_qvector(QString* instruction)
+void P2Dasm::da_qvector(QString* instruction)
 {
     format_WZ_D_IM_S(instruction, t_QVECTOR);
 }
@@ -5903,7 +5903,7 @@ void P2Dasm::dasm_qvector(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_hubset(QString* instruction)
+void P2Dasm::da_hubset(QString* instruction)
 {
     format_IM_D(instruction, t_HUBSET);
 }
@@ -5919,7 +5919,7 @@ void P2Dasm::dasm_hubset(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_cogid(QString* instruction)
+void P2Dasm::da_cogid(QString* instruction)
 {
     format_IM_D_WC(instruction, t_COGID);
 }
@@ -5934,7 +5934,7 @@ void P2Dasm::dasm_cogid(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_cogstop(QString* instruction)
+void P2Dasm::da_cogstop(QString* instruction)
 {
     format_IM_D(instruction, t_COGSTOP);
 }
@@ -5951,7 +5951,7 @@ void P2Dasm::dasm_cogstop(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_locknew(QString* instruction)
+void P2Dasm::da_locknew(QString* instruction)
 {
     format_IM_D_WC(instruction, t_LOCKNEW);
 }
@@ -5966,7 +5966,7 @@ void P2Dasm::dasm_locknew(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_lockret(QString* instruction)
+void P2Dasm::da_lockret(QString* instruction)
 {
     format_IM_D(instruction, t_LOCKRET);
 }
@@ -5984,7 +5984,7 @@ void P2Dasm::dasm_lockret(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_locktry(QString* instruction)
+void P2Dasm::da_locktry(QString* instruction)
 {
     format_IM_D_WC(instruction, t_LOCKTRY);
 }
@@ -6000,7 +6000,7 @@ void P2Dasm::dasm_locktry(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_lockrel(QString* instruction)
+void P2Dasm::da_lockrel(QString* instruction)
 {
     format_IM_D_WC(instruction, t_LOCKREL);
 }
@@ -6016,7 +6016,7 @@ void P2Dasm::dasm_lockrel(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_qlog(QString* instruction)
+void P2Dasm::da_qlog(QString* instruction)
 {
     format_IM_D(instruction, t_QLOG);
 }
@@ -6032,7 +6032,7 @@ void P2Dasm::dasm_qlog(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_qexp(QString* instruction)
+void P2Dasm::da_qexp(QString* instruction)
 {
     format_IM_D(instruction, t_QEXP);
 }
@@ -6049,7 +6049,7 @@ void P2Dasm::dasm_qexp(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rfbyte(QString* instruction)
+void P2Dasm::da_rfbyte(QString* instruction)
 {
     format_D_CZ(instruction, t_RFBYTE);
 }
@@ -6066,7 +6066,7 @@ void P2Dasm::dasm_rfbyte(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rfword(QString* instruction)
+void P2Dasm::da_rfword(QString* instruction)
 {
     format_D_CZ(instruction, t_RFWORD);
 }
@@ -6083,7 +6083,7 @@ void P2Dasm::dasm_rfword(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rflong(QString* instruction)
+void P2Dasm::da_rflong(QString* instruction)
 {
     format_D_CZ(instruction, t_RFLONG);
 }
@@ -6100,7 +6100,7 @@ void P2Dasm::dasm_rflong(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rfvar(QString* instruction)
+void P2Dasm::da_rfvar(QString* instruction)
 {
     format_D_CZ(instruction, t_RFVAR);
 }
@@ -6117,7 +6117,7 @@ void P2Dasm::dasm_rfvar(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rfvars(QString* instruction)
+void P2Dasm::da_rfvars(QString* instruction)
 {
 
     format_D_CZ(instruction, t_RFVARS);
@@ -6133,7 +6133,7 @@ void P2Dasm::dasm_rfvars(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_wfbyte(QString* instruction)
+void P2Dasm::da_wfbyte(QString* instruction)
 {
     format_IM_D(instruction, t_WFBYTE);
 }
@@ -6148,7 +6148,7 @@ void P2Dasm::dasm_wfbyte(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_wfword(QString* instruction)
+void P2Dasm::da_wfword(QString* instruction)
 {
     format_IM_D(instruction, t_WFWORD);
 }
@@ -6163,7 +6163,7 @@ void P2Dasm::dasm_wfword(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_wflong(QString* instruction)
+void P2Dasm::da_wflong(QString* instruction)
 {
     format_IM_D(instruction, t_WFLONG);
 }
@@ -6181,7 +6181,7 @@ void P2Dasm::dasm_wflong(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_getqx(QString* instruction)
+void P2Dasm::da_getqx(QString* instruction)
 {
     format_D_CZ(instruction, t_GETQX);
 }
@@ -6199,7 +6199,7 @@ void P2Dasm::dasm_getqx(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_getqy(QString* instruction)
+void P2Dasm::da_getqy(QString* instruction)
 {
     format_D_CZ(instruction, t_GETQY);
 }
@@ -6215,7 +6215,7 @@ void P2Dasm::dasm_getqy(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_getct(QString* instruction)
+void P2Dasm::da_getct(QString* instruction)
 {
     format_D(instruction, t_GETCT);
 }
@@ -6232,7 +6232,7 @@ void P2Dasm::dasm_getct(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_getrnd(QString* instruction)
+void P2Dasm::da_getrnd(QString* instruction)
 {
     format_D_CZ(instruction, t_GETRND);
 }
@@ -6248,7 +6248,7 @@ void P2Dasm::dasm_getrnd(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_getrnd_cz(QString* instruction)
+void P2Dasm::da_getrnd_cz(QString* instruction)
 {
     format_CZ(instruction, t_GETRND);
 }
@@ -6263,7 +6263,7 @@ void P2Dasm::dasm_getrnd_cz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setdacs(QString* instruction)
+void P2Dasm::da_setdacs(QString* instruction)
 {
     format_IM_D(instruction, t_SETDACS);
 }
@@ -6278,7 +6278,7 @@ void P2Dasm::dasm_setdacs(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setxfrq(QString* instruction)
+void P2Dasm::da_setxfrq(QString* instruction)
 {
     format_IM_D(instruction, t_SETXFRQ);
 }
@@ -6293,7 +6293,7 @@ void P2Dasm::dasm_setxfrq(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_getxacc(QString* instruction)
+void P2Dasm::da_getxacc(QString* instruction)
 {
     format_D(instruction, t_GETXACC);
 }
@@ -6310,7 +6310,7 @@ void P2Dasm::dasm_getxacc(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_waitx(QString* instruction)
+void P2Dasm::da_waitx(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_WAITX);
 }
@@ -6325,7 +6325,7 @@ void P2Dasm::dasm_waitx(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setse1(QString* instruction)
+void P2Dasm::da_setse1(QString* instruction)
 {
     format_IM_D(instruction, t_SETSE1);
 }
@@ -6340,7 +6340,7 @@ void P2Dasm::dasm_setse1(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setse2(QString* instruction)
+void P2Dasm::da_setse2(QString* instruction)
 {
     format_IM_D(instruction, t_SETSE2);
 }
@@ -6355,7 +6355,7 @@ void P2Dasm::dasm_setse2(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setse3(QString* instruction)
+void P2Dasm::da_setse3(QString* instruction)
 {
     format_IM_D(instruction, t_SETSE3);
 }
@@ -6370,7 +6370,7 @@ void P2Dasm::dasm_setse3(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setse4(QString* instruction)
+void P2Dasm::da_setse4(QString* instruction)
 {
     format_IM_D(instruction, t_SETSE4);
 }
@@ -6385,7 +6385,7 @@ void P2Dasm::dasm_setse4(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_pollint(QString* instruction)
+void P2Dasm::da_pollint(QString* instruction)
 {
     format_CZ(instruction, t_POLLINT);
 }
@@ -6400,7 +6400,7 @@ void P2Dasm::dasm_pollint(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_pollct1(QString* instruction)
+void P2Dasm::da_pollct1(QString* instruction)
 {
     format_CZ(instruction, t_POLLCT1);
 }
@@ -6415,7 +6415,7 @@ void P2Dasm::dasm_pollct1(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_pollct2(QString* instruction)
+void P2Dasm::da_pollct2(QString* instruction)
 {
     format_CZ(instruction, t_POLLCT2);
 }
@@ -6430,7 +6430,7 @@ void P2Dasm::dasm_pollct2(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_pollct3(QString* instruction)
+void P2Dasm::da_pollct3(QString* instruction)
 {
     format_CZ(instruction, t_POLLCT3);
 }
@@ -6445,7 +6445,7 @@ void P2Dasm::dasm_pollct3(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_pollse1(QString* instruction)
+void P2Dasm::da_pollse1(QString* instruction)
 {
     format_CZ(instruction, t_POLLSE1);
 }
@@ -6460,7 +6460,7 @@ void P2Dasm::dasm_pollse1(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_pollse2(QString* instruction)
+void P2Dasm::da_pollse2(QString* instruction)
 {
     format_CZ(instruction, t_POLLSE2);
 }
@@ -6475,7 +6475,7 @@ void P2Dasm::dasm_pollse2(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_pollse3(QString* instruction)
+void P2Dasm::da_pollse3(QString* instruction)
 {
     format_CZ(instruction, t_POLLSE3);
 }
@@ -6490,7 +6490,7 @@ void P2Dasm::dasm_pollse3(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_pollse4(QString* instruction)
+void P2Dasm::da_pollse4(QString* instruction)
 {
     format_CZ(instruction, t_POLLSE4);
 }
@@ -6505,7 +6505,7 @@ void P2Dasm::dasm_pollse4(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_pollpat(QString* instruction)
+void P2Dasm::da_pollpat(QString* instruction)
 {
     format_CZ(instruction, t_POLLPAT);
 }
@@ -6520,7 +6520,7 @@ void P2Dasm::dasm_pollpat(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_pollfbw(QString* instruction)
+void P2Dasm::da_pollfbw(QString* instruction)
 {
     format_CZ(instruction, t_POLLFBW);
 }
@@ -6535,7 +6535,7 @@ void P2Dasm::dasm_pollfbw(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_pollxmt(QString* instruction)
+void P2Dasm::da_pollxmt(QString* instruction)
 {
     format_CZ(instruction, t_POLLXMT);
 }
@@ -6550,7 +6550,7 @@ void P2Dasm::dasm_pollxmt(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_pollxfi(QString* instruction)
+void P2Dasm::da_pollxfi(QString* instruction)
 {
     format_CZ(instruction, t_POLLXFI);
 }
@@ -6565,7 +6565,7 @@ void P2Dasm::dasm_pollxfi(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_pollxro(QString* instruction)
+void P2Dasm::da_pollxro(QString* instruction)
 {
     format_CZ(instruction, t_POLLXRO);
 }
@@ -6580,7 +6580,7 @@ void P2Dasm::dasm_pollxro(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_pollxrl(QString* instruction)
+void P2Dasm::da_pollxrl(QString* instruction)
 {
     format_CZ(instruction, t_POLLXRL);
 }
@@ -6595,7 +6595,7 @@ void P2Dasm::dasm_pollxrl(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_pollatn(QString* instruction)
+void P2Dasm::da_pollatn(QString* instruction)
 {
     format_CZ(instruction, t_POLLATN);
 }
@@ -6610,7 +6610,7 @@ void P2Dasm::dasm_pollatn(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_pollqmt(QString* instruction)
+void P2Dasm::da_pollqmt(QString* instruction)
 {
     format_CZ(instruction, t_POLLQMT);
 }
@@ -6627,7 +6627,7 @@ void P2Dasm::dasm_pollqmt(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_waitint(QString* instruction)
+void P2Dasm::da_waitint(QString* instruction)
 {
     format_CZ(instruction, t_WAITINT);
 }
@@ -6644,7 +6644,7 @@ void P2Dasm::dasm_waitint(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_waitct1(QString* instruction)
+void P2Dasm::da_waitct1(QString* instruction)
 {
     format_CZ(instruction, t_WAITCT1);
 }
@@ -6661,7 +6661,7 @@ void P2Dasm::dasm_waitct1(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_waitct2(QString* instruction)
+void P2Dasm::da_waitct2(QString* instruction)
 {
     format_CZ(instruction, t_WAITCT2);
 }
@@ -6678,7 +6678,7 @@ void P2Dasm::dasm_waitct2(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_waitct3(QString* instruction)
+void P2Dasm::da_waitct3(QString* instruction)
 {
     format_CZ(instruction, t_WAITCT3);
 }
@@ -6695,7 +6695,7 @@ void P2Dasm::dasm_waitct3(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_waitse1(QString* instruction)
+void P2Dasm::da_waitse1(QString* instruction)
 {
     format_CZ(instruction, t_WAITSE1);
 }
@@ -6712,7 +6712,7 @@ void P2Dasm::dasm_waitse1(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_waitse2(QString* instruction)
+void P2Dasm::da_waitse2(QString* instruction)
 {
     format_CZ(instruction, t_WAITSE2);
 }
@@ -6729,7 +6729,7 @@ void P2Dasm::dasm_waitse2(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_waitse3(QString* instruction)
+void P2Dasm::da_waitse3(QString* instruction)
 {
     format_CZ(instruction, t_WAITSE3);
 }
@@ -6746,7 +6746,7 @@ void P2Dasm::dasm_waitse3(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_waitse4(QString* instruction)
+void P2Dasm::da_waitse4(QString* instruction)
 {
     format_CZ(instruction, t_WAITSE4);
 }
@@ -6763,7 +6763,7 @@ void P2Dasm::dasm_waitse4(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_waitpat(QString* instruction)
+void P2Dasm::da_waitpat(QString* instruction)
 {
     format_CZ(instruction, t_WAITPAT);
 }
@@ -6780,7 +6780,7 @@ void P2Dasm::dasm_waitpat(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_waitfbw(QString* instruction)
+void P2Dasm::da_waitfbw(QString* instruction)
 {
     format_CZ(instruction, t_WAITFBW);
 }
@@ -6797,7 +6797,7 @@ void P2Dasm::dasm_waitfbw(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_waitxmt(QString* instruction)
+void P2Dasm::da_waitxmt(QString* instruction)
 {
     format_CZ(instruction, t_WAITXMT);
 }
@@ -6814,7 +6814,7 @@ void P2Dasm::dasm_waitxmt(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_waitxfi(QString* instruction)
+void P2Dasm::da_waitxfi(QString* instruction)
 {
     format_CZ(instruction, t_WAITXFI);
 }
@@ -6831,7 +6831,7 @@ void P2Dasm::dasm_waitxfi(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_waitxro(QString* instruction)
+void P2Dasm::da_waitxro(QString* instruction)
 {
     format_CZ(instruction, t_WAITXRO);
 }
@@ -6848,7 +6848,7 @@ void P2Dasm::dasm_waitxro(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_waitxrl(QString* instruction)
+void P2Dasm::da_waitxrl(QString* instruction)
 {
     format_CZ(instruction, t_WAITXRL);
 }
@@ -6865,7 +6865,7 @@ void P2Dasm::dasm_waitxrl(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_waitatn(QString* instruction)
+void P2Dasm::da_waitatn(QString* instruction)
 {
     format_CZ(instruction, t_WAITATN);
 }
@@ -6880,7 +6880,7 @@ void P2Dasm::dasm_waitatn(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_allowi(QString* instruction)
+void P2Dasm::da_allowi(QString* instruction)
 {
     format_inst(instruction, t_ALLOWI);
 }
@@ -6895,7 +6895,7 @@ void P2Dasm::dasm_allowi(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_stalli(QString* instruction)
+void P2Dasm::da_stalli(QString* instruction)
 {
     format_inst(instruction, t_STALLI);
 }
@@ -6910,7 +6910,7 @@ void P2Dasm::dasm_stalli(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_trgint1(QString* instruction)
+void P2Dasm::da_trgint1(QString* instruction)
 {
     format_inst(instruction, t_TRGINT1);
 }
@@ -6925,7 +6925,7 @@ void P2Dasm::dasm_trgint1(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_trgint2(QString* instruction)
+void P2Dasm::da_trgint2(QString* instruction)
 {
     format_inst(instruction, t_TRGINT2);
 }
@@ -6940,7 +6940,7 @@ void P2Dasm::dasm_trgint2(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_trgint3(QString* instruction)
+void P2Dasm::da_trgint3(QString* instruction)
 {
     format_inst(instruction, t_TRGINT3);
 }
@@ -6955,7 +6955,7 @@ void P2Dasm::dasm_trgint3(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_nixint1(QString* instruction)
+void P2Dasm::da_nixint1(QString* instruction)
 {
     format_inst(instruction, t_NIXINT1);
 }
@@ -6970,7 +6970,7 @@ void P2Dasm::dasm_nixint1(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_nixint2(QString* instruction)
+void P2Dasm::da_nixint2(QString* instruction)
 {
     format_inst(instruction, t_NIXINT2);
 }
@@ -6985,7 +6985,7 @@ void P2Dasm::dasm_nixint2(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_nixint3(QString* instruction)
+void P2Dasm::da_nixint3(QString* instruction)
 {
     format_inst(instruction, t_NIXINT3);
 }
@@ -7000,7 +7000,7 @@ void P2Dasm::dasm_nixint3(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setint1(QString* instruction)
+void P2Dasm::da_setint1(QString* instruction)
 {
     format_IM_D(instruction, t_SETINT1);
 }
@@ -7015,7 +7015,7 @@ void P2Dasm::dasm_setint1(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setint2(QString* instruction)
+void P2Dasm::da_setint2(QString* instruction)
 {
     format_IM_D(instruction, t_SETINT2);
 }
@@ -7030,7 +7030,7 @@ void P2Dasm::dasm_setint2(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setint3(QString* instruction)
+void P2Dasm::da_setint3(QString* instruction)
 {
     format_IM_D(instruction, t_SETINT3);
 }
@@ -7047,7 +7047,7 @@ void P2Dasm::dasm_setint3(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setq(QString* instruction)
+void P2Dasm::da_setq(QString* instruction)
 {
     format_IM_D(instruction, t_SETQ);
 }
@@ -7063,7 +7063,7 @@ void P2Dasm::dasm_setq(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setq2(QString* instruction)
+void P2Dasm::da_setq2(QString* instruction)
 {
     format_IM_D(instruction, t_SETQ2);
 }
@@ -7078,7 +7078,7 @@ void P2Dasm::dasm_setq2(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_push(QString* instruction)
+void P2Dasm::da_push(QString* instruction)
 {
     format_IM_D(instruction, t_PUSH);
 }
@@ -7094,7 +7094,7 @@ void P2Dasm::dasm_push(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_pop(QString* instruction)
+void P2Dasm::da_pop(QString* instruction)
 {
     format_D_CZ(instruction, t_POP);
 }
@@ -7110,7 +7110,7 @@ void P2Dasm::dasm_pop(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jmp(QString* instruction)
+void P2Dasm::da_jmp(QString* instruction)
 {
     format_D_CZ(instruction, t_JMP);
 }
@@ -7126,7 +7126,7 @@ void P2Dasm::dasm_jmp(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_call(QString* instruction)
+void P2Dasm::da_call(QString* instruction)
 {
     format_D_CZ(instruction, t_CALL);
 }
@@ -7142,7 +7142,7 @@ void P2Dasm::dasm_call(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_ret(QString* instruction)
+void P2Dasm::da_ret(QString* instruction)
 {
     format_CZ(instruction, t_RET);
 }
@@ -7158,7 +7158,7 @@ void P2Dasm::dasm_ret(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_calla(QString* instruction)
+void P2Dasm::da_calla(QString* instruction)
 {
     format_D_CZ(instruction, t_CALLA);
 }
@@ -7174,7 +7174,7 @@ void P2Dasm::dasm_calla(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_reta(QString* instruction)
+void P2Dasm::da_reta(QString* instruction)
 {
     format_CZ(instruction, t_RETA);
 }
@@ -7190,7 +7190,7 @@ void P2Dasm::dasm_reta(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_callb(QString* instruction)
+void P2Dasm::da_callb(QString* instruction)
 {
     format_D_CZ(instruction, t_CALLB);
 }
@@ -7206,7 +7206,7 @@ void P2Dasm::dasm_callb(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_retb(QString* instruction)
+void P2Dasm::da_retb(QString* instruction)
 {
     format_CZ(instruction, t_RETB);
 }
@@ -7223,7 +7223,7 @@ void P2Dasm::dasm_retb(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jmprel(QString* instruction)
+void P2Dasm::da_jmprel(QString* instruction)
 {
     format_IM_D(instruction, t_JMPREL);
 }
@@ -7239,7 +7239,7 @@ void P2Dasm::dasm_jmprel(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_skip(QString* instruction)
+void P2Dasm::da_skip(QString* instruction)
 {
     format_IM_D(instruction, t_SKIP);
 }
@@ -7255,7 +7255,7 @@ void P2Dasm::dasm_skip(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_skipf(QString* instruction)
+void P2Dasm::da_skipf(QString* instruction)
 {
     format_IM_D(instruction, t_SKIPF);
 }
@@ -7271,7 +7271,7 @@ void P2Dasm::dasm_skipf(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_execf(QString* instruction)
+void P2Dasm::da_execf(QString* instruction)
 {
     format_IM_D(instruction, t_EXECF);
 }
@@ -7286,7 +7286,7 @@ void P2Dasm::dasm_execf(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_getptr(QString* instruction)
+void P2Dasm::da_getptr(QString* instruction)
 {
     format_D(instruction, t_GETPTR);
 }
@@ -7303,7 +7303,7 @@ void P2Dasm::dasm_getptr(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_getbrk(QString* instruction)
+void P2Dasm::da_getbrk(QString* instruction)
 {
     format_D_CZ(instruction, t_GETBRK);
 }
@@ -7319,7 +7319,7 @@ void P2Dasm::dasm_getbrk(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_cogbrk(QString* instruction)
+void P2Dasm::da_cogbrk(QString* instruction)
 {
     format_IM_D(instruction, t_COGBRK);
 }
@@ -7335,7 +7335,7 @@ void P2Dasm::dasm_cogbrk(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_brk(QString* instruction)
+void P2Dasm::da_brk(QString* instruction)
 {
     format_IM_D(instruction, t_BRK);
 }
@@ -7350,7 +7350,7 @@ void P2Dasm::dasm_brk(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setluts(QString* instruction)
+void P2Dasm::da_setluts(QString* instruction)
 {
     format_IM_D(instruction, t_SETLUTS);
 }
@@ -7365,7 +7365,7 @@ void P2Dasm::dasm_setluts(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setcy(QString* instruction)
+void P2Dasm::da_setcy(QString* instruction)
 {
     format_IM_D(instruction, t_SETCY);
 }
@@ -7380,7 +7380,7 @@ void P2Dasm::dasm_setcy(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setci(QString* instruction)
+void P2Dasm::da_setci(QString* instruction)
 {
     format_IM_D(instruction, t_SETCI);
 }
@@ -7395,7 +7395,7 @@ void P2Dasm::dasm_setci(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setcq(QString* instruction)
+void P2Dasm::da_setcq(QString* instruction)
 {
     format_IM_D(instruction, t_SETCQ);
 }
@@ -7410,7 +7410,7 @@ void P2Dasm::dasm_setcq(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setcfrq(QString* instruction)
+void P2Dasm::da_setcfrq(QString* instruction)
 {
     format_IM_D(instruction, t_SETCFRQ);
 }
@@ -7425,7 +7425,7 @@ void P2Dasm::dasm_setcfrq(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setcmod(QString* instruction)
+void P2Dasm::da_setcmod(QString* instruction)
 {
     format_IM_D(instruction, t_SETCMOD);
 }
@@ -7440,7 +7440,7 @@ void P2Dasm::dasm_setcmod(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setpiv(QString* instruction)
+void P2Dasm::da_setpiv(QString* instruction)
 {
     format_IM_D(instruction, t_SETPIV);
 }
@@ -7455,7 +7455,7 @@ void P2Dasm::dasm_setpiv(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setpix(QString* instruction)
+void P2Dasm::da_setpix(QString* instruction)
 {
     format_IM_D(instruction, t_SETPIX);
 }
@@ -7470,7 +7470,7 @@ void P2Dasm::dasm_setpix(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_cogatn(QString* instruction)
+void P2Dasm::da_cogatn(QString* instruction)
 {
     format_IM_D(instruction, t_COGATN);
 }
@@ -7486,7 +7486,7 @@ void P2Dasm::dasm_cogatn(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_testp_w(QString* instruction)
+void P2Dasm::da_testp_w(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_TESTP);
 }
@@ -7502,7 +7502,7 @@ void P2Dasm::dasm_testp_w(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_testpn_w(QString* instruction)
+void P2Dasm::da_testpn_w(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_TESTPN);
 }
@@ -7518,7 +7518,7 @@ void P2Dasm::dasm_testpn_w(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_testp_and(QString* instruction)
+void P2Dasm::da_testp_and(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_TESTP, t_AND);
 }
@@ -7534,7 +7534,7 @@ void P2Dasm::dasm_testp_and(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_testpn_and(QString* instruction)
+void P2Dasm::da_testpn_and(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_TESTPN, t_AND);
 }
@@ -7550,7 +7550,7 @@ void P2Dasm::dasm_testpn_and(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_testp_or(QString* instruction)
+void P2Dasm::da_testp_or(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_TESTP, t_OR);
 }
@@ -7566,7 +7566,7 @@ void P2Dasm::dasm_testp_or(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_testpn_or(QString* instruction)
+void P2Dasm::da_testpn_or(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_TESTPN, t_OR);
 }
@@ -7582,7 +7582,7 @@ void P2Dasm::dasm_testpn_or(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_testp_xor(QString* instruction)
+void P2Dasm::da_testp_xor(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_TESTP, t_XOR);
 }
@@ -7598,7 +7598,7 @@ void P2Dasm::dasm_testp_xor(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_testpn_xor(QString* instruction)
+void P2Dasm::da_testpn_xor(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_TESTPN, t_XOR);
 }
@@ -7614,7 +7614,7 @@ void P2Dasm::dasm_testpn_xor(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_dirl(QString* instruction)
+void P2Dasm::da_dirl(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_DIRL);
 }
@@ -7630,7 +7630,7 @@ void P2Dasm::dasm_dirl(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_dirh(QString* instruction)
+void P2Dasm::da_dirh(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_DIRH);
 }
@@ -7646,7 +7646,7 @@ void P2Dasm::dasm_dirh(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_dirc(QString* instruction)
+void P2Dasm::da_dirc(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_DIRC);
 }
@@ -7662,7 +7662,7 @@ void P2Dasm::dasm_dirc(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_dirnc(QString* instruction)
+void P2Dasm::da_dirnc(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_DIRNC);
 }
@@ -7678,7 +7678,7 @@ void P2Dasm::dasm_dirnc(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_dirz(QString* instruction)
+void P2Dasm::da_dirz(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_DIRZ);
 }
@@ -7694,7 +7694,7 @@ void P2Dasm::dasm_dirz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_dirnz(QString* instruction)
+void P2Dasm::da_dirnz(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_DIRNZ);
 }
@@ -7710,7 +7710,7 @@ void P2Dasm::dasm_dirnz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_dirrnd(QString* instruction)
+void P2Dasm::da_dirrnd(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_DIRRND);
 }
@@ -7726,7 +7726,7 @@ void P2Dasm::dasm_dirrnd(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_dirnot(QString* instruction)
+void P2Dasm::da_dirnot(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_DIRNOT);
 }
@@ -7742,7 +7742,7 @@ void P2Dasm::dasm_dirnot(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_outl(QString* instruction)
+void P2Dasm::da_outl(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_OUTL);
 }
@@ -7758,7 +7758,7 @@ void P2Dasm::dasm_outl(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_outh(QString* instruction)
+void P2Dasm::da_outh(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_OUTH);
 }
@@ -7774,7 +7774,7 @@ void P2Dasm::dasm_outh(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_outc(QString* instruction)
+void P2Dasm::da_outc(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_OUTC);
 }
@@ -7790,7 +7790,7 @@ void P2Dasm::dasm_outc(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_outnc(QString* instruction)
+void P2Dasm::da_outnc(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_OUTNC);
 }
@@ -7806,7 +7806,7 @@ void P2Dasm::dasm_outnc(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_outz(QString* instruction)
+void P2Dasm::da_outz(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_OUTZ);
 }
@@ -7822,7 +7822,7 @@ void P2Dasm::dasm_outz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_outnz(QString* instruction)
+void P2Dasm::da_outnz(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_OUTNZ);
 }
@@ -7838,7 +7838,7 @@ void P2Dasm::dasm_outnz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_outrnd(QString* instruction)
+void P2Dasm::da_outrnd(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_OUTRND);
 }
@@ -7854,7 +7854,7 @@ void P2Dasm::dasm_outrnd(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_outnot(QString* instruction)
+void P2Dasm::da_outnot(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_OUTNOT);
 }
@@ -7871,7 +7871,7 @@ void P2Dasm::dasm_outnot(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_fltl(QString* instruction)
+void P2Dasm::da_fltl(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_FLTL);
 }
@@ -7888,7 +7888,7 @@ void P2Dasm::dasm_fltl(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_flth(QString* instruction)
+void P2Dasm::da_flth(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_FLTH);
 }
@@ -7905,7 +7905,7 @@ void P2Dasm::dasm_flth(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_fltc(QString* instruction)
+void P2Dasm::da_fltc(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_FLTC);
 }
@@ -7922,7 +7922,7 @@ void P2Dasm::dasm_fltc(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_fltnc(QString* instruction)
+void P2Dasm::da_fltnc(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_FLTNC);
 }
@@ -7939,7 +7939,7 @@ void P2Dasm::dasm_fltnc(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_fltz(QString* instruction)
+void P2Dasm::da_fltz(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_FLTZ);
 }
@@ -7956,7 +7956,7 @@ void P2Dasm::dasm_fltz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_fltnz(QString* instruction)
+void P2Dasm::da_fltnz(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_FLTNZ);
 }
@@ -7973,7 +7973,7 @@ void P2Dasm::dasm_fltnz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_fltrnd(QString* instruction)
+void P2Dasm::da_fltrnd(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_FLTRND);
 }
@@ -7990,7 +7990,7 @@ void P2Dasm::dasm_fltrnd(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_fltnot(QString* instruction)
+void P2Dasm::da_fltnot(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_FLTNOT);
 }
@@ -8007,7 +8007,7 @@ void P2Dasm::dasm_fltnot(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_drvl(QString* instruction)
+void P2Dasm::da_drvl(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_DRVL);
 }
@@ -8024,7 +8024,7 @@ void P2Dasm::dasm_drvl(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_drvh(QString* instruction)
+void P2Dasm::da_drvh(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_DRVH);
 }
@@ -8041,7 +8041,7 @@ void P2Dasm::dasm_drvh(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_drvc(QString* instruction)
+void P2Dasm::da_drvc(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_DRVC);
 }
@@ -8058,7 +8058,7 @@ void P2Dasm::dasm_drvc(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_drvnc(QString* instruction)
+void P2Dasm::da_drvnc(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_DRVNC);
 }
@@ -8075,7 +8075,7 @@ void P2Dasm::dasm_drvnc(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_drvz(QString* instruction)
+void P2Dasm::da_drvz(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_DRVZ);
 }
@@ -8092,7 +8092,7 @@ void P2Dasm::dasm_drvz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_drvnz(QString* instruction)
+void P2Dasm::da_drvnz(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_DRVNZ);
 }
@@ -8109,7 +8109,7 @@ void P2Dasm::dasm_drvnz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_drvrnd(QString* instruction)
+void P2Dasm::da_drvrnd(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_DRVRND);
 }
@@ -8126,7 +8126,7 @@ void P2Dasm::dasm_drvrnd(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_drvnot(QString* instruction)
+void P2Dasm::da_drvnot(QString* instruction)
 {
     format_IM_D_WCZ(instruction, t_DRVNOT);
 }
@@ -8142,7 +8142,7 @@ void P2Dasm::dasm_drvnot(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_splitb(QString* instruction)
+void P2Dasm::da_splitb(QString* instruction)
 {
     format_D(instruction, t_SPLITB);
 }
@@ -8158,7 +8158,7 @@ void P2Dasm::dasm_splitb(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_mergeb(QString* instruction)
+void P2Dasm::da_mergeb(QString* instruction)
 {
     format_D(instruction, t_MERGEB);
 }
@@ -8174,7 +8174,7 @@ void P2Dasm::dasm_mergeb(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_splitw(QString* instruction)
+void P2Dasm::da_splitw(QString* instruction)
 {
     format_D(instruction, t_SPLITW);
 }
@@ -8190,7 +8190,7 @@ void P2Dasm::dasm_splitw(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_mergew(QString* instruction)
+void P2Dasm::da_mergew(QString* instruction)
 {
     format_D(instruction, t_MERGEW);
 }
@@ -8207,7 +8207,7 @@ void P2Dasm::dasm_mergew(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_seussf(QString* instruction)
+void P2Dasm::da_seussf(QString* instruction)
 {
     format_D(instruction, t_SEUSSF);
 }
@@ -8224,7 +8224,7 @@ void P2Dasm::dasm_seussf(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_seussr(QString* instruction)
+void P2Dasm::da_seussr(QString* instruction)
 {
     format_D(instruction, t_SEUSSR);
 }
@@ -8240,7 +8240,7 @@ void P2Dasm::dasm_seussr(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rgbsqz(QString* instruction)
+void P2Dasm::da_rgbsqz(QString* instruction)
 {
     format_D(instruction, t_RGBSQZ);
 }
@@ -8256,7 +8256,7 @@ void P2Dasm::dasm_rgbsqz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rgbexp(QString* instruction)
+void P2Dasm::da_rgbexp(QString* instruction)
 {
     format_D(instruction, t_RGBEXP);
 }
@@ -8271,7 +8271,7 @@ void P2Dasm::dasm_rgbexp(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_xoro32(QString* instruction)
+void P2Dasm::da_xoro32(QString* instruction)
 {
     format_D(instruction, t_XORO32);
 }
@@ -8287,7 +8287,7 @@ void P2Dasm::dasm_xoro32(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rev(QString* instruction)
+void P2Dasm::da_rev(QString* instruction)
 {
     format_D(instruction, t_REV);
 }
@@ -8304,7 +8304,7 @@ void P2Dasm::dasm_rev(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rczr(QString* instruction)
+void P2Dasm::da_rczr(QString* instruction)
 {
     format_D_CZ(instruction, t_RCZR);
 }
@@ -8321,7 +8321,7 @@ void P2Dasm::dasm_rczr(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_rczl(QString* instruction)
+void P2Dasm::da_rczl(QString* instruction)
 {
     format_D_CZ(instruction, t_RCZL);
 }
@@ -8337,7 +8337,7 @@ void P2Dasm::dasm_rczl(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_wrc(QString* instruction)
+void P2Dasm::da_wrc(QString* instruction)
 {
     format_D(instruction, t_WRC);
 }
@@ -8353,7 +8353,7 @@ void P2Dasm::dasm_wrc(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_wrnc(QString* instruction)
+void P2Dasm::da_wrnc(QString* instruction)
 {
     format_D(instruction, t_WRNC);
 }
@@ -8369,7 +8369,7 @@ void P2Dasm::dasm_wrnc(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_wrz(QString* instruction)
+void P2Dasm::da_wrz(QString* instruction)
 {
     format_D(instruction, t_WRZ);
 }
@@ -8385,7 +8385,7 @@ void P2Dasm::dasm_wrz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_wrnz(QString* instruction)
+void P2Dasm::da_wrnz(QString* instruction)
 {
     format_D(instruction, t_WRNZ);
 }
@@ -8401,7 +8401,7 @@ void P2Dasm::dasm_wrnz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_modcz(QString* instruction)
+void P2Dasm::da_modcz(QString* instruction)
 {
     format_MODCZ_WCZ(instruction, t_MODCZ);
 }
@@ -8420,7 +8420,7 @@ void P2Dasm::dasm_modcz(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_setscp(QString* instruction)
+void P2Dasm::da_setscp(QString* instruction)
 {
     format_IM_D(instruction, t_SETSCP);
 }
@@ -8439,7 +8439,7 @@ void P2Dasm::dasm_setscp(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_getscp(QString* instruction)
+void P2Dasm::da_getscp(QString* instruction)
 {
     format_D(instruction, t_GETSCP);
 }
@@ -8455,7 +8455,7 @@ void P2Dasm::dasm_getscp(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_jmp_abs(QString* instruction)
+void P2Dasm::da_jmp_abs(QString* instruction)
 {
     format_PC_A20(instruction, t_JMP);
 }
@@ -8471,7 +8471,7 @@ void P2Dasm::dasm_jmp_abs(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_call_abs(QString* instruction)
+void P2Dasm::da_call_abs(QString* instruction)
 {
     format_PC_A20(instruction, t_CALL);
 }
@@ -8487,7 +8487,7 @@ void P2Dasm::dasm_call_abs(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_calla_abs(QString* instruction)
+void P2Dasm::da_calla_abs(QString* instruction)
 {
     format_PC_A20(instruction, t_CALLA);
 }
@@ -8503,7 +8503,7 @@ void P2Dasm::dasm_calla_abs(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_callb_abs(QString* instruction)
+void P2Dasm::da_callb_abs(QString* instruction)
 {
     format_PC_A20(instruction, t_CALLB);
 }
@@ -8519,7 +8519,7 @@ void P2Dasm::dasm_callb_abs(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_calld_abs_pa(QString* instruction)
+void P2Dasm::da_calld_abs_pa(QString* instruction)
 {
     format_PC_A20(instruction, t_CALLD, t_PA);
 }
@@ -8535,7 +8535,7 @@ void P2Dasm::dasm_calld_abs_pa(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_calld_abs_pb(QString* instruction)
+void P2Dasm::da_calld_abs_pb(QString* instruction)
 {
     format_PC_A20(instruction, t_CALLD, t_PB);
 }
@@ -8551,7 +8551,7 @@ void P2Dasm::dasm_calld_abs_pb(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_calld_abs_ptra(QString* instruction)
+void P2Dasm::da_calld_abs_ptra(QString* instruction)
 {
     format_PC_A20(instruction, t_CALLD, t_PTRA);
 }
@@ -8567,7 +8567,7 @@ void P2Dasm::dasm_calld_abs_ptra(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_calld_abs_ptrb(QString* instruction)
+void P2Dasm::da_calld_abs_ptrb(QString* instruction)
 {
     format_PC_A20(instruction, t_CALLD, t_PTRB);
 }
@@ -8583,7 +8583,7 @@ void P2Dasm::dasm_calld_abs_ptrb(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_loc_pa(QString* instruction)
+void P2Dasm::da_loc_pa(QString* instruction)
 {
     format_PC_A20(instruction, t_LOC, t_PA);
 }
@@ -8599,7 +8599,7 @@ void P2Dasm::dasm_loc_pa(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_loc_pb(QString* instruction)
+void P2Dasm::da_loc_pb(QString* instruction)
 {
     format_PC_A20(instruction, t_LOC, t_PB);
 }
@@ -8615,7 +8615,7 @@ void P2Dasm::dasm_loc_pb(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_loc_ptra(QString* instruction)
+void P2Dasm::da_loc_ptra(QString* instruction)
 {
     format_PC_A20(instruction, t_LOC, t_PTRA);
 }
@@ -8631,7 +8631,7 @@ void P2Dasm::dasm_loc_ptra(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_loc_ptrb(QString* instruction)
+void P2Dasm::da_loc_ptrb(QString* instruction)
 {
     format_PC_A20(instruction, t_LOC, t_PTRB);
 }
@@ -8646,7 +8646,7 @@ void P2Dasm::dasm_loc_ptrb(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_augs(QString* instruction)
+void P2Dasm::da_augs(QString* instruction)
 {
     format_IMM23(instruction, t_AUGS);
 }
@@ -8661,7 +8661,7 @@ void P2Dasm::dasm_augs(QString* instruction)
  *
  * @param instruction pointer to string where to store the result
  */
-void P2Dasm::dasm_AUGD(QString* instruction)
+void P2Dasm::da_AUGD(QString* instruction)
 {
     format_IMM23(instruction, t_AUGD);
 }

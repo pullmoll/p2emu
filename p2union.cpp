@@ -1077,11 +1077,6 @@ static inline QString bin(const p2_QUAD val, int digits = 0)
     return QString("%1").arg(val, digits, 2, QChar('0'));
 }
 
-static inline QString byt(const p2_QUAD val, int digits = 0)
-{
-    return QString("%1").arg(val, digits, 16, QChar('0'));
-}
-
 static inline QString dec(const p2_QUAD val, int digits = 0)
 {
     return QString("%1").arg(val, digits, 10, QChar('0'));
@@ -1160,10 +1155,8 @@ QString P2Union::str(const P2Union& un, bool with_type, p2_FORMAT_e fmt)
 
     case ut_Addr:
         {
-            p2_LONG _hub = un.get_addr(p2_hub);
             p2_LONG _cog = un.get_addr(p2_cog);
-            if (_cog < HUB_ADDR0)
-                _cog >>= 2;
+            p2_LONG _hub = un.get_addr(p2_hub);
             switch (fmt) {
             case fmt_dec:
                 result += QString("%1:%2")

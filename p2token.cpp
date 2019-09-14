@@ -37,7 +37,7 @@
 #include "p2util.h"
 
 #define DBG_REGEX 0
-#define DBG_TOKEN 0
+#define DBG_TOKEN 1
 
 #if DBG_REGEX
 #define DEBUG_REGEX(x,...) qDebug(x,__VA_ARGS__)
@@ -52,14 +52,13 @@
 #endif
 
 /**
- * @brief Regular expression for comments
+ * @brief Regular expression for comments in curly braces
  */
-static const QString re_comment_curly = QLatin1String("\\{[^\\}]*\\}");
+static const QString re_comment_curly = QLatin1String("^\\{[^\\}]*\\}");
 
 /**
- * @brief Regular expression for comments
+ * @brief Regular expression for comments until end of line
  */
-//static const QString re_comment_eol = QLatin1String("'[^\\{\\}]*");
 static const QString re_comment_eol = QLatin1String("^'.*");
 
 /**
@@ -68,7 +67,7 @@ static const QString re_comment_eol = QLatin1String("^'.*");
  * leading "."
  * then any number of "A"…"Z", "0"…"9", or "_"
  */
-static const QString re_locsym = QLatin1String("^[.][A-Z_]+[A-Z0-9_]*");
+static const QString re_locsym = QLatin1String("^[.][a-zA-Z_]+[a-zA-Z0-9_]*");
 
 /**
  * @brief Regular expression for alphanumeric
@@ -76,7 +75,7 @@ static const QString re_locsym = QLatin1String("^[.][A-Z_]+[A-Z0-9_]*");
  * leading "A"…"Z", or "_"
  * then any number of "A"…"Z", "0"…"9", or "_"
  */
-static const QString re_symbol = QLatin1String("^[A-Z_]+[A-Z0-9_]*");
+static const QString re_symbol = QLatin1String("^[a-zA-Z_]+[a-zA-Z0-9_]*");
 
 /**
  * @brief Regular expression for binary number
@@ -95,12 +94,21 @@ static const QString re_bin_const = QLatin1String("^%[_]*[01_]+");
 static const QString re_byt_const = QLatin1String("^%%[_]*[0-3_]+");
 
 /**
+ * @brief Regular expression for a qreal number
+ *
+ * leading any number of "0"…"9"
+ * then one period "."
+ * then any number of "0"…"9"
+ */
+static const QString re_real_const = QLatin1String("^[0-9]+[0-9_]*\\.[0-9_]*");
+
+/**
  * @brief Regular expression for a decimal number
  *
  * leading "0"…"9"
  * then any number of "0"…"9", or "_"
  */
-static const QString re_dec_const = QLatin1String("^[0-9_]+(?!\\.)");
+static const QString re_dec_const = QLatin1String("^[0-9]+[0-9_]*(?!\\.)");
 
 /**
  * @brief Regular expression an octal number
@@ -108,7 +116,7 @@ static const QString re_dec_const = QLatin1String("^[0-9_]+(?!\\.)");
  * leading "$"
  * then any number of "0"…"9", "A"…"F", or "_"
  */
-static const QString re_hex_const = QLatin1String("^\\$[_]*[0-9A-F_]+");
+static const QString re_hex_const = QLatin1String("^\\$[_]*[0-9a-fA-F_]+");
 
 /**
  * @brief Regular expression for a string enclosed in doublequotes, possibly containing escaped doublequotes
@@ -117,15 +125,6 @@ static const QString re_hex_const = QLatin1String("^\\$[_]*[0-9A-F_]+");
  * trailing '"'
  */
 static const QString re_str_const = QLatin1String("^\"([^\\\"]|\\\\.)*\"");
-
-/**
- * @brief Regular expression for a qreal number
- *
- * leading any number of "0"…"9"
- * then one period "."
- * then any number of "0"…"9"
- */
-static const QString re_real_const = QLatin1String("^[0-9_]*\\.[0-9_]*");
 
 //! Global static instance of the P2Token class
 P2Token Token;
@@ -221,10 +220,21 @@ P2Token Token;
  *
  */
 
-#define TN_ADD(token,mask,string) tn_ADD(token,#token,mask,string)
+#define TN_ADD(token,mask,string) tn_add(token,#token,mask,string)
 
 P2Token::P2Token()
-    : m_token_enum_name()
+    : m_rx()
+    , m_rx_comment_curly(re_comment_curly, Qt::CaseInsensitive)
+    , m_rx_comment_eol(re_comment_eol, Qt::CaseInsensitive)
+    , m_rx_bin_const(re_bin_const, Qt::CaseInsensitive)
+    , m_rx_byt_const(re_byt_const, Qt::CaseInsensitive)
+    , m_rx_dec_const(re_dec_const, Qt::CaseInsensitive)
+    , m_rx_hex_const(re_hex_const, Qt::CaseInsensitive)
+    , m_rx_str_const(re_str_const, Qt::CaseInsensitive)
+    , m_rx_real_const(re_real_const, Qt::CaseInsensitive)
+    , m_rx_locsym(re_locsym, Qt::CaseInsensitive)
+    , m_rx_symbol(re_symbol, Qt::CaseInsensitive)
+    , m_token_enum_name()
     , m_token_string()
     , m_string_token()
     , m_token_type()
@@ -232,21 +242,11 @@ P2Token::P2Token()
     , m_lookup_cond()
     , m_lookup_modcz()
     , m_t_type_name()
-    , rx_comment_eol(re_comment_eol, Qt::CaseInsensitive)
-    , rx_comment_curly(re_comment_curly, Qt::CaseInsensitive)
-    , rx_symbol(re_symbol, Qt::CaseInsensitive)
-    , rx_locsym(re_locsym, Qt::CaseInsensitive)
-    , rx_bin_const(re_bin_const, Qt::CaseInsensitive)
-    , rx_byt_const(re_byt_const, Qt::CaseInsensitive)
-    , rx_hex_const(re_hex_const, Qt::CaseInsensitive)
-    , rx_dec_const(re_dec_const, Qt::CaseInsensitive)
-    , rx_str_const(re_str_const, Qt::CaseInsensitive)
-    , rx_real_const(re_real_const, Qt::CaseInsensitive)
 {
     TN_ADD(t_invalid,           tm_lexer, QStringLiteral("·INVALID·"));
     TN_ADD(t_none,              tm_none, QString());
     TN_ADD(t_unknown,           tm_lexer, QStringLiteral("·unknown·"));
-    TN_ADD(t_comment,           tm_comment, QStringLiteral("·comment·"));
+    TN_ADD(t_comment_curly,           tm_comment, QStringLiteral("·comment·"));
     TN_ADD(t_comment_eol,       tm_comment, QStringLiteral("'"));
     TN_ADD(t_comment_lcurly,    tm_comment, QStringLiteral("{"));
     TN_ADD(t_comment_rcurly,    tm_comment, QStringLiteral("}"));
@@ -811,9 +811,9 @@ P2Token::P2Token()
     TN_ADD(t_INB,               tm_constant, QLatin1String("INB"));
 
     // Conversion to different type
-    TN_ADD(t__FLOAT,            tm_function, QLatin1String("FLOAT"));
-    TN_ADD(t__ROUND,            tm_function, QLatin1String("ROUND"));
-    TN_ADD(t__TRUNC,            tm_function, QLatin1String("TRUNC"));
+    TN_ADD(t_FUNC_FLOAT,        tm_function, QLatin1String("FLOAT"));
+    TN_ADD(t_FUNC_ROUND,        tm_function, QLatin1String("ROUND"));
+    TN_ADD(t_FUNC_TRUNC,        tm_function, QLatin1String("TRUNC"));
 
     // Current PC reference
     TN_ADD(t_DOLLAR,            tm_constant, QLatin1String("$"));
@@ -823,60 +823,60 @@ P2Token::P2Token()
     TN_ADD(t_AUGMENTED,         tm_traits, QLatin1String("##"));
     TN_ADD(t_RELATIVE,          tm_traits, QLatin1String("@"));
     TN_ADD(t_ABSOLUTE,          tm_traits, QLatin1String("\\"));
-    TN_ADD(t_HUBADDRESS,       tm_traits, QLatin1String("#@"));
+    TN_ADD(t_HUBADDRESS,        tm_traits, QLatin1String("#@"));
 
     // Sub expression in parens
-    TN_ADD(t__LPAREN,           tm_parens, QLatin1String("("));
-    TN_ADD(t__RPAREN,           tm_parens, QLatin1String(")"));
+    TN_ADD(t_EXPR_LPAREN,       tm_parens, QLatin1String("("));
+    TN_ADD(t_EXPR_RPAREN,       tm_parens, QLatin1String(")"));
 
     // Index expression in brackets
-    TN_ADD(t__LBRACKET,         tm_brackets, QLatin1String("["));
-    TN_ADD(t__RBRACKET,         tm_brackets, QLatin1String("]"));
+    TN_ADD(t_EXPR_LBRACKET,     tm_brackets, QLatin1String("["));
+    TN_ADD(t_EXPR_RBRACKET,     tm_brackets, QLatin1String("]"));
 
     // Set the primary operators
-    TN_ADD(t__INC,              tm_primary, QLatin1String("++"));
-    TN_ADD(t__DEC,              tm_primary, QLatin1String("--"));
+    TN_ADD(t_EXPR_INC,          tm_primary, QLatin1String("++"));
+    TN_ADD(t_EXPR_DEC,          tm_primary, QLatin1String("--"));
 
     // Set the unary operators
-    TN_ADD(t__NEG,              tm_unary, QLatin1String("!"));
-    TN_ADD(t__NOT,              tm_unary, QLatin1String("~"));
+    TN_ADD(t_EXPR_NEG,          tm_unary, QLatin1String("!"));
+    TN_ADD(t_EXPR_NOT,          tm_unary, QLatin1String("~"));
 
     // Set the multiplication operators
-    TN_ADD(t__MUL,              tm_mulop, QLatin1String("*"));
-    TN_ADD(t__DIV,              tm_mulop, QLatin1String("/"));
-    TN_ADD(t__MOD,              tm_mulop, QLatin1String("%"));
+    TN_ADD(t_EXPR_MUL,          tm_mulop, QLatin1String("*"));
+    TN_ADD(t_EXPR_DIV,          tm_mulop, QLatin1String("/"));
+    TN_ADD(t_EXPR_MOD,          tm_mulop, QLatin1String("%"));
 
     // Set the addition operators
-    TN_ADD(t__PLUS,             tm_addop | tm_unary, QLatin1String("+"));
-    TN_ADD(t__MINUS,            tm_addop | tm_unary, QLatin1String("-"));
+    TN_ADD(t_EXPR_PLUS,         tm_addop | tm_unary, QLatin1String("+"));
+    TN_ADD(t_EXPR_MINUS,        tm_addop | tm_unary, QLatin1String("-"));
 
     // Set the shift operators
-    TN_ADD(t__SHL,              tm_shiftop, QLatin1String("<<"));
-    TN_ADD(t__SHR,              tm_shiftop, QLatin1String(">>"));
+    TN_ADD(t_EXPR_SHL,          tm_shiftop, QLatin1String("<<"));
+    TN_ADD(t_EXPR_SHR,          tm_shiftop, QLatin1String(">>"));
 
     // Set the less/greater comparison operators
-    TN_ADD(t__GE,               tm_relation, QLatin1String(">="));
-    TN_ADD(t__GT,               tm_relation, QLatin1String(">"));
-    TN_ADD(t__LE,               tm_relation, QLatin1String("<="));
-    TN_ADD(t__LT,               tm_relation, QLatin1String("<"));
+    TN_ADD(t_EXPR_GE,           tm_relation, QLatin1String(">="));
+    TN_ADD(t_EXPR_GT,           tm_relation, QLatin1String(">"));
+    TN_ADD(t_EXPR_LE,           tm_relation, QLatin1String("<="));
+    TN_ADD(t_EXPR_LT,           tm_relation, QLatin1String("<"));
 
     // Set the equal/unequal comparison operators
-    TN_ADD(t__EQ,               tm_equality, QLatin1String("=="));
-    TN_ADD(t__NE,               tm_equality, QLatin1String("!="));
+    TN_ADD(t_EXPR_EQ,           tm_equality, QLatin1String("=="));
+    TN_ADD(t_EXPR_NE,           tm_equality, QLatin1String("!="));
 
     // Set the binary operators
-    TN_ADD(t__AND,              tm_binop_and, QLatin1String("&"));
-    TN_ADD(t__XOR,              tm_binop_xor, QLatin1String("^"));
-    TN_ADD(t__OR,               tm_binop_or,  QLatin1String("|"));
-    TN_ADD(t__REV,              tm_binop_rev, QLatin1String("><"));
+    TN_ADD(t_EXPR_AND,          tm_binop_and, QLatin1String("&"));
+    TN_ADD(t_EXPR_XOR,          tm_binop_xor, QLatin1String("^"));
+    TN_ADD(t_EXPR_OR,           tm_binop_or,  QLatin1String("|"));
+    TN_ADD(t_EXPR_REV,          tm_binop_rev, QLatin1String("><"));
 
     // Encode / Decode
-    TN_ADD(t__ENCOD,            tm_binop_encod, QLatin1String("|<"));
-    TN_ADD(t__DECOD,            tm_binop_decod, QLatin1String(">|"));
+    TN_ADD(t_EXPR_ENCOD,        tm_binop_encod, QLatin1String("|<"));
+    TN_ADD(t_EXPR_DECOD,        tm_binop_decod, QLatin1String(">|"));
 
     // Set the logical operators
-    TN_ADD(t__LOGAND,           tm_logop_and, QLatin1String("&&"));
-    TN_ADD(t__LOGOR,            tm_logop_or, QLatin1String("||"));
+    TN_ADD(t_EXPR_LOGAND,       tm_logop_and, QLatin1String("&&"));
+    TN_ADD(t_EXPR_LOGOR,        tm_logop_or, QLatin1String("||"));
 
     // Set the conditionals lookup table
     m_lookup_cond.insert(t__RET_,               cc__ret_);
@@ -1018,7 +1018,7 @@ P2Token::P2Token()
 
     // Build the reverse QMultiHash for types lookup
     foreach(p2_TOKEN_e tok, m_token_type.keys())
-        foreach(p2_TOKENMASK_t mask, m_token_type.values(tok))
+        foreach(p2_TOKMASK_t mask, m_token_type.values(tok))
             m_type_token.insertMulti(mask, tok);
 
     m_t_type_name.insert(tt_none,           QStringLiteral("-"));
@@ -1051,6 +1051,27 @@ P2Token::P2Token()
     m_t_type_name.insert(tt_origin,         QStringLiteral("Origin"));
     m_t_type_name.insert(tt_data,           QStringLiteral("Data"));
     m_t_type_name.insert(tt_regexp,         QStringLiteral("RegExp"));
+
+    QStringList expressions;
+    expressions += re_comment_eol;
+    expressions += re_comment_curly;
+    expressions += re_bin_const;
+    expressions += re_byt_const;
+    expressions += re_hex_const;
+    expressions += re_dec_const;
+    expressions += re_real_const;
+    expressions += re_str_const;
+    expressions += re_locsym;
+    expressions += re_symbol;
+
+    // Add all token strings as well
+    foreach (const QString& token, m_token_string.values())
+        expressions += QString("^%1").arg(QRegularExpression::escape(token));
+
+    m_rx.setPattern(QChar('(') + expressions.join(QChar('|')) + QChar(')'));
+    m_rx.setPatternOptions(QRegularExpression::CaseInsensitiveOption);
+    m_rx.optimize();
+    Q_ASSERT(m_rx.isValid());
 }
 
 /**
@@ -1074,307 +1095,117 @@ QString P2Token::enum_name(p2_TOKEN_e tok) const
 }
 
 /**
- * @brief Count number of curly braces, left and right, return the sum
- * @param ref QStringRef to a portion of a string to scan
- * @return number of lcurly - number of rcruly braces
+ * @brief Return a P2 token enumeration value for the QStringRef %ref in %line
+ * @param line pointer to the line where the %ref is based on
+ * @param ref reference to a QStringRef to use / modify on match
+ * @return p2_token_e enumeration value, or t_unknown if not a known string
  */
-static int count_curly(const QStringRef& ref)
+p2_TOKEN_e P2Token::token(QStringRef& ref) const
 {
-    int curly = 0;
-    curly += ref.count(chr_lcurly);
-    curly -= ref.count(chr_rcurly);
-    return curly;
-}
-
-/**
- * @brief Tokenize a string and append to P2AsmWords
- * @param line string to tokenize
- * @param lineno line number
- * @param in_curly reference to an integer with the current curly braces level
- * @return A QVector of P2Words for the line
- */
-P2Words P2Token::tokenize(const QString* line, const int lineno, int& in_curly) const
-{
-    static QRegExp rx;
-    static QString regex;
-    P2Words words;
-    p2_TOKEN_e tok;
-    const int len = line->length();
-    int pos = 0;
-    int lastpos = 0;
-
-#if (DBG_REGEX || DBG_TOKEN)
-    qDebug("%s: ····························· tokenize line ·································", __func__);
-    qDebug("%-4d: %s%s%s", lineno, qPrintable(chr_ldangle), qPrintable(line), qPrintable(chr_rdangle));
-#endif
-
-    if (rx.isEmpty()) {
-        // first time initialization of the QRegExp
-        QStringList list;
-
-        list += QStringLiteral("^\\s+");                                    // spaces
-        list += re_comment_curly;                                           // comments in {curly braces}
-        list += re_comment_eol;                                             // Comments 'something...
-        list += re_locsym;                                                  // local symbols
-        list += re_symbol;                                                  // symbols
-        list += re_bin_const;                                               // bin constants
-        list += re_byt_const;                                               // byt constants
-        list += re_real_const;                                              // real constants
-        list += re_dec_const;                                               // dec constants
-        list += re_hex_const;                                               // hex constants
-        list += re_str_const;                                               // str constants
-        list += QRegExp::escape(m_token_string.value(t_PTRA));              // PTRA
-        list += QRegExp::escape(m_token_string.value(t_PTRA_postinc));      // PTRA++
-        list += QRegExp::escape(m_token_string.value(t_PTRA_postdec));      // PTRA--
-        list += QRegExp::escape(m_token_string.value(t_PTRA_preinc));       // ++PTRA
-        list += QRegExp::escape(m_token_string.value(t_PTRA_predec));       // --PTRA
-        list += QRegExp::escape(m_token_string.value(t_PTRB));              // PTRB
-        list += QRegExp::escape(m_token_string.value(t_PTRB_postinc));      // PTRB++
-        list += QRegExp::escape(m_token_string.value(t_PTRB_postdec));      // PTRB--
-        list += QRegExp::escape(m_token_string.value(t_PTRB_preinc));       // ++PTRB
-        list += QRegExp::escape(m_token_string.value(t_PTRB_predec));       // --PTRB
-        list += QRegExp::escape(m_token_string.value(t_IMMEDIATE));         // immediate (#)
-        list += QRegExp::escape(m_token_string.value(t_AUGMENTED));         // augmented (##)
-        list += QRegExp::escape(m_token_string.value(t_RELATIVE));          // relative (@)
-        list += QRegExp::escape(m_token_string.value(t_ABSOLUTE));          // absolute (\)
-        list += QRegExp::escape(m_token_string.value(t_HUBADDRESS));        // use HUB address (#@)
-        list += QRegExp::escape(m_token_string.value(t_DOLLAR));            // dollar ($)
-        list += QRegExp::escape(m_token_string.value(t_COMMA));             // comma (,)
-        list += QRegExp::escape(m_token_string.value(t__LBRACKET));         // left bracket ([) (index expression start)
-        list += QRegExp::escape(m_token_string.value(t__RBRACKET));         // right bracket (]) (index expression end)
-        list += QRegExp::escape(m_token_string.value(t__INC));              // increment (++)
-        list += QRegExp::escape(m_token_string.value(t__PLUS));             // add / unary plus (+)
-        list += QRegExp::escape(m_token_string.value(t__DEC));              // decrement (--)
-        list += QRegExp::escape(m_token_string.value(t__MINUS));            // subtract / unary minus (-)
-        list += QRegExp::escape(m_token_string.value(t__SHL));              // shift left (<<)
-        list += QRegExp::escape(m_token_string.value(t__LT));               // less than (<)
-        list += QRegExp::escape(m_token_string.value(t__SHR));              // shift right (>>)
-        list += QRegExp::escape(m_token_string.value(t__REV));              // reverse (><)
-        list += QRegExp::escape(m_token_string.value(t__DECOD));            // binary decode (>|)
-        list += QRegExp::escape(m_token_string.value(t__ENCOD));            // binary encode (|<)
-        list += QRegExp::escape(m_token_string.value(t__GT));               // greater than (>)
-        list += QRegExp::escape(m_token_string.value(t__MUL));              // multiply (*)
-        list += QRegExp::escape(m_token_string.value(t__DIV));              // divide (/)
-        list += QRegExp::escape(m_token_string.value(t__MOD));              // modulo (%)
-        list += QRegExp::escape(m_token_string.value(t__AND));              // binary AND (&)
-        list += QRegExp::escape(m_token_string.value(t__OR));               // binary OR (|)
-        list += QRegExp::escape(m_token_string.value(t__LPAREN));           // left parenthesis "(" (sub expression start)
-        list += QRegExp::escape(m_token_string.value(t__RPAREN));           // right parenthesis ")" (sub expression end)
-        list += QRegExp::escape(m_token_string.value(t__EQ));               // equals (==)
-        list += QRegExp::escape(m_token_string.value(t_ASSIGN));            // assignment (=)
-        list += QRegExp::escape(m_token_string.value(t_comment_lcurly));    // left curly brace ({) (comment start)
-        list += QRegExp::escape(m_token_string.value(t_comment_rcurly));    // right curly brace (}) (comment end)
-
-        rx.setPatternSyntax(QRegExp::RegExp2);  // greedy syntax
-        regex = QString("(%1)").arg(list.join(QChar('|')));
-        rx.setPattern(regex);
-        rx.setCaseSensitivity(Qt::CaseInsensitive);
-        Q_ASSERT(rx.isValid());
-    }
-
-    while (pos < line->length() && line->at(pos).isSpace())
-        ++pos;
-
-    while (-1 != (pos = rx.indexIn(*line, lastpos, QRegExp::CaretAtOffset))) {
-        int tlen = rx.matchedLength();
-        QStringRef ref(line, pos, tlen);
-
-        if (tlen > 0 && ref.trimmed().isEmpty()) {
-            DEBUG_REGEX("  match %d @%-3d #%-3d SPACE(S)", in_curly, pos, tlen);
-            while (pos < line->length() && line->at(pos).isSpace())
-                ++pos;
-            lastpos = pos;
-            if (pos >= len) {
-                DEBUG_REGEX("  match %d @%-3d #%-3d end-of-line", in_curly, pos, tlen);
-                break;
-            }
-            continue;
-        }
-
-        if (pos >= len) {
-            DEBUG_REGEX("  match %d @%-3d #%-3d end-of-line", in_curly, pos, tlen);
-            break;
-        }
-
-        if (ref[0] != chr_dquote && ref[0] != chr_apostrophe) {
-            int curly = count_curly(ref);
-            if (curly) {
-                in_curly = qMax(in_curly + curly, 0);
-                const int tlen = len - pos;
-                tok = curly >= 0 ? t_comment_lcurly : t_comment_rcurly;
-                QStringRef ref(line, pos, tlen);
-                words.append(P2Word(tok, ref, lineno));
-                pos += tlen;
-                DEBUG_REGEX("  match %d @%-3d #%-3d %s%s%s",
-                            in_curly, pos, tlen,
-                            qPrintable(chr_ldangle), qPrintable(ref.toString()), qPrintable(chr_rdangle));
-                goto leave;
-            }
-        }
-
-        if (ref[0] == chr_apostrophe) {
-            const int tlen = len - pos;
-            tok = t_comment_eol;
-            QStringRef ref(line, pos, tlen);
-            words.append(P2Word(tok, ref, lineno));
-            DEBUG_REGEX("  comnt %d @%-3d #%-3d %s%s%s",
-                        in_curly, pos, tlen,
-                        qPrintable(chr_ldangle), qPrintable(ref.toString()), qPrintable(chr_rdangle));
-            goto leave;
-        }
-
-        if (in_curly > 0) {
-            const int tlen = len - pos;
-            QStringRef ref(line, pos, tlen);
-            int curly = count_curly(ref);
-            in_curly = qMax(in_curly + curly, 0);
-
-            tok = in_curly > 0 ? t_comment_lcurly : t_comment_rcurly;
-            words.append(P2Word(tok, ref, lineno));
-            DEBUG_REGEX("  curly %d @%-3d #%-3d %s%s%s",
-                        in_curly, pos, tlen,
-                        qPrintable(chr_ldangle), qPrintable(ref.toString()), qPrintable(chr_rdangle));
-            goto leave;
-        }
-
-        DEBUG_REGEX("  match %d @%-3d #%-3d %s%s%s",
-                    in_curly, pos, tlen,
-                    qPrintable(chr_ldangle), qPrintable(line.mid(pos, tlen)), qPrintable(chr_rdangle));
-
-        tok = token(*line, pos, tlen);
-        ref = QStringRef(line, pos, tlen);
-        words.append(P2Word(tok, ref, lineno));
-        if (tok != t_str_const) {
-            int curly = count_curly(ref);
-            in_curly = qMax(in_curly + curly, 0);
-        }
-        pos += tlen;
-        lastpos = pos;
-    }
-
-leave:
-
-#if DBG_TOKEN
-    int i = 0;
-    if (words.isEmpty()) {
-
-        DEBUG_REGEX("%s: empty %d @%-3d #%-3d %s%s%s", __func__,
-                    in_curly, 0, line.length(),
-                    qPrintable(chr_ldangle), qPrintable(line), qPrintable(chr_rdangle));
-        return words;
-
-    } else foreach(const P2Word& word, words) {
-        const p2_token_e tok = word.tok();
-        const QString& name = enum_name(tok);
-        const QString& str = word.str();
-        const int pos = word.pos();
-        const int len = word.len();
-
-        DEBUG_TOKEN("  word[%-3d] %s%s%s%*s @%-3d #%-3d %s%s%s",
-                    i,
-                    qPrintable(chr_ldangle), qPrintable(name), qPrintable(chr_rdangle),
-                    24 - name.length(), "",
-                    pos, len,
-                    qPrintable(chr_ldangle), qPrintable(str), qPrintable(chr_rdangle));
-        i++;
-    }
-#endif
-
-
-#if (DBG_REGEX || DBG_TOKEN)
-    qDebug("%s: ·············································································", __func__);
-#endif
-    return words;
-}
-
-/**
- * @brief Return a p2_token_e enumeration value for the QString %str
- * @param str QString to scan for
- * @param chop if true, chop off characters until a a token other than t_nothing is matched
- * @param plen optional pointer to an int to receive the length of the token
- * @return p2_token_e enumeration value, or t_nothing if not a known string
- */
-p2_TOKEN_e P2Token::token(const QString& line, int pos, int& len, bool chop) const
-{
+    const QRegularExpression::MatchType mt = QRegularExpression::NormalMatch;
+    const QRegularExpression::MatchOption mo =  QRegularExpression::AnchoredMatchOption;
     p2_TOKEN_e tok = t_unknown;
-    QStringRef ref(&line, pos, len);
+    int pos = ref.position();
+    int len = ref.length();
 
     while (len > 0) {
 
-        tok = m_string_token.value(ref.toString().toUpper());
-        if (t_none != tok && t_unknown != tok) {
-            len = m_token_string.value(tok).length();
-            break;
-        }
+        QRegularExpressionMatch match = m_rx.match(ref.toString().toUpper(), 0, mt, mo);
+        const int mlen = match.capturedLength();
+        if (match.hasMatch() && mlen > 0) {
+            const QString* line = ref.string();
+            QString str = line->mid(pos, mlen);
+            ref = QStringRef(line, pos, mlen);
+            const QChar ch0 = mlen > 0 ? ref.at(0) : QChar::Null;
 
-        if (pos == rx_comment_eol.indexIn(line, pos, QRegExp::CaretAtOffset)) {
-            len = rx_comment_eol.matchedLength();
-            tok = t_comment_eol;
-            break;
-        }
+            if (ch0.isSpace()) {
+                len = 0;
+                for (int i = 0; i < mlen && ref.at(i).isSpace(); i++)
+                    len++;
+                tok = t_none;
+                break;
+            }
 
-        if (pos == rx_comment_curly.indexIn(line, pos, QRegExp::CaretAtOffset)) {
-            len = rx_comment_curly.matchedLength();
-            tok = t_comment;
-            break;
-        }
+            if (0 == m_rx_comment_curly.indexIn(str)) {
+                len = mlen;
+                tok = t_comment_curly;
+                break;
+            }
 
-        if (pos == rx_symbol.indexIn(line, pos, QRegExp::CaretAtOffset)) {
-            len = rx_symbol.matchedLength();
+            if (0 == m_rx_comment_eol.indexIn(str)) {
+                len = mlen;
+                tok = t_comment_eol;
+                break;
+            }
+
+            if (0 == m_rx_bin_const.indexIn(str)) {
+                len = mlen;
+                tok = t_bin_const;
+                break;
+            }
+
+            if (0 == m_rx_byt_const.indexIn(str)) {
+                len = mlen;
+                tok = t_byt_const;
+                break;
+            }
+
+            if (0 == m_rx_hex_const.indexIn(str)) {
+                len = mlen;
+                tok = t_hex_const;
+                break;
+            }
+
+            if (0 == m_rx_real_const.indexIn(str)) {
+                len = mlen;
+                tok = t_real_const;
+                break;
+            }
+
+            if (0 == m_rx_dec_const.indexIn(str)) {
+                len = mlen;
+                tok = t_dec_const;
+                break;
+            }
+
+            if (0 == m_rx_str_const.indexIn(str)) {
+                len = mlen;
+                tok = t_str_const;
+                break;
+            }
+
+            if (0 == m_rx_locsym.indexIn(str)) {
+                len = mlen;
+                tok = t_locsym;
+                break;
+            }
+
+            tok = m_string_token.value(match.captured());
+            if (t_none != tok && t_unknown != tok) {
+                len = mlen;
+                break;
+            }
+
             tok = t_symbol;
             break;
+
+        } else {
+            const QString* line = ref.string();
+            QString str = line->mid(pos, len);
+            tok = m_string_token.value(str);
+            if (t_none != tok && t_unknown != tok)
+                break;
         }
 
-        if (pos == rx_locsym.indexIn(line, pos, QRegExp::CaretAtOffset)) {
-            len = rx_locsym.matchedLength();
-            tok = t_locsym;
+        if (--len == 0)
             break;
-        }
-
-        if (pos == rx_bin_const.indexIn(line, pos, QRegExp::CaretAtOffset)) {
-            len = rx_bin_const.matchedLength();
-            tok = t_bin_const;
-            break;
-        }
-
-        if (pos == rx_byt_const.indexIn(line, pos, QRegExp::CaretAtOffset)) {
-            len = rx_byt_const.matchedLength();
-            tok = t_byt_const;
-            break;
-        }
-
-        if (pos == rx_hex_const.indexIn(line, pos, QRegExp::CaretAtOffset)) {
-            len = rx_hex_const.matchedLength();
-            tok = t_hex_const;
-            break;
-        }
-
-        if (pos == rx_real_const.indexIn(line, pos, QRegExp::CaretAtOffset)) {
-            len = rx_real_const.matchedLength();
-            tok = t_real_const;
-            break;
-        }
-
-        if (pos == rx_dec_const.indexIn(line, pos, QRegExp::CaretAtOffset)) {
-            len = rx_dec_const.matchedLength();
-            tok = t_dec_const;
-            break;
-        }
-
-        if (pos == rx_str_const.indexIn(line, pos, QRegExp::CaretAtOffset)) {
-            len = rx_str_const.matchedLength();
-            tok = t_str_const;
-            break;
-        }
-
-        if (!chop)
-            break;
-
-        // chop off one character
-        len--;
         ref.chop(1);
     }
 
+    const QString* line = ref.string();
+    ref = QStringRef(line, pos, len);
+    DEBUG_TOKEN(" tok=%s \tlen = %d \tcap(1)=\"%s\"",
+           qPrintable(m_token_enum_name.value(tok)), len, qPrintable(ref.toString()));
     return tok;
 }
 
@@ -1384,9 +1215,9 @@ p2_TOKEN_e P2Token::token(const QString& line, int pos, int& len, bool chop) con
  * @param typemask token type bit mask
  * @return true if token type is set, or false otherwise
  */
-bool P2Token::is_type(p2_TOKEN_e tok, p2_TOKENMASK_t typemask) const
+bool P2Token::is_type(p2_TOKEN_e tok, p2_TOKMASK_t typemask) const
 {
-    const p2_TOKENMASK_t bits = m_token_type.value(tok, 0);
+    const p2_TOKMASK_t bits = m_token_type.value(tok, 0);
     return (bits & typemask) ? true : false;
 }
 
@@ -1396,10 +1227,10 @@ bool P2Token::is_type(p2_TOKEN_e tok, p2_TOKENMASK_t typemask) const
  * @param type token type
  * @return true if token type is set, or false otherwise
  */
-bool P2Token::is_type(p2_TOKEN_e tok, p2_TOKENTYPE_e type) const
+bool P2Token::is_type(p2_TOKEN_e tok, p2_TOKTYPE_e type) const
 {
-    const p2_TOKENMASK_t bits = m_token_type.value(tok, 0);
-    const p2_TOKENMASK_t mask = TTMASK(type);
+    const p2_TOKMASK_t bits = m_token_type.value(tok, 0);
+    const p2_TOKMASK_t mask = TTMASK(type);
     return (bits & mask) ? true : false;
 }
 
@@ -1409,7 +1240,7 @@ bool P2Token::is_type(p2_TOKEN_e tok, p2_TOKENTYPE_e type) const
  * @param type token type
  * @return true if token type is set, or false otherwise
  */
-bool P2Token::is_type(const QString& str, p2_TOKENTYPE_e type) const
+bool P2Token::is_type(const QString& str, p2_TOKTYPE_e type) const
 {
     const p2_TOKEN_e tok = m_string_token.value(str);
     return is_type(tok, type);
@@ -1421,14 +1252,14 @@ bool P2Token::is_type(const QString& str, p2_TOKENTYPE_e type) const
  * @param typemask bit mask of token types
  * @return QStringList with the type names
  */
-QStringList P2Token::type_names(p2_TOKENMASK_t typemask) const
+QStringList P2Token::type_names(p2_TOKMASK_t typemask) const
 {
     QStringList list;
     for (int i = 0; i <= 64 && typemask != 0; i++, typemask >>= 1)
         if (typemask & 1)
-                list += m_t_type_name.value(static_cast<p2_TOKENTYPE_e>(i));
+                list += m_t_type_name.value(static_cast<p2_TOKTYPE_e>(i));
     if (list.isEmpty())
-        list += m_t_type_name.value(static_cast<p2_TOKENTYPE_e>(tt_none));
+        list += m_t_type_name.value(static_cast<p2_TOKTYPE_e>(tt_none));
     return list;
 }
 
@@ -1439,7 +1270,7 @@ QStringList P2Token::type_names(p2_TOKENMASK_t typemask) const
  */
 QStringList P2Token::type_names(p2_TOKEN_e tok) const
 {
-    const p2_TOKENMASK_t typemask = m_token_type.value(tok, 0);
+    const p2_TOKMASK_t typemask = m_token_type.value(tok, 0);
     return type_names(typemask);
 }
 
@@ -1456,12 +1287,12 @@ QStringList P2Token::type_names(p2_TOKEN_e tok) const
  */
 p2_TOKEN_e P2Token::at_token(int& pos, const QString& str, QList<p2_TOKEN_e> tokens, p2_TOKEN_e dflt) const
 {
-    int len = str.length() - pos;
-    p2_TOKEN_e tok = token(str.mid(pos), true, pos, len);
+    QStringRef ref(&str, pos, str.length() - pos);
+    p2_TOKEN_e tok = token(ref);
     if (t_unknown == tok)
         return dflt;
     if (tokens.contains(tok)) {
-        pos += len;
+        pos += ref.length();
     }
     return tok;
 }
@@ -1487,7 +1318,7 @@ p2_TOKEN_e P2Token::at_token(const QString& str, QList<p2_TOKEN_e> tokens, p2_TO
 bool P2Token::is_operation(p2_TOKEN_e tok) const
 {
     // Bit mask for operations
-    const p2_TOKENMASK_t mask = m_token_type.value(tok, 0);
+    const p2_TOKMASK_t mask = m_token_type.value(tok, 0);
     return (mask & tm_operations) ? true : false;
 }
 
@@ -1522,16 +1353,16 @@ bool P2Token::is_modcz_param(p2_TOKEN_e tok) const
  * @param dflt default token value to return if not found
  * @return token value if found, or dflt otherwise
  */
-p2_TOKEN_e P2Token::at_type(int& pos, const QString& str, p2_TOKENMASK_t typemask, p2_TOKEN_e dflt) const
+p2_TOKEN_e P2Token::at_type(int& pos, const QString& str, p2_TOKMASK_t typemask, p2_TOKEN_e dflt) const
 {
-    int len = str.length() - pos;
-    p2_TOKEN_e tok = token(str, true, pos, len);
+    QStringRef ref(&str, pos, str.length() - pos);
+    p2_TOKEN_e tok = token(ref);
 
     if (t_unknown == tok)
         return dflt;
 
     if (tt_chk(tok, typemask)) {
-        pos += len;
+        pos += ref.length();
     } else {
         tok = dflt;
     }
@@ -1550,16 +1381,16 @@ p2_TOKEN_e P2Token::at_type(int& pos, const QString& str, p2_TOKENMASK_t typemas
  * @param dflt default token value to return if not found
  * @return token value if found, or dflt otherwise
  */
-p2_TOKEN_e P2Token::at_type(int& pos, const QString& str, p2_TOKENTYPE_e type, p2_TOKEN_e dflt) const
+p2_TOKEN_e P2Token::at_type(int& pos, const QString& str, p2_TOKTYPE_e type, p2_TOKEN_e dflt) const
 {
-    int len = str.length() - pos;
-    p2_TOKEN_e tok = token(str, true, pos, len);
+    QStringRef ref(&str, pos, str.length() - pos);
+    p2_TOKEN_e tok = token(ref);
 
     if (t_unknown == tok)
         return dflt;
 
     if (tt_chk(tok, type)) {
-        pos += len;
+        pos += ref.length();
     } else {
         tok = dflt;
     }
@@ -1575,7 +1406,7 @@ p2_TOKEN_e P2Token::at_type(int& pos, const QString& str, p2_TOKENTYPE_e type, p
  * @param dflt default token value to return if not found
  * @return token value if found, or dflt otherwise
  */
-p2_TOKEN_e P2Token::at_type(const QString& str, p2_TOKENTYPE_e type, p2_TOKEN_e dflt) const
+p2_TOKEN_e P2Token::at_type(const QString& str, p2_TOKTYPE_e type, p2_TOKEN_e dflt) const
 {
     int pos = 0;
     return at_type(pos, str, type, dflt);
@@ -1593,10 +1424,10 @@ p2_TOKEN_e P2Token::at_type(const QString& str, p2_TOKENTYPE_e type, p2_TOKEN_e 
  * @return token value if found, or dflt otherwise
  */
 
-p2_TOKEN_e P2Token::at_types(int& pos, const QString& str, p2_TOKENMASK_t typemask, p2_TOKEN_e dflt) const
+p2_TOKEN_e P2Token::at_types(int& pos, const QString& str, p2_TOKMASK_t typemask, p2_TOKEN_e dflt) const
 {
-    int len = str.length() - pos;
-    p2_TOKEN_e tok = token(str, true, pos, len);
+    QStringRef ref(&str, pos, str.length() - pos);
+    p2_TOKEN_e tok = token(ref);
 
     if (t_unknown == tok)
         return dflt;
@@ -1604,7 +1435,7 @@ p2_TOKEN_e P2Token::at_types(int& pos, const QString& str, p2_TOKENMASK_t typema
     // Build bit mask for types
 
     if (tt_chk(tok, typemask)) {
-        pos += len;
+        pos += ref.length();
     } else {
         tok = dflt;
     }
@@ -1623,11 +1454,11 @@ p2_TOKEN_e P2Token::at_types(int& pos, const QString& str, p2_TOKENMASK_t typema
  * @param dflt default token value to return if not found
  * @return token value if found, or dflt otherwise
  */
-p2_TOKEN_e P2Token::at_types(int& pos, const QString& str, const QList<p2_TOKENTYPE_e>& types, p2_TOKEN_e dflt) const
+p2_TOKEN_e P2Token::at_types(int& pos, const QString& str, const QList<p2_TOKTYPE_e>& types, p2_TOKEN_e dflt) const
 {
     // Build bit mask for types
-    p2_TOKENMASK_t typemask = tm_none;
-    foreach(const p2_TOKENTYPE_e type, types)
+    p2_TOKMASK_t typemask = tm_none;
+    foreach(const p2_TOKTYPE_e type, types)
         typemask |= TTMASK(type);
     return at_types(pos, str, typemask, dflt);
 }
@@ -1639,7 +1470,7 @@ p2_TOKEN_e P2Token::at_types(int& pos, const QString& str, const QList<p2_TOKENT
  * @param dflt default token value to return if not found
  * @return token value if found, or dflt otherwise
  */
-p2_TOKEN_e P2Token::at_types(const QString& str, const QList<p2_TOKENTYPE_e>& types, p2_TOKEN_e dflt) const
+p2_TOKEN_e P2Token::at_types(const QString& str, const QList<p2_TOKTYPE_e>& types, p2_TOKEN_e dflt) const
 {
     int pos = 0;
     return at_types(pos, str, types, dflt);
@@ -1753,9 +1584,9 @@ p2_Cond_e P2Token::modcz_param(const QString& str, p2_Cond_e dflt) const
  * @param tok token value
  * @param typemask bit mask with type(s) to set
  */
-void P2Token::tt_set(p2_TOKEN_e tok, p2_TOKENMASK_t typemask)
+void P2Token::tt_set(p2_TOKEN_e tok, p2_TOKMASK_t typemask)
 {
-    p2_TOKENMASK_t mask = m_token_type.value(tok, 0) | typemask;
+    p2_TOKMASK_t mask = m_token_type.value(tok, 0) | typemask;
     m_token_type.insert(tok, mask);
 }
 
@@ -1764,9 +1595,9 @@ void P2Token::tt_set(p2_TOKEN_e tok, p2_TOKENMASK_t typemask)
  * @param tok token value
  * @param typemask bit mask with type(s) to clear
  */
-void P2Token::tt_clr(p2_TOKEN_e tok, p2_TOKENMASK_t typemask)
+void P2Token::tt_clr(p2_TOKEN_e tok, p2_TOKMASK_t typemask)
 {
-    p2_TOKENMASK_t mask = m_token_type.value(tok, 0) & ~typemask;
+    p2_TOKMASK_t mask = m_token_type.value(tok, 0) & ~typemask;
     m_token_type.insert(tok, mask);
 }
 
@@ -1776,7 +1607,7 @@ void P2Token::tt_clr(p2_TOKEN_e tok, p2_TOKENMASK_t typemask)
  * @param typemask bit mask with type(s) to check for
  * @return true if any bit of typemask is set, or false otherwise
  */
-bool P2Token::tt_chk(p2_TOKEN_e tok, p2_TOKENMASK_t typemask) const
+bool P2Token::tt_chk(p2_TOKEN_e tok, p2_TOKMASK_t typemask) const
 {
     return m_token_type.value(tok, 0) & typemask ? true : false;
 }
@@ -1787,7 +1618,7 @@ bool P2Token::tt_chk(p2_TOKEN_e tok, p2_TOKENMASK_t typemask) const
  * @param typemask token type bitmask
  * @param str string
  */
-void P2Token::tn_ADD(p2_TOKEN_e tok, const QString& enum_name, p2_TOKENMASK_t typemask, const QString& string)
+void P2Token::tn_add(p2_TOKEN_e tok, const QString& enum_name, p2_TOKMASK_t typemask, const QString& string)
 {
     m_token_enum_name.insert(tok, enum_name);
     m_token_string.insert(tok, string);
