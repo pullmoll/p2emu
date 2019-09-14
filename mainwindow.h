@@ -66,16 +66,16 @@ public:
     ~MainWindow();
 
 private slots:
-    void saveSettings();
-    void restoreSettings();
+    void save_settings();
+    void restore_settings();
 
-    void saveSettingsPalette();
-    void saveSettingsAsm();
-    void saveSettingsDasm();
+    void save_settings_palette();
+    void save_settings_asm();
+    void save_settings_dasm();
 
     void restoreSettingsPalette();
-    void restoreSettingsAsm();
-    void restoreSettingsDasm();
+    void restore_settings_asm();
+    void restore_settings_dasm();
 
     void about();
     void aboutQt5();
@@ -87,30 +87,30 @@ private slots:
     void goto_rom();
     void goto_address();
 
-    void setAsmOpcodes(int mode);
-    void setAsmOpcodes();
-    void incAsmFontSize();
-    void decAsmFontSize();
-    void setAsmFontSize(int size);
+    void set_opcodes_asm(int mode);
+    void set_opcodes_asm();
+    void font_size_inc_asm();
+    void font_size_dec_asm();
+    void font_size_set_asm(int size);
 
-    void setDasmOpcodes(int mode);
-    void setDasmOpcodes();
-    void incDasmFontSize();
-    void decDasmFontSize();
-    void setDasmFontSize(int size);
+    void set_opcodes_dasm(int mode);
+    void set_opcodes_dasm();
+    void font_size_inc_dasm();
+    void font_size_dec_dasm();
+    void font_size_set_dasm(int size);
 
-    void setDasmLowercase(bool check);
-    void setAsmHeaderColums(const QPoint& pos);
-    void setDasmHeaderColums(const QPoint& pos);
-    void setSymbolsHeaderColums(const QPoint& pos);
+    void set_lowercase_dasm(bool check);
+    void header_colums_asm(const QPoint& pos);
+    void header_columns_dasm(const QPoint& pos);
+    void header_columns_symbols(const QPoint& pos);
 
-    void hubSingleStep();
-    void loadObject(const QString& filename = QString());
-    void loadObjectRandom();
+    void hub_single_step();
+    void load_object(const QString& filename = QString());
+    void load_object_random();
 
-    void openSource(const QString& filename = QString());
-    void loadSource(const QString& filename = QString());
-    void loadSourceRandom();
+    void open_source(const QString& filename = QString());
+    void load_source(const QString& filename = QString());
+    void load_source_random();
     void assemble();
 
     void palette_setup();
@@ -119,7 +119,7 @@ private slots:
     void goto_line(const QUrl& url);
     void goto_line_number();
     void goto_definition(const QModelIndex& index);
-    void resizeSourceSplitter();
+    void resize_splitter_source();
 private:
     Ui::MainWindow *ui;
     QVector<P2CogView*> m_vcog;
@@ -139,16 +139,17 @@ private:
     P2DasmModel* dasm_model();
     P2SymbolsModel* sym_model();
 
-    void setupAssembler();
-    void setupDisassembler();
-    void setupFonts();
-    void setupMenu();
-    void setupTabWidget();
-    void setupToolbars();
-    void setupStatusbar();
+    void setup_asm();
+    void setup_sym();
+    void setup_dasm();
+    void setup_fonts();
+    void setup_menu();
+    void setup_tabwidget();
+    void setup_toolbars();
+    void setup_statusbar();
 
-    void updateAsmColumnSizes();
-    void updateDasmColumnSizes();
-    void updateSymbolsColumnSizes();
-    void setupCogView();
+    void update_sizes_asm();
+    void update_sizes_dasm();
+    void update_sizes_symbols();
+    void setup_cog_views();
 };

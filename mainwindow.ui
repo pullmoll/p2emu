@@ -13,6 +13,11 @@
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normalon>:/icons/propeller2.png</normalon>
+   </iconset>
+  </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
@@ -36,7 +41,7 @@
        <attribute name="title">
         <string>Assembler</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_2">
+       <layout class="QVBoxLayout" name="layoutAsm">
         <item>
          <widget class="QToolBar" name="toolbarAsm"/>
         </item>
@@ -112,6 +117,9 @@
            </property>
           </widget>
          </widget>
+        </item>
+        <item>
+         <widget class="QWidget" name="dlgPaletteSetup" native="true"/>
         </item>
        </layout>
       </widget>
@@ -285,10 +293,11 @@
     <property name="title">
      <string>&amp;Help</string>
     </property>
-    <addaction name="action_P2_opcodes"/>
     <addaction name="separator"/>
     <addaction name="action_About"/>
     <addaction name="action_AboutQt5"/>
+    <addaction name="separator"/>
+    <addaction name="action_P2_opcodes"/>
    </widget>
    <widget class="QMenu" name="menu_Edit">
     <property name="title">
@@ -379,6 +388,11 @@
    </property>
   </action>
   <action name="action_About">
+   <property name="icon">
+    <iconset>
+     <normalon>:/icons/propeller2.png</normalon>
+    </iconset>
+   </property>
    <property name="text">
     <string>&amp;About …</string>
    </property>
@@ -658,6 +672,11 @@
    </property>
   </action>
   <action name="action_P2_opcodes">
+   <property name="icon">
+    <iconset>
+     <normalon>:/icons/p2opcodes.png</normalon>
+    </iconset>
+   </property>
    <property name="text">
     <string>&amp;Propeller2 opcodes</string>
    </property>

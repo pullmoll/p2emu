@@ -75,7 +75,7 @@ P2AsmModel::P2AsmModel(P2Asm* p2asm, QObject *parent)
     m_header.insert(c_Errors,           tr("Errors"));
     m_background.insert(c_Errors,       qRgb(0xff,0xff,0xff));
     m_head_alignment.insert(c_Errors,   Qt::AlignLeft | Qt::AlignVCenter);
-    m_text_alignment.insert(c_Errors,   Qt::AlignRight | Qt::AlignTop);
+    m_text_alignment.insert(c_Errors,   Qt::AlignLeft | Qt::AlignTop);
 
     m_header.insert(c_Tokens,           tr("Tokens"));
     m_background.insert(c_Tokens,       qRgb(0x10,0xfc,0xff));

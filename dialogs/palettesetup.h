@@ -37,6 +37,6 @@ private:
     void setup_buttons();
     void setup_combo_boxes();
     void reinit_combo_boxes();
-    QHash<P2Colors::p2_palette_e, QColor> m_original_palette;
-    QHash<P2Colors::p2_palette_e, QColor> m_modified_palette;
+    QHash<P2Colors::p2_palette_e, QRgb> m_original_palette;
+    QHash<P2Colors::p2_palette_e, QRgb> m_modified_palette;
 };

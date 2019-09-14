@@ -654,8 +654,6 @@ p2_words_hash_t p2flex_source(QVector<const QString*> source)
         QStringRef ref(line, pos, len);
 
         if (nullptr == line) {
-            qDebug("%s: lineno=%d beyond p_lines=%d",
-               __func__, lineno, source.count());
             res = yylex();
             continue;
         }

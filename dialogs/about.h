@@ -15,8 +15,7 @@ public:
     explicit About(QWidget *parent = nullptr);
     ~About();
 
-    void setApplicationName(const QString& name);
-    void setApplicationVersion(const QString& version);
+    void setApplicationNameVersion(const QString& name, const QString& version);
 
 private:
     Ui::About *ui;

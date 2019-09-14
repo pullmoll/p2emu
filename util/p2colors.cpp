@@ -59,173 +59,155 @@ P2Colors::P2Colors()
     , m_palette_names()
 {
     m_name_color = {
-        {QStringLiteral("Alice Blue"),          QColor(0xF0,0xF8,0xFF,0xFF)},
-        {QStringLiteral("Antique White"),       QColor(0xFA,0xEB,0xD7,0xFF)},
-        {QStringLiteral("Aqua"),                QColor(0x00,0xFF,0xFF,0xFF)},
-        {QStringLiteral("Aquamarine"),          QColor(0x7F,0xFF,0xD4,0xFF)},
-        {QStringLiteral("Azure"),               QColor(0xF0,0xFF,0xFF,0xFF)},
-        {QStringLiteral("Beige"),               QColor(0xF5,0xF5,0xDC,0xFF)},
-        {QStringLiteral("Bisque"),              QColor(0xFF,0xE4,0xC4,0xFF)},
-        {QStringLiteral("Black"),               QColor(0x00,0x00,0x00,0xFF)},
-        {QStringLiteral("Blanched Almond"),     QColor(0xFF,0xEB,0xCD,0xFF)},
-        {QStringLiteral("Blue"),                QColor(0x00,0x00,0xFF,0xFF)},
-        {QStringLiteral("Blue Violet"),         QColor(0x8A,0x2B,0xE2,0xFF)},
-        {QStringLiteral("Brown"),               QColor(0xA5,0x2A,0x2A,0xFF)},
-        {QStringLiteral("Burlywood"),           QColor(0xDE,0xB8,0x87,0xFF)},
-        {QStringLiteral("Cadet Blue"),          QColor(0x5F,0x9E,0xA0,0xFF)},
-        {QStringLiteral("Chartreuse"),          QColor(0x7F,0xFF,0x00,0xFF)},
-        {QStringLiteral("Chocolate"),           QColor(0xD2,0x69,0x1E,0xFF)},
-        {QStringLiteral("Coral"),               QColor(0xFF,0x7F,0x50,0xFF)},
-        {QStringLiteral("Cornflower Blue"),     QColor(0x64,0x95,0xED,0xFF)},
-        {QStringLiteral("Cornsilk"),            QColor(0xFF,0xF8,0xDC,0xFF)},
-        {QStringLiteral("Crimson"),             QColor(0xDC,0x14,0x3C,0xFF)},
-        {QStringLiteral("Cyan"),                QColor(0x00,0xFF,0xFF,0xFF)},
-        {QStringLiteral("Dark Blue"),           QColor(0x00,0x00,0x8B,0xFF)},
-        {QStringLiteral("Dark Cyan"),           QColor(0x00,0x8B,0x8B,0xFF)},
-        {QStringLiteral("Dark Goldenrod"),      QColor(0xB8,0x86,0x0B,0xFF)},
-        {QStringLiteral("Dark Gray"),           QColor(0xA9,0xA9,0xA9,0xFF)},
-        {QStringLiteral("Dark Green"),          QColor(0x00,0x64,0x00,0xFF)},
-        {QStringLiteral("Dark Khaki"),          QColor(0xBD,0xB7,0x6B,0xFF)},
-        {QStringLiteral("Dark Magenta"),        QColor(0x8B,0x00,0x8B,0xFF)},
-        {QStringLiteral("Dark Olive Green"),    QColor(0x55,0x6B,0x2F,0xFF)},
-        {QStringLiteral("Dark Orange"),         QColor(0xFF,0x8C,0x00,0xFF)},
-        {QStringLiteral("Dark Orchid"),         QColor(0x99,0x32,0xCC,0xFF)},
-        {QStringLiteral("Dark Red"),            QColor(0x8B,0x00,0x00,0xFF)},
-        {QStringLiteral("Dark Salmon"),         QColor(0xE9,0x96,0x7A,0xFF)},
-        {QStringLiteral("Dark Sea Green"),      QColor(0x8F,0xBC,0x8F,0xFF)},
-        {QStringLiteral("Dark Slate Blue"),     QColor(0x48,0x3D,0x8B,0xFF)},
-        {QStringLiteral("Dark Slate Gray"),     QColor(0x2F,0x4F,0x4F,0xFF)},
-        {QStringLiteral("Dark Turquoise"),      QColor(0x00,0xCE,0xD1,0xFF)},
-        {QStringLiteral("Dark Violet"),         QColor(0x94,0x00,0xD3,0xFF)},
-        {QStringLiteral("Deep Pink"),           QColor(0xFF,0x14,0x93,0xFF)},
-        {QStringLiteral("Deep Sky Blue"),       QColor(0x00,0xBF,0xFF,0xFF)},
-        {QStringLiteral("Dim Gray"),            QColor(0x69,0x69,0x69,0xFF)},
-        {QStringLiteral("Dodger Blue"),         QColor(0x1E,0x90,0xFF,0xFF)},
-        {QStringLiteral("Firebrick"),           QColor(0xB2,0x22,0x22,0xFF)},
-        {QStringLiteral("Floral White"),        QColor(0xFF,0xFA,0xF0,0xFF)},
-        {QStringLiteral("Forest Green"),        QColor(0x22,0x8B,0x22,0xFF)},
-        {QStringLiteral("Fuchsia"),             QColor(0xFF,0x01,0xFF,0xFF)},
-        {QStringLiteral("Gainsboro"),           QColor(0xDC,0xDC,0xDC,0xFF)},
-        {QStringLiteral("Ghost White"),         QColor(0xF8,0xF8,0xFF,0xFF)},
-        {QStringLiteral("Gold"),                QColor(0xFF,0xD7,0x00,0xFF)},
-        {QStringLiteral("Goldenrod"),           QColor(0xDA,0xA5,0x20,0xFF)},
-        {QStringLiteral("Gray"),                QColor(0xBE,0xBE,0xBE,0xFF)},
-        {QStringLiteral("Web Gray"),            QColor(0x80,0x80,0x80,0xFF)},
-        {QStringLiteral("Green"),               QColor(0x00,0xFF,0x00,0xFF)},
-        {QStringLiteral("Web Green"),           QColor(0x00,0x80,0x00,0xFF)},
-        {QStringLiteral("Green Yellow"),        QColor(0xAD,0xFF,0x2F,0xFF)},
-        {QStringLiteral("Honeydew"),            QColor(0xF0,0xFF,0xF0,0xFF)},
-        {QStringLiteral("Hot Pink"),            QColor(0xFF,0x69,0xB4,0xFF)},
-        {QStringLiteral("Indian Red"),          QColor(0xCD,0x5C,0x5C,0xFF)},
-        {QStringLiteral("Indigo"),              QColor(0x4B,0x00,0x82,0xFF)},
-        {QStringLiteral("Ivory"),               QColor(0xFF,0xFF,0xF0,0xFF)},
-        {QStringLiteral("Khaki"),               QColor(0xF0,0xE6,0x8C,0xFF)},
-        {QStringLiteral("Lavender"),            QColor(0xE6,0xE6,0xFA,0xFF)},
-        {QStringLiteral("Lavender Blush"),      QColor(0xFF,0xF0,0xF5,0xFF)},
-        {QStringLiteral("Lawn Green"),          QColor(0x7C,0xFC,0x00,0xFF)},
-        {QStringLiteral("Lemon Chiffon"),       QColor(0xFF,0xFA,0xCD,0xFF)},
-        {QStringLiteral("Light Blue"),          QColor(0xAD,0xD8,0xE6,0xFF)},
-        {QStringLiteral("Light Coral"),         QColor(0xF0,0x80,0x80,0xFF)},
-        {QStringLiteral("Light Cyan"),          QColor(0xE0,0xFF,0xFF,0xFF)},
-        {QStringLiteral("Light Goldenrod"),     QColor(0xFA,0xFA,0xD2,0xFF)},
-        {QStringLiteral("Light Gray"),          QColor(0xD3,0xD3,0xD3,0xFF)},
-        {QStringLiteral("Light Green"),         QColor(0x90,0xEE,0x90,0xFF)},
-        {QStringLiteral("Light Pink"),          QColor(0xFF,0xB6,0xC1,0xFF)},
-        {QStringLiteral("Light Salmon"),        QColor(0xFF,0xA0,0x7A,0xFF)},
-        {QStringLiteral("Light Sea Green"),     QColor(0x20,0xB2,0xAA,0xFF)},
-        {QStringLiteral("Light Sky Blue"),      QColor(0x87,0xCE,0xFA,0xFF)},
-        {QStringLiteral("Light Slate Gray"),    QColor(0x77,0x88,0x99,0xFF)},
-        {QStringLiteral("Light Steel Blue"),    QColor(0xB0,0xC4,0xDE,0xFF)},
-        {QStringLiteral("Light Yellow"),        QColor(0xFF,0xFF,0xE0,0xFF)},
-        {QStringLiteral("Lime"),                QColor(0x00,0xFF,0x01,0xFF)},
-        {QStringLiteral("Lime Green"),          QColor(0x32,0xCD,0x32,0xFF)},
-        {QStringLiteral("Linen"),               QColor(0xFA,0xF0,0xE6,0xFF)},
-        {QStringLiteral("Magenta"),             QColor(0xFF,0x00,0xFF,0xFF)},
-        {QStringLiteral("Maroon"),              QColor(0xB0,0x30,0x60,0xFF)},
-        {QStringLiteral("Web Maroon"),          QColor(0x80,0x00,0x00,0xFF)},
-        {QStringLiteral("Medium Aquamarine"),   QColor(0x66,0xCD,0xAA,0xFF)},
-        {QStringLiteral("Medium Blue"),         QColor(0x00,0x00,0xCD,0xFF)},
-        {QStringLiteral("Medium Orchid"),       QColor(0xBA,0x55,0xD3,0xFF)},
-        {QStringLiteral("Medium Purple"),       QColor(0x93,0x70,0xDB,0xFF)},
-        {QStringLiteral("Medium Sea Green"),    QColor(0x3C,0xB3,0x71,0xFF)},
-        {QStringLiteral("Medium Slate Blue"),   QColor(0x7B,0x68,0xEE,0xFF)},
-        {QStringLiteral("Medium Spring Green"), QColor(0x00,0xFA,0x9A,0xFF)},
-        {QStringLiteral("Medium Turquoise"),    QColor(0x48,0xD1,0xCC,0xFF)},
-        {QStringLiteral("Medium Violet Red"),   QColor(0xC7,0x15,0x85,0xFF)},
-        {QStringLiteral("Midnight Blue"),       QColor(0x19,0x19,0x70,0xFF)},
-        {QStringLiteral("Mint Cream"),          QColor(0xF5,0xFF,0xFA,0xFF)},
-        {QStringLiteral("Misty Rose"),          QColor(0xFF,0xE4,0xE1,0xFF)},
-        {QStringLiteral("Moccasin"),            QColor(0xFF,0xE4,0xB5,0xFF)},
-        {QStringLiteral("Navajo White"),        QColor(0xFF,0xDE,0xAD,0xFF)},
-        {QStringLiteral("Navy Blue"),           QColor(0x00,0x00,0x80,0xFF)},
-        {QStringLiteral("Old Lace"),            QColor(0xFD,0xF5,0xE6,0xFF)},
-        {QStringLiteral("Olive"),               QColor(0x80,0x80,0x00,0xFF)},
-        {QStringLiteral("Olive Drab"),          QColor(0x6B,0x8E,0x23,0xFF)},
-        {QStringLiteral("Orange"),              QColor(0xFF,0xA5,0x00,0xFF)},
-        {QStringLiteral("Orange Red"),          QColor(0xFF,0x45,0x00,0xFF)},
-        {QStringLiteral("Orchid"),              QColor(0xDA,0x70,0xD6,0xFF)},
-        {QStringLiteral("Pale Goldenrod"),      QColor(0xEE,0xE8,0xAA,0xFF)},
-        {QStringLiteral("Pale Green"),          QColor(0x98,0xFB,0x98,0xFF)},
-        {QStringLiteral("Pale Turquoise"),      QColor(0xAF,0xEE,0xEE,0xFF)},
-        {QStringLiteral("Pale Violet Red"),     QColor(0xDB,0x70,0x93,0xFF)},
-        {QStringLiteral("Papaya Whip"),         QColor(0xFF,0xEF,0xD5,0xFF)},
-        {QStringLiteral("Peach Puff"),          QColor(0xFF,0xDA,0xB9,0xFF)},
-        {QStringLiteral("Peru"),                QColor(0xCD,0x85,0x3F,0xFF)},
-        {QStringLiteral("Pink"),                QColor(0xFF,0xC0,0xCB,0xFF)},
-        {QStringLiteral("Plum"),                QColor(0xDD,0xA0,0xDD,0xFF)},
-        {QStringLiteral("Powder Blue"),         QColor(0xB0,0xE0,0xE6,0xFF)},
-        {QStringLiteral("Purple"),              QColor(0xA0,0x20,0xF0,0xFF)},
-        {QStringLiteral("Web Purple"),          QColor(0x80,0x00,0x80,0xFF)},
-        {QStringLiteral("Rebecca Purple"),      QColor(0x66,0x33,0x99,0xFF)},
-        {QStringLiteral("Red"),                 QColor(0xFF,0x00,0x00,0xFF)},
-        {QStringLiteral("Rosy Brown"),          QColor(0xBC,0x8F,0x8F,0xFF)},
-        {QStringLiteral("Royal Blue"),          QColor(0x41,0x69,0xE1,0xFF)},
-        {QStringLiteral("Saddle Brown"),        QColor(0x8B,0x45,0x13,0xFF)},
-        {QStringLiteral("Salmon"),              QColor(0xFA,0x80,0x72,0xFF)},
-        {QStringLiteral("Sandy Brown"),         QColor(0xF4,0xA4,0x60,0xFF)},
-        {QStringLiteral("Sea Green"),           QColor(0x2E,0x8B,0x57,0xFF)},
-        {QStringLiteral("Seashell"),            QColor(0xFF,0xF5,0xEE,0xFF)},
-        {QStringLiteral("Sienna"),              QColor(0xA0,0x52,0x2D,0xFF)},
-        {QStringLiteral("Silver"),              QColor(0xC0,0xC0,0xC0,0xFF)},
-        {QStringLiteral("Sky Blue"),            QColor(0x87,0xCE,0xEB,0xFF)},
-        {QStringLiteral("Slate Blue"),          QColor(0x6A,0x5A,0xCD,0xFF)},
-        {QStringLiteral("Slate Gray"),          QColor(0x70,0x80,0x90,0xFF)},
-        {QStringLiteral("Snow"),                QColor(0xFF,0xFA,0xFA,0xFF)},
-        {QStringLiteral("Spring Green"),        QColor(0x00,0xFF,0x7F,0xFF)},
-        {QStringLiteral("Steel Blue"),          QColor(0x46,0x82,0xB4,0xFF)},
-        {QStringLiteral("Tan"),                 QColor(0xD2,0xB4,0x8C,0xFF)},
-        {QStringLiteral("Teal"),                QColor(0x00,0x80,0x80,0xFF)},
-        {QStringLiteral("Thistle"),             QColor(0xD8,0xBF,0xD8,0xFF)},
-        {QStringLiteral("Tomato"),              QColor(0xFF,0x63,0x47,0xFF)},
-        {QStringLiteral("Turquoise"),           QColor(0x40,0xE0,0xD0,0xFF)},
-        {QStringLiteral("Violet"),              QColor(0xEE,0x82,0xEE,0xFF)},
-        {QStringLiteral("Wheat"),               QColor(0xF5,0xDE,0xB3,0xFF)},
-        {QStringLiteral("White"),               QColor(0xFF,0xFF,0xFF,0xFF)},
-        {QStringLiteral("White Smoke"),         QColor(0xF5,0xF5,0xF5,0xFF)},
-        {QStringLiteral("Yellow"),              QColor(0xFF,0xFF,0x00,0xFF)},
-        {QStringLiteral("Yellow Green"),        QColor(0x9A,0xCD,0x32,0xFF)},
-        {QStringLiteral("Transparent"),         QColor(0x00,0x00,0x00,0x00)}
+        {QStringLiteral("Alice Blue"),          qRgba(0xF0,0xF8,0xFF,0xFF)},
+        {QStringLiteral("Antique White"),       qRgba(0xFA,0xEB,0xD7,0xFF)},
+        {QStringLiteral("Aqua"),                qRgba(0x00,0xFF,0xFF,0xFF)},
+        {QStringLiteral("Aquamarine"),          qRgba(0x7F,0xFF,0xD4,0xFF)},
+        {QStringLiteral("Azure"),               qRgba(0xF0,0xFF,0xFF,0xFF)},
+        {QStringLiteral("Beige"),               qRgba(0xF5,0xF5,0xDC,0xFF)},
+        {QStringLiteral("Bisque"),              qRgba(0xFF,0xE4,0xC4,0xFF)},
+        {QStringLiteral("Black"),               qRgba(0x00,0x00,0x00,0xFF)},
+        {QStringLiteral("Blanched Almond"),     qRgba(0xFF,0xEB,0xCD,0xFF)},
+        {QStringLiteral("Blue"),                qRgba(0x00,0x00,0xFF,0xFF)},
+        {QStringLiteral("Blue Violet"),         qRgba(0x8A,0x2B,0xE2,0xFF)},
+        {QStringLiteral("Brown"),               qRgba(0xA5,0x2A,0x2A,0xFF)},
+        {QStringLiteral("Burlywood"),           qRgba(0xDE,0xB8,0x87,0xFF)},
+        {QStringLiteral("Cadet Blue"),          qRgba(0x5F,0x9E,0xA0,0xFF)},
+        {QStringLiteral("Chartreuse"),          qRgba(0x7F,0xFF,0x00,0xFF)},
+        {QStringLiteral("Chocolate"),           qRgba(0xD2,0x69,0x1E,0xFF)},
+        {QStringLiteral("Coral"),               qRgba(0xFF,0x7F,0x50,0xFF)},
+        {QStringLiteral("Cornflower Blue"),     qRgba(0x64,0x95,0xED,0xFF)},
+        {QStringLiteral("Cornsilk"),            qRgba(0xFF,0xF8,0xDC,0xFF)},
+        {QStringLiteral("Crimson"),             qRgba(0xDC,0x14,0x3C,0xFF)},
+        {QStringLiteral("Cyan"),                qRgba(0x00,0xFF,0xFF,0xFF)},
+        {QStringLiteral("Dark Blue"),           qRgba(0x00,0x00,0x8B,0xFF)},
+        {QStringLiteral("Dark Cyan"),           qRgba(0x00,0x8B,0x8B,0xFF)},
+        {QStringLiteral("Dark Goldenrod"),      qRgba(0xB8,0x86,0x0B,0xFF)},
+        {QStringLiteral("Dark Gray"),           qRgba(0xA9,0xA9,0xA9,0xFF)},
+        {QStringLiteral("Dark Green"),          qRgba(0x00,0x64,0x00,0xFF)},
+        {QStringLiteral("Dark Khaki"),          qRgba(0xBD,0xB7,0x6B,0xFF)},
+        {QStringLiteral("Dark Magenta"),        qRgba(0x8B,0x00,0x8B,0xFF)},
+        {QStringLiteral("Dark Olive Green"),    qRgba(0x55,0x6B,0x2F,0xFF)},
+        {QStringLiteral("Dark Orange"),         qRgba(0xFF,0x8C,0x00,0xFF)},
+        {QStringLiteral("Dark Orchid"),         qRgba(0x99,0x32,0xCC,0xFF)},
+        {QStringLiteral("Dark Red"),            qRgba(0x8B,0x00,0x00,0xFF)},
+        {QStringLiteral("Dark Salmon"),         qRgba(0xE9,0x96,0x7A,0xFF)},
+        {QStringLiteral("Dark Sea Green"),      qRgba(0x8F,0xBC,0x8F,0xFF)},
+        {QStringLiteral("Dark Slate Blue"),     qRgba(0x48,0x3D,0x8B,0xFF)},
+        {QStringLiteral("Dark Slate Gray"),     qRgba(0x2F,0x4F,0x4F,0xFF)},
+        {QStringLiteral("Dark Turquoise"),      qRgba(0x00,0xCE,0xD1,0xFF)},
+        {QStringLiteral("Dark Violet"),         qRgba(0x94,0x00,0xD3,0xFF)},
+        {QStringLiteral("Deep Pink"),           qRgba(0xFF,0x14,0x93,0xFF)},
+        {QStringLiteral("Deep Sky Blue"),       qRgba(0x00,0xBF,0xFF,0xFF)},
+        {QStringLiteral("Dim Gray"),            qRgba(0x69,0x69,0x69,0xFF)},
+        {QStringLiteral("Dodger Blue"),         qRgba(0x1E,0x90,0xFF,0xFF)},
+        {QStringLiteral("Firebrick"),           qRgba(0xB2,0x22,0x22,0xFF)},
+        {QStringLiteral("Floral White"),        qRgba(0xFF,0xFA,0xF0,0xFF)},
+        {QStringLiteral("Forest Green"),        qRgba(0x22,0x8B,0x22,0xFF)},
+        {QStringLiteral("Fuchsia"),             qRgba(0xFF,0x01,0xFF,0xFF)},
+        {QStringLiteral("Gainsboro"),           qRgba(0xDC,0xDC,0xDC,0xFF)},
+        {QStringLiteral("Ghost White"),         qRgba(0xF8,0xF8,0xFF,0xFF)},
+        {QStringLiteral("Gold"),                qRgba(0xFF,0xD7,0x00,0xFF)},
+        {QStringLiteral("Goldenrod"),           qRgba(0xDA,0xA5,0x20,0xFF)},
+        {QStringLiteral("Gray"),                qRgba(0xBE,0xBE,0xBE,0xFF)},
+        {QStringLiteral("Web Gray"),            qRgba(0x80,0x80,0x80,0xFF)},
+        {QStringLiteral("Green"),               qRgba(0x00,0xFF,0x00,0xFF)},
+        {QStringLiteral("Web Green"),           qRgba(0x00,0x80,0x00,0xFF)},
+        {QStringLiteral("Green Yellow"),        qRgba(0xAD,0xFF,0x2F,0xFF)},
+        {QStringLiteral("Honeydew"),            qRgba(0xF0,0xFF,0xF0,0xFF)},
+        {QStringLiteral("Hot Pink"),            qRgba(0xFF,0x69,0xB4,0xFF)},
+        {QStringLiteral("Indian Red"),          qRgba(0xCD,0x5C,0x5C,0xFF)},
+        {QStringLiteral("Indigo"),              qRgba(0x4B,0x00,0x82,0xFF)},
+        {QStringLiteral("Ivory"),               qRgba(0xFF,0xFF,0xF0,0xFF)},
+        {QStringLiteral("Khaki"),               qRgba(0xF0,0xE6,0x8C,0xFF)},
+        {QStringLiteral("Lavender"),            qRgba(0xE6,0xE6,0xFA,0xFF)},
+        {QStringLiteral("Lavender Blush"),      qRgba(0xFF,0xF0,0xF5,0xFF)},
+        {QStringLiteral("Lawn Green"),          qRgba(0x7C,0xFC,0x00,0xFF)},
+        {QStringLiteral("Lemon Chiffon"),       qRgba(0xFF,0xFA,0xCD,0xFF)},
+        {QStringLiteral("Light Blue"),          qRgba(0xAD,0xD8,0xE6,0xFF)},
+        {QStringLiteral("Light Coral"),         qRgba(0xF0,0x80,0x80,0xFF)},
+        {QStringLiteral("Light Cyan"),          qRgba(0xE0,0xFF,0xFF,0xFF)},
+        {QStringLiteral("Light Goldenrod"),     qRgba(0xFA,0xFA,0xD2,0xFF)},
+        {QStringLiteral("Light Gray"),          qRgba(0xD3,0xD3,0xD3,0xFF)},
+        {QStringLiteral("Light Green"),         qRgba(0x90,0xEE,0x90,0xFF)},
+        {QStringLiteral("Light Pink"),          qRgba(0xFF,0xB6,0xC1,0xFF)},
+        {QStringLiteral("Light Salmon"),        qRgba(0xFF,0xA0,0x7A,0xFF)},
+        {QStringLiteral("Light Sea Green"),     qRgba(0x20,0xB2,0xAA,0xFF)},
+        {QStringLiteral("Light Sky Blue"),      qRgba(0x87,0xCE,0xFA,0xFF)},
+        {QStringLiteral("Light Slate Gray"),    qRgba(0x77,0x88,0x99,0xFF)},
+        {QStringLiteral("Light Steel Blue"),    qRgba(0xB0,0xC4,0xDE,0xFF)},
+        {QStringLiteral("Light Yellow"),        qRgba(0xFF,0xFF,0xE0,0xFF)},
+        {QStringLiteral("Lime"),                qRgba(0x00,0xFF,0x01,0xFF)},
+        {QStringLiteral("Lime Green"),          qRgba(0x32,0xCD,0x32,0xFF)},
+        {QStringLiteral("Linen"),               qRgba(0xFA,0xF0,0xE6,0xFF)},
+        {QStringLiteral("Magenta"),             qRgba(0xFF,0x00,0xFF,0xFF)},
+        {QStringLiteral("Maroon"),              qRgba(0xB0,0x30,0x60,0xFF)},
+        {QStringLiteral("Web Maroon"),          qRgba(0x80,0x00,0x00,0xFF)},
+        {QStringLiteral("Medium Aquamarine"),   qRgba(0x66,0xCD,0xAA,0xFF)},
+        {QStringLiteral("Medium Blue"),         qRgba(0x00,0x00,0xCD,0xFF)},
+        {QStringLiteral("Medium Orchid"),       qRgba(0xBA,0x55,0xD3,0xFF)},
+        {QStringLiteral("Medium Purple"),       qRgba(0x93,0x70,0xDB,0xFF)},
+        {QStringLiteral("Medium Sea Green"),    qRgba(0x3C,0xB3,0x71,0xFF)},
+        {QStringLiteral("Medium Slate Blue"),   qRgba(0x7B,0x68,0xEE,0xFF)},
+        {QStringLiteral("Medium Spring Green"), qRgba(0x00,0xFA,0x9A,0xFF)},
+        {QStringLiteral("Medium Turquoise"),    qRgba(0x48,0xD1,0xCC,0xFF)},
+        {QStringLiteral("Medium Violet Red"),   qRgba(0xC7,0x15,0x85,0xFF)},
+        {QStringLiteral("Midnight Blue"),       qRgba(0x19,0x19,0x70,0xFF)},
+        {QStringLiteral("Mint Cream"),          qRgba(0xF5,0xFF,0xFA,0xFF)},
+        {QStringLiteral("Misty Rose"),          qRgba(0xFF,0xE4,0xE1,0xFF)},
+        {QStringLiteral("Moccasin"),            qRgba(0xFF,0xE4,0xB5,0xFF)},
+        {QStringLiteral("Navajo White"),        qRgba(0xFF,0xDE,0xAD,0xFF)},
+        {QStringLiteral("Navy Blue"),           qRgba(0x00,0x00,0x80,0xFF)},
+        {QStringLiteral("Old Lace"),            qRgba(0xFD,0xF5,0xE6,0xFF)},
+        {QStringLiteral("Olive"),               qRgba(0x80,0x80,0x00,0xFF)},
+        {QStringLiteral("Olive Drab"),          qRgba(0x6B,0x8E,0x23,0xFF)},
+        {QStringLiteral("Orange"),              qRgba(0xFF,0xA5,0x00,0xFF)},
+        {QStringLiteral("Orange Red"),          qRgba(0xFF,0x45,0x00,0xFF)},
+        {QStringLiteral("Orchid"),              qRgba(0xDA,0x70,0xD6,0xFF)},
+        {QStringLiteral("Pale Goldenrod"),      qRgba(0xEE,0xE8,0xAA,0xFF)},
+        {QStringLiteral("Pale Green"),          qRgba(0x98,0xFB,0x98,0xFF)},
+        {QStringLiteral("Pale Turquoise"),      qRgba(0xAF,0xEE,0xEE,0xFF)},
+        {QStringLiteral("Pale Violet Red"),     qRgba(0xDB,0x70,0x93,0xFF)},
+        {QStringLiteral("Papaya Whip"),         qRgba(0xFF,0xEF,0xD5,0xFF)},
+        {QStringLiteral("Peach Puff"),          qRgba(0xFF,0xDA,0xB9,0xFF)},
+        {QStringLiteral("Peru"),                qRgba(0xCD,0x85,0x3F,0xFF)},
+        {QStringLiteral("Pink"),                qRgba(0xFF,0xC0,0xCB,0xFF)},
+        {QStringLiteral("Plum"),                qRgba(0xDD,0xA0,0xDD,0xFF)},
+        {QStringLiteral("Powder Blue"),         qRgba(0xB0,0xE0,0xE6,0xFF)},
+        {QStringLiteral("Purple"),              qRgba(0xA0,0x20,0xF0,0xFF)},
+        {QStringLiteral("Web Purple"),          qRgba(0x80,0x00,0x80,0xFF)},
+        {QStringLiteral("Rebecca Purple"),      qRgba(0x66,0x33,0x99,0xFF)},
+        {QStringLiteral("Red"),                 qRgba(0xFF,0x00,0x00,0xFF)},
+        {QStringLiteral("Rosy Brown"),          qRgba(0xBC,0x8F,0x8F,0xFF)},
+        {QStringLiteral("Royal Blue"),          qRgba(0x41,0x69,0xE1,0xFF)},
+        {QStringLiteral("Saddle Brown"),        qRgba(0x8B,0x45,0x13,0xFF)},
+        {QStringLiteral("Salmon"),              qRgba(0xFA,0x80,0x72,0xFF)},
+        {QStringLiteral("Sandy Brown"),         qRgba(0xF4,0xA4,0x60,0xFF)},
+        {QStringLiteral("Sea Green"),           qRgba(0x2E,0x8B,0x57,0xFF)},
+        {QStringLiteral("Seashell"),            qRgba(0xFF,0xF5,0xEE,0xFF)},
+        {QStringLiteral("Sienna"),              qRgba(0xA0,0x52,0x2D,0xFF)},
+        {QStringLiteral("Silver"),              qRgba(0xC0,0xC0,0xC0,0xFF)},
+        {QStringLiteral("Sky Blue"),            qRgba(0x87,0xCE,0xEB,0xFF)},
+        {QStringLiteral("Slate Blue"),          qRgba(0x6A,0x5A,0xCD,0xFF)},
+        {QStringLiteral("Slate Gray"),          qRgba(0x70,0x80,0x90,0xFF)},
+        {QStringLiteral("Snow"),                qRgba(0xFF,0xFA,0xFA,0xFF)},
+        {QStringLiteral("Spring Green"),        qRgba(0x00,0xFF,0x7F,0xFF)},
+        {QStringLiteral("Steel Blue"),          qRgba(0x46,0x82,0xB4,0xFF)},
+        {QStringLiteral("Tan"),                 qRgba(0xD2,0xB4,0x8C,0xFF)},
+        {QStringLiteral("Teal"),                qRgba(0x00,0x80,0x80,0xFF)},
+        {QStringLiteral("Thistle"),             qRgba(0xD8,0xBF,0xD8,0xFF)},
+        {QStringLiteral("Tomato"),              qRgba(0xFF,0x63,0x47,0xFF)},
+        {QStringLiteral("Turquoise"),           qRgba(0x40,0xE0,0xD0,0xFF)},
+        {QStringLiteral("Violet"),              qRgba(0xEE,0x82,0xEE,0xFF)},
+        {QStringLiteral("Wheat"),               qRgba(0xF5,0xDE,0xB3,0xFF)},
+        {QStringLiteral("White"),               qRgba(0xFF,0xFF,0xFF,0xFF)},
+        {QStringLiteral("White Smoke"),         qRgba(0xF5,0xF5,0xF5,0xFF)},
+        {QStringLiteral("Yellow"),              qRgba(0xFF,0xFF,0x00,0xFF)},
+        {QStringLiteral("Yellow Green"),        qRgba(0x9A,0xCD,0x32,0xFF)},
+        {QStringLiteral("Transparent"),         qRgba(0x00,0x00,0x00,0x00)}
     };
 
     setup_tables();
-
-    m_palette_names.insert(p2_pal_background,   QStringLiteral("Background"));
-    m_palette_names.insert(p2_pal_comment,      QStringLiteral("Comment"));
-    m_palette_names.insert(p2_pal_instruction,  QStringLiteral("Instruction"));
-    m_palette_names.insert(p2_pal_conditional,  QStringLiteral("Conditional"));
-    m_palette_names.insert(p2_pal_wcz_suffix,   QStringLiteral("WCZ_suffix"));
-    m_palette_names.insert(p2_pal_section,      QStringLiteral("Section"));
-    m_palette_names.insert(p2_pal_modcz_param,  QStringLiteral("MODCZ_parameter"));
-    m_palette_names.insert(p2_pal_symbol,       QStringLiteral("Symbol"));
-    m_palette_names.insert(p2_pal_locsym,       QStringLiteral("Local_symbol"));
-    m_palette_names.insert(p2_pal_expression,   QStringLiteral("Expression"));
-    m_palette_names.insert(p2_pal_str_const,    QStringLiteral("String_constant"));
-    m_palette_names.insert(p2_pal_bin_const,    QStringLiteral("Binary_constant"));
-    m_palette_names.insert(p2_pal_byt_const,    QStringLiteral("Byte_constant"));
-    m_palette_names.insert(p2_pal_dec_const,    QStringLiteral("Decimal_constant"));
-    m_palette_names.insert(p2_pal_hex_const,    QStringLiteral("Hexadecimal_constant"));
-    m_palette_names.insert(p2_pal_real_const,   QStringLiteral("Real_constant"));
-    m_palette_names.insert(p2_pal_source,       QStringLiteral("Source"));
     reset_palette();
 }
 
@@ -340,7 +322,7 @@ P2Colors::p2_palette_e P2Colors::palette_key(const QString& name) const
  * @param reset_default if true, reset to the default palette first
  * @return QHash of palette enumeration values and their QColor
  */
-const QHash<P2Colors::p2_palette_e, QColor>& P2Colors::hash(bool reset_default)
+const QHash<P2Colors::p2_palette_e,QRgb>& P2Colors::hash(bool reset_default)
 {
     if (reset_default)
         reset_palette();
@@ -381,7 +363,7 @@ QPalette P2Colors::palette(p2_TOKEN_e tok) const
  * @param pal palette index from p2_palette_e
  * @return QColor for the index
  */
-QColor P2Colors::palette_color(p2_palette_e pal) const
+QRgb P2Colors::palette_color(p2_palette_e pal) const
 {
     return m_palette.value(pal, m_default_colors[p2_pal_source]);
 }
@@ -390,7 +372,7 @@ QColor P2Colors::palette_color(p2_palette_e pal) const
  * @brief Set the entire palette to a new hash
  * @param palette const reference to a QHash of palette enumeration values and their QColor
  */
-void P2Colors::set_palette(const QHash<P2Colors::p2_palette_e, QColor>& palette)
+void P2Colors::set_palette(const QHash<P2Colors::p2_palette_e,QRgb>& palette)
 {
     m_palette = palette;
 }
@@ -398,11 +380,11 @@ void P2Colors::set_palette(const QHash<P2Colors::p2_palette_e, QColor>& palette)
 /**
  * @brief Set a single palette color
  * @param pal palette index from p2_palette_e
- * @param color QColor to set
+ * @param rgba QRgb value to set
  */
-void P2Colors::set_palette_color(P2Colors::p2_palette_e pal, const QColor& color)
+void P2Colors::set_palette_color(P2Colors::p2_palette_e pal, const QRgb& rgba)
 {
-    m_palette.insert(pal, color);
+    m_palette.insert(pal, rgba);
 }
 
 /**
@@ -505,7 +487,7 @@ void P2Colors::setup_tables()
 {
     // Add Qt5 default color names which have no entry
     foreach(const QString& name, QColor::colorNames()) {
-        QColor stdcolor = QColor(name);
+        QRgb stdcolor = QColor(name).rgba();
         if (m_name_color.keys(stdcolor).isEmpty())
             m_name_color.insert(name, stdcolor);
     }
@@ -540,6 +522,7 @@ void P2Colors::setup_tables()
  */
 void P2Colors::reset_palette()
 {
+
     m_default_colors.insert(p2_pal_background,      m_name_color.value("White"));
     m_default_colors.insert(p2_pal_source,          m_name_color.value("Black"));
     m_default_colors.insert(p2_pal_comment,         m_name_color.value("Dark Olive Green"));
@@ -559,4 +542,22 @@ void P2Colors::reset_palette()
     m_default_colors.insert(p2_pal_wcz_suffix,      m_name_color.value("Pale Violet Red"));
 
     m_palette = m_default_colors;
+
+    m_palette_names.insert(p2_pal_background,       QStringLiteral("Background"));
+    m_palette_names.insert(p2_pal_comment,          QStringLiteral("Comment"));
+    m_palette_names.insert(p2_pal_instruction,      QStringLiteral("Instruction"));
+    m_palette_names.insert(p2_pal_conditional,      QStringLiteral("Conditional"));
+    m_palette_names.insert(p2_pal_wcz_suffix,       QStringLiteral("WCZ_suffix"));
+    m_palette_names.insert(p2_pal_section,          QStringLiteral("Section"));
+    m_palette_names.insert(p2_pal_modcz_param,      QStringLiteral("MODCZ_parameter"));
+    m_palette_names.insert(p2_pal_symbol,           QStringLiteral("Symbol"));
+    m_palette_names.insert(p2_pal_locsym,           QStringLiteral("Local_symbol"));
+    m_palette_names.insert(p2_pal_expression,       QStringLiteral("Expression"));
+    m_palette_names.insert(p2_pal_str_const,        QStringLiteral("String_constant"));
+    m_palette_names.insert(p2_pal_bin_const,        QStringLiteral("Binary_constant"));
+    m_palette_names.insert(p2_pal_byt_const,        QStringLiteral("Byte_constant"));
+    m_palette_names.insert(p2_pal_dec_const,        QStringLiteral("Decimal_constant"));
+    m_palette_names.insert(p2_pal_hex_const,        QStringLiteral("Hexadecimal_constant"));
+    m_palette_names.insert(p2_pal_real_const,       QStringLiteral("Real_constant"));
+    m_palette_names.insert(p2_pal_source,           QStringLiteral("Source"));
 }

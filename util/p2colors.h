@@ -72,29 +72,29 @@ public:
     QString palette_name(p2_palette_e id = p2_pal_source) const;
     QStringList palette_names() const;
     p2_palette_e palette_key(const QString& name) const;
-    const QHash<p2_palette_e, QColor>& hash(bool reset_default = false);
+    const QHash<p2_palette_e, QRgb>& hash(bool reset_default = false);
     QPalette palette(p2_palette_e pal) const;
     QPalette palette(p2_TOKEN_e tok) const;
-    QColor palette_color(p2_palette_e pal) const;
+    QRgb palette_color(p2_palette_e pal) const;
     QColor palette_color(p2_TOKEN_e tok) const;
 
     static p2_palette_e pal_for_token(const p2_TOKEN_e tok);
 
 public slots:
-    void set_palette_color(p2_palette_e pal, const QColor& color);
+    void set_palette_color(p2_palette_e pal, const QRgb& rgba);
     void set_palette_color(p2_palette_e pal, const QString& name);
-    void set_palette(const QHash<p2_palette_e, QColor>& palette_color);
+    void set_palette(const QHash<p2_palette_e, QRgb>& palette_color);
 
 private:
-    QHash<QString,QColor> m_name_color;
+    QHash<QString,QRgb> m_name_color;
     QHash<QRgb,QString> m_color_name;
-    QHash<p2_palette_e,QColor> m_palette;
+    QHash<p2_palette_e,QRgb> m_palette;
     QStringList m_color_names_lexicographic;
     QStringList m_color_names_hue_sat_lum;
     QVector<QColor> m_color_values;
     QVector<QColor> m_colors_hue_sat_lum;
     QMap<p2_palette_e,QString> m_palette_names;
-    mutable QHash<p2_palette_e,QColor> m_default_colors;
+    mutable QHash<p2_palette_e,QRgb> m_default_colors;
     void setup_tables();
     void reset_palette();
 };

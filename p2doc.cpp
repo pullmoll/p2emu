@@ -7453,6 +7453,22 @@ void P2Doc::doc_NIXINT3(p2_OPX24_e instr)
  *
  * SETINT1 {#}D
  *
+ * 0	<off>, default on cog start for INT1/INT2/INT3 event sources
+ * 1	CT-passed-CT1, established by ADDCT1
+ * 2	CT-passed-CT2, established by ADDCT2
+ * 3	CT-passed-CT3, established by ADDCT3
+ * 4	SE1 event occurred, established by SETSE1
+ * 5	SE2 event occurred, established by SETSE2
+ * 6	SE3 event occurred, established by SETSE3
+ * 7	SE4 event occurred, established by SETSE4
+ * 8	Pin pattern match or mismatch occurred, established by SETPAT
+ * 9	Hub RAM FIFO interface wrapped and reloaded, established by RDFAST/WRFAST/FBLOCK
+ * 10	Streamer is ready for another command, established by XINIT/XZERO/ZCONT
+ * 11	Streamer ran out of commands, established by XINIT/XZERO/ZCONT
+ * 12	Streamer NCO rolled over, established by XINIT/XZERO/XCONT
+ * 13	Streamer read location $1FF of lookup RAM
+ * 14	Attention requested by other cog(s)
+ * 15	GETQX/GETQY executed without any CORDIC results available or in progress
  *
  */
 void P2Doc::doc_SETINT1(p2_OPSRC_e instr)
@@ -7462,6 +7478,22 @@ void P2Doc::doc_SETINT1(p2_OPSRC_e instr)
     op->set_token(t_SETINT1);
     op->set_brief("Set INT1 source to D[3:0].");
     op->set_instr("SETINT1 {#}D");
+    op->add_descr("0	<off>, default on cog start for INT1/INT2/INT3 event sources");
+    op->add_descr("1	CT-passed-CT1, established by ADDCT1");
+    op->add_descr("2	CT-passed-CT2, established by ADDCT2");
+    op->add_descr("3	CT-passed-CT3, established by ADDCT3");
+    op->add_descr("4	SE1 event occurred, established by SETSE1");
+    op->add_descr("5	SE2 event occurred, established by SETSE2");
+    op->add_descr("6	SE3 event occurred, established by SETSE3");
+    op->add_descr("7	SE4 event occurred, established by SETSE4");
+    op->add_descr("8	Pin pattern match or mismatch occurred, established by SETPAT");
+    op->add_descr("9	Hub RAM FIFO interface wrapped and reloaded, established by RDFAST/WRFAST/FBLOCK");
+    op->add_descr("10	Streamer is ready for another command, established by XINIT/XZERO/ZCONT");
+    op->add_descr("11	Streamer ran out of commands, established by XINIT/XZERO/ZCONT");
+    op->add_descr("12	Streamer NCO rolled over, established by XINIT/XZERO/XCONT");
+    op->add_descr("13	Streamer read location $1FF of lookup RAM");
+    op->add_descr("14	Attention requested by other cog(s)");
+    op->add_descr("15	GETQX/GETQY executed without any CORDIC results available or in progress");
 }
 
 /**
@@ -7480,6 +7512,22 @@ void P2Doc::doc_SETINT2(p2_OPSRC_e instr)
     op->set_token(t_SETINT2);
     op->set_brief("Set INT2 source to D[3:0].");
     op->set_instr("SETINT2 {#}D");
+    op->add_descr("0	<off>, default on cog start for INT1/INT2/INT3 event sources");
+    op->add_descr("1	CT-passed-CT1, established by ADDCT1");
+    op->add_descr("2	CT-passed-CT2, established by ADDCT2");
+    op->add_descr("3	CT-passed-CT3, established by ADDCT3");
+    op->add_descr("4	SE1 event occurred, established by SETSE1");
+    op->add_descr("5	SE2 event occurred, established by SETSE2");
+    op->add_descr("6	SE3 event occurred, established by SETSE3");
+    op->add_descr("7	SE4 event occurred, established by SETSE4");
+    op->add_descr("8	Pin pattern match or mismatch occurred, established by SETPAT");
+    op->add_descr("9	Hub RAM FIFO interface wrapped and reloaded, established by RDFAST/WRFAST/FBLOCK");
+    op->add_descr("10	Streamer is ready for another command, established by XINIT/XZERO/ZCONT");
+    op->add_descr("11	Streamer ran out of commands, established by XINIT/XZERO/ZCONT");
+    op->add_descr("12	Streamer NCO rolled over, established by XINIT/XZERO/XCONT");
+    op->add_descr("13	Streamer read location $1FF of lookup RAM");
+    op->add_descr("14	Attention requested by other cog(s)");
+    op->add_descr("15	GETQX/GETQY executed without any CORDIC results available or in progress");
 }
 
 /**
@@ -7498,6 +7546,22 @@ void P2Doc::doc_SETINT3(p2_OPSRC_e instr)
     op->set_token(t_SETINT3);
     op->set_brief("Set INT3 source to D[3:0].");
     op->set_instr("SETINT3 {#}D");
+    op->add_descr("0	<off>, default on cog start for INT1/INT2/INT3 event sources");
+    op->add_descr("1	CT-passed-CT1, established by ADDCT1");
+    op->add_descr("2	CT-passed-CT2, established by ADDCT2");
+    op->add_descr("3	CT-passed-CT3, established by ADDCT3");
+    op->add_descr("4	SE1 event occurred, established by SETSE1");
+    op->add_descr("5	SE2 event occurred, established by SETSE2");
+    op->add_descr("6	SE3 event occurred, established by SETSE3");
+    op->add_descr("7	SE4 event occurred, established by SETSE4");
+    op->add_descr("8	Pin pattern match or mismatch occurred, established by SETPAT");
+    op->add_descr("9	Hub RAM FIFO interface wrapped and reloaded, established by RDFAST/WRFAST/FBLOCK");
+    op->add_descr("10	Streamer is ready for another command, established by XINIT/XZERO/ZCONT");
+    op->add_descr("11	Streamer ran out of commands, established by XINIT/XZERO/ZCONT");
+    op->add_descr("12	Streamer NCO rolled over, established by XINIT/XZERO/XCONT");
+    op->add_descr("13	Streamer read location $1FF of lookup RAM");
+    op->add_descr("14	Attention requested by other cog(s)");
+    op->add_descr("15	GETQX/GETQY executed without any CORDIC results available or in progress");
 }
 
 /**

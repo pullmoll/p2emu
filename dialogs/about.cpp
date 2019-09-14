@@ -13,12 +13,9 @@ About::~About()
     delete ui;
 }
 
-void About::setApplicationName(const QString& name)
+void About::setApplicationNameVersion(const QString& name, const QString& version)
 {
+    setWindowTitle(QString("%1 %2").arg(name).arg(version));
     ui->label_title->setText(name);
-}
-
-void About::setApplicationVersion(const QString& version)
-{
     ui->label_version->setText(version);
 }

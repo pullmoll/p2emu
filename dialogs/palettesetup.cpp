@@ -67,8 +67,8 @@ void PaletteSetup::color_changed(int row)
     const int idx = ui->cb_syntax->currentIndex();
     QVariant v_pal = ui->cb_syntax->itemData(idx, Qt::UserRole);
     P2Colors::p2_palette_e pal = qvariant_cast<P2Colors::p2_palette_e>(v_pal);
-    m_modified_palette.insert(pal, color);
-    Colors.set_palette_color(pal, color);
+    m_modified_palette.insert(pal, color.rgba());
+    Colors.set_palette_color(pal, color.rgba());
     emit changedPalette();
 }
 

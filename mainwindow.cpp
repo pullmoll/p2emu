@@ -40,6 +40,7 @@
 #include <QTimer>
 #include <QSettings>
 #include <QLabel>
+#include <QLayout>
 #include <QFontDatabase>
 
 #include "mainwindow.h"
@@ -113,56 +114,58 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     setWindowTitle(QString("%1 v%2").arg(qApp->applicationName()).arg(qApp->applicationVersion()));
-    setupMenu();
-    setupTabWidget();
-    setupToolbars();
-    setupStatusbar();
+    setup_menu();
+    setup_tabwidget();
+    setup_toolbars();
+    setup_statusbar();
 
-    setupAssembler();
-    setupDisassembler();
-    setupCogView();
+    setup_asm();
+    setup_sym();
+    setup_dasm();
+    setup_cog_views();
 
-    restoreSettings();
-    setupFonts();
+    restore_settings();
+    setup_fonts();
 
-    // loadSource(QStringLiteral(":/spin2/spin2_interpreter.spin2"));
-    // loadSource(QStringLiteral(":/spin2/pointers.spin2"));
-    // loadSource(QStringLiteral(":/spin2/USBHost.spin2"));
-    // loadSource(QStringLiteral(":/spin2/VGA_640_x_480_8bpp.spin2"));
-    loadSource(QStringLiteral(":/spin2/P2-qz80-rr032.spin2"));
-    // loadSource(QStringLiteral(":/spin2/ROM_Booter_v33_01j.spin2"));
-    loadObjectRandom();
+    // load_source(QStringLiteral(":/spin2/spin2_interpreter.spin2"));
+    // load_source(QStringLiteral(":/spin2/pointers.spin2"));
+    // load_source(QStringLiteral(":/spin2/USBHost.spin2"));
+    // load_source(QStringLiteral(":/spin2/VGA_640_x_480_8bpp.spin2"));
+    // load_source(QStringLiteral(":/spin2/P2-qz80-rr032.spin2"));
+    load_source(QStringLiteral(":/spin2/ROM_Booter_v33_01j.spin2"));
+    // load_source(QStringLiteral(":/spin2/pointers.spin2"));
+    load_object_random();
 }
 
 MainWindow::~MainWindow()
 {
-    saveSettings();
+    save_settings();
     delete ui;
 }
 
-void MainWindow::saveSettings()
+void MainWindow::save_settings()
 
 {
     QSettings s;
     s.setValue(key_windowGeometry, saveGeometry());
     s.setValue(key_windowState, saveState());
-    saveSettingsAsm();
-    saveSettingsDasm();
-    saveSettingsPalette();
+    save_settings_asm();
+    save_settings_dasm();
+    save_settings_palette();
 
 }
 
-void MainWindow::restoreSettings()
+void MainWindow::restore_settings()
 {
     QSettings s;
     restoreGeometry(s.value(key_windowGeometry).toByteArray());
     restoreState(s.value(key_windowState).toByteArray());
-    restoreSettingsAsm();
-    restoreSettingsDasm();
+    restore_settings_asm();
+    restore_settings_dasm();
     restoreSettingsPalette();
 }
 
-void MainWindow::saveSettingsAsm()
+void MainWindow::save_settings_asm()
 {
     QSettings s;
     QList<int> sizes = ui->splSource->sizes();
@@ -195,11 +198,11 @@ void MainWindow::saveSettingsAsm()
     s.endGroup();
 }
 
-void MainWindow::restoreSettingsAsm()
+void MainWindow::restore_settings_asm()
 {
     QSettings s;
     s.beginGroup(grp_assembler);
-    setAsmOpcodes(s.value(key_opcodes, fmt_bin).toInt());
+    set_opcodes_asm(s.value(key_opcodes, fmt_bin).toInt());
     int row = s.value(key_current_row).toInt();
     int column = s.value(key_current_row).toInt();
     P2AsmModel* amodel = asm_model();
@@ -217,11 +220,11 @@ void MainWindow::restoreSettingsAsm()
     m_symbols_percent = qBound(1,s.value(key_splitter_symbols_percent, m_symbols_percent).toInt(),100);
     m_errors_percent = qBound(1,s.value(key_splitter_errors_percent, m_errors_percent).toInt(),100);
     s.endGroup();
-    setAsmFontSize(m_asm_font_size);
-    resizeSourceSplitter();
+    font_size_set_asm(m_asm_font_size);
+    resize_splitter_source();
 }
 
-void MainWindow::saveSettingsDasm()
+void MainWindow::save_settings_dasm()
 {
     const P2DasmModel* dmodel = dasm_model();
     QSettings s;
@@ -239,12 +242,12 @@ void MainWindow::saveSettingsDasm()
     s.endGroup();
 }
 
-void MainWindow::restoreSettingsDasm()
+void MainWindow::restore_settings_dasm()
 {
     QSettings s;
     s.beginGroup(grp_disassembler);
-    setDasmOpcodes(s.value(key_opcodes, fmt_bin).toInt());
-    setDasmLowercase(s.value(key_lowercase).toBool());
+    set_opcodes_dasm(s.value(key_opcodes, fmt_bin).toInt());
+    set_lowercase_dasm(s.value(key_lowercase).toBool());
     ui->tvDasm->selectRow(s.value(key_current_row).toInt());
     ui->tvDasm->setColumnHidden(P2DasmModel::c_Address, s.value(key_column_address, false).toBool());
     ui->tvDasm->setColumnHidden(P2DasmModel::c_Opcode, s.value(key_column_opcode, false).toBool());
@@ -252,15 +255,16 @@ void MainWindow::restoreSettingsDasm()
     ui->tvDasm->setColumnHidden(P2DasmModel::c_Description, s.value(key_column_description, false).toBool());
     m_dasm_font_size = s.value(key_font_size, 11).toInt();
     s.endGroup();
-    setDasmFontSize(m_dasm_font_size);
+    font_size_set_dasm(m_dasm_font_size);
 }
 
-void MainWindow::saveSettingsPalette()
+void MainWindow::save_settings_palette()
 {
     QSettings s;
     s.beginGroup(grp_palette);
+    // remove all previous entries
     s.remove(QStringLiteral(""));
-    QHash<P2Colors::p2_palette_e,QColor> hash = Colors.hash();
+    QHash<P2Colors::p2_palette_e,QRgb> hash = Colors.hash();
     foreach (P2Colors::p2_palette_e pal, hash.keys()) {
         QString key = Colors.palette_name(pal);
         QColor color = Colors.palette_color(pal);
@@ -284,8 +288,7 @@ void MainWindow::restoreSettingsPalette()
 void MainWindow::about()
 {
     About dlg;
-    dlg.setApplicationName(qApp->applicationName());
-    dlg.setApplicationVersion(qApp->applicationVersion());
+    dlg.setApplicationNameVersion(qApp->applicationName(), qApp->applicationVersion());
     dlg.adjustSize();
     dlg.exec();
 }
@@ -335,46 +338,47 @@ void MainWindow::goto_address()
     }
 }
 
-void MainWindow::setAsmOpcodes(int mode)
+void MainWindow::set_opcodes_asm(int mode)
 {
-    P2AsmModel* amodel = asm_model();
     p2_FORMAT_e format = static_cast<p2_FORMAT_e>(mode);
     ui->action_Asm_Opcodes_bin->setChecked(format == fmt_bin);
     ui->action_Asm_Opcodes_byt->setChecked(format == fmt_bit);
     ui->action_Asm_Opcodes_dec->setChecked(format == fmt_dec);
     ui->action_Asm_Opcodes_hex->setChecked(format == fmt_hex);
-    amodel->setOpcodeFormat(format);
-    updateAsmColumnSizes();
+    P2AsmModel* amodel = asm_model();
+    if (amodel)
+        amodel->setOpcodeFormat(format);
+    update_sizes_asm();
 }
 
-void MainWindow::setAsmOpcodes()
+void MainWindow::set_opcodes_asm()
 {
     QAction* act = qobject_cast<QAction*>(sender());
     Q_ASSERT(act);
-    setAsmOpcodes(act->data().toInt());
+    set_opcodes_asm(act->data().toInt());
 }
 
-void MainWindow::incAsmFontSize()
+void MainWindow::font_size_inc_asm()
 {
     QFont font = ui->tvAsm->font();
     int size = font.pointSize();
     if (size < 24) {
         size++;
-        setAsmFontSize(size);
+        font_size_set_asm(size);
     }
 }
 
-void MainWindow::decAsmFontSize()
+void MainWindow::font_size_dec_asm()
 {
     QFont font = ui->tvAsm->font();
     int size = font.pointSize();
     if (size > 5) {
         size--;
-        setAsmFontSize(size);
+        font_size_set_asm(size);
     }
 }
 
-void MainWindow::setAsmFontSize(int size)
+void MainWindow::font_size_set_asm(int size)
 {
     ui->tvAsm->setUpdatesEnabled(false);
     ui->tvSym->setUpdatesEnabled(false);
@@ -391,14 +395,14 @@ void MainWindow::setAsmFontSize(int size)
     if (smodel)
         smodel->setFont(font);
 
-    updateAsmColumnSizes();
-    updateSymbolsColumnSizes();
+    update_sizes_asm();
+    update_sizes_symbols();
 
     ui->tvSym->setUpdatesEnabled(true);
     ui->tvAsm->setUpdatesEnabled(true);
 }
 
-void MainWindow::setDasmOpcodes(int mode)
+void MainWindow::set_opcodes_dasm(int mode)
 {
     P2DasmModel* dmodel = dasm_model();
     p2_FORMAT_e format = static_cast<p2_FORMAT_e>(mode);
@@ -407,37 +411,37 @@ void MainWindow::setDasmOpcodes(int mode)
     ui->action_Dasm_Opcodes_dec->setChecked(format == fmt_dec);
     ui->action_Dasm_Opcodes_hex->setChecked(format == fmt_hex);
     dmodel->setOpcodeFormat(format);
-    updateDasmColumnSizes();
+    update_sizes_dasm();
 }
 
-void MainWindow::setDasmOpcodes()
+void MainWindow::set_opcodes_dasm()
 {
     QAction* act = qobject_cast<QAction*>(sender());
     Q_ASSERT(act);
-    setDasmOpcodes(act->data().toInt());
+    set_opcodes_dasm(act->data().toInt());
 }
 
-void MainWindow::incDasmFontSize()
+void MainWindow::font_size_inc_dasm()
 {
     QFont font = ui->tvDasm->font();
     int size = font.pointSize();
     if (size < 24) {
         size++;
-        setDasmFontSize(size);
+        font_size_set_dasm(size);
     }
 }
 
-void MainWindow::decDasmFontSize()
+void MainWindow::font_size_dec_dasm()
 {
     QFont font = ui->tvDasm->font();
     int size = font.pointSize();
     if (size > 5) {
         size--;
-        setDasmFontSize(size);
+        font_size_set_dasm(size);
     }
 }
 
-void MainWindow::setDasmFontSize(int size)
+void MainWindow::font_size_set_dasm(int size)
 {
     P2DasmModel* dmodel = dasm_model();
     ui->tvDasm->setUpdatesEnabled(false);
@@ -446,14 +450,16 @@ void MainWindow::setDasmFontSize(int size)
     font.setPointSize(size);
     ui->tvDasm->setFont(font);
     dmodel->setFont(font);
-    updateDasmColumnSizes();
+    update_sizes_dasm();
 
     ui->tvDasm->setUpdatesEnabled(true);
 }
 
-void MainWindow::setAsmHeaderColums(const QPoint& pos)
+void MainWindow::header_colums_asm(const QPoint& pos)
 {
     P2AsmModel* amodel = asm_model();
+    if (amodel)
+        return;
     QList<P2AsmModel::column_e> columns = amodel->columns();
 
     QMenu m(tr("Select columns"));
@@ -475,9 +481,11 @@ void MainWindow::setAsmHeaderColums(const QPoint& pos)
     ui->tvAsm->setColumnHidden(column, !act->isChecked());
 }
 
-void MainWindow::setDasmHeaderColums(const QPoint& pos)
+void MainWindow::header_columns_dasm(const QPoint& pos)
 {
     const P2DasmModel* dmodel = dasm_model();
+    if (!dmodel)
+        return;
     QList<P2DasmModel::column_e> columns = dmodel->columns();
 
     QMenu m(tr("Select columns"));
@@ -499,7 +507,7 @@ void MainWindow::setDasmHeaderColums(const QPoint& pos)
     ui->tvDasm->setColumnHidden(column, !act->isChecked());
 }
 
-void MainWindow::setSymbolsHeaderColums(const QPoint& pos)
+void MainWindow::header_columns_symbols(const QPoint& pos)
 {
     P2SymbolsModel* smodel = sym_model();
     if (!smodel)
@@ -525,14 +533,14 @@ void MainWindow::setSymbolsHeaderColums(const QPoint& pos)
     ui->tvSym->setColumnHidden(column, !act->isChecked());
 }
 
-void MainWindow::hubSingleStep()
+void MainWindow::hub_single_step()
 {
     m_hub->execute(ncogs*2);
     for (int id = 0; id < ncogs; id++)
         m_vcog[id]->updateView();
 }
 
-void MainWindow::loadObject(const QString& filename)
+void MainWindow::load_object(const QString& filename)
 {
     P2DasmModel* dmodel = dasm_model();
     if (!dmodel)
@@ -544,11 +552,11 @@ void MainWindow::loadObject(const QString& filename)
         m_hub->set_pathname(info.path());
     m_hub->load_obj(filename);
     dmodel->invalidate();
-    updateDasmColumnSizes();
+    update_sizes_dasm();
     ui->tvDasm->update();
 }
 
-void MainWindow::loadObjectRandom()
+void MainWindow::load_object_random()
 {
     QDir dir(QStringLiteral(":/bin"));
     QStringList name_filters =
@@ -561,10 +569,10 @@ void MainWindow::loadObjectRandom()
     QString objectfile = QString("%1/%2")
                          .arg(dir.path())
                          .arg(files[qrand() % files.count()]);
-    loadObject(objectfile);
+    load_object(objectfile);
 }
 
-void MainWindow::openSource(const QString& sourcefile)
+void MainWindow::open_source(const QString& sourcefile)
 {
     QSettings s;
     s.beginGroup(key_source);
@@ -611,22 +619,24 @@ void MainWindow::openSource(const QString& sourcefile)
         filename = sourcefile;
     }
 
-    loadSource(filename);
+    load_source(filename);
 }
 
-void MainWindow::loadSource(const QString& filename)
+void MainWindow::load_source(const QString& filename)
 {
-    P2AsmModel* amodel = asm_model();
     QFileInfo info(filename);
     ui->tabWidget->setTabText(0, QString("%1 [%2]").arg(tr("Assembler")).arg(info.fileName()));
 
     if (!info.path().startsWith(QChar(':')))
         m_asm->set_pathname(info.path());
     m_asm->load(filename);
-    amodel->invalidate();
-    updateAsmColumnSizes();
-    updateSymbolsColumnSizes();
-    ui->tvAsm->setCurrentIndex(amodel->index(0, P2AsmModel::c_Source));
+    P2AsmModel* amodel = asm_model();
+    if (amodel)
+        amodel->invalidate();
+    update_sizes_asm();
+    update_sizes_symbols();
+    if (amodel)
+        ui->tvAsm->setCurrentIndex(amodel->index(0, P2AsmModel::c_Source));
     ui->tvAsm->update();
 
     QLabel* lbl_lines = ui->toolbarAsm->findChild<QLabel*>(key_lines);
@@ -635,7 +645,7 @@ void MainWindow::loadSource(const QString& filename)
     assemble();
 }
 
-void MainWindow::loadSourceRandom()
+void MainWindow::load_source_random()
 {
     QDir dir(QStringLiteral(":/spin2"));
     QStringList name_filters = QStringList() << QStringLiteral("*.spin2");
@@ -645,12 +655,11 @@ void MainWindow::loadSourceRandom()
     QString sourcecode = QString("%1/%2")
                          .arg(dir.path())
                          .arg(files[qrand() % files.count()]);
-    loadSource(sourcecode);
+    load_source(sourcecode);
 }
 
 void MainWindow::assemble()
 {
-    P2AsmModel* amodel = asm_model();
     QStringList source = m_asm->source();
     ui->tbErrors->clear();
     ui->splSource->widget(2)->setVisible(false);
@@ -663,29 +672,40 @@ void MainWindow::assemble()
         if (status)
             status->setText(tr("Assembly took %1 ms.").arg(t1 - t0));
 
-        // Inspect result
-        const QModelIndex idx = ui->tvAsm->currentIndex();
-
-        amodel->invalidate();
-        ui->tvAsm->resizeRowsToContents();
-        ui->tvAsm->setCurrentIndex(idx);
         P2SymbolsModel* smodel = sym_model();
         if (smodel)
             smodel->setTable(m_asm->symbols());
+        // Inspect result
+        const QModelIndex idx = ui->tvAsm->currentIndex();
+
+        P2AsmModel* amodel = asm_model();
+        if (amodel)
+            amodel->invalidate();
+        ui->tvAsm->resizeRowsToContents();
+        ui->tvAsm->setCurrentIndex(idx);
     }
 }
 
 void MainWindow::palette_setup()
 {
-    P2AsmModel* amodel = asm_model();
-    QLayout* layout = ui->verticalLayout_2;
-    PaletteSetup* dlg = layout->findChild<PaletteSetup *>(QStringLiteral("PaletteSetup"));
-    if (dlg) {
-        layout->removeWidget(dlg);
+    PaletteSetup* dlg = ui->dlgPaletteSetup->findChild<PaletteSetup *>();
+
+    if (!dlg) {
+        // On the first view create a vertical box layout in the QWidget ui->dlgPaletteSetup
+        QLayout* lay = new QVBoxLayout(ui->dlgPaletteSetup);
+        dlg = new PaletteSetup;
+        // and add the PaletteSetup dialog to it
+        lay->addWidget(dlg);
+    }
+    if (dlg->isVisible()) {
+        // just hide the dialog
+        dlg->hide();
     } else {
-        dlg = new PaletteSetup(this);
-        layout->addWidget(dlg);
-        connect(dlg, SIGNAL(changedPalette()), amodel, SLOT(invalidate()));
+        // On changed palette invalidate the P2AsmModel
+        P2AsmModel* amodel = asm_model();
+        connect(dlg, SIGNAL(changedPalette()), amodel, SLOT(invalidate()), Qt::UniqueConnection);
+        // show the dialog
+        dlg->show();
     }
 }
 
@@ -706,7 +726,6 @@ void MainWindow::print_error(int pass, int line, const QString& message)
 
 void MainWindow::goto_line(const QUrl& url)
 {
-    P2AsmModel* amodel = asm_model();
     const P2SymbolTable& table = m_asm->symbols();
     const QString& path = url.path();
     const QString& name = url.query();
@@ -723,11 +742,14 @@ void MainWindow::goto_line(const QUrl& url)
             word = words[i];
 
     if (path == key_tv_asm) {
-        const QModelIndex idx = amodel->index(lineno - 1, P2AsmModel::c_Source);
-        amodel->set_highlight(idx, symbol, word);
-        ui->tvAsm->setCurrentIndex(idx);
-        ui->tvAsm->viewport()->repaint();
-        // ui->tvAsm->setFocus(Qt::OtherFocusReason);
+        P2AsmModel* amodel = asm_model();
+        if (amodel) {
+            const QModelIndex idx = amodel->index(lineno - 1, P2AsmModel::c_Source);
+            amodel->set_highlight(idx, symbol, word);
+            ui->tvAsm->setCurrentIndex(idx);
+            ui->tvAsm->viewport()->repaint();
+            // ui->tvAsm->setFocus(Qt::OtherFocusReason);
+        }
     }
 }
 
@@ -760,7 +782,7 @@ void MainWindow::goto_definition(const QModelIndex& index)
     }
 }
 
-void MainWindow::resizeSourceSplitter()
+void MainWindow::resize_splitter_source()
 {
     while (m_source_percent + m_symbols_percent + m_errors_percent > 100) {
         if (m_errors_percent > m_symbols_percent) {
@@ -799,7 +821,7 @@ P2SymbolsModel* MainWindow::sym_model()
     return smodel;
 }
 
-void MainWindow::setDasmLowercase(bool check)
+void MainWindow::set_lowercase_dasm(bool check)
 {
     P2DasmModel* dmodel = dasm_model();
     ui->action_Dasm_Lowercase->setChecked(check);
@@ -810,7 +832,7 @@ void MainWindow::setDasmLowercase(bool check)
     ui->tvDasm->selectRow(row);
 }
 
-void MainWindow::setupAssembler()
+void MainWindow::setup_asm()
 {
     connect(m_asm, SIGNAL(Error(int,int,QString)), SLOT(print_error(int,int,QString)));
 
@@ -823,6 +845,7 @@ void MainWindow::setupAssembler()
     // but connect to the anchorClicked(QUrl) signal
     connect(ui->tbErrors, SIGNAL(anchorClicked(QUrl)), SLOT(goto_line(QUrl)), Qt::UniqueConnection);
 
+    // tvAsm setup
     ui->tvAsm->setFocusPolicy(Qt::ClickFocus);
     ui->tvAsm->setEditTriggers(QAbstractItemView::DoubleClicked
                                | QAbstractItemView::SelectedClicked
@@ -831,14 +854,19 @@ void MainWindow::setupAssembler()
     ui->tvAsm->setSelectionMode(QAbstractItemView::ExtendedSelection);
     ui->tvAsm->setSelectionBehavior(QAbstractItemView::SelectItems);
 
+    // Set a delegate for the opcode column
     QAbstractItemDelegate* od = ui->tvAsm->itemDelegateForColumn(P2AsmModel::c_Opcode);
     ui->tvAsm->setItemDelegateForColumn(P2AsmModel::c_Opcode, new P2OpcodeDelegate);
     delete od;
 
+    // Set a delegate for the source column
     QAbstractItemDelegate* sd = ui->tvAsm->itemDelegateForColumn(P2AsmModel::c_Source);
     ui->tvAsm->setItemDelegateForColumn(P2AsmModel::c_Source, new P2SourceDelegate);
     delete sd;
+}
 
+void MainWindow::setup_sym()
+{
     QAbstractItemDelegate* ss = ui->tvSym->itemDelegateForColumn(P2SymbolsModel::c_References);
     P2ReferencesDelegate* delegate = new P2ReferencesDelegate;
     connect(delegate, SIGNAL(urlSelected(QUrl)), SLOT(goto_line(QUrl)));
@@ -856,13 +884,13 @@ void MainWindow::setupAssembler()
     connect(ui->tvSym, SIGNAL(activated(const QModelIndex &)), SLOT(goto_definition(const QModelIndex &)), Qt::UniqueConnection);
 }
 
-void MainWindow::setupDisassembler()
+void MainWindow::setup_dasm()
 {
     ui->tvDasm->setModel(new P2DasmModel(m_dasm));
-    updateDasmColumnSizes();
+    update_sizes_dasm();
 }
 
-void MainWindow::setupFonts()
+void MainWindow::setup_fonts()
 {
     static const QString preferred_font = QStringLiteral("Source Code Pro");
     QFont font = QFont(preferred_font);
@@ -885,7 +913,7 @@ void MainWindow::setupFonts()
     ui->tvDasm->setFont(font);
 }
 
-void MainWindow::setupTabWidget()
+void MainWindow::setup_tabwidget()
 {
     QTabBar* bar = ui->tabWidget->tabBar();
     // FIXME: how to identify tabs if the order changes?
@@ -894,34 +922,34 @@ void MainWindow::setupTabWidget()
     bar->setTabData(2, id_hub);
 }
 
-void MainWindow::setupMenu()
+void MainWindow::setup_menu()
 {
-    connect(ui->action_Open_src, SIGNAL(triggered()), SLOT(openSource()));
-    connect(ui->action_Open_src_random, SIGNAL(triggered()), SLOT(loadSourceRandom()));
+    connect(ui->action_Open_src, SIGNAL(triggered()), SLOT(open_source()));
+    connect(ui->action_Open_src_random, SIGNAL(triggered()), SLOT(load_source_random()));
     // connect(ui->action_Open_obj, SIGNAL(triggered()), SLOT(openObject()));
-    connect(ui->action_Open_obj_random, SIGNAL(triggered()), SLOT(loadObjectRandom()));
+    connect(ui->action_Open_obj_random, SIGNAL(triggered()), SLOT(load_object_random()));
     connect(ui->action_Go_to_line, SIGNAL(triggered()), SLOT(goto_line_number()));
     connect(ui->action_Assemble, SIGNAL(triggered()), SLOT(assemble()));
-    connect(ui->action_SingleStep, SIGNAL(triggered()), SLOT(hubSingleStep()));
+    connect(ui->action_SingleStep, SIGNAL(triggered()), SLOT(hub_single_step()));
 
     connect(ui->action_Palette_setup, SIGNAL(triggered()), SLOT(palette_setup()));
 
-    connect(ui->action_Asm_Opcodes_bin, SIGNAL(triggered(bool)), SLOT(setAsmOpcodes()));
-    connect(ui->action_Asm_Opcodes_byt, SIGNAL(triggered(bool)), SLOT(setAsmOpcodes()));
-    connect(ui->action_Asm_Opcodes_dec, SIGNAL(triggered(bool)), SLOT(setAsmOpcodes()));
-    connect(ui->action_Asm_Opcodes_hex, SIGNAL(triggered(bool)), SLOT(setAsmOpcodes()));
+    connect(ui->action_Asm_Opcodes_bin, SIGNAL(triggered(bool)), SLOT(set_opcodes_asm()));
+    connect(ui->action_Asm_Opcodes_byt, SIGNAL(triggered(bool)), SLOT(set_opcodes_asm()));
+    connect(ui->action_Asm_Opcodes_dec, SIGNAL(triggered(bool)), SLOT(set_opcodes_asm()));
+    connect(ui->action_Asm_Opcodes_hex, SIGNAL(triggered(bool)), SLOT(set_opcodes_asm()));
 
-    connect(ui->action_Asm_DecFontSize, SIGNAL(triggered(bool)), SLOT(decAsmFontSize()));
-    connect(ui->action_Asm_IncFontSize, SIGNAL(triggered(bool)), SLOT(incAsmFontSize()));
+    connect(ui->action_Asm_DecFontSize, SIGNAL(triggered(bool)), SLOT(font_size_dec_asm()));
+    connect(ui->action_Asm_IncFontSize, SIGNAL(triggered(bool)), SLOT(font_size_inc_asm()));
 
-    connect(ui->action_Dasm_Opcodes_bin, SIGNAL(triggered(bool)), SLOT(setDasmOpcodes()));
-    connect(ui->action_Dasm_Opcodes_byt, SIGNAL(triggered(bool)), SLOT(setDasmOpcodes()));
-    connect(ui->action_Dasm_Opcodes_dec, SIGNAL(triggered(bool)), SLOT(setDasmOpcodes()));
-    connect(ui->action_Dasm_Opcodes_hex, SIGNAL(triggered(bool)), SLOT(setDasmOpcodes()));
+    connect(ui->action_Dasm_Opcodes_bin, SIGNAL(triggered(bool)), SLOT(set_opcodes_dasm()));
+    connect(ui->action_Dasm_Opcodes_byt, SIGNAL(triggered(bool)), SLOT(set_opcodes_dasm()));
+    connect(ui->action_Dasm_Opcodes_dec, SIGNAL(triggered(bool)), SLOT(set_opcodes_dasm()));
+    connect(ui->action_Dasm_Opcodes_hex, SIGNAL(triggered(bool)), SLOT(set_opcodes_dasm()));
 
-    connect(ui->action_Dasm_DecFontSize, SIGNAL(triggered(bool)), SLOT(decDasmFontSize()));
-    connect(ui->action_Dasm_IncFontSize, SIGNAL(triggered(bool)), SLOT(incDasmFontSize()));
-    connect(ui->action_Dasm_Lowercase, SIGNAL(triggered(bool)), SLOT(setDasmLowercase(bool)));
+    connect(ui->action_Dasm_DecFontSize, SIGNAL(triggered(bool)), SLOT(font_size_dec_dasm()));
+    connect(ui->action_Dasm_IncFontSize, SIGNAL(triggered(bool)), SLOT(font_size_inc_dasm()));
+    connect(ui->action_Dasm_Lowercase, SIGNAL(triggered(bool)), SLOT(set_lowercase_dasm(bool)));
 
     connect(ui->action_Go_to_COG, SIGNAL(triggered()), SLOT(goto_cog()));
     connect(ui->action_Go_to_LUT, SIGNAL(triggered()), SLOT(goto_lut()));
@@ -936,12 +964,16 @@ void MainWindow::setupMenu()
 
 }
 
-void MainWindow::setupToolbars()
+void MainWindow::setup_toolbars()
 {
     // HUB toolbar
     ui->toolbarHub->addAction(ui->action_SingleStep);
 
     // Assembler toolbar
+    ui->toolbarAsm->addAction(ui->action_Open_src);
+    ui->toolbarAsm->addAction(ui->action_Open_src_random);
+    ui->toolbarAsm->addSeparator();
+
     ui->action_Asm_Opcodes_bin->setData(fmt_bin);
     ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_bin);
     ui->action_Asm_Opcodes_byt->setData(fmt_bit);
@@ -954,6 +986,8 @@ void MainWindow::setupToolbars()
     ui->toolbarAsm->addSeparator();
     ui->toolbarAsm->addAction(ui->action_Asm_DecFontSize);
     ui->toolbarAsm->addAction(ui->action_Asm_IncFontSize);
+    ui->toolbarAsm->addSeparator();
+    ui->toolbarAsm->addAction(ui->action_Palette_setup);
 
     // Expanding spacer
     QWidget* spacer = new QWidget();
@@ -972,6 +1006,10 @@ void MainWindow::setupToolbars()
     ui->toolbarAsm->addWidget(lbl_lines);
 
     // Disassembler toolbar
+    ui->toolbarDasm->addAction(ui->action_Open_obj);
+    ui->toolbarDasm->addAction(ui->action_Open_obj_random);
+    ui->toolbarDasm->addSeparator();
+
     ui->action_Dasm_Opcodes_bin->setData(fmt_bin);
     ui->toolbarDasm->addAction(ui->action_Dasm_Opcodes_bin);
     ui->action_Dasm_Opcodes_byt->setData(fmt_bit);
@@ -995,13 +1033,10 @@ void MainWindow::setupToolbars()
     ui->toolbarDasm->addAction(ui->action_Dasm_IncFontSize);
 
     // Main toolbar
-    ui->toolbar->addAction(ui->action_Open_src);
-    ui->toolbar->addAction(ui->action_Open_src_random);
 
+    ui->toolbar->addAction(ui->action_About);
     ui->toolbar->addSeparator();
-    ui->toolbar->addAction(ui->action_Open_obj);
-    ui->toolbar->addAction(ui->action_Open_obj_random);
-
+    ui->toolbar->addAction(ui->action_P2_opcodes);
     ui->toolbar->addSeparator();
     ui->toolbar->addAction(ui->action_Assemble);
 
@@ -1009,14 +1044,14 @@ void MainWindow::setupToolbars()
     ui->toolbar->addAction(ui->action_Quit);
 }
 
-void MainWindow::setupStatusbar()
+void MainWindow::setup_statusbar()
 {
     QLabel* status = new QLabel(tr("Status"));
     status->setObjectName(key_status);
     ui->statusBar->addWidget(status);
 }
 
-void MainWindow::updateAsmColumnSizes()
+void MainWindow::update_sizes_asm()
 {
     ui->tvAsm->resizeColumnsToContents();
     ui->tvAsm->resizeRowsToContents();
@@ -1025,12 +1060,12 @@ void MainWindow::updateAsmColumnSizes()
 /**
  * @brief Update tvDasm column sizes
  */
-void MainWindow::updateDasmColumnSizes()
+void MainWindow::update_sizes_dasm()
 {
     ui->tvDasm->resizeColumnsToContents();
 }
 
-void MainWindow::updateSymbolsColumnSizes()
+void MainWindow::update_sizes_symbols()
 {
     QFont font = ui->tvSym->font();
     QFontMetrics metrics(font);
@@ -1042,11 +1077,11 @@ void MainWindow::updateSymbolsColumnSizes()
     QHeaderView* hh = ui->tvSym->horizontalHeader();
     hh->setContextMenuPolicy(Qt::CustomContextMenu);
     hh->setStretchLastSection(true);
-    connect(hh, SIGNAL(customContextMenuRequested(QPoint)), SLOT(setSymbolsHeaderColums(QPoint)), Qt::UniqueConnection);
+    connect(hh, SIGNAL(customContextMenuRequested(QPoint)), SLOT(header_columns_symbols(QPoint)), Qt::UniqueConnection);
     ui->tvSym->resizeColumnsToContents();
 }
 
-void MainWindow::setupCogView()
+void MainWindow::setup_cog_views()
 {
     m_vcog = QVector<P2CogView*>()
              << ui->cog0 << ui->cog1 << ui->cog2 << ui->cog3
