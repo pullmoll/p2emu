@@ -47,7 +47,7 @@ P2AsmModel::P2AsmModel(P2Asm* p2asm, QObject *parent)
     , m_asm(p2asm)
     , m_format(fmt_bin)
     , m_font()
-    , m_error_pixmap()
+    , m_error_pixmap(":/icons/error.svg")
     , m_error()
     , m_highlite_index()
     , m_highlight_symbol()
@@ -55,8 +55,6 @@ P2AsmModel::P2AsmModel(P2Asm* p2asm, QObject *parent)
     , m_head_alignment()
     , m_text_alignment()
 {
-    m_error_pixmap = QPixmap(":/icons/error.svg");
-
     m_header.insert(c_Origin,           tr("OrgH"));
     m_background.insert(c_Origin,       qRgb(0xff,0xfc,0xf8));
     m_head_alignment.insert(c_Origin,   Qt::AlignLeft | Qt::AlignVCenter);
@@ -501,7 +499,7 @@ void P2AsmModel::setFont(const QFont& font)
     beginResetModel();
     m_font = font;
     QFontMetrics metrics(m_font);
-    QSizeF size = QSizeF(metrics.averageCharWidth() * 1.66, (metrics.ascent() + metrics.descent() * 1.75));
+    QSizeF size = QSizeF(metrics.averageCharWidth() * 2.5, (metrics.ascent() + metrics.descent() * 2.5));
     m_error = QIcon(m_error_pixmap.scaled(size.toSize(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
     endResetModel();
 }

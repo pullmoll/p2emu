@@ -181,11 +181,12 @@ void P2Asm::line_clear()
     m_lineno += 1;
 
     // Reset some state
+    m_advance = 0;
+    m_IR.clear(0, p2_ORIGIN_t({m_cogaddr, m_hubaddr}));
+    m_IR.set_none();
     m_errors.clear();
     m_words.clear();
     m_data.clear();
-    m_advance = 0;
-    m_IR.clear(0, p2_ORIGIN_t({m_cogaddr, m_hubaddr}));
 }
 
 /**
@@ -687,14 +688,12 @@ bool P2Asm::assemble_dat_section()
 
     // Return if no more words/tokens were found
     if (!skip_comments()) {
-        m_IR.set_as_IR(false);
         results();
         return true;
     }
 
     m_advance = 4;      // Assume the instruction advances by 4 bytes
     m_IR.clear();       // Clear the opcode
-    m_IR.set_as_IR(true);  // Assume the instruction emits IR
 
     // Conditional execution prefix
     m_IR.set_cond(conditional());
@@ -2463,7 +2462,6 @@ QStringList P2Asm::results_instruction(bool wr_mem)
 QString P2Asm::results_assignment()
 {
     QString output;
-    m_IR.set_as_IR(false);
     m_hash_IR.insert(m_lineno, m_IR);
     if (m_pass > 1) {
         output = QString("%1 %2 <%3> %4")
@@ -4834,7 +4832,6 @@ bool P2Asm::asm_enum_continue()
 {
     // first symbol was already taken and defined
     m_advance = 0;      // Don't advance PC
-    m_IR.set_as_IR(false);
     P2Atom atom = m_enum;
     m_IR.set_assign(atom);
 
@@ -4891,8 +4888,10 @@ bool P2Asm::asm_enum_continue()
 bool P2Asm::asm_ALIGNW()
 {
     next();
-    m_IR.set_as_IR(false);
+    m_IR.set_none();
     m_advance = 1u - (m_cogaddr & 1u);
+    if (m_advance)
+        m_IR.set_assign(P2Atom(m_advance));
     return end_of_line();
 }
 
@@ -4904,9 +4903,13 @@ bool P2Asm::asm_ALIGNW()
 bool P2Asm::asm_ALIGNL()
 {
     next();
-    m_IR.set_as_IR(false);
+    m_IR.set_none();
     if (m_cogaddr & 3u)
         m_advance = 4u - (m_cogaddr & 3u);
+    else
+        m_advance = 0;
+    if (m_advance)
+        m_IR.set_assign(P2Atom(m_advance));
     return end_of_line();
 }
 
@@ -4964,7 +4967,6 @@ bool P2Asm::asm_ORGF()
 {
     next();
     m_advance = 0;      // Don't advance PC
-    m_IR.set_as_IR(false);
     P2Atom atom = parse_expression();
 
     if (m_hubmode) {
@@ -5006,7 +5008,6 @@ bool P2Asm::asm_ORGH()
 {
     next();
     m_advance = 0;      // Don't advance PC
-    m_IR.set_as_IR(false);
     P2Atom atom = parse_expression();
     p2_LONG value = atom.isEmpty() ? m_hubaddr : atom.get_long();
     if (value <= HUB_ADDR0)
@@ -5035,7 +5036,6 @@ bool P2Asm::asm_FIT()
 {
     next();
     m_advance = 0;
-    m_IR.set_as_IR(false);
     P2Atom atom = parse_expression();
     const p2_LONG fit = atom.isNull() ? COG_SIZE : atom.get_addr(p2_cog) / sz_LONG;
     const p2_LONG org = m_cogaddr / sz_LONG;
@@ -5056,8 +5056,8 @@ bool P2Asm::asm_FIT()
 bool P2Asm::asm_DAT()
 {
     next();
+    m_IR.set_none();
     m_advance = 0;
-    m_IR.set_as_IR(false);
     m_section = dat_section;
     return true;
 }
@@ -5069,8 +5069,8 @@ bool P2Asm::asm_DAT()
 bool P2Asm::asm_CON()
 {
     next();
+    m_IR.set_none();
     m_advance = 0;
-    m_IR.set_as_IR(false);
     m_section = con_section;
     return true;
 }
@@ -5082,8 +5082,8 @@ bool P2Asm::asm_CON()
 bool P2Asm::asm_PUB()
 {
     next();
+    m_IR.set_none();
     m_advance = 0;
-    m_IR.set_as_IR(false);
     m_section = pub_section;
     return true;
 }
@@ -5095,8 +5095,8 @@ bool P2Asm::asm_PUB()
 bool P2Asm::asm_PRI()
 {
     next();
+    m_IR.set_none();
     m_advance = 0;
-    m_IR.set_as_IR(false);
     m_section = pri_section;
     return true;
 }
@@ -5108,8 +5108,8 @@ bool P2Asm::asm_PRI()
 bool P2Asm::asm_VAR()
 {
     next();
+    m_IR.set_none();
     m_advance = 0;
-    m_IR.set_as_IR(false);
     m_section = var_section;
     return true;
 }
@@ -5122,8 +5122,8 @@ bool P2Asm::asm_VAR()
 bool P2Asm::asm_BYTE()
 {
     next();
+    m_IR.set_none();
     m_advance = 0;      // Don't advance PC, as it's done based on m_data
-    m_IR.set_as_IR(false);
 
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
@@ -5149,10 +5149,9 @@ bool P2Asm::asm_BYTE()
  */
 bool P2Asm::asm_WORD()
 {
-    P2Atom atom(ut_Word);
     next();
+    m_IR.set_none();
     m_advance = 0;      // Don't advance PC, as it's done based on m_data
-    m_IR.set_as_IR(false);
 
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
@@ -5179,8 +5178,8 @@ bool P2Asm::asm_WORD()
 bool P2Asm::asm_LONG()
 {
     next();
+    m_IR.set_none();
     m_advance = 0;      // Don't advance PC, as it's done based on m_data
-    m_IR.set_as_IR(false);
 
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
@@ -5208,8 +5207,8 @@ bool P2Asm::asm_LONG()
 bool P2Asm::asm_RES()
 {
     next();
+    m_IR.set_none();
     m_advance = 0;      // Don't advance PC if no value is specified
-    m_IR.set_as_IR(false);
 
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
@@ -5231,8 +5230,8 @@ bool P2Asm::asm_RES()
 bool P2Asm::asm_FILE()
 {
     next();
+    m_IR.set_none();
     m_advance = 0;      // Don't advance PC, as it's done based on m_data
-    m_IR.set_as_IR(false);
 
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();

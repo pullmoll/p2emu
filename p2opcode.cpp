@@ -440,6 +440,14 @@ const P2Atom& P2Opcode::data() const
 }
 
 /**
+ * @brief Set the opcode's type to none
+ */
+void P2Opcode::set_none()
+{
+    m_type = type_none;
+}
+
+/**
  * @brief Return the most recent error code when generating the AUGS/AUGD instructions
  * @return Error code indicating the type of error
  */
@@ -455,16 +463,6 @@ P2Opcode::Error P2Opcode::aug_error_code() const
 p2_LONG P2Opcode::aug_error_value() const
 {
     return m_error_value;
-}
-
-/**
- * @brief Set whether the current opcode is to be interpreted as instruction
- * Also sets EQU mode to false, if on is true.
- * @param on if true, this is an instruction
- */
-void P2Opcode::set_as_IR(bool on)
-{
-    m_type = on ? type_instruction : type_none;
 }
 
 /**
@@ -505,8 +503,8 @@ void P2Opcode::set_data(const P2Atom& data)
  */
 bool P2Opcode::set_assign(const P2Atom& atom)
 {
-    m_type = type_assign;
     m_assigned = atom;
+    m_type = type_assign;
     return true;
 }
 
@@ -517,6 +515,7 @@ bool P2Opcode::set_assign(const P2Atom& atom)
 void P2Opcode::set_opcode(const p2_LONG opcode)
 {
     m_u.opcode = opcode;
+    m_type = type_instruction;
 }
 
 /**
@@ -526,6 +525,7 @@ void P2Opcode::set_opcode(const p2_LONG opcode)
 void P2Opcode::set_cond(const p2_Cond_e cond)
 {
     m_u.op7.cond = cond;
+    m_type = type_instruction;
 }
 
 /**
@@ -535,6 +535,7 @@ void P2Opcode::set_cond(const p2_Cond_e cond)
 void P2Opcode::set_inst5(const p2_INST5_e inst)
 {
     m_u.op5.inst = static_cast<uint>(inst);
+    m_type = type_instruction;
 }
 
 /**
@@ -544,6 +545,7 @@ void P2Opcode::set_inst5(const p2_INST5_e inst)
 void P2Opcode::set_inst7(const p2_INST7_e inst)
 {
     m_u.op7.inst = static_cast<uint>(inst);
+    m_type = type_instruction;
 }
 
 /**
@@ -553,6 +555,7 @@ void P2Opcode::set_inst7(const p2_INST7_e inst)
 void P2Opcode::set_inst8(const p2_INST8_e inst)
 {
     m_u.op8.inst = static_cast<uint>(inst);
+    m_type = type_instruction;
 }
 
 /**
@@ -562,6 +565,7 @@ void P2Opcode::set_inst8(const p2_INST8_e inst)
 void P2Opcode::set_inst9(const p2_INST9_e inst)
 {
     m_u.op9.inst = static_cast<uint>(inst);
+    m_type = type_instruction;
 }
 
 /**
@@ -573,6 +577,7 @@ void P2Opcode::set_opdst(const p2_OPDST_e inst)
 {
     set_inst9(p2_OPDST);
     m_u.op7.dst = static_cast<uint>(inst);
+    m_type = type_instruction;
 }
 
 /**
@@ -584,6 +589,7 @@ void P2Opcode::set_opsrc(const p2_OPSRC_e inst)
 {
     set_inst7(p2_OPSRC);
     m_u.op7.src = static_cast<uint>(inst);
+    m_type = type_instruction;
 }
 
 /**
@@ -595,6 +601,7 @@ void P2Opcode::set_opx24(const p2_OPX24_e inst)
 {
     set_opsrc(p2_OPSRC_X24);
     m_u.op7.dst = static_cast<uint>(inst);
+    m_type = type_instruction;
 }
 
 /**
@@ -604,6 +611,7 @@ void P2Opcode::set_opx24(const p2_OPX24_e inst)
 void P2Opcode::set_dst(const p2_LONG dst)
 {
     m_u.op7.dst = static_cast<uint>(dst);
+    m_type = type_instruction;
 }
 
 /**
@@ -613,6 +621,7 @@ void P2Opcode::set_dst(const p2_LONG dst)
 void P2Opcode::set_src(const p2_LONG src)
 {
     m_u.op7.src = static_cast<uint>(src);
+    m_type = type_instruction;
 }
 
 /**
@@ -625,6 +634,7 @@ void P2Opcode::set_dst_src(const p2_LONG dst, const p2_LONG src)
     Q_ASSERT(0 == (dst & ~p2_mask9));
     m_u.op7.dst = static_cast<uint>(dst);
     m_u.op7.src = static_cast<uint>(src);
+    m_type = type_instruction;
 }
 
 /**
@@ -636,6 +646,7 @@ void P2Opcode::set_r20(const p2_LONG addr)
     Q_ASSERT(0 == (addr & ~A20MASK));
     m_u.opcode |= addr & A20MASK;
     m_u.opcode |= 1u << 20;
+    m_type = type_instruction;
 }
 
 /**
@@ -646,6 +657,7 @@ void P2Opcode::set_a20(const p2_LONG addr)
 {
     Q_ASSERT(0 == (addr & ~A20MASK));
     m_u.opcode |= addr & A20MASK;
+    m_type = type_instruction;
 }
 
 /**
@@ -876,22 +888,22 @@ bool P2Opcode::set_src(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG 
     return result;
 }
 
-static inline QString bin(const p2_QUAD val, int digits)
+static inline QString bin(const p2_QUAD val, int digits = 1)
 {
     return QString("%1").arg(val, digits, 2, QChar('0'));
 }
 
-static inline QString byt(const p2_QUAD val, int digits)
+static inline QString byt(const p2_QUAD val, int digits = 0)
 {
     return QString("%1").arg(val, digits, 16, QChar('0'));
 }
 
-static inline QString dec(const p2_QUAD val, int digits)
+static inline QString dec(const p2_QUAD val, int digits = 0)
 {
     return QString("%1").arg(val, digits, 10, QChar('0'));
 }
 
-static inline QString hex(const p2_QUAD val, int digits)
+static inline QString hex(const p2_QUAD val, int digits = 0)
 {
     return QString("%1").arg(val, digits, 16, QChar('0'));
 }
@@ -1013,43 +1025,60 @@ QString P2Opcode::format_opcode(const P2Opcode& ir, p2_FORMAT_e fmt)
 
 QString P2Opcode::format_assign_bin(const P2Opcode& ir, bool prefix)
 {
-    QString result("=");
-    p2_QUAD data = ir.assigned().get_quad();
+    QString result(chr_rarrow);
+    P2Atom atom = ir.assigned();
     if (prefix)
         result += QStringLiteral("%");
-    switch (ir.assigned().type()) {
+    switch (atom.type()) {
     case ut_Invalid:
         break;
     case ut_Bool:
-        result += bin(data & 1, 1);
+        result += bin(atom.get_bool() & 1, 1);
         break;
-
     case ut_Byte:
-        result += bin(data, 8);
+        result += bin(atom.get_byte(), 8);
         break;
     case ut_Word:
-        result += QString("%1_%2")
-                  .arg(bin((data >>  8) & 0xff, 8))
-                  .arg(bin((data >>  0) & 0xff, 8));
+        {
+            p2_WORD _word = atom.get_word();
+            result += bin((_word >>  8) & 0xff, 8);
+            result += chr_skip_digit;
+            result += bin((_word >>  0) & 0xff, 8);
+        }
         break;
     case ut_Addr:
     case ut_Long:
-        result += QString("%1_%2_%3_%4")
-                  .arg(bin((data >> 24) & 0xff, 8))
-                  .arg(bin((data >> 16) & 0xff, 8))
-                  .arg(bin((data >>  8) & 0xff, 8))
-                  .arg(bin((data >>  0) & 0xff, 8));
+        {
+            p2_LONG _long = atom.get_long();
+            result += bin((_long >> 24) & 0xff, 8);
+            result += chr_skip_digit;
+            result += bin((_long >> 16) & 0xff, 8);
+            result += chr_skip_digit;
+            result += bin((_long >>  8) & 0xff, 8);
+            result += chr_skip_digit;
+            result += bin((_long >>  0) & 0xff, 8);
+        }
         break;
     case ut_Quad:
-        result += QString("%1_%2_%3_%4_%5_%6_%7_%8")
-                  .arg(bin((data >> 56) & 0xff, 8))
-                  .arg(bin((data >> 48) & 0xff, 8))
-                  .arg(bin((data >> 40) & 0xff, 8))
-                  .arg(bin((data >> 32) & 0xff, 8))
-                  .arg(bin((data >> 24) & 0xff, 8))
-                  .arg(bin((data >> 16) & 0xff, 8))
-                  .arg(bin((data >>  8) & 0xff, 8))
-                  .arg(bin((data >>  0) & 0xff, 8));
+        {
+            p2_QUAD _quad = atom.get_quad();
+            if (_quad & HMAX) {
+                result += bin((_quad >> 56) & 0xff, 8);
+                result += chr_skip_digit;
+                result += bin((_quad >> 48) & 0xff, 8);
+                result += chr_skip_digit;
+                result += bin((_quad >> 40) & 0xff, 8);
+                result += chr_skip_digit;
+                result += bin((_quad >> 32) & 0xff, 8);
+            }
+            result += bin((_quad >> 24) & 0xff, 8);
+            result += chr_skip_digit;
+            result += bin((_quad >> 16) & 0xff, 8);
+            result += chr_skip_digit;
+            result += bin((_quad >>  8) & 0xff, 8);
+            result += chr_skip_digit;
+            result += bin((_quad >>  0) & 0xff, 8);
+        }
         break;
     case ut_Real:
         result += QString("%1").arg(ir.assigned().get_real(), 0, 'f');
@@ -1063,44 +1092,60 @@ QString P2Opcode::format_assign_bin(const P2Opcode& ir, bool prefix)
 
 QString P2Opcode::format_assign_bit(const P2Opcode& ir, bool prefix)
 {
-    QString result("=");
-    p2_QUAD data = ir.assigned().get_quad();
+    QString result(chr_rarrow);
+    P2Atom atom = ir.assigned();
     if (prefix)
         result += QStringLiteral("%%");
-    // FF_FF_FF_FF
-    switch (ir.assigned().type()) {
+    switch (atom.type()) {
     case ut_Invalid:
         break;
     case ut_Bool:
-        result += byt(data & 1, 1);
+        result += hex(atom.get_bool() & 1, 1);
         break;
-
     case ut_Byte:
-        result += byt(data, 8);
+        result += hex(atom.get_byte(), 2);
         break;
     case ut_Word:
-        result += QString("%1_%2")
-                  .arg(byt((data >>  8) & 0xff, 2))
-                  .arg(byt((data >>  0) & 0xff, 2));
+        {
+            p2_WORD _word = atom.get_word();
+            result += hex((_word >>  8) & 0xff, 2);
+            result += chr_skip_digit;
+            result += hex((_word >>  0) & 0xff, 2);
+        }
         break;
     case ut_Addr:
     case ut_Long:
-        result += QString("%1_%2_%3_%4")
-                  .arg(byt((data >> 24) & 0xff, 2))
-                  .arg(byt((data >> 16) & 0xff, 2))
-                  .arg(byt((data >>  8) & 0xff, 2))
-                  .arg(byt((data >>  0) & 0xff, 2));
+        {
+            p2_LONG _long = atom.get_long();
+            result += hex((_long >> 24) & 0xff, 2);
+            result += chr_skip_digit;
+            result += hex((_long >> 16) & 0xff, 2);
+            result += chr_skip_digit;
+            result += hex((_long >>  8) & 0xff, 2);
+            result += chr_skip_digit;
+            result += hex((_long >>  0) & 0xff, 2);
+        }
         break;
     case ut_Quad:
-        result += QString("%1_%2_%3_%4_%5_%6_%7_%8")
-                  .arg(byt((data >> 56) & 0xff, 2))
-                  .arg(byt((data >> 48) & 0xff, 2))
-                  .arg(byt((data >> 40) & 0xff, 2))
-                  .arg(byt((data >> 32) & 0xff, 2))
-                  .arg(byt((data >> 24) & 0xff, 2))
-                  .arg(byt((data >> 16) & 0xff, 2))
-                  .arg(byt((data >>  8) & 0xff, 2))
-                  .arg(byt((data >>  0) & 0xff, 2));
+        {
+            p2_QUAD _quad = atom.get_quad();
+            if (_quad & HMAX) {
+                result += hex((_quad >> 56) & 0xff, 2);
+                result += chr_skip_digit;
+                result += hex((_quad >> 48) & 0xff, 2);
+                result += chr_skip_digit;
+                result += hex((_quad >> 40) & 0xff, 2);
+                result += chr_skip_digit;
+                result += hex((_quad >> 32) & 0xff, 2);
+            }
+            result += hex((_quad >> 24) & 0xff, 2);
+            result += chr_skip_digit;
+            result += hex((_quad >> 16) & 0xff, 2);
+            result += chr_skip_digit;
+            result += hex((_quad >>  8) & 0xff, 2);
+            result += chr_skip_digit;
+            result += hex((_quad >>  0) & 0xff, 2);
+        }
         break;
     case ut_Real:
         result += QString("%1").arg(ir.assigned().get_real(), 0, 'f');
@@ -1114,29 +1159,28 @@ QString P2Opcode::format_assign_bit(const P2Opcode& ir, bool prefix)
 
 QString P2Opcode::format_assign_dec(const P2Opcode& ir, bool prefix)
 {
-    QString result("=");
-    p2_QUAD data = ir.assigned().get_quad();
+    QString result(chr_rarrow);
+    P2Atom atom = ir.assigned();
     Q_UNUSED(prefix)
     // 4294967295
-    switch (ir.assigned().type()) {
+    switch (atom.type()) {
     case ut_Invalid:
         break;
     case ut_Bool:
-        result += dec(data & 1, 1);
+        result += dec(atom.get_bool() & 1, 1);
         break;
-
     case ut_Byte:
-        result += dec(data & 0xffu, 3);
+        result += dec(atom.get_byte(), 3);
         break;
     case ut_Word:
-        result += dec(data & 0xffffu, 5);
+        result += dec(atom.get_word(), 5);
         break;
     case ut_Addr:
     case ut_Long:
-        result += dec(data & 0x0000ffffu, 10);
+        result += dec(atom.get_long(), 0);
         break;
     case ut_Quad:
-        result += dec(data, 0);
+        result += dec(atom.get_quad(), 0);
         break;
     case ut_Real:
         result += QString("%1").arg(ir.data().get_real(), 0, 'f');
@@ -1150,29 +1194,28 @@ QString P2Opcode::format_assign_dec(const P2Opcode& ir, bool prefix)
 
 QString P2Opcode::format_assign_hex(const P2Opcode& ir, bool prefix)
 {
-    QString result("=");
-    p2_QUAD data = ir.assigned().get_quad();
+    QString result(chr_rarrow);
+    P2Atom atom = ir.assigned();
     if (prefix)
         result += QStringLiteral("$");
-    switch (ir.data().type()) {
+    switch (atom.type()) {
     case ut_Invalid:
         break;
     case ut_Bool:
-        result += hex(data & 1, 1);
+        result += hex(atom.get_bool() & 1, 1);
         break;
-
     case ut_Byte:
-        result += hex(data & 0xffu, 2);
+        result += hex(atom.get_byte(), 2);
         break;
     case ut_Word:
-        result += hex(data & 0xffffu, 4);
+        result += hex(atom.get_word(), 4);
         break;
     case ut_Addr:
     case ut_Long:
-        result += hex(data & 0x0000ffffu, 8);
+        result += hex(atom.get_long(), 8);
         break;
     case ut_Quad:
-        result += hex(data, 16);
+        result += hex(atom.get_quad(), 0);
         break;
     case ut_Real:
         result += QString("%1").arg(ir.data().get_real(), 0, 'f');

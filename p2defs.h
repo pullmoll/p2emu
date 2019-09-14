@@ -308,6 +308,9 @@ static constexpr QChar chr_colon(':');
 static constexpr QChar chr_dollar('$');
 
 //! Just a name for a commonly used character: character used in tokenizer debugging
+static constexpr QChar chr_rarrow(L'→');
+
+//! Just a name for a commonly used character: character used in tokenizer debugging
 static constexpr QChar chr_pilcrow(L'¶');
 
 //! Just a name for a commonly used character: character used to enclose non-token names for type masks

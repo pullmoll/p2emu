@@ -119,7 +119,7 @@ public:
 
     const P2Atom& data() const;
 
-    void set_as_IR(bool on = true);
+    void set_none();
     void set_origin(p2_ORIGIN_t origin);
     void set_origin(p2_LONG _org, p2_LONG _orgh);
     void set_data(const P2Atom& data);
