@@ -131,5 +131,18 @@ bool P2Word::operator==(const P2Word& other) const
         return false;
     if (m_ref.position() != other.m_ref.position())
         return false;
+    if (m_ref.length() != other.m_ref.length())
+        return false;
     return true;
+}
+
+bool P2Word::operator!=(const P2Word& other) const
+{
+    if (m_lineno != other.m_lineno)
+        return true;
+    if (m_ref.position() != other.m_ref.position())
+        return true;
+    if (m_ref.length() != other.m_ref.length())
+        return true;
+    return false;
 }

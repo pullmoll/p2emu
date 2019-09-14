@@ -24,6 +24,7 @@ public:
     static bool remove(QVector<P2Word>& words, p2_TOKEN_e tok);
 
     bool operator==(const P2Word& other) const;
+    bool operator!=(const P2Word& other) const;
 private:
     int m_lineno;
     QStringRef m_ref;

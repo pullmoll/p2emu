@@ -1112,17 +1112,17 @@ QString P2Union::str(const P2Union& un, bool with_type, p2_FORMAT_e fmt)
                 result += dec(_byte,0);
                 break;
             case fmt_bin:
-                result += QString("%%1")
-                          .arg(bin(_byte,8));
+                result += chr_percent;
+                result += bin(_byte, 8);
                 break;
             case fmt_bit:
-                result += QString("$%1")
-                          .arg(hex(_byte,2));
+                result += chr_percent;
+                result += hex(_byte, 2);
                 break;
             case fmt_hex:
             default:
-                result += QString("$%1")
-                          .arg(hex(_byte,2));
+                result += chr_percent;
+                result += hex(_byte, 2);
             }
         }
         break;
@@ -1132,62 +1132,76 @@ QString P2Union::str(const P2Union& un, bool with_type, p2_FORMAT_e fmt)
             p2_WORD _word = un.get_word();
             switch (fmt) {
             case fmt_dec:
-                result += QString("%1")
-                          .arg(_word);
+                result += dec(_word,0);
                 break;
             case fmt_bin:
-                result += QString("%%1_%2")
-                          .arg(bin(_word / 256u, 8))
-                          .arg(bin(_word % 256u, 8));
+                result += chr_percent;
+                result += bin(_word >> 8, 8);
+                result += chr_skip_digit;
+                result += bin(_word & 0xff, 8);
                 break;
             case fmt_bit:
-                result += QString("$%1_%2")
-                          .arg(hex(_word / 256u, 2))
-                          .arg(hex(_word % 256u, 2));
+                result += chr_percent;
+                result += hex(_word >> 8, 2);
+                result += chr_skip_digit;
+                result += hex(_word & 0xff, 2);
                 break;
             case fmt_hex:
             default:
-                result += QString("$%1")
-                          .arg(hex(_word, 4));
+                result += chr_percent;
+                result += hex(_word, 4);
             }
         }
         break;
 
     case ut_Addr:
         {
-            p2_LONG _cog = un.get_addr(p2_cog);
+            p2_LONG _cog = un.get_addr(p2_cog) / sz_LONG;
             p2_LONG _hub = un.get_addr(p2_hub);
             switch (fmt) {
             case fmt_dec:
-                result += QString("%1:%2")
-                          .arg(dec(_hub,0))
-                          .arg(dec(_cog,0));
+                result += dec(_hub,0);
+                result += chr_colon;
+                result += dec(_cog,0);
                 break;
             case fmt_bin:
-                result += QString("%%1_%2_%3_%4:%%5_%6_%7")
-                          .arg(bin((_hub >> 24) & 0xff, 8))
-                          .arg(bin((_hub >> 16) & 0xff, 8))
-                          .arg(bin((_hub >>  8) & 0xff, 8))
-                          .arg(bin((_hub >>  0) & 0xff, 8))
-                          .arg(bin((_cog >> 16) & 0xff, 8))
-                          .arg(bin((_cog >>  8) & 0xff, 8))
-                          .arg(bin((_cog >>  0) & 0xff, 8));
+                result += chr_percent;
+                result += bin((_hub >> 24) & 0xff, 8);
+                result += chr_skip_digit;
+                result += bin((_hub >> 16) & 0xff, 8);
+                result += chr_skip_digit;
+                result += bin((_hub >>  8) & 0xff, 8);
+                result += chr_skip_digit;
+                result += bin((_hub >>  0) & 0xff, 8);
+                result += chr_colon;
+                result += bin((_cog >> 16) & 0xff, 2);
+                result += chr_skip_digit;
+                result += bin((_cog>>  8) & 0xff, 8);
+                result += chr_skip_digit;
+                result += bin((_cog >> 0) & 0xff, 8);
                 break;
             case fmt_bit:
-                result += QString("$%1_%2_%3_%4:%5_%6_%7")
-                          .arg(hex((_hub >> 24) & 0xff, 2))
-                          .arg(hex((_hub >> 16) & 0xff, 2))
-                          .arg(hex((_hub >>  8) & 0xff, 2))
-                          .arg(hex((_hub >>  0) & 0xff, 2))
-                          .arg(hex((_cog >> 16) & 0xff, 2))
-                          .arg(hex((_cog >>  8) & 0xff, 2))
-                          .arg(hex((_cog >>  0) & 0xff, 2));
+                result += chr_dollar;
+                result += hex((_hub >> 24) & 0xff, 2);
+                result += chr_skip_digit;
+                result += hex((_hub >> 16) & 0xff, 2);
+                result += chr_skip_digit;
+                result += hex((_hub >>  8) & 0xff, 2);
+                result += chr_skip_digit;
+                result += hex((_hub >>  0) & 0xff, 2);
+                result += chr_colon;
+                result += hex((_cog >> 16) & 0xff, 1);
+                result += chr_skip_digit;
+                result += hex((_cog >>  8) & 0xff, 2);
+                result += chr_skip_digit;
+                result += hex((_cog >>  0) & 0xff, 2);
                 break;
             case fmt_hex:
             default:
-                result += QString("$%1:%2")
-                          .arg(hex(_hub, 5))
-                          .arg(hex(_cog / sz_LONG, 3));
+                result += chr_dollar;
+                result += hex(_hub, 6);
+                result += chr_colon;
+                result += hex(_cog / sz_LONG, 3);
             }
         }
         break;
@@ -1201,23 +1215,29 @@ QString P2Union::str(const P2Union& un, bool with_type, p2_FORMAT_e fmt)
                           .arg(dec(_long, 0));
                 break;
             case fmt_bin:
-                result += QString("%%1_%2_%3_%4")
-                          .arg(bin((_long >> 24) & 0xff, 8))
-                          .arg(bin((_long >> 16) & 0xff, 8))
-                          .arg(bin((_long >>  8) & 0xff, 8))
-                          .arg(bin((_long >>  0) & 0xff, 8));
+                result += chr_percent;
+                result += bin((_long >> 24) & 0xff, 8);
+                result += chr_skip_digit;
+                result += bin((_long >> 16) & 0xff, 8);
+                result += chr_skip_digit;
+                result += bin((_long >>  8) & 0xff, 8);
+                result += chr_skip_digit;
+                result += bin((_long >>  0) & 0xff, 8);
                 break;
             case fmt_bit:
-                result += QString("$%1_%2_%3_%4")
-                          .arg(hex((_long >> 24) & 0xff, 2))
-                          .arg(hex((_long >> 16) & 0xff, 2))
-                          .arg(hex((_long >>  8) & 0xff, 2))
-                          .arg(hex((_long >>  0) & 0xff, 2));
+                result += chr_dollar;
+                result += hex((_long >> 24) & 0xff, 2);
+                result += chr_skip_digit;
+                result += hex((_long >> 16) & 0xff, 2);
+                result += chr_skip_digit;
+                result += hex((_long >>  8) & 0xff, 2);
+                result += chr_skip_digit;
+                result += hex((_long >>  0) & 0xff, 2);
                 break;
             case fmt_hex:
             default:
-                result += QString("$%1")
-                          .arg(hex(_long, 0));
+                result += chr_dollar;
+                result += hex(_long, 0);
             }
         }
         break;
@@ -1227,35 +1247,52 @@ QString P2Union::str(const P2Union& un, bool with_type, p2_FORMAT_e fmt)
             p2_QUAD _quad = un.get_quad();
             switch (fmt) {
             case fmt_dec:
-                result += QString("%1")
-                          .arg(_quad);
+                result += dec(_quad);
                 break;
             case fmt_bin:
-                result += QString("%%1_%2_%3_%4_%5_%6_%7_%8")
-                          .arg(bin((_quad >> 56) & 0xff, 8))
-                          .arg(bin((_quad >> 48) & 0xff, 8))
-                          .arg(bin((_quad >> 40) & 0xff, 8))
-                          .arg(bin((_quad >> 32) & 0xff, 8))
-                          .arg(bin((_quad >> 24) & 0xff, 8))
-                          .arg(bin((_quad >> 16) & 0xff, 8))
-                          .arg(bin((_quad >>  8) & 0xff, 8))
-                          .arg(bin((_quad >>  0) & 0xff, 8));
+                result += chr_percent;
+                if (_quad & HMAX) {
+                    result += bin((_quad >> 56) & 0xff, 8);
+                    result += chr_skip_digit;
+                    result += bin((_quad >> 48) & 0xff, 8);
+                    result += chr_skip_digit;
+                    result += bin((_quad >> 40) & 0xff, 8);
+                    result += chr_skip_digit;
+                    result += bin((_quad >> 32) & 0xff, 8);
+                    result += chr_skip_digit;
+                }
+                result += bin((_quad >> 24) & 0xff, 8);
+                result += chr_skip_digit;
+                result += bin((_quad >> 16) & 0xff, 8);
+                result += chr_skip_digit;
+                result += bin((_quad >>  8) & 0xff, 8);
+                result += chr_skip_digit;
+                result += bin((_quad >>  0) & 0xff, 8);
                 break;
             case fmt_bit:
-                result += QString("$%1_%2_%3_%4_%5_%6_%7_%8")
-                          .arg(hex((_quad >> 56) & 0xff, 2))
-                          .arg(hex((_quad >> 48) & 0xff, 2))
-                          .arg(hex((_quad >> 40) & 0xff, 2))
-                          .arg(hex((_quad >> 32) & 0xff, 2))
-                          .arg(hex((_quad >> 24) & 0xff, 2))
-                          .arg(hex((_quad >> 16) & 0xff, 2))
-                          .arg(hex((_quad >>  8) & 0xff, 2))
-                          .arg(hex((_quad >>  0) & 0xff, 2));
+                result += chr_dollar;
+                if (_quad & HMAX) {
+                    result += hex((_quad >> 56) & 0xff, 2);
+                    result += chr_skip_digit;
+                    result += hex((_quad >> 48) & 0xff, 2);
+                    result += chr_skip_digit;
+                    result += hex((_quad >> 40) & 0xff, 2);
+                    result += chr_skip_digit;
+                    result += hex((_quad >> 32) & 0xff, 2);
+                    result += chr_skip_digit;
+                }
+                result += hex((_quad >> 24) & 0xff, 2);
+                result += chr_skip_digit;
+                result += hex((_quad >> 16) & 0xff, 2);
+                result += chr_skip_digit;
+                result += hex((_quad >>  8) & 0xff, 2);
+                result += chr_skip_digit;
+                result += hex((_quad >>  0) & 0xff, 2);
                 break;
             case fmt_hex:
             default:
-                result += QString("$%1")
-                          .arg(_quad, 0, 16, QChar('0'));
+                result += chr_dollar;
+                result += hex(_quad);
             }
         }
         break;

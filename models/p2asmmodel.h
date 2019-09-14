@@ -91,4 +91,5 @@ private:
     QString tokenToolTip(const P2Words& words) const;
     QString symbolsToolTip(const P2SymbolTable& symbols, const QList<P2Symbol>& symrefs) const;
     QString errorsToolTip(const QStringList& list) const;
+    QVariant sourceToolTip(const QModelIndex& index, const P2SymbolTable& symbols, const P2Words& words) const;
 };

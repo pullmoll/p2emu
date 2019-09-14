@@ -61,6 +61,12 @@
            <property name="selectionMode">
             <enum>QAbstractItemView::SingleSelection</enum>
            </property>
+           <property name="iconSize">
+            <size>
+             <width>20</width>
+             <height>20</height>
+            </size>
+           </property>
            <property name="textElideMode">
             <enum>Qt::ElideNone</enum>
            </property>

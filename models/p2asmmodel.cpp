@@ -31,6 +31,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
+#include <QTableView>
+#include <QScreen>
 #include "p2asmmodel.h"
 #include "p2util.h"
 #include "p2html.h"
@@ -71,9 +73,9 @@ P2AsmModel::P2AsmModel(P2Asm* p2asm, QObject *parent)
     m_text_alignment.insert(c_Opcode,   Qt::AlignLeft | Qt::AlignTop);
 
     m_header.insert(c_Errors,           tr("Errors"));
-    m_background.insert(c_Errors,       qRgb(0xff,0xc0,0xc0));
+    m_background.insert(c_Errors,       qRgb(0xff,0xff,0xff));
     m_head_alignment.insert(c_Errors,   Qt::AlignLeft | Qt::AlignVCenter);
-    m_text_alignment.insert(c_Errors,   Qt::AlignHCenter | Qt::AlignTop);
+    m_text_alignment.insert(c_Errors,   Qt::AlignRight | Qt::AlignTop);
 
     m_header.insert(c_Tokens,           tr("Tokens"));
     m_background.insert(c_Tokens,       qRgb(0x10,0xfc,0xff));
@@ -185,8 +187,8 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
 
     const bool has_symbols = !symbols.isNull();
     const QStringList& errors = m_asm->errors(lineno);
-
     const bool has_errors = !errors.isEmpty();
+
     const P2Words& words = m_asm->words(lineno);
 
     const bool has_ORIGIN = m_asm->has_ORIGIN(lineno);
@@ -232,17 +234,16 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
             break;
 
         case c_Errors:  // Error messages
-            if (has_errors)
-                result = template_str_errors;
+            if (false && has_errors)
+                result = errors.first();
             break;
 
         case c_Symbols:
+            result = QStringLiteral("-");
             if (has_symbols) {
-                QList<P2Symbol> refs = symbols->references_in(lineno);
-                if (refs.isEmpty())
-                    result = QStringLiteral("-");
-                else
-                    result = QString::number(refs.count());
+                int count = symbols->references_in(lineno).count();
+                if (count > 0)
+                    result = QString::number(count);
             }
             break;
 
@@ -254,12 +255,12 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
 
     case Qt::DecorationRole:
         switch (column) {
-        case c_Source:
+        case c_Errors:
             if (has_errors)
                 result = m_error;
             break;
         default:
-            result.clear();
+            break;
         }
         break;
 
@@ -333,15 +334,9 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
             break;
 
         case c_Source:
-            result = tr("This column shows the source code.");
+            result = sourceToolTip(index, symbols, words);
             break;
         }
-        break;
-
-    case Qt::StatusTipRole:
-        break;
-
-    case Qt::WhatsThisRole:
         break;
 
     case Qt::FontRole:
@@ -354,21 +349,10 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
 
     case Qt::BackgroundRole:
         result = QColor(m_background.value(column));
-        switch (column) {
-        case c_Errors:
-            if (!has_errors)
-                result = QColor(m_background.value(c_Source));
-            break;
-        default:
-            ;
-        }
         break;
 
     case Qt::SizeHintRole:
         result = sizeHint(index, data(index).toString());
-        break;
-
-    case Qt::InitialSortOrderRole:
         break;
 
     case Qt::UserRole:
@@ -517,8 +501,8 @@ void P2AsmModel::setFont(const QFont& font)
     beginResetModel();
     m_font = font;
     QFontMetrics metrics(m_font);
-    QSize size = QSize(metrics.averageCharWidth(), metrics.ascent() + metrics.descent());
-    m_error = QIcon(m_error_pixmap.scaled(size, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    QSizeF size = QSizeF(metrics.averageCharWidth() * 1.66, (metrics.ascent() + metrics.descent() * 1.75));
+    m_error = QIcon(m_error_pixmap.scaled(size.toSize(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
     endResetModel();
 }
 
@@ -780,4 +764,104 @@ QString P2AsmModel::errorsToolTip(const QStringList& list) const
     }
     doc.appendChild(table);
     return doc.toString(1);
+}
+
+QVariant P2AsmModel::sourceToolTip(const QModelIndex& index, const P2SymbolTable& symbols, const P2Words& words) const
+{
+    QTableView* view = qobject_cast<QTableView*>(index.model()->parent());
+    if (!view) {
+        qDebug("%s: no view", __func__);
+        return QVariant();
+    }
+    QWidget* viewport = view->viewport();
+    if (!viewport) {
+        qDebug("%s: no viewport", __func__);
+        return QVariant();
+    }
+    QPoint pt = viewport->mapFromGlobal(QCursor::pos());
+    const int vpx = view->columnViewportPosition(index.column());
+
+    QFontMetrics metrics(qvariant_cast<QFont>(data(index,Qt::FontRole)));
+    const int pos = (pt.x() - vpx) / metrics.averageCharWidth();
+
+    foreach(const P2Word& word, words) {
+        if (pos < word.pos() || pos >= word.end())
+            continue;
+        P2Symbol sym = symbols->reference(word);
+        if (sym.isNull())
+            return QVariant();
+
+        // Create the tool tip HTML
+        QDomDocument doc;
+        QDomElement table = p2_html(doc, "table");
+        QDomElement tr, th, td, tt;
+
+        tr = p2_html(doc, "tr");
+        td = p2_html(doc, "td");
+        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        tt = p2_html(doc, "tt");
+        tt.appendChild(p2_text(doc, word.str()));
+        td.appendChild(tt);
+        tr.appendChild(td);
+
+        td = p2_html(doc, "td");
+        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        tt = p2_html(doc, "tt");
+        tt.appendChild(p2_text(doc, sym->name()));
+        td.appendChild(tt);
+        tr.appendChild(td);
+        table.appendChild(tr);
+
+        tr = p2_html(doc, "tr");
+        td = p2_html(doc, "td");
+        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        tt = p2_html(doc, "tt");
+        tt.appendChild(p2_text(doc, QString("Bin")));
+        td.appendChild(tt);
+        tr.appendChild(td);
+
+        td = p2_html(doc, "td");
+        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        tt = p2_html(doc, "tt");
+        tt.appendChild(p2_text(doc, sym->value().str(true, fmt_bin)));
+        td.appendChild(tt);
+        tr.appendChild(td);
+        table.appendChild(tr);
+
+        tr = p2_html(doc, "tr");
+        td = p2_html(doc, "td");
+        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        tt = p2_html(doc, "tt");
+        tt.appendChild(p2_text(doc, QString("Dec")));
+        td.appendChild(tt);
+        tr.appendChild(td);
+
+        td = p2_html(doc, "td");
+        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        tt = p2_html(doc, "tt");
+        tt.appendChild(p2_text(doc, sym->value().str(true, fmt_dec)));
+        td.appendChild(tt);
+        tr.appendChild(td);
+        table.appendChild(tr);
+
+        tr = p2_html(doc, "tr");
+        td = p2_html(doc, "td");
+        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        tt = p2_html(doc, "tt");
+        tt.appendChild(p2_text(doc, QString("Hex")));
+        td.appendChild(tt);
+        tr.appendChild(td);
+
+        td = p2_html(doc, "td");
+        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        tt = p2_html(doc, "tt");
+        tt.appendChild(p2_text(doc, sym->value().str(true, fmt_hex)));
+        td.appendChild(tt);
+        tr.appendChild(td);
+        table.appendChild(tr);
+
+        doc.appendChild(table);
+        return doc.toString(1);
+    }
+    return QVariant();
 }

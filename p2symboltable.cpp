@@ -35,7 +35,8 @@
 
 P2SymbolTableClass::P2SymbolTableClass()
     : m_symbols()
-    , m_references()
+    , m_name_references()
+    , m_word_references()
 {
 }
 
@@ -45,7 +46,8 @@ P2SymbolTableClass::P2SymbolTableClass()
 void P2SymbolTableClass::clear()
 {
     m_symbols.clear();
-    m_references.clear();
+    m_name_references.clear();
+    m_word_references.clear();
 }
 
 /**
@@ -164,7 +166,7 @@ P2Word P2SymbolTableClass::definition(const QString& name) const
 const QList<P2Symbol> P2SymbolTableClass::references_in(int lineno) const
 {
     QList<P2Symbol> symbols;
-    QStringList names = m_references.values(lineno);
+    QStringList names = m_name_references.values(lineno);
     foreach(const QString& name, names)
         symbols += m_symbols.values(name);
     return symbols;
@@ -177,9 +179,14 @@ P2Word P2SymbolTableClass::reference(const QString& name, int idx) const
     return m_symbols[name]->reference(idx);
 }
 
+P2Symbol P2SymbolTableClass::reference(const P2Word& word) const
+{
+    return m_word_references.key(word);
+}
+
 const QList<int> P2SymbolTableClass::references(const QString& name) const
 {
-    QList<int> references = m_references.keys(name);
+    QList<int> references = m_name_references.keys(name);
     QMap<int,int> sorted;
     foreach(int lineno, references)
         sorted.insert(lineno, 1);
@@ -188,12 +195,12 @@ const QList<int> P2SymbolTableClass::references(const QString& name) const
 
 bool P2SymbolTableClass::add_reference(int lineno, const QString& name, const P2Word& word)
 {
-    if (m_references.contains(lineno, name))
-        return true;
-    m_references.insert(lineno, name);
     if (!m_symbols.contains(name))
         return false;
-    m_symbols[name]->add_reference(lineno, word);
+    P2Symbol symbol = m_symbols[name];
+    m_name_references.insert(lineno, name);
+    m_word_references.insert(symbol, word);
+    symbol->add_reference(lineno, word);
     return true;
 }
 
@@ -225,5 +232,5 @@ const p2_symbols_hash_t& P2SymbolTableClass::symbols() const
 
 const QMultiHash<int,QString>& P2SymbolTableClass::references() const
 {
-    return m_references;
+    return m_name_references;
 }

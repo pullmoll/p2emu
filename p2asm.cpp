@@ -4996,8 +4996,8 @@ bool P2Asm::asm_FIT()
     m_advance = 0;
     m_IR.set_as_IR(false);
     P2Atom atom = parse_expression();
-    const p2_LONG fit = atom.isNull() ? HUB_ADDR0 : atom.get_addr(p2_cog);
-    const p2_LONG org = m_cogaddr;
+    const p2_LONG fit = atom.isNull() ? COG_SIZE : atom.get_addr(p2_hub);
+    const p2_LONG org = m_cogaddr / sz_LONG;
     if (fit < org) {
         m_errors += tr("Code does not fit below $%1 (ORG is $%2)")
                   .arg(fit / 4, 0, 16)

@@ -62,6 +62,7 @@ public:
     P2Word reference(int lineno = 0) const;
     void add_reference(int lineno, const P2Word& word);
     const p2_word_hash_t& references() const;
+    QList<int> references(const P2Word& word) const;
     QList<P2Word> references(const P2SymbolClass& sym) const;
     QUrl url(const P2Word& word) const;
 

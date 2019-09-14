@@ -301,6 +301,9 @@ static constexpr QChar chr_percent('%');
 //! Just a name for a commonly used character: first character for a binary constant (double %% is a byte index, i.e. base 4)
 static const QString str_byt_prefix = QLatin1String("%%");
 
+//! Just a name for a commonly used character: delimiter between HUB and COG address
+static constexpr QChar chr_colon(':');
+
 //! Just a name for a commonly used character: represents the current origin (PC)
 static constexpr QChar chr_dollar('$');
 

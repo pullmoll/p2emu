@@ -170,6 +170,11 @@ const p2_word_hash_t& P2SymbolClass::references() const
     return m_references;
 }
 
+QList<int> P2SymbolClass::references(const P2Word& word) const
+{
+    return m_references.keys(word);
+}
+
 /**
  * @brief Return the hash of references to the symbol
  *

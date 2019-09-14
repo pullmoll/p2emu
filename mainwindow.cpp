@@ -164,7 +164,6 @@ void MainWindow::restoreSettings()
 
 void MainWindow::saveSettingsAsm()
 {
-    const P2AsmModel* amodel = asm_model();
     QSettings s;
     QList<int> sizes = ui->splSource->sizes();
     QSize size = ui->tabAsm->size();
@@ -175,7 +174,9 @@ void MainWindow::saveSettingsAsm()
     }
 
     s.beginGroup(grp_assembler);
-    s.setValue(key_opcodes, amodel->opcode_format());
+    const P2AsmModel* amodel = asm_model();
+    if (amodel)
+        s.setValue(key_opcodes, amodel->opcode_format());
     s.setValue(key_column_origin, ui->tvAsm->isColumnHidden(P2AsmModel::c_Origin));
     s.setValue(key_column_address, ui->tvAsm->isColumnHidden(P2AsmModel::c_Address));
     s.setValue(key_column_opcode, ui->tvAsm->isColumnHidden(P2AsmModel::c_Opcode));
@@ -196,13 +197,14 @@ void MainWindow::saveSettingsAsm()
 
 void MainWindow::restoreSettingsAsm()
 {
-    P2AsmModel* amodel = asm_model();
     QSettings s;
     s.beginGroup(grp_assembler);
     setAsmOpcodes(s.value(key_opcodes, fmt_bin).toInt());
     int row = s.value(key_current_row).toInt();
     int column = s.value(key_current_row).toInt();
-    ui->tvAsm->setCurrentIndex(amodel->index(row, column));
+    P2AsmModel* amodel = asm_model();
+    if (amodel)
+        ui->tvAsm->setCurrentIndex(amodel->index(row, column));
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Origin, s.value(key_column_origin, false).toBool());
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Address, s.value(key_column_address, false).toBool());
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Opcode, s.value(key_column_opcode, false).toBool());
@@ -843,7 +845,7 @@ void MainWindow::setupAssembler()
     ui->tvSym->setItemDelegateForColumn(P2SymbolsModel::c_References, delegate);
     delete ss;
 
-    ui->tvAsm->setModel(new P2AsmModel(m_asm));
+    ui->tvAsm->setModel(new P2AsmModel(m_asm, ui->tvAsm));
 
     P2SymbolsModel* smodel = new P2SymbolsModel;
     P2SymbolSorter* sorter = new P2SymbolSorter(this);

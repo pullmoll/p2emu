@@ -36,7 +36,8 @@
 #include "p2symbol.h"
 
 typedef QHash<QString,P2Symbol> p2_symbols_hash_t;
-typedef QMultiHash<int,QString> p2_references_hash_t;
+typedef QMultiHash<int,QString> p2_name_references_hash_t;
+typedef QMultiHash<P2Symbol,P2Word> p2_word_references_hash_t;
 
 /**
  * @brief The P2SymbolTable class is a QHash<QString,Symbol>, i.e. a hash
@@ -56,6 +57,7 @@ public:
     p2_Union_e type(const QString& name) const;
     P2Word definition(const QString& name) const;
     const QList<P2Symbol> references_in(int lineno) const;
+    P2Symbol reference(const P2Word& word) const;
     P2Word reference(const QString& name, int idx = 0) const;
     const QList<int> references(const QString& name) const;
     QStringList names() const;
@@ -70,7 +72,8 @@ public:
 
 private:
     p2_symbols_hash_t m_symbols;
-    p2_references_hash_t m_references;
+    p2_name_references_hash_t m_name_references;
+    p2_word_references_hash_t m_word_references;
 };
 
 typedef QSharedPointer<P2SymbolTableClass> P2SymbolTable;
