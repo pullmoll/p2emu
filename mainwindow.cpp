@@ -132,7 +132,7 @@ MainWindow::MainWindow(QWidget *parent)
     // loadSource(QStringLiteral(":/spin2/pointers.spin2"));
     // loadSource(QStringLiteral(":/spin2/USBHost.spin2"));
     // loadSource(QStringLiteral(":/spin2/VGA_640_x_480_8bpp.spin2"));
-    // loadSource(QStringLiteral(":/spin2/P2-qz80-rr032.spin2"));
+    loadSource(QStringLiteral(":/spin2/P2-qz80-rr032.spin2"));
     // loadSource(QStringLiteral(":/spin2/ROM_Booter_v33_01j.spin2"));
     loadObjectRandom();
 }
