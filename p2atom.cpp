@@ -217,9 +217,9 @@ void P2Atom::set_type(p2_Union_e type)
  * @brief Return the traits of the atom
  * @return Enumeration value from p2_traits_e
  */
-P2Traits P2Atom::traits() const
+p2_Traits_e P2Atom::traits() const
 {
-    return m_traits;
+    return m_traits.traits();
 }
 
 /**
@@ -227,7 +227,7 @@ P2Traits P2Atom::traits() const
  * @param trait new trait to set
  * @return true if set, false if not changed
  */
-bool P2Atom::set_traits(const Traits traits)
+bool P2Atom::set_traits(const p2_Traits_e traits)
 {
     if (traits == m_traits.traits())
         return false;
@@ -241,7 +241,7 @@ bool P2Atom::set_traits(const Traits traits)
  * @param on if true, add trait, otherwise clear it
  * @return true
  */
-bool P2Atom::add_trait(const Traits trait, bool on)
+bool P2Atom::add_trait(const p2_Traits_e trait, bool on)
 {
     if (on)
         m_traits.add(trait);
@@ -255,7 +255,7 @@ bool P2Atom::add_trait(const Traits trait, bool on)
  * @param trait trait to add
  * @return true if added, false if not changed
  */
-bool P2Atom::add_trait(const Traits trait)
+bool P2Atom::add_trait(const p2_Traits_e trait)
 {
     if (m_traits.has(trait))
         return false;
@@ -276,7 +276,7 @@ bool P2Atom::add_trait(const p2_LONG trait)
  * @param trait trait to clear
  * @return true if added, false if not changed
  */
-bool P2Atom::clear_trait(const Traits trait)
+bool P2Atom::clear_trait(const p2_Traits_e trait)
 {
     if (!m_traits.has(trait))
         return false;
@@ -289,7 +289,7 @@ bool P2Atom::clear_trait(const Traits trait)
  * @param trait Enumeration value from p2_traits_e
  * @return true if set, or false otherwise
  */
-bool P2Atom::has_trait(const Traits trait) const
+bool P2Atom::has_trait(const p2_Traits_e trait) const
 {
     return m_traits.has(trait);
 }

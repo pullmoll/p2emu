@@ -75,7 +75,7 @@ public:
 
     void clear();
     void pass_clear();
-    void line_clear();
+    void line_clear(int i);
 
     int pass() const;
 
@@ -115,6 +115,7 @@ public slots:
     bool set_source(const QStringList& source);
 
 private:
+    bool m_pnut;                            //!< use PNut compatible listing mode
     bool m_v33mode;                         //!< use V33 mode in index expressions?
     int m_pass;                             //!< current pass
     QString m_pathname;                     //!< current path name for FILE "filename.ext"
@@ -158,11 +159,15 @@ private:
 
     int commata_left() const;
     bool find_tok(p2_TOKEN_e tok) const;
+
+    static QString hub_cog(const P2Opcode& IR);
+
     QStringList results_instruction(bool wr_mem);
     QString results_assignment();
     QString results_comment();
     QStringList results_data(bool wr_mem);
     void results();
+
     QString expand_tabs(const QString& src);
     bool skip_comments();
     bool eol();
@@ -209,7 +214,7 @@ private:
     bool parse_addops(P2Atom& atom, int level);
     bool parse_shiftops(P2Atom& atom, int level);
     bool parse_binops(P2Atom& atom, int level);
-    Traits parse_traits();
+    p2_Traits_e parse_traits();
     P2Atom parse_expression(int level = 0);
 
     bool error_dst_or_src();

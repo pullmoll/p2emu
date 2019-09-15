@@ -34,10 +34,11 @@
 #include "p2opcode.h"
 #include "p2doc.h"
 
-P2Opcode::P2Opcode(const p2_LONG opcode, p2_ORIGIN_t org_orgh)
-    : m_u()
-    , m_origin(org_orgh)
+P2Opcode::P2Opcode(const p2_LONG opcode, p2_ORIGIN_t cog_hub)
+    : m_u({opcode})
+    , m_origin(cog_hub)
     , m_type(type_none)
+    , m_hubmode(false)
     , m_dst_imm(ignore)
     , m_src_imm(ignore)
     , m_augd()
@@ -47,69 +48,33 @@ P2Opcode::P2Opcode(const p2_LONG opcode, p2_ORIGIN_t org_orgh)
     , m_error_code(err_none)
     , m_error_value(0)
 {
-    m_u.opcode = opcode;
 }
 
-P2Opcode::P2Opcode(const p2_INST5_e inst5, p2_ORIGIN_t org_orgh)
-    : m_u()
-    , m_origin(org_orgh)
-    , m_type(type_none)
-    , m_dst_imm(ignore)
-    , m_src_imm(ignore)
-    , m_augd()
-    , m_augs()
-    , m_data()
-    , m_assigned()
-    , m_error_code(err_none)
-    , m_error_value(0)
+P2Opcode::P2Opcode(const p2_LONG opcode, p2_LONG _cog, p2_LONG _hub)
+    : P2Opcode(opcode, p2_ORIGIN_t({_cog, _hub}))
+{
+}
+
+P2Opcode::P2Opcode(const p2_INST5_e inst5, p2_ORIGIN_t cog_hub)
+    : P2Opcode(0, cog_hub)
 {
     set_inst5(inst5);
 }
 
-P2Opcode::P2Opcode(const p2_INST7_e inst7, p2_ORIGIN_t org_orgh)
-    : m_u()
-    , m_origin(org_orgh)
-    , m_type(type_none)
-    , m_dst_imm(ignore)
-    , m_src_imm(ignore)
-    , m_augd()
-    , m_augs()
-    , m_data()
-    , m_assigned()
-    , m_error_code(err_none)
-    , m_error_value(0)
+P2Opcode::P2Opcode(const p2_INST7_e inst7, p2_ORIGIN_t cog_hub)
+    : P2Opcode(0, cog_hub)
 {
     set_inst7(inst7);
 }
 
-P2Opcode::P2Opcode(const p2_INST8_e inst8, p2_ORIGIN_t org_orgh)
-    : m_u()
-    , m_origin(org_orgh)
-    , m_type(type_none)
-    , m_dst_imm(ignore)
-    , m_src_imm(ignore)
-    , m_augd()
-    , m_augs()
-    , m_data()
-    , m_assigned()
-    , m_error_code(err_none)
-    , m_error_value(0)
+P2Opcode::P2Opcode(const p2_INST8_e inst8, p2_ORIGIN_t cog_hub)
+    : P2Opcode(0, cog_hub)
 {
     set_inst8(inst8);
 }
 
-P2Opcode::P2Opcode(const p2_INST9_e inst9, p2_ORIGIN_t org_orgh)
-    : m_u()
-    , m_origin(org_orgh)
-    , m_type(type_none)
-    , m_dst_imm(ignore)
-    , m_src_imm(ignore)
-    , m_augd()
-    , m_augs()
-    , m_data()
-    , m_assigned()
-    , m_error_code(err_none)
-    , m_error_value(0)
+P2Opcode::P2Opcode(const p2_INST9_e inst9, p2_ORIGIN_t cog_hub)
+    : P2Opcode(0, cog_hub)
 {
     set_inst9(inst9);
 }
@@ -123,6 +88,7 @@ void P2Opcode::clear(const p2_LONG opcode, p2_ORIGIN_t origin)
     m_u.opcode = opcode;
     m_origin = origin;
     m_type = type_none;
+    m_hubmode = false;
     m_dst_imm = ignore;
     m_src_imm = ignore;
     m_augd.clear();
@@ -265,12 +231,21 @@ p2_LONG P2Opcode::augs_value() const
 }
 
 /**
- * @brief Return true, if the current P2Opcode is to be interpreted as instruction (opcode)
+ * @brief Return true, if the current opcode is to be interpreted as instruction
  * @return true if instruction, or false otherwise
  */
 bool P2Opcode::is_instruction() const
 {
     return type_instruction == m_type;
+}
+
+/**
+ * @brief Return true, if the instruction was defined in HUB mode
+ * @return true if instruction, or false otherwise
+ */
+bool P2Opcode::is_hubmode() const
+{
+    return m_hubmode;
 }
 
 /**
@@ -491,8 +466,8 @@ void P2Opcode::set_origin(p2_LONG _org, p2_LONG _orgh)
  */
 void P2Opcode::set_data(const P2Atom& data)
 {
-    m_type = type_data;
     m_data = data;
+    m_type = type_data;
 }
 
 /**
@@ -506,6 +481,15 @@ bool P2Opcode::set_assign(const P2Atom& atom)
     m_assigned = atom;
     m_type = type_assign;
     return true;
+}
+
+/**
+ * @brief Set the opcode's HUB mode flag
+ * @param hubmode true if HUB mode
+ */
+void P2Opcode::set_hubmode(bool hubmode)
+{
+    m_hubmode = hubmode;
 }
 
 /**
@@ -532,9 +516,11 @@ void P2Opcode::set_cond(const p2_Cond_e cond)
  * @brief Set the opcode's instruction field to a 5 bit enumeration value
  * @param inst p2_inst5_e instruction to set
  */
-void P2Opcode::set_inst5(const p2_INST5_e inst)
+void P2Opcode::set_inst5(const p2_INST5_e inst, bool rel, p2_LONG address)
 {
     m_u.op5.inst = static_cast<uint>(inst);
+    m_u.op5.rel = rel;
+    m_u.op5.address = address;
     m_type = type_instruction;
 }
 
@@ -1359,7 +1345,7 @@ QStringList P2Opcode::format_data_bit(const P2Opcode& ir, bool prefix, int* limi
 
     for (int i = 0; i < mask.size(); i++) {
         if (prefix && 0 == i % 4)
-            line += QStringLiteral("%%");
+            line += str_byt_prefix;
         if (mask[i] == 0xff) {
             line += byt(bytes[i], 2);
         } else {

@@ -128,12 +128,12 @@ MainWindow::MainWindow(QWidget *parent)
     setup_fonts();
 
     // load_source(QStringLiteral(":/spin2/spin2_interpreter.spin2"));
-    // load_source(QStringLiteral(":/spin2/pointers.spin2"));
     // load_source(QStringLiteral(":/spin2/USBHost.spin2"));
     // load_source(QStringLiteral(":/spin2/VGA_640_x_480_8bpp.spin2"));
     // load_source(QStringLiteral(":/spin2/P2-qz80-rr032.spin2"));
     // load_source(QStringLiteral(":/spin2/ROM_Booter_v33_01j.spin2"));
-    load_source(QStringLiteral(":/spin2/pointers.spin2"));
+    // load_source(QStringLiteral(":/spin2/pointers.spin2"));
+    load_source(QStringLiteral(":/spin2/fibo3.spin2"));
     load_object_random();
 }
 
@@ -685,6 +685,12 @@ void MainWindow::assemble()
             amodel->invalidate();
         ui->tvAsm->resizeRowsToContents();
         ui->tvAsm->setCurrentIndex(idx);
+        QString text = ui->tbErrors->toPlainText();
+        if (text.isEmpty()) {
+            text = m_asm->listing().join(QChar::LineFeed);
+            ui->tbErrors->setText(text);
+            ui->splSource->widget(2)->setVisible(true);
+        }
     }
 }
 

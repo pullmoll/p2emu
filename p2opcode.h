@@ -42,8 +42,9 @@
 class P2Opcode
 {
 public:
-    explicit P2Opcode(const p2_LONG opcode = 0, p2_ORIGIN_t origin = p2_ORIGIN_t({0,0}));
-    P2Opcode(const p2_INST5_e inst7, p2_ORIGIN_t origin = p2_ORIGIN_t({0,0}));
+    explicit P2Opcode(const p2_LONG opcode, p2_ORIGIN_t origin);
+    explicit P2Opcode(const p2_LONG opcode = 0, p2_LONG _cog = 0, p2_LONG _hub = 0);
+    P2Opcode(const p2_INST5_e inst7, p2_ORIGIN_t cog_hub = p2_ORIGIN_t({0,0}));
     P2Opcode(const p2_INST7_e inst7, p2_ORIGIN_t origin = p2_ORIGIN_t({0,0}));
     P2Opcode(const p2_INST8_e inst8, p2_ORIGIN_t origin = p2_ORIGIN_t({0,0}));
     P2Opcode(const p2_INST9_e inst9, p2_ORIGIN_t origin = p2_ORIGIN_t({0,0}));
@@ -98,6 +99,7 @@ public:
     p2_LONG aug_error_value() const;
 
     bool is_instruction() const;
+    bool is_hubmode() const;
     bool is_assign() const;
     bool is_data() const;
 
@@ -124,10 +126,11 @@ public:
     void set_origin(p2_LONG _org, p2_LONG _orgh);
     void set_data(const P2Atom& data);
     bool set_assign(const P2Atom& atom);
+    void set_hubmode(bool hubmode);
 
     void set_opcode(const p2_LONG opcode);
     void set_cond(const p2_Cond_e cond);
-    void set_inst5(const p2_INST5_e inst);
+    void set_inst5(const p2_INST5_e inst, bool rel = false, p2_LONG address = 0);
     void set_inst7(const p2_INST7_e inst);
     void set_inst8(const p2_INST8_e inst);
     void set_inst9(const p2_INST9_e inst);
@@ -174,6 +177,7 @@ private:
     p2_opcode_u m_u;                //!< instruction opcode or assignment value
     p2_ORIGIN_t m_origin;           //!< instruction's ORG and ORGH values
     Type m_type;                    //!< What type of information is stored in the opcode
+    bool m_hubmode;                 //!< True if the instruction was in HUB mode
     ImmFlag m_dst_imm;              //!< where to store destination (D) immediate flag
     ImmFlag m_src_imm;              //!< where to store source (S) immediate flag
     QVariant m_augd;                //!< optional value in case an AUGD is required

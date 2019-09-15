@@ -94,13 +94,13 @@ public:
     const QString type_name() const;
     void set_type(p2_Union_e type);
 
-    P2Traits traits() const;
-    bool set_traits(const Traits traits);
-    bool add_trait(const Traits trait, bool on);
-    bool add_trait(const Traits trait);
+    p2_Traits_e traits() const;
+    bool set_traits(const p2_Traits_e traits);
+    bool add_trait(const p2_Traits_e trait, bool on);
+    bool add_trait(const p2_Traits_e trait);
     bool add_trait(const p2_LONG trait);
-    bool clear_trait(const Traits trait);
-    bool has_trait(const Traits trait) const;
+    bool clear_trait(const p2_Traits_e trait);
+    bool has_trait(const p2_Traits_e trait) const;
     bool has_trait(const p2_LONG trait) const;
 
     const P2Union value() const;

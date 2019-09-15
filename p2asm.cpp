@@ -82,6 +82,7 @@ static const QString p2_prefix_real_const = QStringLiteral("flt");
  */
 P2Asm::P2Asm(QObject *parent)
     : QObject(parent)
+    , m_pnut(true)
     , m_v33mode(false)
     , m_pass(0)
     , m_pathname(".")
@@ -185,11 +186,11 @@ void P2Asm::pass_clear()
 /**
  * @brief Clear the results of the last line
  */
-void P2Asm::line_clear()
+void P2Asm::line_clear(int i)
 {
     // Parse the next line
-    m_lineptr = m_sourceptr[m_lineno];
-    m_lineno += 1;
+    m_lineptr = m_sourceptr[i];
+    m_lineno = i + 1;
 
     // Reset some state
     m_advance = 0;
@@ -694,7 +695,6 @@ bool P2Asm::assemble_dat_section()
 
     // Return if no more words/tokens were found
     if (!skip_comments()) {
-        results();
         return true;
     }
 
@@ -2262,7 +2262,7 @@ bool P2Asm::assemble_pass()
     pass_clear();
 
     for (int i = 0; i < m_source.count(); i++) {
-        line_clear();
+        line_clear(i);
         get_words();
 
         // Ignore empty lines
@@ -2376,6 +2376,19 @@ bool P2Asm::find_tok(p2_TOKEN_e tok) const
     return false;
 }
 
+QString P2Asm::hub_cog(const P2Opcode& IR)
+{
+    p2_LONG _hub = IR.hubaddr();
+    p2_LONG _cog = IR.cogaddr();
+    if (IR.is_hubmode())
+        return QString("%1 %2")
+                .arg(_hub, 5, 16, QChar('0'))
+                .arg(QString(3, QChar::Space));
+    return QString("%1 %2")
+            .arg(_hub, 5, 16, QChar('0'))
+            .arg(_cog/sz_LONG, 3, 16, QChar('0'));
+}
+
 /**
  * @brief Instruction register was constructed
  * @param wr_mem if true, store opcode into MEM
@@ -2384,38 +2397,47 @@ bool P2Asm::find_tok(p2_TOKEN_e tok) const
 QStringList P2Asm::results_instruction(bool wr_mem)
 {
     QStringList output;
-    p2_LONG org = m_cogaddr;
-    p2_LONG orgh = m_hubaddr;
+    p2_LONG _cog = m_cogaddr;
+    p2_LONG _hub = m_hubaddr;
 
     const QString* lineptr = m_lineptr;
     Q_ASSERT(m_advance == 4);
 
-    m_IR.set_origin(m_cogaddr, m_hubaddr);
+    m_IR.set_origin(_cog, _hub);
+    m_IR.set_hubmode(m_hubmode);
     m_hash_ORIGIN.insert(m_lineno, m_IR.origin());
     m_hash_IR.insert(m_lineno, m_IR);
 
     // Do we need to generate an AUGD instruction?
     if (m_IR.augd_valid()) {
         p2_LONG value = m_IR.augd_value();
-        P2Opcode IR(p2_AUGD, p2_ORIGIN_t({org, orgh}));
+        P2Opcode IR(p2_AUGD, _cog, _hub);
+        IR.set_hubmode(m_hubmode);
         IR.set_imm23(value);
 
         if (m_pass > 1) {
-            output += QString("%1 %2 [%3] %4")
-                     .arg(m_lineno, -6)
-                     .arg(org, 6, 16, QChar('0'))
-                     .arg(IR.opcode(), 8, 16, QChar('0'))
-                     .arg(lineptr ? *lineptr : QString());
+            if (m_pnut) {
+                output += QString("%1 %2 %3")
+                          .arg(hub_cog(IR))
+                          .arg(IR.opcode(), 8, 16, QChar('0'))
+                          .arg(lineptr ? *lineptr : QString());
+            } else {
+                output += QString("%1 %2 [%3] %4")
+                          .arg(m_lineno, -6)
+                          .arg(hub_cog(IR))
+                          .arg(IR.opcode(), 8, 16, QChar('0'))
+                          .arg(lineptr ? *lineptr : QString());
+            }
         }
-        if (wr_mem && orgh < MEM_SIZE) {
+        if (wr_mem && _hub < MEM_SIZE) {
             // write the opcode to memory as well
-            MEM.LONGS[orgh/4] = IR.opcode();
+            MEM.LONGS[_hub/4] = IR.opcode();
         }
 
-        org += 4;
-        orgh += 4;
+        _cog += sz_LONG;
+        _hub += sz_LONG;
         m_IR.set_origin(IR.origin());
-        m_advance += 4;
+        m_advance += sz_LONG;
         m_IR.set_augd();
         lineptr = nullptr;
     }
@@ -2423,40 +2445,56 @@ QStringList P2Asm::results_instruction(bool wr_mem)
     // Do we need to generate an AUGS instruction?
     if (m_IR.augs_valid()) {
         p2_LONG value = m_IR.augs_value();
-        P2Opcode IR(p2_AUGS, p2_ORIGIN_t({org, orgh}));
+        P2Opcode IR(p2_AUGS, p2_ORIGIN_t({_cog, _hub}));
+        IR.set_hubmode(m_hubmode);
         IR.set_imm23(value);
 
         if (m_pass > 1) {
-            output += QString("%1 %2 [%3] %4")
-                     .arg(m_lineno, -6)
-                     .arg(org, 6, 16, QChar('0'))
-                     .arg(IR.opcode(), 8, 16, QChar('0'))
-                     .arg(lineptr ? *lineptr : QString());
+            if (m_pnut) {
+                output += QString("%1 %2 %3")
+                          .arg(hub_cog(IR))
+                          .arg(IR.opcode(), 8, 16, QChar('0'))
+                          .arg(lineptr ? *lineptr : QString());
+            } else {
+                output += QString("%1 %2 [%3] %4")
+                          .arg(m_lineno, -6)
+                          .arg(hub_cog(IR))
+                          .arg(IR.opcode(), 8, 16, QChar('0'))
+                          .arg(lineptr ? *lineptr : QString());
+            }
         }
-        if (wr_mem && orgh < MEM_SIZE) {
+        if (wr_mem && _hub < MEM_SIZE) {
             // write the opcode to memory as well
-            MEM.LONGS[orgh/4] = IR.opcode();
+            MEM.LONGS[_hub/4] = IR.opcode();
         }
 
-        org += 4;
-        orgh += 4;
+        _cog += sz_LONG;
+        _hub += sz_LONG;
         m_IR.set_origin(IR.origin());
-        m_advance += 4;
+        m_advance += sz_LONG;
         m_IR.set_augs();
         lineptr = nullptr;
     }
 
     if (m_pass > 1) {
-        output += QString("%1 %2 [%3] %4")
-                  .arg(m_lineno, -6)
-                  .arg(org, 6, 16, QChar('0'))
-                  .arg(m_IR.opcode(), 8, 16, QChar('0'))
-                  .arg(lineptr ? *lineptr : QString());
+        if (m_pnut) {
+            output += QString("%1 %2 %3")
+                      .arg(hub_cog(m_IR))
+                      .arg(m_IR.opcode(), 8, 16, QChar('0'))
+                      .arg(lineptr ? *lineptr : QString());
+        } else {
+            output += QString("%1 %2 %3 [%4] %5")
+                      .arg(m_lineno, -6)
+                      .arg(_hub, 5, 16, QChar('0'))
+                      .arg(_cog/sz_LONG, 3, 16, QChar('0'))
+                      .arg(m_IR.opcode(), 8, 16, QChar('0'))
+                      .arg(lineptr ? *lineptr : QString());
+        }
     }
 
-    if (wr_mem && orgh < MEM_SIZE) {
+    if (wr_mem && _hub < MEM_SIZE) {
         // write the opcode to memory as well
-        MEM.LONGS[orgh/4] = m_IR.opcode();
+        MEM.LONGS[_hub/sz_LONG] = m_IR.opcode();
     }
     return output;
 }
@@ -2470,11 +2508,28 @@ QString P2Asm::results_assignment()
     QString output;
     m_hash_IR.insert(m_lineno, m_IR);
     if (m_pass > 1) {
-        output = QString("%1 %2 <%3> %4")
-                 .arg(m_lineno, -6)
-                 .arg(m_cogaddr, 6, 16, QChar('0'))
-                 .arg(m_IR.assigned().get_long(), 8, 16, QChar('0'))
-                 .arg(*m_lineptr);
+        if (m_pnut) {
+            if (con_section == m_section) {
+                output += QString("%1 %2 %3 %4")
+                      .arg(QString(5, QChar::Space))
+                      .arg(QString(3, QChar::Space))
+                      .arg(QString(8, QChar::Space))
+                      .arg(*m_lineptr);
+            } else {
+                output += QString("%1 %2 %3 %4")
+                      .arg(m_hubaddr, 5, 16, QChar('0'))
+                      .arg(QString(3, QChar::Space))
+                      .arg(QString(8, QChar::Space))
+                      .arg(*m_lineptr);
+            }
+        } else {
+            output = QString("%1 %2 %3 <%4> %5")
+                     .arg(m_lineno, -6)
+                     .arg(m_hubaddr, 5, 16, QChar('0'))
+                     .arg(m_cogaddr/sz_LONG, 3, 16, QChar('0'))
+                     .arg(m_IR.assigned().get_long(), 8, 16, QChar('0'))
+                     .arg(*m_lineptr);
+        }
     }
     return output;
 }
@@ -2489,7 +2544,6 @@ QStringList P2Asm::results_data(bool wr_mem)
     QStringList output;
     p2_ORIGIN_t origin({m_cogaddr, m_hubaddr});
 
-    m_IR.set_data(m_data);
     m_IR.set_origin(origin);
     m_hash_ORIGIN.insert(m_lineno, origin);
     m_hash_IR.insert(m_lineno, m_IR);
@@ -2506,7 +2560,71 @@ QStringList P2Asm::results_data(bool wr_mem)
     }
 
     if (m_pass > 1) {
-        output += P2Opcode::format_data(m_IR, fmt_hex).split(QChar::LineFeed);
+        const P2Atom atom = m_IR.data();
+        const P2Union u = atom.value();
+        const QString* lineptr = m_lineptr;
+        p2_LONG _cog = m_cogaddr;
+        p2_LONG _hub = m_hubaddr;
+        p2_LONG advance = 0;
+        foreach(const P2TypedValue& tv, u) {
+            P2Opcode IR(0, _cog, _hub);
+            IR.set_hubmode(m_hubmode);
+            switch (tv.type) {
+            case ut_Invalid:
+                IR.set_data(tv.value._long);
+                advance = 1;
+                break;
+            case ut_Bool:
+                IR.set_data(tv.value._bool);
+                advance = sz_BYTE;
+                break;
+            case ut_Byte:
+                IR.set_data(tv.value._byte);
+                advance = sz_BYTE;
+                break;
+            case ut_Word:
+                IR.set_data(tv.value._word);
+                advance = sz_WORD;
+                break;
+            case ut_Long:
+                IR.set_data(tv.value._long);
+                advance = sz_LONG;
+                break;
+            case ut_Addr:
+                IR.set_data(tv.value._addr[0]);
+                advance = sz_LONG;
+                break;
+            case ut_Quad:
+                IR.set_data(tv.value._quad);
+                advance = sz_QUAD;
+                break;
+            case ut_Real:
+                IR.set_data(tv.value._real);
+                advance = sz_REAL;
+                break;
+            case ut_String:
+                IR.set_data(tv.value._byte);
+                advance = sz_BYTE;
+                break;
+            }
+            if (m_pnut) {
+                int digits = int(2*advance);
+                output += QString("%1 %2%3 %4")
+                          .arg(hub_cog(IR))
+                          .arg(IR.data().get_long(), digits, 16, QChar('0'))
+                          .arg(QString(8-digits, QChar::Space))
+                          .arg(lineptr ? *lineptr : QString());
+            } else {
+                output += QString("%1 %2 [%3] %4")
+                          .arg(m_lineno, -6)
+                          .arg(hub_cog(IR))
+                          .arg(P2Opcode::format_data(IR, fmt_hex))
+                          .arg(lineptr ? *lineptr : QString());
+            }
+            _hub += advance;
+            _cog += advance;
+            lineptr = nullptr;
+        }
     }
     m_advance = static_cast<p2_LONG>(_bytes.size());
 
@@ -2521,11 +2639,20 @@ QString P2Asm::results_comment()
 {
     QString output;
     if (m_pass > 1) {
-        output = QString("%1 %2 -%3- %4")
+        if (m_pnut) {
+            output = QString("%1 %2 %3 %4")
+                  .arg(QString(5, QChar::Space))
+                  .arg(QString(3, QChar::Space))
+                  .arg(QString(8, QChar::Space))
+                  .arg(*m_lineptr);
+        } else {
+            output = QString("%1 %2 %3 -%4- %5")
                  .arg(m_lineno, -6)
-                 .arg(m_cogaddr, 6, 16, QChar('0'))
+                 .arg(m_hubaddr, 5, 16, QChar('0'))
+                 .arg(m_cogaddr/sz_LONG, 3, 16, QChar('0'))
                  .arg(QStringLiteral("--------"))
                  .arg(*m_lineptr);
+        }
     }
     return output;
 }
@@ -2537,10 +2664,6 @@ QString P2Asm::results_comment()
 void P2Asm::results()
 {
     const bool binary = true;
-
-    if (!m_data.isEmpty()) {
-        m_IR.set_data(m_data);
-    }
 
     if (m_IR.is_instruction()) {
         m_listing += results_instruction(binary);
@@ -2827,8 +2950,15 @@ QString P2Asm::find_locsym(Section sect, const QString& local)
  */
 P2Symbol P2Asm::get_symbol(P2Asm::Section sect, const QString& func, bool all_sections)
 {
-    QString symbol = find_symbol(sect, func, all_sections);
-    return m_symbols->symbol(symbol);
+    QString name = find_symbol(sect, func, all_sections);
+    P2Symbol symbol = m_symbols->symbol(name);
+    if (symbol.isNull() && m_pass > 1) {
+        m_errors += tr("Undefined %1 symbol %2.")
+                    .arg(tr("global"))
+                    .arg(name);
+        emit Error(m_pass, m_lineno, m_errors.last());
+    }
+    return symbol;
 }
 
 /**
@@ -2839,8 +2969,15 @@ P2Symbol P2Asm::get_symbol(P2Asm::Section sect, const QString& func, bool all_se
  */
 P2Symbol P2Asm::get_locsym(P2Asm::Section sect, const QString& local)
 {
-    QString symbol = find_locsym(sect, local);
-    return m_symbols->symbol(symbol);
+    QString name = find_locsym(sect, local);
+    P2Symbol symbol = m_symbols->symbol(name);
+    if (symbol.isNull() && m_pass > 1) {
+        m_errors += tr("Undefined %1 symbol %2.")
+                    .arg(tr("local"))
+                    .arg(name);
+        emit Error(m_pass, m_lineno, m_errors.last());
+    }
+    return symbol;
 }
 
 /**
@@ -2878,16 +3015,23 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_FUNC_FLOAT:
         next();
         DBG_EXPR(" atom float function: %s", qPrintable(str));
-        atom = parse_expression(level+1);
-        atom.set_type(ut_Real);
+        {
+            P2Atom expr = parse_expression(level+1);
+            expr.set_traits(expr.traits());
+            expr.set_type(ut_Real);
+            atom = expr;
+        }
         prev();
+        DBG_EXPR(" atom float atom = %s", qPrintable(atom.str()));
         break;
 
     case t_FUNC_ROUND:
         DBG_EXPR(" atom round function: %s", qPrintable(str));
         next();
-        atom = parse_expression(level+1);
-        atom.set_type(ut_Long);
+        {
+            P2Atom expr = parse_expression(level+1);
+            atom.set_value(expr.value());
+        }
         prev();
         DBG_EXPR(" atom round atom = %s", qPrintable(atom.str()));
         break;
@@ -2895,8 +3039,10 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_FUNC_TRUNC:
         DBG_EXPR(" atom trunc function: %s", qPrintable(str));
         next();
-        atom = parse_expression(level+1);
-        atom.set_type(ut_Long);
+        {
+            P2Atom expr = parse_expression(level+1);
+            atom.set_value(expr.value());
+        }
         prev();
         DBG_EXPR(" atom trunc atom = %s", qPrintable(atom.str()));
         break;
@@ -2905,7 +3051,10 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
         // precedence 0
         DBG_EXPR(" atom lparen: %s", qPrintable(curr_str()));
         next();
-        atom = parse_expression(level+1);
+        {
+            P2Atom expr = parse_expression(level+1);
+            atom.set_value(expr.value());
+        }
         prev();
         break;
 
@@ -2918,7 +3067,10 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
         // precedence 0
         DBG_EXPR(" atom lbracket: %s", qPrintable(curr_str()));
         next();
-        parse_expression(level+1);  // Note: index is set in parse_expression()
+        {
+            P2Atom expr = parse_expression(level+1);  // Note: index is set in parse_expression()
+            atom.set_value(expr.value());
+        }
         prev();
         break;
 
@@ -2934,12 +3086,6 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
             atom.set_value(sym->value());
             DBG_EXPR(" atom found locsym: %s = %s", qPrintable(sym->name()), qPrintable(atom.str()));
             break;
-        } else if (m_pass > 1) {
-            QString symbol = find_locsym(m_section, str);
-            m_errors += tr("Undefined %1 symbol %2.")
-                        .arg(tr("local"))
-                        .arg(symbol);
-            emit Error(m_pass, m_lineno, m_errors.last());
         }
         DBG_EXPR(" atom undefined locsym: %s", qPrintable(str));
         break;
@@ -2951,12 +3097,6 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
             atom.set_value(sym->value());
             DBG_EXPR(" atom found symbol: %s = %s", qPrintable(sym->name()), qPrintable(atom.str()));
             break;
-        } else if (m_pass > 1) {
-            QString symbol = find_symbol(m_section, str, true);
-            m_errors += tr("Undefined %1 symbol %2.")
-                        .arg(tr("global"))
-                        .arg(symbol);
-            emit Error(m_pass, m_lineno, m_errors.last());
         }
         DBG_EXPR(" atom undefined symbol: %s", qPrintable(str));
         break;
@@ -3551,7 +3691,7 @@ bool P2Asm::parse_binops(P2Atom& atom, int level)
  * @brief Parse leading traits before an expression
  * @return Bit mask of p2_Traits_e found
  */
-Traits P2Asm::parse_traits()
+p2_Traits_e P2Asm::parse_traits()
 {
     P2Traits traits(tr_none);
     while (Token.is_type(curr_tok(), tm_traits)) {
@@ -4912,10 +5052,11 @@ bool P2Asm::asm_ORG()
     P2Atom atom = parse_expression();
     p2_LONG value = atom.get_long();
     p2_LONG limit = (value < COG_SIZE ? COG_SIZE : COG_SIZE + LUT_SIZE) - 1;
+
     if (optional_COMMA()) {
-        // limit specified
-        P2Atom atom2 = parse_expression();
-        limit = atom2.get_long();
+        // a limit is also specified
+        P2Atom atom = parse_expression();
+        limit = atom.get_long();
     }
 
     if (limit > 0 && limit < COG_SIZE + LUT_SIZE) {
@@ -4933,13 +5074,12 @@ bool P2Asm::asm_ORG()
                     .arg(value, 0, 16, QChar('0'))
                     .arg(limit, 3, 16, QChar('0'));
         emit Error(m_pass, m_lineno, m_errors.last());
-        value = m_cogaddr;
-    } else {
-        m_cogaddr = sz_LONG * value;
+        value = m_cogaddr / sz_LONG;
     }
-
+    m_cogaddr = sz_LONG * value;
     m_hubmode = false;
     m_IR.set_assign(m_cogaddr);
+    m_IR.set_hubmode(m_hubmode);
     if (!m_symbol.isEmpty())
         m_symbols->set_atom(m_symbol, atom);
     return end_of_line();
@@ -4970,16 +5110,15 @@ bool P2Asm::asm_ORGF()
                     .arg(value / 4, 0, 16, QChar('0'))
                     .arg(0x1ff, 3, 16, QChar('0'));
         emit Error(m_pass, m_lineno, m_errors.last());
-        value = m_cogaddr;
-        atom.set_value(P2Union(value));
+        atom.set_value(P2Union(m_cogaddr, m_hubaddr));
     }
 
-    for (p2_LONG pc = m_cogaddr; pc < value; pc += 4)
+    for (p2_LONG pc = m_cogaddr; pc < atom.get_addr(p2_cog); pc += 4)
         m_data.add_long(0);
 
-    m_hubmode = false;
-    m_advance = m_data.size();
+    m_advance = 0;
     m_IR.set_assign(atom);
+    m_IR.set_hubmode(m_hubmode);
     if (!m_symbol.isEmpty())
         m_symbols->set_value(m_symbol, atom.value());
 
@@ -5009,6 +5148,7 @@ bool P2Asm::asm_ORGH()
     m_cogaddr = value;  // FIXME: correct?
     m_hubaddr = value;
     m_IR.set_assign(m_hubaddr);
+    m_IR.set_hubmode(m_hubmode);
     if (!m_symbol.isEmpty())
         m_symbols->set_value(m_symbol, P2Union(value));
 
@@ -5033,6 +5173,7 @@ bool P2Asm::asm_FIT()
         emit Error(m_pass, m_lineno, m_errors.last());
     }
     m_IR.set_assign(atom);
+    m_IR.set_hubmode(m_hubmode);
     return end_of_line();
 }
 
@@ -5112,6 +5253,7 @@ bool P2Asm::asm_BYTE()
     m_IR.set_none();
     m_advance = 0;      // Don't advance PC, as it's done based on m_data
 
+    m_data.clear(ut_Byte);
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
         p2_BYTES _bytes = atom.get_bytes();
@@ -5126,6 +5268,8 @@ bool P2Asm::asm_BYTE()
         }
         optional_COMMA();
     }
+    m_IR.set_data(m_data);
+
     return end_of_line();
 }
 
@@ -5140,6 +5284,7 @@ bool P2Asm::asm_WORD()
     m_IR.set_none();
     m_advance = 0;      // Don't advance PC, as it's done based on m_data
 
+    m_data.clear(ut_Word);
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
         p2_WORD _word = atom.get_word();
@@ -5153,6 +5298,7 @@ bool P2Asm::asm_WORD()
         }
         optional_COMMA();
     }
+    m_IR.set_data(m_data);
 
     return end_of_line();
 }
@@ -5168,6 +5314,7 @@ bool P2Asm::asm_LONG()
     m_IR.set_none();
     m_advance = 0;      // Don't advance PC, as it's done based on m_data
 
+    m_data.clear(ut_Long);
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
         p2_LONG _long = atom.get_long();
@@ -5182,6 +5329,7 @@ bool P2Asm::asm_LONG()
         }
         optional_COMMA();
     }
+    m_IR.set_data(m_data);
 
     return end_of_line();
 }
@@ -5197,6 +5345,7 @@ bool P2Asm::asm_RES()
     m_IR.set_none();
     m_advance = 0;      // Don't advance PC if no value is specified
 
+    m_data.clear(ut_Long);
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
         int count = atom.get_int();
@@ -5204,7 +5353,7 @@ bool P2Asm::asm_RES()
         m_data.add_longs(_longs);
         optional_COMMA();
     }
-    m_data.set_type(ut_Long);
+    m_IR.set_data(m_data);
 
     return end_of_line();
 }
@@ -5220,6 +5369,7 @@ bool P2Asm::asm_FILE()
     m_IR.set_none();
     m_advance = 0;      // Don't advance PC, as it's done based on m_data
 
+    m_data.clear(ut_String);
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
         QString filename = QString("%1/%2")
@@ -5238,6 +5388,8 @@ bool P2Asm::asm_FILE()
         }
         optional_COMMA();
     }
+    m_IR.set_data(m_data);
+
     return end_of_line();
 
 }

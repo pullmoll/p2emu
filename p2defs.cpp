@@ -51,3 +51,60 @@ const QString template_str_instruction = QStringLiteral(" label_name IF_NC_AND_N
 const QString template_str_description = QStringLiteral(" Some description string... ");
 
 const QString key_tv_asm = QStringLiteral("tvAsm");
+
+P2Traits::P2Traits(p2_LONG l)
+    : m()
+{
+    m._long = l;
+}
+
+P2Traits::P2Traits(p2_Traits_e t)
+    : m()
+{
+    m.traits = t;
+}
+
+p2_Traits_e P2Traits::traits() const
+{
+    return m.traits;
+}
+
+p2_LONG P2Traits::value() const
+{
+    return m._long;
+}
+
+void P2Traits::set(const p2_Traits_e set)
+{
+    m.traits = set;
+}
+
+bool P2Traits::has(const p2_Traits_e has) const
+{
+    return m._long & has ? true : false;
+}
+
+bool P2Traits::has(const p2_LONG has) const
+{
+    return m._long & has ? true : false;
+}
+
+void P2Traits::add(const p2_Traits_e set)
+{
+    m._long |= set;
+}
+
+void P2Traits::add(const p2_LONG set)
+{
+    m._long |= set;
+}
+
+void P2Traits::remove(const p2_Traits_e clear)
+{
+    m._long &= ~clear;
+}
+
+void P2Traits::remove(const p2_LONG clear)
+{
+    m._long &= ~clear;
+}

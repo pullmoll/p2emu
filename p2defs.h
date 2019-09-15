@@ -393,73 +393,28 @@ typedef enum {
     tr_INC         = (1u <<  8),   //!< PTRA/PTRB with increment (++)
     tr_PRE         = (1u <<  9),   //!< PTRA/PTRB with pre inc/dec (--PTRx or ++PTRx)
     tr_POST        = (1u << 10),   //!< PTRA/PTRB with post inc/dec post (PTRx-- or PTRx++)
-}   Traits;
+}   p2_Traits_e;
 
 //! P2Atom traits
 class P2Traits
 {
 public:
-    explicit P2Traits(p2_LONG l = tr_none)
-        : m()
-    {
-        m._long = l;
-    }
+    explicit P2Traits(p2_LONG l = tr_none);
+    explicit P2Traits(p2_Traits_e t = tr_none);
 
-    explicit P2Traits(Traits t = tr_none)
-        : m()
-    {
-        m._traits = t;
-    }
-
-    Traits traits() const
-    {
-        return m._traits;
-    }
-
-    p2_LONG value() const
-    {
-        return m._long;
-    }
-
-    void set(const Traits set)
-    {
-        m._traits = set;
-    }
-
-    bool has(const Traits has) const
-    {
-        return m._long & has ? true : false;
-    }
-
-    bool has(const p2_LONG has) const
-    {
-        return m._long & has ? true : false;
-    }
-
-    void add(const Traits set)
-    {
-        m._long |= set;
-    }
-
-    void add(const p2_LONG set)
-    {
-        m._long |= set;
-    }
-
-    void remove(const Traits clear)
-    {
-        m._long &= ~clear;
-    }
-
-    void remove(const p2_LONG clear)
-    {
-        m._long &= ~clear;
-    }
-
+    p2_Traits_e traits() const;
+    p2_LONG value() const;
+    void set(const p2_Traits_e set);
+    bool has(const p2_Traits_e has) const;
+    bool has(const p2_LONG has) const;
+    void add(const p2_Traits_e set);
+    void add(const p2_LONG set);
+    void remove(const p2_Traits_e clear);
+    void remove(const p2_LONG clear);
 private:
     union {
         p2_LONG _long;
-        Traits _traits;
+        p2_Traits_e traits;
     }   m;
 };
 
