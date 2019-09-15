@@ -4376,6 +4376,27 @@ bool P2Asm::parse_D_IM_S()
 }
 
 /**
+ * @brief Expect parameters for D and {#}S where #S is relative to COG/HUB addresss
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_D_REL_S()
+{
+    P2Atom dst = parse_dst();
+    if (!mandatory_COMMA())
+        return false;
+    return parse_REL_S();
+}
+
+bool P2Asm::parse_D_REL_S_WCZ()
+{
+    P2Atom dst = parse_dst();
+    if (!mandatory_COMMA())
+        return false;
+    return parse_REL_S_WCZ();
+}
+
+/**
  * @brief Expect parameters for D and {#}S / PTRx followed by optional WC, WZ, WCZ
  *
  * @return true on success, or false on error
@@ -4700,6 +4721,21 @@ bool P2Asm::parse_WZ_D_IM_S()
 }
 
 /**
+ * @brief Expect parameters for {#}D, and {#}S where #S is relative to COG / HUB addres
+ *
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_WZ_D_REL_S()
+{
+    P2Atom dst = parse_dst(P2Opcode::immediate_L);
+    if (!mandatory_COMMA())
+        return false;
+    if (!parse_REL())
+        return false;
+    return end_of_line();
+}
+
+/**
  * @brief Expect parameters for {#}D, and {#}S or PTRx[index]
  *
  * @return true on success, or false on error
@@ -4802,6 +4838,63 @@ bool P2Asm::parse_IM_S_WC()
     return end_of_line();
 }
 
+bool P2Asm::parse_REL()
+{
+    m_IR.set_src_imm(P2Opcode::immediate_I);
+    P2Atom src = parse_expression();
+    if (src.has_trait(tr_IMMEDIATE)) {
+        int value = static_cast<int>(src.get_addr(m_hubmode));
+        int relative = 0;
+        if (m_hubmode) {
+            relative = value - static_cast<int>(m_hubaddr + sz_LONG);
+            if (relative & 3) {
+                m_errors += tr("Invalid distance between HUB addresses: %1 is not a multiple of %2.")
+                            .arg(relative)
+                            .arg(tr("four"));
+                emit Error(m_pass, m_lineno, m_errors.last());
+            }
+            value = relative / sz_LONG;
+        } else {
+            relative = value - static_cast<int>(m_cogaddr + sz_LONG);
+        }
+        value = relative / sz_LONG;
+        if (value < -256 || value > 255) {
+            m_errors += tr("Relative value  %1 not in range %2 … %3.")
+                        .arg(value)
+                        .arg(-256)
+                        .arg(255);
+            emit Error(m_pass, m_lineno, m_errors.last());
+        }
+        m_IR.set_src(static_cast<p2_LONG>(value & 0x1ff));
+    } else {
+        m_IR.set_src(src.get_addr(p2_cog) / sz_LONG);
+    }
+    return true;
+}
+
+/**
+ * @brief Expect S or #S where the address is -256 to 255 longs relative to COG / HUB address
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_REL_S()
+{
+    if (!parse_REL())
+        return false;
+    return end_of_line();
+}
+
+/**
+ * @brief Expect S or #S where the address is -256 to 255 longs relative to COG / HUB address
+ * @return true on success, or false on error
+ */
+bool P2Asm::parse_REL_S_WCZ()
+{
+    if (!parse_REL())
+        return false;
+    if (!optional_WCZ())
+        return false;
+    return end_of_line();
+}
 
 /**
  * @brief Expect parameters for #AAAAAAAAAAAA (20 bit address for CALL/CALLA/CALLB/LOC)
@@ -5269,6 +5362,7 @@ bool P2Asm::asm_BYTE()
         optional_COMMA();
     }
     m_IR.set_data(m_data);
+    m_IR.set_hubmode(m_hubmode);
 
     return end_of_line();
 }
@@ -5299,6 +5393,7 @@ bool P2Asm::asm_WORD()
         optional_COMMA();
     }
     m_IR.set_data(m_data);
+    m_IR.set_hubmode(m_hubmode);
 
     return end_of_line();
 }
@@ -5330,6 +5425,7 @@ bool P2Asm::asm_LONG()
         optional_COMMA();
     }
     m_IR.set_data(m_data);
+    m_IR.set_hubmode(m_hubmode);
 
     return end_of_line();
 }
@@ -5354,6 +5450,7 @@ bool P2Asm::asm_RES()
         optional_COMMA();
     }
     m_IR.set_data(m_data);
+    m_IR.set_hubmode(m_hubmode);
 
     return end_of_line();
 }
@@ -5389,6 +5486,7 @@ bool P2Asm::asm_FILE()
         optional_COMMA();
     }
     m_IR.set_data(m_data);
+    m_IR.set_hubmode(m_hubmode);
 
     return end_of_line();
 
@@ -7985,7 +8083,7 @@ bool P2Asm::asm_CALLD()
 {
     next();
     m_IR.set_inst7(p2_CALLD);
-    return parse_D_IM_S_WCZ();
+    return parse_D_REL_S_WCZ();
 }
 
 /**
@@ -8002,8 +8100,7 @@ bool P2Asm::asm_RESI3()
 {
     next();
     m_IR.set_inst7(p2_CALLD);
-    m_IR.set_wc();
-    m_IR.set_wz();
+    m_IR.set_wcz();
     m_IR.set_dst_src(offs_IJMP3, offs_IRET3);
     return parse_INST();
 }
@@ -8022,7 +8119,7 @@ bool P2Asm::asm_RESI2()
 {
     next();
     m_IR.set_inst7(p2_CALLD);
-    m_IR.set_wcz(true);
+    m_IR.set_wcz();
     m_IR.set_dst_src(offs_IJMP2, offs_IRET2);
     return parse_INST();
 }
@@ -8041,7 +8138,7 @@ bool P2Asm::asm_RESI1()
 {
     next();
     m_IR.set_inst7(p2_CALLD);
-    m_IR.set_wcz(true);
+    m_IR.set_wcz();
     m_IR.set_dst_src(offs_IJMP1, offs_IRET1);
     return parse_INST();
 }
@@ -8060,7 +8157,7 @@ bool P2Asm::asm_RESI0()
 {
     next();
     m_IR.set_inst7(p2_CALLD);
-    m_IR.set_wcz(true);
+    m_IR.set_wcz();
     m_IR.set_dst_src(offs_INA, offs_INB);
     return parse_INST();
 }
@@ -8079,7 +8176,7 @@ bool P2Asm::asm_RETI3()
 {
     next();
     m_IR.set_inst7(p2_CALLD);
-    m_IR.set_wcz(true);
+    m_IR.set_wcz();
     m_IR.set_dst_src(offs_INB, offs_IRET3);
     return parse_INST();
 }
@@ -8098,7 +8195,7 @@ bool P2Asm::asm_RETI2()
 {
     next();
     m_IR.set_inst7(p2_CALLD);
-    m_IR.set_wcz(true);
+    m_IR.set_wcz();
     m_IR.set_dst_src(offs_INB, offs_IRET2);
     return parse_INST();
 }
@@ -8117,7 +8214,7 @@ bool P2Asm::asm_RETI1()
 {
     next();
     m_IR.set_inst7(p2_CALLD);
-    m_IR.set_wcz(true);
+    m_IR.set_wcz();
     m_IR.set_dst_src(offs_INB, offs_IRET1);
     return parse_INST();
 }
@@ -8136,7 +8233,7 @@ bool P2Asm::asm_RETI0()
 {
     next();
     m_IR.set_inst7(p2_CALLD);
-    m_IR.set_wcz(true);
+    m_IR.set_wcz();
     m_IR.set_dst_src(offs_INB, offs_INB);
     return parse_INST();
 }
@@ -8153,7 +8250,7 @@ bool P2Asm::asm_CALLPA()
 {
     next();
     m_IR.set_inst8(p2_CALLPA);
-    return parse_WZ_D_IM_S();
+    return parse_WZ_D_REL_S();
 }
 
 /**
@@ -8168,7 +8265,7 @@ bool P2Asm::asm_CALLPB()
 {
     next();
     m_IR.set_inst8(p2_CALLPB);
-    return parse_WZ_D_IM_S();
+    return parse_WZ_D_REL_S();
 }
 
 /**
@@ -8183,7 +8280,7 @@ bool P2Asm::asm_DJZ()
 {
     next();
     m_IR.set_inst9(p2_DJZ);
-    return parse_D_IM_S();
+    return parse_D_REL_S();
 }
 
 /**
@@ -8198,7 +8295,7 @@ bool P2Asm::asm_DJNZ()
 {
     next();
     m_IR.set_inst9(p2_DJNZ);
-    return parse_D_IM_S();
+    return parse_D_REL_S();
 }
 
 /**
@@ -8213,7 +8310,7 @@ bool P2Asm::asm_DJF()
 {
     next();
     m_IR.set_inst9(p2_DJF);
-    return parse_D_IM_S();
+    return parse_D_REL_S();
 }
 
 /**
@@ -8228,7 +8325,7 @@ bool P2Asm::asm_DJNF()
 {
     next();
     m_IR.set_inst9(p2_DJNF);
-    return parse_D_IM_S();
+    return parse_D_REL_S();
 }
 
 /**
@@ -8243,7 +8340,7 @@ bool P2Asm::asm_IJZ()
 {
     next();
     m_IR.set_inst9(p2_IJZ);
-    return parse_D_IM_S();
+    return parse_D_REL_S();
 }
 
 /**
@@ -8258,7 +8355,7 @@ bool P2Asm::asm_IJNZ()
 {
     next();
     m_IR.set_inst9(p2_IJNZ);
-    return parse_D_IM_S();
+    return parse_D_REL_S();
 }
 
 /**
@@ -8273,7 +8370,7 @@ bool P2Asm::asm_TJZ()
 {
     next();
     m_IR.set_inst9(p2_TJZ);
-    return parse_D_IM_S();
+    return parse_D_REL_S();
 }
 
 /**
@@ -8288,7 +8385,7 @@ bool P2Asm::asm_TJNZ()
 {
     next();
     m_IR.set_inst9(p2_TJNZ);
-    return parse_D_IM_S();
+    return parse_D_REL_S();
 }
 
 /**
@@ -8303,7 +8400,7 @@ bool P2Asm::asm_TJF()
 {
     next();
     m_IR.set_inst9(p2_TJF);
-    return parse_D_IM_S();
+    return parse_D_REL_S();
 }
 
 /**
@@ -8318,7 +8415,7 @@ bool P2Asm::asm_TJNF()
 {
     next();
     m_IR.set_inst9(p2_TJNF);
-    return parse_D_IM_S();
+    return parse_D_REL_S();
 }
 
 /**
@@ -8333,7 +8430,7 @@ bool P2Asm::asm_TJS()
 {
     next();
     m_IR.set_inst9(p2_TJS);
-    return parse_D_IM_S();
+    return parse_D_REL_S();
 }
 
 /**
@@ -8348,7 +8445,7 @@ bool P2Asm::asm_TJNS()
 {
     next();
     m_IR.set_inst9(p2_TJNS);
-    return parse_D_IM_S();
+    return parse_D_REL_S();
 }
 
 /**
@@ -8363,7 +8460,7 @@ bool P2Asm::asm_TJV()
 {
     next();
     m_IR.set_inst9(p2_TJV);
-    return parse_D_IM_S();
+    return parse_D_REL_S();
 }
 
 /**
@@ -8378,7 +8475,7 @@ bool P2Asm::asm_JINT()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JINT);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8393,7 +8490,7 @@ bool P2Asm::asm_JCT1()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JCT1);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8408,7 +8505,7 @@ bool P2Asm::asm_JCT2()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JCT2);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8423,7 +8520,7 @@ bool P2Asm::asm_JCT3()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JCT3);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8438,7 +8535,7 @@ bool P2Asm::asm_JSE1()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JSE1);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8453,7 +8550,7 @@ bool P2Asm::asm_JSE2()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JSE2);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8468,7 +8565,7 @@ bool P2Asm::asm_JSE3()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JSE3);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8483,7 +8580,7 @@ bool P2Asm::asm_JSE4()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JSE4);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8498,7 +8595,7 @@ bool P2Asm::asm_JPAT()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JPAT);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8513,7 +8610,7 @@ bool P2Asm::asm_JFBW()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JFBW);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8528,7 +8625,7 @@ bool P2Asm::asm_JXMT()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JXMT);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8543,7 +8640,7 @@ bool P2Asm::asm_JXFI()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JXFI);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8558,7 +8655,7 @@ bool P2Asm::asm_JXRO()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JXRO);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8573,7 +8670,7 @@ bool P2Asm::asm_JXRL()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JXRL);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8588,7 +8685,7 @@ bool P2Asm::asm_JATN()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JATN);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8603,7 +8700,7 @@ bool P2Asm::asm_JQMT()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JQMT);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8618,7 +8715,7 @@ bool P2Asm::asm_JNINT()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNINT);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8633,7 +8730,7 @@ bool P2Asm::asm_JNCT1()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNCT1);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8648,7 +8745,7 @@ bool P2Asm::asm_JNCT2()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNCT2);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8663,7 +8760,7 @@ bool P2Asm::asm_JNCT3()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNCT3);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8678,7 +8775,7 @@ bool P2Asm::asm_JNSE1()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNSE1);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8693,7 +8790,7 @@ bool P2Asm::asm_JNSE2()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNSE2);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8708,7 +8805,7 @@ bool P2Asm::asm_JNSE3()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNSE3);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8723,7 +8820,7 @@ bool P2Asm::asm_JNSE4()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNSE4);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8738,7 +8835,7 @@ bool P2Asm::asm_JNPAT()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNPAT);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8753,7 +8850,7 @@ bool P2Asm::asm_JNFBW()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNFBW);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8768,7 +8865,7 @@ bool P2Asm::asm_JNXMT()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNXMT);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8783,7 +8880,7 @@ bool P2Asm::asm_JNXFI()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNXFI);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8798,7 +8895,7 @@ bool P2Asm::asm_JNXRO()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNXRO);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8813,7 +8910,7 @@ bool P2Asm::asm_JNXRL()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNXRL);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8828,7 +8925,7 @@ bool P2Asm::asm_JNATN()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNATN);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**
@@ -8843,7 +8940,7 @@ bool P2Asm::asm_JNQMT()
 {
     next();
     m_IR.set_opdst(p2_OPDST_JNQMT);
-    return parse_IM_S();
+    return parse_REL_S();
 }
 
 /**

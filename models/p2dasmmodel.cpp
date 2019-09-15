@@ -232,7 +232,7 @@ QSize P2DasmModel::sizeHint(const QModelIndex& index, const QString& text) const
 
     switch (column) {
     case c_Address:
-        return metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_address : text);
+        return metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_cogaddr : text);
 
     case c_Opcode:
         switch (m_format) {

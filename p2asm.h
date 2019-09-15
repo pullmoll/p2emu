@@ -240,10 +240,13 @@ private:
     bool parse_D_IM_S_ORCZ();
     bool parse_D_IM_S_XORCZ();
     bool parse_WZ_D_IM_S();
+    bool parse_WZ_D_REL_S();
     bool parse_WZ_D_IM_S_PTRx(int scale = 1);
     bool parse_WZ_D_IM_S_WC();
     bool parse_D_IM_S_NNN(uint max = 7);
     bool parse_D_IM_S();
+    bool parse_D_REL_S();
+    bool parse_D_REL_S_WCZ();
     bool parse_D_IM_S_PTRx_WCZ(int scale = 1);
     bool parse_D_IM_S_PTRx(int scale = 1);
     bool parse_D_WCZ();
@@ -258,6 +261,9 @@ private:
     bool parse_IM_D_XORC_XORZ();
     bool parse_IM_S();
     bool parse_IM_S_WC();
+    bool parse_REL();
+    bool parse_REL_S();
+    bool parse_REL_S_WCZ();
     bool parse_PC_A20();
     bool parse_PTRx_PC_A20();
     bool parse_IMM23();

@@ -35,8 +35,8 @@
 #include "p2defs.h"
 #include "p2token.h"
 
-const QString template_str_origin = QStringLiteral("FFFFFF ");
-const QString template_str_address = QStringLiteral("COG:1FF ");
+const QString template_str_hubaddr = QStringLiteral("12345 ");
+const QString template_str_cogaddr = QStringLiteral("COG:1FF ");
 
 const QString template_str_opcode_bin = QStringLiteral("EEEE OOOOOOO CZI DDDDDDDDD SSSSSSSSS ");
 const QString template_str_opcode_byt = QStringLiteral("F FF FFF FFF FFF ");

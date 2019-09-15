@@ -1603,8 +1603,8 @@ typedef enum {
     fmt_doc,                    //!< display as excerpt of the P2Doc information
 }   p2_FORMAT_e;
 
-extern const QString template_str_origin;
-extern const QString template_str_address;
+extern const QString template_str_hubaddr;
+extern const QString template_str_cogaddr;
 extern const QString template_str_opcode_bin;
 extern const QString template_str_opcode_byt;
 extern const QString template_str_opcode_oct;

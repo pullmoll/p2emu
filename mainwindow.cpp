@@ -130,10 +130,10 @@ MainWindow::MainWindow(QWidget *parent)
     // load_source(QStringLiteral(":/spin2/spin2_interpreter.spin2"));
     // load_source(QStringLiteral(":/spin2/USBHost.spin2"));
     // load_source(QStringLiteral(":/spin2/VGA_640_x_480_8bpp.spin2"));
-    // load_source(QStringLiteral(":/spin2/P2-qz80-rr032.spin2"));
+    load_source(QStringLiteral(":/spin2/P2-qz80-rr032.spin2"));
     // load_source(QStringLiteral(":/spin2/ROM_Booter_v33_01j.spin2"));
     // load_source(QStringLiteral(":/spin2/pointers.spin2"));
-    load_source(QStringLiteral(":/spin2/fibo3.spin2"));
+    // load_source(QStringLiteral(":/spin2/all_cogs_blink.spin2"));
     load_object_random();
 }
 
@@ -180,8 +180,8 @@ void MainWindow::save_settings_asm()
     const P2AsmModel* amodel = asm_model();
     if (amodel)
         s.setValue(key_opcodes, amodel->opcode_format());
-    s.setValue(key_column_origin, ui->tvAsm->isColumnHidden(P2AsmModel::c_Origin));
-    s.setValue(key_column_address, ui->tvAsm->isColumnHidden(P2AsmModel::c_Address));
+    s.setValue(key_column_origin, ui->tvAsm->isColumnHidden(P2AsmModel::c_HubAddr));
+    s.setValue(key_column_address, ui->tvAsm->isColumnHidden(P2AsmModel::c_CogAddr));
     s.setValue(key_column_opcode, ui->tvAsm->isColumnHidden(P2AsmModel::c_Opcode));
     s.setValue(key_column_tokens, ui->tvAsm->isColumnHidden(P2AsmModel::c_Tokens));
     s.setValue(key_column_symbols, ui->tvAsm->isColumnHidden(P2AsmModel::c_Symbols));
@@ -208,8 +208,8 @@ void MainWindow::restore_settings_asm()
     P2AsmModel* amodel = asm_model();
     if (amodel)
         ui->tvAsm->setCurrentIndex(amodel->index(row, column));
-    ui->tvAsm->setColumnHidden(P2AsmModel::c_Origin, s.value(key_column_origin, false).toBool());
-    ui->tvAsm->setColumnHidden(P2AsmModel::c_Address, s.value(key_column_address, false).toBool());
+    ui->tvAsm->setColumnHidden(P2AsmModel::c_HubAddr, s.value(key_column_origin, false).toBool());
+    ui->tvAsm->setColumnHidden(P2AsmModel::c_CogAddr, s.value(key_column_address, false).toBool());
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Opcode, s.value(key_column_opcode, false).toBool());
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Tokens, s.value(key_column_tokens, false).toBool());
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Symbols, s.value(key_column_symbols, false).toBool());

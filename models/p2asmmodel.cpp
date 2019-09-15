@@ -55,15 +55,15 @@ P2AsmModel::P2AsmModel(P2Asm* p2asm, QObject *parent)
     , m_head_alignment()
     , m_text_alignment()
 {
-    m_header.insert(c_Origin,           tr("OrgH"));
-    m_background.insert(c_Origin,       qRgb(0xff,0xfc,0xf8));
-    m_head_alignment.insert(c_Origin,   Qt::AlignLeft | Qt::AlignVCenter);
-    m_text_alignment.insert(c_Origin,   Qt::AlignLeft | Qt::AlignTop);
+    m_header.insert(c_HubAddr,          tr("HUB"));
+    m_background.insert(c_HubAddr,      qRgb(0xff,0xfc,0xf8));
+    m_head_alignment.insert(c_HubAddr,  Qt::AlignLeft | Qt::AlignVCenter);
+    m_text_alignment.insert(c_HubAddr,  Qt::AlignLeft | Qt::AlignTop);
 
-    m_header.insert(c_Address,          tr("Org"));
-    m_background.insert(c_Address,      qRgb(0xff,0xf0,0xe0));
-    m_head_alignment.insert(c_Address,  Qt::AlignLeft | Qt::AlignVCenter);
-    m_text_alignment.insert(c_Address,  Qt::AlignLeft | Qt::AlignTop);
+    m_header.insert(c_CogAddr,          tr("COG/LUT"));
+    m_background.insert(c_CogAddr,      qRgb(0xff,0xf0,0xe0));
+    m_head_alignment.insert(c_CogAddr,  Qt::AlignLeft | Qt::AlignVCenter);
+    m_text_alignment.insert(c_CogAddr,  Qt::AlignLeft | Qt::AlignTop);
 
     m_header.insert(c_Opcode,           tr("Opcode"));
     m_background.insert(c_Opcode,       qRgb(0xf8,0xfc,0xff));
@@ -119,10 +119,10 @@ QVariant P2AsmModel::headerData(int section, Qt::Orientation orientation, int ro
 
         case Qt::ToolTipRole:
             switch (column) {
-            case c_Origin:
+            case c_HubAddr:
                 result = tr("Origin of the current instruction.");
                 break;
-            case c_Address:
+            case c_CogAddr:
                 result = tr("Program counter address of the current instruction.");
                 break;
             case c_Errors:
@@ -192,8 +192,8 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     const bool has_ORIGIN = m_asm->has_ORIGIN(lineno);
     const p2_ORIGIN_t origin = has_ORIGIN ? m_asm->get_ORIGIN(lineno)
                                        : p2_ORIGIN_t();
-    const p2_LONG cogaddr = origin._cog;
-    const p2_LONG hubaddr = origin._hub;
+    const p2_LONG _cog = origin._cog;
+    const p2_LONG _hub = origin._hub;
 
     const bool has_IR = m_asm->has_IR(lineno);
     const P2Opcode& IR = m_asm->get_IR(lineno);
@@ -201,27 +201,33 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     switch (role) {
     case Qt::DisplayRole:
         switch (column) {
-        case c_Origin: // Address as COG[xxx], LUT[xxx], or xxxxxx in RAM
+        case c_HubAddr:
             if (!has_ORIGIN)
                 break;
-            result = QString("%1").arg(hubaddr, 6, 16, QChar('0'));
+            result = QString("%1")
+                     .arg(_hub, 5, 16, QChar('0'));
             break;
 
-        case c_Address:
+        case c_CogAddr:
             if (!has_ORIGIN)
                 break;
-            if (cogaddr < LUT_ADDR0) {
-                result = QString("COG:%1").arg(cogaddr / 4, 3, 16, QChar('0'));
-            } else if (cogaddr < HUB_ADDR0) {
-                result = QString("LUT:%1").arg((cogaddr - LUT_ADDR0) / 4, 3, 16, QChar('0'));
+            if (IR.is_hubmode())
+                break;
+            if (_cog < LUT_ADDR0) {
+                result = QString("COG:%1")
+                         .arg(_cog / sz_LONG, 3, 16, QChar('0'));
+            } else if (_cog < HUB_ADDR0) {
+                result = QString("LUT:%1")
+                         .arg(_cog / sz_LONG, 3, 16, QChar('0'));
             } else {
-                result = QString("%1").arg(cogaddr, 6, 16, QChar('0'));
+                result = QString("%1")
+                         .arg(_cog, 5, 16, QChar('0'));
             }
             break;
 
         case c_Opcode: // Opcode string
             if (has_IR)
-                result = QVariant::fromValue(IR);
+                result = P2Opcode::format_opcode(IR, m_format);
             break;
 
         case c_Tokens:
@@ -264,12 +270,12 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
 
     case Qt::EditRole:
         switch (column) {
-        case c_Origin:
+        case c_HubAddr:
             if (has_ORIGIN)
                 result = QVariant::fromValue(origin._hub);
             break;
 
-        case c_Address:
+        case c_CogAddr:
             if (has_ORIGIN)
                 result = QVariant::fromValue(origin._cog);
             break;
@@ -302,11 +308,11 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
 
     case Qt::ToolTipRole:
         switch (column) {
-        case c_Origin:
+        case c_HubAddr:
             result = tr("This column shows the HUB address.");
             break;
 
-        case c_Address:
+        case c_CogAddr:
             result = tr("This column shows the COG address.");
             break;
 
@@ -350,7 +356,7 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
         break;
 
     case Qt::SizeHintRole:
-        result = sizeHint(index, data(index).toString());
+        result = sizeHint(index);
         break;
 
     case Qt::UserRole:
@@ -389,58 +395,48 @@ bool P2AsmModel::setData(const QModelIndex& index, const QVariant& value, int ro
     return result;
 }
 
-QSize P2AsmModel::sizeHint(const QModelIndex& index, const QString& text) const
+QSize P2AsmModel::sizeHint(const QModelIndex& index) const
 {
-    const column_e column = static_cast<column_e>(index.column());
     QFontMetrics metrics(m_font);
-    QSize size;
-
-    switch (column) {
-    case c_Origin:
-        size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_origin : text);
-        break;
-
-    case c_Address:
-        size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_address : text);
-        break;
-
-    case c_Opcode:
-        switch (m_format) {
-        case fmt_bin:
-            size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_bin : text);
+    QVariant var = data(index, Qt::DisplayRole);
+    if (var.isNull()) {
+        switch (index.column()) {
+        case c_HubAddr:
+            var = template_str_hubaddr;
             break;
-        case fmt_bit:
-            size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_byt : text);
+        case c_CogAddr:
+            var = template_str_cogaddr;
             break;
-        case fmt_dec:
-            size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_dec : text);
+        case c_Opcode:
+            switch (m_format) {
+            case fmt_bin:
+                var = template_str_opcode_bin;
+                break;
+            case fmt_bit:
+                var = template_str_opcode_byt;
+                break;
+            case fmt_dec:
+                var = template_str_opcode_dec;
+                break;
+            case fmt_hex:
+            default:
+                var = template_str_opcode_hex;
+                break;
+            }
             break;
-        case fmt_hex:
-            size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_hex : text);
+        case c_Tokens:
+            var = template_str_tokens;
             break;
-        case fmt_doc:
-            size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_opcode_doc : text);
+        case c_Symbols:
+            var = template_str_symbols;
+            break;
+        case c_Source:
+            var = template_str_instruction;
             break;
         }
-        break;
-
-    case c_Symbols:
-        size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_symbols : text);
-        break;
-
-    case c_Tokens:
-        size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_tokens : text);
-        break;
-
-    case c_Errors:
-        size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_errors : text);
-        break;
-
-    case c_Source:
-        size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_instruction : text);
-        break;
     }
-    return size;
+
+    return metrics.size(Qt::TextSingleLine, var.toString());
 }
 
 Qt::ItemFlags P2AsmModel::flags(const QModelIndex &index) const
@@ -464,8 +460,8 @@ Qt::ItemFlags P2AsmModel::flags(const QModelIndex &index) const
 QList<P2AsmModel::column_e> P2AsmModel::columns()
 {
     QList<column_e> columns;
-    columns += c_Origin;
-    columns += c_Address;
+    columns += c_HubAddr;
+    columns += c_CogAddr;
     columns += c_Opcode;
     columns += c_Tokens;
     columns += c_Symbols;

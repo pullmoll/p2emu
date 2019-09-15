@@ -45,8 +45,8 @@ class P2AsmModel : public QAbstractTableModel
     Q_OBJECT
 public:
     enum column_e {
-        c_Origin,
-        c_Address,
+        c_HubAddr,
+        c_CogAddr,
         c_Opcode,
         c_Tokens,
         c_Symbols,
@@ -66,7 +66,7 @@ public:
 
     static QList<column_e> columns();
     p2_FORMAT_e opcode_format() const;
-    QSize sizeHint(const QModelIndex &parent = QModelIndex(), const QString& text = QString()) const;
+    QSize sizeHint(const QModelIndex &parent = QModelIndex()) const;
 
 public slots:
     void invalidate();
