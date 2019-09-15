@@ -761,29 +761,19 @@ void P2Opcode::set_n(const p2_LONG n)
  */
 bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG hubaddr)
 {
-    const bool hubmode = atom.has_trait(tr_HUBMODE | tr_HUBADDRESS);
+    const bool hubmode = atom.has_trait(tr_HUBMODE | tr_HUBADDRESS | tr_AUGMENTED);
     const bool relative = atom.has_trait(tr_RELATIVE) && !atom.has_trait(tr_AUGMENTED);
-    p2_LONG value = atom.get_addr(hubmode ? p2_hub : p2_cog);
+    const p2_LONG value = atom.get_addr(hubmode);
     bool result = true;
-
-    if (atom.has_trait(tr_AUGMENTED))
-        value = atom.get_addr(p2_hub);
-
-    if (relative) {
-        if (hubmode) {
-            value -= hubaddr;
-        } else {
-            value -= cogaddr;
-        }
-    }
 
     m_augs.clear();
     if (relative) {
-        if (value < 0x00000400 || value >= 0xfffffc00) {
-            m_u.op7.src = static_cast<p2_LONG>(value / sz_LONG) & COG_MASK;
+        const int rvalue = static_cast<int>(value - (hubmode ? hubaddr : cogaddr)) / sz_LONG;
+        if (rvalue >= -256 && rvalue < 256) {
+            m_u.op7.dst = static_cast<p2_LONG>(rvalue) & COG_MASK;
         } else {
-            m_error_code = src_relative;
-            m_error_value = value;
+            m_error_code = dst_relative;
+            m_error_value = static_cast<p2_LONG>(rvalue);
             result = false;
         }
     } else {
@@ -824,28 +814,18 @@ bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG 
  */
 bool P2Opcode::set_src(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG hubaddr)
 {
-    const bool hubmode = atom.has_trait(tr_HUBMODE | tr_HUBADDRESS);
+    const bool hubmode = atom.has_trait(tr_HUBMODE | tr_HUBADDRESS | tr_AUGMENTED);
     const bool relative = atom.has_trait(tr_RELATIVE) && !atom.has_trait(tr_AUGMENTED);
-    p2_LONG value = atom.get_addr(hubmode ? p2_hub : p2_cog);
+    const p2_LONG value = atom.get_addr(hubmode);
     bool result = true;
-
-    if (atom.has_trait(tr_AUGMENTED))
-        value = atom.get_addr(p2_hub);
-
-    if (relative) {
-        if (hubmode) {
-            value -= hubaddr;
-        } else {
-            value -= cogaddr;
-        }
-    }
 
     m_augs.clear();
     if (relative) {
-        if (value < 0x00000400 || value >= 0xfffffc00) {
-            m_u.op7.src = static_cast<p2_LONG>(value / sz_LONG) & COG_MASK;
+        const int rvalue = static_cast<int>(value - (hubmode ? hubaddr : cogaddr)) / sz_LONG;
+        if (rvalue >= -256 && rvalue < 256) {
+            m_u.op7.src = static_cast<p2_LONG>(rvalue) & COG_MASK;
         } else {
-            m_error_code = src_relative;
+            m_error_code = dst_relative;
             m_error_value = value;
             result = false;
         }

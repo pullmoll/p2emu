@@ -3759,7 +3759,10 @@ P2Atom P2Asm::parse_expression(int level)
             // precedence 0
             DBG_EXPR(" expr lparen: %s", qPrintable(curr_str()));
             next();
-            atom = parse_expression(level+1);
+            {
+                P2Atom expr = parse_expression(level+1);
+                atom.set_value(expr.value());
+            }
             prev();
             break;
 
@@ -3902,11 +3905,11 @@ bool P2Asm::error_dst_or_src()
         break;
 
     case P2Opcode::dst_relative:
-        m_errors += tr("%1 relative $%2 out of range -$%3 … +$%4.")
+        m_errors += tr("%1 relative $%2 out of bounds -%3 … +%4.")
                     .arg(QStringLiteral("DST"))
                     .arg(m_IR.aug_error_value(), 0, 16)
-                    .arg(0x100, 3, 16, QChar('0'))
-                    .arg(0x0ff, 3, 16, QChar('0'));
+                    .arg(0x100)
+                    .arg(0x0ff);
         break;
 
     case P2Opcode::src_augs_none:
@@ -3926,11 +3929,11 @@ bool P2Asm::error_dst_or_src()
         break;
 
     case P2Opcode::src_relative:
-        m_errors += tr("%1 relative $%2 out of range -$%3 … +$%4.")
+        m_errors += tr("%1 relative $%2 out of range -%3 … +%4.")
                     .arg(QStringLiteral("SRC"))
                     .arg(m_IR.aug_error_value(), 0, 16)
-                    .arg(0x100, 3, 16, QChar('0'))
-                    .arg(0x0ff, 3, 16, QChar('0'));
+                    .arg(0x100)
+                    .arg(0x0ff);
         break;
     }
     emit Error(m_pass, m_lineno, m_errors.last());
@@ -4847,7 +4850,7 @@ bool P2Asm::parse_REL()
         int relative = 0;
         if (m_hubmode) {
             relative = value - static_cast<int>(m_hubaddr + sz_LONG);
-            if (relative & 3) {
+            if (m_pass > 1 && (relative & 3)) {
                 m_errors += tr("Invalid distance between HUB addresses: %1 is not a multiple of %2.")
                             .arg(relative)
                             .arg(tr("four"));
@@ -4858,7 +4861,7 @@ bool P2Asm::parse_REL()
             relative = value - static_cast<int>(m_cogaddr + sz_LONG);
         }
         value = relative / sz_LONG;
-        if (value < -256 || value > 255) {
+        if (m_pass > 1 && (value < -256 || value > 255)) {
             m_errors += tr("Relative value  %1 not in range %2 … %3.")
                         .arg(value)
                         .arg(-256)
