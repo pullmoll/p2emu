@@ -36,7 +36,7 @@
 #include "p2util.h"
 
 P2Atom::P2Atom(p2_Union_e type)
-    : m_trait(tr_none)
+    : m_traits(tr_none)
     , m_value()
     , m_index()
 {
@@ -44,50 +44,64 @@ P2Atom::P2Atom(p2_Union_e type)
 }
 
 P2Atom::P2Atom(const P2Atom& other)
-    : m_trait(other.m_trait)
+    : m_traits(other.m_traits)
     , m_value(other.m_value)
     , m_index(other.m_index)
 {
 }
 
 P2Atom::P2Atom(bool _bool)
-    : P2Atom()
+    : m_traits(tr_none)
+    , m_value()
+    , m_index()
 {
     m_value.set_bool(_bool);
 }
 
 P2Atom::P2Atom(const p2_BYTE _byte)
-    : P2Atom()
+    : m_traits(tr_none)
+    , m_value()
+    , m_index()
 {
     m_value.set_byte(_byte);
 }
 
 P2Atom::P2Atom(const p2_WORD _word)
-    : P2Atom()
+    : m_traits(tr_none)
+    , m_value()
+    , m_index()
 {
     m_value.set_word(_word);
 }
 
 P2Atom::P2Atom(const p2_LONG _long)
-    : P2Atom()
+    : m_traits(tr_none)
+    , m_value()
+    , m_index()
 {
     m_value.set_long(_long);
 }
 
 P2Atom::P2Atom(const p2_QUAD _quad)
-    : P2Atom()
+    : m_traits(tr_none)
+    , m_value()
+    , m_index()
 {
     m_value.set_quad(_quad);
 }
 
 P2Atom::P2Atom(const p2_REAL _real)
-    : P2Atom()
+    : m_traits(tr_none)
+    , m_value()
+    , m_index()
 {
     m_value.set_real(_real);
 }
 
 P2Atom::P2Atom(const p2_LONG _cog, const p2_LONG _hub)
-    : P2Atom()
+    : m_traits(tr_none)
+    , m_value()
+    , m_index()
 {
     m_value.set_addr(_cog, _hub);
 }
@@ -97,7 +111,7 @@ P2Atom::P2Atom(const p2_LONG _cog, const p2_LONG _hub)
  */
 void P2Atom::clear(p2_Union_e type)
 {
-    m_trait = tr_none;
+    m_traits.set(tr_none);
     m_value.clear();
     m_value.set_type(type);
     m_index.clear();
@@ -184,18 +198,10 @@ const QString P2Atom::type_name() const
  * @brief Set the index of the atom
  * @param val new index value
  */
-void P2Atom::set_index(const QVariant val)
+void P2Atom::set_index(const P2Atom& index)
 {
-    if (val.canConvert(mt_P2Atom)) {
-        P2Atom index = qvariant_cast<P2Atom>(val);
-        m_index = index.m_value;
-        return;
-    }
-    if (val.canConvert(QVariant::UInt)) {
-        m_index.set_long(val.toUInt());
-        return;
-    }
-    Q_ASSERT(0 == val.type());
+    m_index = index.m_value;
+    return;
 }
 
 /**
@@ -211,9 +217,9 @@ void P2Atom::set_type(p2_Union_e type)
  * @brief Return the traits of the atom
  * @return Enumeration value from p2_traits_e
  */
-p2_Traits_e P2Atom::traits() const
+P2Traits P2Atom::traits() const
 {
-    return m_trait;
+    return m_traits;
 }
 
 /**
@@ -221,11 +227,11 @@ p2_Traits_e P2Atom::traits() const
  * @param trait new trait to set
  * @return true if set, false if not changed
  */
-bool P2Atom::set_traits(p2_Traits_e trait)
+bool P2Atom::set_traits(const Traits traits)
 {
-    if (trait == m_trait)
+    if (traits == m_traits.traits())
         return false;
-    m_trait = trait;
+    m_traits.set(traits);
     return true;
 }
 
@@ -235,12 +241,12 @@ bool P2Atom::set_traits(p2_Traits_e trait)
  * @param on if true, add trait, otherwise clear it
  * @return true
  */
-bool P2Atom::set_trait(p2_Traits_e trait, bool on)
+bool P2Atom::add_trait(const Traits trait, bool on)
 {
     if (on)
-        add_trait(trait);
+        m_traits.add(trait);
     else
-        clr_trait(trait);
+        m_traits.remove(trait);
     return true;
 }
 
@@ -249,11 +255,19 @@ bool P2Atom::set_trait(p2_Traits_e trait, bool on)
  * @param trait trait to add
  * @return true if added, false if not changed
  */
-bool P2Atom::add_trait(p2_Traits_e trait)
+bool P2Atom::add_trait(const Traits trait)
 {
-    if (p2_has_trait(m_trait, trait))
+    if (m_traits.has(trait))
         return false;
-    p2_set_trait(m_trait, trait);
+    m_traits.add(trait);
+    return true;
+}
+
+bool P2Atom::add_trait(const p2_LONG trait)
+{
+    if (m_traits.has(trait))
+        return false;
+    m_traits.add(trait);
     return true;
 }
 
@@ -262,11 +276,11 @@ bool P2Atom::add_trait(p2_Traits_e trait)
  * @param trait trait to clear
  * @return true if added, false if not changed
  */
-bool P2Atom::clr_trait(p2_Traits_e trait)
+bool P2Atom::clear_trait(const Traits trait)
 {
-    if (!p2_has_trait(m_trait, trait))
+    if (!m_traits.has(trait))
         return false;
-    p2_clr_trait(m_trait, trait);
+    m_traits.remove(trait);
     return true;
 }
 
@@ -275,14 +289,14 @@ bool P2Atom::clr_trait(p2_Traits_e trait)
  * @param trait Enumeration value from p2_traits_e
  * @return true if set, or false otherwise
  */
-bool P2Atom::has_trait(const p2_Traits_e trait) const
+bool P2Atom::has_trait(const Traits trait) const
 {
-    return p2_has_trait(m_trait, trait);
+    return m_traits.has(trait);
 }
 
-bool P2Atom::has_trait(const int trait) const
+bool P2Atom::has_trait(const p2_LONG trait) const
 {
-    return p2_has_trait(m_trait, static_cast<p2_Traits_e>(trait));
+    return m_traits.has(trait);
 }
 
 /**
@@ -1692,7 +1706,7 @@ void P2Atom::make_real()
 
 P2Atom& P2Atom::operator=(const P2Atom& other)
 {
-    m_trait = other.m_trait;
+    m_traits = other.m_traits;
     m_value = other.m_value;
     return *this;
 }

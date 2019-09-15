@@ -775,7 +775,7 @@ void P2Opcode::set_n(const p2_LONG n)
  */
 bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG hubaddr)
 {
-    const bool hubmode = atom.has_trait(static_cast<p2_Traits_e>(tr_HUBMODE | tr_HUBADDRESS));
+    const bool hubmode = atom.has_trait(tr_HUBMODE | tr_HUBADDRESS);
     const bool relative = atom.has_trait(tr_RELATIVE) && !atom.has_trait(tr_AUGMENTED);
     p2_LONG value = atom.get_addr(hubmode ? p2_hub : p2_cog);
     bool result = true;
@@ -838,7 +838,7 @@ bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG 
  */
 bool P2Opcode::set_src(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG hubaddr)
 {
-    const bool hubmode = atom.has_trait(static_cast<p2_Traits_e>(tr_HUBMODE | tr_HUBADDRESS));
+    const bool hubmode = atom.has_trait(tr_HUBMODE | tr_HUBADDRESS);
     const bool relative = atom.has_trait(tr_RELATIVE) && !atom.has_trait(tr_AUGMENTED);
     p2_LONG value = atom.get_addr(hubmode ? p2_hub : p2_cog);
     bool result = true;
@@ -1025,7 +1025,7 @@ QString P2Opcode::format_opcode(const P2Opcode& ir, p2_FORMAT_e fmt)
 
 QString P2Opcode::format_assign_bin(const P2Opcode& ir, bool prefix)
 {
-    QString result(chr_rarrow);
+    QString result;
     P2Atom atom = ir.assigned();
     if (prefix)
         result += QStringLiteral("%");
@@ -1087,12 +1087,13 @@ QString P2Opcode::format_assign_bin(const P2Opcode& ir, bool prefix)
         result += ir.assigned().string();
         break;
     }
+    result += chr_larrow;
     return result;
 }
 
 QString P2Opcode::format_assign_bit(const P2Opcode& ir, bool prefix)
 {
-    QString result(chr_rarrow);
+    QString result;
     P2Atom atom = ir.assigned();
     if (prefix)
         result += QStringLiteral("%%");
@@ -1154,12 +1155,13 @@ QString P2Opcode::format_assign_bit(const P2Opcode& ir, bool prefix)
         result += ir.assigned().string();
         break;
     }
+    result += chr_larrow;
     return result;
 }
 
 QString P2Opcode::format_assign_dec(const P2Opcode& ir, bool prefix)
 {
-    QString result(chr_rarrow);
+    QString result;
     P2Atom atom = ir.assigned();
     Q_UNUSED(prefix)
     // 4294967295
@@ -1189,12 +1191,13 @@ QString P2Opcode::format_assign_dec(const P2Opcode& ir, bool prefix)
         result += ir.assigned().string();
         break;
     }
+    result += chr_larrow;
     return result;
 }
 
 QString P2Opcode::format_assign_hex(const P2Opcode& ir, bool prefix)
 {
-    QString result(chr_rarrow);
+    QString result;
     P2Atom atom = ir.assigned();
     if (prefix)
         result += QStringLiteral("$");
@@ -1224,6 +1227,7 @@ QString P2Opcode::format_assign_hex(const P2Opcode& ir, bool prefix)
         result += ir.assigned().string();
         break;
     }
+    result += chr_larrow;
     return result;
 }
 

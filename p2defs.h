@@ -307,7 +307,10 @@ static constexpr QChar chr_colon(':');
 //! Just a name for a commonly used character: represents the current origin (PC)
 static constexpr QChar chr_dollar('$');
 
-//! Just a name for a commonly used character: character used in tokenizer debugging
+//! Just a name for a commonly used character: character used in assignment output
+static constexpr QChar chr_larrow(L'←');
+
+//! Just a name for a commonly used character: character used in assignment output
 static constexpr QChar chr_rarrow(L'→');
 
 //! Just a name for a commonly used character: character used in tokenizer debugging
@@ -377,26 +380,89 @@ typedef struct {
 } P2TypedValue;
 Q_DECLARE_METATYPE(P2TypedValue);
 
-//! P2Atom traits
 typedef enum {
-    tr_none         = 0,            //!< no special trait
-    tr_HUBMODE      = (1 <<  0),    //!< symbol was defined in hubmode
-    tr_IMMEDIATE    = (1 <<  1),    //!< expression started with '#'
-    tr_RELATIVE     = (1 <<  2),    //!< expression started with '@'
-    tr_ABSOLUTE     = (1 <<  3),    //!< expression contained a '\'
-    tr_HUBADDRESS   = (1 <<  4),    //!< expression started with '#@'
-    tr_AUGMENTED    = (1 <<  5),    //!< expression started with '##'
-    tr_INDEX        = (1 <<  6),    //!< expression contains an index: '[' expr ']'
-    tr_DEC          = (1 <<  7),    //!< PTRA/PTRB with decrement (--)
-    tr_INC          = (1 <<  8),    //!< PTRA/PTRB with increment (++)
-    tr_PRE          = (1 <<  9),    //!< PTRA/PTRB with pre inc/dec (--PTRx or ++PTRx)
-    tr_POST         = (1 << 10),    //!< PTRA/PTRB with post inc/dec post (PTRx-- or PTRx++)
-}   p2_Traits_e;
+    tr_none        = 0,             //!< no special trait
+    tr_HUBMODE     = (1u <<  0),   //!< symbol was defined in hubmode
+    tr_IMMEDIATE   = (1u <<  1),   //!< expression started with '#'
+    tr_RELATIVE    = (1u <<  2),   //!< expression started with '@'
+    tr_ABSOLUTE    = (1u <<  3),   //!< expression contained a '\'
+    tr_HUBADDRESS  = (1u <<  4),   //!< expression started with '#@'
+    tr_AUGMENTED   = (1u <<  5),   //!< expression started with '##'
+    tr_INDEX       = (1u <<  6),   //!< expression contains an index: '[' expr ']'
+    tr_DEC         = (1u <<  7),   //!< PTRA/PTRB with decrement (--)
+    tr_INC         = (1u <<  8),   //!< PTRA/PTRB with increment (++)
+    tr_PRE         = (1u <<  9),   //!< PTRA/PTRB with pre inc/dec (--PTRx or ++PTRx)
+    tr_POST        = (1u << 10),   //!< PTRA/PTRB with post inc/dec post (PTRx-- or PTRx++)
+}   Traits;
 
-extern void p2_set_trait(p2_Traits_e& traits, const p2_Traits_e set);
-extern void p2_clr_trait(p2_Traits_e& traits, const p2_Traits_e clr);
-extern bool p2_has_trait(const p2_Traits_e traits, const p2_Traits_e has);
-extern bool p2_has_trait(const p2_Traits_e traits, const int has);
+//! P2Atom traits
+class P2Traits
+{
+public:
+    explicit P2Traits(p2_LONG l = tr_none)
+        : m()
+    {
+        m._long = l;
+    }
+
+    explicit P2Traits(Traits t = tr_none)
+        : m()
+    {
+        m._traits = t;
+    }
+
+    Traits traits() const
+    {
+        return m._traits;
+    }
+
+    p2_LONG value() const
+    {
+        return m._long;
+    }
+
+    void set(const Traits set)
+    {
+        m._traits = set;
+    }
+
+    bool has(const Traits has) const
+    {
+        return m._long & has ? true : false;
+    }
+
+    bool has(const p2_LONG has) const
+    {
+        return m._long & has ? true : false;
+    }
+
+    void add(const Traits set)
+    {
+        m._long |= set;
+    }
+
+    void add(const p2_LONG set)
+    {
+        m._long |= set;
+    }
+
+    void remove(const Traits clear)
+    {
+        m._long &= ~clear;
+    }
+
+    void remove(const p2_LONG clear)
+    {
+        m._long &= ~clear;
+    }
+
+private:
+    union {
+        p2_LONG _long;
+        Traits _traits;
+    }   m;
+};
+
 
 /**
  * @brief Enumeration of the 16 conditional execution modes
@@ -1363,25 +1429,42 @@ typedef struct {
 /**
  * @brief Offsets of the COG shadow registers
  */
-typedef enum {
-    offs_IJMP3 = 0x1f0,         //!< offset of interrupt call address for INT3
-    offs_IRET3,                 //!< offset of interrupt return address for INT3
-    offs_IJMP2,                 //!< offset of interrupt call address for INT2
-    offs_IRET2,                 //!< offset of interrupt return address for INT2
-    offs_IJMP1,                 //!< offset of interrupt call address for INT1
-    offs_IRET1,                 //!< offset of interrupt return address for INT1
-    offs_PA,                    //!< offset of CALLD-imm return, CALLPA parameter, or LOC address
-    offs_PB,                    //!< offset of CALLD-imm return, CALLPB parameter, or LOC address
-    offs_PTRA,                  //!< offset of pointer A to hub RAM
-    offs_PTRB,                  //!< offset of pointer B to hub RAM
-    offs_DIRA,                  //!< offset of output enables for P31 ... P0
-    offs_DIRB,                  //!< offset of output enables for P63 ... P32
-    offs_OUTA,                  //!< offset of output states for P31 ... P0
-    offs_OUTB,                  //!< offset of output states for P63 ... P32
-    offs_INA,                   //!< offset of input states for P31 ... P0
-    offs_INB,                   //!< offset of input states for P63 ... P32
-}   p2_COGRegs_e;
-Q_DECLARE_METATYPE(p2_COGRegs_e);
+static constexpr p2_LONG offs_IJMP3 = 0x1f0;                    //!< offset of interrupt call address for INT3
+static constexpr p2_LONG offs_IRET3 = 0x1f1;                    //!< offset of interrupt return address for INT3
+static constexpr p2_LONG offs_IJMP2 = 0x1f2;                    //!< offset of interrupt call address for INT2
+static constexpr p2_LONG offs_IRET2 = 0x1f3;                    //!< offset of interrupt return address for INT2
+static constexpr p2_LONG offs_IJMP1 = 0x1f4;                    //!< offset of interrupt call address for INT1
+static constexpr p2_LONG offs_IRET1 = 0x1f5;                    //!< offset of interrupt return address for INT1
+static constexpr p2_LONG offs_PA    = 0x1f6;                    //!< offset of CALLD-imm return, CALLPA parameter, or LOC address
+static constexpr p2_LONG offs_PB    = 0x1f7;                    //!< offset of CALLD-imm return, CALLPB parameter, or LOC address
+static constexpr p2_LONG offs_PTRA  = 0x1f8;                    //!< offset of pointer A to hub RAM
+static constexpr p2_LONG offs_PTRB  = 0x1f9;                    //!< offset of pointer B to hub RAM
+static constexpr p2_LONG offs_DIRA  = 0x1fa;                    //!< offset of output enables for P31 ... P0
+static constexpr p2_LONG offs_DIRB  = 0x1fb;                    //!< offset of output enables for P63 ... P32
+static constexpr p2_LONG offs_OUTA  = 0x1fc;                    //!< offset of output states for P31 ... P0
+static constexpr p2_LONG offs_OUTB  = 0x1fd;                    //!< offset of output states for P63 ... P32
+static constexpr p2_LONG offs_INA   = 0x1fe;                    //!< offset of input states for P31 ... P0
+static constexpr p2_LONG offs_INB   = 0x1ff;                    //!< offset of input states for P63 ... P32
+
+/**
+ * @brief Addresses of the COG shadow registers
+ */
+static constexpr p2_LONG addr_IJMP3 = sz_LONG * offs_IJMP3;     //!< address of interrupt call address for INT3
+static constexpr p2_LONG addr_IRET3 = sz_LONG * offs_IRET3;     //!< address of interrupt return address for INT3
+static constexpr p2_LONG addr_IJMP2 = sz_LONG * offs_IJMP2;     //!< address of interrupt call address for INT2
+static constexpr p2_LONG addr_IRET2 = sz_LONG * offs_IRET2;     //!< address of interrupt return address for INT2
+static constexpr p2_LONG addr_IJMP1 = sz_LONG * offs_IJMP1;     //!< address of interrupt call address for INT1
+static constexpr p2_LONG addr_IRET1 = sz_LONG * offs_IRET1;     //!< address of interrupt return address for INT1
+static constexpr p2_LONG addr_PA    = sz_LONG * offs_PA;        //!< address of CALLD-imm return, CALLPA parameter, or LOC address
+static constexpr p2_LONG addr_PB    = sz_LONG * offs_PB;        //!< address of CALLD-imm return, CALLPB parameter, or LOC address
+static constexpr p2_LONG addr_PTRA  = sz_LONG * offs_PTRA;      //!< address of pointer A to hub RAM
+static constexpr p2_LONG addr_PTRB  = sz_LONG * offs_PTRB;      //!< address of pointer B to hub RAM
+static constexpr p2_LONG addr_DIRA  = sz_LONG * offs_DIRA;      //!< address of output enables for P31 ... P0
+static constexpr p2_LONG addr_DIRB  = sz_LONG * offs_DIRB;      //!< address of output enables for P63 ... P32
+static constexpr p2_LONG addr_OUTA  = sz_LONG * offs_OUTA;      //!< address of output states for P31 ... P0
+static constexpr p2_LONG addr_OUTB  = sz_LONG * offs_OUTB;      //!< address of output states for P63 ... P32
+static constexpr p2_LONG addr_INA   = sz_LONG * offs_INA;       //!< address of input states for P31 ... P0
+static constexpr p2_LONG addr_INB   = sz_LONG * offs_INB;       //!< address of input states for P63 ... P32
 
 Q_STATIC_ASSERT(offs_INB == 0x1ff);
 

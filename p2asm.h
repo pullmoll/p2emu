@@ -154,6 +154,7 @@ private:
 
 private:
     QHash<Section,QString> m_sections;      //!< section names as strings
+    QHash<p2_TOKEN_e,p2_LONG> m_traits;     //!< traits for specific tokens
 
     int commata_left() const;
     bool find_tok(p2_TOKEN_e tok) const;
@@ -208,7 +209,7 @@ private:
     bool parse_addops(P2Atom& atom, int level);
     bool parse_shiftops(P2Atom& atom, int level);
     bool parse_binops(P2Atom& atom, int level);
-    p2_Traits_e parse_traits();
+    Traits parse_traits();
     P2Atom parse_expression(int level = 0);
 
     bool error_dst_or_src();

@@ -174,33 +174,51 @@ p2_BYTE P2Union::get_byte() const
 p2_WORD P2Union::get_word() const
 {
     const P2TypedValue tv = value(0);
-    return tv.value._word;
+    p2_WORD value;
+    if (ut_Addr == tv.type) {
+        value = static_cast<p2_WORD>(tv.value._addr[0]);
+    } else {
+        value = tv.value._word;
+    }
+    return value;
 }
 
 p2_LONG P2Union::get_long() const
 {
     const P2TypedValue tv = value(0);
-    return tv.value._long;
+    p2_LONG value;
+    if (ut_Addr == tv.type) {
+        value = tv.value._addr[0];
+    } else {
+        value = tv.value._long;
+    }
+    return value;
 }
 
 p2_LONG P2Union::get_addr(bool hub) const
 {
     const P2TypedValue tv = value(0);
-    p2_LONG addr;
+    p2_LONG value;
     if (ut_Addr == tv.type) {
-        addr = tv.value._addr[hub & 1];
+        value = tv.value._addr[hub & 1];
     } else if (hub) {
-        addr = tv.value._long;
+        value = tv.value._long;
     } else {
-        addr = tv.value._long * sz_LONG;    // scale COG constant by sz_LONG
+        value = tv.value._long * sz_LONG;    // scale COG constant by sz_LONG
     }
-    return addr;
+    return value;
 }
 
 p2_QUAD P2Union::get_quad() const
 {
     const P2TypedValue tv = value(0);
-    return tv.value._quad;
+    p2_QUAD value;
+    if (ut_Addr == tv.type) {
+        value = tv.value._addr[0];
+    } else {
+        value = tv.value._long;
+    }
+    return value;
 }
 
 p2_REAL P2Union::get_real() const
@@ -1201,7 +1219,7 @@ QString P2Union::str(const P2Union& un, bool with_type, p2_FORMAT_e fmt)
                 result += chr_dollar;
                 result += hex(_hub, 6);
                 result += chr_colon;
-                result += hex(_cog / sz_LONG, 3);
+                result += hex(_cog, 3);
             }
         }
         break;

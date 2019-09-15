@@ -204,7 +204,6 @@ P2Colors::P2Colors()
         {QStringLiteral("White Smoke"),         qRgba(0xF5,0xF5,0xF5,0xFF)},
         {QStringLiteral("Yellow"),              qRgba(0xFF,0xFF,0x00,0xFF)},
         {QStringLiteral("Yellow Green"),        qRgba(0x9A,0xCD,0x32,0xFF)},
-        {QStringLiteral("Transparent"),         qRgba(0x00,0x00,0x00,0x00)}
     };
 
     setup_tables();
@@ -485,13 +484,6 @@ P2Colors::p2_palette_e P2Colors::pal_for_token(const p2_TOKEN_e tok)
  */
 void P2Colors::setup_tables()
 {
-    // Add Qt5 default color names which have no entry
-    foreach(const QString& name, QColor::colorNames()) {
-        QRgb stdcolor = QColor(name).rgba();
-        if (m_name_color.keys(stdcolor).isEmpty())
-            m_name_color.insert(name, stdcolor);
-    }
-
     // Build the reverse hash for color to name lookup
     foreach(const QString& name, m_name_color.keys()) {
         QColor color = m_name_color.value(name);

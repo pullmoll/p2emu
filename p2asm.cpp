@@ -53,13 +53,13 @@ static const QString p2_section_pub = QStringLiteral("PUB");
 static const QString p2_section_pri = QStringLiteral("PRI");
 static const QString p2_section_var = QStringLiteral("VAR");
 
-static const QString p2_prefix_offs_const = QStringLiteral("COG::");
-static const QString p2_prefix_bin_const = QStringLiteral("bin::");
-static const QString p2_prefix_byt_const = QStringLiteral("byt::");
-static const QString p2_prefix_dec_const = QStringLiteral("dec::");
-static const QString p2_prefix_hex_const = QStringLiteral("hex::");
-static const QString p2_prefix_str_const = QStringLiteral("str::");
-static const QString p2_prefix_real_const = QStringLiteral("flt::");
+static const QString p2_prefix_cog_const = QStringLiteral("COG");
+static const QString p2_prefix_bin_const = QStringLiteral("bin");
+static const QString p2_prefix_byt_const = QStringLiteral("byt");
+static const QString p2_prefix_dec_const = QStringLiteral("dec");
+static const QString p2_prefix_hex_const = QStringLiteral("hex");
+static const QString p2_prefix_str_const = QStringLiteral("str");
+static const QString p2_prefix_real_const = QStringLiteral("flt");
 
 
 #if DEBUG_EXPR
@@ -119,6 +119,17 @@ P2Asm::P2Asm(QObject *parent)
     m_sections.insert(pub_section, p2_section_pub);
     m_sections.insert(pri_section, p2_section_pri);
     m_sections.insert(var_section, p2_section_var);
+
+    m_traits.insert(t_PTRA, tr_INDEX);
+    m_traits.insert(t_PTRA_preinc, tr_INDEX | tr_PRE | tr_INC);
+    m_traits.insert(t_PTRA_predec, tr_INDEX | tr_PRE | tr_DEC);
+    m_traits.insert(t_PTRA_postinc, tr_INDEX | tr_POST | tr_INC);
+    m_traits.insert(t_PTRA_postdec, tr_INDEX | tr_POST | tr_DEC);
+    m_traits.insert(t_PTRB, tr_INDEX);
+    m_traits.insert(t_PTRB_preinc, tr_INDEX | tr_PRE | tr_INC);
+    m_traits.insert(t_PTRB_predec, tr_INDEX | tr_PRE | tr_DEC);
+    m_traits.insert(t_PTRB_postinc, tr_INDEX | tr_POST | tr_INC);
+    m_traits.insert(t_PTRB_postdec, tr_INDEX | tr_POST | tr_DEC);
 }
 
 /**
@@ -536,12 +547,7 @@ bool P2Asm::define_symbol(const QString& symbol, const P2Atom& atom)
 
     if (m_pass > 1) {
         // Redefine in pass 2
-        m_symbols->set_value(symbol, atom.value());
-        return true;
-    }
-
-    if (sym.isNull()) {
-        // Invalid
+        m_symbols->set_atom(symbol, atom);
         return true;
     }
 
@@ -680,7 +686,7 @@ bool P2Asm::assemble_dat_section()
         if (!m_symbol.isEmpty()) {
             // defining a symbol at the current PC
             P2Atom atom(m_cogaddr, m_hubaddr);
-            atom.set_trait(tr_HUBMODE, m_hubmode);
+            atom.add_trait(tr_HUBMODE, m_hubmode);
             define_symbol(m_symbol, atom);
         }
         break;
@@ -2467,7 +2473,7 @@ QString P2Asm::results_assignment()
         output = QString("%1 %2 <%3> %4")
                  .arg(m_lineno, -6)
                  .arg(m_cogaddr, 6, 16, QChar('0'))
-                 .arg(m_IR.opcode(), 8, 16, QChar('0'))
+                 .arg(m_IR.assigned().get_long(), 8, 16, QChar('0'))
                  .arg(*m_lineptr);
     }
     return output;
@@ -2845,7 +2851,7 @@ P2Symbol P2Asm::get_locsym(P2Asm::Section sect, const QString& local)
  */
 void P2Asm::add_const_symbol(const QString& pfx, const P2Word& word, const P2Atom& atom)
 {
-    QString symbol = QString("%1%2")
+    QString symbol = QString("%1::%2")
                      .arg(pfx)
                      .arg(word.str().toUpper());
     if (!m_symbols->contains(symbol))
@@ -3000,57 +3006,57 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
 
     case t_IJMP3:
         DBG_EXPR(" atom IJMP3: %s", qPrintable(str));
-        atom.set_value(P2Union(sz_LONG * offs_IJMP3, offs_IJMP3));
-        add_const_symbol(p2_prefix_offs_const, word, atom);
+        atom.set_value(P2Union(addr_IJMP3, addr_IJMP3));
+        add_const_symbol(p2_prefix_cog_const, word, atom);
         DBG_EXPR(" atom IJMP3 atom = %s", qPrintable(atom.str()));
         break;
 
     case t_IRET3:
         DBG_EXPR(" atom IRET3: %s", qPrintable(str));
-        atom.set_value(P2Union(sz_LONG * offs_IRET3, offs_IRET3));
-        add_const_symbol(p2_prefix_offs_const, word, atom);
+        atom.set_value(P2Union(addr_IRET3, addr_IRET3));
+        add_const_symbol(p2_prefix_cog_const, word, atom);
         DBG_EXPR(" atom IRET3 atom = %s", qPrintable(atom.str()));
         break;
 
     case t_IJMP2:
         DBG_EXPR(" atom IJMP2: %s", qPrintable(str));
-        atom.set_value(P2Union(sz_LONG * offs_IJMP2, offs_IJMP2));
-        add_const_symbol(p2_prefix_offs_const, word, atom);
+        atom.set_value(P2Union(addr_IJMP2, addr_IJMP2));
+        add_const_symbol(p2_prefix_cog_const, word, atom);
         DBG_EXPR(" atom IJMP2 atom = %s", qPrintable(atom.str()));
         break;
 
     case t_IRET2:
         DBG_EXPR(" atom IRET2: %s", qPrintable(str));
-        atom.set_value(P2Union(sz_LONG * offs_IRET2, offs_IRET2));
-        add_const_symbol(p2_prefix_offs_const, word, atom);
+        atom.set_value(P2Union(addr_IRET2, addr_IRET2));
+        add_const_symbol(p2_prefix_cog_const, word, atom);
         DBG_EXPR(" atom IRET2 atom = %s", qPrintable(atom.str()));
         break;
 
     case t_IJMP1:
         DBG_EXPR(" atom IJMP1: %s", qPrintable(str));
-        atom.set_value(P2Union(sz_LONG * offs_IJMP1, offs_IJMP1));
-        add_const_symbol(p2_prefix_offs_const, word, atom);
+        atom.set_value(P2Union(addr_IJMP1, addr_IJMP1));
+        add_const_symbol(p2_prefix_cog_const, word, atom);
         DBG_EXPR(" atom IJMP1 atom = %s", qPrintable(atom.str()));
         break;
 
     case t_IRET1:
         DBG_EXPR(" atom IRET1: %s", qPrintable(str));
-        atom.set_value(P2Union(sz_LONG * offs_IRET1, offs_IRET1));
-        add_const_symbol(p2_prefix_offs_const, word, atom);
+        atom.set_value(P2Union(addr_IRET1, addr_IRET1));
+        add_const_symbol(p2_prefix_cog_const, word, atom);
         DBG_EXPR(" atom IRET1 atom = %s", qPrintable(atom.str()));
         break;
 
     case t_PA:
         DBG_EXPR(" atom PA: %s", qPrintable(str));
-        atom.set_value(P2Union(sz_LONG * offs_PA, offs_PA));
-        add_const_symbol(p2_prefix_offs_const, word, atom);
+        atom.set_value(P2Union(addr_PA, addr_PA));
+        add_const_symbol(p2_prefix_cog_const, word, atom);
         DBG_EXPR(" atom PA atom = %s", qPrintable(atom.str()));
         break;
 
     case t_PB:
         DBG_EXPR(" atom PB: %s", qPrintable(str));
-        atom.set_value(P2Union(sz_LONG * offs_PB, offs_PB));
-        add_const_symbol(p2_prefix_offs_const, word, atom);
+        atom.set_value(P2Union(addr_PB, addr_PB));
+        add_const_symbol(p2_prefix_cog_const, word, atom);
         DBG_EXPR(" atom PB atom = %s", qPrintable(atom.str()));
         break;
 
@@ -3060,16 +3066,9 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_PTRA_preinc:
     case t_PTRA_predec:
         DBG_EXPR(" atom PTRA: %s", qPrintable(str));
-        atom.set_value(P2Union(sz_LONG * offs_PTRA, offs_PTRA));
-        add_const_symbol(p2_prefix_offs_const, word, atom);
-        if (t_PTRA_preinc == tok || t_PTRA_predec == tok)
-            atom.add_trait(tr_PRE);
-        if (t_PTRA_postinc == tok || t_PTRA_postdec == tok)
-            atom.add_trait(tr_POST);
-        if (t_PTRA_preinc == tok || t_PTRA_postinc == tok)
-            atom.add_trait(tr_INC);
-        if (t_PTRA_predec == tok || t_PTRA_postdec == tok)
-            atom.add_trait(tr_DEC);
+        atom.set_value(P2Union(addr_PTRA, addr_PTRA));
+        add_const_symbol(p2_prefix_cog_const, word, atom);
+        atom.add_trait(m_traits.value(tok));
         DBG_EXPR(" atom PTRA atom = %s", qPrintable(atom.str()));
         break;
 
@@ -3079,58 +3078,51 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
     case t_PTRB_preinc:
     case t_PTRB_predec:
         DBG_EXPR(" atom PTRB: %s", qPrintable(str));
-        atom.set_value(P2Union(sz_LONG * offs_PTRB, offs_PTRB));
-        add_const_symbol(p2_prefix_offs_const, word, atom);
-        if (t_PTRB_preinc == tok || t_PTRB_predec == tok)
-            atom.add_trait(tr_PRE);
-        if (t_PTRB_postinc == tok || t_PTRB_postdec == tok)
-            atom.add_trait(tr_POST);
-        if (t_PTRB_preinc == tok || t_PTRB_postinc == tok)
-            atom.add_trait(tr_INC);
-        if (t_PTRB_predec == tok || t_PTRB_postdec == tok)
-            atom.add_trait(tr_DEC);
+        atom.set_value(P2Union(addr_PTRB, addr_PTRB));
+        add_const_symbol(p2_prefix_cog_const, word, atom);
+        atom.add_trait(m_traits.value(tok, tr_none));
         DBG_EXPR(" atom PTRB atom = %s", qPrintable(atom.str()));
         break;
 
     case t_DIRA:
         DBG_EXPR(" atom DIRA: %s", qPrintable(str));
-        atom.set_value(P2Union(sz_LONG * offs_DIRA, offs_DIRA));
-        add_const_symbol(p2_prefix_offs_const, word, atom);
+        atom.set_value(P2Union(addr_DIRA, addr_DIRA));
+        add_const_symbol(p2_prefix_cog_const, word, atom);
         DBG_EXPR(" atom DIRA const = %s", qPrintable(atom.str()));
         break;
 
     case t_DIRB:
         DBG_EXPR(" atom DIRB: %s", qPrintable(str));
-        atom.set_value(P2Union(sz_LONG * offs_DIRB, offs_DIRB));
-        add_const_symbol(p2_prefix_offs_const, word, atom);
+        atom.set_value(P2Union(addr_DIRB, addr_DIRB));
+        add_const_symbol(p2_prefix_cog_const, word, atom);
         DBG_EXPR(" atom DIRB const = %s", qPrintable(atom.str()));
         break;
 
     case t_OUTA:
         DBG_EXPR(" atom OUTA: %s", qPrintable(str));
-        atom.set_value(P2Union(sz_LONG * offs_OUTA, offs_OUTA));
-        add_const_symbol(p2_prefix_offs_const, word, atom);
+        atom.set_value(P2Union(addr_OUTA, addr_OUTA));
+        add_const_symbol(p2_prefix_cog_const, word, atom);
         DBG_EXPR(" atom OUTA atom = %s", qPrintable(atom.str()));
         break;
 
     case t_OUTB:
         DBG_EXPR(" atom OUTB: %s", qPrintable(str));
-        atom.set_value(P2Union(sz_LONG * offs_OUTB, offs_OUTB));
-        add_const_symbol(p2_prefix_offs_const, word, atom);
+        atom.set_value(P2Union(addr_OUTB, addr_OUTB));
+        add_const_symbol(p2_prefix_cog_const, word, atom);
         DBG_EXPR(" atom OUTB atom = %s", qPrintable(atom.str()));
         break;
 
     case t_INA:
         DBG_EXPR(" atom INA: %s", qPrintable(str));
-        atom.set_value(P2Union(sz_LONG * offs_INA, offs_INA));
-        add_const_symbol(p2_prefix_offs_const, word, atom);
+        atom.set_value(P2Union(addr_INA, addr_INA));
+        add_const_symbol(p2_prefix_cog_const, word, atom);
         DBG_EXPR(" atom INA const = %s", qPrintable(atom.str()));
         break;
 
     case t_INB:
         DBG_EXPR(" atom INB: %s", qPrintable(str));
-        atom.set_value(P2Union(sz_LONG * offs_INB, offs_INB));
-        add_const_symbol(p2_prefix_offs_const, word, atom);
+        atom.set_value(P2Union(addr_INB, addr_INB));
+        add_const_symbol(p2_prefix_cog_const, word, atom);
         DBG_EXPR(" atom INB atom = %s", qPrintable(atom.str()));
         break;
 
@@ -3559,46 +3551,46 @@ bool P2Asm::parse_binops(P2Atom& atom, int level)
  * @brief Parse leading traits before an expression
  * @return Bit mask of p2_Traits_e found
  */
-p2_Traits_e P2Asm::parse_traits()
+Traits P2Asm::parse_traits()
 {
-    p2_Traits_e traits = tr_none;
+    P2Traits traits(tr_none);
     while (Token.is_type(curr_tok(), tm_traits)) {
 
         switch (curr_tok()) {
         case t_IMMEDIATE:
             DBG_EXPR(" trait immediate: %s", qPrintable(Token.string(tok)));
-            p2_set_trait(traits, tr_IMMEDIATE);
+            traits.add(tr_IMMEDIATE);
             next();
             break;
         case t_AUGMENTED:
             DBG_EXPR(" trait force AUGS/AUGD: %s", qPrintable(Token.string(tok)));
-            p2_set_trait(traits, tr_AUGMENTED);
+            traits.add(tr_AUGMENTED);
             next();
             break;
         case t_RELATIVE:
             DBG_EXPR(" trait relative: %s", qPrintable(Token.string(tok)));
-            p2_set_trait(traits, tr_RELATIVE);
+            traits.add(tr_RELATIVE);
             next();
             break;
         case t_ABSOLUTE:
             DBG_EXPR(" trait absolute: %s", qPrintable(Token.string(tok)));
-            p2_set_trait(traits, tr_ABSOLUTE);
+            traits.add(tr_ABSOLUTE);
             next();
             break;
         case t_HUBADDRESS:
             DBG_EXPR(" trait HUB address: %s", qPrintable(Token.string(tok)));
-            p2_set_trait(traits, tr_HUBADDRESS);
+            traits.add(tr_HUBADDRESS);
             next();
             break;
         default:
             Q_ASSERT_X(false, "traits", "Invalid trait");
-            return traits;
+            return traits.traits();
         }
 
         if (eol())
             break;
     }
-    return traits;
+    return traits.traits();
 }
 
 /**
@@ -3616,7 +3608,7 @@ P2Atom P2Asm::parse_expression(int level)
         return atom;
     }
 
-    p2_Traits_e traits = parse_traits();
+    atom.set_traits(parse_traits());
 
     // Check for subexpression enclosed in parenthesis
     p2_TOKEN_e tok = curr_tok();
@@ -3652,18 +3644,20 @@ P2Atom P2Asm::parse_expression(int level)
     DBG_EXPR(" expr atom = %s", qPrintable(atom.str()));
 
     // Check for index expression enclosed in square brackets
-    P2Atom index = P2Atom(ut_Long);
     tok = curr_tok();
     while (Token.is_type(tok, tm_brackets)) {
         switch (tok) {
         case t_EXPR_LBRACKET:
             // precedence 0
-            DBG_EXPR(" expr lbracket: %s", qPrintable(curr_str()));
-            next();
-            index = parse_expression(level+1);  // evaluate the expression into index
-            p2_set_trait(traits, tr_INDEX);
-            if (index.has_trait(tr_AUGMENTED))
-                p2_set_trait(traits, tr_AUGMENTED);
+            {
+                DBG_EXPR(" expr lbracket: %s", qPrintable(curr_str()));
+                next();
+                P2Atom index = parse_expression(level+1);  // evaluate the expression into index
+                atom.set_index(index);
+                if (index.has_trait(tr_AUGMENTED))
+                    atom.add_trait(tr_AUGMENTED);
+                atom.add_trait(tr_INDEX);
+            }
             break;
 
         case t_EXPR_RBRACKET:
@@ -3689,16 +3683,8 @@ P2Atom P2Asm::parse_expression(int level)
         tok = curr_tok();
     }
 
-    DBG_EXPR(" expr set traits: %#x", traits);
-    atom.set_traits(traits);
-
-    if (traits & tr_INDEX) {
-        DBG_EXPR(" expr set index: %#x", index.get_long());
-        atom.set_index(QVariant::fromValue(index));
-    }
-
     // Set immediate flag according to traits
-    if (traits & (tr_IMMEDIATE | tr_AUGMENTED | tr_HUBADDRESS)) {
+    if (atom.has_trait(tr_IMMEDIATE | tr_AUGMENTED | tr_HUBADDRESS)) {
         m_IR.set_im_flags(true);
     }
 
@@ -3846,53 +3832,51 @@ P2Atom P2Asm::parse_src(P2Opcode::ImmFlag flag)
 bool P2Asm::parse_index(int scale, P2Atom& src)
 {
     bool result = true;
-    const bool ptrb = offs_PTRB == src.get_long();
+    const bool ptrb = addr_PTRB == src.get_long();
     const bool post = src.has_trait(tr_POST);
     const bool inc = src.has_trait(tr_INC);
     const bool dec = src.has_trait(tr_DEC);
     const bool negate = src.has_trait(tr_DEC);
     const p2_LONG value = negate ? -src.index_long() : src.index_long();
     const int svalue = static_cast<qint32>(value);
-    p2_Index9_t index = {0};
-    p2_Index23_t index_augs = {0};
 
-    m_IR.set_wz(false);
-    m_IR.set_im(true);
     Q_UNUSED(scale)
-
-    /*
-     * Structure of the 9 bit non-augmented index
-     *
-     * This structure defines the 9 bits of S/#/PTRx without AUGS
-     * 0:   %0AAAAAAAA
-     * 1:   %1SUPNNNNN
-     * The topmost bit (%sup) determines whether the
-     * lower 8 bits are to be interpreted as:
-     * 0:   AAAAAAAA: 8 bits of address (0…255)
-     * 1:   SUPNNNNN: structure definining the
-     *      + S: PTRx false for PTRA, true for PTRB
-     *      + U: false to keep PTRx same, true to update PTRx (PTRx += INDEX*SCALE)
-     *      + P: false to use PTRx + INDEX*SCALE, true to use PTRx (post-modify)
-     *      + NNNNN: index -16…15 for simple offsets, 0…15 for ++'s, 0…16 for --'s
-     * SCALE is:
-     *      = 1: for RDBYTE/WRBYTE
-     *      = 2: for RDWORD/WRWORD
-     *      = 4: for RDLONG/WRLONG/WMLONG
-     */
-    index.i.sup = true;
-    index.i.S = ptrb;
-    index.i.U = inc || dec;
-    index.i.P = post;
-    if (inc)
-        index.i.N = 1;
-    if (dec)
-        index.i.N = -1;
 
     m_IR.set_augs();
 
     if (src.has_trait(tr_INDEX)) {
-
+        /*
+         * Structure of the 9 bit non-augmented index
+         *
+         * This structure defines the 9 bits of S/#/PTRx without AUGS
+         * 0:   %0AAAAAAAA
+         * 1:   %1SUPNNNNN
+         * The topmost bit (%sup) determines whether the
+         * lower 8 bits are to be interpreted as:
+         * 0:   AAAAAAAA: 8 bits of address (0…255)
+         * 1:   SUPNNNNN: structure definining the
+         *      + S: PTRx false for PTRA, true for PTRB
+         *      + U: false to keep PTRx same, true to update PTRx (PTRx += INDEX*SCALE)
+         *      + P: false to use PTRx + INDEX*SCALE, true to use PTRx (post-modify)
+         *      + NNNNN: index -16…15 for simple offsets, 0…15 for ++'s, 0…16 for --'s
+         * SCALE is:
+         *      = 1: for RDBYTE/WRBYTE
+         *      = 2: for RDWORD/WRWORD
+         *      = 4: for RDLONG/WRLONG/WMLONG
+         */
+        m_IR.set_wz(false);
+        m_IR.set_im(true);
+        p2_Index9_t index = {0};
+        index.i.sup = true;
+        index.i.S = ptrb;
+        index.i.U = inc || dec;
+        index.i.P = post;
+        if (inc)
+            index.i.N = 1;
+        if (dec)
+            index.i.N = -1;
         if (src.has_trait(tr_AUGMENTED)) {
+            p2_Index23_t index_augs = {0};
             /*
              * Structure of the 23 bit augmented (AUGS) index
              *
@@ -3931,43 +3915,46 @@ bool P2Asm::parse_index(int scale, P2Atom& src)
             return result;
         }
 
-        if (m_v33mode) {
-            if (index.i.U) {
-                if (svalue < -16 || svalue > 16 || svalue == 0) {
-                    m_errors += tr("Pointer index %1 ($%2) is invalid.")
-                                .arg(svalue)
-                                .arg(value, 8, 16, QChar('0'));
-                    emit Error(m_pass, m_lineno, m_errors.last());
-                    result = false;
-                }
-                if (svalue == 16)
-                    index.i.N = 0;
-                else
+        if (!src.index().isEmpty()) {
+            if (m_v33mode) {
+                if (index.i.U) {
+                    if (svalue < -16 || svalue > 16 || svalue == 0) {
+                        m_errors += tr("Pointer index %1 ($%2) is invalid.")
+                                    .arg(svalue)
+                                    .arg(value, 8, 16, QChar('0'));
+                        emit Error(m_pass, m_lineno, m_errors.last());
+                        result = false;
+                    }
+                    if (svalue == 16)
+                        index.i.N = 0;
+                    else
+                        index.i.N = static_cast<char>(value & 31);
+                } else {
+                    if (svalue < -32 || svalue > 31) {
+                        m_errors += tr("Pointer index %1 ($%2) is invalid.")
+                                    .arg(svalue)
+                                    .arg(value, 8, 16, QChar('0'));
+                        emit Error(m_pass, m_lineno, m_errors.last());
+                        result = false;
+                    }
+                    index.i.P = svalue < 0;
                     index.i.N = static_cast<char>(value & 31);
+                }
             } else {
-                if (svalue < -32 || svalue > 31) {
+                if (svalue < -16 || svalue > 15) {
                     m_errors += tr("Pointer index %1 ($%2) is invalid.")
                                 .arg(svalue)
                                 .arg(value, 8, 16, QChar('0'));
                     emit Error(m_pass, m_lineno, m_errors.last());
                     result = false;
                 }
-                index.i.P = svalue < 0;
                 index.i.N = static_cast<char>(value & 31);
             }
-        } else {
-            if (svalue < -16 || svalue > 15) {
-                m_errors += tr("Pointer index %1 ($%2) is invalid.")
-                            .arg(svalue)
-                            .arg(value, 8, 16, QChar('0'));
-                emit Error(m_pass, m_lineno, m_errors.last());
-                result = false;
-            }
-            index.i.N = static_cast<char>(value & 31);
         }
 
         m_IR.set_src(index.src);
     }
+
     return result;
 }
 
@@ -3981,7 +3968,7 @@ P2Atom P2Asm::parse_src_ptrx(int scale, P2Opcode::ImmFlag flag)
     P2Atom src = parse_expression();
     if (!m_IR.set_src(src, m_cogaddr, m_hubaddr))
         error_dst_or_src();
-    if (offs_PTRA == src.get_addr(p2_hub) || offs_PTRB == src.get_addr(p2_hub))
+    if (src.has_trait(tr_INDEX))
         parse_index(scale, src);
     return src;
 }

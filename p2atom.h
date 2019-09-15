@@ -94,19 +94,20 @@ public:
     const QString type_name() const;
     void set_type(p2_Union_e type);
 
-    p2_Traits_e traits() const;
-    bool set_traits(p2_Traits_e traits);
-    bool set_trait(p2_Traits_e trait, bool on);
-    bool add_trait(p2_Traits_e traits);
-    bool clr_trait(p2_Traits_e traits);
-    bool has_trait(const p2_Traits_e trait) const;
-    bool has_trait(const int trait) const;
+    P2Traits traits() const;
+    bool set_traits(const Traits traits);
+    bool add_trait(const Traits trait, bool on);
+    bool add_trait(const Traits trait);
+    bool add_trait(const p2_LONG trait);
+    bool clear_trait(const Traits trait);
+    bool has_trait(const Traits trait) const;
+    bool has_trait(const p2_LONG trait) const;
 
     const P2Union value() const;
     void set_value(const P2Union value);
 
     const P2Union index() const;
-    void set_index(const QVariant val);
+    void set_index(const P2Atom& index);
     p2_LONG index_long() const;
 
     void set_int(const int _int);
@@ -204,7 +205,7 @@ public:
     static QString string(const P2Atom& atom);
 
 private:
-    p2_Traits_e m_trait;        //!< Traits for this atom
+    P2Traits m_traits;       //!< Traits for this atom
     P2Union m_value;            //!< Actual value of this atom
     P2Union m_index;            //!< Optional index value of this atom
 };
