@@ -545,7 +545,6 @@ LOCSYM      "."[A-Z_]?[A-Z0-9_]+
 "IRET2"                 return t_IRET2;
 "IJMP1"                 return t_IJMP1;
 "IRET1"                 return t_IRET1;
-"PB"                    return t_PB;
 "PA"                    return t_PA;
 "PB"                    return t_PB;
 "--PTRA"		return t_PTRA_predec;
