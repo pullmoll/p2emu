@@ -2602,7 +2602,9 @@ QString P2Asm::results_assignment()
 QStringList P2Asm::results_data(bool wr_mem)
 {
     QStringList output;
-    p2_ORIGIN_t origin({m_cogaddr, m_hubaddr});
+    p2_ORIGIN_t origin;
+    origin._cog = m_cogaddr;
+    origin._hub = m_hubaddr;
 
     m_IR.set_origin(origin);
     m_hash_ORIGIN.insert(m_lineno, origin);
