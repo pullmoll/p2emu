@@ -763,7 +763,7 @@ bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG 
 {
     const bool augmented = atom.has_trait(tr_AUGMENTED);
     const bool hubmode = atom.has_trait(tr_HUBMODE | tr_HUBADDRESS | tr_AUGMENTED);
-    const bool relative = atom.has_trait(tr_RELATIVE) && !atom.has_trait(tr_AUGMENTED);
+    const bool relative = atom.has_trait(tr_RELATIVE) && !augmented;
     const p2_LONG value = atom.get_addr(hubmode);
     bool result = true;
 
@@ -835,7 +835,7 @@ bool P2Opcode::set_src(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG 
 {
     const bool augmented = atom.has_trait(tr_AUGMENTED);
     const bool hubmode = atom.has_trait(tr_HUBMODE | tr_HUBADDRESS | tr_AUGMENTED);
-    const bool relative = atom.has_trait(tr_RELATIVE) && !atom.has_trait(tr_AUGMENTED);
+    const bool relative = atom.has_trait(tr_RELATIVE) && !augmented;
     const p2_LONG value = atom.get_addr(hubmode);
     bool result = true;
 

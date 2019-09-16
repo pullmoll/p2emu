@@ -132,9 +132,9 @@ MainWindow::MainWindow(QWidget *parent)
     restore_settings();
 
     // load_source(QStringLiteral(":/spin2/spin2_interpreter.spin2"));
-    // load_source(QStringLiteral(":/spin2/USBHost.spin2"));
+    load_source(QStringLiteral(":/spin2/USBHost.spin2"));
     // load_source(QStringLiteral(":/spin2/VGA_640_x_480_8bpp.spin2"));
-    load_source(QStringLiteral(":/spin2/P2-qz80-rr032.spin2"));
+    // load_source(QStringLiteral(":/spin2/P2-qz80-rr032.spin2"));
     // load_source(QStringLiteral(":/spin2/ROM_Booter_v33_01j.spin2"));
     // load_source(QStringLiteral(":/spin2/pointers.spin2"));
     // load_source(QStringLiteral(":/spin2/all_cogs_blink.spin2"));
@@ -480,7 +480,7 @@ void MainWindow::header_columns_asm(QPoint pos)
         return;
 
     QMenu popup;
-    QAction* tact = new QAction(tr("Select visible columns"));
+    QAction* tact = new QAction(QString("- %1 -").arg(tr("Select visible columns")));
     tact->setEnabled(false);
     popup.addAction(tact);
     for (int column = 0; column < amodel->columnCount(); column++) {
@@ -515,7 +515,7 @@ void MainWindow::header_columns_dasm(QPoint pos)
         return;
 
     QMenu popup;
-    QAction* tact = new QAction(tr("Select visible columns"));
+    QAction* tact = new QAction(QString("- %1 -").arg(tr("Select visible columns")));
     tact->setEnabled(false);
     popup.addAction(tact);
     for (int column = 0; column < dmodel->columnCount(); column++) {
@@ -544,7 +544,7 @@ void MainWindow::header_columns_sym(QPoint pos)
         return;
 
     QMenu popup;
-    QAction* tact = new QAction(tr("Select visible columns"));
+    QAction* tact = new QAction(QString("- %1 -").arg(tr("Select visible columns")));
     tact->setEnabled(false);
     popup.addAction(tact);
     for (int column = 0; column < smodel->columnCount(); column++) {

@@ -224,7 +224,27 @@ p2_QUAD P2Union::get_quad() const
 p2_REAL P2Union::get_real() const
 {
     const P2TypedValue tv = value(0);
-    return tv.value._real;
+    switch (tv.type) {
+    case ut_Invalid:
+        return 0.0;
+    case ut_Bool:
+        return tv.value._bool ? 1.0 : 0.0;
+    case ut_Byte:
+        return 1.0 * tv.value._byte;
+    case ut_Word:
+        return 1.0 * tv.value._word;
+    case ut_Addr:
+        return 1.0 * tv.value._addr[0];
+    case ut_Long:
+        return 1.0 * tv.value._long;
+    case ut_Quad:
+        return 1.0 * tv.value._quad;
+    case ut_Real:
+        return tv.value._real;
+    case ut_String:
+        return 1.0 * tv.value._byte;
+    }
+    return 0.0;
 }
 
 void P2Union::set_int(const int var)

@@ -174,7 +174,7 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
     const P2Symbol symbol = m_table->symbol(name);
     const bool has_symbol = !symbol.isNull();
     const P2Word& definition = has_symbol ? symbol->definition() : P2Word();
-    const int definition_lineno = definition.lineno();
+    const int lineno = definition.lineno();
     const P2Atom& atom = has_symbol ? symbol->atom() : P2Atom();
     const p2_Union_e type = atom.type();
 
@@ -186,11 +186,11 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
             break;
 
         case c_Definition:
-            result = QString::number(definition_lineno);
+            result = QString::number(lineno);
             break;
 
         case c_References:
-            result = QString::number(m_table->references_in(definition_lineno).count());
+            result = QString::number(m_table->references_in(lineno).count());
             break;
 
         case c_Type:
@@ -199,7 +199,8 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
             break;
 
         case c_Value:
-            result = atom.str(false);
+            if (has_symbol)
+                result = atom.str(false);
             break;
         }
         break;
