@@ -123,12 +123,13 @@ MainWindow::MainWindow(QWidget *parent)
     setup_statusbar();
 
     setup_asm();
+    setup_err();
     setup_sym();
     setup_dasm();
     setup_cog_views();
 
-    restore_settings();
     setup_fonts();
+    restore_settings();
 
     // load_source(QStringLiteral(":/spin2/spin2_interpreter.spin2"));
     // load_source(QStringLiteral(":/spin2/USBHost.spin2"));
@@ -396,7 +397,7 @@ void MainWindow::set_font_asm(const QFont& font)
 {
     ui->tvAsm->setUpdatesEnabled(false);
     ui->tvSym->setUpdatesEnabled(false);
-    ui->tbErrors->setUpdatesEnabled(false);
+    ui->tbErr->setUpdatesEnabled(false);
 
     ui->tvAsm->setFont(font);
     P2AsmModel* amodel = asm_model();
@@ -408,12 +409,12 @@ void MainWindow::set_font_asm(const QFont& font)
     if (smodel)
         smodel->setFont(font);
 
-    ui->tbErrors->setFont(font);
+    ui->tbErr->setFont(font);
 
     update_sizes_asm();
     update_sizes_symbols();
 
-    ui->tbErrors->setUpdatesEnabled(true);
+    ui->tbErr->setUpdatesEnabled(true);
     ui->tvSym->setUpdatesEnabled(true);
     ui->tvAsm->setUpdatesEnabled(true);
 }
@@ -475,12 +476,22 @@ void MainWindow::set_font_dasm(const QFont& font)
 void MainWindow::header_columns_asm(QPoint pos)
 {
     P2AsmModel* amodel = asm_model();
-    if (amodel)
+    if (!amodel)
         return;
 
-    QMenu popup(tr("Select visible columns"));
+    QMenu popup;
+    QAction* tact = new QAction(tr("Select visible columns"));
+    tact->setEnabled(false);
+    popup.addAction(tact);
     for (int column = 0; column < amodel->columnCount(); column++) {
-        QAction* act = new QAction(amodel->headerData(column, Qt::Horizontal).toString());
+        QString title = amodel->headerData(column, Qt::Horizontal).toString();
+        if (title == QStringLiteral("T"))
+            title = tr("Tokens");
+        if (title == QStringLiteral("E"))
+            title = tr("Errors");
+        if (title == QStringLiteral("S"))
+            title = tr("Symbols");
+        QAction* act = new QAction(title);
         act->setData(column);
         act->setCheckable(true);
         act->setChecked(!ui->tvAsm->isColumnHidden(column));
@@ -503,9 +514,13 @@ void MainWindow::header_columns_dasm(QPoint pos)
     if (!dmodel)
         return;
 
-    QMenu popup(tr("Select visible columns"));
+    QMenu popup;
+    QAction* tact = new QAction(tr("Select visible columns"));
+    tact->setEnabled(false);
+    popup.addAction(tact);
     for (int column = 0; column < dmodel->columnCount(); column++) {
-        QAction* act = new QAction(dmodel->headerData(column, Qt::Horizontal).toString());
+        QString title = dmodel->headerData(column, Qt::Horizontal).toString();
+        QAction* act = new QAction(title);
         act->setData(column);
         act->setCheckable(true);
         act->setChecked(!ui->tvDasm->isColumnHidden(column));
@@ -528,18 +543,22 @@ void MainWindow::header_columns_sym(QPoint pos)
     if (!smodel)
         return;
 
-    QMenu m(tr("Select columns"));
+    QMenu popup;
+    QAction* tact = new QAction(tr("Select visible columns"));
+    tact->setEnabled(false);
+    popup.addAction(tact);
     for (int column = 0; column < smodel->columnCount(); column++) {
-        QAction* act = new QAction(smodel ->headerData(column, Qt::Horizontal).toString());
+        QString title = smodel ->headerData(column, Qt::Horizontal).toString();
+        QAction* act = new QAction(title);
         act->setData(column);
         act->setCheckable(true);
         act->setChecked(!ui->tvSym->isColumnHidden(column));
-        m.addAction(act);
+        popup.addAction(act);
     }
 
     // Popup menu
     QHeaderView* hv = ui->tvSym->horizontalHeader();
-    QAction* act = m.exec(hv->mapToGlobal(pos));
+    QAction* act = popup.exec(hv->mapToGlobal(pos));
     if (!act)
         return;
     // hide or show the selected column
@@ -675,7 +694,7 @@ void MainWindow::load_source_random()
 void MainWindow::assemble()
 {
     QStringList source = m_asm->source();
-    ui->tbErrors->clear();
+    ui->tbErr->clear();
     ui->splSource->widget(2)->setVisible(false);
     m_num_errors = 0;
 
@@ -697,10 +716,10 @@ void MainWindow::assemble()
             amodel->invalidate();
         ui->tvAsm->resizeRowsToContents();
         ui->tvAsm->setCurrentIndex(idx);
-        QString text = ui->tbErrors->toPlainText();
+        QString text = ui->tbErr->toPlainText();
         if (text.isEmpty()) {
             text = m_asm->listing().join(QChar::LineFeed);
-            ui->tbErrors->setText(text);
+            ui->tbErr->setText(text);
             ui->splSource->widget(2)->setVisible(true);
         }
     }
@@ -756,7 +775,7 @@ void MainWindow::print_error(int pass, int line, const QString& message)
                         .arg(key_tv_asm)
                        .arg(QString::number(line));
     QString error = str_pass + str_line + message;
-    ui->tbErrors->append(error);
+    ui->tbErr->append(error);
     m_num_errors++;
     ui->splSource->widget(2)->setVisible(true);
 }
@@ -874,17 +893,9 @@ void MainWindow::setup_asm()
     connect(m_asm,
             SIGNAL(Error(int,int,QString)),
             SLOT(print_error(int,int,QString)));
-
-    // prevent opening of (external) links
-    ui->tbErrors->setOpenLinks(false);
-    ui->tbErrors->setOpenExternalLinks(false);
     ui->splSource->setCollapsible(1, true);
     ui->splSource->setCollapsible(2, true);
 
-    // but connect to the anchorClicked(QUrl) signal
-    connect(ui->tbErrors,
-            SIGNAL(anchorClicked(QUrl)),
-            SLOT(goto_line(QUrl)), Qt::UniqueConnection);
 
     // tvAsm setup
     ui->tvAsm->setFocusPolicy(Qt::ClickFocus);
@@ -949,6 +960,17 @@ void MainWindow::setup_sym()
             Qt::UniqueConnection);
 }
 
+void MainWindow::setup_err()
+{
+    // prevent opening of (external) links
+    ui->tbErr->setOpenLinks(false);
+    ui->tbErr->setOpenExternalLinks(false);
+    // but connect to the anchorClicked(QUrl) signal
+    connect(ui->tbErr,
+            SIGNAL(anchorClicked(QUrl)),
+            SLOT(goto_line(QUrl)), Qt::UniqueConnection);
+}
+
 void MainWindow::setup_dasm()
 {
     ui->tvDasm->setModel(new P2DasmModel(m_dasm, ui->tvDasm));
@@ -982,7 +1004,7 @@ void MainWindow::setup_fonts()
     font.setPointSize(m_font_asm.pointSize());
     ui->tvAsm->setFont(font);
     ui->tvSym->setFont(font);
-    ui->tbErrors->setFont(font);
+    ui->tbErr->setFont(font);
 
     font.setPointSize(m_font_dasm.pointSize());
     ui->tvDasm->setFont(font);

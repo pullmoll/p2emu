@@ -141,6 +141,7 @@ private:
 
     void setup_asm();
     void setup_sym();
+    void setup_err();
     void setup_dasm();
     void setup_fonts();
     void setup_menu();

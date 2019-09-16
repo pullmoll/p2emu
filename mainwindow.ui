@@ -54,24 +54,6 @@
            <property name="editTriggers">
             <set>QAbstractItemView::AnyKeyPressed|QAbstractItemView::DoubleClicked|QAbstractItemView::EditKeyPressed|QAbstractItemView::SelectedClicked</set>
            </property>
-           <property name="tabKeyNavigation">
-            <bool>false</bool>
-           </property>
-           <property name="showDropIndicator" stdset="0">
-            <bool>false</bool>
-           </property>
-           <property name="dragDropOverwriteMode">
-            <bool>false</bool>
-           </property>
-           <property name="selectionMode">
-            <enum>QAbstractItemView::SingleSelection</enum>
-           </property>
-           <property name="iconSize">
-            <size>
-             <width>20</width>
-             <height>20</height>
-            </size>
-           </property>
            <property name="textElideMode">
             <enum>Qt::ElideNone</enum>
            </property>
@@ -92,18 +74,6 @@
            </attribute>
           </widget>
           <widget class="QTableView" name="tvSym">
-           <property name="editTriggers">
-            <set>QAbstractItemView::AllEditTriggers</set>
-           </property>
-           <property name="tabKeyNavigation">
-            <bool>false</bool>
-           </property>
-           <property name="showDropIndicator" stdset="0">
-            <bool>false</bool>
-           </property>
-           <property name="dragDropOverwriteMode">
-            <bool>false</bool>
-           </property>
            <property name="sortingEnabled">
             <bool>true</bool>
            </property>
@@ -111,7 +81,7 @@
             <bool>false</bool>
            </property>
           </widget>
-          <widget class="QTextBrowser" name="tbErrors">
+          <widget class="QTextBrowser" name="tbErr">
            <property name="openLinks">
             <bool>false</bool>
            </property>
@@ -726,7 +696,7 @@
   <tabstop>tabWidget</tabstop>
   <tabstop>tvAsm</tabstop>
   <tabstop>tvSym</tabstop>
-  <tabstop>tbErrors</tabstop>
+  <tabstop>tbErr</tabstop>
   <tabstop>tvDasm</tabstop>
   <tabstop>saCOGs</tabstop>
  </tabstops>
