@@ -144,67 +144,197 @@ void P2Union::set_type(p2_Union_e type)
 
 bool P2Union::is_zero() const
 {
+    // FIXME: xxx
     return true;
 }
 
 int P2Union::get_int() const
 {
     const P2TypedValue tv = value(0);
-    return tv.value._int;
+    switch (tv.type) {
+    case ut_Invalid:
+        break;
+    case ut_Bool:
+        return tv.value._bool;
+    case ut_Byte:
+        return tv.value._byte;
+    case ut_Word:
+        return tv.value._word;
+    case ut_Addr:
+        return static_cast<int>(tv.value._addr[0]);
+    case ut_Long:
+        return static_cast<int>(tv.value._long);
+    case ut_Quad:
+        return static_cast<int>(tv.value._quad);
+    case ut_Real:
+        return static_cast<int>(tv.value._real);
+    case ut_String:
+        return tv.value._byte;
+    }
+    return 0;
 }
 
 bool P2Union::get_bool() const
 {
     const P2TypedValue tv = value(0);
-    return tv.value._bool;
+    switch (tv.type) {
+    case ut_Invalid:
+        break;
+    case ut_Bool:
+        return tv.value._bool;
+    case ut_Byte:
+        return tv.value._byte ? true : false;
+    case ut_Word:
+        return tv.value._word ? true : false;
+    case ut_Addr:
+        return tv.value._addr[0] ? true : false;
+    case ut_Long:
+        return tv.value._long ? true : false;
+    case ut_Quad:
+        return tv.value._quad ? true : false;
+    case ut_Real:
+        return !qFuzzyIsNull(tv.value._real);
+    case ut_String:
+        return tv.value._byte ? true : false;
+    }
+    return false;
 }
 
 char P2Union::get_char() const
 {
     const P2TypedValue tv = value(0);
+    switch (tv.type) {
+    case ut_Invalid:
+        break;
+    case ut_Bool:
+        return tv.value._bool;
+    case ut_Byte:
+        return tv.value._char;
+    case ut_Word:
+        return static_cast<char>(tv.value._word);
+    case ut_Addr:
+        return static_cast<char>(tv.value._addr[0]);
+    case ut_Long:
+        return static_cast<char>(tv.value._long);
+    case ut_Quad:
+        return static_cast<char>(tv.value._quad);
+    case ut_Real:
+        return static_cast<char>(tv.value._real);
+    case ut_String:
+        return tv.value._char;
+    }
     return tv.value._char;
 }
 
 p2_BYTE P2Union::get_byte() const
 {
     const P2TypedValue tv = value(0);
+    switch (tv.type) {
+    case ut_Invalid:
+        break;
+    case ut_Bool:
+        return tv.value._bool;
+    case ut_Byte:
+        return tv.value._byte;
+    case ut_Word:
+        return static_cast<p2_BYTE>(tv.value._word);
+    case ut_Addr:
+        return static_cast<p2_BYTE>(tv.value._addr[0]);
+    case ut_Long:
+        return static_cast<p2_BYTE>(tv.value._long);
+    case ut_Quad:
+        return static_cast<p2_BYTE>(tv.value._quad);
+    case ut_Real:
+        return static_cast<p2_BYTE>(tv.value._real);
+    case ut_String:
+        return tv.value._byte;
+    }
     return tv.value._byte;
 }
 
 p2_WORD P2Union::get_word() const
 {
     const P2TypedValue tv = value(0);
-    p2_WORD value;
-    if (ut_Addr == tv.type) {
-        value = static_cast<p2_WORD>(tv.value._addr[0]);
-    } else {
-        value = tv.value._word;
+    switch (tv.type) {
+    case ut_Invalid:
+        break;
+    case ut_Bool:
+        return tv.value._bool;
+    case ut_Byte:
+        return tv.value._byte;
+    case ut_Word:
+        return tv.value._word;
+    case ut_Addr:
+        return static_cast<p2_WORD>(tv.value._addr[0]);
+    case ut_Long:
+        return static_cast<p2_WORD>(tv.value._long);
+    case ut_Quad:
+        return static_cast<p2_WORD>(tv.value._quad);
+    case ut_Real:
+        return static_cast<p2_WORD>(tv.value._real);
+    case ut_String:
+        return tv.value._byte;
     }
-    return value;
+    return tv.value._word;
 }
 
 p2_LONG P2Union::get_long() const
 {
     const P2TypedValue tv = value(0);
-    p2_LONG value;
-    if (ut_Addr == tv.type) {
-        value = tv.value._addr[0];
-    } else {
-        value = tv.value._long;
+    switch (tv.type) {
+    case ut_Invalid:
+        break;
+    case ut_Bool:
+        return tv.value._bool;
+    case ut_Byte:
+        return tv.value._byte;
+    case ut_Word:
+        return tv.value._word;
+    case ut_Addr:
+        return tv.value._addr[0];
+    case ut_Long:
+        return tv.value._long;
+    case ut_Quad:
+        return static_cast<p2_LONG>(tv.value._quad);
+    case ut_Real:
+        return static_cast<p2_LONG>(tv.value._real);
+    case ut_String:
+        return tv.value._byte;
     }
-    return value;
+    return tv.value._long;
 }
 
 p2_LONG P2Union::get_addr(bool hub) const
 {
     const P2TypedValue tv = value(0);
-    p2_LONG value;
-    if (ut_Addr == tv.type) {
-        value = tv.value._addr[hub & 1];
-    } else if (hub) {
-        value = tv.value._long;
-    } else {
-        value = tv.value._long * sz_LONG;    // scale COG constant by sz_LONG
+    p2_LONG value = tv.value._addr[hub];
+    switch (tv.type) {
+    case ut_Invalid:
+        break;
+    case ut_Bool:
+        value = tv.value._bool ? sz_LONG : 0;
+        break;
+    case ut_Byte:
+        value = tv.value._byte * sz_LONG;
+        break;
+    case ut_Word:
+        value = tv.value._word * sz_LONG;
+        break;
+    case ut_Addr:
+        value = tv.value._addr[hub];
+        break;
+    case ut_Long:
+        value = tv.value._long * sz_LONG;
+        break;
+    case ut_Quad:
+        value = static_cast<p2_LONG>(tv.value._quad * sz_LONG);
+        break;
+    case ut_Real:
+        value = static_cast<p2_LONG>(tv.value._real * sz_LONG);
+        break;
+    case ut_String:
+        value = tv.value._byte * sz_LONG;
+        break;
     }
     return value;
 }
@@ -212,13 +342,27 @@ p2_LONG P2Union::get_addr(bool hub) const
 p2_QUAD P2Union::get_quad() const
 {
     const P2TypedValue tv = value(0);
-    p2_QUAD value;
-    if (ut_Addr == tv.type) {
-        value = tv.value._addr[0];
-    } else {
-        value = tv.value._long;
+    switch (tv.type) {
+    case ut_Invalid:
+        break;
+    case ut_Bool:
+        return tv.value._bool;
+    case ut_Byte:
+        return tv.value._byte;
+    case ut_Word:
+        return tv.value._word;
+    case ut_Addr:
+        return tv.value._addr[0];
+    case ut_Long:
+        return tv.value._long;
+    case ut_Quad:
+        return tv.value._quad;
+    case ut_Real:
+        return static_cast<p2_QUAD>(tv.value._real);
+    case ut_String:
+        return tv.value._byte;
     }
-    return value;
+    return tv.value._quad;
 }
 
 p2_REAL P2Union::get_real() const
