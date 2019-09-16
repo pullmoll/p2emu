@@ -40,7 +40,6 @@ P2DasmModel::P2DasmModel(P2Dasm* dasm, QObject *parent)
     : QAbstractTableModel(parent)
     , m_dasm(dasm)
     , m_format(fmt_bin)
-    , m_font()
     , m_header()
     , m_background()
     , m_alignment()
@@ -65,8 +64,9 @@ P2DasmModel::P2DasmModel(P2Dasm* dasm, QObject *parent)
 QVariant P2DasmModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     QVariant result;
+    QFont font;
+    font.setBold(true);
     const column_e column = static_cast<column_e>(section);
-    QFontMetrics metrics(m_font);
 
     switch (orientation) {
     case Qt::Horizontal:
@@ -76,7 +76,7 @@ QVariant P2DasmModel::headerData(int section, Qt::Orientation orientation, int r
             break;
 
         case Qt::FontRole:
-            result = m_font;
+            result = font;
             break;
 
         case Qt::SizeHintRole:
@@ -215,16 +215,6 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
     return result;
 }
 
-QList<P2DasmModel::column_e> P2DasmModel::columns()
-{
-    QList<column_e> columns;
-    columns += c_Address;
-    columns += c_Opcode;
-    columns += c_Instruction;
-    columns += c_Description;
-    return columns;
-}
-
 QSize P2DasmModel::sizeHint(const QModelIndex& index, const QString& text) const
 {
     QFontMetrics metrics(m_font);
@@ -274,6 +264,7 @@ void P2DasmModel::setOpcodeFormat(p2_FORMAT_e format)
 
 void P2DasmModel::setFont(const QFont& font)
 {
+    beginResetModel();
     m_font = font;
-    invalidate();
+    endResetModel();
 }

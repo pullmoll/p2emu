@@ -84,6 +84,7 @@ P2Asm::P2Asm(QObject *parent)
     : QObject(parent)
     , m_pnut(true)
     , m_v33mode(false)
+    , m_file_errors(false)
     , m_pass(0)
     , m_pathname(".")
     , m_source()
@@ -252,6 +253,33 @@ bool P2Asm::set_source(const QStringList& source)
     for (int i = 0; i < m_source.count(); i++)
         m_sourceptr[i] = &m_source[i];
     return true;
+}
+
+/**
+ * @brief Set PNut compatibility for listing output
+ * @param on try to be compatible if true
+ */
+void P2Asm::set_pnut(bool on)
+{
+    m_pnut = on;
+}
+
+/**
+ * @brief Set V33 mode for PTRA/PTRB index
+ * @param on try to be compatible if true
+ */
+void P2Asm::set_v33mode(bool on)
+{
+    m_v33mode = on;
+}
+
+/**
+ * @brief Set emit errors for missing FILEs
+ * @param on try to be compatible if true
+ */
+void P2Asm::set_file_errors(bool on)
+{
+    m_file_errors = on;
 }
 
 /**
@@ -2325,6 +2353,38 @@ bool P2Asm::assemble(const QString& filename)
     return assemble(list);
 }
 
+/**
+ * @brief Return PNut compatibility flag
+ * @return true if compatibility is on, false otherwise
+ */
+bool P2Asm::pnut() const
+{
+    return m_pnut;
+}
+
+/**
+ * @brief Return V33 mode flag
+ * @return true if V33 mode is on, false otherwise
+ */
+bool P2Asm::v33mode() const
+{
+    return m_v33mode;
+}
+
+/**
+ * @brief Return FILE errors flag
+ * @return true if FILE errors are on, false otherwise
+ */
+bool P2Asm::file_errors() const
+{
+    return m_file_errors;
+}
+
+/**
+ * @brief Set the path name to search for FILEs
+ * @param pathname path name where to search for FILEs
+ * @return true if changed and path exists, or false otherwise
+ */
 bool P2Asm::set_pathname(const QString& pathname)
 {
     if (pathname == m_pathname)
@@ -5480,7 +5540,7 @@ bool P2Asm::asm_FILE()
             m_data.add_array(data.readAll());
             m_data.set_type(ut_String);
             data.close();
-        } else {
+        } else if (m_file_errors) {
             m_errors += tr("Could not open file \"%1\" for reading.")
                         .arg(filename);
             emit Error(m_pass, m_lineno, m_errors.last());

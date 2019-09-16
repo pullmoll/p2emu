@@ -801,8 +801,15 @@ void P2Atom::unary_dec(const p2_LONG val)
             p2_QUAD max = 0;
             for (int i = 0; i < m_value.count(); i++) {
                 P2TypedValue tv = m_value[i];
-                tv.value._quad = tv.value._byte - val;
-                max |= tv.value._quad;
+                p2_QUAD res = tv.value._byte - val;
+                if (res & ~LBYTE)
+                    tv.type = ut_Word;
+                if (res & ~LWORD)
+                    tv.type = ut_Long;
+                if (res & ~LMAX)
+                    tv.type = ut_Quad;
+                max |= res;
+                tv.value._quad = res;
                 m_value.replace(i, tv);
             }
             if (max & ~LBYTE)
@@ -856,8 +863,15 @@ void P2Atom::unary_inc(const p2_LONG val)
             p2_QUAD max = 0;
             for (int i = 0; i < m_value.count(); i++) {
                 P2TypedValue tv = m_value[i];
-                tv.value._quad = tv.value._byte + val;
-                max |= tv.value._quad;
+                p2_QUAD res = tv.value._byte + val;
+                if (res & ~LBYTE)
+                    tv.type = ut_Word;
+                if (res & ~LWORD)
+                    tv.type = ut_Long;
+                if (res & ~LMAX)
+                    tv.type = ut_Quad;
+                max |= res;
+                tv.value._quad = res;
                 m_value.replace(i, tv);
             }
             if (max & ~LBYTE)
@@ -912,8 +926,15 @@ void P2Atom::arith_mul(const P2Atom& atom)
             p2_QUAD max = 0;
             for (int i = 0; i < m_value.count(); i++) {
                 P2TypedValue tv = m_value[i];
-                tv.value._quad = tv.value._byte * factor;
-                max |= tv.value._quad;
+                p2_QUAD res = tv.value._byte * factor;
+                if (res & ~LBYTE)
+                    tv.type = ut_Word;
+                if (res & ~LWORD)
+                    tv.type = ut_Long;
+                if (res & ~LMAX)
+                    tv.type = ut_Quad;
+                max |= res;
+                tv.value._quad = res;
                 m_value.replace(i, tv);
             }
             if (max & ~LBYTE)
@@ -994,8 +1015,15 @@ void P2Atom::arith_div(const P2Atom& atom)
                 p2_LONG max = 0;
                 for (int i = 0; i < m_value.count(); i++) {
                     P2TypedValue tv = m_value[i];
-                    tv.value._quad = tv.value._byte / divisor;
-                    max |= tv.value._quad;
+                    p2_QUAD res = tv.value._byte / divisor;
+                    if (res & ~LBYTE)
+                        tv.type = ut_Word;
+                    if (res & ~LWORD)
+                        tv.type = ut_Long;
+                    if (res & ~LMAX)
+                        tv.type = ut_Quad;
+                    max |= res;
+                    tv.value._quad = res;
                     m_value.replace(i, tv);
                 }
                 if (max & ~LBYTE)
@@ -1077,8 +1105,15 @@ void P2Atom::arith_mod(const P2Atom& atom)
                 p2_LONG max = 0;
                 for (int i = 0; i < m_value.count(); i++) {
                     P2TypedValue tv = m_value[i];
-                    tv.value._quad = tv.value._byte % divisor;
-                    max |= tv.value._quad;
+                    p2_QUAD res = tv.value._byte % divisor;
+                    if (res & ~LBYTE)
+                        tv.type = ut_Word;
+                    if (res & ~LWORD)
+                        tv.type = ut_Long;
+                    if (res & ~LMAX)
+                        tv.type = ut_Quad;
+                    max |= res;
+                    tv.value._quad = res;
                     m_value.replace(i, tv);
                 }
                 if (max & ~LBYTE)
@@ -1137,8 +1172,15 @@ void P2Atom::arith_add(const P2Atom& atom)
                 p2_LONG max = 0;
                 for (int i = 0; i < m_value.count(); i++) {
                     P2TypedValue tv = m_value[i];
-                    tv.value._quad = tv.value._byte + addend;
-                    max |= tv.value._quad;
+                    p2_QUAD res = tv.value._byte + addend;
+                    if (res & ~LBYTE)
+                        tv.type = ut_Word;
+                    if (res & ~LWORD)
+                        tv.type = ut_Long;
+                    if (res & ~LMAX)
+                        tv.type = ut_Quad;
+                    max |= res;
+                    tv.value._quad = res;
                     m_value.replace(i, tv);
                 }
                 if (max & ~LBYTE)
@@ -1196,8 +1238,15 @@ void P2Atom::arith_sub(const P2Atom& atom)
                 p2_LONG max = 0;
                 for (int i = 0; i < m_value.count(); i++) {
                     P2TypedValue tv = m_value[i];
-                    tv.value._quad = tv.value._byte - minuend;
-                    max |= tv.value._quad;
+                    p2_QUAD res = tv.value._byte - minuend;
+                    if (res & ~LBYTE)
+                        tv.type = ut_Word;
+                    if (res & ~LWORD)
+                        tv.type = ut_Long;
+                    if (res & ~LMAX)
+                        tv.type = ut_Quad;
+                    max |= res;
+                    tv.value._quad = res;
                     m_value.replace(i, tv);
                 }
                 if (max & ~LBYTE)
@@ -1255,8 +1304,15 @@ void P2Atom::binary_shl(const P2Atom& atom)
                 p2_QUAD max = 0;
                 for (int i = 0; i < m_value.count(); i++) {
                     P2TypedValue tv = m_value[i];
-                    tv.value._quad = static_cast<p2_QUAD>(tv.value._byte) << shift;
-                    max |= tv.value._quad;
+                    p2_QUAD res = static_cast<p2_QUAD>(tv.value._byte) << shift;
+                    if (res & ~LBYTE)
+                        tv.type = ut_Word;
+                    if (res & ~LWORD)
+                        tv.type = ut_Long;
+                    if (res & ~LMAX)
+                        tv.type = ut_Quad;
+                    max |= res;
+                    tv.value._quad = res;
                     m_value.replace(i, tv);
                 }
                 if (max & ~LBYTE)
@@ -1314,8 +1370,15 @@ void P2Atom::binary_shr(const P2Atom& atom)
                 p2_QUAD max = 0;
                 for (int i = 0; i < m_value.count(); i++) {
                     P2TypedValue tv = m_value[i];
-                    tv.value._quad = static_cast<p2_QUAD>(tv.value._byte) >> shift;
-                    max |= tv.value._quad;
+                    p2_QUAD res = tv.value._byte >> shift;
+                    if (res & ~LBYTE)
+                        tv.type = ut_Word;
+                    if (res & ~LWORD)
+                        tv.type = ut_Long;
+                    if (res & ~LMAX)
+                        tv.type = ut_Quad;
+                    max |= res;
+                    tv.value._quad = res;
                     m_value.replace(i, tv);
                 }
                 if (max & ~LBYTE)
@@ -1373,8 +1436,15 @@ void P2Atom::binary_and(const P2Atom& atom)
                 p2_QUAD max = 0;
                 for (int i = 0; i < m_value.count(); i++) {
                     P2TypedValue tv = m_value[i];
-                    tv.value._quad = tv.value._byte & rvalue;
-                    max |= tv.value._quad;
+                    p2_QUAD res = tv.value._byte & rvalue;
+                    if (res & ~LBYTE)
+                        tv.type = ut_Word;
+                    if (res & ~LWORD)
+                        tv.type = ut_Long;
+                    if (res & ~LMAX)
+                        tv.type = ut_Quad;
+                    max |= res;
+                    tv.value._quad = res;
                     m_value.replace(i, tv);
                 }
                 if (max & ~LBYTE)
@@ -1432,8 +1502,15 @@ void P2Atom::binary_xor(const P2Atom& atom)
             p2_QUAD max = 0;
             for (int i = 0; i < m_value.count(); i++) {
                 P2TypedValue tv = m_value[i];
-                tv.value._quad = tv.value._byte ^ rvalue;
-                max |= tv.value._quad;
+                p2_QUAD res = tv.value._byte ^ rvalue;
+                if (res & ~LBYTE)
+                    tv.type = ut_Word;
+                if (res & ~LWORD)
+                    tv.type = ut_Long;
+                if (res & ~LMAX)
+                    tv.type = ut_Quad;
+                max |= res;
+                tv.value._quad = res;
                 m_value.replace(i, tv);
             }
             if (max & ~LBYTE)
@@ -1491,8 +1568,15 @@ void P2Atom::binary_or(const P2Atom& atom)
             p2_QUAD max = 0;
             for (int i = 0; i < m_value.count(); i++) {
                 P2TypedValue tv = m_value[i];
-                tv.value._quad = tv.value._byte | rvalue;
-                max |= tv.value._quad;
+                p2_QUAD res = tv.value._byte | rvalue;
+                if (res & ~LBYTE)
+                    tv.type = ut_Word;
+                if (res & ~LWORD)
+                    tv.type = ut_Long;
+                if (res & ~LMAX)
+                    tv.type = ut_Quad;
+                max |= res;
+                tv.value._quad = res;
                 m_value.replace(i, tv);
             }
             if (max & ~LBYTE)

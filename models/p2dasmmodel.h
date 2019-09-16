@@ -58,7 +58,6 @@ public:
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 
-    static QList<column_e> columns();
     p2_FORMAT_e opcode_format() const { return m_format; }
     QSize sizeHint(const QModelIndex& index, const QString& text = QString()) const;
 
@@ -69,8 +68,8 @@ public slots:
 
 private:
     P2Dasm* m_dasm;
-    p2_FORMAT_e m_format;
     QFont m_font;
+    p2_FORMAT_e m_format;
     QHash<column_e,QString> m_header;
     QHash<column_e,QRgb> m_background;
     QHash<column_e,int> m_alignment;

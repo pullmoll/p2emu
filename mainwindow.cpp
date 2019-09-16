@@ -50,6 +50,7 @@
 #include "gotoaddress.h"
 #include "gotoline.h"
 #include "palettesetup.h"
+#include "preferences.h"
 #include "textbrowser.h"
 #include "p2hub.h"
 #include "p2cog.h"
@@ -83,7 +84,10 @@ static const QLatin1String key_column_symbols("hide_symbols");
 static const QLatin1String key_column_instruction("hide_instruction");
 static const QLatin1String key_column_source("hide_source");
 static const QLatin1String key_column_description("hide_description");
-static const QLatin1String key_font_size("font_size");
+static const QLatin1String key_pnut_compatible("pnut_compatible");
+static const QLatin1String key_v33mode("v33mode");
+static const QLatin1String key_file_errors("file_errors");
+static const QLatin1String key_font("font");
 static const QLatin1String key_splitter_source_percent("source_percent");
 static const QLatin1String key_splitter_symbols_percent("symbols_percent");
 static const QLatin1String key_splitter_errors_percent("errors_percent");
@@ -103,9 +107,8 @@ MainWindow::MainWindow(QWidget *parent)
     , m_hub(new P2Hub(ncogs, this))
     , m_asm(new P2Asm(this))
     , m_dasm(new P2Dasm(m_hub->cog(0)))
-    , m_font(QLatin1String("Source Code Pro"), 9)
-    , m_asm_font_size(11)
-    , m_dasm_font_size(11)
+    , m_font_asm(QLatin1String("Source Code Pro"), 9)
+    , m_font_dasm(QLatin1String("Source Code Pro"), 9)
     , m_source_percent(80)
     , m_symbols_percent(15)
     , m_errors_percent(5)
@@ -190,10 +193,14 @@ void MainWindow::save_settings_asm()
     QModelIndex index = ui->tvAsm->currentIndex();
     s.setValue(key_current_row, index.row());
     s.setValue(key_current_column, index.column());
-    s.setValue(key_font_size, ui->tvAsm->font().pointSize());
+    s.setValue(key_font, ui->tvAsm->font());
     s.setValue(key_splitter_source_percent, m_source_percent);
     s.setValue(key_splitter_symbols_percent, m_symbols_percent);
     s.setValue(key_splitter_errors_percent, m_errors_percent);
+
+    s.setValue(key_pnut_compatible, m_asm->pnut());
+    s.setValue(key_v33mode, m_asm->v33mode());
+    s.setValue(key_file_errors, m_asm->file_errors());
 
     s.endGroup();
 }
@@ -215,12 +222,17 @@ void MainWindow::restore_settings_asm()
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Symbols, s.value(key_column_symbols, false).toBool());
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Errors, s.value(key_column_errors, false).toBool());
     ui->tvAsm->setColumnHidden(P2AsmModel::c_Source, s.value(key_column_source, false).toBool());
-    m_asm_font_size = s.value(key_font_size, 11).toInt();
+    m_font_asm = qvariant_cast<QFont>(s.value(key_font, m_font_asm));
     m_source_percent = qBound(1,s.value(key_splitter_source_percent, m_source_percent).toInt(),100);
     m_symbols_percent = qBound(1,s.value(key_splitter_symbols_percent, m_symbols_percent).toInt(),100);
     m_errors_percent = qBound(1,s.value(key_splitter_errors_percent, m_errors_percent).toInt(),100);
+
+    m_asm->set_pnut(s.value(key_pnut_compatible, true).toBool());
+    m_asm->set_v33mode(s.value(key_v33mode, false).toBool());
+    m_asm->set_file_errors(s.value(key_file_errors, false).toBool());
+
     s.endGroup();
-    font_size_set_asm(m_asm_font_size);
+    set_font_asm(m_font_asm);
     resize_splitter_source();
 }
 
@@ -238,7 +250,7 @@ void MainWindow::save_settings_dasm()
     QModelIndex index = ui->tvDasm->currentIndex();
     s.setValue(key_current_row, index.row());
     s.setValue(key_current_column, index.column());
-    s.setValue(key_font_size, ui->tvDasm->font().pointSize());
+    m_font_dasm = qvariant_cast<QFont>(s.value(key_font, m_font_dasm));
     s.endGroup();
 }
 
@@ -253,9 +265,9 @@ void MainWindow::restore_settings_dasm()
     ui->tvDasm->setColumnHidden(P2DasmModel::c_Opcode, s.value(key_column_opcode, false).toBool());
     ui->tvDasm->setColumnHidden(P2DasmModel::c_Instruction, s.value(key_column_instruction, false).toBool());
     ui->tvDasm->setColumnHidden(P2DasmModel::c_Description, s.value(key_column_description, false).toBool());
-    m_dasm_font_size = s.value(key_font_size, 11).toInt();
+    m_font_dasm = qvariant_cast<QFont>(s.value(key_font, m_font_dasm));
     s.endGroup();
-    font_size_set_dasm(m_dasm_font_size);
+    set_font_dasm(m_font_dasm);
 }
 
 void MainWindow::save_settings_palette()
@@ -364,7 +376,8 @@ void MainWindow::font_size_inc_asm()
     int size = font.pointSize();
     if (size < 24) {
         size++;
-        font_size_set_asm(size);
+        font.setPointSize(size);
+        set_font_asm(font);
     }
 }
 
@@ -374,17 +387,17 @@ void MainWindow::font_size_dec_asm()
     int size = font.pointSize();
     if (size > 5) {
         size--;
-        font_size_set_asm(size);
+        font.setPointSize(size);
+        set_font_asm(font);
     }
 }
 
-void MainWindow::font_size_set_asm(int size)
+void MainWindow::set_font_asm(const QFont& font)
 {
     ui->tvAsm->setUpdatesEnabled(false);
     ui->tvSym->setUpdatesEnabled(false);
+    ui->tbErrors->setUpdatesEnabled(false);
 
-    QFont font = ui->tvAsm->font();
-    font.setPointSize(size);
     ui->tvAsm->setFont(font);
     P2AsmModel* amodel = asm_model();
     if (amodel)
@@ -400,6 +413,7 @@ void MainWindow::font_size_set_asm(int size)
     update_sizes_asm();
     update_sizes_symbols();
 
+    ui->tbErrors->setUpdatesEnabled(true);
     ui->tvSym->setUpdatesEnabled(true);
     ui->tvAsm->setUpdatesEnabled(true);
 }
@@ -429,7 +443,8 @@ void MainWindow::font_size_inc_dasm()
     int size = font.pointSize();
     if (size < 24) {
         size++;
-        font_size_set_dasm(size);
+        font.setPointSize(size);
+        set_font_dasm(font);
     }
 }
 
@@ -439,43 +454,42 @@ void MainWindow::font_size_dec_dasm()
     int size = font.pointSize();
     if (size > 5) {
         size--;
-        font_size_set_dasm(size);
+        font.setPointSize(size);
+        set_font_dasm(font);
     }
 }
 
-void MainWindow::font_size_set_dasm(int size)
+void MainWindow::set_font_dasm(const QFont& font)
 {
-    P2DasmModel* dmodel = dasm_model();
     ui->tvDasm->setUpdatesEnabled(false);
 
-    QFont font = ui->tvDasm->font();
-    font.setPointSize(size);
     ui->tvDasm->setFont(font);
-    dmodel->setFont(font);
+    P2DasmModel* dmodel = dasm_model();
+    if (dmodel)
+        dmodel->setFont(font);
     update_sizes_dasm();
 
     ui->tvDasm->setUpdatesEnabled(true);
 }
 
-void MainWindow::header_colums_asm(const QPoint& pos)
+void MainWindow::header_columns_asm(QPoint pos)
 {
     P2AsmModel* amodel = asm_model();
     if (amodel)
         return;
-    QList<P2AsmModel::column_e> columns = amodel->columns();
 
-    QMenu m(tr("Select columns"));
-    foreach(P2AsmModel::column_e column, columns) {
+    QMenu popup(tr("Select visible columns"));
+    for (int column = 0; column < amodel->columnCount(); column++) {
         QAction* act = new QAction(amodel->headerData(column, Qt::Horizontal).toString());
         act->setData(column);
         act->setCheckable(true);
         act->setChecked(!ui->tvAsm->isColumnHidden(column));
-        m.addAction(act);
+        popup.addAction(act);
     }
 
     // Popup menu
     QHeaderView* hv = ui->tvAsm->horizontalHeader();
-    QAction* act = m.exec(hv->mapToGlobal(pos));
+    QAction* act = popup.exec(hv->mapToGlobal(pos));
     if (!act)
         return;
     // hide or show the selected column
@@ -483,25 +497,24 @@ void MainWindow::header_colums_asm(const QPoint& pos)
     ui->tvAsm->setColumnHidden(column, !act->isChecked());
 }
 
-void MainWindow::header_columns_dasm(const QPoint& pos)
+void MainWindow::header_columns_dasm(QPoint pos)
 {
     const P2DasmModel* dmodel = dasm_model();
     if (!dmodel)
         return;
-    QList<P2DasmModel::column_e> columns = dmodel->columns();
 
-    QMenu m(tr("Select columns"));
-    foreach(P2DasmModel::column_e column, columns) {
+    QMenu popup(tr("Select visible columns"));
+    for (int column = 0; column < dmodel->columnCount(); column++) {
         QAction* act = new QAction(dmodel->headerData(column, Qt::Horizontal).toString());
         act->setData(column);
         act->setCheckable(true);
         act->setChecked(!ui->tvDasm->isColumnHidden(column));
-        m.addAction(act);
+        popup.addAction(act);
     }
 
     // Popup menu
     QHeaderView* hv = ui->tvDasm->horizontalHeader();
-    QAction* act = m.exec(hv->mapToGlobal(pos));
+    QAction* act = popup.exec(hv->mapToGlobal(pos));
     if (!act)
         return;
     // hide or show the selected column
@@ -509,15 +522,14 @@ void MainWindow::header_columns_dasm(const QPoint& pos)
     ui->tvDasm->setColumnHidden(column, !act->isChecked());
 }
 
-void MainWindow::header_columns_symbols(const QPoint& pos)
+void MainWindow::header_columns_sym(QPoint pos)
 {
     P2SymbolsModel* smodel = sym_model();
     if (!smodel)
         return;
-    QList<P2SymbolsModel::column_e> columns = smodel ->columns();
 
     QMenu m(tr("Select columns"));
-    foreach(P2SymbolsModel::column_e column, columns) {
+    for (int column = 0; column < smodel->columnCount(); column++) {
         QAction* act = new QAction(smodel ->headerData(column, Qt::Horizontal).toString());
         act->setData(column);
         act->setCheckable(true);
@@ -717,6 +729,23 @@ void MainWindow::palette_setup()
     }
 }
 
+void MainWindow::preferences()
+{
+    Preferences dlg(this);
+    dlg.set_pnut(m_asm->pnut());
+    dlg.set_v33mode(m_asm->v33mode());
+    dlg.set_file_errors(m_asm->file_errors());
+    dlg.set_font_asm(ui->tvAsm->font());
+    dlg.set_font_dasm(ui->tvDasm->font());
+    if (QDialog::Accepted != dlg.exec())
+        return;
+    m_asm->set_pnut(dlg.pnut());
+    m_asm->set_v33mode(dlg.v33mode());
+    m_asm->set_file_errors(dlg.file_errors());
+    set_font_asm(dlg.font_asm());
+    set_font_dasm(dlg.font_dasm());
+}
+
 void MainWindow::print_error(int pass, int line, const QString& message)
 {
     QString str_pass = QString("%1 #%2 - ")
@@ -842,16 +871,20 @@ void MainWindow::set_lowercase_dasm(bool check)
 
 void MainWindow::setup_asm()
 {
-    connect(m_asm, SIGNAL(Error(int,int,QString)), SLOT(print_error(int,int,QString)));
+    connect(m_asm,
+            SIGNAL(Error(int,int,QString)),
+            SLOT(print_error(int,int,QString)));
 
     // prevent opening of (external) links
     ui->tbErrors->setOpenLinks(false);
     ui->tbErrors->setOpenExternalLinks(false);
-    ui->splSource->setCollapsible(1, false);
+    ui->splSource->setCollapsible(1, true);
     ui->splSource->setCollapsible(2, true);
 
     // but connect to the anchorClicked(QUrl) signal
-    connect(ui->tbErrors, SIGNAL(anchorClicked(QUrl)), SLOT(goto_line(QUrl)), Qt::UniqueConnection);
+    connect(ui->tbErrors,
+            SIGNAL(anchorClicked(QUrl)),
+            SLOT(goto_line(QUrl)), Qt::UniqueConnection);
 
     // tvAsm setup
     ui->tvAsm->setFocusPolicy(Qt::ClickFocus);
@@ -862,6 +895,8 @@ void MainWindow::setup_asm()
     ui->tvAsm->setSelectionMode(QAbstractItemView::ExtendedSelection);
     ui->tvAsm->setSelectionBehavior(QAbstractItemView::SelectItems);
 
+    ui->tvAsm->setModel(new P2AsmModel(m_asm, ui->tvAsm));
+
     // Set a delegate for the opcode column
     QAbstractItemDelegate* od = ui->tvAsm->itemDelegateForColumn(P2AsmModel::c_Opcode);
     ui->tvAsm->setItemDelegateForColumn(P2AsmModel::c_Opcode, new P2OpcodeDelegate);
@@ -871,31 +906,61 @@ void MainWindow::setup_asm()
     QAbstractItemDelegate* sd = ui->tvAsm->itemDelegateForColumn(P2AsmModel::c_Source);
     ui->tvAsm->setItemDelegateForColumn(P2AsmModel::c_Source, new P2SourceDelegate);
     delete sd;
+
+    ui->tvAsm->resizeColumnsToContents();
+
+    QHeaderView* hh = ui->tvAsm->horizontalHeader();
+    hh->setStretchLastSection(true);
+    hh->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(hh,
+            SIGNAL(customContextMenuRequested(QPoint)),
+            SLOT(header_columns_asm(QPoint)),
+            Qt::UniqueConnection);
 }
 
 void MainWindow::setup_sym()
 {
-    QAbstractItemDelegate* ss = ui->tvSym->itemDelegateForColumn(P2SymbolsModel::c_References);
+    QAbstractItemDelegate* sd = ui->tvSym->itemDelegateForColumn(P2SymbolsModel::c_References);
     P2ReferencesDelegate* delegate = new P2ReferencesDelegate;
     connect(delegate, SIGNAL(urlSelected(QUrl)), SLOT(goto_line(QUrl)));
     ui->tvSym->setItemDelegateForColumn(P2SymbolsModel::c_References, delegate);
-    delete ss;
-
-    ui->tvAsm->setModel(new P2AsmModel(m_asm, ui->tvAsm));
+    delete sd;
 
     P2SymbolsModel* smodel = new P2SymbolsModel;
     P2SymbolSorter* sorter = new P2SymbolSorter(this);
     sorter->setSourceModel(smodel);
     ui->tvSym->setModel(sorter);
     ui->tvSym->setSortingEnabled(true);
-    connect(ui->tvSym, SIGNAL(clicked(const QModelIndex &)), SLOT(goto_definition(const QModelIndex &)), Qt::UniqueConnection);
-    connect(ui->tvSym, SIGNAL(activated(const QModelIndex &)), SLOT(goto_definition(const QModelIndex &)), Qt::UniqueConnection);
+    connect(ui->tvSym,
+            SIGNAL(clicked(const QModelIndex &)),
+            SLOT(goto_definition(const QModelIndex &)), Qt::UniqueConnection);
+    connect(ui->tvSym,
+            SIGNAL(activated(const QModelIndex &)),
+            SLOT(goto_definition(const QModelIndex &)), Qt::UniqueConnection);
+
+    ui->tvSym->resizeColumnsToContents();
+
+    QHeaderView* hh = ui->tvSym->horizontalHeader();
+    hh->setStretchLastSection(true);
+    hh->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(hh,
+            SIGNAL(customContextMenuRequested(QPoint)),
+            SLOT(header_columns_sym(QPoint)),
+            Qt::UniqueConnection);
 }
 
 void MainWindow::setup_dasm()
 {
-    ui->tvDasm->setModel(new P2DasmModel(m_dasm));
+    ui->tvDasm->setModel(new P2DasmModel(m_dasm, ui->tvDasm));
     update_sizes_dasm();
+
+    QHeaderView* hh = ui->tvDasm->horizontalHeader();
+    hh->setContextMenuPolicy(Qt::CustomContextMenu);
+    hh->setStretchLastSection(true);
+    connect(hh,
+            SIGNAL(customContextMenuRequested(QPoint)),
+            SLOT(header_columns_dasm(QPoint)),
+            Qt::UniqueConnection);
 }
 
 void MainWindow::setup_fonts()
@@ -905,19 +970,21 @@ void MainWindow::setup_fonts()
 
     if (font.family() != preferred_font)
         font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+
     font.setStyleHint(QFont::TypeWriter, QFont::PreferAntialias);
     font.setPointSize(9);
-    m_font = font;
+    m_font_asm = font;
+    m_font_dasm = font;
 
     font.setPointSize(11);
     ui->tabWidget->setFont(font);
 
-    font.setPointSize(m_asm_font_size);
+    font.setPointSize(m_font_asm.pointSize());
     ui->tvAsm->setFont(font);
     ui->tvSym->setFont(font);
     ui->tbErrors->setFont(font);
 
-    font.setPointSize(m_dasm_font_size);
+    font.setPointSize(m_font_dasm.pointSize());
     ui->tvDasm->setFont(font);
 }
 
@@ -941,6 +1008,7 @@ void MainWindow::setup_menu()
     connect(ui->action_SingleStep, SIGNAL(triggered()), SLOT(hub_single_step()));
 
     connect(ui->action_Palette_setup, SIGNAL(triggered()), SLOT(palette_setup()));
+    connect(ui->action_Preferences, SIGNAL(triggered()), SLOT(preferences()));
 
     connect(ui->action_Asm_Opcodes_bin, SIGNAL(triggered(bool)), SLOT(set_opcodes_asm()));
     connect(ui->action_Asm_Opcodes_byt, SIGNAL(triggered(bool)), SLOT(set_opcodes_asm()));
@@ -1077,16 +1145,6 @@ void MainWindow::update_sizes_symbols()
 {
     QFont font = ui->tvSym->font();
     QFontMetrics metrics(font);
-
-    QHeaderView* vh = ui->tvSym->verticalHeader();
-    vh->setEnabled(true);
-    vh->setDefaultSectionSize(metrics.ascent() + metrics.descent());
-
-    QHeaderView* hh = ui->tvSym->horizontalHeader();
-    hh->setContextMenuPolicy(Qt::CustomContextMenu);
-    hh->setStretchLastSection(true);
-    connect(hh, SIGNAL(customContextMenuRequested(QPoint)), SLOT(header_columns_symbols(QPoint)), Qt::UniqueConnection);
-    ui->tvSym->resizeColumnsToContents();
 }
 
 void MainWindow::setup_cog_views()

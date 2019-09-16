@@ -779,23 +779,36 @@ bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG 
     } else {
         if (value >= HUB_ADDR0 || atom.has_trait(tr_AUGMENTED)) {
             m_u.op7.dst = value & COG_MASK;
-            switch (m_dst_imm) {
-            case ignore:
-                break;
-            case immediate_I:
-                if (!im()) {
-                    m_error_code = dst_augd_im;
-                    m_error_value = value;
-                    result = false;
+            if (atom.has_trait(tr_AUGMENTED)) {
+                switch (m_dst_imm) {
+                case ignore:
+                    break;
+                case immediate_I:
+                    set_im();
+                    break;
+                case immediate_L:
+                    set_wz();
+                    break;
                 }
-                break;
-            case immediate_L:
-                if (!wz()) {
-                    m_error_code = dst_augd_wz;
-                    m_error_value = value;
-                    result = false;
+            } else {
+                switch (m_dst_imm) {
+                case ignore:
+                    break;
+                case immediate_I:
+                    if (!im()) {
+                        m_error_code = dst_augd_im;
+                        m_error_value = value;
+                        result = false;
+                    }
+                    break;
+                case immediate_L:
+                    if (!wz()) {
+                        m_error_code = dst_augd_wz;
+                        m_error_value = value;
+                        result = false;
+                    }
+                    break;
                 }
-                break;
             }
             m_augd = value & ~COG_MASK;
         } else {
@@ -832,19 +845,32 @@ bool P2Opcode::set_src(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG 
     } else {
         if (value >= HUB_ADDR0 || atom.has_trait(tr_AUGMENTED)) {
             m_u.op7.src = value & COG_MASK;
-            switch (m_src_imm) {
-            case ignore:
-                break;
-            case immediate_I:
-                if (!im()) {
-                    m_error_code = src_augs_im;
-                    m_error_value = value;
-                    result = false;
+            if (atom.has_trait(tr_AUGMENTED)) {
+                switch (m_src_imm) {
+                case ignore:
+                    break;
+                case immediate_I:
+                    set_im();
+                    break;
+                case immediate_L:
+                    Q_ASSERT_X(m_src_imm == immediate_L, "impossible instruction WZ for S", "set_src");
+                    break;
                 }
-                break;
-            case immediate_L:
-                Q_ASSERT_X(m_src_imm == immediate_L, "impossible instruction WZ for S", "set_src");
-                break;
+            } else {
+                switch (m_src_imm) {
+                case ignore:
+                    break;
+                case immediate_I:
+                    if (!im()) {
+                        m_error_code = src_augs_im;
+                        m_error_value = value;
+                        result = false;
+                    }
+                    break;
+                case immediate_L:
+                    Q_ASSERT_X(m_src_imm == immediate_L, "impossible instruction WZ for S", "set_src");
+                    break;
+                }
             }
             m_augs = value & ~COG_MASK;
         } else {

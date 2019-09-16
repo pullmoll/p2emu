@@ -59,8 +59,7 @@ public:
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     Qt::ItemFlags flags(const QModelIndex& index) const override;
 
-    static QList<column_e> columns();
-    QSize sizeHint(column_e column, bool header = false, const QString& text = QString()) const;
+    QSize sizeHint(const QModelIndex& index, QVariant var = QVariant()) const;
 
 public slots:
     void invalidate();

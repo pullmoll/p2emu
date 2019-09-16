@@ -91,18 +91,18 @@ private slots:
     void set_opcodes_asm();
     void font_size_inc_asm();
     void font_size_dec_asm();
-    void font_size_set_asm(int size);
+    void set_font_asm(const QFont& font);
 
     void set_opcodes_dasm(int mode);
     void set_opcodes_dasm();
     void font_size_inc_dasm();
     void font_size_dec_dasm();
-    void font_size_set_dasm(int size);
+    void set_font_dasm(const QFont& font);
 
     void set_lowercase_dasm(bool check);
-    void header_colums_asm(const QPoint& pos);
-    void header_columns_dasm(const QPoint& pos);
-    void header_columns_symbols(const QPoint& pos);
+    void header_columns_asm(QPoint pos);
+    void header_columns_dasm(QPoint pos);
+    void header_columns_sym(QPoint pos);
 
     void hub_single_step();
     void load_object(const QString& filename = QString());
@@ -114,6 +114,7 @@ private slots:
     void assemble();
 
     void palette_setup();
+    void preferences();
 
     void print_error(int pass, int lineno, const QString& message);
     void goto_line(const QUrl& url);
@@ -127,10 +128,9 @@ private:
     P2Asm* m_asm;
     P2Dasm* m_dasm;
 
-    QFont m_font;
+    QFont m_font_asm;
+    QFont m_font_dasm;
     int m_num_errors;
-    int m_asm_font_size;
-    int m_dasm_font_size;
     int m_source_percent;
     int m_symbols_percent;
     int m_errors_percent;

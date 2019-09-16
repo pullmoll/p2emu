@@ -105,6 +105,10 @@ public:
     bool assemble(const QStringList& source);
     bool assemble(const QString& filename);
 
+    bool pnut() const;
+    bool v33mode() const;
+    bool file_errors() const;
+
 signals:
     void Error(int pass, int lineno, QString message);
 
@@ -114,9 +118,14 @@ public slots:
     bool set_source(int idx, const QString& source);
     bool set_source(const QStringList& source);
 
+    void set_pnut(bool on = true);
+    void set_v33mode(bool on = true);
+    void set_file_errors(bool on = true);
+
 private:
     bool m_pnut;                            //!< use PNut compatible listing mode
     bool m_v33mode;                         //!< use V33 mode in index expressions?
+    bool m_file_errors;                     //!< emit an error when a file is not found
     int m_pass;                             //!< current pass
     QString m_pathname;                     //!< current path name for FILE "filename.ext"
     QStringList m_source;                   //!< source code as QStringList

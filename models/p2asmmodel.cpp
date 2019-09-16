@@ -37,11 +37,6 @@
 #include "p2util.h"
 #include "p2html.h"
 
-static const QLatin1String style("style");
-static const QLatin1String style_nowrap("white-space:nowrap;");
-static const QLatin1String style_left("text-align:left;");
-static const QLatin1String style_padding("padding:0px 4px 0px 4px;");
-
 P2AsmModel::P2AsmModel(P2Asm* p2asm, QObject *parent)
     : QAbstractTableModel(parent)
     , m_asm(p2asm)
@@ -70,17 +65,17 @@ P2AsmModel::P2AsmModel(P2Asm* p2asm, QObject *parent)
     m_head_alignment.insert(c_Opcode,   Qt::AlignLeft | Qt::AlignVCenter);
     m_text_alignment.insert(c_Opcode,   Qt::AlignLeft | Qt::AlignTop);
 
-    m_header.insert(c_Errors,           tr("Errors"));
+    m_header.insert(c_Errors,           tr("E"));
     m_background.insert(c_Errors,       qRgb(0xff,0xff,0xff));
     m_head_alignment.insert(c_Errors,   Qt::AlignLeft | Qt::AlignVCenter);
     m_text_alignment.insert(c_Errors,   Qt::AlignLeft | Qt::AlignTop);
 
-    m_header.insert(c_Tokens,           tr("Tokens"));
+    m_header.insert(c_Tokens,           tr("T"));
     m_background.insert(c_Tokens,       qRgb(0x10,0xfc,0xff));
     m_head_alignment.insert(c_Tokens,   Qt::AlignLeft | Qt::AlignVCenter);
     m_text_alignment.insert(c_Tokens,   Qt::AlignHCenter | Qt::AlignTop);
 
-    m_header.insert(c_Symbols,          tr("Symbols"));
+    m_header.insert(c_Symbols,          tr("S"));
     m_background.insert(c_Symbols,      qRgb(0xff,0xf0,0xff));
     m_head_alignment.insert(c_Symbols,  Qt::AlignLeft | Qt::AlignVCenter);
     m_text_alignment.insert(c_Symbols,  Qt::AlignHCenter | Qt::AlignTop);
@@ -94,8 +89,9 @@ P2AsmModel::P2AsmModel(P2Asm* p2asm, QObject *parent)
 QVariant P2AsmModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     QVariant result;
+    QFont font;
+    font.setBold(true);
     const column_e column = static_cast<column_e>(section);
-    QFontMetrics metrics(m_font);
     const int row = section;
 
     switch (orientation) {
@@ -106,7 +102,7 @@ QVariant P2AsmModel::headerData(int section, Qt::Orientation orientation, int ro
             break;
 
         case Qt::FontRole:
-            result = m_font;
+            result = font;
             break;
 
         case Qt::SizeHintRole:
@@ -457,19 +453,6 @@ Qt::ItemFlags P2AsmModel::flags(const QModelIndex &index) const
     return flags;
 }
 
-QList<P2AsmModel::column_e> P2AsmModel::columns()
-{
-    QList<column_e> columns;
-    columns += c_HubAddr;
-    columns += c_CogAddr;
-    columns += c_Opcode;
-    columns += c_Tokens;
-    columns += c_Symbols;
-    columns += c_Errors;
-    columns += c_Source;
-    return columns;
-}
-
 p2_FORMAT_e P2AsmModel::opcode_format() const
 {
     return m_format;
@@ -563,7 +546,7 @@ QString P2AsmModel::opcodeToolTip(const P2Opcode& IR) const
         const QString& line = column1[i];
         tr = p2_html(doc, "tr");
         td = p2_html(doc, "td");
-        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
         tt = p2_html(doc, "tt");
         tt.appendChild(p2_text(doc, line));
         td.appendChild(tt);
@@ -571,7 +554,7 @@ QString P2AsmModel::opcodeToolTip(const P2Opcode& IR) const
 
         if (!column2.isEmpty()) {
             td = p2_html(doc, "td");
-            td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+            td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
             tt = p2_html(doc, "tt");
             tt.appendChild(p2_text(doc, column2.value(i)));
             td.appendChild(tt);
@@ -602,7 +585,7 @@ QString P2AsmModel::tokenToolTip(const P2Words& words) const
 
     foreach(const QString& heading, headings) {
         th = p2_html(doc, "th");
-        th.setAttribute(style, QString("%1 %2").arg(style_left).arg(style_nowrap));
+        th.setAttribute(attr_style, QString("%1 %2").arg(attr_style_left).arg(attr_style_nowrap));
         tt = p2_html(doc, "tt");
         tt.appendChild(p2_text(doc, heading));
         th.appendChild(tt);
@@ -617,35 +600,35 @@ QString P2AsmModel::tokenToolTip(const P2Words& words) const
 
         tr = p2_html(doc, "tr");
         td = p2_html(doc, "td");
-        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
         tt = p2_html(doc, "tt");
         tt.appendChild(p2_text(doc, Token.enum_name(word.tok())));
         td.appendChild(tt);
         tr.appendChild(td);
 
         td = p2_html(doc, "td");
-        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
         tt = p2_html(doc, "tt");
         tt.appendChild(p2_text(doc, Token.type_names(word.tok()).join(QChar::Space)));
         td.appendChild(tt);
         tr.appendChild(td);
 
         td = p2_html(doc, "td");
-        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
         tt = p2_html(doc, "tt");
         tt.appendChild(p2_text(doc, QString("@%1").arg(word.pos())));
         td.appendChild(tt);
         tr.appendChild(td);
 
         td = p2_html(doc, "td");
-        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
         tt = p2_html(doc, "tt");
         tt.appendChild(p2_text(doc, QString("+%1").arg(word.len())));
         td.appendChild(tt);
         tr.appendChild(td);
 
         td = p2_html(doc, "td");
-        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
         tt = p2_html(doc, "tt");
         tt.appendChild(p2_text(doc, word.str()));
         td.appendChild(tt);
@@ -678,7 +661,7 @@ QString P2AsmModel::symbolsToolTip(const P2SymbolTable& symbols, const QList<P2S
 
     foreach(const QString& header, headers) {
         th = p2_html(doc, "th");
-        th.setAttribute(style, QString("%1 %2").arg(style_left).arg(style_nowrap));
+        th.setAttribute(attr_style, QString("%1 %2").arg(attr_style_left).arg(attr_style_nowrap));
         tt = p2_html(doc, "tt");
         tt.appendChild(p2_text(doc, header));
         th.appendChild(tt);
@@ -696,28 +679,28 @@ QString P2AsmModel::symbolsToolTip(const P2SymbolTable& symbols, const QList<P2S
         tr = p2_html(doc, "tr");
 
         td = p2_html(doc, "td");
-        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
         tt = p2_html(doc, "tt");
         tt.appendChild(p2_text(doc, QString::number(word.lineno())));
         td.appendChild(tt);
         tr.appendChild(td);
 
         td = p2_html(doc, "td");
-        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
         tt = p2_html(doc, "tt");
         tt.appendChild(p2_text(doc, symbol->name()));
         td.appendChild(tt);
         tr.appendChild(td);
 
         td = p2_html(doc, "td");
-        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
         tt = p2_html(doc, "tt");
         tt.appendChild(p2_text(doc, symbol->type_name()));
         td.appendChild(tt);
         tr.appendChild(td);
 
         td = p2_html(doc, "td");
-        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
         tt = p2_html(doc, "tt");
         tt.appendChild(p2_text(doc, value.str(false, fmt_hex)));
         td.appendChild(tt);
@@ -739,7 +722,7 @@ QString P2AsmModel::errorsToolTip(const QStringList& list) const
     // heading
     tr = p2_html(doc, "tr");
     th = p2_html(doc, "th");
-    th.setAttribute(style, QString("%1 %2").arg(style_left).arg(style_nowrap));
+    th.setAttribute(attr_style, QString("%1 %2").arg(attr_style_left).arg(attr_style_nowrap));
     tt = p2_html(doc, "tt");
     tt.appendChild(p2_text(doc, this->tr("Error message")));
     th.appendChild(tt);
@@ -749,7 +732,7 @@ QString P2AsmModel::errorsToolTip(const QStringList& list) const
     foreach (const QString& error, list) {
         tr = p2_html(doc, "tr");
         td = p2_html(doc, "td");
-        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
         tt = p2_html(doc, "tt");
         tt.appendChild(p2_text(doc, error));
         td.appendChild(tt);
@@ -792,14 +775,14 @@ QVariant P2AsmModel::sourceToolTip(const QModelIndex& index, const P2SymbolTable
 
         tr = p2_html(doc, "tr");
         td = p2_html(doc, "td");
-        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
         tt = p2_html(doc, "tt");
         tt.appendChild(p2_text(doc, word.str()));
         td.appendChild(tt);
         tr.appendChild(td);
 
         td = p2_html(doc, "td");
-        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
         tt = p2_html(doc, "tt");
         tt.appendChild(p2_text(doc, sym->name()));
         td.appendChild(tt);
@@ -808,14 +791,14 @@ QVariant P2AsmModel::sourceToolTip(const QModelIndex& index, const P2SymbolTable
 
         tr = p2_html(doc, "tr");
         td = p2_html(doc, "td");
-        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
         tt = p2_html(doc, "tt");
         tt.appendChild(p2_text(doc, QString("Bin")));
         td.appendChild(tt);
         tr.appendChild(td);
 
         td = p2_html(doc, "td");
-        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
         tt = p2_html(doc, "tt");
         tt.appendChild(p2_text(doc, sym->value().str(true, fmt_bin)));
         td.appendChild(tt);
@@ -824,14 +807,14 @@ QVariant P2AsmModel::sourceToolTip(const QModelIndex& index, const P2SymbolTable
 
         tr = p2_html(doc, "tr");
         td = p2_html(doc, "td");
-        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
         tt = p2_html(doc, "tt");
         tt.appendChild(p2_text(doc, QString("Dec")));
         td.appendChild(tt);
         tr.appendChild(td);
 
         td = p2_html(doc, "td");
-        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
         tt = p2_html(doc, "tt");
         tt.appendChild(p2_text(doc, sym->value().str(true, fmt_dec)));
         td.appendChild(tt);
@@ -840,14 +823,14 @@ QVariant P2AsmModel::sourceToolTip(const QModelIndex& index, const P2SymbolTable
 
         tr = p2_html(doc, "tr");
         td = p2_html(doc, "td");
-        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
         tt = p2_html(doc, "tt");
         tt.appendChild(p2_text(doc, QString("Hex")));
         td.appendChild(tt);
         tr.appendChild(td);
 
         td = p2_html(doc, "td");
-        td.setAttribute(style, QString("%1 %2").arg(style_padding).arg(style_nowrap));
+        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
         tt = p2_html(doc, "tt");
         tt.appendChild(p2_text(doc, sym->value().str(true, fmt_hex)));
         td.appendChild(tt);

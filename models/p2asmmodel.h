@@ -64,7 +64,6 @@ public:
     bool setData(const QModelIndex& index, const QVariant& value, int role) override;
     Qt::ItemFlags flags(const QModelIndex& index) const override;
 
-    static QList<column_e> columns();
     p2_FORMAT_e opcode_format() const;
     QSize sizeHint(const QModelIndex &parent = QModelIndex()) const;
 

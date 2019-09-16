@@ -306,6 +306,8 @@
     <addaction name="action_Go_to_line"/>
     <addaction name="separator"/>
     <addaction name="action_Palette_setup"/>
+    <addaction name="separator"/>
+    <addaction name="action_Preferences"/>
    </widget>
    <widget class="QMenu" name="menu_View">
     <property name="title">
@@ -697,6 +699,11 @@
    </property>
    <property name="text">
     <string>Palette &amp;setup …</string>
+   </property>
+  </action>
+  <action name="action_Preferences">
+   <property name="text">
+    <string>&amp;Preferences …</string>
    </property>
   </action>
  </widget>

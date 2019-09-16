@@ -91,9 +91,9 @@ QVariant P2SymbolsModel::headerData(int section, Qt::Orientation orientation, in
 {
     QVariant result;
     QFont font;
-    const column_e column = static_cast<column_e>(section);
     font.setBold(true);
     QFontMetrics metrics(font);
+    const column_e column = static_cast<column_e>(section);
     const int row = section;
 
     switch (orientation) {
@@ -108,7 +108,7 @@ QVariant P2SymbolsModel::headerData(int section, Qt::Orientation orientation, in
             break;
 
         case Qt::SizeHintRole:
-            result = sizeHint(column, true);
+            result = sizeHint(createIndex(0,column));
             break;
 
         case Qt::TextAlignmentRole:
@@ -255,12 +255,6 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
         }
         break;
 
-    case Qt::StatusTipRole:
-        break;
-
-    case Qt::WhatsThisRole:
-        break;
-
     case Qt::FontRole:
         result = font;
         break;
@@ -273,20 +267,8 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
         result = m_background.value(column);
         break;
 
-    case Qt::ForegroundRole:
-        break;
-
-    case Qt::CheckStateRole:
-        break;
-
-    case Qt::AccessibleTextRole:
-        break;
-
-    case Qt::AccessibleDescriptionRole:
-        break;
-
     case Qt::SizeHintRole:
-        result = sizeHint(column, false, data(index, Qt::DisplayRole).toString());
+        result = sizeHint(index, data(index));
         break;
 
     case Qt::InitialSortOrderRole:
@@ -298,54 +280,40 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
     return result;
 }
 
-QList<P2SymbolsModel::column_e> P2SymbolsModel::columns()
-{
-    QList<column_e> columns;
-    columns += c_Name;
-    columns += c_Definition;
-    columns += c_References;
-    columns += c_Type;
-    columns += c_Value;
-    return columns;
-
-}
-
 static const QString template_str_name = QStringLiteral("CON::SOME_REALLY_LONG_NAME");
 static const QString template_str_definition = QStringLiteral("9999999 ");
 static const QString template_str_references = QStringLiteral("9999999XXXX ");
 static const QString template_str_type = QStringLiteral("Invalid ");
 static const QString template_str_value = QStringLiteral("$0123456789abcdef ");
 
-QSize P2SymbolsModel::sizeHint(P2SymbolsModel::column_e column, bool header, const QString& text) const
+QSize P2SymbolsModel::sizeHint(const QModelIndex& index, QVariant var) const
 {
-    QFont font(m_font);
-    font.setBold(header);
-    QFontMetrics metrics(font);
-    QSize size;
+    if (var.isNull()) {
+        switch (index.column()) {
+        case c_Name:
+            var = template_str_name;
+            break;
 
-    switch (column) {
-    case c_Name:
-        size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_name : text);
-        break;
+        case c_Definition:
+            var = template_str_definition;
+            break;
 
-    case c_Definition:
-        size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_definition : text);
-        break;
+        case c_References:
+            var = template_str_references;
+            break;
 
-    case c_References:
-        size = metrics.size(0, text.isEmpty() ? template_str_references : text);
-        size.rwidth() += 24;
-        break;
+        case c_Type:
+            var = template_str_type;
+            break;
 
-    case c_Type:
-        size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_type : text);
-        break;
-
-    case c_Value:
-        size = metrics.size(Qt::TextSingleLine, text.isEmpty() ? template_str_tokens : text);
-        break;
+        case c_Value:
+            var = template_str_tokens;
+            break;
+        }
     }
-    return size;
+
+    QFontMetrics metrics(m_font);
+    return metrics.size(Qt::TextSingleLine, var.toString());
 }
 
 void P2SymbolsModel::invalidate()

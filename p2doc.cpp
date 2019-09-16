@@ -526,8 +526,16 @@ P2Doc::P2Doc()
  * @param pattern
  * @return formatted string
  */
-const QString P2Doc::format_pattern(const p2_LONG pattern, const QChar& zero, const QChar& one)
+const QString P2Doc::format_pattern(const p2_LONG pattern, const QChar& zero, const QChar& one, const p2_LONG ignore)
 {
+    const int pos[32] = {
+        0, 1, 2, 3,                         // 4 is space
+        5, 6, 7, 8, 9, 10, 11,              // 12 is space
+        13, 14, 15,                         // 16 is space
+        17, 18, 19, 20, 21, 22, 23, 24, 25, // 26 is space
+        27, 28, 29, 30, 31, 32, 33, 34, 35
+    };
+
     QString result = QString("%1 %2 %3 %4 %5")
                      .arg((pattern >> 28) & 0x00f, 4, 2, QChar('0'))
                      .arg((pattern >> 21) & 0x07f, 7, 2, QChar('0'))
@@ -535,6 +543,11 @@ const QString P2Doc::format_pattern(const p2_LONG pattern, const QChar& zero, co
                      .arg((pattern >>  9) & 0x1ff, 9, 2, QChar('0'))
                      .arg((pattern >>  0) & 0x1ff, 9, 2, QChar('0'))
                      ;
+    for (int i = 0; i < 32; i++) {
+        if (ignore & (1u << (31 - i)))
+            result[pos[i]] = QChar(L'·');
+    }
+
     if (zero != QChar('0'))
         result.replace(QChar('0'), zero);
     if (one != QChar('1'))
@@ -570,53 +583,27 @@ QDomDocumentFragment P2Doc::doc_opcode(QDomDocument& doc, P2DocOpcode op) const
     if (op.isNull() || !op->isDefined())
         return node;
 
-    QDomElement h2, pre, table, tr, td, tt, strong;
+    QDomElement h2, h3, pre, table, tr, td, tt, strong;
     QDomText text;
 
     h2 = p2_html(doc,"h2");
-    text = p2_text(doc, QString("%1: %2")
-                    .arg(Token.string(op->token()))
-                    .arg(op->brief()));
+    h2.setAttribute(attr_style, attr_style_nowrap);
+    text = p2_text(doc, Token.string(op->token()));
     h2.appendChild(text);
     node.appendChild(h2);
 
-    pre = p2_html(doc,"pre");
+    h3 = p2_html(doc,"h3");
+    h3.setAttribute(attr_style, attr_style_nowrap);
+    text = p2_text(doc, op->brief());
+    h3.appendChild(text);
+    node.appendChild(h3);
+
     table = p2_html(doc,"table");
-    table.setAttribute("width", "95%");
+    table.setAttribute(attr_width, attr_95percent);
 
     tr = p2_html(doc,"tr");
     td = p2_html(doc,"td");
-    td.setAttribute("width", "10%");
-    text = p2_text(doc, QStringLiteral("Mask"));
-    td.appendChild(text);
-    tr.appendChild(td);
-
-    td = p2_html(doc,"td");
-    tt = p2_html(doc,"tt");
-    text = p2_text(doc, format_pattern(op->mask(), QChar('-'), QChar('X')));
-    tt.appendChild(text);
-    td.appendChild(tt);
-    tr.appendChild(td);
-    table.appendChild(tr);
-
-    tr = p2_html(doc,"tr");
-    td = p2_html(doc,"td");
-    td.setAttribute("width", "10%");
-    text = p2_text(doc, QStringLiteral("Match"));
-    td.appendChild(text);
-    tr.appendChild(td);
-
-    td = p2_html(doc,"td");
-    tt = p2_html(doc,"tt");
-    text = p2_text(doc, format_pattern(op->match()));
-    tt.appendChild(text);
-    td.appendChild(tt);
-    tr.appendChild(td);
-    table.appendChild(tr);
-
-    tr = p2_html(doc,"tr");
-    td = p2_html(doc,"td");
-    td.setAttribute("width", "10%");
+    td.setAttribute(attr_width, attr_10percent);
     text = p2_text(doc, QStringLiteral("Pattern"));
     td.appendChild(text);
     tr.appendChild(td);
@@ -624,6 +611,36 @@ QDomDocumentFragment P2Doc::doc_opcode(QDomDocument& doc, P2DocOpcode op) const
     td = p2_html(doc,"td");
     tt = p2_html(doc,"tt");
     text = p2_text(doc, op->pattern());
+    tt.appendChild(text);
+    td.appendChild(tt);
+    tr.appendChild(td);
+    table.appendChild(tr);
+
+    tr = p2_html(doc,"tr");
+    td = p2_html(doc,"td");
+    td.setAttribute(attr_width, attr_10percent);
+    text = p2_text(doc, QStringLiteral("Mask"));
+    td.appendChild(text);
+    tr.appendChild(td);
+
+    td = p2_html(doc,"td");
+    tt = p2_html(doc,"tt");
+    text = p2_text(doc, format_pattern(op->mask(), QChar(L'·'), QChar('X')));
+    tt.appendChild(text);
+    td.appendChild(tt);
+    tr.appendChild(td);
+    table.appendChild(tr);
+
+    tr = p2_html(doc,"tr");
+    td = p2_html(doc,"td");
+    td.setAttribute(attr_width, attr_10percent);
+    text = p2_text(doc, QStringLiteral("Match"));
+    td.appendChild(text);
+    tr.appendChild(td);
+
+    td = p2_html(doc,"td");
+    tt = p2_html(doc,"tt");
+    text = p2_text(doc, format_pattern(op->match(), QChar('0'), QChar('1'), ~op->mask()));
     tt.appendChild(text);
     td.appendChild(tt);
     tr.appendChild(td);
@@ -670,7 +687,7 @@ const QStringList P2Doc::html_opcode(const p2_LONG opcode) const
 
     body = p2_html(doc,"body");
     table = p2_html(doc,"table");
-    table.setAttribute("width", "95%");
+    table.setAttribute(attr_width, attr_95percent);
     tr = p2_html(doc,"tr");
     td = p2_html(doc,"td");
     td.appendChild(doc_opcode(doc, op));
@@ -712,7 +729,7 @@ const QStringList P2Doc::html_opcodes() const
 
     body = p2_html(doc,"body");
     table = p2_html(doc,"table");
-    table.setAttribute("width", "95%");
+    table.setAttribute(attr_width, attr_95percent);
 
 
     QMultiMap<p2_LONG,P2MatchMask> opcodes;
@@ -726,7 +743,7 @@ const QStringList P2Doc::html_opcodes() const
             tr = p2_html(doc,"tr");
             td = p2_html(doc,"td");
             hr = p2_html(doc,"hr");
-            hr.setAttribute("width", "95%");
+            // hr.setAttribute(attr_width, attr_95percent);
             td.appendChild(hr);
             tr.appendChild(td);
             table.appendChild(tr);

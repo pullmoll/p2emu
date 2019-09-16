@@ -76,7 +76,10 @@ private:
     QMap<uchar,P2MatchMask> m_masks;                                    //!< map of number of 1 bits to match/mask pairs
     QList<uchar> m_ones;                                                 //!< list of number of 1 bits
 
-    static const QString format_pattern(const p2_LONG pattern, const QChar& zero = QChar('0'), const QChar& one = QChar('1'));
+    static const QString format_pattern(const p2_LONG pattern,
+                                        const QChar& zero = QChar('0'),
+                                        const QChar& one = QChar('1'),
+                                        const p2_LONG ignore = 0u);
 
     const P2MatchMask opcode_matchmask(const p2_LONG opcode) const;
     const P2DocOpcode opcode_of(const p2_LONG opcode) const;
