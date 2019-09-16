@@ -91,7 +91,7 @@ void P2OpcodeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     painter->setBackgroundMode(Qt::OpaqueMode);
     painter->fillRect(opt.rect, opt.backgroundBrush);
 
-    QPalette pal = Colors.palette(P2Colors::p2_pal_source);
+    QPalette pal = Colors.palette(p2_pal_source);
     painter->setBackgroundMode(Qt::TransparentMode);
     painter->setFont(opt.font);
     painter->setPen(pal.windowText().color());

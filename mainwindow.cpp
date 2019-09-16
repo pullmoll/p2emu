@@ -71,6 +71,7 @@ static const QLatin1String key_windowState("windowState");
 static const QLatin1String grp_assembler("assembler");
 static const QLatin1String grp_disassembler("disassembler");
 static const QLatin1String grp_palette("palette");
+static const QLatin1String key_palette("p2_palette");
 static const QLatin1String key_opcodes("opcodes");
 static const QLatin1String key_lowercase("lowercase");
 static const QLatin1String key_current_row("current_row");
@@ -166,7 +167,7 @@ void MainWindow::restore_settings()
     restoreState(s.value(key_windowState).toByteArray());
     restore_settings_asm();
     restore_settings_dasm();
-    restoreSettingsPalette();
+    restore_settings_palette();
 }
 
 void MainWindow::save_settings_asm()
@@ -275,27 +276,16 @@ void MainWindow::save_settings_palette()
 {
     QSettings s;
     s.beginGroup(grp_palette);
-    // remove all previous entries
-    s.remove(QStringLiteral(""));
-    QHash<P2Colors::p2_palette_e,QRgb> hash = Colors.hash();
-    foreach (P2Colors::p2_palette_e pal, hash.keys()) {
-        QString key = Colors.palette_name(pal);
-        QColor color = Colors.palette_color(pal);
-        QString name = Colors.closest(color);
-        s.setValue(key, name);
-    }
+    Colors.save_palette(s);
     s.endGroup();
 }
 
-void MainWindow::restoreSettingsPalette()
+void MainWindow::restore_settings_palette()
 {
     QSettings s;
     s.beginGroup(grp_palette);
-    foreach(const QString& key, s.allKeys()) {
-        P2Colors::p2_palette_e pal = Colors.palette_key(key);
-        QString name = s.value(key).toString();
-        Colors.set_palette_color(pal, name);
-    }
+    Colors.restore_palette(s);
+    s.endGroup();
 }
 
 void MainWindow::about()

@@ -71,7 +71,7 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
 
     // fill the background
     painter->setBackgroundMode(Qt::OpaqueMode);
-    QPalette palette = Colors.palette(P2Colors::p2_pal_source);
+    QPalette palette = Colors.palette(p2_pal_source);
     palette.setCurrentColorGroup(QPalette::Normal);
     opt.backgroundBrush = palette.base();
     painter->fillRect(opt.rect, opt.backgroundBrush);

@@ -73,7 +73,7 @@ private slots:
     void save_settings_asm();
     void save_settings_dasm();
 
-    void restoreSettingsPalette();
+    void restore_settings_palette();
     void restore_settings_asm();
     void restore_settings_dasm();
 

@@ -281,11 +281,11 @@ QVariant P2SymbolsModel::data(const QModelIndex& index, int role) const
     return result;
 }
 
-static const QString template_str_name = QStringLiteral("CON::SOME_REALLY_LONG_NAME");
-static const QString template_str_definition = QStringLiteral("9999999 ");
-static const QString template_str_references = QStringLiteral("9999999XXXX ");
-static const QString template_str_type = QStringLiteral("Invalid ");
-static const QString template_str_value = QStringLiteral("$0123456789abcdef ");
+static const QString template_str_name = QStringLiteral("CON::SOME_REALLY_LONG_NAME XX");
+static const QString template_str_definition = QStringLiteral("9999999999 XX");
+static const QString template_str_references = QStringLiteral("9999999XXXX XX");
+static const QString template_str_type = QStringLiteral("Invalid XX");
+static const QString template_str_value = QStringLiteral("$0123456789abcdef XX");
 
 QSize P2SymbolsModel::sizeHint(const QModelIndex& index, QVariant var) const
 {

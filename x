@@ -1,0 +1,7 @@
+			--exclude "**/debug/*.x86_64*.xbps*" \
+			--exclude "**/debug/*.i686*.xbps*" \
+			--exclude "**/debug/*.armv6l*.xbps*" \
+			--exclude "**/debug/*.armv7l*.xbps*" \
+			--exclude "**/debug/*.aarch64*.xbps*" \
+			--exclude "**/debug/*.ppc64le*.xbps*" \
+			--delete-excluded \
