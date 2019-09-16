@@ -761,60 +761,66 @@ void P2Opcode::set_n(const p2_LONG n)
  */
 bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG hubaddr)
 {
+    const bool augmented = atom.has_trait(tr_AUGMENTED);
     const bool hubmode = atom.has_trait(tr_HUBMODE | tr_HUBADDRESS | tr_AUGMENTED);
     const bool relative = atom.has_trait(tr_RELATIVE) && !atom.has_trait(tr_AUGMENTED);
     const p2_LONG value = atom.get_addr(hubmode);
     bool result = true;
 
-    m_augs.clear();
+    m_augd.clear();
+
     if (relative) {
         const int rvalue = static_cast<int>(value - (hubmode ? hubaddr : cogaddr)) / sz_LONG;
         if (rvalue >= -256 && rvalue < 256) {
             m_u.op7.dst = static_cast<p2_LONG>(rvalue) & COG_MASK;
-        } else {
-            m_error_code = dst_relative;
-            m_error_value = static_cast<p2_LONG>(rvalue);
-            result = false;
+            return true;
+        }
+        m_error_code = dst_relative;
+        m_error_value = static_cast<p2_LONG>(rvalue);
+        return false;
+    }
+
+    // dst is 9 bit?
+    if (value < HUB_ADDR0 && !augmented) {
+        m_u.op7.dst = (value / sz_LONG) & COG_MASK;
+        return true;
+    }
+
+    // generate AUGD
+    m_u.op7.dst = value & COG_MASK;
+    if (augmented) {
+        switch (m_dst_imm) {
+        case ignore:
+            break;
+        case immediate_I:
+            set_im();
+            break;
+        case immediate_L:
+            set_wz();
+            break;
         }
     } else {
-        if (value >= HUB_ADDR0 || atom.has_trait(tr_AUGMENTED)) {
-            m_u.op7.dst = value & COG_MASK;
-            if (atom.has_trait(tr_AUGMENTED)) {
-                switch (m_dst_imm) {
-                case ignore:
-                    break;
-                case immediate_I:
-                    set_im();
-                    break;
-                case immediate_L:
-                    set_wz();
-                    break;
-                }
-            } else {
-                switch (m_dst_imm) {
-                case ignore:
-                    break;
-                case immediate_I:
-                    if (!im()) {
-                        m_error_code = dst_augd_im;
-                        m_error_value = value;
-                        result = false;
-                    }
-                    break;
-                case immediate_L:
-                    if (!wz()) {
-                        m_error_code = dst_augd_wz;
-                        m_error_value = value;
-                        result = false;
-                    }
-                    break;
-                }
+        switch (m_dst_imm) {
+        case ignore:
+            break;
+        case immediate_I:
+            if (!im()) {
+                m_error_code = dst_augd_im;
+                m_error_value = value;
+                result = false;
             }
-            m_augd = value & ~COG_MASK;
-        } else {
-            m_u.op7.dst = (value / sz_LONG) & COG_MASK;
+            break;
+        case immediate_L:
+            if (!wz()) {
+                m_error_code = dst_augd_wz;
+                m_error_value = value;
+                result = false;
+            }
+            break;
         }
     }
+    m_augd = value & ~COG_MASK;
+
     return result;
 }
 
@@ -827,56 +833,62 @@ bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG 
  */
 bool P2Opcode::set_src(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG hubaddr)
 {
+    const bool augmented = atom.has_trait(tr_AUGMENTED);
     const bool hubmode = atom.has_trait(tr_HUBMODE | tr_HUBADDRESS | tr_AUGMENTED);
     const bool relative = atom.has_trait(tr_RELATIVE) && !atom.has_trait(tr_AUGMENTED);
     const p2_LONG value = atom.get_addr(hubmode);
     bool result = true;
 
     m_augs.clear();
+
     if (relative) {
         const int rvalue = static_cast<int>(value - (hubmode ? hubaddr : cogaddr)) / sz_LONG;
         if (rvalue >= -256 && rvalue < 256) {
             m_u.op7.src = static_cast<p2_LONG>(rvalue) & COG_MASK;
-        } else {
-            m_error_code = dst_relative;
-            m_error_value = value;
-            result = false;
+            return true;
+        }
+        m_error_code = dst_relative;
+        m_error_value = value;
+        return false;
+    }
+
+    // src is 9 bit?
+    if (value < HUB_ADDR0 && !augmented) {
+        m_u.op7.src = (value / sz_LONG) & COG_MASK;
+        return true;
+    }
+
+    // generate AUGS
+    m_u.op7.src = value & COG_MASK;
+    if (augmented) {
+        switch (m_src_imm) {
+        case ignore:
+            break;
+        case immediate_I:
+            set_im();
+            break;
+        case immediate_L:
+            Q_ASSERT_X(m_src_imm == immediate_L, "impossible instruction WZ for S", "set_src");
+            break;
         }
     } else {
-        if (value >= HUB_ADDR0 || atom.has_trait(tr_AUGMENTED)) {
-            m_u.op7.src = value & COG_MASK;
-            if (atom.has_trait(tr_AUGMENTED)) {
-                switch (m_src_imm) {
-                case ignore:
-                    break;
-                case immediate_I:
-                    set_im();
-                    break;
-                case immediate_L:
-                    Q_ASSERT_X(m_src_imm == immediate_L, "impossible instruction WZ for S", "set_src");
-                    break;
-                }
-            } else {
-                switch (m_src_imm) {
-                case ignore:
-                    break;
-                case immediate_I:
-                    if (!im()) {
-                        m_error_code = src_augs_im;
-                        m_error_value = value;
-                        result = false;
-                    }
-                    break;
-                case immediate_L:
-                    Q_ASSERT_X(m_src_imm == immediate_L, "impossible instruction WZ for S", "set_src");
-                    break;
-                }
+        switch (m_src_imm) {
+        case ignore:
+            break;
+        case immediate_I:
+            if (!im()) {
+                m_error_code = src_augs_im;
+                m_error_value = value;
+                result = false;
             }
-            m_augs = value & ~COG_MASK;
-        } else {
-            m_u.op7.src = (value / sz_LONG) & COG_MASK;
+            break;
+        case immediate_L:
+            Q_ASSERT_X(m_src_imm == immediate_L, "impossible instruction WZ for S", "set_src");
+            break;
         }
     }
+    m_augs = value & ~COG_MASK;
+
     return result;
 }
 
