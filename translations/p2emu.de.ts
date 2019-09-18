@@ -6,37 +6,45 @@
     <message>
         <location filename="../dialogs/about.ui" line="14"/>
         <source>About</source>
-        <translation>Über das Programm</translation>
+        <translation>Informationen</translation>
     </message>
     <message>
-        <location filename="../dialogs/about.ui" line="25"/>
         <source>This code includes icons made by Freepik from https://www.flaticon.com/</source>
-        <translation>Dieses Programm enthält Icons von Freepik auf https://www.flaticon.com/</translation>
+        <translation type="vanished">Dieses Programm enthält Icons von Freepik auf https://www.flaticon.com/</translation>
     </message>
     <message>
-        <location filename="../dialogs/about.ui" line="52"/>
+        <location filename="../dialogs/about.ui" line="30"/>
+        <source>This code includes icons made by Freepik from &lt;a href=&quot;https://www.flaticon.com/&quot; alt=&quot;www.flaticon.com&quot;&gt;https://www.flaticon.com/&lt;/a&gt;</source>
+        <translation>Dieses Programm enthält Icons von Freepik von &lt;a href=&quot;https://www.flaticon.com&quot; alt=&quot;www.flaticon.com&quot;&gt;https://www.flaticon.com/&lt;/a&gt;</translation>
+    </message>
+    <message>
+        <location filename="../dialogs/about.ui" line="57"/>
         <source>0.0</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../dialogs/about.ui" line="64"/>
+        <location filename="../dialogs/about.ui" line="69"/>
         <source>The Propeller2 emulator is a try to model the Parallax Inc. Propeller2 processor in Software.</source>
         <translation>Der Propeller2 Emulator ist ein Versuch, den Parallax Inc. Propeller2 Prozessor in Software zu modellieren.</translation>
     </message>
     <message>
-        <location filename="../dialogs/about.ui" line="85"/>
+        <location filename="../dialogs/about.ui" line="90"/>
         <source>It integrates software to emulate the HUB and its hardware (counters and ports), a number of COGs executing machine code instructions, a disassembler to inspect COGs, and an assembler to convert spin2 into machine code.</source>
         <translation>Dieses Anwendung integriert Software, um den HUB und seine Hardware (Zähler und Ports) zu emulieren, eine Anzahl von COGs, die Maschinencode-Instruktionen ausführen, einen Disassembler um COGs zu inspizieren und einen Assembler, der Spin2-Quellcode in Maschinencode übersetzt.</translation>
     </message>
     <message>
-        <location filename="../dialogs/about.ui" line="129"/>
+        <location filename="../dialogs/about.ui" line="124"/>
         <source>Propeller2 emulator</source>
         <translation>Propeller2 Emulator</translation>
     </message>
     <message>
-        <location filename="../dialogs/about.ui" line="141"/>
+        <location filename="../dialogs/about.ui" line="136"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Parallax Inc. homepage can be visited at &lt;a href=&quot;https://www.parallax.com/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;https://www.parallax.com/&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Die Parallax Inc. Seite findet sich unter &lt;a href=&quot;https://www.parallax.com/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;https://www.parallax.com/&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
         <source>The Parallax homepage is at https://www.parallax.com/</source>
-        <translation>Die Parallax Homepage findet sich unter https://www.parallax.com/</translation>
+        <translation type="vanished">Die Parallax Homepage findet sich unter https://www.parallax.com/</translation>
     </message>
 </context>
 <context>
@@ -78,170 +86,170 @@
         <translation>HauptFenster</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="34"/>
+        <location filename="../mainwindow.ui" line="39"/>
         <source>tabAsm</source>
         <translation>tabAsm</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="37"/>
-        <location filename="../mainwindow.ui" line="312"/>
-        <location filename="../mainwindow.cpp" line="601"/>
+        <location filename="../mainwindow.ui" line="42"/>
+        <location filename="../mainwindow.ui" line="302"/>
+        <location filename="../mainwindow.cpp" line="651"/>
         <source>Assembler</source>
         <translation>Assembler</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="116"/>
+        <location filename="../mainwindow.ui" line="103"/>
         <source>tabDasm</source>
         <translation>tabDasm</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="119"/>
-        <location filename="../mainwindow.cpp" line="523"/>
+        <location filename="../mainwindow.ui" line="106"/>
+        <location filename="../mainwindow.cpp" line="572"/>
         <source>Disassembler</source>
         <translation>Disassembler</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="172"/>
+        <location filename="../mainwindow.ui" line="159"/>
         <source>tabHub</source>
         <translation>tabHub</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="175"/>
+        <location filename="../mainwindow.ui" line="162"/>
         <source>HUB</source>
         <translation>HUB</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="262"/>
+        <location filename="../mainwindow.ui" line="249"/>
         <source>&amp;File</source>
         <translation>&amp;Datei</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="277"/>
+        <location filename="../mainwindow.ui" line="264"/>
         <source>&amp;Help</source>
         <translation>&amp;Hilfe</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="286"/>
+        <location filename="../mainwindow.ui" line="274"/>
         <source>&amp;Edit</source>
         <translation>&amp;Bearbeiten</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="294"/>
+        <location filename="../mainwindow.ui" line="284"/>
         <source>&amp;View</source>
         <translation>&amp;Anzeige</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="298"/>
+        <location filename="../mainwindow.ui" line="288"/>
         <source>&amp;Disassembler …</source>
         <translation>&amp;Disassembler …</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="324"/>
+        <location filename="../mainwindow.ui" line="314"/>
         <source>&amp;COG</source>
         <translation>&amp;COG</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="340"/>
+        <location filename="../mainwindow.ui" line="330"/>
         <source>&amp;Run</source>
         <translation>&amp;Run</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="366"/>
+        <location filename="../mainwindow.ui" line="356"/>
         <source>&amp;Quit</source>
         <translation>&amp;Beenden</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="369"/>
+        <location filename="../mainwindow.ui" line="359"/>
         <source>Ctrl+Q</source>
         <translation>Ctrl+Q</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="374"/>
+        <location filename="../mainwindow.ui" line="369"/>
         <source>&amp;About …</source>
         <translation>&amp;Info …</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="379"/>
+        <location filename="../mainwindow.ui" line="374"/>
         <source>About &amp;Qt5</source>
         <translation>Info über &amp;Qt5</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="388"/>
+        <location filename="../mainwindow.ui" line="383"/>
         <source>&amp;Open …</source>
         <translation>&amp;Öffnen …</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="391"/>
+        <location filename="../mainwindow.ui" line="386"/>
         <source>Ctrl+O</source>
         <translation>Ctrl+O</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="400"/>
+        <location filename="../mainwindow.ui" line="395"/>
         <source>Open &amp;random resource file</source>
         <translation>&amp;Zufällige Quelldatei öffnen</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="403"/>
+        <location filename="../mainwindow.ui" line="398"/>
         <source>Ctrl+R</source>
         <translation>Strg+R</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="412"/>
+        <location filename="../mainwindow.ui" line="407"/>
         <source>Go to &amp;address …</source>
         <translation>Gehe zu &amp;Adresse …</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="421"/>
+        <location filename="../mainwindow.ui" line="416"/>
         <source>Go to &amp;COG</source>
         <translation>Gehe zum &amp;COG</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="424"/>
+        <location filename="../mainwindow.ui" line="419"/>
         <source>Shift+C</source>
         <translation>Shift+C</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="433"/>
+        <location filename="../mainwindow.ui" line="428"/>
         <source>Go to &amp;LUT</source>
         <translation>Gehe zur &amp;LUT</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="436"/>
+        <location filename="../mainwindow.ui" line="431"/>
         <source>Shift+L</source>
         <translation>Shift+L</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="445"/>
+        <location filename="../mainwindow.ui" line="440"/>
         <source>Go to &amp;ROM</source>
         <translation>Gehe zum &amp;ROM</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="448"/>
+        <location filename="../mainwindow.ui" line="443"/>
         <source>Shift+R</source>
         <translation>Shift+R</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="457"/>
+        <location filename="../mainwindow.ui" line="452"/>
         <source>Single &amp;step</source>
         <translation>Einzel&amp;schritt</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="460"/>
+        <location filename="../mainwindow.ui" line="455"/>
         <source>F10</source>
         <translation>F10</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="627"/>
+        <location filename="../mainwindow.ui" line="622"/>
         <source>Go to line …</source>
         <translation>Gehe zu Zeile …</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="639"/>
+        <location filename="../mainwindow.ui" line="634"/>
         <source>Open &amp;binary object …</source>
         <translation>&amp;Binäres Objekt öffnen …</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="648"/>
+        <location filename="../mainwindow.ui" line="643"/>
         <source>Open random binary object file</source>
         <translation>Zufälliges binäres object öffnen</translation>
     </message>
@@ -266,27 +274,32 @@
         <translation>Palette &amp;konfigurieren …</translation>
     </message>
     <message>
+        <location filename="../mainwindow.ui" line="676"/>
+        <source>&amp;Preferences …</source>
+        <translation>&amp;Einstellungen</translation>
+    </message>
+    <message>
         <source>Ctrl+Return</source>
         <translation type="vanished">Ctrl+Return</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="469"/>
+        <location filename="../mainwindow.ui" line="464"/>
         <source>&amp;Assemble …</source>
         <translation>&amp;Assemblieren …</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="472"/>
+        <location filename="../mainwindow.ui" line="467"/>
         <source>Ctrl+A</source>
         <translation>Ctrl+A</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="484"/>
-        <location filename="../mainwindow.ui" line="550"/>
+        <location filename="../mainwindow.ui" line="479"/>
+        <location filename="../mainwindow.ui" line="545"/>
         <source>Opcodes &amp;binary</source>
         <translation>Opcodes &amp;binär</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="496"/>
+        <location filename="../mainwindow.ui" line="491"/>
         <source>Opcodes b&amp;ytes</source>
         <translation>Opcodes B&amp;ytes</translation>
     </message>
@@ -295,46 +308,46 @@
         <translation type="vanished">Opcodes &amp;oktal</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="508"/>
-        <location filename="../mainwindow.ui" line="574"/>
+        <location filename="../mainwindow.ui" line="503"/>
+        <location filename="../mainwindow.ui" line="569"/>
         <source>Opcodes &amp;decimal</source>
         <translation>Opcodes &amp;dezimal</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="520"/>
-        <location filename="../mainwindow.ui" line="586"/>
+        <location filename="../mainwindow.ui" line="515"/>
+        <location filename="../mainwindow.ui" line="581"/>
         <source>Opcodes &amp;hexadecimal</source>
         <translation>Opcodes &amp;hexadezimal</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="529"/>
-        <location filename="../mainwindow.ui" line="607"/>
+        <location filename="../mainwindow.ui" line="524"/>
+        <location filename="../mainwindow.ui" line="602"/>
         <source>Increase font size</source>
         <translation>Font vergrößern</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="538"/>
-        <location filename="../mainwindow.ui" line="619"/>
+        <location filename="../mainwindow.ui" line="533"/>
+        <location filename="../mainwindow.ui" line="614"/>
         <source>Decrease font size</source>
         <translation>Font verkleinern</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="562"/>
+        <location filename="../mainwindow.ui" line="557"/>
         <source>Opcodes &amp;bytes</source>
         <translation>Opcodes &amp;Bytes</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="598"/>
+        <location filename="../mainwindow.ui" line="593"/>
         <source>Instructions &amp;lowercase</source>
         <translation>Instruktionen in K&amp;lkeinbuchstaben</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="610"/>
+        <location filename="../mainwindow.ui" line="605"/>
         <source>Ctrl++</source>
         <translation>Ctrl++</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="622"/>
+        <location filename="../mainwindow.ui" line="617"/>
         <source>Ctrl+-</source>
         <translation>Ctrl+-</translation>
     </message>
@@ -343,50 +356,69 @@
         <translation type="vanished">Gehe zu Zeile …</translation>
     </message>
     <message>
-        <location filename="../mainwindow.ui" line="630"/>
+        <location filename="../mainwindow.ui" line="625"/>
         <source>Ctrl+L</source>
         <translation>Ctrl+L</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="299"/>
+        <location filename="../mainwindow.cpp" line="308"/>
         <source>Propeller2 Opcode Table</source>
         <translation>Propeller2 Opcode-Tabelle</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="448"/>
-        <location filename="../mainwindow.cpp" line="471"/>
-        <location filename="../mainwindow.cpp" line="494"/>
         <source>Select columns</source>
-        <translation>Wähle Spalten aus</translation>
+        <translation type="vanished">Wähle Spalten aus</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="566"/>
+        <location filename="../mainwindow.cpp" line="473"/>
+        <location filename="../mainwindow.cpp" line="508"/>
+        <location filename="../mainwindow.cpp" line="537"/>
+        <source>Select visible columns</source>
+        <translation>Sichtbare Spalten auswählen</translation>
+    </message>
+    <message>
+        <location filename="../mainwindow.cpp" line="479"/>
+        <source>Tokens</source>
+        <translation>Token</translation>
+    </message>
+    <message>
+        <location filename="../mainwindow.cpp" line="481"/>
+        <source>Errors</source>
+        <translation>Fehler</translation>
+    </message>
+    <message>
+        <location filename="../mainwindow.cpp" line="483"/>
+        <source>Symbols</source>
+        <translation>Symbole</translation>
+    </message>
+    <message>
+        <location filename="../mainwindow.cpp" line="615"/>
         <source>Spin2 source files (*.spin2)</source>
         <translation>Spin2 Quelldateien (*.spin2)</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="614"/>
-        <location filename="../mainwindow.cpp" line="895"/>
+        <location filename="../mainwindow.cpp" line="667"/>
+        <location filename="../mainwindow.cpp" line="1086"/>
         <source>%1 lines</source>
         <translation>%1 Zeilen</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="643"/>
+        <location filename="../mainwindow.cpp" line="696"/>
         <source>Assembly took %1 ms.</source>
         <translation>Assemblierung benötigte %1 ms.</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="671"/>
+        <location filename="../mainwindow.cpp" line="761"/>
         <source>Pass</source>
         <translation>Durchgang</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="674"/>
+        <location filename="../mainwindow.cpp" line="764"/>
         <source>Line</source>
         <translation>Zeile</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="945"/>
+        <location filename="../mainwindow.cpp" line="1137"/>
         <source>Status</source>
         <translation>Status</translation>
     </message>
@@ -424,7 +456,7 @@ Wert: %3 ($%4, %%5).</translation>
 %2</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="2313"/>
+        <location filename="../p2asm.cpp" line="2344"/>
         <source>Can not open &apos;%1&apos; for reading.</source>
         <translation>Kann &apos;%1&apos; nicht zum Lesen öffnen.</translation>
     </message>
@@ -477,58 +509,58 @@ Wert: %3 ($%4, %%5).</translation>
         <translation type="vanished">SRC Konstant größer als $1ff aber wc ist nicht gesetzt für I</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="3978"/>
+        <location filename="../p2asm.cpp" line="4192"/>
         <source>Found extra parameters: %1</source>
         <translation>Zusätzliche Parameter gefunden: %1</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="3993"/>
-        <location filename="../p2asm.cpp" line="4000"/>
+        <location filename="../p2asm.cpp" line="4207"/>
+        <location filename="../p2asm.cpp" line="4214"/>
         <source>Expected %1 but found %2.</source>
         <translation>Erwartet wird %1 gefunden jedoch %2.</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="3995"/>
+        <location filename="../p2asm.cpp" line="4209"/>
         <source>end of line</source>
         <translation>Ende-der-Zeile</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="4051"/>
-        <location filename="../p2asm.cpp" line="4077"/>
-        <location filename="../p2asm.cpp" line="4102"/>
-        <location filename="../p2asm.cpp" line="4131"/>
-        <location filename="../p2asm.cpp" line="4160"/>
-        <location filename="../p2asm.cpp" line="4189"/>
+        <location filename="../p2asm.cpp" line="4265"/>
+        <location filename="../p2asm.cpp" line="4291"/>
+        <location filename="../p2asm.cpp" line="4316"/>
+        <location filename="../p2asm.cpp" line="4345"/>
+        <location filename="../p2asm.cpp" line="4374"/>
+        <location filename="../p2asm.cpp" line="4403"/>
         <source>Unexpected flag update &apos;%1&apos; not %2</source>
         <translation>Unerwartetes Flag Update &apos;%1&apos; nicht %2</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="4053"/>
+        <location filename="../p2asm.cpp" line="4267"/>
         <source>WC, WZ, or WCZ</source>
         <translation>WC, WZ oder WCZ</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="4079"/>
+        <location filename="../p2asm.cpp" line="4293"/>
         <source>WC</source>
         <translation>WC</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="4104"/>
+        <location filename="../p2asm.cpp" line="4318"/>
         <source>WZ</source>
         <translation>WZ</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="4613"/>
+        <location filename="../p2asm.cpp" line="4863"/>
         <source>Expected immediate #n</source>
         <translation>Immediat erwartet #n</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="392"/>
+        <location filename="../p2asm.cpp" line="442"/>
         <source>Expected MODCZ param or immediate.</source>
         <translation>MODCZ-Parameter oder Immediate erwartet.</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="398"/>
+        <location filename="../p2asm.cpp" line="448"/>
         <source>Expected MODCZ immediate in range 0…15.</source>
         <translation>MODCZ Immediate im Bereicht 0…15 erwartet.</translation>
     </message>
@@ -541,131 +573,155 @@ Wert: %3 ($%4, %%5).</translation>
         <translation type="vanished">Symbol &apos;%1&apos; ist bereits definiert in Zeile #%2 (Wert: %3, $%4, %%5).</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="549"/>
+        <location filename="../p2asm.cpp" line="585"/>
         <source>Symbol &apos;%1&apos; already defined in line #%2 (%3).</source>
         <translation>Symbol &apos;%1&apos; ist bereits definiert in Zeile #%2 (%3).</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="644"/>
+        <location filename="../p2asm.cpp" line="680"/>
         <source>Not an CON section token &apos;%1&apos;.</source>
         <translation>Kein Token der CON-Sektion &apos;%1&apos;.</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="2210"/>
+        <location filename="../p2asm.cpp" line="2240"/>
         <source>Missing handling of instruction token &apos;%1&apos;.</source>
         <translation>Fehlende Behandlung des Instruktionstoek &apos;%1&apos;.</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="2219"/>
+        <location filename="../p2asm.cpp" line="2249"/>
         <source>Constant &apos;%1&apos; used as an instruction.</source>
         <translation>Konstante &apos;%1&apos; als Instruktion verwendet.</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="2228"/>
+        <location filename="../p2asm.cpp" line="2258"/>
         <source>Extraneous conditional &apos;%1&apos;.</source>
         <translation>Überzählige Bedingung &apos;%1&apos;.</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="2237"/>
+        <location filename="../p2asm.cpp" line="2267"/>
         <source>Extraneous MODCZ parameter &apos;%1&apos;.</source>
         <translation>Überzähliger MODCZ-Parameter &apos;%1&apos;.</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="2244"/>
+        <location filename="../p2asm.cpp" line="2274"/>
         <source>Not an instruction token &apos;%1&apos;.</source>
         <translation>Kein Instruktions-Token &apos;%1&apos;.</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="3244"/>
-        <location filename="../p2asm.cpp" line="3316"/>
-        <location filename="../p2asm.cpp" line="3383"/>
-        <location filename="../p2asm.cpp" line="3450"/>
+        <location filename="../p2asm.cpp" line="3018"/>
+        <location filename="../p2asm.cpp" line="3037"/>
+        <source>Undefined %1 symbol %2.</source>
+        <translation>Undefiniertes %1 Symbol %2.</translation>
+    </message>
+    <message>
+        <location filename="../p2asm.cpp" line="3019"/>
+        <source>global</source>
+        <translation>global</translation>
+    </message>
+    <message>
+        <location filename="../p2asm.cpp" line="3038"/>
+        <source>local</source>
+        <translation>lokal</translation>
+    </message>
+    <message>
+        <location filename="../p2asm.cpp" line="3478"/>
+        <location filename="../p2asm.cpp" line="3550"/>
+        <location filename="../p2asm.cpp" line="3617"/>
+        <location filename="../p2asm.cpp" line="3684"/>
         <source>End of line in expression (%1)</source>
         <translation>Ende der Zeile im Ausdruck (%1)</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="3245"/>
-        <location filename="../p2asm.cpp" line="3254"/>
+        <location filename="../p2asm.cpp" line="3479"/>
+        <location filename="../p2asm.cpp" line="3488"/>
         <source>mulops</source>
         <translation>mulops</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="3253"/>
-        <location filename="../p2asm.cpp" line="3325"/>
-        <location filename="../p2asm.cpp" line="3392"/>
-        <location filename="../p2asm.cpp" line="3459"/>
+        <location filename="../p2asm.cpp" line="3487"/>
+        <location filename="../p2asm.cpp" line="3559"/>
+        <location filename="../p2asm.cpp" line="3626"/>
+        <location filename="../p2asm.cpp" line="3693"/>
         <source>Invalid character in expression (%1): %2</source>
         <translation>Ungültiges Zeichen im Ausdruck (%1): %2</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="3317"/>
-        <location filename="../p2asm.cpp" line="3326"/>
+        <location filename="../p2asm.cpp" line="3551"/>
+        <location filename="../p2asm.cpp" line="3560"/>
         <source>shiftops</source>
         <translation>shiftops</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="3384"/>
-        <location filename="../p2asm.cpp" line="3393"/>
+        <location filename="../p2asm.cpp" line="3618"/>
+        <location filename="../p2asm.cpp" line="3627"/>
         <source>addops</source>
         <translation>addops</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="3451"/>
-        <location filename="../p2asm.cpp" line="3460"/>
+        <location filename="../p2asm.cpp" line="3685"/>
+        <location filename="../p2asm.cpp" line="3694"/>
         <source>binops</source>
         <translation>binops</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="3732"/>
-        <location filename="../p2asm.cpp" line="3739"/>
-        <location filename="../p2asm.cpp" line="3748"/>
-        <location filename="../p2asm.cpp" line="3765"/>
-        <location filename="../p2asm.cpp" line="3772"/>
+        <location filename="../p2asm.cpp" line="3945"/>
+        <location filename="../p2asm.cpp" line="3952"/>
+        <location filename="../p2asm.cpp" line="3961"/>
+        <location filename="../p2asm.cpp" line="3978"/>
+        <location filename="../p2asm.cpp" line="3985"/>
         <source>%1 constant $%2 is &gt; $1ff but %3.</source>
         <translation>%1-Konstante $%2 ist &gt; $1ff aber %3.</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="3757"/>
-        <location filename="../p2asm.cpp" line="3781"/>
-        <source>%1 relative $%2 out of range -$%3 … +$%4.</source>
-        <translation>%1 Relativwert $%2 nicht im Bereich -$%3 … +$%4.</translation>
+        <location filename="../p2asm.cpp" line="3970"/>
+        <source>%1 relative $%2 out of bounds -%3 … +%4.</source>
+        <translation>%1 Relativwert $%2 außerhalb des Bereichs -%1 … +%4.</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="3894"/>
+        <location filename="../p2asm.cpp" line="3994"/>
+        <source>%1 relative $%2 out of range -%3 … +%4.</source>
+        <translation>%1 Relativwert $%2 außerhalb des Bereichs -%1 … +%4.</translation>
+    </message>
+    <message>
+        <source>%1 relative $%2 out of range -$%3 … +$%4.</source>
+        <translation type="vanished">%1 Relativwert $%2 nicht im Bereich -$%3 … +$%4.</translation>
+    </message>
+    <message>
+        <location filename="../p2asm.cpp" line="4105"/>
         <source>Pointer index $%1 is out of bounds.</source>
         <translation>Zeigerindex $%1 ist außerhalb des Bereichs.</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="3915"/>
-        <location filename="../p2asm.cpp" line="3927"/>
-        <location filename="../p2asm.cpp" line="3938"/>
+        <location filename="../p2asm.cpp" line="4127"/>
+        <location filename="../p2asm.cpp" line="4139"/>
+        <location filename="../p2asm.cpp" line="4150"/>
         <source>Pointer index %1 ($%2) is invalid.</source>
         <translation>Zeigerindex %1 ($%2) ist ungültig.</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="4799"/>
-        <location filename="../p2asm.cpp" line="4852"/>
+        <location filename="../p2asm.cpp" line="5106"/>
+        <location filename="../p2asm.cpp" line="5158"/>
         <source>Unexpected token %1 in enumeration: %2.</source>
         <translation>Unerwartetes Toke %1 in der Enumeration: %2.</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="4820"/>
+        <location filename="../p2asm.cpp" line="5126"/>
         <source>enumeration continuation</source>
         <translation>Fortsetzung der Enumeration.</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="4910"/>
+        <location filename="../p2asm.cpp" line="5223"/>
         <source>COG limit ($%1) exceeds $%2.</source>
         <translation>COG Limit ($%1) ist größer als $%2.</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="4918"/>
-        <location filename="../p2asm.cpp" line="4956"/>
+        <location filename="../p2asm.cpp" line="5231"/>
+        <location filename="../p2asm.cpp" line="5267"/>
         <source>COG origin ($%1) exceeds limit $%2.</source>
         <translation>COG Origin ($%1) ist größer als Limit $%2.</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="4947"/>
+        <location filename="../p2asm.cpp" line="5258"/>
         <source>%1 found in HUB mode.</source>
         <translation>%1 im HUB-Modus gefunden.</translation>
     </message>
@@ -674,15 +730,15 @@ Wert: %3 ($%4, %%5).</translation>
         <translation type="vanished">Konstante %1 ist größer als $1ff aber %2.</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="3735"/>
-        <location filename="../p2asm.cpp" line="3768"/>
+        <location filename="../p2asm.cpp" line="3948"/>
+        <location filename="../p2asm.cpp" line="3981"/>
         <source>no imediate mode</source>
         <translation>kein Immediate-Modus</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="3742"/>
-        <location filename="../p2asm.cpp" line="3751"/>
-        <location filename="../p2asm.cpp" line="3775"/>
+        <location filename="../p2asm.cpp" line="3955"/>
+        <location filename="../p2asm.cpp" line="3964"/>
+        <location filename="../p2asm.cpp" line="3988"/>
         <source>%1 is not set for %2</source>
         <translation>%1 ist nicht gesetzt für %2</translation>
     </message>
@@ -691,44 +747,59 @@ Wert: %3 ($%4, %%5).</translation>
         <translation type="vanished">Fehlende Behandlung für P2Opcode Enumerationswert.</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="4133"/>
+        <location filename="../p2asm.cpp" line="4347"/>
         <source>ANDC/ANDZ</source>
         <translation>ANDC/ANDZ</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="4162"/>
+        <location filename="../p2asm.cpp" line="4376"/>
         <source>ORC/ORZ</source>
         <translation>ORC/ORZ</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="4191"/>
+        <location filename="../p2asm.cpp" line="4405"/>
         <source>XORC/XORZ</source>
         <translation>XORC/XORZ</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="4618"/>
+        <location filename="../p2asm.cpp" line="4868"/>
         <source>Immediate #n not in 0-%1 (%2)</source>
         <translation>Immediate #n ist nicht im Bereich 0-%1 (%2)</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="4626"/>
+        <location filename="../p2asm.cpp" line="4876"/>
         <source>Missing immediate #n</source>
         <translation>Fehlendes Immediate #n</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="4678"/>
+        <location filename="../p2asm.cpp" line="4916"/>
+        <source>Invalid distance between HUB addresses: %1 is not a multiple of %2.</source>
+        <translation>Ungültige Distanz zwischen HUB-Adressen: %1 ist kein Vielfaches von %2.</translation>
+    </message>
+    <message>
+        <location filename="../p2asm.cpp" line="4918"/>
+        <source>four</source>
+        <translation>Vier</translation>
+    </message>
+    <message>
+        <location filename="../p2asm.cpp" line="4927"/>
+        <source>Relative value  %1 not in range %2 … %3.</source>
+        <translation>Relativwert  %1 nicht im Bereich %2 … %3.</translation>
+    </message>
+    <message>
+        <location filename="../p2asm.cpp" line="4985"/>
         <source>Invalid pointer parameter: %1</source>
         <translation>Ungültiger Pointer-Parameter: %1</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="4739"/>
-        <location filename="../p2asm.cpp" line="4770"/>
-        <location filename="../p2asm.cpp" line="4819"/>
+        <location filename="../p2asm.cpp" line="5046"/>
+        <location filename="../p2asm.cpp" line="5077"/>
+        <location filename="../p2asm.cpp" line="5125"/>
         <source>Not in constant section (CON) but found %1.</source>
         <translation>Nicht in der Konstanten-Sektion (CON) aber %1 wurde gefunden.</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="4740"/>
+        <location filename="../p2asm.cpp" line="5047"/>
         <source>assignment</source>
         <translation>Zuweisung</translation>
     </message>
@@ -737,7 +808,7 @@ Wert: %3 ($%4, %%5).</translation>
         <translation type="vanished">Unerwartetes Token in einer Enumeration: %1.</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="4771"/>
+        <location filename="../p2asm.cpp" line="5078"/>
         <source>enumeration start</source>
         <translation>Start einer Enumeration</translation>
     </message>
@@ -746,27 +817,27 @@ Wert: %3 ($%4, %%5).</translation>
         <translation type="vanished">COG Origin ($%1) ist größer als das Limit %2.</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="4991"/>
+        <location filename="../p2asm.cpp" line="5300"/>
         <source>HUB address exceeds limit $%1.</source>
         <translation>HUB-Adresse ist größer als das Limit $%1.</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="5018"/>
+        <location filename="../p2asm.cpp" line="5328"/>
         <source>Code does not fit below $%1 (ORG is $%2)</source>
         <translation>Code passt nicht in $%1 (ORG ist $%2)</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="5222"/>
+        <location filename="../p2asm.cpp" line="5546"/>
         <source>Could not open file &quot;%1&quot; for reading.</source>
         <translation>Die Datei &quot;%1&quot; konnte nicht zum Lesen göffnet werden.</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="12063"/>
+        <location filename="../p2asm.cpp" line="12404"/>
         <source>Invalid pointer &apos;%1&apos;; expected one of %2.</source>
         <translation>Ungültiger Pointer &apos;%1&apos;; erwartet wurde eins von %2.</translation>
     </message>
     <message>
-        <location filename="../p2asm.cpp" line="12065"/>
+        <location filename="../p2asm.cpp" line="12406"/>
         <source>PA, PB, PTRA, or PTRB</source>
         <translation>PA, PB, PTRA oder PTRB</translation>
     </message>
@@ -782,73 +853,68 @@ Wert: %3 ($%4, %%5).</translation>
 <context>
     <name>P2AsmModel</name>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="73"/>
         <source>Errors</source>
-        <translation>Fehler</translation>
+        <translation type="vanished">Fehler</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="78"/>
         <source>Tokens</source>
-        <translation>Token</translation>
+        <translation type="vanished">Token</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="68"/>
-        <location filename="../models/p2asmmodel.cpp" line="542"/>
+        <location filename="../models/p2asmmodel.cpp" line="63"/>
+        <location filename="../models/p2asmmodel.cpp" line="503"/>
         <source>Opcode</source>
         <translation>Opcode</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="58"/>
         <source>OrgH</source>
-        <translation>OrgH</translation>
+        <translation type="vanished">OrgH</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="63"/>
         <source>Org</source>
-        <translation>Org</translation>
+        <translation type="vanished">Org</translation>
+    </message>
+    <message>
+        <source>Symbols</source>
+        <translation type="vanished">Symbole</translation>
     </message>
     <message>
         <location filename="../models/p2asmmodel.cpp" line="83"/>
-        <source>Symbols</source>
-        <translation>Symbole</translation>
-    </message>
-    <message>
-        <location filename="../models/p2asmmodel.cpp" line="88"/>
         <source>Source</source>
         <translation>Quelltext</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="123"/>
+        <location filename="../models/p2asmmodel.cpp" line="119"/>
         <source>Origin of the current instruction.</source>
         <translation>Origin der aktuellen Instruktion.</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="126"/>
+        <location filename="../models/p2asmmodel.cpp" line="122"/>
         <source>Program counter address of the current instruction.</source>
         <translation>Programmzähler-Adresse der aktuellen Instruktion.</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="129"/>
+        <location filename="../models/p2asmmodel.cpp" line="125"/>
         <source>Errors while assembling the current line.</source>
         <translation>Fehler in der aktuellen Zeile.</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="132"/>
+        <location filename="../models/p2asmmodel.cpp" line="128"/>
         <source>Tokens found when parsing the current line.</source>
         <translation>Erkannte Tokens der aktuellen Zeile.</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="135"/>
+        <location filename="../models/p2asmmodel.cpp" line="131"/>
         <source>Opcode of the current instruction, or value of assignment.</source>
         <translation>Opcode der aktuellen Instruktion, oder Wert einer Zuweisung.</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="138"/>
+        <location filename="../models/p2asmmodel.cpp" line="134"/>
         <source>Number of defined / referenced symbols.</source>
         <translation>Anzahl der definierten / referenzierten Symbole.</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="141"/>
+        <location filename="../models/p2asmmodel.cpp" line="137"/>
         <source>Source code line.</source>
         <translation>Quellcode Zeile.</translation>
     </message>
@@ -865,78 +931,102 @@ Wert: %3 ($%4, %%5).</translation>
         <translation type="vanished">Position, Länge</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="613"/>
+        <location filename="../models/p2asmmodel.cpp" line="574"/>
         <source>Token</source>
         <translation>Token</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="336"/>
         <source>This column shows the source code.</source>
-        <translation>Dies Spalte zeigen den Quelltext.</translation>
+        <translation type="vanished">Dies Spalte zeigen den Quelltext.</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="307"/>
+        <location filename="../models/p2asmmodel.cpp" line="53"/>
+        <source>HUB</source>
+        <translation>HUB</translation>
+    </message>
+    <message>
+        <location filename="../models/p2asmmodel.cpp" line="58"/>
+        <source>COG/LUT</source>
+        <translation>COG/LUT</translation>
+    </message>
+    <message>
+        <location filename="../models/p2asmmodel.cpp" line="68"/>
+        <source>E</source>
+        <translation>E</translation>
+    </message>
+    <message>
+        <location filename="../models/p2asmmodel.cpp" line="73"/>
+        <source>T</source>
+        <translation>T</translation>
+    </message>
+    <message>
+        <location filename="../models/p2asmmodel.cpp" line="78"/>
+        <source>S</source>
+        <translation>S</translation>
+    </message>
+    <message>
+        <location filename="../models/p2asmmodel.cpp" line="308"/>
         <source>This column shows the HUB address.</source>
         <translation>Diese Spalte zeit die HUB-Adresse.</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="311"/>
+        <location filename="../models/p2asmmodel.cpp" line="312"/>
         <source>This column shows the COG address.</source>
         <translation>Diese Spalte zeigt die COG-Adresse.</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="544"/>
+        <location filename="../models/p2asmmodel.cpp" line="505"/>
         <source>Brief</source>
         <translation>Kurz</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="549"/>
+        <location filename="../models/p2asmmodel.cpp" line="510"/>
         <source>Assigment</source>
         <translation>Zuweisung</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="554"/>
+        <location filename="../models/p2asmmodel.cpp" line="515"/>
         <source>Data</source>
         <translation>Daten</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="558"/>
+        <location filename="../models/p2asmmodel.cpp" line="519"/>
         <source>%1 more …</source>
         <translation>%1 mehr …</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="614"/>
-        <location filename="../models/p2asmmodel.cpp" line="690"/>
+        <location filename="../models/p2asmmodel.cpp" line="575"/>
+        <location filename="../models/p2asmmodel.cpp" line="651"/>
         <source>Type</source>
         <translation>Typ</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="615"/>
+        <location filename="../models/p2asmmodel.cpp" line="576"/>
         <source>Pos</source>
         <translation>Pos.</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="616"/>
+        <location filename="../models/p2asmmodel.cpp" line="577"/>
         <source>Len</source>
         <translation>Länge</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="617"/>
+        <location filename="../models/p2asmmodel.cpp" line="578"/>
         <source>Source code</source>
         <translation>Quellcode</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="688"/>
+        <location filename="../models/p2asmmodel.cpp" line="649"/>
         <source>Line #</source>
         <translation>Zeile #</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="689"/>
+        <location filename="../models/p2asmmodel.cpp" line="650"/>
         <source>Section::name</source>
         <translation>Sektion::name</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="691"/>
+        <location filename="../models/p2asmmodel.cpp" line="652"/>
         <source>Value</source>
         <translation>Wert</translation>
     </message>
@@ -953,7 +1043,7 @@ Wert: %3 ($%4, %%5).</translation>
         <translation type="vanished">Wert (bin)</translation>
     </message>
     <message>
-        <location filename="../models/p2asmmodel.cpp" line="766"/>
+        <location filename="../models/p2asmmodel.cpp" line="727"/>
         <source>Error message</source>
         <translation>Fehlermeldung</translation>
     </message>
@@ -1175,22 +1265,22 @@ Wert: %3 ($%4, %%5).</translation>
 <context>
     <name>P2DasmModel</name>
     <message>
-        <location filename="../models/p2dasmmodel.cpp" line="48"/>
+        <location filename="../models/p2dasmmodel.cpp" line="47"/>
         <source>Address</source>
         <translation>Adresse</translation>
     </message>
     <message>
-        <location filename="../models/p2dasmmodel.cpp" line="52"/>
+        <location filename="../models/p2dasmmodel.cpp" line="51"/>
         <source>Opcode</source>
         <translation>Opcode</translation>
     </message>
     <message>
-        <location filename="../models/p2dasmmodel.cpp" line="56"/>
+        <location filename="../models/p2dasmmodel.cpp" line="55"/>
         <source>Instruction</source>
         <translation>Instruktion</translation>
     </message>
     <message>
-        <location filename="../models/p2dasmmodel.cpp" line="60"/>
+        <location filename="../models/p2dasmmodel.cpp" line="59"/>
         <source>Description</source>
         <translation>Beschreibung</translation>
     </message>
@@ -1215,29 +1305,41 @@ Wert: %3 ($%4, %%5).</translation>
 <context>
     <name>P2ReferencesDelegate</name>
     <message>
-        <location filename="../delegates/p2referencesdelegate.cpp" line="150"/>
-        <location filename="../delegates/p2referencesdelegate.cpp" line="152"/>
         <source>%1 refs</source>
-        <translation>%1 Refs</translation>
+        <translation type="vanished">%1 Refs</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../delegates/p2referencesdelegate.cpp" line="104"/>
+        <location filename="../delegates/p2referencesdelegate.cpp" line="151"/>
+        <source>%n ref(s)</source>
+        <comment>Number of references</comment>
+        <translation>
+            <numerusform>%n Ref</numerusform>
+            <numerusform>%n Refs</numerusform>
+        </translation>
     </message>
     <message>
         <location filename="../delegates/p2referencesdelegate.cpp" line="109"/>
         <source>Line #%1</source>
         <translation>Zeile #%1</translation>
     </message>
+    <message>
+        <location filename="../delegates/p2referencesdelegate.cpp" line="149"/>
+        <source>no refs</source>
+        <comment>Number of references is zero</comment>
+        <translation>Keine</translation>
+    </message>
     <message numerus="yes">
-        <location filename="../delegates/p2referencesdelegate.cpp" line="104"/>
         <source>%n refs</source>
         <comment>Number of references</comment>
-        <translation>
+        <translation type="vanished">
             <numerusform>%n Ref.</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../delegates/p2referencesdelegate.cpp" line="150"/>
         <source>no</source>
-        <translation>keine</translation>
+        <translation type="vanished">keine</translation>
     </message>
 </context>
 <context>
@@ -1369,100 +1471,163 @@ Wert: %3 ($%4, %%5).</translation>
         <translation>Palette einstellen</translation>
     </message>
     <message>
-        <location filename="../dialogs/palettesetup.ui" line="20"/>
-        <location filename="../dialogs/palettesetup.cpp" line="168"/>
+        <location filename="../dialogs/palettesetup.ui" line="32"/>
+        <location filename="../dialogs/palettesetup.cpp" line="170"/>
         <source>Color</source>
         <translation>Farbe</translation>
     </message>
     <message>
-        <location filename="../dialogs/palettesetup.ui" line="62"/>
+        <location filename="../dialogs/palettesetup.ui" line="74"/>
         <source>Syntax element</source>
         <translation>Syntax-Element</translation>
     </message>
     <message>
         <location filename="../dialogs/palettesetup.cpp" line="132"/>
+        <source>Background</source>
+        <translation>Hintergrund</translation>
+    </message>
+    <message>
+        <location filename="../dialogs/palettesetup.cpp" line="133"/>
         <source>Comment</source>
         <translation>Kommentar</translation>
     </message>
     <message>
-        <location filename="../dialogs/palettesetup.cpp" line="133"/>
+        <location filename="../dialogs/palettesetup.cpp" line="134"/>
         <source>Instruction</source>
         <translation>Instruktion</translation>
     </message>
     <message>
-        <location filename="../dialogs/palettesetup.cpp" line="134"/>
+        <location filename="../dialogs/palettesetup.cpp" line="135"/>
         <source>Conditional</source>
         <translation>Bedingung</translation>
     </message>
     <message>
-        <location filename="../dialogs/palettesetup.cpp" line="135"/>
+        <location filename="../dialogs/palettesetup.cpp" line="136"/>
         <source>WCZ suffix</source>
         <translation>WCZ Zusatz</translation>
     </message>
     <message>
-        <location filename="../dialogs/palettesetup.cpp" line="136"/>
+        <location filename="../dialogs/palettesetup.cpp" line="137"/>
         <source>Section</source>
         <translation>Sektion</translation>
     </message>
     <message>
-        <location filename="../dialogs/palettesetup.cpp" line="137"/>
+        <location filename="../dialogs/palettesetup.cpp" line="138"/>
         <source>MODCZ parameter</source>
         <translation>MODCZ-Parameter</translation>
     </message>
     <message>
-        <location filename="../dialogs/palettesetup.cpp" line="138"/>
+        <location filename="../dialogs/palettesetup.cpp" line="139"/>
         <source>Symbol</source>
         <translation>Symbol</translation>
     </message>
     <message>
-        <location filename="../dialogs/palettesetup.cpp" line="139"/>
+        <location filename="../dialogs/palettesetup.cpp" line="140"/>
         <source>Local symbol</source>
         <translation>Lokales Symbol</translation>
     </message>
     <message>
-        <location filename="../dialogs/palettesetup.cpp" line="140"/>
+        <location filename="../dialogs/palettesetup.cpp" line="141"/>
         <source>Expression</source>
         <translation>Ausdruck</translation>
     </message>
     <message>
-        <location filename="../dialogs/palettesetup.cpp" line="141"/>
+        <location filename="../dialogs/palettesetup.cpp" line="142"/>
         <source>String constant</source>
         <translation>Zeichenkette</translation>
     </message>
     <message>
-        <location filename="../dialogs/palettesetup.cpp" line="142"/>
+        <location filename="../dialogs/palettesetup.cpp" line="143"/>
         <source>Binary constant</source>
         <translation>Binäre Konstante</translation>
     </message>
     <message>
-        <location filename="../dialogs/palettesetup.cpp" line="143"/>
+        <location filename="../dialogs/palettesetup.cpp" line="144"/>
         <source>Byte constant</source>
         <translation>Byte Konstante</translation>
     </message>
     <message>
-        <location filename="../dialogs/palettesetup.cpp" line="144"/>
+        <location filename="../dialogs/palettesetup.cpp" line="145"/>
         <source>Decimal constant</source>
         <translation>Dezimal-Konstante</translation>
     </message>
     <message>
-        <location filename="../dialogs/palettesetup.cpp" line="145"/>
+        <location filename="../dialogs/palettesetup.cpp" line="146"/>
         <source>Hexadecimal constant</source>
         <translation>Hexadezimal-Konstante</translation>
     </message>
     <message>
-        <location filename="../dialogs/palettesetup.cpp" line="146"/>
+        <location filename="../dialogs/palettesetup.cpp" line="147"/>
         <source>Real constant</source>
         <translation>Realzahl-Konstante</translation>
     </message>
     <message>
-        <location filename="../dialogs/palettesetup.cpp" line="147"/>
+        <location filename="../dialogs/palettesetup.cpp" line="148"/>
         <source>Source</source>
         <translation>Quellcode</translation>
     </message>
     <message>
-        <location filename="../dialogs/palettesetup.cpp" line="168"/>
+        <location filename="../dialogs/palettesetup.cpp" line="170"/>
+        <source>RGB</source>
+        <translation>RGB</translation>
+    </message>
+    <message>
         <source>#RRGGBB</source>
-        <translation>#RRGGBB</translation>
+        <translation type="vanished">#RRGGBB</translation>
+    </message>
+</context>
+<context>
+    <name>Preferences</name>
+    <message>
+        <location filename="../dialogs/preferences.ui" line="14"/>
+        <source>Preferences</source>
+        <translation>Einstellungen</translation>
+    </message>
+    <message>
+        <location filename="../dialogs/preferences.ui" line="20"/>
+        <source>Font (assembler)</source>
+        <translation>Font (Assembler)</translation>
+    </message>
+    <message>
+        <location filename="../dialogs/preferences.ui" line="27"/>
+        <location filename="../dialogs/preferences.ui" line="93"/>
+        <source>Source Code Pro [ADBE]</source>
+        <translation>Source Code Pro [ABDE]</translation>
+    </message>
+    <message>
+        <location filename="../dialogs/preferences.ui" line="44"/>
+        <source>Compatibility</source>
+        <translation>Kompatibilität</translation>
+    </message>
+    <message>
+        <location filename="../dialogs/preferences.ui" line="51"/>
+        <source>&amp;PNut compatible listing</source>
+        <translation>&amp;PNut kompatibles Listing</translation>
+    </message>
+    <message>
+        <location filename="../dialogs/preferences.ui" line="58"/>
+        <source>Syntax</source>
+        <translation>Syntax</translation>
+    </message>
+    <message>
+        <location filename="../dialogs/preferences.ui" line="65"/>
+        <source>Use &amp;V33 syntax for PTRA/PTRB index</source>
+        <translation>Nutze &amp;V33-Syntax für PTRA/PTRB Index</translation>
+    </message>
+    <message>
+        <location filename="../dialogs/preferences.ui" line="72"/>
+        <source>FILE errors</source>
+        <translation>FILE Fehlermeldungen</translation>
+    </message>
+    <message>
+        <location filename="../dialogs/preferences.ui" line="79"/>
+        <source>Emit errors on missing &amp;FILEs</source>
+        <translation>Gib Fehler bei fehlender Datei in &amp;FILE</translation>
+    </message>
+    <message>
+        <location filename="../dialogs/preferences.ui" line="86"/>
+        <source>Font (disassembler)</source>
+        <translation>Font (Disassembler)</translation>
     </message>
 </context>
 </TS>

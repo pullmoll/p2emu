@@ -85,7 +85,7 @@ void P2ReferencesDelegate::setEditorData(QWidget* editor, const QModelIndex& ind
     // clear and refill the QComboBox with updates disabled
     cb->setUpdatesEnabled(false);
     cb->clear();
-    QVariant data = model->data(index, Qt::EditRole);
+    QVariant data = model->data(index, Qt::UserRole);
     P2Symbol symbol = qvariant_cast<P2Symbol>(data);
 
     if (symbol.isNull()) {
@@ -101,7 +101,7 @@ void P2ReferencesDelegate::setEditorData(QWidget* editor, const QModelIndex& ind
     }
 
     // add a zeroth item with the number of references to not select anything at first
-    cb->addItem(tr("%n refs", "Number of references", urlmap.count()));
+    cb->addItem(tr("%n ref(s)", "Number of references", urlmap.count()));
     qobject_cast<QStandardItemModel*>(cb->model())->item(0)->setEnabled(false);
 
     // Fill the QComboBox with items
@@ -139,17 +139,16 @@ void P2ReferencesDelegate::paint(QPainter* painter, const QStyleOptionViewItem& 
 {
     const QAbstractItemModel* model = index.model();
     QVariant data = model->data(index, Qt::EditRole);
-    const P2Symbol symbol = qvariant_cast<P2Symbol>(data);
-    const p2_word_hash_t& hash = symbol->references();
+    p2_word_hash_t hash = qvariant_cast<p2_word_hash_t>(data);
     QStyleOptionViewItem opt(option);
     QString text;
     int flags = Qt::AlignRight | Qt::AlignVCenter |
                 Qt::TextSingleLine | Qt::TextDontClip;
 
     if (hash.count() < 1) {
-        text = tr("%1 refs").arg(tr("no"));
+        text = tr("no refs", "Number of references is zero");
     } else {
-        text = tr("%1 refs").arg(hash.count());
+        text = tr("%n ref(s)", "Number of references", hash.count());
     }
     painter->drawText(opt.rect, flags, text);
 }

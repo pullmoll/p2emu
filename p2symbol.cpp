@@ -155,7 +155,8 @@ void P2SymbolClass::add_reference(int lineno, const P2Word& word)
 {
     if (m_references.isEmpty())
         m_definition = word;
-    m_references.insert(lineno, word);
+    if (!m_references.contains(lineno, word))
+        m_references.insert(lineno, word);
 }
 
 /**
