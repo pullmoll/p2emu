@@ -351,16 +351,19 @@ p2_LONG P2Union::get_addr(bool hub) const
         value = tv.value._byte * sz_LONG;
         break;
     case ut_Word:
-        value = tv.value._word * sz_LONG;
+        value = tv.value._word < HUB_ADDR0 ? tv.value._word * sz_LONG
+                                           : tv.value._word;
         break;
     case ut_Addr:
         value = tv.value._addr[hub];
         break;
     case ut_Long:
-        value = tv.value._long * sz_LONG;
+        value = tv.value._long < HUB_ADDR0 ? tv.value._long * sz_LONG
+                                           : tv.value._long;
         break;
     case ut_Quad:
-        value = static_cast<p2_LONG>(tv.value._quad * sz_LONG);
+        value = static_cast<p2_LONG>(tv.value._quad < HUB_ADDR0 ? tv.value._quad * sz_LONG
+                                                                : tv.value._quad);
         break;
     case ut_Real:
         value = static_cast<p2_LONG>(tv.value._real * sz_LONG);

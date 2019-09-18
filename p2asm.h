@@ -166,7 +166,8 @@ private:
     QHash<Section,QString> m_sections;      //!< section names as strings
     QHash<p2_TOKEN_e,p2_LONG> m_traits;     //!< traits for specific tokens
 
-    int commata_left() const;
+    int count_commata() const;
+    int count_wcz_flags() const;
     bool find_tok(p2_TOKEN_e tok) const;
 
     static QString hub_cog(const P2Opcode& IR);

@@ -2415,13 +2415,26 @@ bool P2Asm::load(const QString& filename)
  * @brief Return number of commata following in the words/tokens
  * @return number of commata following
  */
-int P2Asm::commata_left() const
+int P2Asm::count_commata() const
 {
     int commata = 0;
     for (int i = m_idx; i < m_cnt; i++)
         if (t_COMMA == m_words[i].tok())
             commata++;
     return commata;
+}
+
+/**
+ * @brief Return number of WC/WZ/WCZ or ANDC/ANDZ/ORC/ORZ/XORC/XORZ flags
+ * @return number of flags following
+ */
+int P2Asm::count_wcz_flags() const
+{
+    int flags = 0;
+    for (int i = m_idx; i < m_cnt; i++)
+        if (Token.is_type(m_words[i].tok(), tm_wcz_suffix))
+            flags++;
+    return flags;
 }
 
 /**
@@ -4426,7 +4439,7 @@ bool P2Asm::parse_INST()
  */
 bool P2Asm::parse_D_IM_S()
 {
-    if (commata_left() < 1) {
+    if (count_commata() < 1) {
         const int idx = m_idx;
         P2Atom dst = parse_dst();
         m_idx = idx;
@@ -4468,7 +4481,7 @@ bool P2Asm::parse_D_REL_S_WCZ()
  */
 bool P2Asm::parse_D_IM_S_PTRx_WCZ(int scale)
 {
-    if (commata_left() < 1) {
+    if (count_commata() < 1) {
         const int idx = m_idx;
         P2Atom dst = parse_dst();
         m_idx = idx;
@@ -4490,7 +4503,7 @@ bool P2Asm::parse_D_IM_S_PTRx_WCZ(int scale)
  */
 bool P2Asm::parse_D_IM_S_PTRx(int scale)
 {
-    if (commata_left() < 1) {
+    if (count_commata() < 1) {
         const int idx = m_idx;
         P2Atom dst = parse_dst();
         m_idx = idx;
@@ -4627,7 +4640,7 @@ bool P2Asm::parse_IM_D_XORC_XORZ()
  */
 bool P2Asm::parse_D_IM_S_WCZ()
 {
-    if (commata_left() < 1) {
+    if (count_commata() < 1) {
         // if there is no comma, expect D = S and no #S
         const int idx = m_idx;
         P2Atom dst = parse_dst();
@@ -4651,7 +4664,7 @@ bool P2Asm::parse_D_IM_S_WCZ()
  */
 bool P2Asm::parse_D_IM_S_ANDCZ()
 {
-    if (commata_left() < 1) {
+    if (count_commata() < 1) {
         // if there is no comma, expect D = S and no #S
         const int idx = m_idx;
         P2Atom dst = parse_dst();
@@ -4674,7 +4687,7 @@ bool P2Asm::parse_D_IM_S_ANDCZ()
  */
 bool P2Asm::parse_D_IM_S_ORCZ()
 {
-    if (commata_left() < 1) {
+    if (count_commata() < 1) {
         // if there is no comma, expect D = S and no #S
         const int idx = m_idx;
         P2Atom dst = parse_dst();
@@ -4698,7 +4711,7 @@ bool P2Asm::parse_D_IM_S_ORCZ()
  */
 bool P2Asm::parse_D_IM_S_XORCZ()
 {
-    if (commata_left() < 1) {
+    if (count_commata() < 1) {
         // if there is no comma, expect D = S and no #S
         const int idx = m_idx;
         P2Atom dst = parse_dst();
@@ -4722,7 +4735,7 @@ bool P2Asm::parse_D_IM_S_XORCZ()
  */
 bool P2Asm::parse_D_IM_S_WC()
 {
-    if (commata_left() < 1) {
+    if (count_commata() < 1) {
         // if there is no comma, expect D = S and no #S
         const int idx = m_idx;
         P2Atom dst = parse_dst();
@@ -4746,7 +4759,7 @@ bool P2Asm::parse_D_IM_S_WC()
  */
 bool P2Asm::parse_D_IM_S_WZ()
 {
-    if (commata_left() < 1) {
+    if (count_commata() < 1) {
         // if there is no comma, expect D = S and no #S
         const int idx = m_idx;
         P2Atom dst = parse_dst();
@@ -4770,7 +4783,7 @@ bool P2Asm::parse_D_IM_S_WZ()
  */
 bool P2Asm::parse_WZ_D_IM_S()
 {
-    if (commata_left() < 1) {
+    if (count_commata() < 1) {
         // if there is no comma, expect D = S and no #S
         const int idx = m_idx;
         P2Atom dst = parse_dst();
@@ -4807,7 +4820,7 @@ bool P2Asm::parse_WZ_D_REL_S()
  */
 bool P2Asm::parse_WZ_D_IM_S_PTRx(int scale)
 {
-    if (commata_left() < 1) {
+    if (count_commata() < 1) {
         // if there is no comma, expect D = S and no #S
         const int idx = m_idx;
         P2Atom dst = parse_dst();
@@ -4829,7 +4842,7 @@ bool P2Asm::parse_WZ_D_IM_S_PTRx(int scale)
  */
 bool P2Asm::parse_WZ_D_IM_S_WC()
 {
-    if (commata_left() < 1) {
+    if (count_commata() < 1) {
         // if there is no comma, expect D = S and no #S
         const int idx = m_idx;
         P2Atom dst = parse_dst();
@@ -5005,12 +5018,29 @@ bool P2Asm::parse_PTRx_PC_A20()
 bool P2Asm::parse_PC_A20()
 {
     P2Atom atom = parse_expression();
-    p2_LONG addr = atom.get_addr(p2_hub);
+    p2_LONG addr = atom.get_addr(p2_cog);
     if (atom.has_trait(tr_ABSOLUTE)) {
         m_IR.set_a20(addr);
+    } else if (!m_hubmode) {
+        if (addr < LUT_ADDR0 && m_cogaddr < LUT_ADDR0) {
+            // relative in COG
+            addr = addr - (m_cogaddr + sz_LONG);
+            m_IR.set_r20(addr & A20MASK);
+        } else if (addr < HUB_ADDR0 && m_cogaddr < LUT_ADDR0) {
+            // relative in LUT
+            addr = addr - (m_cogaddr + sz_LONG);
+            m_IR.set_r20(addr & A20MASK);
+        } else {
+            // jump between COG / LUT / HUB
+            m_IR.set_a20(addr & A20MASK);
+        }
+    } else if (addr < HUB_ADDR0) {
+        // jump from HUB to COG / LUT
+        m_IR.set_a20(addr & A20MASK);
     } else {
-        // TODO: Check if a relative address is shorter ?
-        m_IR.set_a20(addr);
+        // relative in HUB
+        addr = addr - (m_hubaddr + sz_LONG);
+        m_IR.set_r20(addr & A20MASK);
     }
 
     return end_of_line();
@@ -6919,7 +6949,7 @@ bool P2Asm::asm_TESTN()
  */
 bool P2Asm::asm_SETNIB()
 {
-    if (commata_left() < 1)
+    if (count_commata() < 1)
         return asm_SETNIB_ALTSN();
     next();
     m_IR.set_inst7(p2_SETNIB_0_3);
@@ -6953,7 +6983,7 @@ bool P2Asm::asm_SETNIB_ALTSN()
  */
 bool P2Asm::asm_GETNIB()
 {
-    if (commata_left() < 1)
+    if (count_commata() < 1)
         return asm_GETNIB_ALTGN();
     next();
     m_IR.set_inst7(p2_GETNIB_0_3);
@@ -6986,7 +7016,7 @@ bool P2Asm::asm_GETNIB_ALTGN()
  */
 bool P2Asm::asm_ROLNIB()
 {
-    if (commata_left() < 1)
+    if (count_commata() < 1)
         return asm_ROLNIB_ALTGN();
     next();
     m_IR.set_inst7(p2_ROLNIB_0_3);
@@ -7018,7 +7048,7 @@ bool P2Asm::asm_ROLNIB_ALTGN()
  */
 bool P2Asm::asm_SETBYTE()
 {
-    if (commata_left() < 1)
+    if (count_commata() < 1)
         return asm_SETBYTE_ALTSB();
     next();
     m_IR.set_inst7(p2_SETBYTE_0_3);
@@ -7052,7 +7082,7 @@ bool P2Asm::asm_SETBYTE_ALTSB()
  */
 bool P2Asm::asm_GETBYTE()
 {
-    if (commata_left() < 1)
+    if (count_commata() < 1)
         return asm_GETBYTE_ALTGB();
     next();
     m_IR.set_inst7(p2_GETBYTE_0_3);
@@ -7086,7 +7116,7 @@ bool P2Asm::asm_GETBYTE_ALTGB()
  */
 bool P2Asm::asm_ROLBYTE()
 {
-    if (commata_left() < 1)
+    if (count_commata() < 1)
         return asm_ROLBYTE_ALTGB();
     next();
     m_IR.set_inst7(p2_ROLBYTE_0_3);
@@ -7118,7 +7148,7 @@ bool P2Asm::asm_ROLBYTE_ALTGB()
  */
 bool P2Asm::asm_SETWORD()
 {
-    if (commata_left() < 1)
+    if (count_commata() < 1)
         return asm_SETWORD_ALTSW();
     next();
     m_IR.set_inst9(p2_SETWORD);
@@ -7152,7 +7182,7 @@ bool P2Asm::asm_SETWORD_ALTSW()
  */
 bool P2Asm::asm_GETWORD()
 {
-    if (commata_left() < 1)
+    if (count_commata() < 1)
         return asm_GETWORD_ALTGW();
     next();
     m_IR.set_inst9(p2_GETWORD);
@@ -7186,7 +7216,7 @@ bool P2Asm::asm_GETWORD_ALTGW()
  */
 bool P2Asm::asm_ROLWORD()
 {
-    if (commata_left() < 1)
+    if (count_commata() < 1)
         return asm_ROLWORD_ALTGW();
     next();
     m_IR.set_inst9(p2_ROLWORD);
@@ -7221,7 +7251,7 @@ bool P2Asm::asm_ROLWORD_ALTGW()
  */
 bool P2Asm::asm_ALTSN()
 {
-    if (commata_left() < 1)
+    if (count_commata() < 1)
         return asm_ALTSN_D();
     next();
     m_IR.set_inst9(p2_ALTSN);
@@ -7258,7 +7288,7 @@ bool P2Asm::asm_ALTSN_D()
  */
 bool P2Asm::asm_ALTGN()
 {
-    if (commata_left() < 1)
+    if (count_commata() < 1)
         return asm_ALTGN_D();
     next();
     m_IR.set_inst9(p2_ALTGN);
@@ -7295,7 +7325,7 @@ bool P2Asm::asm_ALTGN_D()
  */
 bool P2Asm::asm_ALTSB()
 {
-    if (commata_left() < 1)
+    if (count_commata() < 1)
         return asm_ALTSB_D();
     next();
     m_IR.set_inst9(p2_ALTSB);
@@ -7332,7 +7362,7 @@ bool P2Asm::asm_ALTSB_D()
  */
 bool P2Asm::asm_ALTGB()
 {
-    if (commata_left() < 1)
+    if (count_commata() < 1)
         return asm_ALTGB_D();
     next();
     m_IR.set_inst9(p2_ALTGB);
@@ -7369,7 +7399,7 @@ bool P2Asm::asm_ALTGB_D()
  */
 bool P2Asm::asm_ALTSW()
 {
-    if (commata_left() < 1)
+    if (count_commata() < 1)
         return asm_ALTSW_D();
     next();
     m_IR.set_inst9(p2_ALTSW);
@@ -7406,7 +7436,7 @@ bool P2Asm::asm_ALTSW_D()
  */
 bool P2Asm::asm_ALTGW()
 {
-    if (commata_left() < 1)
+    if (count_commata() < 1)
         return asm_ALTGW_D();
     next();
     m_IR.set_inst9(p2_ALTGW);
@@ -7442,7 +7472,7 @@ bool P2Asm::asm_ALTGW_D()
  */
 bool P2Asm::asm_ALTR()
 {
-    if (commata_left() < 1)
+    if (count_commata() < 1)
         return asm_ALTR_D();
     next();
     m_IR.set_inst9(p2_ALTR);
@@ -7476,7 +7506,7 @@ bool P2Asm::asm_ALTR_D()
  */
 bool P2Asm::asm_ALTD()
 {
-    if (commata_left() < 1)
+    if (count_commata() < 1)
         return asm_ALTD_D();
     next();
     m_IR.set_inst9(p2_ALTD);
@@ -7510,7 +7540,7 @@ bool P2Asm::asm_ALTD_D()
  */
 bool P2Asm::asm_ALTS()
 {
-    if (commata_left() < 1)
+    if (count_commata() < 1)
         return asm_ALTS_D();
     next();
     m_IR.set_inst9(p2_ALTS);
@@ -7544,7 +7574,7 @@ bool P2Asm::asm_ALTS_D()
  */
 bool P2Asm::asm_ALTB()
 {
-    if (commata_left() < 1)
+    if (count_commata() < 1)
         return asm_ALTB_D();
     next();
     m_IR.set_inst9(p2_ALTB);
@@ -7578,7 +7608,7 @@ bool P2Asm::asm_ALTB_D()
  */
 bool P2Asm::asm_ALTI()
 {
-    if (commata_left() < 1)
+    if (count_commata() < 1)
         return asm_ALTI_D();
     next();
     m_IR.set_inst9(p2_ALTI);
@@ -10716,9 +10746,11 @@ bool P2Asm::asm_POP()
  */
 bool P2Asm::asm_JMP()
 {
-    p2_TOKEN_e tok = next_tok();
-    if (t_IMMEDIATE == tok || t_AUGMENTED == tok)
-        return asm_JMP_ABS();
+    if (0 == count_wcz_flags()) {
+        p2_TOKEN_e tok = next_tok();
+        if (t_IMMEDIATE == tok || t_AUGMENTED == tok)
+            return asm_JMP_ABS();
+    }
     next();
     m_IR.set_opsrc(p2_OPSRC_JMP);
     return parse_IM_D_WCZ();
@@ -10736,9 +10768,11 @@ bool P2Asm::asm_JMP()
  */
 bool P2Asm::asm_CALL()
 {
-    p2_TOKEN_e tok = next_tok();
-    if (t_IMMEDIATE == tok || t_AUGMENTED == tok)
-        return asm_CALL_ABS();
+    if (0 == count_wcz_flags()) {
+        p2_TOKEN_e tok = next_tok();
+        if (t_IMMEDIATE == tok || t_AUGMENTED == tok)
+            return asm_CALL_ABS();
+    }
     next();
     m_IR.set_opsrc(p2_OPSRC_CALL_RET);
     return parse_IM_D_WCZ();
@@ -10775,6 +10809,11 @@ bool P2Asm::asm_RET()
  */
 bool P2Asm::asm_CALLA()
 {
+    if (0 == count_wcz_flags()) {
+        p2_TOKEN_e tok = next_tok();
+        if (t_IMMEDIATE == tok || t_AUGMENTED == tok)
+            return asm_CALLA_ABS();
+    }
     next();
     m_IR.set_opsrc(p2_OPSRC_CALLA_RETA);
     return parse_D_WCZ();
@@ -10811,6 +10850,11 @@ bool P2Asm::asm_RETA()
  */
 bool P2Asm::asm_CALLB()
 {
+    if (0 == count_wcz_flags()) {
+        p2_TOKEN_e tok = next_tok();
+        if (t_IMMEDIATE == tok || t_AUGMENTED == tok)
+            return asm_CALLB_ABS();
+    }
     next();
     m_IR.set_opsrc(p2_OPSRC_CALLB_RETB);
     return parse_D_WCZ();
@@ -12232,7 +12276,7 @@ bool P2Asm::asm_GETSCP()
 bool P2Asm::asm_JMP_ABS()
 {
     next();
-    m_IR.set_opsrc(p2_OPSRC_JMP);
+    m_IR.set_inst7(p2_JMP_ABS);
     return parse_PC_A20();
 }
 
@@ -12249,7 +12293,7 @@ bool P2Asm::asm_JMP_ABS()
 bool P2Asm::asm_CALL_ABS()
 {
     next();
-    m_IR.set_opsrc(p2_OPSRC_CALL_RET);
+    m_IR.set_inst7(p2_CALL_ABS);
     return parse_PC_A20();
 }
 
@@ -12266,7 +12310,7 @@ bool P2Asm::asm_CALL_ABS()
 bool P2Asm::asm_CALLA_ABS()
 {
     next();
-    m_IR.set_opsrc(p2_OPSRC_CALLA_RETA);
+    m_IR.set_inst7(p2_CALLA_ABS);
     return parse_PC_A20();
 }
 
@@ -12283,7 +12327,7 @@ bool P2Asm::asm_CALLA_ABS()
 bool P2Asm::asm_CALLB_ABS()
 {
     next();
-    m_IR.set_opsrc(p2_OPSRC_CALLB_RETB);
+    m_IR.set_inst7(p2_CALLB_ABS);
     return parse_PC_A20();
 }
 

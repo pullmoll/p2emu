@@ -138,7 +138,8 @@ MainWindow::MainWindow(QWidget *parent)
     // load_source(QStringLiteral(":/spin2/P2-qz80-rr032.spin2"));
     // load_source(QStringLiteral(":/spin2/ROM_Booter_v33_01j.spin2"));
     // load_source(QStringLiteral(":/spin2/pointers.spin2"));
-    load_source(QStringLiteral(":/spin2/all_cogs_blink.spin2"));
+    // load_source(QStringLiteral(":/spin2/all_cogs_blink.spin2"));
+    load_source(QStringLiteral(":/spin2/lock_test.spin2"));
     load_object_random();
 }
 
@@ -1061,6 +1062,8 @@ void MainWindow::setup_toolbars()
     ui->toolbarAsm->addAction(ui->action_Open_src);
     ui->toolbarAsm->addAction(ui->action_Open_src_random);
     ui->toolbarAsm->addSeparator();
+    ui->toolbarAsm->addAction(ui->action_Assemble);
+    ui->toolbarAsm->addSeparator();
 
     ui->action_Asm_Opcodes_bin->setData(fmt_bin);
     ui->toolbarAsm->addAction(ui->action_Asm_Opcodes_bin);
@@ -1125,8 +1128,6 @@ void MainWindow::setup_toolbars()
     ui->toolbar->addAction(ui->action_About);
     ui->toolbar->addSeparator();
     ui->toolbar->addAction(ui->action_P2_opcodes);
-    ui->toolbar->addSeparator();
-    ui->toolbar->addAction(ui->action_Assemble);
 
     ui->toolbar->addSeparator();
     ui->toolbar->addAction(ui->action_Quit);
