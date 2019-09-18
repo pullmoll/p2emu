@@ -186,7 +186,7 @@ typedef enum {
     p2_col_Yellow,
     p2_col_Yellow_Green,
 }   p2_color_e;
-Q_DECLARE_METATYPE(p2_color_e);
+Q_DECLARE_METATYPE(p2_color_e)
 
 typedef enum {
     p2_pal_invalid,
@@ -208,7 +208,7 @@ typedef enum {
     p2_pal_instruction,
     p2_pal_wcz_suffix,
 }   p2_palette_e;
-Q_DECLARE_METATYPE(p2_palette_e);
+Q_DECLARE_METATYPE(p2_palette_e)
 
 typedef QHash<p2_palette_e, p2_color_e> p2_palette_hash_t;
 

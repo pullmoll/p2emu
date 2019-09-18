@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Propeller2 disassembler
+ * Propeller2 disassembler implementation
  *
  * Copyright (C) 2019 Jürgen Buchmüller <pullmoll@t-online.de>
  *
@@ -405,30 +405,30 @@ bool P2Dasm::dasm(p2_LONG addr, QString* opcode, QString* instruction, QString* 
             da_testn(instruction);
             break;
 
-        case p2_SETNIB_0:
-        case p2_SETNIB_1:
+        case p2_SETNIB_0_3:
+        case p2_SETNIB_4_7:
             da_setnib(instruction);
             break;
 
-        case p2_GETNIB_0:
-        case p2_GETNIB_1:
+        case p2_GETNIB_0_3:
+        case p2_GETNIB_4_7:
             da_getnib(instruction);
             break;
 
-        case p2_ROLNIB_0:
-        case p2_ROLNIB_1:
+        case p2_ROLNIB_0_3:
+        case p2_ROLNIB_4_7:
             da_rolnib(instruction);
             break;
 
-        case p2_SETBYTE:
+        case p2_SETBYTE_0_3:
             da_setbyte(instruction);
             break;
 
-        case p2_GETBYTE:
+        case p2_GETBYTE_0_3:
             da_getbyte(instruction);
             break;
 
-        case p2_ROLBYTE:
+        case p2_ROLBYTE_0_3:
             da_rolbyte(instruction);
             break;
 

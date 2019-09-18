@@ -1,6 +1,4 @@
-#ifndef PREFERENCES_H
-#define PREFERENCES_H
-
+#pragma once
 #include <QDialog>
 
 namespace Ui {
@@ -31,5 +29,3 @@ public slots:
 private:
     Ui::Preferences *ui;
 };
-
-#endif // PREFERENCES_H

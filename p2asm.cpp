@@ -6922,7 +6922,7 @@ bool P2Asm::asm_SETNIB()
     if (commata_left() < 1)
         return asm_SETNIB_ALTSN();
     next();
-    m_IR.set_inst7(p2_SETNIB_0);
+    m_IR.set_inst7(p2_SETNIB_0_3);
     return parse_D_IM_S_NNN();
 }
 
@@ -6937,7 +6937,7 @@ bool P2Asm::asm_SETNIB()
 bool P2Asm::asm_SETNIB_ALTSN()
 {
     next();
-    m_IR.set_inst7(p2_SETNIB_0);
+    m_IR.set_inst7(p2_SETNIB_0_3);
     return parse_IM_S();
 }
 
@@ -6956,7 +6956,7 @@ bool P2Asm::asm_GETNIB()
     if (commata_left() < 1)
         return asm_GETNIB_ALTGN();
     next();
-    m_IR.set_inst7(p2_GETNIB_0);
+    m_IR.set_inst7(p2_GETNIB_0_3);
     return parse_D_IM_S_NNN();
 }
 
@@ -6970,7 +6970,7 @@ bool P2Asm::asm_GETNIB()
  */
 bool P2Asm::asm_GETNIB_ALTGN()
 {
-    m_IR.set_inst7(p2_GETNIB_0);
+    m_IR.set_inst7(p2_GETNIB_0_3);
     return parse_IM_S();
 }
 
@@ -6989,7 +6989,7 @@ bool P2Asm::asm_ROLNIB()
     if (commata_left() < 1)
         return asm_ROLNIB_ALTGN();
     next();
-    m_IR.set_inst7(p2_ROLNIB_0);
+    m_IR.set_inst7(p2_ROLNIB_0_3);
     return parse_D_IM_S_NNN();
 }
 
@@ -7004,7 +7004,7 @@ bool P2Asm::asm_ROLNIB()
 bool P2Asm::asm_ROLNIB_ALTGN()
 {
     next();
-    m_IR.set_inst7(p2_ROLNIB_0);
+    m_IR.set_inst7(p2_ROLNIB_0_3);
     return parse_D();
 }
 
@@ -7021,7 +7021,7 @@ bool P2Asm::asm_SETBYTE()
     if (commata_left() < 1)
         return asm_SETBYTE_ALTSB();
     next();
-    m_IR.set_inst7(p2_SETBYTE);
+    m_IR.set_inst7(p2_SETBYTE_0_3);
     return parse_D_IM_S_NNN();
 }
 
@@ -7036,7 +7036,7 @@ bool P2Asm::asm_SETBYTE()
 bool P2Asm::asm_SETBYTE_ALTSB()
 {
     next();
-    m_IR.set_inst7(p2_SETBYTE);
+    m_IR.set_inst7(p2_SETBYTE_0_3);
     return parse_IM_S();
 }
 
@@ -7055,7 +7055,7 @@ bool P2Asm::asm_GETBYTE()
     if (commata_left() < 1)
         return asm_GETBYTE_ALTGB();
     next();
-    m_IR.set_inst7(p2_GETBYTE);
+    m_IR.set_inst7(p2_GETBYTE_0_3);
     return parse_D_IM_S_NNN();
 }
 
@@ -7070,7 +7070,7 @@ bool P2Asm::asm_GETBYTE()
 bool P2Asm::asm_GETBYTE_ALTGB()
 {
     next();
-    m_IR.set_inst7(p2_GETBYTE);
+    m_IR.set_inst7(p2_GETBYTE_0_3);
     return parse_D();
 }
 
@@ -7089,7 +7089,7 @@ bool P2Asm::asm_ROLBYTE()
     if (commata_left() < 1)
         return asm_ROLBYTE_ALTGB();
     next();
-    m_IR.set_inst7(p2_ROLBYTE);
+    m_IR.set_inst7(p2_ROLBYTE_0_3);
     return parse_D_IM_S_NNN(3);
 }
 
@@ -7104,7 +7104,7 @@ bool P2Asm::asm_ROLBYTE()
 bool P2Asm::asm_ROLBYTE_ALTGB()
 {
     next();
-    m_IR.set_inst7(p2_ROLBYTE);
+    m_IR.set_inst7(p2_ROLBYTE_0_3);
     return parse_D();
 }
 

@@ -54,27 +54,36 @@ public:
     p2_TOKEN_e token(p2_LONG opcode);
 
 private:
-    static constexpr p2_LONG C_match     = p2_mask_C;                   //!< C == match in pattern
-    static constexpr p2_LONG C_neq_Z     = p2_mask_CZ;                  //!< C != Z in pattern
-    static constexpr p2_LONG C_equ_Z     = p2_mask_CZ;                  //!< C == Z in pattern
-    static constexpr p2_LONG NNN_match   = p2_mask_NNN;                 //!< NNN nibble number in pattern
-    static constexpr p2_LONG NN_match    = p2_mask_NN;                  //!< NN byte number in pattern
-    static constexpr p2_LONG N_match     = p2_mask_N;                   //!< N word number in pattern
-    static constexpr p2_LONG CZI_match   = p2_mask_CZI;                 //!< C,Z,I == match in pattern
-    static constexpr p2_LONG CZ_match    = p2_mask_CZ;                  //!< C,Z == match in pattern
-    static constexpr p2_LONG I_match     = p2_mask_I;                   //!< I == match in pattern
-    static constexpr p2_LONG S_match     = p2_mask_S;                   //!< S == match in pattern
-    static constexpr p2_LONG D_match     = p2_mask_D;                   //!< D == match in pattern
-    static constexpr p2_LONG I_D_match   = p2_mask_I | p2_mask_D;       //!< I == match and D == match in pattern
-    static constexpr p2_LONG D_S_match   = p2_mask_D | p2_mask_S;       //!< D == match and S == match in pattern
-    static constexpr p2_LONG D_equ_S     = p2_mask_D | p2_mask_S;       //!< D == S in pattern
-    static constexpr p2_LONG INST_5      = p2_mask_inst5;               //!< 5 bit inst in pattern
-    static constexpr p2_LONG ALL_match   = FULL;                        //!< NOP
+    enum match_flags {
+        match_none,
+        match_all,
+        match_CZI_D_S,
+        match_NNN,
+        match_NNN_D,
+        match_NNN_I_S,
+        match_NN,
+        match_NN_D,
+        match_NN_I_S,
+        match_N,
+        match_N_I_S,
+        match_I_D,
+        match_I_S,
+        match_C,
+        match_CZ,
+        match_CZI,
+        match_I,
+        match_D,
+        match_S,
+        match_D_S,
+        match_D_equ_S,
+        match_C_equ_Z,
+        match_C_neq_Z,
+    };
 
     QHash<P2MatchMask,P2DocOpcode> m_opcodes;                           //!< hash of P2DocOpcodes for P2MatchMask pairs
     QMultiHash<p2_LONG,P2MatchMask> m_matches;                          //!< multi hash of P2MatchMask pairs for masks
-    QMap<uchar,P2MatchMask> m_masks;                                    //!< map of number of 1 bits to match/mask pairs
-    QList<uchar> m_ones;                                                 //!< list of number of 1 bits
+    QHash<uchar,P2MatchMask> m_masks;                                   //!< hash of number of 1 bits to match/mask pairs
+    QList<uchar> m_ones;                                                //!< list of number of 1 bits
 
     static const QString format_pattern(const p2_LONG pattern,
                                         const QChar& zero = QChar('0'),
@@ -121,16 +130,16 @@ private:
     p2_TOKEN_e token(p2_OPSRC_e inst) { return token(opcode_opsrc(inst)); }
     p2_TOKEN_e token(p2_OPX24_e inst) { return token(opcode_opx24(inst)); }
 
-    P2DocOpcode make_pattern(const char* _func, p2_LONG instr, const char* src, const p2_LONG instmask, p2_LONG mode = 0);
+    P2DocOpcode make_pattern(const char* _func, p2_LONG instr, const char* src, p2_LONG mask1, p2_LONG mask2);
 
-    P2DocOpcode make_pattern(const char* _func, p2_INST5_e instr, const char* pat, p2_LONG mode = 0);
-    P2DocOpcode make_pattern(const char* _func, p2_INST7_e instr, const char* pat, p2_LONG mode = 0);
-    P2DocOpcode make_pattern(const char* _func, p2_INST8_e instr, const char* pat, p2_LONG mode = 0);
-    P2DocOpcode make_pattern(const char* _func, p2_INST9_e instr, const char* pat, p2_LONG mode = 0);
-    P2DocOpcode make_pattern(const char* _func, p2_OPDST_e instr, const char* pat, p2_LONG mode = 0);
-    P2DocOpcode make_pattern(const char* _func, p2_OPSRC_e instr, const char* pat, p2_LONG mode = 0);
-    P2DocOpcode make_pattern(const char* _func, p2_OPX24_e instr, const char* pat, p2_LONG mode = 0);
-    P2DocOpcode make_pattern(const char* _func, p2_OPSRC_e instr, p2_INST9_e inst9, const char* pat, p2_LONG mode = 0);
+    P2DocOpcode make_pattern(const char* _func, p2_INST5_e instr, const char* pat, match_flags flags = match_none);
+    P2DocOpcode make_pattern(const char* _func, p2_INST7_e instr, const char* pat, match_flags flags = match_none);
+    P2DocOpcode make_pattern(const char* _func, p2_INST8_e instr, const char* pat, match_flags flags = match_none);
+    P2DocOpcode make_pattern(const char* _func, p2_INST9_e instr, const char* pat, match_flags flags = match_none);
+    P2DocOpcode make_pattern(const char* _func, p2_OPDST_e instr, const char* pat, match_flags flags = match_none);
+    P2DocOpcode make_pattern(const char* _func, p2_OPSRC_e instr, const char* pat, match_flags flags = match_none);
+    P2DocOpcode make_pattern(const char* _func, p2_OPX24_e instr, const char* pat, match_flags flags = match_none);
+    P2DocOpcode make_pattern(const char* _func, p2_OPSRC_e instr, p2_INST9_e inst9, const char* pat, match_flags flags = match_none);
 
     void doc_NOP(p2_INST7_e instr);
     void doc_ROR(p2_INST7_e instr);
@@ -214,17 +223,17 @@ private:
     void doc_TEST(p2_INST7_e instr);
     void doc_TESTN(p2_INST7_e instr);
 
-    void doc_SETNIB(p2_INST7_e instr);
+    void doc_SETNIB(p2_INST9_e instr);
     void doc_SETNIB_ALTSN(p2_INST7_e instr);
-    void doc_GETNIB(p2_INST7_e instr);
+    void doc_GETNIB(p2_INST9_e instr);
     void doc_GETNIB_ALTGN(p2_INST7_e instr);
-    void doc_ROLNIB(p2_INST7_e instr);
+    void doc_ROLNIB(p2_INST9_e instr);
     void doc_ROLNIB_ALTGN(p2_INST7_e instr);
-    void doc_SETBYTE(p2_INST7_e instr);
+    void doc_SETBYTE(p2_INST9_e instr);
     void doc_SETBYTE_ALTSB(p2_INST7_e instr);
-    void doc_GETBYTE(p2_INST7_e instr);
+    void doc_GETBYTE(p2_INST9_e instr);
     void doc_GETBYTE_ALTGB(p2_INST7_e instr);
-    void doc_ROLBYTE(p2_INST7_e instr);
+    void doc_ROLBYTE(p2_INST9_e instr);
     void doc_ROLBYTE_ALTGB(p2_INST7_e instr);
 
     void doc_SETWORD(p2_INST9_e instr);

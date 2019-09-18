@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Propeller2 assembler symbol
+ * Propeller2 assembler symbol implementation
  *
  * Copyright (C) 2019 Jürgen Buchmüller <pullmoll@t-online.de>
  *

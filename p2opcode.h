@@ -191,6 +191,4 @@ private:
     static P2Opcode make_AUGS(const P2Opcode& ir);
 };
 
-
-
-Q_DECLARE_METATYPE(P2Opcode);
+Q_DECLARE_METATYPE(P2Opcode)

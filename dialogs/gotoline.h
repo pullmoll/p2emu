@@ -1,6 +1,4 @@
-#ifndef GOTOLINE_H
-#define GOTOLINE_H
-
+#pragma once
 #include <QDialog>
 
 namespace Ui {
@@ -23,5 +21,3 @@ public slots:
 private:
     Ui::GotoLine *ui;
 };
-
-#endif // GOTOLINE_H

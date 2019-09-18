@@ -76,4 +76,4 @@ private:
 };
 
 typedef QSharedPointer<P2SymbolClass> P2Symbol;
-Q_DECLARE_METATYPE(P2Symbol);
+Q_DECLARE_METATYPE(P2Symbol)

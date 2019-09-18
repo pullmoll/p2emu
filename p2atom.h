@@ -210,5 +210,4 @@ private:
     P2Union m_index;            //!< Optional index value of this atom
 };
 
-Q_DECLARE_METATYPE(P2Atom);
-static const int mt_P2Atom = qMetaTypeId<P2Atom>();
+Q_DECLARE_METATYPE(P2Atom)

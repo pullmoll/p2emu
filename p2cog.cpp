@@ -1302,30 +1302,30 @@ int P2Cog::decode()
         cycles = op_TESTN();
         break;
 
-    case p2_SETNIB_0:
-    case p2_SETNIB_1:
+    case p2_SETNIB_0_3:
+    case p2_SETNIB_4_7:
         cycles = op_SETNIB();
         break;
 
-    case p2_GETNIB_0:
-    case p2_GETNIB_1:
+    case p2_GETNIB_0_3:
+    case p2_GETNIB_4_7:
         cycles = op_GETNIB();
         break;
 
-    case p2_ROLNIB_0:
-    case p2_ROLNIB_1:
+    case p2_ROLNIB_0_3:
+    case p2_ROLNIB_4_7:
         cycles = op_ROLNIB();
         break;
 
-    case p2_SETBYTE:
+    case p2_SETBYTE_0_3:
         cycles = op_SETBYTE();
         break;
 
-    case p2_GETBYTE:
+    case p2_GETBYTE_0_3:
         cycles = op_GETBYTE();
         break;
 
-    case p2_ROLBYTE:
+    case p2_ROLBYTE_0_3:
         cycles = op_ROLBYTE();
         break;
 

@@ -49,47 +49,58 @@
  * Definitions for the basic types based on Qt5 types
  */
 
-typedef quint8 p2_BYTE;                     //!< Type of the Propeller2 BYTE
-Q_DECLARE_METATYPE(p2_BYTE);
+//! Type of the Propeller2 BYTE
+typedef quint8 p2_BYTE;
+Q_DECLARE_METATYPE(p2_BYTE)
 static constexpr int sz_BYTE = sizeof(p2_BYTE);
 
-typedef quint16 p2_WORD;                    //!< Type of the Propeller2 WORD
-Q_DECLARE_METATYPE(p2_WORD);
+//! Type of the Propeller2 WORD
+typedef quint16 p2_WORD;
+Q_DECLARE_METATYPE(p2_WORD)
 static constexpr int sz_WORD = sizeof(p2_WORD);
 
-typedef quint32 p2_LONG;                    //!< Type of the Propeller2 LONG
-Q_DECLARE_METATYPE(p2_LONG);
+//! Type of the Propeller2 LONG
+typedef quint32 p2_LONG;
+Q_DECLARE_METATYPE(p2_LONG)
 static constexpr int sz_LONG = sizeof(p2_LONG);
 
-typedef quint64 p2_QUAD;                    //!< Intermediate type (unsigned long long); not a Propeller2 type, but used in expressions
-Q_DECLARE_METATYPE(p2_QUAD);
+//! Intermediate type (unsigned long long); not a Propeller2 type, but used in expressions
+typedef quint64 p2_QUAD;
+Q_DECLARE_METATYPE(p2_QUAD)
 static constexpr int sz_QUAD = sizeof(p2_QUAD);
 
-typedef double p2_REAL;                     //!< Intermediate type (double); not a Propeller2 type, but used in expressions
-Q_DECLARE_METATYPE(p2_REAL);
+//! Intermediate type (double); not a Propeller2 type, but used in expressions
+typedef double p2_REAL;
+Q_DECLARE_METATYPE(p2_REAL)
 static constexpr int sz_REAL = sizeof(p2_REAL);
 
 //! A pair of p2_LONG where the first is the ORG, the second the ORGH address
 typedef struct { p2_LONG _cog; p2_LONG _hub; } p2_ORIGIN_t;
-Q_DECLARE_METATYPE(p2_ORIGIN_t);
+Q_DECLARE_METATYPE(p2_ORIGIN_t)
 
-typedef QVector<p2_BYTE> p2_BYTES;          //!< Type for an array (QVector) of BYTEs (interpret as ut_Byte or ut_Bool)
-Q_DECLARE_METATYPE(p2_BYTES);
+//! Type for an array (QVector) of BYTEs (interpret as ut_Byte or ut_Bool)
+typedef QVector<p2_BYTE> p2_BYTES;
+Q_DECLARE_METATYPE(p2_BYTES)
 
-typedef QVector<p2_WORD> p2_WORDS;          //!< Type for an array (QVector) of WORDs (ut_Word)
-Q_DECLARE_METATYPE(p2_WORDS);
+//! Type for an array (QVector) of WORDs (ut_Word)
+typedef QVector<p2_WORD> p2_WORDS;
+Q_DECLARE_METATYPE(p2_WORDS)
 
-typedef QVector<p2_LONG> p2_LONGS;          //!< Type for an array (QVector) of LONGs (ut_Addr or ut_Long)
-Q_DECLARE_METATYPE(p2_LONGS);
+//! Type for an array (QVector) of LONGs (ut_Addr or ut_Long)
+typedef QVector<p2_LONG> p2_LONGS;
+Q_DECLARE_METATYPE(p2_LONGS)
 
-typedef QVector<p2_QUAD> p2_QUADS;          //!< Type for an array (QVector) of QUADs (ut_Quad)
-Q_DECLARE_METATYPE(p2_QUADS);
+//! Type for an array (QVector) of QUADs (ut_Quad)
+typedef QVector<p2_QUAD> p2_QUADS;
+Q_DECLARE_METATYPE(p2_QUADS)
 
-typedef QVector<p2_REAL> p2_REALS;          //!< Type for an array (QVector) of REALs (ut_Real)
-Q_DECLARE_METATYPE(p2_REALS);
+//! Type for an array (QVector) of REALs (ut_Real)
+typedef QVector<p2_REAL> p2_REALS;
+Q_DECLARE_METATYPE(p2_REALS)
 
-typedef QVector<char> p2_CHARS;             //!< Type for an array (vector) of chars (ut_String interpret as ut_Byte or char)
-Q_DECLARE_METATYPE(p2_CHARS);
+//! Type for an array (QVector) of chars (ut_String interpreted as ut_Byte or char)
+typedef QVector<char> p2_CHARS;
+Q_DECLARE_METATYPE(p2_CHARS)
 
 //! Size of the HUB memory, i.e. address range, in bytes (this is 1MiB)
 static constexpr p2_LONG MEM_SIZE = 1u << 20;
@@ -175,17 +186,23 @@ static constexpr p2_LONG p2_mask8 = (1u << 8) - 1;
 //! The mask for 9 bit instructions or DST/SRC values
 static constexpr p2_LONG p2_mask9 = (1u << 9) - 1;
 
-//! The shift count for the CZI bits in an instruction
-static constexpr p2_LONG p2_shift_CZI = 9 + 9;
+//! The shift count for the I bit in an instruction
+static constexpr p2_LONG p2_shift_I = 9 + 9;
+
+//! The shift count for the Z bit in an instruction
+static constexpr p2_LONG p2_shift_Z = 1 + 9 + 9;
+
+//! The shift count for the C bit in an instruction
+static constexpr p2_LONG p2_shift_C = 1 + 1 + 9 + 9;
 
 //! The shift count for the NNN bits (nibble index) in an instruction
-static constexpr p2_LONG p2_shift_NNN = 1 + p2_shift_CZI;
+static constexpr p2_LONG p2_shift_NNN = p2_shift_Z;
 
 //! The shift count for the NN bits (BYTE index) in an instruction
-static constexpr p2_LONG p2_shift_NN = p2_shift_NNN;
+static constexpr p2_LONG p2_shift_NN = p2_shift_Z;
 
 //! The shift count for the N bit (WORD index) in an instruction
-static constexpr p2_LONG p2_shift_N = p2_shift_NNN;
+static constexpr p2_LONG p2_shift_N = p2_shift_Z;
 
 //! The shift count for a 5 bit instruction in the opcode
 static constexpr p2_LONG p2_shift_inst5 = 32 - 4 - 5;
@@ -218,19 +235,19 @@ static constexpr p2_LONG p2_mask_inst8 = p2_mask8 << p2_shift_inst8;
 static constexpr p2_LONG p2_mask_inst9 = p2_mask9 << p2_shift_inst9;
 
 //! The bit mask for the C bit in an instruction
-static constexpr p2_LONG p2_mask_C = 4u << p2_shift_CZI;
+static constexpr p2_LONG p2_mask_C = 1u << p2_shift_C;
 
 //! The bit mask for the Z bit in an instruction
-static constexpr p2_LONG p2_mask_Z = 2u << p2_shift_CZI;
+static constexpr p2_LONG p2_mask_Z = 1u << p2_shift_Z;
 
 //! The bit mask for the I bit in an instruction
-static constexpr p2_LONG p2_mask_I = 1u << p2_shift_CZI;
+static constexpr p2_LONG p2_mask_I = 1u << p2_shift_I;
 
 //! The bit mask for both, the C and Z bits in an instruction
 static constexpr p2_LONG p2_mask_CZ = p2_mask_C | p2_mask_Z;
 
 //! The bit mask for all of the  C, Z, and I bits in an instruction
-static constexpr p2_LONG p2_mask_CZI = p2_mask_CZ | p2_mask_I;
+static constexpr p2_LONG p2_mask_CZI = p2_mask_C | p2_mask_Z | p2_mask_I;
 
 //! The bit mask for a nibble index in an instruction
 static constexpr p2_LONG p2_mask_NNN = 7u << p2_shift_NNN;
@@ -341,10 +358,7 @@ typedef enum {
     ut_Real,                                //!< Value is REAL sized (qreal can be float or double)
     ut_String                               //!< Value is an array of char
 }   p2_Union_e;
-Q_DECLARE_METATYPE(p2_Union_e);
-
-static constexpr bool p2_cog = false;
-static constexpr bool p2_hub = true;
+Q_DECLARE_METATYPE(p2_Union_e)
 
 /**
  * @brief Union of the integral Propeller2 types to store in a QVector
@@ -360,25 +374,33 @@ typedef union {
     p2_REAL _real;
     p2_LONG _addr[2];
 }   p2_Union_t;
-Q_DECLARE_METATYPE(p2_Union_t);
+Q_DECLARE_METATYPE(p2_Union_t)
 
-class P2MatchMask : public QPair<p2_LONG,p2_LONG>
-{
-public:
-    P2MatchMask(p2_LONG mask = 0, p2_LONG match = 0)
-        : QPair<p2_LONG,p2_LONG>(mask, match)
-    {}
-    p2_LONG mask() const { return first; }
-    p2_LONG match() const { return second; }
-    void set_masked_match(const p2_LONG match) { second = match & first; }
-};
-
-//!< A typed union member
+//! A typed union member
 typedef struct {
     p2_Union_e type;
     p2_Union_t value;
 } P2TypedValue;
-Q_DECLARE_METATYPE(P2TypedValue);
+Q_DECLARE_METATYPE(P2TypedValue)
+
+static constexpr bool p2_cog = false;
+static constexpr bool p2_hub = true;
+
+
+/**
+ * @brief The P2MatchMask class is used to handle opcode pattern
+ * mask and match pairs of p2_LONG.
+ */
+class P2MatchMask : public QPair<p2_LONG,p2_LONG>
+{
+public:
+    P2MatchMask(p2_LONG match = 0, p2_LONG mask = 0)
+        : QPair<p2_LONG,p2_LONG>(match, mask)
+    {}
+    p2_LONG match() const { return first; }
+    p2_LONG mask() const { return second; }
+    void set_masked_match(const p2_LONG match) { first = match & second; }
+};
 
 typedef enum {
     tr_none        = 0,             //!< no special trait
@@ -566,16 +588,16 @@ typedef enum {
     p2_TEST                     = INST7(0,1,1,1,1,1,0),
     p2_TESTN                    = INST7(0,1,1,1,1,1,1),
 
-    p2_SETNIB_0                 = INST7(1,0,0,0,0,0,0),
-    p2_SETNIB_1                 = INST7(1,0,0,0,0,0,1),
-    p2_GETNIB_0                 = INST7(1,0,0,0,0,1,0),
-    p2_GETNIB_1                 = INST7(1,0,0,0,0,1,1),
-    p2_ROLNIB_0                 = INST7(1,0,0,0,1,0,0),
-    p2_ROLNIB_1                 = INST7(1,0,0,0,1,0,1),
-    p2_SETBYTE                  = INST7(1,0,0,0,1,1,0),
-    p2_GETBYTE                  = INST7(1,0,0,0,1,1,1),
+    p2_SETNIB_0_3               = INST7(1,0,0,0,0,0,0),
+    p2_SETNIB_4_7               = INST7(1,0,0,0,0,0,1),
+    p2_GETNIB_0_3               = INST7(1,0,0,0,0,1,0),
+    p2_GETNIB_4_7               = INST7(1,0,0,0,0,1,1),
+    p2_ROLNIB_0_3               = INST7(1,0,0,0,1,0,0),
+    p2_ROLNIB_4_7               = INST7(1,0,0,0,1,0,1),
+    p2_SETBYTE_0_3              = INST7(1,0,0,0,1,1,0),
+    p2_GETBYTE_0_3              = INST7(1,0,0,0,1,1,1),
 
-    p2_ROLBYTE                  = INST7(1,0,0,1,0,0,0),
+    p2_ROLBYTE_0_3              = INST7(1,0,0,1,0,0,0),
     p2_SETWORD_GETWORD          = INST7(1,0,0,1,0,0,1),
     p2_ROLWORD_ALTSN_ALTGN      = INST7(1,0,0,1,0,1,0),
     p2_ALTSB_ALTGB_ALTSW_ALTGW  = INST7(1,0,0,1,0,1,1),
@@ -1058,6 +1080,48 @@ typedef enum {
     p2_TESTPN_XORZ              = INST9(p2_OPSRC,0,1),
     p2_TESTPN_XORC              = INST9(p2_OPSRC,1,0),
     p2_DIRNOT_WCZ               = INST9(p2_OPSRC,1,1),
+
+    p2_SETNIB_0                 = INST9(p2_SETNIB_0_3,0,0),
+    p2_SETNIB_1                 = INST9(p2_SETNIB_0_3,0,1),
+    p2_SETNIB_2                 = INST9(p2_SETNIB_0_3,1,0),
+    p2_SETNIB_3                 = INST9(p2_SETNIB_0_3,1,1),
+    p2_SETNIB_4                 = INST9(p2_SETNIB_4_7,0,0),
+    p2_SETNIB_5                 = INST9(p2_SETNIB_4_7,0,1),
+    p2_SETNIB_6                 = INST9(p2_SETNIB_4_7,1,0),
+    p2_SETNIB_7                 = INST9(p2_SETNIB_4_7,1,1),
+
+    p2_GETNIB_0                 = INST9(p2_GETNIB_0_3,0,0),
+    p2_GETNIB_1                 = INST9(p2_GETNIB_0_3,0,1),
+    p2_GETNIB_2                 = INST9(p2_GETNIB_0_3,1,0),
+    p2_GETNIB_3                 = INST9(p2_GETNIB_0_3,1,1),
+    p2_GETNIB_4                 = INST9(p2_GETNIB_4_7,0,0),
+    p2_GETNIB_5                 = INST9(p2_GETNIB_4_7,0,1),
+    p2_GETNIB_6                 = INST9(p2_GETNIB_4_7,1,0),
+    p2_GETNIB_7                 = INST9(p2_GETNIB_4_7,1,1),
+
+    p2_ROLNIB_0                 = INST9(p2_ROLNIB_0_3,0,0),
+    p2_ROLNIB_1                 = INST9(p2_ROLNIB_0_3,0,1),
+    p2_ROLNIB_2                 = INST9(p2_ROLNIB_0_3,1,0),
+    p2_ROLNIB_3                 = INST9(p2_ROLNIB_0_3,1,1),
+    p2_ROLNIB_4                 = INST9(p2_ROLNIB_4_7,0,0),
+    p2_ROLNIB_5                 = INST9(p2_ROLNIB_4_7,0,1),
+    p2_ROLNIB_6                 = INST9(p2_ROLNIB_4_7,1,0),
+    p2_ROLNIB_7                 = INST9(p2_ROLNIB_4_7,1,1),
+
+    p2_SETBYTE_0                = INST9(p2_SETBYTE_0_3,0,0),
+    p2_SETBYTE_1                = INST9(p2_SETBYTE_0_3,0,1),
+    p2_SETBYTE_2                = INST9(p2_SETBYTE_0_3,1,0),
+    p2_SETBYTE_3                = INST9(p2_SETBYTE_0_3,1,1),
+
+    p2_GETBYTE_0                = INST9(p2_GETBYTE_0_3,0,0),
+    p2_GETBYTE_1                = INST9(p2_GETBYTE_0_3,0,1),
+    p2_GETBYTE_2                = INST9(p2_GETBYTE_0_3,1,0),
+    p2_GETBYTE_3                = INST9(p2_GETBYTE_0_3,1,1),
+
+    p2_ROLBYTE_0                = INST9(p2_ROLBYTE_0_3,0,0),
+    p2_ROLBYTE_1                = INST9(p2_ROLBYTE_0_3,0,1),
+    p2_ROLBYTE_2                = INST9(p2_ROLBYTE_0_3,1,0),
+    p2_ROLBYTE_3                = INST9(p2_ROLBYTE_0_3,1,1),
 
     p2_SETWORD_ALTSW            = INST9(p2_SETWORD_GETWORD,0,0),
     p2_SETWORD                  = INST9(p2_SETWORD_GETWORD,0,1),

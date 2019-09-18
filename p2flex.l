@@ -5,14 +5,11 @@
 static int yycolumn = 0;
 static int curly = 0;
 
-#if defined(Q_OS_WIN)
 #define isatty(x) (0)
-#endif
 
 %}
 
 %option 8bit
-%option nointeractive
 %option case-insensitive
 %option batch
 /* %option noyywrap */

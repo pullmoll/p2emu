@@ -1,6 +1,4 @@
-#ifndef ABOUT_H
-#define ABOUT_H
-
+#pragma once
 #include <QDialog>
 
 namespace Ui {
@@ -20,5 +18,3 @@ public:
 private:
     Ui::About *ui;
 };
-
-#endif // ABOUT_H
