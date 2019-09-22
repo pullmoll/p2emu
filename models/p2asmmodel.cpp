@@ -185,11 +185,9 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
 
     const P2Words& words = m_asm->words(lineno);
 
-    const bool has_ORIGIN = m_asm->has_ORIGIN(lineno);
-    const p2_ORIGIN_t origin = has_ORIGIN ? m_asm->get_ORIGIN(lineno)
-                                       : p2_ORIGIN_t();
-    const p2_LONG _cog = origin._cog;
-    const p2_LONG _hub = origin._hub;
+    const P2Union origin = m_asm->get_addr(lineno);
+    const p2_LONG _cog = origin.get_addr(p2_cog);
+    const p2_LONG _hub = origin.get_addr(p2_hub);
 
     const bool has_IR = m_asm->has_IR(lineno);
     const P2Opcode& IR = m_asm->get_IR(lineno);
@@ -198,14 +196,13 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     case Qt::DisplayRole:
         switch (column) {
         case c_HubAddr:
-            if (!has_ORIGIN)
+            if (ut_Invalid == origin.type())
                 break;
-            result = QString("%1")
-                     .arg(_hub, 5, 16, QChar('0'));
+            result = QString("%1").arg(_hub, 5, 16, QChar('0'));
             break;
 
         case c_CogAddr:
-            if (!has_ORIGIN)
+            if (ut_Invalid == origin.type())
                 break;
             if (IR.is_hubmode())
                 break;
@@ -267,13 +264,11 @@ QVariant P2AsmModel::data(const QModelIndex &index, int role) const
     case Qt::EditRole:
         switch (column) {
         case c_HubAddr:
-            if (has_ORIGIN)
-                result = QVariant::fromValue(origin._hub);
+            result = QVariant::fromValue(_hub);
             break;
 
         case c_CogAddr:
-            if (has_ORIGIN)
-                result = QVariant::fromValue(origin._cog);
+            result = QVariant::fromValue(_cog);
             break;
 
         case c_Opcode:

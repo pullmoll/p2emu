@@ -34,11 +34,11 @@
 #include "p2opcode.h"
 #include "p2doc.h"
 
-P2Opcode::P2Opcode(const p2_LONG opcode, p2_ORIGIN_t cog_hub)
+P2Opcode::P2Opcode(const p2_LONG opcode, P2Union origin)
     : m_u({opcode})
-    , m_origin(cog_hub)
+    , m_origin(origin)
     , m_type(type_none)
-    , m_hubmode(false)
+    , m_hubmode(origin.hubmode())
     , m_dst_imm(ignore)
     , m_src_imm(ignore)
     , m_augd()
@@ -46,35 +46,35 @@ P2Opcode::P2Opcode(const p2_LONG opcode, p2_ORIGIN_t cog_hub)
     , m_data()
     , m_assigned()
     , m_error_code(err_none)
-    , m_error_value(0)
+    , m_error_value(0u)
 {
 }
 
-P2Opcode::P2Opcode(const p2_LONG opcode, p2_LONG _cog, p2_LONG _hub)
-    : P2Opcode(opcode, p2_ORIGIN_t({_cog, _hub}))
+P2Opcode::P2Opcode(const p2_LONG opcode, const p2_LONG _cog, const p2_LONG _hub, const bool hubmode)
+    : P2Opcode(opcode, P2Union(_cog, _hub, hubmode))
 {
 }
 
-P2Opcode::P2Opcode(const p2_INST5_e inst5, p2_ORIGIN_t cog_hub)
-    : P2Opcode(0, cog_hub)
+P2Opcode::P2Opcode(const p2_INST5_e inst5, const p2_LONG _cog, const p2_LONG _hub, const bool hubmode)
+    : P2Opcode(0, P2Union(_cog, _hub, hubmode))
 {
     set_inst5(inst5);
 }
 
-P2Opcode::P2Opcode(const p2_INST7_e inst7, p2_ORIGIN_t cog_hub)
-    : P2Opcode(0, cog_hub)
+P2Opcode::P2Opcode(const p2_INST7_e inst7, const p2_LONG _cog, const p2_LONG _hub, const bool hubmode)
+    : P2Opcode(0, P2Union(_cog, _hub, hubmode))
 {
     set_inst7(inst7);
 }
 
-P2Opcode::P2Opcode(const p2_INST8_e inst8, p2_ORIGIN_t cog_hub)
-    : P2Opcode(0, cog_hub)
+P2Opcode::P2Opcode(const p2_INST8_e inst8, const p2_LONG _cog, const p2_LONG _hub, const bool hubmode)
+    : P2Opcode(0, P2Union(_cog, _hub, hubmode))
 {
     set_inst8(inst8);
 }
 
-P2Opcode::P2Opcode(const p2_INST9_e inst9, p2_ORIGIN_t cog_hub)
-    : P2Opcode(0, cog_hub)
+P2Opcode::P2Opcode(const p2_INST9_e inst9, const p2_LONG _cog, const p2_LONG _hub, const bool hubmode)
+    : P2Opcode(0, P2Union(_cog, _hub, hubmode))
 {
     set_inst9(inst9);
 }
@@ -83,12 +83,12 @@ P2Opcode::P2Opcode(const p2_INST9_e inst9, p2_ORIGIN_t cog_hub)
  * @brief clear the members to their initial state
  * @param opcode optional opcode
  */
-void P2Opcode::clear(const p2_LONG opcode, p2_ORIGIN_t origin)
+void P2Opcode::clear(const p2_LONG opcode, P2Union origin)
 {
     m_u.opcode = opcode;
     m_origin = origin;
     m_type = type_none;
-    m_hubmode = false;
+    m_hubmode = origin.hubmode();
     m_dst_imm = ignore;
     m_src_imm = ignore;
     m_augd.clear();
@@ -99,9 +99,9 @@ void P2Opcode::clear(const p2_LONG opcode, p2_ORIGIN_t origin)
     m_error_value = 0;
 }
 
-void P2Opcode::clear(const p2_LONG opcode, p2_LONG _cog, p2_LONG _hub)
+void P2Opcode::clear(const p2_LONG opcode, p2_LONG _cog, p2_LONG _hub, bool hubmode)
 {
-    clear(opcode, p2_ORIGIN_t({_cog,_hub}));
+    clear(opcode, P2Union(_cog,_hub,hubmode));
 }
 
 /**
@@ -116,10 +116,10 @@ P2Atom P2Opcode::assigned() const
 }
 
 /**
- * @brief Return the current ORG/ORGH pair
- * @return QPair<p2_LONG,p2_LONG> with ORG in first, ORGH in second
+ * @brief Return the current address pair
+ * @return P2Union with the COG and HUB address
  */
-const p2_ORIGIN_t P2Opcode::origin() const
+P2Union P2Opcode::origin() const
 {
     return m_origin;
 }
@@ -130,7 +130,7 @@ const p2_ORIGIN_t P2Opcode::origin() const
  */
 p2_LONG P2Opcode::cogaddr() const
 {
-    return m_origin._cog;
+    return m_origin.get_addr(p2_cog);
 }
 
 /**
@@ -139,7 +139,7 @@ p2_LONG P2Opcode::cogaddr() const
  */
 p2_LONG P2Opcode::hubaddr() const
 {
-    return m_origin._hub;
+    return m_origin.get_addr(p2_hub);
 }
 
 /**
@@ -441,10 +441,10 @@ p2_LONG P2Opcode::aug_error_value() const
 }
 
 /**
- * @brief Set the current ORG/ORGH
+ * @brief Set the current COG and HUB address pair
  * @param origin pair of p2_LONG with ORG and ORGH values
  */
-void P2Opcode::set_origin(p2_ORIGIN_t origin)
+void P2Opcode::set_origin(P2Union origin)
 {
     m_origin = origin;
 }
@@ -453,9 +453,9 @@ void P2Opcode::set_origin(p2_ORIGIN_t origin)
  * @brief Set the current ORG/ORGH pair
  * @param origin pair of p2_LONG with ORG and ORGH values
  */
-void P2Opcode::set_origin(p2_LONG _org, p2_LONG _orgh)
+void P2Opcode::set_origin(p2_LONG _cogaddr, p2_LONG _hubaddr, bool hubmode)
 {
-    m_origin = p2_ORIGIN_t({_org,_orgh});
+    m_origin = P2Union(_cogaddr,_hubaddr,hubmode);
 }
 
 /**
@@ -762,14 +762,14 @@ void P2Opcode::set_n(const p2_LONG n)
 bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG hubaddr)
 {
     const bool augmented = atom.has_trait(tr_AUGMENTED);
-    const bool hubmode = atom.has_trait(tr_HUBMODE | tr_HUBADDRESS | tr_AUGMENTED);
-    const bool relative = atom.has_trait(tr_RELATIVE) && !augmented;
+    const bool hubaddress = atom.has_trait(tr_HUBADDRESS);
+    const bool hubmode = atom.hubmode() | hubaddress | augmented;
     const p2_LONG value = atom.get_addr(hubmode);
     bool result = true;
 
     m_augd.clear();
 
-    if (relative) {
+    if (hubaddress && !augmented) {
         const int rvalue = static_cast<int>(value - (hubmode ? hubaddr : cogaddr)) / sz_LONG;
         if (rvalue >= -256 && rvalue < 256) {
             m_u.op7.dst = static_cast<p2_LONG>(rvalue) & COG_MASK;
@@ -834,14 +834,14 @@ bool P2Opcode::set_dst(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG 
 bool P2Opcode::set_src(const P2Atom& atom, const p2_LONG cogaddr, const p2_LONG hubaddr)
 {
     const bool augmented = atom.has_trait(tr_AUGMENTED);
-    const bool hubmode = atom.has_trait(tr_HUBMODE | tr_HUBADDRESS | tr_AUGMENTED);
-    const bool relative = atom.has_trait(tr_RELATIVE) && !augmented;
+    const bool hubaddress = atom.has_trait(tr_HUBADDRESS);
+    const bool hubmode = atom.hubmode() | hubaddress | augmented;
     const p2_LONG value = atom.get_addr(hubmode);
     bool result = true;
 
     m_augs.clear();
 
-    if (relative) {
+    if (hubaddress && !augmented) {
         const int rvalue = static_cast<int>(value - (hubmode ? hubaddr : cogaddr)) / sz_LONG;
         if (rvalue >= -256 && rvalue < 256) {
             m_u.op7.src = static_cast<p2_LONG>(rvalue) & COG_MASK;

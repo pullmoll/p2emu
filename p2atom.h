@@ -78,7 +78,7 @@ public:
     P2Atom(const p2_LONG _long);
     P2Atom(const p2_QUAD _quad);
     P2Atom(const p2_REAL _real);
-    P2Atom(const p2_LONG _cog, const p2_LONG _hub);
+    P2Atom(const p2_LONG _cog, const p2_LONG _hub, bool hubmode);
 
     void clear(p2_Union_e type = ut_Invalid);
     bool isNull() const;
@@ -94,12 +94,16 @@ public:
     const QString type_name() const;
     void set_type(p2_Union_e type);
 
+    bool hubmode() const;
+    void set_hubmode(bool hubmode);
+
     p2_Traits_e traits() const;
     bool set_traits(const p2_Traits_e traits);
     bool add_trait(const p2_Traits_e trait, bool on);
     bool add_trait(const p2_Traits_e trait);
     bool add_trait(const p2_LONG trait);
-    bool clear_trait(const p2_Traits_e trait);
+    bool remove_trait(const p2_Traits_e trait);
+    bool remove_trait(const p2_LONG trait);
     bool has_trait(const p2_Traits_e trait) const;
     bool has_trait(const p2_LONG trait) const;
 
@@ -116,7 +120,7 @@ public:
     void set_byte(const p2_BYTE _byte);
     void set_word(const p2_WORD _word);
     void set_long(const p2_LONG _long);
-    void set_addr(const p2_LONG _cog, const p2_LONG _hub);
+    void set_addr(const p2_LONG _cog, const p2_LONG _hub, bool hubmode);
     void set_quad(const p2_QUAD _quad);
     void set_real(const p2_REAL _real);
     void set_chars(const p2_CHARS& _chars);
@@ -131,7 +135,7 @@ public:
     void add_byte(const p2_BYTE _byte);
     void add_word(const p2_WORD _word);
     void add_long(const p2_LONG _long);
-    void add_addr(const p2_LONG _cog, const p2_LONG _hub);
+    void add_addr(const p2_LONG _cog, const p2_LONG _hub, bool hubmode);
     void add_quad(const p2_QUAD _quad);
     void add_real(const p2_REAL _real);
     void add_chars(const p2_CHARS& _chars);
@@ -146,6 +150,7 @@ public:
     p2_BYTE get_byte() const;
     p2_WORD get_word() const;
     p2_LONG get_long() const;
+    p2_LONG get_addr() const;
     p2_LONG get_addr(bool hub) const;
     p2_QUAD get_quad() const;
     p2_REAL get_real() const;
@@ -205,9 +210,9 @@ public:
     static QString string(const P2Atom& atom);
 
 private:
-    P2Traits m_traits;       //!< Traits for this atom
-    P2Union m_value;            //!< Actual value of this atom
-    P2Union m_index;            //!< Optional index value of this atom
+    P2Traits m_traits;  //!< Traits for this atom
+    P2Union m_value;    //!< Actual value of this atom
+    P2Union m_index;    //!< Optional index value of this atom
 };
 
 Q_DECLARE_METATYPE(P2Atom)

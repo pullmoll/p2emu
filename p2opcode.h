@@ -42,12 +42,12 @@
 class P2Opcode
 {
 public:
-    explicit P2Opcode(const p2_LONG opcode, p2_ORIGIN_t origin);
-    explicit P2Opcode(const p2_LONG opcode = 0, p2_LONG _cog = 0, p2_LONG _hub = 0);
-    P2Opcode(const p2_INST5_e inst7, p2_ORIGIN_t cog_hub = p2_ORIGIN_t({0,0}));
-    P2Opcode(const p2_INST7_e inst7, p2_ORIGIN_t origin = p2_ORIGIN_t({0,0}));
-    P2Opcode(const p2_INST8_e inst8, p2_ORIGIN_t origin = p2_ORIGIN_t({0,0}));
-    P2Opcode(const p2_INST9_e inst9, p2_ORIGIN_t origin = p2_ORIGIN_t({0,0}));
+    explicit P2Opcode(const p2_LONG opcode, P2Union origin);
+    explicit P2Opcode(const p2_LONG opcode = 0, const p2_LONG _cog = 0, const p2_LONG _hub = 0, const bool hubmode = false);
+    P2Opcode(const p2_INST5_e inst7, const p2_LONG _cog = 0, const p2_LONG _hub = 0, const bool hubmode = false);
+    P2Opcode(const p2_INST7_e inst7, const p2_LONG _cog = 0, const p2_LONG _hub = 0, const bool hubmode = false);
+    P2Opcode(const p2_INST8_e inst8, const p2_LONG _cog = 0, const p2_LONG _hub = 0, const bool hubmode = false);
+    P2Opcode(const p2_INST9_e inst9, const p2_LONG _cog = 0, const p2_LONG _hub = 0, const bool hubmode = false);
 
     enum Type {
         type_none,          //!< type of the contents is unspecified
@@ -75,11 +75,11 @@ public:
         src_relative,       //!< SRC relative range error: -$100 … $0FF
     };
 
-    void clear(const p2_LONG opcode, p2_ORIGIN_t origin);
-    void clear(const p2_LONG opcode = 0, p2_LONG _cog = 0, p2_LONG _hub = 0);
+    void clear(const p2_LONG opcode, P2Union origin);
+    void clear(const p2_LONG opcode = 0, p2_LONG _cog = 0, p2_LONG _hub = 0, bool hubmode = false);
 
     P2Atom assigned() const;
-    const p2_ORIGIN_t origin() const;
+    P2Union origin() const;
     p2_LONG cogaddr() const;
     p2_LONG hubaddr() const;
 
@@ -122,8 +122,8 @@ public:
     const P2Atom& data() const;
 
     void set_none();
-    void set_origin(p2_ORIGIN_t origin);
-    void set_origin(p2_LONG _org, p2_LONG _orgh);
+    void set_origin(P2Union origin);
+    void set_origin(p2_LONG _org, p2_LONG _orgh, bool hubmode = false);
     void set_data(const P2Atom& data);
     bool set_assign(const P2Atom& atom);
     void set_hubmode(bool hubmode);
@@ -175,7 +175,7 @@ public:
 
 private:
     p2_opcode_u m_u;                //!< instruction opcode or assignment value
-    p2_ORIGIN_t m_origin;           //!< instruction's ORG and ORGH values
+    P2Union m_origin;               //!< instruction's ORG and ORGH values
     Type m_type;                    //!< What type of information is stored in the opcode
     bool m_hubmode;                 //!< True if the instruction was in HUB mode
     ImmFlag m_dst_imm;              //!< where to store destination (D) immediate flag

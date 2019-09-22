@@ -90,7 +90,7 @@ P2Asm::P2Asm(QObject *parent)
     , m_source()
     , m_sourceptr()
     , m_listing()
-    , m_hash_ORIGIN()
+    , m_hash_address()
     , m_hash_IR()
     , m_hash_words()
     , m_hash_error()
@@ -160,7 +160,7 @@ void P2Asm::pass_clear()
     // next pass
     m_pass++;
     m_listing.clear();
-    m_hash_ORIGIN.clear();
+    m_hash_address.clear();
     m_hash_IR.clear();
     m_hash_error.clear();
     m_lineno = 0;
@@ -195,7 +195,7 @@ void P2Asm::line_clear(int i)
 
     // Reset some state
     m_advance = 0;
-    m_IR.clear(0, p2_ORIGIN_t({m_cogaddr, m_hubaddr}));
+    m_IR.clear(0, m_cogaddr, m_hubaddr, m_hubmode);
     m_IR.set_none();
     m_errors.clear();
     m_words.clear();
@@ -322,32 +322,13 @@ int P2Asm::count() const
 }
 
 /**
- * @brief Return a const reference to the has of ORG and ORGH values per line
- * @return const reference to the hash
- */
-const p2_ORIGIN_hash_t& P2Asm::ORIGIN_hash() const
-{
-    return m_hash_ORIGIN;
-}
-
-/**
  * @brief Return a pair of values for ORG and ORGH for the line
  * @param lineno line number
- * @return pair of values
+ * @return P2Union with address for COG and HUB
  */
-p2_ORIGIN_t P2Asm::get_ORIGIN(int lineno) const
+P2Union P2Asm::get_addr(int lineno) const
 {
-    return m_hash_ORIGIN.value(lineno);
-}
-
-/**
- * @brief Return true, if a line number has ORG and ORGH values
- * @param lineno line number
- * @return true if available, or false otherwise
- */
-bool P2Asm::has_ORIGIN(int lineno) const
-{
-    return m_hash_ORIGIN.contains(lineno);
+    return m_hash_address.value(lineno);
 }
 
 /**
@@ -569,7 +550,7 @@ bool P2Asm::define_symbol(const QString& symbol, const P2Atom& atom)
 
     if (sym.isNull()) {
         // Not defined yet
-        m_symbols->insert(symbol, atom);
+        m_symbols->insert(symbol, atom, m_hubmode);
         m_symbols->add_reference(m_lineno, symbol, word);
         return true;
     }
@@ -714,8 +695,7 @@ bool P2Asm::assemble_dat_section()
 
         if (!m_symbol.isEmpty()) {
             // defining a symbol at the current PC
-            P2Atom atom(m_cogaddr, m_hubaddr);
-            atom.add_trait(tr_HUBMODE, m_hubmode);
+            P2Atom atom(m_cogaddr, m_hubaddr, m_hubmode);
             define_symbol(m_symbol, atom);
         }
         break;
@@ -2459,7 +2439,7 @@ QString P2Asm::hub_cog(const P2Opcode& IR)
                 .arg(QString(3, QChar::Space));
     return QString("%1 %2")
             .arg(_hub, 5, 16, QChar('0'))
-            .arg(_cog/sz_LONG, 3, 16, QChar('0'));
+            .arg(HUB2COG(_cog), 3, 16, QChar('0'));
 }
 
 /**
@@ -2474,17 +2454,17 @@ QStringList P2Asm::results_instruction(bool wr_mem)
     p2_LONG _hub = m_hubaddr;
 
     const QString* lineptr = m_lineptr;
-    Q_ASSERT(m_advance == 4);
+    Q_ASSERT(m_advance == sz_LONG);
 
     m_IR.set_origin(_cog, _hub);
     m_IR.set_hubmode(m_hubmode);
-    m_hash_ORIGIN.insert(m_lineno, m_IR.origin());
+    m_hash_address.insert(m_lineno, m_IR.origin());
     m_hash_IR.insert(m_lineno, m_IR);
 
     // Do we need to generate an AUGD instruction?
     if (m_IR.augd_valid()) {
         p2_LONG value = m_IR.augd_value();
-        P2Opcode IR(p2_AUGD, _cog, _hub);
+        P2Opcode IR(p2_AUGD, _cog, _hub, m_hubmode);
         IR.set_hubmode(m_hubmode);
         IR.set_imm23(value);
 
@@ -2518,7 +2498,7 @@ QStringList P2Asm::results_instruction(bool wr_mem)
     // Do we need to generate an AUGS instruction?
     if (m_IR.augs_valid()) {
         p2_LONG value = m_IR.augs_value();
-        P2Opcode IR(p2_AUGS, p2_ORIGIN_t({_cog, _hub}));
+        P2Opcode IR(p2_AUGS, _cog, _hub, m_hubmode);
         IR.set_hubmode(m_hubmode);
         IR.set_imm23(value);
 
@@ -2615,12 +2595,9 @@ QString P2Asm::results_assignment()
 QStringList P2Asm::results_data(bool wr_mem)
 {
     QStringList output;
-    p2_ORIGIN_t origin;
-    origin._cog = m_cogaddr;
-    origin._hub = m_hubaddr;
-
+    P2Union origin(m_cogaddr, m_hubaddr, m_hubmode);
     m_IR.set_origin(origin);
-    m_hash_ORIGIN.insert(m_lineno, origin);
+    m_hash_address.insert(m_lineno, origin);
     m_hash_IR.insert(m_lineno, m_IR);
 
     const p2_BYTES& _bytes = m_data.get_bytes(true);
@@ -3067,7 +3044,7 @@ void P2Asm::add_const_symbol(const QString& pfx, const P2Word& word, const P2Ato
                      .arg(pfx)
                      .arg(word.str().toUpper());
     if (!m_symbols->contains(symbol))
-        m_symbols->insert(symbol, atom);
+        m_symbols->insert(symbol, atom, false);
     m_symbols->add_reference(m_lineno, symbol, word);
 }
 
@@ -3343,7 +3320,7 @@ bool P2Asm::parse_atom(P2Atom& atom, int level)
 
     case t_DOLLAR:
         DBG_EXPR(" atom current PC: %s", qPrintable(str));
-        atom.set_addr(m_cogaddr, m_hubaddr);
+        atom.set_addr(m_cogaddr, m_hubaddr, m_hubmode);
         DBG_EXPR(" atom $ addr = %s", qPrintable(atom.str()));
         break;
 
@@ -3782,19 +3759,14 @@ p2_Traits_e P2Asm::parse_traits()
             traits.add(tr_AUGMENTED);
             next();
             break;
-        case t_RELATIVE:
-            DBG_EXPR(" trait relative: %s", qPrintable(Token.string(tok)));
-            traits.add(tr_RELATIVE);
+        case t_HUBADDRESS:
+            DBG_EXPR(" trait hubadress: %s", qPrintable(Token.string(tok)));
+            traits.add(tr_HUBADDRESS);
             next();
             break;
         case t_ABSOLUTE:
             DBG_EXPR(" trait absolute: %s", qPrintable(Token.string(tok)));
             traits.add(tr_ABSOLUTE);
-            next();
-            break;
-        case t_HUBADDRESS:
-            DBG_EXPR(" trait HUB address: %s", qPrintable(Token.string(tok)));
-            traits.add(tr_HUBADDRESS);
             next();
             break;
         default:
@@ -3902,7 +3874,7 @@ P2Atom P2Asm::parse_expression(int level)
     }
 
     // Set immediate flag according to traits
-    if (atom.has_trait(tr_IMMEDIATE | tr_AUGMENTED | tr_HUBADDRESS)) {
+    if (atom.has_trait(tr_IMMEDIATE | tr_AUGMENTED)) {
         m_IR.set_im_flags(true);
     }
 
@@ -4921,9 +4893,9 @@ bool P2Asm::parse_REL()
     m_IR.set_src_imm(P2Opcode::immediate_I);
     P2Atom src = parse_expression();
     if (src.has_trait(tr_IMMEDIATE)) {
-        int value = static_cast<int>(src.get_addr(m_hubmode));
+        int value = static_cast<int>(src.get_addr());
         int relative = 0;
-        if (m_hubmode) {
+        if (src.hubmode()) {
             relative = value - static_cast<int>(m_hubaddr + sz_LONG);
             if (m_pass > 1 && (relative & 3)) {
                 m_errors += tr("Invalid distance between HUB addresses: %1 is not a multiple of %2.")
@@ -5018,31 +4990,82 @@ bool P2Asm::parse_PTRx_PC_A20()
 bool P2Asm::parse_PC_A20()
 {
     P2Atom atom = parse_expression();
-    p2_LONG addr = atom.get_addr(p2_cog);
-    if (atom.has_trait(tr_ABSOLUTE)) {
+    p2_LONG addr = atom.get_addr();
+    p2_LONG base = (atom.has_trait(tr_HUBADDRESS) ? m_hubaddr : m_cogaddr) + sz_LONG;
+    bool relmode = false;
+
+    if (m_pass < 2 || atom.isNull()) {
         m_IR.set_a20(addr);
-    } else if (!m_hubmode) {
-        if (addr < LUT_ADDR0 && m_cogaddr < LUT_ADDR0) {
-            // relative in COG
-            addr = addr - (m_cogaddr + sz_LONG);
-            m_IR.set_r20(addr & A20MASK);
-        } else if (addr < HUB_ADDR0 && m_cogaddr < LUT_ADDR0) {
-            // relative in LUT
-            addr = addr - (m_cogaddr + sz_LONG);
-            m_IR.set_r20(addr & A20MASK);
-        } else {
-            // jump between COG / LUT / HUB
-            m_IR.set_a20(addr & A20MASK);
-        }
-    } else if (addr < HUB_ADDR0) {
-        // jump from HUB to COG / LUT
-        m_IR.set_a20(addr & A20MASK);
-    } else {
-        // relative in HUB
-        addr = addr - (m_hubaddr + sz_LONG);
-        m_IR.set_r20(addr & A20MASK);
+        return end_of_line();
     }
 
+    if (m_hubmode) {
+        // HUB mode
+
+        if (atom.hubmode()) {
+            if (atom.has_trait(tr_ABSOLUTE)) {
+                qDebug("%s: [HUB->HUB ABSHUB] $%05x (%-5d) %s", __func__,
+                    addr & A20MASK, static_cast<int>(addr), qPrintable(*m_lineptr));
+            } else if (addr >= m_hubaddr && 0 == ((addr - m_hubaddr) & 3u)) {
+                addr = addr - base;
+                relmode = true;
+                qDebug("%s: [HUB->HUB RELHUB] $%05x (%-5d) %s", __func__,
+                    addr & A20MASK, static_cast<int>(addr), qPrintable(*m_lineptr));
+            } else {
+                qDebug("%s: [HUB->HUB ODDHUB] $%05x (%-5d) %s", __func__,
+                    addr & A20MASK, static_cast<int>(addr), qPrintable(*m_lineptr));
+            }
+        } else if (atom.has_trait(tr_HUBADDRESS)) {
+            addr = atom.get_addr(true);
+            qDebug("%s: [HUB->COG COGHUB] $%05x (%-5d) %s", __func__,
+                   addr & A20MASK, static_cast<int>(addr), qPrintable(*m_lineptr));
+        } else {
+            addr = HUB2COG(addr);
+            qDebug("%s: [HUB->COG COGCOG] $%05x (%-5d) %s", __func__,
+                   addr & A20MASK, static_cast<int>(addr), qPrintable(*m_lineptr));
+        }
+
+    } else if (atom.hubmode() || atom.has_trait(tr_HUBADDRESS)) {
+        // COG mode: atom is defined in HUB mode
+
+        if (atom.has_trait(tr_ABSOLUTE)) {
+            qDebug("%s: [COG->HUB ABSHUB] $%05x (%-5d) %s", __func__,
+                   addr & A20MASK, static_cast<int>(addr), qPrintable(*m_lineptr));
+        } else if (addr < COG_SIZE + LUT_SIZE) {
+            addr = addr - HUB2COG(base);
+            addr *= sz_LONG;
+            relmode = true;
+            qDebug("%s: [COG->HUB RELCOG] $%05x (%-5d) %s", __func__,
+                   addr & A20MASK, static_cast<int>(addr), qPrintable(*m_lineptr));
+        } else {
+            // relative jump out of range, thus use absolute mode
+            addr = atom.get_addr(true);
+            qDebug("%s: [COG->HUB FARPTR] $%05x (%-5d) %s", __func__,
+                   addr & A20MASK, static_cast<int>(addr), qPrintable(*m_lineptr));
+        }
+
+    } else {
+        // COG mode: atom is defined in COG mode
+
+        if (atom.has_trait(tr_ABSOLUTE)) {
+            qDebug("%s: [COG->COG ABSCOG] $%05x (%-5d) %s", __func__,
+                   addr & A20MASK, static_cast<int>(addr), qPrintable(*m_lineptr));
+        } else if (addr < COG_SIZE + LUT_SIZE) {
+            addr = addr - base;
+            relmode = true;
+            qDebug("%s: [COG->COG RELCOG] $%05x (%-5d) %s", __func__,
+                   addr & A20MASK, static_cast<int>(addr), qPrintable(*m_lineptr));
+        } else {
+            qDebug("%s: [COG->COG FARPTR] $%05x (%-5d) %s", __func__,
+                   addr & A20MASK, static_cast<int>(addr), qPrintable(*m_lineptr));
+        }
+
+    }
+    if (relmode) {
+        m_IR.set_r20(addr & A20MASK);
+    } else {
+        m_IR.set_a20(addr & A20MASK);
+    }
     return end_of_line();
 }
 
@@ -5323,9 +5346,13 @@ bool P2Asm::asm_ORGH()
     next();
     m_advance = 0;      // Don't advance PC
     P2Atom atom = parse_expression();
-    p2_LONG value = atom.isEmpty() ? m_hubaddr : atom.get_long();
-    if (value <= HUB_ADDR0)
-        value *= 4;
+    p2_LONG value = 0;
+
+    if (atom.isEmpty()) {
+        value = m_hubaddr;
+    } else {
+        value = atom.get_long();
+    }
     if (value >= MEM_SIZE) {
         m_errors += tr("HUB address exceeds limit $%1.")
                     .arg(value, 0, 16, QChar('0'));
@@ -5507,13 +5534,25 @@ bool P2Asm::asm_LONG()
     m_data.clear(ut_Long);
     while (m_idx < m_cnt) {
         P2Atom atom = parse_expression();
-        p2_LONG _long = atom.get_long();
-        // FIXME: fix "$1f0 - $" type expressions
-        p2_LONG count = atom.index_long() / sz_LONG;
-        m_data.set_type(ut_Long);
-        m_data.add_long(_long);
-        if (count > 0 && count < 4096) {
-            Q_ASSERT(count < 4096);
+        if (ut_Addr == atom.type()) {
+            p2_LONG count = atom.index_long() / sz_LONG;
+            p2_LONG _long;
+            if (atom.has_trait(tr_HUBADDRESS)) {
+                _long = atom.get_addr(p2_hub);
+            } else {
+                _long = atom.get_addr();
+                if (!m_hubmode && !atom.has_trait(tr_IMMEDIATE))
+                    _long = _long / sz_LONG;
+            }
+            m_data.set_type(ut_Addr);
+            m_data.add_long(_long);
+            while (count-- > 1)
+                m_data.add_long(_long);
+        } else {
+            p2_LONG _long = atom.get_long();
+            // FIXME: fix "$1f0 - $" type expressions
+            p2_LONG count = atom.index_long() / sz_LONG;
+            m_data.add_long(_long);
             while (count-- > 1)
                 m_data.add_long(_long);
         }

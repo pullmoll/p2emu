@@ -74,10 +74,6 @@ typedef double p2_REAL;
 Q_DECLARE_METATYPE(p2_REAL)
 static constexpr int sz_REAL = sizeof(p2_REAL);
 
-//! A pair of p2_LONG where the first is the ORG, the second the ORGH address
-typedef struct { p2_LONG _cog; p2_LONG _hub; } p2_ORIGIN_t;
-Q_DECLARE_METATYPE(p2_ORIGIN_t)
-
 //! Type for an array (QVector) of BYTEs (interpret as ut_Byte or ut_Bool)
 typedef QVector<p2_BYTE> p2_BYTES;
 Q_DECLARE_METATYPE(p2_BYTES)
@@ -380,6 +376,7 @@ Q_DECLARE_METATYPE(p2_Union_t)
 typedef struct {
     p2_Union_e type;
     p2_Union_t value;
+    bool hubmode;
 } P2TypedValue;
 Q_DECLARE_METATYPE(P2TypedValue)
 
@@ -403,18 +400,16 @@ public:
 };
 
 typedef enum {
-    tr_none        = 0,             //!< no special trait
-    tr_HUBMODE     = (1u <<  0),   //!< symbol was defined in hubmode
-    tr_IMMEDIATE   = (1u <<  1),   //!< expression started with '#'
-    tr_RELATIVE    = (1u <<  2),   //!< expression started with '@'
-    tr_ABSOLUTE    = (1u <<  3),   //!< expression contained a '\'
-    tr_HUBADDRESS  = (1u <<  4),   //!< expression started with '#@'
-    tr_AUGMENTED   = (1u <<  5),   //!< expression started with '##'
-    tr_INDEX       = (1u <<  6),   //!< expression contains an index: '[' expr ']'
-    tr_DEC         = (1u <<  7),   //!< PTRA/PTRB with decrement (--)
-    tr_INC         = (1u <<  8),   //!< PTRA/PTRB with increment (++)
-    tr_PRE         = (1u <<  9),   //!< PTRA/PTRB with pre inc/dec (--PTRx or ++PTRx)
-    tr_POST        = (1u << 10),   //!< PTRA/PTRB with post inc/dec post (PTRx-- or PTRx++)
+    tr_none         = 0,            //!< no special trait
+    tr_IMMEDIATE    = (1u << 0),    //!< expression started with '#'
+    tr_AUGMENTED    = (1u << 1),    //!< expression started with '##'
+    tr_HUBADDRESS   = (1u << 2),    //!< expression contained '@'
+    tr_ABSOLUTE     = (1u << 3),    //!< expression contained '\'
+    tr_INDEX        = (1u << 4),    //!< expression contains an index: PTRA, PTRB, or '[' expr ']'
+    tr_DEC          = (1u << 5),    //!< PTRA/PTRB with decrement (--)
+    tr_INC          = (1u << 6),    //!< PTRA/PTRB with increment (++)
+    tr_PRE          = (1u << 7),    //!< PTRA/PTRB with pre inc/dec (--PTRx or ++PTRx)
+    tr_POST         = (1u << 8),    //!< PTRA/PTRB with post inc/dec post (PTRx-- or PTRx++)
 }   p2_Traits_e;
 
 //! P2Atom traits
@@ -427,8 +422,8 @@ public:
     p2_Traits_e traits() const;
     p2_LONG value() const;
     void set(const p2_Traits_e set);
-    bool has(const p2_Traits_e has) const;
-    bool has(const p2_LONG has) const;
+    bool has(const p2_Traits_e trait) const;
+    bool has(const p2_LONG trait) const;
     void add(const p2_Traits_e set);
     void add(const p2_LONG set);
     void remove(const p2_Traits_e clear);
@@ -1805,3 +1800,5 @@ static constexpr p2_TOKMASK_t tm_expression =
         tm_function |
         tm_operations |
         tm_constant;
+
+static inline constexpr p2_LONG HUB2COG(const p2_LONG hub) { return static_cast<p2_LONG>(static_cast<int>(hub) / 4); }

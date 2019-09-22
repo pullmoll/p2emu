@@ -121,9 +121,10 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
         return result;
 
     const column_e column = static_cast<column_e>(index.column());
-    const p2_LONG PC = static_cast<p2_LONG>(index.row());
-    const p2_LONG ORGH = PC * 4;
-    P2Opcode IR(m_dasm->rd_mem(ORGH), p2_ORIGIN_t({PC, ORGH}));
+    const p2_LONG _cogaddr = static_cast<p2_LONG>(index.row());
+    const p2_LONG _hubaddr = _cogaddr * 4;
+    const bool hubmode = _cogaddr < 0x400;
+    P2Opcode IR(m_dasm->rd_mem(_hubaddr), P2Union(_cogaddr, _hubaddr, hubmode));
     QString opcode;
     QString instruction;
     QString description;
@@ -134,26 +135,26 @@ QVariant P2DasmModel::data(const QModelIndex &index, int role) const
     case Qt::DisplayRole:
         switch (column) {
         case c_Address: // Address as COG[xxx], LUT[xxx], or xxxxxx in RAM
-            if (PC < 0x200) {
-                result = QString("COG:%1").arg(PC, 3, 16, QChar('0'));
-            } else if (PC < 0x400) {
-                result = QString("LUT:%1").arg(PC - 0x200, 3, 16, QChar('0'));
+            if (_cogaddr < 0x200) {
+                result = QString("COG:%1").arg(_cogaddr, 3, 16, QChar('0'));
+            } else if (_cogaddr < 0x400) {
+                result = QString("LUT:%1").arg(_cogaddr - 0x200, 3, 16, QChar('0'));
             } else {
-                result = QString("%1").arg(ORGH, 6, 16, QChar('0'));
+                result = QString("%1").arg(_hubaddr, 6, 16, QChar('0'));
             }
             break;
         case c_Opcode: // Opcode string
             {
-                known = m_dasm->dasm(PC, &opcode);
+                known = m_dasm->dasm(_cogaddr, &opcode);
                 result = P2Opcode::format_opcode(IR, m_format);
             }
             break;
         case c_Instruction: // Disassembled instruction string
-            known = m_dasm->dasm(PC, nullptr, &instruction);
+            known = m_dasm->dasm(_cogaddr, nullptr, &instruction);
             result = instruction;
             break;
         case c_Description: // Comments
-            known = m_dasm->dasm(PC, nullptr, nullptr, &description);
+            known = m_dasm->dasm(_cogaddr, nullptr, nullptr, &description);
             result = description;
             break;
         }

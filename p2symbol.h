@@ -46,12 +46,13 @@
 class P2SymbolClass
 {
 public:
-    explicit P2SymbolClass(const QString& name, const P2Atom& atom);
+    explicit P2SymbolClass(const QString& name, const P2Atom& atom, const bool hubmode);
 
     bool isNull() const;
     bool isEmpty() const;
     const QString& name() const;
     const P2Atom& atom() const;
+    bool hubmode() const;
     void set_atom(const P2Atom& value);
     P2Union value() const;
     void set_value(const P2Union& value);
@@ -71,6 +72,7 @@ public:
 private:
     QString m_name;
     P2Atom m_atom;
+    bool m_hubmode;
     P2Word m_definition;
     p2_word_hash_t m_references;
 };

@@ -79,14 +79,14 @@ void P2Traits::set(const p2_Traits_e set)
     m.traits = set;
 }
 
-bool P2Traits::has(const p2_Traits_e has) const
+bool P2Traits::has(const p2_Traits_e trait) const
 {
-    return m._long & has ? true : false;
+    return m.traits & trait ? true : false;
 }
 
-bool P2Traits::has(const p2_LONG has) const
+bool P2Traits::has(const p2_LONG trait) const
 {
-    return m._long & has ? true : false;
+    return m._long & trait ? true : false;
 }
 
 void P2Traits::add(const p2_Traits_e set)

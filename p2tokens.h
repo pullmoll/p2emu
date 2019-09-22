@@ -596,10 +596,9 @@ enum p2_TOKEN_e {
 
     // traits
     t_IMMEDIATE,        //!< "#"
-    t_AUGMENTED,        //!< "##"
-    t_RELATIVE,         //!< "@"
+    t_HUBADDRESS,       //!< "@"
     t_ABSOLUTE,         //!< "\"
-    t_HUBADDRESS,       //!< "#@"
+    t_AUGMENTED,        //!< "##"
 
     // expressions: relations
     t_EXPR_LE,          //!< "<="

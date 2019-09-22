@@ -52,7 +52,7 @@ public:
     int count(const QString& name = QString()) const;
     bool contains(const QString& name) const;
     bool insert(const P2SymbolClass& symbol);
-    bool insert(const QString& name, const P2Atom& atom);
+    bool insert(const QString& name, const P2Atom& atom, bool hubmode);
     P2Symbol symbol(const QString& name) const;
     p2_Union_e type(const QString& name) const;
     P2Word definition(const QString& name) const;

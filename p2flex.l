@@ -573,9 +573,8 @@ LOCSYM      "."[A-Z_]?[A-Z0-9_]+
 ","			return t_COMMA;
 "#"                     return t_IMMEDIATE;
 "##"			return t_AUGMENTED;
-"@"			return t_RELATIVE;
+"@"			return t_HUBADDRESS;
 \\			return t_ABSOLUTE;
-"#@"			return t_HUBADDRESS;
 "<="			return t_EXPR_LE;
 "<"			return t_EXPR_LT;
 ">="			return t_EXPR_GE;

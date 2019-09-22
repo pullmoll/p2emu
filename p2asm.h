@@ -44,7 +44,7 @@
 
 
 //! A QHash of ORG and ORGH per line number
-typedef QHash<int,p2_ORIGIN_t> p2_ORIGIN_hash_t;
+typedef QHash<int,P2Union> p2_address_hash_t;
 
 //! A QHash of P2Opcode per line number
 typedef QHash<int,P2Opcode> p2_opcode_hash_t;
@@ -84,9 +84,9 @@ public:
     const QString source(int idx) const;
 
     int count() const;
-    const p2_ORIGIN_hash_t& ORIGIN_hash() const;
-    p2_ORIGIN_t get_ORIGIN(int lineno) const;
-    bool has_ORIGIN(int lineno) const;
+    P2Union get_addr(int lineno) const;
+    p2_LONG get_cogaddr(int lineno) const;
+    p2_LONG get_hubaddr(int lineno) const;
 
     const p2_opcode_hash_t& IR_hash() const;
     P2Opcode get_IR(int lineno) const;
@@ -131,7 +131,7 @@ private:
     QStringList m_source;                   //!< source code as QStringList
     QVector<const QString*> m_sourceptr;    //!< pointers to strings in m_source
     QStringList m_listing;                  //!< listing as QStringList
-    p2_ORIGIN_hash_t m_hash_ORIGIN;         //!< optional ORIGINs per line (ORG and ORGH)
+    p2_address_hash_t m_hash_address;       //!< optional P2Uniont (type ut_Addr) per line
     p2_opcode_hash_t m_hash_IR;             //!< optional P2Opcode per line
     p2_words_hash_t m_hash_words;           //!< optional words per line
     p2_error_hash_t m_hash_error;           //!< optional (multiple) error messages per line

@@ -79,9 +79,9 @@ P2Union::P2Union(p2_REAL r) : P2Union()
     set_real(r);
 }
 
-P2Union::P2Union(p2_LONG o, p2_LONG h)
+P2Union::P2Union(p2_LONG _cog, p2_LONG _hub, bool hubmode)
 {
-    set_addr(o, h);
+    set_addr(_cog, _hub, hubmode);
 }
 
 P2Union::P2Union(const QByteArray& ba) : P2Union()
@@ -106,18 +106,7 @@ P2Union::P2Union(p2_LONGS lv) : P2Union()
 
 int P2Union::unit() const
 {
-    switch (m_type) {
-    case ut_Bool:    return sz_BYTE;
-    case ut_Byte:    return sz_BYTE;
-    case ut_Word:    return sz_WORD;
-    case ut_Addr:    return sz_QUAD;
-    case ut_Long:    return sz_LONG;
-    case ut_Quad:    return sz_QUAD;
-    case ut_Real:    return sz_REAL;
-    case ut_String:  return sz_BYTE;
-    case ut_Invalid: return sz_BYTE;
-    }
-    return 1;
+    return unit(m_type);
 }
 
 int P2Union::usize() const
@@ -181,152 +170,217 @@ bool P2Union::is_zero() const
     return true;
 }
 
-int P2Union::get_int() const
+bool P2Union::hubmode() const
 {
     const P2TypedValue tv = value(0);
+    return tv.hubmode;
+}
+
+void P2Union::set_hubmode(bool hubmode)
+{
+    for (int i = 0; i < count(); i++) {
+        P2TypedValue tv = value(i);
+        tv.hubmode = hubmode;
+        replace(i, tv);
+    }
+}
+
+int P2Union::get_int() const
+{
+    const P2TypedValue& tv = value(0);
+    int result = 0;
     switch (tv.type) {
     case ut_Invalid:
         break;
     case ut_Bool:
-        return tv.value._bool;
+        result = tv.value._bool;
+        break;
     case ut_Byte:
-        return tv.value._byte;
+        result = tv.value._byte;
+        break;
     case ut_Word:
-        return tv.value._word;
+        result = tv.value._word;
+        break;
     case ut_Addr:
-        return static_cast<int>(tv.value._addr[0]);
+        result = static_cast<int>(tv.value._addr[tv.hubmode]);
+        break;
     case ut_Long:
-        return static_cast<int>(tv.value._long);
+        result = static_cast<int>(tv.value._long);
+        break;
     case ut_Quad:
-        return static_cast<int>(tv.value._quad);
+        result = static_cast<int>(tv.value._quad);
+        break;
     case ut_Real:
-        return static_cast<int>(tv.value._real);
+        result = static_cast<int>(tv.value._real);
+        break;
     case ut_String:
-        return tv.value._byte;
+        result = tv.value._byte;
+        break;
     }
-    return 0;
+    return result;
 }
 
 bool P2Union::get_bool() const
 {
-    const P2TypedValue tv = value(0);
+    const P2TypedValue& tv = value(0);
+    bool result = false;
     switch (tv.type) {
     case ut_Invalid:
         break;
     case ut_Bool:
-        return tv.value._bool;
+        result = tv.value._bool;
+        break;
     case ut_Byte:
-        return tv.value._byte ? true : false;
+        result = tv.value._byte != 0;
+        break;
     case ut_Word:
-        return tv.value._word ? true : false;
+        result = tv.value._word != 0;
+        break;
     case ut_Addr:
-        return tv.value._addr[0] ? true : false;
+        result = tv.value._addr[tv.hubmode] != 0;
+        break;
     case ut_Long:
-        return tv.value._long ? true : false;
+        result = tv.value._long != 0;
+        break;
     case ut_Quad:
-        return tv.value._quad ? true : false;
+        result = tv.value._quad != 0;
+        break;
     case ut_Real:
-        return !qFuzzyIsNull(tv.value._real);
+        result = !qFuzzyIsNull(tv.value._real);
+        break;
     case ut_String:
-        return tv.value._byte ? true : false;
+        result = tv.value._byte ? true : false;
     }
-    return false;
+    return result;
 }
 
 char P2Union::get_char() const
 {
-    const P2TypedValue tv = value(0);
+    const P2TypedValue& tv = value(0);
+    char result = '\0';
     switch (tv.type) {
     case ut_Invalid:
         break;
     case ut_Bool:
-        return tv.value._bool;
+        result = tv.value._bool;
+        break;
     case ut_Byte:
-        return tv.value._char;
+        result = tv.value._char;
+        break;
     case ut_Word:
-        return static_cast<char>(tv.value._word);
+        result = static_cast<char>(tv.value._word);
+        break;
     case ut_Addr:
-        return static_cast<char>(tv.value._addr[0]);
+        result = static_cast<char>(tv.value._addr[tv.hubmode]);
+        break;
     case ut_Long:
-        return static_cast<char>(tv.value._long);
+        result = static_cast<char>(tv.value._long);
+        break;
     case ut_Quad:
-        return static_cast<char>(tv.value._quad);
+        result = static_cast<char>(tv.value._quad);
+        break;
     case ut_Real:
-        return static_cast<char>(tv.value._real);
+        result = static_cast<char>(tv.value._real);
+        break;
     case ut_String:
-        return tv.value._char;
+        result = tv.value._char;
+        break;
     }
-    return tv.value._char;
+    return result;
 }
 
 p2_BYTE P2Union::get_byte() const
 {
-    const P2TypedValue tv = value(0);
+    const P2TypedValue& tv = value(0);
+    p2_BYTE result = 0;
     switch (tv.type) {
     case ut_Invalid:
         break;
     case ut_Bool:
-        return tv.value._bool;
+        result = tv.value._bool;
+        break;
     case ut_Byte:
-        return tv.value._byte;
+        result = tv.value._byte;
+        break;
     case ut_Word:
-        return static_cast<p2_BYTE>(tv.value._word);
+        result = static_cast<p2_BYTE>(tv.value._word);
+        break;
     case ut_Addr:
-        return static_cast<p2_BYTE>(tv.value._addr[0]);
+        result = static_cast<p2_BYTE>(tv.value._addr[tv.hubmode]);
+        break;
     case ut_Long:
-        return static_cast<p2_BYTE>(tv.value._long);
+        result = static_cast<p2_BYTE>(tv.value._long);
+        break;
     case ut_Quad:
-        return static_cast<p2_BYTE>(tv.value._quad);
+        result = static_cast<p2_BYTE>(tv.value._quad);
+        break;
     case ut_Real:
-        return static_cast<p2_BYTE>(tv.value._real);
+        result = static_cast<p2_BYTE>(tv.value._real);
+        break;
     case ut_String:
-        return tv.value._byte;
+        result = tv.value._byte;
+        break;
     }
-    return tv.value._byte;
+    return result;
 }
 
 p2_WORD P2Union::get_word() const
 {
-    const P2TypedValue tv = value(0);
+    const P2TypedValue& tv = value(0);
+    p2_WORD result = 0;
     switch (tv.type) {
     case ut_Invalid:
         break;
     case ut_Bool:
-        return tv.value._bool;
+        result = tv.value._bool;
+        break;
     case ut_Byte:
-        return tv.value._byte;
+        result = tv.value._byte;
+        break;
     case ut_Word:
-        return tv.value._word;
+        result = tv.value._word;
+        break;
     case ut_Addr:
-        return static_cast<p2_WORD>(tv.value._addr[0]);
+        result = static_cast<p2_WORD>(tv.value._addr[tv.hubmode]);
+        break;
     case ut_Long:
-        return static_cast<p2_WORD>(tv.value._long);
+        result = static_cast<p2_WORD>(tv.value._long);
+        break;
     case ut_Quad:
-        return static_cast<p2_WORD>(tv.value._quad);
+        result = static_cast<p2_WORD>(tv.value._quad);
+        break;
     case ut_Real:
-        return static_cast<p2_WORD>(tv.value._real);
+        result = static_cast<p2_WORD>(tv.value._real);
+        break;
     case ut_String:
-        return tv.value._byte;
+        result = tv.value._byte;
+        break;
     }
-    return tv.value._word;
+    return result;
 }
 
 p2_LONG P2Union::get_long() const
 {
     const P2TypedValue tv = value(0);
+    p2_LONG result = 0;
     switch (tv.type) {
     case ut_Invalid:
         break;
     case ut_Bool:
-        return tv.value._bool;
+        result = tv.value._bool;
+        break;
     case ut_Byte:
-        return tv.value._byte;
+        result = tv.value._byte;
+        break;
     case ut_Word:
-        return tv.value._word;
+        result = tv.value._word;
+        break;
     case ut_Addr:
-        return tv.value._addr[0];
+        result = tv.value._addr[tv.hubmode];
+        break;
     case ut_Long:
-        return tv.value._long;
+        result = tv.value._long;
+        break;
     case ut_Quad:
         return static_cast<p2_LONG>(tv.value._quad);
     case ut_Real:
@@ -334,97 +388,129 @@ p2_LONG P2Union::get_long() const
     case ut_String:
         return tv.value._byte;
     }
-    return tv.value._long;
+    return result;
 }
 
-p2_LONG P2Union::get_addr(bool hub) const
+p2_LONG P2Union::get_addr() const
 {
-    const P2TypedValue tv = value(0);
-    p2_LONG value = tv.value._addr[hub];
+    const P2TypedValue& tv = value(0);
+    p2_LONG result = 0;
     switch (tv.type) {
     case ut_Invalid:
         break;
     case ut_Bool:
-        value = tv.value._bool ? sz_LONG : 0;
+        result = tv.value._bool ? sz_LONG : 0;
         break;
     case ut_Byte:
-        value = tv.value._byte * sz_LONG;
+        result = tv.value._byte * sz_LONG;
         break;
     case ut_Word:
-        value = tv.value._word < HUB_ADDR0 ? tv.value._word * sz_LONG
+        result = tv.value._word < HUB_ADDR0 ? tv.value._word * sz_LONG
                                            : tv.value._word;
         break;
     case ut_Addr:
-        value = tv.value._addr[hub];
+        result = tv.value._addr[tv.hubmode];
         break;
     case ut_Long:
-        value = tv.value._long < HUB_ADDR0 ? tv.value._long * sz_LONG
+        result = tv.value._long < HUB_ADDR0 ? tv.value._long * sz_LONG
                                            : tv.value._long;
         break;
     case ut_Quad:
-        value = static_cast<p2_LONG>(tv.value._quad < HUB_ADDR0 ? tv.value._quad * sz_LONG
+        result = static_cast<p2_LONG>(tv.value._quad < HUB_ADDR0 ? tv.value._quad * sz_LONG
                                                                 : tv.value._quad);
         break;
     case ut_Real:
-        value = static_cast<p2_LONG>(tv.value._real * sz_LONG);
+        result = static_cast<p2_LONG>(tv.value._real * sz_LONG);
         break;
     case ut_String:
-        value = tv.value._byte * sz_LONG;
+        result = tv.value._byte * sz_LONG;
         break;
     }
-    return value;
+    return result;
+}
+
+p2_LONG P2Union::get_addr(bool hubmode) const
+{
+    const P2TypedValue& tv = value(0);
+    p2_LONG result = 0;
+    switch (tv.type) {
+    case ut_Addr:
+        result = tv.value._addr[hubmode];
+        break;
+    default:
+        result = get_addr();
+    }
+    return result;
 }
 
 p2_QUAD P2Union::get_quad() const
 {
     const P2TypedValue tv = value(0);
+    p2_QUAD result = 0;
     switch (tv.type) {
     case ut_Invalid:
         break;
     case ut_Bool:
-        return tv.value._bool;
+        result = tv.value._bool;
+        break;
     case ut_Byte:
-        return tv.value._byte;
+        result = tv.value._byte;
+        break;
     case ut_Word:
-        return tv.value._word;
+        result = tv.value._word;
+        break;
     case ut_Addr:
-        return tv.value._addr[0];
+        result = tv.value._addr[0];
+        break;
     case ut_Long:
-        return tv.value._long;
+        result = tv.value._long;
+        break;
     case ut_Quad:
-        return tv.value._quad;
+        result = tv.value._quad;
+        break;
     case ut_Real:
-        return static_cast<p2_QUAD>(tv.value._real);
+        result = static_cast<p2_QUAD>(tv.value._real);
+        break;
     case ut_String:
-        return tv.value._byte;
+        result = tv.value._byte;
+        break;
     }
-    return tv.value._quad;
+    return result;
 }
 
 p2_REAL P2Union::get_real() const
 {
     const P2TypedValue tv = value(0);
+    p2_REAL result = 0.0;
     switch (tv.type) {
     case ut_Invalid:
-        return 0.0;
+        break;
     case ut_Bool:
-        return tv.value._bool ? 1.0 : 0.0;
+        result = tv.value._bool ? 1.0 : 0.0;
+        break;
     case ut_Byte:
-        return 1.0 * tv.value._byte;
+        result = tv.value._byte;
+        break;
     case ut_Word:
-        return 1.0 * tv.value._word;
+        result = tv.value._word;
+        break;
     case ut_Addr:
-        return 1.0 * tv.value._addr[0];
+        result = tv.value._addr[tv.hubmode];
+        break;
     case ut_Long:
-        return 1.0 * tv.value._long;
+        result = tv.value._long;
+        break;
     case ut_Quad:
-        return 1.0 * tv.value._quad;
+        result = tv.value._quad;
+        break;
     case ut_Real:
-        return tv.value._real;
+        result = tv.value._real;
+        break;
     case ut_String:
-        return 1.0 * tv.value._byte;
+        result = tv.value._byte;
+        break;
     }
-    return 0.0;
+    return result;
 }
 
 void P2Union::set_int(const int var)
@@ -473,6 +559,13 @@ void P2Union::set_addr(const p2_LONG _cog, const p2_LONG _hub)
 {
     clear();
     add_addr(_cog, _hub);
+    m_type = ut_Addr;
+}
+
+void P2Union::set_addr(const p2_LONG _cog, const p2_LONG _hub, bool hubmode)
+{
+    clear();
+    add_addr(_cog, _hub, hubmode);
     m_type = ut_Addr;
 }
 
@@ -555,7 +648,7 @@ void P2Union::set_typed_var(const P2TypedValue& _tv)
 
 void P2Union::add_int(const int _int)
 {
-    P2TypedValue v{ut_Long, {0}};
+    P2TypedValue v{ut_Long, {0}, false};
     v.value._int = _int;
     append(v);
 }
@@ -563,57 +656,67 @@ void P2Union::add_int(const int _int)
 
 void P2Union::add_bool(const bool _bool)
 {
-    P2TypedValue v{ut_Byte, {0}};
+    P2TypedValue v{ut_Byte, {0}, false};
     v.value._bool = _bool;
     append(v);
 }
 
 void P2Union::add_char(const char _char)
 {
-    P2TypedValue v{ut_Byte, {0}};
+    P2TypedValue v{ut_Byte, {0}, false};
     v.value._char = _char;
     append(v);
 }
 
 void P2Union::add_byte(const p2_BYTE _byte)
 {
-    P2TypedValue v{ut_Byte, {0}};
+    P2TypedValue v{ut_Byte, {0}, false};
     v.value._byte = _byte;
     append(v);
 }
 
 void P2Union::add_word(const p2_WORD _word)
 {
-    P2TypedValue v{ut_Word, {0}};
+    P2TypedValue v{ut_Word, {0}, false};
     v.value._word = _word;
     append(v);
 }
 
 void P2Union::add_long(const p2_LONG _long)
 {
-    P2TypedValue v{ut_Long, {0}};
+    P2TypedValue v{ut_Long, {0}, false};
     v.value._long = _long;
     append(v);
 }
 
 void P2Union::add_addr(const p2_LONG _cog, const p2_LONG _hub)
 {
-    P2TypedValue v{ut_Addr, {0}};
+    P2TypedValue v{ut_Addr, {0}, false};
     v.value._addr[0] = _cog;
     v.value._addr[1] = _hub;
+    v.hubmode = value(0).hubmode;
+    append(v);
+}
+
+void P2Union::add_addr(const p2_LONG _cog, const p2_LONG _hub, bool hubmode)
+{
+    P2TypedValue v{ut_Addr, {0}, false};
+    v.value._addr[0] = _cog;
+    v.value._addr[1] = _hub;
+    v.hubmode = hubmode;
     append(v);
 }
 
 void P2Union::add_quad(const p2_QUAD _quad)
 {
-    P2TypedValue v{ut_Quad, {0}};
+    P2TypedValue v{ut_Quad, {0}, false};
     v.value._quad = _quad;
     append(v);
 }
 
 void P2Union::add_real(const p2_REAL _real)
 {
-    P2TypedValue v{ut_Real, {0}};
+    P2TypedValue v{ut_Real, {0}, false};
     v.value._real = _real;
     append(v);
 }
@@ -622,7 +725,7 @@ void P2Union::add_chars(const p2_CHARS& _chars)
 {
     const int pos = size();
     resize(pos + _chars.size());
-    P2TypedValue v{ut_Byte, {0}};
+    P2TypedValue v{ut_Byte, {0}, false};
     for (int i = 0; i < _chars.size(); i++) {
         v.value._char = _chars[i];
         replace(pos + i, v);
@@ -633,7 +736,7 @@ void P2Union::add_bytes(const p2_BYTES& _bytes)
 {
     const int pos = size();
     resize(pos + _bytes.size());
-    P2TypedValue v{ut_Byte, {0}};
+    P2TypedValue v{ut_Byte, {0}, false};
     for (int i = 0; i < _bytes.size(); i++) {
         v.value._byte = _bytes[i];
         replace(pos + i, v);
@@ -644,7 +747,7 @@ void P2Union::add_words(const p2_WORDS& _words)
 {
     const int pos = size();
     resize(pos + _words.size());
-    P2TypedValue v{ut_Word, {0}};
+    P2TypedValue v{ut_Word, {0}, false};
     for (int i = 0; i < _words.size(); i++) {
         v.value._word = _words[i];
         replace(pos + i, v);
@@ -655,7 +758,7 @@ void P2Union::add_longs(const p2_LONGS& _longs)
 {
     const int pos = size();
     resize(pos + _longs.size());
-    P2TypedValue v{ut_Long, {0}};
+    P2TypedValue v{ut_Long, {0}, false};
     for (int i = 0; i < _longs.size(); i++) {
         v.value._long = _longs[i];
         replace(pos + i, v);
@@ -666,7 +769,7 @@ void P2Union::add_quads(const p2_QUADS& _quads)
 {
     const int pos = size();
     resize(pos + _quads.size());
-    P2TypedValue v{ut_Quad, {0}};
+    P2TypedValue v{ut_Quad, {0}, false};
     for (int i = 0; i < _quads.size(); i++) {
         v.value._quad = _quads[i];
         replace(pos + i, v);
@@ -677,7 +780,7 @@ void P2Union::add_reals(const p2_REALS& _reals)
 {
     const int pos = size();
     resize(pos + _reals.size());
-    P2TypedValue v{ut_Real, {0}};
+    P2TypedValue v{ut_Real, {0}, false};
     for (int i = 0; i < _reals.size(); i++) {
         v.value._real = _reals[i];
         replace(pos + i, v);
@@ -688,7 +791,7 @@ void P2Union::add_array(const QByteArray& _array)
 {
     const int pos = size();
     resize(pos + _array.size());
-    P2TypedValue v{ut_Byte, {0}};
+    P2TypedValue v{ut_Byte, {0}, false};
     for (int i = 0; i < _array.size(); i++) {
         v.value._char = _array[i];
         replace(pos + i, v);
@@ -699,7 +802,7 @@ void P2Union::add_string(const QString& _string)
 {
     const int pos = size();
     resize(pos + _string.size());
-    P2TypedValue v{ut_Byte, {0}};
+    P2TypedValue v{ut_Byte, {0}, false};
     for (int i = 0; i < _string.size(); i++) {
         v.value._char = _string[i].toLatin1();
         replace(pos +i, v);
@@ -1260,6 +1363,37 @@ QString P2Union::get_string(bool expand) const
     return QString::fromUtf8(chars);
 }
 
+QString P2Union::str(bool with_type, p2_FORMAT_e fmt) const
+{
+    return str(*this, with_type, fmt);
+}
+
+/**
+ * @brief Return the size of a unit of %type
+ * @param type one of p2_Union_e
+ * @return size in bytes
+ */
+int P2Union::unit(p2_Union_e type)
+{
+    switch (type) {
+    case ut_Bool:    return sz_BYTE;
+    case ut_Byte:    return sz_BYTE;
+    case ut_Word:    return sz_WORD;
+    case ut_Addr:    return sz_QUAD;
+    case ut_Long:    return sz_LONG;
+    case ut_Quad:    return sz_QUAD;
+    case ut_Real:    return sz_REAL;
+    case ut_String:  return sz_BYTE;
+    case ut_Invalid: return sz_BYTE;
+    }
+    return 1;
+}
+
+/**
+ * @brief Return the (technical) name of a unit of %type
+ * @param type one of p2_Union_e
+ * @return QString with the type name
+ */
 QString P2Union::type_name(p2_Union_e type)
 {
     switch (type) {
@@ -1285,11 +1419,6 @@ QString P2Union::type_name(p2_Union_e type)
     return QStringLiteral("<invalid>");
 }
 
-QString P2Union::str(bool with_type, p2_FORMAT_e fmt) const
-{
-    return str(*this, with_type, fmt);
-}
-
 static inline QString bin(const p2_QUAD val, int digits = 0)
 {
     return QString("%1").arg(val, digits, 2, QChar('0'));
@@ -1305,26 +1434,26 @@ static inline QString hex(const p2_QUAD val, int digits = 0)
     return QString("%1").arg(val, digits, 16, QChar('0'));
 }
 
-QString P2Union::str(const P2Union& un, bool with_type, p2_FORMAT_e fmt)
+QString P2Union::str(const P2Union& u, bool with_type, p2_FORMAT_e fmt)
 {
     QString result;
 
     if (with_type)
         result = QString("<%1> ")
-                 .arg(un.type_name());
-    switch (un.type()) {
+                 .arg(u.type_name());
+    switch (u.type()) {
     case ut_Invalid:
         result = QLatin1String("<invalid>");
         break;
 
     case ut_Bool:
         result += QString("%1")
-                  .arg(un.get_bool() ? "true" : "false");
+                  .arg(u.get_bool() ? "true" : "false");
         break;
 
     case ut_Byte:
         {
-            p2_BYTE _byte = un.get_byte();
+            p2_BYTE _byte = u.get_byte();
             switch (fmt) {
             case fmt_dec:
                 result += dec(_byte,0);
@@ -1347,7 +1476,7 @@ QString P2Union::str(const P2Union& un, bool with_type, p2_FORMAT_e fmt)
 
     case ut_Word:
         {
-            p2_WORD _word = un.get_word();
+            p2_WORD _word = u.get_word();
             switch (fmt) {
             case fmt_dec:
                 result += dec(_word,0);
@@ -1374,13 +1503,15 @@ QString P2Union::str(const P2Union& un, bool with_type, p2_FORMAT_e fmt)
 
     case ut_Addr:
         {
-            p2_LONG _cog = un.get_addr(p2_cog) / sz_LONG;
-            p2_LONG _hub = un.get_addr(p2_hub);
+            p2_LONG _cog = u.get_addr(p2_cog) / sz_LONG;
+            p2_LONG _hub = u.get_addr(p2_hub);
             switch (fmt) {
             case fmt_dec:
                 result += dec(_hub,0);
-                result += chr_colon;
-                result += dec(_cog,0);
+                if (!u.hubmode()) {
+                    result += chr_colon;
+                    result += dec(_cog,0);
+                }
                 break;
             case fmt_bin:
                 result += chr_percent;
@@ -1391,12 +1522,14 @@ QString P2Union::str(const P2Union& un, bool with_type, p2_FORMAT_e fmt)
                 result += bin((_hub >>  8) & 0xff, 8);
                 result += chr_skip_digit;
                 result += bin((_hub >>  0) & 0xff, 8);
-                result += chr_colon;
-                result += bin((_cog >> 16) & 0xff, 2);
-                result += chr_skip_digit;
-                result += bin((_cog>>  8) & 0xff, 8);
-                result += chr_skip_digit;
-                result += bin((_cog >> 0) & 0xff, 8);
+                if (!u.hubmode()) {
+                    result += chr_colon;
+                    result += bin((_cog >> 16) & 0xff, 2);
+                    result += chr_skip_digit;
+                    result += bin((_cog>>  8) & 0xff, 8);
+                    result += chr_skip_digit;
+                    result += bin((_cog >> 0) & 0xff, 8);
+                }
                 break;
             case fmt_bit:
                 result += chr_dollar;
@@ -1407,26 +1540,30 @@ QString P2Union::str(const P2Union& un, bool with_type, p2_FORMAT_e fmt)
                 result += hex((_hub >>  8) & 0xff, 2);
                 result += chr_skip_digit;
                 result += hex((_hub >>  0) & 0xff, 2);
-                result += chr_colon;
-                result += hex((_cog >> 16) & 0xff, 1);
-                result += chr_skip_digit;
-                result += hex((_cog >>  8) & 0xff, 2);
-                result += chr_skip_digit;
-                result += hex((_cog >>  0) & 0xff, 2);
+                if (!u.hubmode()) {
+                    result += chr_colon;
+                    result += hex((_cog >> 16) & 0xff, 1);
+                    result += chr_skip_digit;
+                    result += hex((_cog >>  8) & 0xff, 2);
+                    result += chr_skip_digit;
+                    result += hex((_cog >>  0) & 0xff, 2);
+                }
                 break;
             case fmt_hex:
             default:
                 result += chr_dollar;
                 result += hex(_hub, 6);
-                result += chr_colon;
-                result += hex(_cog, 3);
+                if (!u.hubmode()) {
+                    result += chr_colon;
+                    result += hex(_cog, 3);
+                }
             }
         }
         break;
 
     case ut_Long:
         {
-            p2_LONG _long = un.get_long();
+            p2_LONG _long = u.get_long();
             switch (fmt) {
             case fmt_dec:
                 result += QString("%1")
@@ -1462,7 +1599,7 @@ QString P2Union::str(const P2Union& un, bool with_type, p2_FORMAT_e fmt)
 
     case ut_Quad:
         {
-            p2_QUAD _quad = un.get_quad();
+            p2_QUAD _quad = u.get_quad();
             switch (fmt) {
             case fmt_dec:
                 result += dec(_quad);
@@ -1517,11 +1654,11 @@ QString P2Union::str(const P2Union& un, bool with_type, p2_FORMAT_e fmt)
 
     case ut_Real:
         result += QString("%1")
-                  .arg(un.get_real(), 2, 'f');
+                  .arg(u.get_real(), 2, 'f');
         break;
 
     case ut_String:
-        result += un.get_string();
+        result += u.get_string();
         break;
     }
     return result;

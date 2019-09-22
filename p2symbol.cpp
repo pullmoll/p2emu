@@ -39,9 +39,10 @@
  * @param name optional initial name
  * @param atom optional initial atom
  */
-P2SymbolClass::P2SymbolClass(const QString& name, const P2Atom& atom)
+P2SymbolClass::P2SymbolClass(const QString& name, const P2Atom& atom, const bool hubmode)
     : m_name(name)
     , m_atom(atom)
+    , m_hubmode(hubmode)
     , m_references()
 {
 }

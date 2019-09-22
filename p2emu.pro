@@ -131,6 +131,51 @@ DISTFILES += \
 	README.md \
 	csv.cpp \
 	csv.h \
+	doc/MainLoader.lst1 \
+	doc/NTSC_256_x_192.lst1 \
+	doc/NTSC_256_x_192_interrupt.lst1 \
+	doc/P2 instruction set.csv \
+	doc/ROM_137PBJ.lst1 \
+	doc/ROM_Booter_v32.lst1 \
+	doc/SD2_test_121a.lst1 \
+	doc/USBHost.lst1 \
+	doc/VGA_640_x_480_16bpp.lst1 \
+	doc/VGA_640_x_480_4bpp1.lst1 \
+	doc/VGA_640_x_480_8bpp.lst1 \
+	doc/all_cogs_blink.lst1 \
+	doc/bas.lst1 \
+	doc/blink.lst1 \
+	doc/blinkit.lst1 \
+	doc/chess.lst1 \
+	doc/crcbit_crcnib.lst1 \
+	doc/dry.lst1 \
+	doc/echo1.lst1 \
+	doc/echo2.lst1 \
+	doc/fibo.lst1 \
+	doc/fibo1.lst1 \
+	doc/fibo2.lst1 \
+	doc/fibo3.lst1 \
+	doc/instructions_v33g.txt \
+	doc/lock_test.lst1 \
+	doc/ml.lst1 \
+	doc/p2pfth.lst1 \
+	doc/pointers.lst1 \
+	doc/prefix.lst1 \
+	doc/printf.lst1 \
+	doc/programmer.lst1 \
+	doc/sin_cos_dacs.lst1 \
+	doc/single_step.lst1 \
+	doc/smartpin_pwm.lst1 \
+	doc/smartpin_serial_turnaround.lst1 \
+	doc/smartpin_usb_turnaround.lst1 \
+	doc/spin2_interpreter.lst1 \
+	doc/test1.lst1 \
+	doc/testjmploc.lst1 \
+	doc/testops.lst1 \
+	doc/tt.lst1 \
+	doc/xbyte.lst1 \
+	doc/xoro32.lst1 \
+	doc/xoroshiro128plus.lst1 \
 	translations/p2emu.de.qm
 
 FLEXSOURCES += \

@@ -52,58 +52,51 @@ P2Atom::P2Atom(const P2Atom& other)
 
 P2Atom::P2Atom(bool _bool)
     : m_traits(tr_none)
-    , m_value()
+    , m_value(_bool)
     , m_index()
 {
-    m_value.set_bool(_bool);
 }
 
 P2Atom::P2Atom(const p2_BYTE _byte)
     : m_traits(tr_none)
-    , m_value()
+    , m_value(_byte)
     , m_index()
 {
-    m_value.set_byte(_byte);
 }
 
 P2Atom::P2Atom(const p2_WORD _word)
     : m_traits(tr_none)
-    , m_value()
+    , m_value(_word)
     , m_index()
 {
-    m_value.set_word(_word);
 }
 
 P2Atom::P2Atom(const p2_LONG _long)
     : m_traits(tr_none)
-    , m_value()
+    , m_value(_long)
     , m_index()
 {
-    m_value.set_long(_long);
 }
 
 P2Atom::P2Atom(const p2_QUAD _quad)
     : m_traits(tr_none)
-    , m_value()
+    , m_value(_quad)
     , m_index()
 {
-    m_value.set_quad(_quad);
 }
 
 P2Atom::P2Atom(const p2_REAL _real)
     : m_traits(tr_none)
-    , m_value()
+    , m_value(_real)
     , m_index()
 {
-    m_value.set_real(_real);
 }
 
-P2Atom::P2Atom(const p2_LONG _cog, const p2_LONG _hub)
+P2Atom::P2Atom(const p2_LONG _cog, const p2_LONG _hub, bool hubmode)
     : m_traits(tr_none)
-    , m_value()
+    , m_value(_cog, _hub, hubmode)
     , m_index()
 {
-    m_value.set_addr(_cog, _hub);
 }
 
 /**
@@ -214,6 +207,24 @@ void P2Atom::set_type(p2_Union_e type)
 }
 
 /**
+ * @brief Return true, if the atom was defined in hubmode
+ * @return true if hubmode, false otherwise
+ */
+bool P2Atom::hubmode() const
+{
+    return m_value.hubmode();
+}
+
+/**
+ * @brief Change the hubmode flag of the atom
+ * @param hubmode new flag to set
+ */
+void P2Atom::set_hubmode(bool hubmode)
+{
+    m_value.set_hubmode(hubmode);
+}
+
+/**
  * @brief Return the traits of the atom
  * @return Enumeration value from p2_traits_e
  */
@@ -276,7 +287,15 @@ bool P2Atom::add_trait(const p2_LONG trait)
  * @param trait trait to clear
  * @return true if added, false if not changed
  */
-bool P2Atom::clear_trait(const p2_Traits_e trait)
+bool P2Atom::remove_trait(const p2_Traits_e trait)
+{
+    if (!m_traits.has(trait))
+        return false;
+    m_traits.remove(trait);
+    return true;
+}
+
+bool P2Atom::remove_trait(const p2_LONG trait)
 {
     if (!m_traits.has(trait))
         return false;
@@ -333,6 +352,137 @@ const P2Union P2Atom::index() const
 p2_LONG P2Atom::index_long() const
 {
     return m_index.get_long();
+}
+
+/**
+ * @brief Return data as a single bool
+ * @return One bool
+ */
+bool P2Atom::get_bool() const
+{
+    return m_value.get_bool();
+}
+
+/**
+ * @brief Return data as a single int
+ * @return One int
+ */
+int P2Atom::get_int() const
+{
+    return m_value.get_int();
+}
+
+/**
+ * @brief Return data as a single byte
+ * @return One p2_BYTE
+ */
+p2_BYTE P2Atom::get_byte() const
+{
+    return m_value.get_byte();
+}
+
+/**
+ * @brief Return data as a single word
+ * @return One p2_WORD
+ */
+p2_WORD P2Atom::get_word() const
+{
+    return m_value.get_word();
+}
+
+/**
+ * @brief Return data as a single long
+ * @return One p2_LONG
+ */
+p2_LONG P2Atom::get_long() const
+{
+    return m_value.get_long();
+}
+
+p2_LONG P2Atom::get_addr() const
+{
+    p2_LONG addr = has_trait(tr_HUBADDRESS) ? m_value.get_addr(true)
+                                            : m_value.get_addr();
+    return addr;
+}
+
+/**
+ * @brief Return address as a long for COG (false) or HUB (true)
+ * @return One p2_LONG
+ */
+p2_LONG P2Atom::get_addr(bool hub) const
+{
+    return m_value.get_addr(hub);
+}
+
+/**
+ * @brief Return data as a single quad
+ * @return One p2_QUAD
+ */
+p2_QUAD P2Atom::get_quad() const
+{
+    return m_value.get_quad();
+}
+
+/**
+ * @brief Return data as a single quad
+ * @return One p2_REAL
+ */
+p2_REAL P2Atom::get_real() const
+{
+    return m_value.get_real();
+}
+
+/**
+ * @brief Return data as a QString
+ * @return QString with the data
+ */
+QString P2Atom::string(bool expand) const
+{
+    p2_CHARS chars = m_value.get_chars(expand);
+    return QString::fromLatin1(chars.data(), chars.size());
+}
+
+/**
+ * @brief Return data as a QByteArray
+ * @return QString with the data
+ */
+QByteArray P2Atom::array(bool expand) const
+{
+    p2_CHARS bytes = m_value.get_chars(expand);
+    return QByteArray(bytes.data(), bytes.size());
+}
+
+/**
+ * @brief Return data as a vector of bytes
+ * @return p2_BYTEs of all data
+ */
+p2_BYTES P2Atom::get_bytes(bool expand) const
+{
+    return m_value.get_bytes(expand);
+}
+
+/**
+ * @brief Return data as a vector of words
+ * @return p2_WORDs of all data
+ */
+p2_WORDS P2Atom::get_words(bool expand) const
+{
+    return m_value.get_words(expand);
+}
+
+/**
+ * @brief Return data as a vector of longs
+ * @return p2_LONGs of all data
+ */
+p2_LONGS P2Atom::get_longs(bool expand) const
+{
+    return m_value.get_longs(expand);
+}
+
+void P2Atom::make_real()
+{
+    m_value.set_type(ut_Real);
 }
 
 /**
@@ -400,10 +550,11 @@ void P2Atom::set_long(const p2_LONG _long)
  * NB: The atom's value type becomes ut_Addr
  * @param _cog address to set
  * @param _hub address to set
+ * @param hubmode true, if atom is defined in hubmode
  */
-void P2Atom::set_addr(const p2_LONG _cog, const p2_LONG _hub)
+void P2Atom::set_addr(const p2_LONG _cog, const p2_LONG _hub, bool hubmode)
 {
-    m_value.set_addr(_cog, _hub);
+    m_value.set_addr(_cog, _hub, hubmode);
 }
 
 /**
@@ -535,9 +686,9 @@ void P2Atom::add_long(const p2_LONG _long)
  * @param _cog address to append
  * @param _hub address to append
  */
-void P2Atom::add_addr(const p2_LONG _cog, const p2_LONG _hub)
+void P2Atom::add_addr(const p2_LONG _cog, const p2_LONG _hub, bool hubmode)
 {
-    m_value.add_addr(_cog, _hub);
+    m_value.add_addr(_cog, _hub, hubmode);
 }
 
 /**
@@ -1720,130 +1871,6 @@ void P2Atom::decode(const P2Atom& atom)
         Q_ASSERT(m_value.type() == ut_Invalid);
         break;
     }
-}
-
-/**
- * @brief Return data as a single bool
- * @return One bool
- */
-bool P2Atom::get_bool() const
-{
-    return m_value.get_bool();
-}
-
-/**
- * @brief Return data as a single int
- * @return One int
- */
-int P2Atom::get_int() const
-{
-    return m_value.get_int();
-}
-
-/**
- * @brief Return data as a single byte
- * @return One p2_BYTE
- */
-p2_BYTE P2Atom::get_byte() const
-{
-    return m_value.get_byte();
-}
-
-/**
- * @brief Return data as a single word
- * @return One p2_WORD
- */
-p2_WORD P2Atom::get_word() const
-{
-    return m_value.get_word();
-}
-
-/**
- * @brief Return data as a single long
- * @return One p2_LONG
- */
-p2_LONG P2Atom::get_long() const
-{
-    return m_value.get_long();
-}
-
-/**
- * @brief Return address as a long for COG (false) or HUB (true)
- * @return One p2_ORIGIN_t
- */
-p2_LONG P2Atom::get_addr(bool hub) const
-{
-    return m_value.get_addr(hub);
-}
-
-/**
- * @brief Return data as a single quad
- * @return One p2_QUAD
- */
-p2_QUAD P2Atom::get_quad() const
-{
-    return m_value.get_quad();
-}
-
-/**
- * @brief Return data as a single quad
- * @return One p2_REAL
- */
-p2_REAL P2Atom::get_real() const
-{
-    return m_value.get_real();
-}
-
-/**
- * @brief Return data as a QString
- * @return QString with the data
- */
-QString P2Atom::string(bool expand) const
-{
-    p2_CHARS chars = m_value.get_chars(expand);
-    return QString::fromLatin1(chars.data(), chars.size());
-}
-
-/**
- * @brief Return data as a QByteArray
- * @return QString with the data
- */
-QByteArray P2Atom::array(bool expand) const
-{
-    p2_CHARS bytes = m_value.get_chars(expand);
-    return QByteArray(bytes.data(), bytes.size());
-}
-
-/**
- * @brief Return data as a vector of bytes
- * @return p2_BYTEs of all data
- */
-p2_BYTES P2Atom::get_bytes(bool expand) const
-{
-    return m_value.get_bytes(expand);
-}
-
-/**
- * @brief Return data as a vector of words
- * @return p2_WORDs of all data
- */
-p2_WORDS P2Atom::get_words(bool expand) const
-{
-    return m_value.get_words(expand);
-}
-
-/**
- * @brief Return data as a vector of longs
- * @return p2_LONGs of all data
- */
-p2_LONGS P2Atom::get_longs(bool expand) const
-{
-    return m_value.get_longs(expand);
-}
-
-void P2Atom::make_real()
-{
-    m_value.set_type(ut_Real);
 }
 
 P2Atom& P2Atom::operator=(const P2Atom& other)

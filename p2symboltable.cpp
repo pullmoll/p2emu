@@ -91,11 +91,12 @@ bool P2SymbolTableClass::insert(const P2SymbolClass& symbol)
  * @brief Insert a symbol name / atom into the symbol table
  * @param name name of the new symbol
  * @param atom atom of the new symbol
+ * @param hubmode if true, the symbol is defined in hubmode
  * @return false if the symbol was already in the table, or true if inserted
  */
-bool P2SymbolTableClass::insert(const QString& name, const P2Atom& atom)
+bool P2SymbolTableClass::insert(const QString& name, const P2Atom& atom, bool hubmode)
 {
-    return insert(P2SymbolClass(name, atom));
+    return insert(P2SymbolClass(name, atom, hubmode));
 }
 
 /**

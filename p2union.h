@@ -47,7 +47,7 @@ public:
     explicit P2Union(p2_LONG l);
     explicit P2Union(p2_QUAD q);
     explicit P2Union(p2_REAL r);
-    explicit P2Union(p2_LONG o, p2_LONG h);
+    explicit P2Union(p2_LONG _cog, p2_LONG _hub, bool hubmode = false);
     explicit P2Union(const QByteArray& ba);
     explicit P2Union(p2_BYTES vb);
     explicit P2Union(p2_WORDS vw);
@@ -61,13 +61,17 @@ public:
     void set_type(p2_Union_e type);
     bool is_zero() const;
 
+    bool hubmode() const;
+    void set_hubmode(bool hubmode);
+
     int get_int() const;
     bool get_bool() const;
     char get_char() const;
     p2_BYTE get_byte() const;
     p2_WORD get_word() const;
     p2_LONG get_long() const;
-    p2_LONG get_addr(bool p2_hub) const;
+    p2_LONG get_addr() const;
+    p2_LONG get_addr(bool hubmode) const;
     p2_QUAD get_quad() const;
     p2_REAL get_real() const;
 
@@ -85,6 +89,7 @@ public:
     void set_byte(const p2_BYTE _byte);
     void set_word(const p2_WORD _word);
     void set_addr(const p2_LONG _cog, const p2_LONG _hub);
+    void set_addr(const p2_LONG _cog, const p2_LONG _hub, bool hubmode);
     void set_long(const p2_LONG _long);
     void set_quad(const p2_QUAD _quad);
     void set_real(const p2_REAL _real);
@@ -107,6 +112,7 @@ public:
     void add_word(const p2_WORD _word);
     void add_long(const p2_LONG _long);
     void add_addr(const p2_LONG _cog, const p2_LONG _hub);
+    void add_addr(const p2_LONG _cog, const p2_LONG _hub, bool hubmode);
     void add_quad(const p2_QUAD _quad);
     void add_real(const p2_REAL _real);
 
@@ -123,8 +129,9 @@ public:
 
     QString str(bool with_type = false, p2_FORMAT_e fmt = fmt_hex) const;
 
+    static int unit(p2_Union_e type);
     static QString type_name(p2_Union_e type);
-    static QString str(const P2Union& un, bool with_type = false, p2_FORMAT_e fmt = fmt_hex);
+    static QString str(const P2Union& u, bool with_type = false, p2_FORMAT_e fmt = fmt_hex);
 
 private:
     p2_Union_e m_type;

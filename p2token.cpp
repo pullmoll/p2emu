@@ -821,9 +821,8 @@ P2Token::P2Token()
     // Traits
     TN_ADD(t_IMMEDIATE,         tm_traits, QLatin1String("#"));
     TN_ADD(t_AUGMENTED,         tm_traits, QLatin1String("##"));
-    TN_ADD(t_RELATIVE,          tm_traits, QLatin1String("@"));
+    TN_ADD(t_HUBADDRESS,        tm_traits, QLatin1String("@"));
     TN_ADD(t_ABSOLUTE,          tm_traits, QLatin1String("\\"));
-    TN_ADD(t_HUBADDRESS,        tm_traits, QLatin1String("#@"));
 
     // Sub expression in parens
     TN_ADD(t_EXPR_LPAREN,       tm_parens, QLatin1String("("));

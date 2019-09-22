@@ -139,7 +139,8 @@ MainWindow::MainWindow(QWidget *parent)
     // load_source(QStringLiteral(":/spin2/ROM_Booter_v33_01j.spin2"));
     // load_source(QStringLiteral(":/spin2/pointers.spin2"));
     // load_source(QStringLiteral(":/spin2/all_cogs_blink.spin2"));
-    load_source(QStringLiteral(":/spin2/lock_test.spin2"));
+    // load_source(QStringLiteral(":/spin2/lock_test.spin2"));
+    load_source(QStringLiteral(":/spin2/testjmploc.spin2"));
     load_object_random();
 }
 
