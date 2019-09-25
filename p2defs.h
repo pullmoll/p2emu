@@ -1801,4 +1801,9 @@ static constexpr p2_TOKMASK_t tm_expression =
         tm_operations |
         tm_constant;
 
-static inline constexpr p2_LONG HUB2COG(const p2_LONG hub) { return static_cast<p2_LONG>(static_cast<int>(hub) / 4); }
+inline constexpr p2_LONG hub2cog(const p2_LONG hub) {
+    return static_cast<p2_LONG>(static_cast<int>(hub) / sz_LONG);
+}
+inline constexpr p2_LONG cog2hub(const p2_LONG cog) {
+    return cog * sz_LONG;
+}

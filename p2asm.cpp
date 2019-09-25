@@ -43,9 +43,10 @@
 
 extern p2_words_hash_t p2flex_source(QVector<const QString*> source);
 
-#define DEBUG_EXPR  0 //! set to 1 to debug expression parsing
-#define DEBUG_CON   0 //! set to 1 to debug CON section parsing
-#define DEBUG_DAT   0 //! set to 1 to debug DAT section parsing
+#define DEBUG_EXPR      0 //! set to 1 to debug expression parsing
+#define DEBUG_CON       0 //! set to 1 to debug CON section parsing
+#define DEBUG_DAT       0 //! set to 1 to debug DAT section parsing
+#define DEBUG_PC_A20    0 //! set to 1 to debug PC_A20 parsing
 
 static const QString p2_section_dat = QStringLiteral("DAT");
 static const QString p2_section_con = QStringLiteral("CON");
@@ -74,6 +75,13 @@ static const QString p2_prefix_real_const = QStringLiteral("flt");
 #define DBG_CON(x,...) do { if (m_pass > 1) { qDebug(x,__VA_ARGS__); } } while (0)
 #else
 #define DBG_CON(x,...)
+#endif
+
+#if DEBUG_PC_A20
+//! debug expression parsing
+#define DBG_PC_A20(x,...) do { if (m_pass > 1) { qDebug(x,__VA_ARGS__); } } while (0)
+#else
+#define DBG_PC_A20(x,...)
 #endif
 
 /**
@@ -2439,7 +2447,7 @@ QString P2Asm::hub_cog(const P2Opcode& IR)
                 .arg(QString(3, QChar::Space));
     return QString("%1 %2")
             .arg(_hub, 5, 16, QChar('0'))
-            .arg(HUB2COG(_cog), 3, 16, QChar('0'));
+            .arg(hub2cog(_cog), 3, 16, QChar('0'));
 }
 
 /**
@@ -4990,8 +4998,9 @@ bool P2Asm::parse_PTRx_PC_A20()
 bool P2Asm::parse_PC_A20()
 {
     P2Atom atom = parse_expression();
+    bool hubmode = atom.hubmode() || atom.has_trait(tr_HUBADDRESS);
     p2_LONG addr = atom.get_addr();
-    p2_LONG base = (atom.has_trait(tr_HUBADDRESS) ? m_hubaddr : m_cogaddr) + sz_LONG;
+    p2_LONG base = (hubmode ? m_hubaddr : m_cogaddr) + sz_LONG;
     bool relmode = false;
 
     if (m_pass < 2 || atom.isNull()) {
@@ -5002,45 +5011,42 @@ bool P2Asm::parse_PC_A20()
     if (m_hubmode) {
         // HUB mode
 
-        if (atom.hubmode()) {
+        if (hubmode) {
             if (atom.has_trait(tr_ABSOLUTE)) {
-                qDebug("%s: [HUB->HUB ABSHUB] $%05x (%-5d) %s", __func__,
+                DBG_PC_A20("%s: [HUB->HUB HUBABS] $%05x (%-5d) %s", __func__,
                     addr & A20MASK, static_cast<int>(addr), qPrintable(*m_lineptr));
-            } else if (addr >= m_hubaddr && 0 == ((addr - m_hubaddr) & 3u)) {
+            } else if (addr >= base || addr >= COG_SIZE + LUT_SIZE) {
                 addr = addr - base;
                 relmode = true;
-                qDebug("%s: [HUB->HUB RELHUB] $%05x (%-5d) %s", __func__,
+                DBG_PC_A20("%s: [HUB->HUB HUBREL] $%05x (%-5d) %s", __func__,
                     addr & A20MASK, static_cast<int>(addr), qPrintable(*m_lineptr));
             } else {
-                qDebug("%s: [HUB->HUB ODDHUB] $%05x (%-5d) %s", __func__,
+                // this is illogical, but "jmp #label2" and "jmp #@label2"
+                // from HUB to HUB generate non-relative jumps
+                DBG_PC_A20("%s: [HUB->HUB PNUTxx] $%05x (%-5d) %s", __func__,
                     addr & A20MASK, static_cast<int>(addr), qPrintable(*m_lineptr));
             }
-        } else if (atom.has_trait(tr_HUBADDRESS)) {
-            addr = atom.get_addr(true);
-            qDebug("%s: [HUB->COG COGHUB] $%05x (%-5d) %s", __func__,
-                   addr & A20MASK, static_cast<int>(addr), qPrintable(*m_lineptr));
         } else {
-            addr = HUB2COG(addr);
-            qDebug("%s: [HUB->COG COGCOG] $%05x (%-5d) %s", __func__,
+            addr = hub2cog(addr);
+            DBG_PC_A20("%s: [HUB->COG COGABS] $%05x (%-5d) %s", __func__,
                    addr & A20MASK, static_cast<int>(addr), qPrintable(*m_lineptr));
         }
 
-    } else if (atom.hubmode() || atom.has_trait(tr_HUBADDRESS)) {
-        // COG mode: atom is defined in HUB mode
+    } else if (hubmode) {
+        // COG mode: atom is defined in HUB mode or HUB address is requested
 
         if (atom.has_trait(tr_ABSOLUTE)) {
-            qDebug("%s: [COG->HUB ABSHUB] $%05x (%-5d) %s", __func__,
+            DBG_PC_A20("%s: [COG->HUB ABSHUB] $%05x (%-5d) %s", __func__,
                    addr & A20MASK, static_cast<int>(addr), qPrintable(*m_lineptr));
         } else if (addr < COG_SIZE + LUT_SIZE) {
-            addr = addr - HUB2COG(base);
+            addr = addr - hub2cog(base);
             addr *= sz_LONG;
             relmode = true;
-            qDebug("%s: [COG->HUB RELCOG] $%05x (%-5d) %s", __func__,
+            DBG_PC_A20("%s: [COG->HUB RELCOG] $%05x (%-5d) %s", __func__,
                    addr & A20MASK, static_cast<int>(addr), qPrintable(*m_lineptr));
         } else {
-            // relative jump out of range, thus use absolute mode
-            addr = atom.get_addr(true);
-            qDebug("%s: [COG->HUB FARPTR] $%05x (%-5d) %s", __func__,
+            // relative is out of range, thus use absolute mode
+            DBG_PC_A20("%s: [COG->HUB FARPTR] $%05x (%-5d) %s", __func__,
                    addr & A20MASK, static_cast<int>(addr), qPrintable(*m_lineptr));
         }
 
@@ -5048,15 +5054,16 @@ bool P2Asm::parse_PC_A20()
         // COG mode: atom is defined in COG mode
 
         if (atom.has_trait(tr_ABSOLUTE)) {
-            qDebug("%s: [COG->COG ABSCOG] $%05x (%-5d) %s", __func__,
+            addr = hub2cog(addr);
+            DBG_PC_A20("%s: [COG->COG ABSCOG] $%05x (%-5d) %s", __func__,
                    addr & A20MASK, static_cast<int>(addr), qPrintable(*m_lineptr));
         } else if (addr < COG_SIZE + LUT_SIZE) {
             addr = addr - base;
             relmode = true;
-            qDebug("%s: [COG->COG RELCOG] $%05x (%-5d) %s", __func__,
+            DBG_PC_A20("%s: [COG->COG RELCOG] $%05x (%-5d) %s", __func__,
                    addr & A20MASK, static_cast<int>(addr), qPrintable(*m_lineptr));
         } else {
-            qDebug("%s: [COG->COG FARPTR] $%05x (%-5d) %s", __func__,
+            DBG_PC_A20("%s: [COG->COG FARPTR] $%05x (%-5d) %s", __func__,
                    addr & A20MASK, static_cast<int>(addr), qPrintable(*m_lineptr));
         }
 
