@@ -2568,6 +2568,8 @@ QString P2Asm::results_assignment()
 {
     QString output;
     m_hash_IR.insert(m_lineno, m_IR);
+    if (ut_Invalid != m_IR.origin().type())
+        m_hash_address.insert(m_lineno, m_IR.origin());
     if (m_pass > 1) {
         if (m_pnut) {
             if (con_section == m_section) {
@@ -5237,6 +5239,7 @@ bool P2Asm::asm_ALIGNW()
     m_advance = 1u - (m_cogaddr & 1u);
     if (m_advance)
         m_IR.set_assign(P2Atom(m_advance));
+    m_IR.set_origin(m_cogaddr, m_hubaddr, m_hubmode);
     return end_of_line();
 }
 
@@ -5255,6 +5258,7 @@ bool P2Asm::asm_ALIGNL()
         m_advance = 0;
     if (m_advance)
         m_IR.set_assign(P2Atom(m_advance));
+    m_IR.set_origin(m_cogaddr, m_hubaddr, m_hubmode);
     return end_of_line();
 }
 
@@ -5297,6 +5301,7 @@ bool P2Asm::asm_ORG()
     m_cogaddr = sz_LONG * value;
     m_hubmode = false;
     m_IR.set_assign(m_cogaddr);
+    m_IR.set_origin(m_cogaddr, m_hubaddr, m_hubmode);
     m_IR.set_hubmode(m_hubmode);
     if (!m_symbol.isEmpty())
         m_symbols->set_atom(m_symbol, atom);
@@ -5336,6 +5341,7 @@ bool P2Asm::asm_ORGF()
 
     m_advance = 0;
     m_IR.set_assign(atom);
+    m_IR.set_origin(m_cogaddr, m_hubaddr, m_hubmode);
     m_IR.set_hubmode(m_hubmode);
     if (!m_symbol.isEmpty())
         m_symbols->set_value(m_symbol, atom.value());
@@ -5370,6 +5376,7 @@ bool P2Asm::asm_ORGH()
     m_cogaddr = value;  // FIXME: correct?
     m_hubaddr = value;
     m_IR.set_assign(m_hubaddr);
+    m_IR.set_origin(m_cogaddr, m_hubaddr, m_hubmode);
     m_IR.set_hubmode(m_hubmode);
     if (!m_symbol.isEmpty())
         m_symbols->set_value(m_symbol, P2Union(value));
@@ -5395,6 +5402,7 @@ bool P2Asm::asm_FIT()
         emit Error(m_pass, m_lineno, m_errors.last());
     }
     m_IR.set_assign(atom);
+    m_IR.set_origin(m_cogaddr, m_hubaddr, m_hubmode);
     m_IR.set_hubmode(m_hubmode);
     return end_of_line();
 }
