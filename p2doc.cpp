@@ -1590,7 +1590,7 @@ void P2Doc::params_IMM23(P2DocOpcode& op)
  */
 void P2Doc::doc_NOP(p2_INST7_e instr)
 {
-    P2DocOpcode op = make_pattern(__func__, instr, "0000 0000000 000 000000000 000000000", match_all);
+    P2DocOpcode op = make_pattern(__func__, instr, "0000 0000000 000 000000000 000000000", FULL, 0);
 
     op->set_token(t_NOP);
     op->set_brief("No operation.");

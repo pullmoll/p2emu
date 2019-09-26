@@ -43,12 +43,11 @@ P2DocOpcodeClass::P2DocOpcodeClass(const P2MatchMask& mm, const char* pat, const
     , m_token(t_invalid)
     , m_params()
 {
-
 }
 
 bool P2DocOpcodeClass::isDefined() const
 {
-    return m_matchmask.first != 0;   // mask is non-zero?
+    return m_matchmask.mask() != 0;
 }
 
 p2_LONG P2DocOpcodeClass::mask() const
