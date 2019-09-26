@@ -111,7 +111,7 @@ void P2Cog::wr_lut(p2_LONG addr, p2_LONG val)
 p2_LONG P2Cog::rd_mem(p2_LONG addr) const
 {
     p2_LONG result = 0;
-    switch (addr & 0xfffe00) {
+    switch (addr & 0xfff800) {
     case 0x000000:
         result = rd_cog(addr/4);
         break;
@@ -127,7 +127,7 @@ p2_LONG P2Cog::rd_mem(p2_LONG addr) const
 
 void P2Cog::wr_mem(p2_LONG addr, p2_LONG val)
 {
-    switch (addr & 0xfffe00) {
+    switch (addr & 0xfff800) {
     case 0x000000:
         wr_cog(addr/4, val);
         break;
@@ -175,7 +175,7 @@ void P2Cog::wr_PTRB(p2_LONG addr)
  */
 void P2Cog::updateC(bool c) {
     if (IR.op7.wc)
-        C = static_cast<p2_LONG>(c) & 1;
+        C = c & 1u;
 }
 
 /**
@@ -184,16 +184,16 @@ void P2Cog::updateC(bool c) {
  */
 void P2Cog::updateZ(bool z) {
     if (IR.op7.wz)
-        C = static_cast<p2_LONG>(z) & 1;
+        C = z & 1u;
 }
 
 /**
- * @brief Update D, i.e. write result to COG
+ * @brief Update D, i.e. write result to COG result register R
  * @param d new value for D
  */
 void P2Cog::updateD(p2_LONG d)
 {
-    COG.RAM[IR.op7.dst] = d;
+    COG.RAM[R] = d;
 }
 
 /**
@@ -918,47 +918,59 @@ void P2Cog::update_regs()
 }
 
 /**
- * @brief Read and decode the next Propeller2 opcode
+ * @brief Read the next I register; preset D and S registers
+ *
+ * If the SKIPF LSB is set, skip the instruction
+ *
  * @return number of cycles
  */
-int P2Cog::decode()
+int P2Cog::gox()
 {
-    int cycles = 2;
+    while (SKIPF & 1) {
+        PC += 4;    // increment PC
+        SKIPF >>= 1;
+    }
+
+    PC &= A20MASK;
+    // rdRAM Ib
+    switch (PC & 0xfff800) {
+    case 0x00000:   // COG exec
+        IR.opcode = COG.RAM[(PC/sz_LONG) & COG_MASK];
+        break;
+    case 0x00800:   // LUT exec
+        IR.opcode = LUT.RAM[(PC/sz_LONG) & LUT_MASK];
+        break;
+    default:        // hubexec
+        IR.opcode = HUB->rd_LONG(PC);
+    }
+    PC += 4;            // increment PC
+    S = IR.op7.src;     // latch Sb
+    D = IR.op7.dst;     // latch Db
+    R = IR.op7.dst;     // preset R = Db
+    return 1;
+}
+
+int P2Cog::get()
+{
+    int cycles = 1;
 
     check_interrupt_flags();
 
-    do {
-        switch (PC & 0xffe00) {
-        case 0x00000:   // cogexec
-            IR.opcode = COG.RAM[PC];
-            PC++;       // increment PC
-            break;
-        case 0x00200:   // lutexec
-            IR.opcode = LUT.RAM[PC - 0x200];
-            PC++;       // increment PC
-            break;
-        default:        // hubexec
-            IR.opcode = HUB->rd_LONG(PC);
-            PC += 4;    // increment PC by 4
-        }
-        if (SKIPF)
-            SKIPF >>= 1;
-    } while (SKIPF & 1);
+    S = COG.RAM[S];         // rdRAM Sb
+    D = COG.RAM[D];         // rdRAM Db
 
-    S = COG.RAM[IR.op7.src]; // set S to COG[src]
-    D = COG.RAM[IR.op7.dst]; // set D to COG[dst]
+    if (SKIP & 1) {
+        // cancel this instruction
+        SKIP >>= 1;
+        return cycles;
+    }
+
+    if (SKIP)
+        SKIP >>= 1;
 
     // check for the condition
     if (!conditional(IR.op7.cond))
         return cycles;
-
-    if (SKIP) {
-        if (SKIP & 1) {
-            SKIP >>= 1;
-            return cycles;
-        }
-        SKIP >>= 1;
-    }
 
     // Dispatch to op_xxx() functions
     switch (IR.op7.inst) {
@@ -2525,7 +2537,7 @@ int P2Cog::decode()
  */
 int P2Cog::op_NOP()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -2551,7 +2563,7 @@ int P2Cog::op_ROR()
     updateC((D & (LSB << shift)) != 0);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -2575,7 +2587,7 @@ int P2Cog::op_ROL()
     updateC((D & (MSB >> shift)) != 0);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -2599,7 +2611,7 @@ int P2Cog::op_SHR()
     updateC((D & (LSB << shift)) != 0);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -2623,7 +2635,7 @@ int P2Cog::op_SHL()
     updateC((D & (MSB >> shift)) != 0);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -2647,7 +2659,7 @@ int P2Cog::op_RCR()
     updateC((D & (LSB << shift)) != 0);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -2671,7 +2683,7 @@ int P2Cog::op_RCL()
     updateC((D & (MSB >> shift)) != 0);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -2695,7 +2707,7 @@ int P2Cog::op_SAR()
     updateC((D & (LSB << shift)) != 0);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -2719,7 +2731,7 @@ int P2Cog::op_SAL()
     updateC((D & (MSB >> shift)) != 0);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -2742,7 +2754,7 @@ int P2Cog::op_ADD()
     updateC((accu >> 32) & 1);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -2765,7 +2777,7 @@ int P2Cog::op_ADDX()
     updateC((accu >> 32) & 1);
     updateZ(Z & (result == 0));
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -2789,7 +2801,7 @@ int P2Cog::op_ADDS()
     updateC((accu < 0) ^ sign);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -2813,7 +2825,7 @@ int P2Cog::op_ADDSX()
     updateC((accu < 0) ^ sign);
     updateZ(Z & (result == 0));
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -2836,7 +2848,7 @@ int P2Cog::op_SUB()
     updateC((accu >> 32) & 1);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -2859,7 +2871,7 @@ int P2Cog::op_SUBX()
     updateC((accu >> 32) & 1);
     updateZ(Z & (result == 0));
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -2883,7 +2895,7 @@ int P2Cog::op_SUBS()
     updateC((accu < 0) ^ sign);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -2907,7 +2919,7 @@ int P2Cog::op_SUBSX()
     updateC((accu < 0) ^ sign);
     updateZ(Z & (result == 0));
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -2928,7 +2940,7 @@ int P2Cog::op_CMP()
     const p2_LONG result = U32L(accu);
     updateC((accu >> 32) & 1);
     updateZ(0 == result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -2949,7 +2961,7 @@ int P2Cog::op_CMPX()
     const p2_LONG result = U32L(accu);
     updateC((accu >> 32) & 1);
     updateZ(Z & (result == 0));
-    return 2;
+    return 1;
 }
 
 /**
@@ -2971,7 +2983,7 @@ int P2Cog::op_CMPS()
     const p2_LONG result = U32L(accu);
     updateC((accu < 0) ^ sign);
     updateZ(0 == result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -2993,7 +3005,7 @@ int P2Cog::op_CMPSX()
     const p2_LONG result = U32L(accu);
     updateC((accu < 0) ^ sign);
     updateZ(Z & (result == 0));
-    return 2;
+    return 1;
 }
 
 /**
@@ -3014,7 +3026,7 @@ int P2Cog::op_CMPR()
     const p2_LONG result = U32L(accu);
     updateC((accu >> 32) & 1);
     updateZ(0 == result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3035,7 +3047,7 @@ int P2Cog::op_CMPM()
     const p2_LONG result = U32L(accu);
     updateC((accu >> 31) & 1);
     updateZ(0 == result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3058,7 +3070,7 @@ int P2Cog::op_SUBR()
     updateC((accu >> 32) & 1);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3088,7 +3100,7 @@ int P2Cog::op_CMPSUB()
         updateZ(0 == result);
         updateD(result);
     }
-    return 2;
+    return 1;
 }
 
 /**
@@ -3115,7 +3127,7 @@ int P2Cog::op_FGE()
         updateC(0);
         updateZ(0 == result);
     }
-    return 2;
+    return 1;
 }
 
 /**
@@ -3142,7 +3154,7 @@ int P2Cog::op_FLE()
         updateC(0);
         updateZ(0 == result);
     }
-    return 2;
+    return 1;
 }
 
 /**
@@ -3169,7 +3181,7 @@ int P2Cog::op_FGES()
         updateC(0);
         updateZ(0 == result);
     }
-    return 2;
+    return 1;
 }
 
 /**
@@ -3196,7 +3208,7 @@ int P2Cog::op_FLES()
         updateC(0);
         updateZ(0 == result);
     }
-    return 2;
+    return 1;
 }
 
 /**
@@ -3220,7 +3232,7 @@ int P2Cog::op_SUMC()
     updateC(((accu >> 32) & 1) ^ sign);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3244,7 +3256,7 @@ int P2Cog::op_SUMNC()
     updateC(((accu >> 32) & 1) ^ sign);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3268,7 +3280,7 @@ int P2Cog::op_SUMZ()
     updateC(((accu >> 32) & 1) ^ sign);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3292,7 +3304,7 @@ int P2Cog::op_SUMNZ()
     updateC(((accu >> 32) & 1) ^ sign);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3312,7 +3324,7 @@ int P2Cog::op_TESTB_W()
     const uchar bit = (D >> shift) & 1;
     updateC(bit);
     updateZ(bit);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3332,7 +3344,7 @@ int P2Cog::op_TESTBN_W()
     const uchar bit = (~D >> shift) & 1;
     updateC(bit);
     updateZ(bit);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3352,7 +3364,7 @@ int P2Cog::op_TESTB_AND()
     const uchar bit = (D >> shift) & 1;
     updateC(C & bit);
     updateZ(Z & bit);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3372,7 +3384,7 @@ int P2Cog::op_TESTBN_AND()
     const uchar bit = (~D >> shift) & 1;
     updateC(C & bit);
     updateZ(Z & bit);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3392,7 +3404,7 @@ int P2Cog::op_TESTB_OR()
     const uchar bit = (D >> shift) & 1;
     updateC(C | bit);
     updateZ(Z | bit);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3412,7 +3424,7 @@ int P2Cog::op_TESTBN_OR()
     const uchar bit = (~D >> shift) & 1;
     updateC(C | bit);
     updateZ(Z | bit);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3432,7 +3444,7 @@ int P2Cog::op_TESTB_XOR()
     const uchar bit = (D >> shift) & 1;
     updateC(C ^ bit);
     updateZ(Z ^ bit);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3452,7 +3464,7 @@ int P2Cog::op_TESTBN_XOR()
     const uchar bit = (~D >> shift) & 1;
     updateC(C ^ bit);
     updateZ(Z ^ bit);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3471,7 +3483,7 @@ int P2Cog::op_BITL()
     const p2_LONG result = D & ~bit;
     updateC((result >> shift) & 1);
     updateZ((result >> shift) & 1);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3490,7 +3502,7 @@ int P2Cog::op_BITH()
     const p2_LONG result = D | bit;
     updateC((result >> shift) & 1);
     updateZ((result >> shift) & 1);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3509,7 +3521,7 @@ int P2Cog::op_BITC()
     const p2_LONG result = C ? D | bit : D & ~bit;
     updateC((result >> shift) & 1);
     updateZ((result >> shift) & 1);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3528,7 +3540,7 @@ int P2Cog::op_BITNC()
     const p2_LONG result = !C ? D | bit : D & ~bit;
     updateC((result >> shift) & 1);
     updateZ((result >> shift) & 1);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3547,7 +3559,7 @@ int P2Cog::op_BITZ()
     const p2_LONG result = Z ? D | bit : D & ~bit;
     updateC((result >> shift) & 1);
     updateZ((result >> shift) & 1);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3566,7 +3578,7 @@ int P2Cog::op_BITNZ()
     const p2_LONG result = !Z ? D | bit : D & ~bit;
     updateC((result >> shift) & 1);
     updateZ((result >> shift) & 1);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3585,7 +3597,7 @@ int P2Cog::op_BITRND()
     const p2_LONG result = (HUB->random(shift) & 1) ? D | bit : D & ~bit;
     updateC((result >> shift) & 1);
     updateZ((result >> shift) & 1);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3604,7 +3616,7 @@ int P2Cog::op_BITNOT()
     const p2_LONG result = D ^ bit;
     updateC((result >> shift) & 1);
     updateZ((result >> shift) & 1);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3625,7 +3637,7 @@ int P2Cog::op_AND()
     const p2_LONG result = D & S;
     updateC(P2Util::parity(result));
     updateZ(0 == result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3646,7 +3658,7 @@ int P2Cog::op_ANDN()
     const p2_LONG result = D & ~S;
     updateC(P2Util::parity(result));
     updateZ(0 == result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3667,7 +3679,7 @@ int P2Cog::op_OR()
     const p2_LONG result = D | S;
     updateC(P2Util::parity(result));
     updateZ(0 == result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3688,7 +3700,7 @@ int P2Cog::op_XOR()
     const p2_LONG result = D ^ S;
     updateC(P2Util::parity(result));
     updateZ(0 == result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3709,7 +3721,7 @@ int P2Cog::op_MUXC()
     const p2_LONG result = (D & ~S) | (C ? S : 0);
     updateC(P2Util::parity(result));
     updateZ(0 == result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3730,7 +3742,7 @@ int P2Cog::op_MUXNC()
     const p2_LONG result = (D & ~S) | (!C ? S : 0);
     updateC(P2Util::parity(result));
     updateZ(0 == result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3751,7 +3763,7 @@ int P2Cog::op_MUXZ()
     const p2_LONG result = (D & ~S) | (Z ? S : 0);
     updateC(P2Util::parity(result));
     updateZ(0 == result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3772,7 +3784,7 @@ int P2Cog::op_MUXNZ()
     const p2_LONG result = (D & ~S) | (!Z ? S : 0);
     updateC(P2Util::parity(result));
     updateZ(0 == result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3794,7 +3806,7 @@ int P2Cog::op_MOV()
     updateC(result >> 31);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3816,7 +3828,7 @@ int P2Cog::op_NOT()
     updateC(result >> 31);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3838,7 +3850,7 @@ int P2Cog::op_ABS()
     updateC(S >> 31);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3860,7 +3872,7 @@ int P2Cog::op_NEG()
     updateC(result >> 31);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3882,7 +3894,7 @@ int P2Cog::op_NEGC()
     updateC(result >> 31);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3904,7 +3916,7 @@ int P2Cog::op_NEGNC()
     updateC(result >> 31);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3926,7 +3938,7 @@ int P2Cog::op_NEGZ()
     updateC(result >> 31);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3948,7 +3960,7 @@ int P2Cog::op_NEGNZ()
     updateC(result >> 31);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3969,7 +3981,7 @@ int P2Cog::op_INCMOD()
     updateC(result == 0);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -3990,7 +4002,7 @@ int P2Cog::op_DECMOD()
     updateC(result == S);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4014,7 +4026,7 @@ int P2Cog::op_ZEROX()
     updateC(msb);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4038,7 +4050,7 @@ int P2Cog::op_SIGNX()
     updateC(msb);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4060,7 +4072,7 @@ int P2Cog::op_ENCOD()
     updateC(S != 0);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4081,7 +4093,7 @@ int P2Cog::op_ONES()
     const p2_LONG result = P2Util::ones(S);
     updateC(result & 1);
     updateZ(0 == result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4101,7 +4113,7 @@ int P2Cog::op_TEST()
     const p2_LONG result = D & S;
     updateC(P2Util::parity(result));
     updateZ(0 == result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4121,7 +4133,7 @@ int P2Cog::op_TESTN()
     const p2_LONG result = D & ~S;
     updateC(P2Util::parity(result));
     updateZ(0 == result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4139,7 +4151,7 @@ int P2Cog::op_SETNIB()
     const p2_LONG mask = LNIBBLE << shift;
     const p2_LONG result = (D & ~mask) | ((S << shift) & mask);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4153,7 +4165,7 @@ int P2Cog::op_SETNIB()
 int P2Cog::op_SETNIB_ALTSN()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4172,7 +4184,7 @@ int P2Cog::op_GETNIB()
     const uchar shift = static_cast<uchar>((IR.opcode >> 19) & 7) * 4;
     const p2_LONG result = (S >> shift) & LNIBBLE;
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4186,7 +4198,7 @@ int P2Cog::op_GETNIB()
 int P2Cog::op_GETNIB_ALTGN()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4205,7 +4217,7 @@ int P2Cog::op_ROLNIB()
     const uchar shift = static_cast<uchar>((IR.opcode >> 19) & 7) * 4;
     const p2_LONG result = (D << 4) | ((S >> shift) & LNIBBLE);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4219,7 +4231,7 @@ int P2Cog::op_ROLNIB()
 int P2Cog::op_ROLNIB_ALTGN()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4237,7 +4249,7 @@ int P2Cog::op_SETBYTE()
     const p2_LONG mask = LBYTE << shift;
     const p2_LONG result = (D & ~mask) | ((S << shift) & mask);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4251,7 +4263,7 @@ int P2Cog::op_SETBYTE()
 int P2Cog::op_SETBYTE_ALTSB()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4270,7 +4282,7 @@ int P2Cog::op_GETBYTE()
     const uchar shift = static_cast<uchar>((IR.opcode >> 19) & 3) * 8;
     const p2_LONG result = (S >> shift) & LBYTE;
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4284,7 +4296,7 @@ int P2Cog::op_GETBYTE()
 int P2Cog::op_GETBYTE_ALTGB()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4303,7 +4315,7 @@ int P2Cog::op_ROLBYTE()
     const uchar shift = static_cast<uchar>((IR.opcode >> 19) & 3) * 8;
     const p2_LONG result = (D << 8) | ((S >> shift) & LBYTE);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4317,7 +4329,7 @@ int P2Cog::op_ROLBYTE()
 int P2Cog::op_ROLBYTE_ALTGB()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4335,7 +4347,7 @@ int P2Cog::op_SETWORD()
     const p2_LONG mask = LWORD << shift;
     const p2_LONG result = (D & ~mask) | ((S >> shift) & mask);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4349,7 +4361,7 @@ int P2Cog::op_SETWORD()
 int P2Cog::op_SETWORD_ALTSW()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4368,7 +4380,7 @@ int P2Cog::op_GETWORD()
     const uchar shift = IR.op7.wz * 16;
     const p2_LONG result = (S >> shift) & LWORD;
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4381,7 +4393,7 @@ int P2Cog::op_GETWORD()
  */
 int P2Cog::op_GETWORD_ALTGW()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -4400,7 +4412,7 @@ int P2Cog::op_ROLWORD()
     const uchar shift = IR.op7.wz * 16;
     const p2_LONG result = (D << 16) & ((S >> shift) & LWORD);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4413,7 +4425,7 @@ int P2Cog::op_ROLWORD()
  */
 int P2Cog::op_ROLWORD_ALTGW()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -4430,7 +4442,7 @@ int P2Cog::op_ROLWORD_ALTGW()
 int P2Cog::op_ALTSN()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4445,7 +4457,7 @@ int P2Cog::op_ALTSN()
  */
 int P2Cog::op_ALTSN_D()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -4462,7 +4474,7 @@ int P2Cog::op_ALTSN_D()
 int P2Cog::op_ALTGN()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4477,7 +4489,7 @@ int P2Cog::op_ALTGN()
  */
 int P2Cog::op_ALTGN_D()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -4494,7 +4506,7 @@ int P2Cog::op_ALTGN_D()
 int P2Cog::op_ALTSB()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4509,7 +4521,7 @@ int P2Cog::op_ALTSB()
  */
 int P2Cog::op_ALTSB_D()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -4526,7 +4538,7 @@ int P2Cog::op_ALTSB_D()
 int P2Cog::op_ALTGB()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4541,7 +4553,7 @@ int P2Cog::op_ALTGB()
  */
 int P2Cog::op_ALTGB_D()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -4558,7 +4570,7 @@ int P2Cog::op_ALTGB_D()
 int P2Cog::op_ALTSW()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4573,7 +4585,7 @@ int P2Cog::op_ALTSW()
  */
 int P2Cog::op_ALTSW_D()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -4590,7 +4602,7 @@ int P2Cog::op_ALTSW_D()
 int P2Cog::op_ALTGW()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4605,7 +4617,7 @@ int P2Cog::op_ALTGW()
  */
 int P2Cog::op_ALTGW_D()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -4621,7 +4633,7 @@ int P2Cog::op_ALTGW_D()
 int P2Cog::op_ALTR()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4634,7 +4646,7 @@ int P2Cog::op_ALTR()
  */
 int P2Cog::op_ALTR_D()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -4650,7 +4662,7 @@ int P2Cog::op_ALTR_D()
 int P2Cog::op_ALTD()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4663,7 +4675,7 @@ int P2Cog::op_ALTD()
  */
 int P2Cog::op_ALTD_D()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -4679,7 +4691,7 @@ int P2Cog::op_ALTD_D()
 int P2Cog::op_ALTS()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4692,7 +4704,7 @@ int P2Cog::op_ALTS()
  */
 int P2Cog::op_ALTS_D()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -4708,7 +4720,7 @@ int P2Cog::op_ALTS_D()
 int P2Cog::op_ALTB()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4721,7 +4733,7 @@ int P2Cog::op_ALTB()
  */
 int P2Cog::op_ALTB_D()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -4737,7 +4749,7 @@ int P2Cog::op_ALTB_D()
 int P2Cog::op_ALTI()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4752,7 +4764,7 @@ int P2Cog::op_ALTI()
  */
 int P2Cog::op_ALTI_D()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -4768,7 +4780,7 @@ int P2Cog::op_ALTI_D()
 int P2Cog::op_SETR()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4784,7 +4796,7 @@ int P2Cog::op_SETR()
 int P2Cog::op_SETD()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4800,7 +4812,7 @@ int P2Cog::op_SETD()
 int P2Cog::op_SETS()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4819,7 +4831,7 @@ int P2Cog::op_DECOD()
     const uchar shift = S & 31;
     const p2_LONG result = LSB << shift;
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4834,7 +4846,7 @@ int P2Cog::op_DECOD()
  */
 int P2Cog::op_DECOD_D()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -4853,7 +4865,7 @@ int P2Cog::op_BMASK()
     const p2_LONG result = U32L((Q_UINT64_C(2) << shift) - 1);
     updateD(result);
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4871,7 +4883,7 @@ int P2Cog::op_BMASK_D()
     const uchar shift = D & 31;
     const p2_LONG result = U32L((Q_UINT64_C(2) << shift) - 1);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4890,7 +4902,7 @@ int P2Cog::op_CRCBIT()
     const p2_LONG result = (D >> 1) ^ (S & SXn<p2_LONG,1>(C ^ D));
     updateC(D & 1);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4920,7 +4932,7 @@ int P2Cog::op_CRCNIB()
     updateQ(Q << 4);
     updateD(D ^ q4);
     updateC(c3);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4937,7 +4949,7 @@ int P2Cog::op_MUXNITS()
     const p2_LONG mask = S | ((S & 0xaaaaaaaa) >> 1) | ((S & 0x55555555) << 1);
     const p2_LONG result = (D & ~mask) | (S & mask);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4955,7 +4967,7 @@ int P2Cog::op_MUXNIBS()
     const p2_LONG mask1 = ((mask0 & 0xcccccccc) >> 2) | ((mask0 & 0x33333333) << 2);
     const p2_LONG result = (D & ~mask1) | (S & mask1);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -4974,7 +4986,7 @@ int P2Cog::op_MUXQ()
     augmentS(IR.op7.im);
     const p2_LONG result = (D & ~Q) | (S & Q);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5000,7 +5012,7 @@ int P2Cog::op_MOVBYTS()
     dst.b[2] = src.b[(S >> 4) & 3];
     dst.b[3] = src.b[(S >> 6) & 3];
     updateD(dst.l);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5019,7 +5031,7 @@ int P2Cog::op_MUL()
     const p2_LONG result = U16(D) * U16(S);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5038,7 +5050,7 @@ int P2Cog::op_MULS()
     const p2_LONG result = static_cast<p2_LONG>(S16(D) * S16(S));
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5057,7 +5069,7 @@ int P2Cog::op_SCA()
     const p2_LONG result = (U16(D) * U16(S)) >> 16;
     updateZ(0 == result);
     S_next = result;
-    return 2;
+    return 1;
 }
 
 /**
@@ -5077,7 +5089,7 @@ int P2Cog::op_SCAS()
     const p2_LONG result = static_cast<p2_LONG>((S16(D) * S16(S)) >> 14);
     updateZ(0 == result);
     S_next = result;
-    return 2;
+    return 1;
 }
 
 /**
@@ -5102,7 +5114,7 @@ int P2Cog::op_ADDPIX()
     dst.b[2] = qMin<p2_BYTE>(dst.b[2] + src.b[2], 0xff);
     dst.b[3] = qMin<p2_BYTE>(dst.b[3] + src.b[3], 0xff);
     updateD(dst.l);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5116,7 +5128,7 @@ int P2Cog::op_ADDPIX()
 int P2Cog::op_MULPIX()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5130,7 +5142,7 @@ int P2Cog::op_MULPIX()
 int P2Cog::op_BLNPIX()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5144,7 +5156,7 @@ int P2Cog::op_BLNPIX()
 int P2Cog::op_MIXPIX()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5160,7 +5172,7 @@ int P2Cog::op_MIXPIX()
 int P2Cog::op_ADDCT1()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5176,7 +5188,7 @@ int P2Cog::op_ADDCT1()
 int P2Cog::op_ADDCT2()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5192,7 +5204,7 @@ int P2Cog::op_ADDCT2()
 int P2Cog::op_ADDCT3()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5208,7 +5220,7 @@ int P2Cog::op_ADDCT3()
 int P2Cog::op_WMLONG()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5224,7 +5236,7 @@ int P2Cog::op_WMLONG()
 int P2Cog::op_RQPIN()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5240,7 +5252,7 @@ int P2Cog::op_RQPIN()
 int P2Cog::op_RDPIN()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5268,7 +5280,7 @@ int P2Cog::op_RDLUT()
     updateC((result >> 31) & 1);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5296,7 +5308,7 @@ int P2Cog::op_RDBYTE()
     updateC((result >> 7) & 1);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5324,7 +5336,7 @@ int P2Cog::op_RDWORD()
     updateC((result >> 15) & 1);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5352,7 +5364,7 @@ int P2Cog::op_RDLONG()
     updateC((result >> 15) & 1);
     updateZ(0 == result);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5368,7 +5380,7 @@ int P2Cog::op_RDLONG()
  */
 int P2Cog::op_POPA()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -5384,7 +5396,7 @@ int P2Cog::op_POPA()
  */
 int P2Cog::op_POPB()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -5423,7 +5435,7 @@ int P2Cog::op_CALLD()
     updateZ((S >> 30) & 1);
     updateD(result);
     updatePC(S & A20MASK);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5438,7 +5450,7 @@ int P2Cog::op_CALLD()
  */
 int P2Cog::op_RESI3()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -5453,7 +5465,7 @@ int P2Cog::op_RESI3()
  */
 int P2Cog::op_RESI2()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -5468,7 +5480,7 @@ int P2Cog::op_RESI2()
  */
 int P2Cog::op_RESI1()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -5483,7 +5495,7 @@ int P2Cog::op_RESI1()
  */
 int P2Cog::op_RESI0()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -5498,7 +5510,7 @@ int P2Cog::op_RESI0()
  */
 int P2Cog::op_RETI3()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -5513,7 +5525,7 @@ int P2Cog::op_RETI3()
  */
 int P2Cog::op_RETI2()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -5528,7 +5540,7 @@ int P2Cog::op_RETI2()
  */
 int P2Cog::op_RETI1()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -5543,7 +5555,7 @@ int P2Cog::op_RETI1()
  */
 int P2Cog::op_RETI0()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -5565,7 +5577,7 @@ int P2Cog::op_CALLPA()
     pushK(stack);
     updatePA(result);
     updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5587,7 +5599,7 @@ int P2Cog::op_CALLPB()
     pushK(stack);
     updatePB(result);
     updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5606,7 +5618,7 @@ int P2Cog::op_DJZ()
     const p2_LONG address = S;
     if (result == ZERO)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5625,7 +5637,7 @@ int P2Cog::op_DJNZ()
     const p2_LONG address = S;
     if (result != ZERO)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5644,7 +5656,7 @@ int P2Cog::op_DJF()
     const p2_LONG address = S;
     if (result == FULL)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5663,7 +5675,7 @@ int P2Cog::op_DJNF()
     const p2_LONG address = S;
     if (result != FULL)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5682,7 +5694,7 @@ int P2Cog::op_IJZ()
     const p2_LONG address = S;
     if (result == ZERO)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5701,7 +5713,7 @@ int P2Cog::op_IJNZ()
     const p2_LONG address = S;
     if (result != ZERO)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5720,7 +5732,7 @@ int P2Cog::op_TJZ()
     const p2_LONG address = S;
     if (result == ZERO)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5739,7 +5751,7 @@ int P2Cog::op_TJNZ()
     const p2_LONG address = S;
     if (result != ZERO)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5758,7 +5770,7 @@ int P2Cog::op_TJF()
     const p2_LONG address = S;
     if (result == FULL)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5777,7 +5789,7 @@ int P2Cog::op_TJNF()
     const p2_LONG address = S;
     if (result != FULL)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5796,7 +5808,7 @@ int P2Cog::op_TJS()
     const p2_LONG address = S;
     if (result)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5815,7 +5827,7 @@ int P2Cog::op_TJNS()
     const p2_LONG address = S;
     if (!result)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5834,7 +5846,7 @@ int P2Cog::op_TJV()
     const p2_LONG address = S;
     if (result)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5852,7 +5864,7 @@ int P2Cog::op_JINT()
     const p2_LONG address = S;
     if (FLAGS.f_INT)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5870,7 +5882,7 @@ int P2Cog::op_JCT1()
     const p2_LONG address = S;
     if (FLAGS.f_CT1)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5888,7 +5900,7 @@ int P2Cog::op_JCT2()
     const p2_LONG address = S;
     if (FLAGS.f_CT2)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5906,7 +5918,7 @@ int P2Cog::op_JCT3()
     const p2_LONG address = S;
     if (FLAGS.f_CT3)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5924,7 +5936,7 @@ int P2Cog::op_JSE1()
     const p2_LONG address = S;
     if (FLAGS.f_SE1)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5942,7 +5954,7 @@ int P2Cog::op_JSE2()
     const p2_LONG address = S;
     if (FLAGS.f_SE2)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5960,7 +5972,7 @@ int P2Cog::op_JSE3()
     const p2_LONG address = S;
     if (FLAGS.f_SE3)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5978,7 +5990,7 @@ int P2Cog::op_JSE4()
     const p2_LONG address = S;
     if (FLAGS.f_SE4)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -5996,7 +6008,7 @@ int P2Cog::op_JPAT()
     const p2_LONG address = S;
     if (FLAGS.f_PAT)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6014,7 +6026,7 @@ int P2Cog::op_JFBW()
     const p2_LONG address = S;
     if (FLAGS.f_FBW)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6032,7 +6044,7 @@ int P2Cog::op_JXMT()
     const p2_LONG address = S;
     if (FLAGS.f_XMT)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6050,7 +6062,7 @@ int P2Cog::op_JXFI()
     const p2_LONG address = S;
     if (FLAGS.f_XFI)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6068,7 +6080,7 @@ int P2Cog::op_JXRO()
     const p2_LONG address = S;
     if (FLAGS.f_XRO)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6086,7 +6098,7 @@ int P2Cog::op_JXRL()
     const p2_LONG address = S;
     if (FLAGS.f_XRL)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6104,7 +6116,7 @@ int P2Cog::op_JATN()
     const p2_LONG address = S;
     if (FLAGS.f_ATN)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6122,7 +6134,7 @@ int P2Cog::op_JQMT()
     const p2_LONG address = S;
     if (FLAGS.f_QMT)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6140,7 +6152,7 @@ int P2Cog::op_JNINT()
     const p2_LONG address = S;
     if (!FLAGS.f_INT)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6158,7 +6170,7 @@ int P2Cog::op_JNCT1()
     const p2_LONG address = S;
     if (!FLAGS.f_CT1)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6176,7 +6188,7 @@ int P2Cog::op_JNCT2()
     const p2_LONG address = S;
     if (!FLAGS.f_CT2)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6194,7 +6206,7 @@ int P2Cog::op_JNCT3()
     const p2_LONG address = S;
     if (!FLAGS.f_CT3)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6212,7 +6224,7 @@ int P2Cog::op_JNSE1()
     const p2_LONG address = S;
     if (!FLAGS.f_SE1)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6230,7 +6242,7 @@ int P2Cog::op_JNSE2()
     const p2_LONG address = S;
     if (!FLAGS.f_SE2)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6248,7 +6260,7 @@ int P2Cog::op_JNSE3()
     const p2_LONG address = S;
     if (!FLAGS.f_SE3)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6266,7 +6278,7 @@ int P2Cog::op_JNSE4()
     const p2_LONG address = S;
     if (!FLAGS.f_SE4)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6284,7 +6296,7 @@ int P2Cog::op_JNPAT()
     const p2_LONG address = S;
     if (!FLAGS.f_PAT)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6302,7 +6314,7 @@ int P2Cog::op_JNFBW()
     const p2_LONG address = S;
     if (!FLAGS.f_FBW)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6320,7 +6332,7 @@ int P2Cog::op_JNXMT()
     const p2_LONG address = S;
     if (!FLAGS.f_XMT)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6338,7 +6350,7 @@ int P2Cog::op_JNXFI()
     const p2_LONG address = S;
     if (!FLAGS.f_XFI)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6356,7 +6368,7 @@ int P2Cog::op_JNXRO()
     const p2_LONG address = S;
     if (!FLAGS.f_XRO)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6374,7 +6386,7 @@ int P2Cog::op_JNXRL()
     const p2_LONG address = S;
     if (!FLAGS.f_XRL)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6392,7 +6404,7 @@ int P2Cog::op_JNATN()
     const p2_LONG address = S;
     if (!FLAGS.f_ATN)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6410,7 +6422,7 @@ int P2Cog::op_JNQMT()
     const p2_LONG address = S;
     if (!FLAGS.f_QMT)
         updatePC(address);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6426,7 +6438,7 @@ int P2Cog::op_1011110_1()
 {
     augmentS(IR.op7.im);
     augmentD(IR.op7.wz);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6442,7 +6454,7 @@ int P2Cog::op_1011111_0()
 {
     augmentS(IR.op7.im);
     augmentD(IR.op7.wz);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6463,7 +6475,7 @@ int P2Cog::op_SETPAT()
                         : (IR.op7.wz ? p2_PAT_PA_EQ : p2_PAT_PA_NE);
     PAT.mask = D;
     PAT.match = S;
-    return 2;
+    return 1;
 }
 
 /**
@@ -6479,7 +6491,7 @@ int P2Cog::op_WRPIN()
 {
     augmentS(IR.op7.im);
     augmentD(IR.op7.wz);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6494,7 +6506,7 @@ int P2Cog::op_WRPIN()
 int P2Cog::op_AKPIN()
 {
     augmentS(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6510,7 +6522,7 @@ int P2Cog::op_WXPIN()
 {
     augmentS(IR.op7.im);
     augmentD(IR.op7.wz);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6526,7 +6538,7 @@ int P2Cog::op_WYPIN()
 {
     augmentS(IR.op7.im);
     augmentD(IR.op7.wz);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6545,7 +6557,7 @@ int P2Cog::op_WRLUT()
     const p2_LONG address = D;
     const p2_LONG result = S;
     updateLUT(address, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6564,7 +6576,7 @@ int P2Cog::op_WRBYTE()
     p2_LONG address = get_pointer(S, 2);
     p2_BYTE result = static_cast<p2_BYTE>(D);
     HUB->wr_BYTE(address, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6583,7 +6595,7 @@ int P2Cog::op_WRWORD()
     p2_LONG address = get_pointer(S, 1);
     p2_WORD result = static_cast<p2_WORD>(D);
     HUB->wr_WORD(address, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6603,7 +6615,7 @@ int P2Cog::op_WRLONG()
     p2_LONG address = get_pointer(S, 0);
     p2_LONG result = D;
     HUB->wr_BYTE(address, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6620,7 +6632,7 @@ int P2Cog::op_PUSHA()
     augmentD(IR.op7.wz);
     p2_LONG result = D;
     pushPTRA(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6637,7 +6649,7 @@ int P2Cog::op_PUSHB()
     augmentD(IR.op7.wz);
     p2_LONG result = D;
     pushPTRB(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6654,7 +6666,7 @@ int P2Cog::op_RDFAST()
 {
     augmentS(IR.op7.im);
     augmentD(IR.op7.wz);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6671,7 +6683,7 @@ int P2Cog::op_WRFAST()
 {
     augmentS(IR.op7.im);
     augmentD(IR.op7.wz);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6688,7 +6700,7 @@ int P2Cog::op_FBLOCK()
 {
     augmentS(IR.op7.im);
     augmentD(IR.op7.wz);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6704,7 +6716,7 @@ int P2Cog::op_XINIT()
 {
     augmentS(IR.op7.im);
     augmentD(IR.op7.wz);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6718,7 +6730,7 @@ int P2Cog::op_XINIT()
  */
 int P2Cog::op_XSTOP()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -6734,7 +6746,7 @@ int P2Cog::op_XZERO()
 {
     augmentS(IR.op7.im);
     augmentD(IR.op7.wz);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6750,7 +6762,7 @@ int P2Cog::op_XCONT()
 {
     augmentS(IR.op7.im);
     augmentD(IR.op7.wz);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6769,7 +6781,7 @@ int P2Cog::op_REP()
     augmentS(IR.op7.im);
     augmentD(IR.op7.wz);
     updateREP(D, S);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6789,7 +6801,7 @@ int P2Cog::op_COGINIT()
     augmentD(IR.op7.wz);
     Q_ASSERT(HUB);
     HUB->coginit(D, S, Q);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6806,7 +6818,7 @@ int P2Cog::op_QMUL()
 {
     augmentS(IR.op7.im);
     augmentD(IR.op7.wz);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6823,7 +6835,7 @@ int P2Cog::op_QDIV()
 {
     augmentS(IR.op7.im);
     augmentD(IR.op7.wz);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6840,7 +6852,7 @@ int P2Cog::op_QFRAC()
 {
     augmentS(IR.op7.im);
     augmentD(IR.op7.wz);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6857,7 +6869,7 @@ int P2Cog::op_QSQRT()
 {
     augmentS(IR.op7.im);
     augmentD(IR.op7.wz);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6874,7 +6886,7 @@ int P2Cog::op_QROTATE()
 {
     augmentS(IR.op7.im);
     augmentD(IR.op7.wz);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6891,7 +6903,7 @@ int P2Cog::op_QVECTOR()
 {
     augmentS(IR.op7.im);
     augmentD(IR.op7.wz);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6906,7 +6918,7 @@ int P2Cog::op_QVECTOR()
 int P2Cog::op_HUBSET()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6922,7 +6934,7 @@ int P2Cog::op_HUBSET()
 int P2Cog::op_COGID()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6937,7 +6949,7 @@ int P2Cog::op_COGID()
 int P2Cog::op_COGSTOP()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6953,7 +6965,7 @@ int P2Cog::op_COGSTOP()
  */
 int P2Cog::op_LOCKNEW()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -6968,7 +6980,7 @@ int P2Cog::op_LOCKNEW()
 int P2Cog::op_LOCKRET()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -6986,7 +6998,7 @@ int P2Cog::op_LOCKRET()
 int P2Cog::op_LOCKTRY()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -7002,7 +7014,7 @@ int P2Cog::op_LOCKTRY()
 int P2Cog::op_LOCKREL()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -7018,7 +7030,7 @@ int P2Cog::op_LOCKREL()
 int P2Cog::op_QLOG()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -7034,7 +7046,7 @@ int P2Cog::op_QLOG()
 int P2Cog::op_QEXP()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -7050,7 +7062,7 @@ int P2Cog::op_QEXP()
  */
 int P2Cog::op_RFBYTE()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7066,7 +7078,7 @@ int P2Cog::op_RFBYTE()
  */
 int P2Cog::op_RFWORD()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7082,7 +7094,7 @@ int P2Cog::op_RFWORD()
  */
 int P2Cog::op_RFLONG()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7098,7 +7110,7 @@ int P2Cog::op_RFLONG()
  */
 int P2Cog::op_RFVAR()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7114,7 +7126,7 @@ int P2Cog::op_RFVAR()
  */
 int P2Cog::op_RFVARS()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7128,7 +7140,7 @@ int P2Cog::op_RFVARS()
  */
 int P2Cog::op_WFBYTE()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7142,7 +7154,7 @@ int P2Cog::op_WFBYTE()
  */
 int P2Cog::op_WFWORD()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7156,7 +7168,7 @@ int P2Cog::op_WFWORD()
  */
 int P2Cog::op_WFLONG()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7175,7 +7187,7 @@ int P2Cog::op_WFLONG()
  */
 int P2Cog::op_GETQX()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7194,7 +7206,7 @@ int P2Cog::op_GETQX()
  */
 int P2Cog::op_GETQY()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7209,7 +7221,7 @@ int P2Cog::op_GETQY()
  */
 int P2Cog::op_GETCT()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7229,7 +7241,7 @@ int P2Cog::op_GETRND()
     updateC((result >> 31) & 1);
     updateZ((result >> 30) & 1);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -7247,7 +7259,7 @@ int P2Cog::op_GETRND_CZ()
     p2_LONG result = HUB->random(2*ID);
     updateC((result >> 31) & 1);
     updateZ((result >> 30) & 1);
-    return 2;
+    return 1;
 }
 
 /**
@@ -7262,7 +7274,7 @@ int P2Cog::op_GETRND_CZ()
 int P2Cog::op_SETDACS()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -7277,7 +7289,7 @@ int P2Cog::op_SETDACS()
 int P2Cog::op_SETXFRQ()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -7291,7 +7303,7 @@ int P2Cog::op_SETXFRQ()
  */
 int P2Cog::op_GETACC()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7308,7 +7320,7 @@ int P2Cog::op_GETACC()
 int P2Cog::op_WAITX()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -7323,7 +7335,7 @@ int P2Cog::op_WAITX()
 int P2Cog::op_SETSE1()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -7338,7 +7350,7 @@ int P2Cog::op_SETSE1()
 int P2Cog::op_SETSE2()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -7353,7 +7365,7 @@ int P2Cog::op_SETSE2()
 int P2Cog::op_SETSE3()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -7368,7 +7380,7 @@ int P2Cog::op_SETSE3()
 int P2Cog::op_SETSE4()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -7382,7 +7394,7 @@ int P2Cog::op_SETSE4()
  */
 int P2Cog::op_POLLINT()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7396,7 +7408,7 @@ int P2Cog::op_POLLINT()
  */
 int P2Cog::op_POLLCT1()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7410,7 +7422,7 @@ int P2Cog::op_POLLCT1()
  */
 int P2Cog::op_POLLCT2()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7424,7 +7436,7 @@ int P2Cog::op_POLLCT2()
  */
 int P2Cog::op_POLLCT3()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7438,7 +7450,7 @@ int P2Cog::op_POLLCT3()
  */
 int P2Cog::op_POLLSE1()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7452,7 +7464,7 @@ int P2Cog::op_POLLSE1()
  */
 int P2Cog::op_POLLSE2()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7466,7 +7478,7 @@ int P2Cog::op_POLLSE2()
  */
 int P2Cog::op_POLLSE3()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7480,7 +7492,7 @@ int P2Cog::op_POLLSE3()
  */
 int P2Cog::op_POLLSE4()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7494,7 +7506,7 @@ int P2Cog::op_POLLSE4()
  */
 int P2Cog::op_POLLPAT()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7508,7 +7520,7 @@ int P2Cog::op_POLLPAT()
  */
 int P2Cog::op_POLLFBW()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7522,7 +7534,7 @@ int P2Cog::op_POLLFBW()
  */
 int P2Cog::op_POLLXMT()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7536,7 +7548,7 @@ int P2Cog::op_POLLXMT()
  */
 int P2Cog::op_POLLXFI()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7550,7 +7562,7 @@ int P2Cog::op_POLLXFI()
  */
 int P2Cog::op_POLLXRO()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7564,7 +7576,7 @@ int P2Cog::op_POLLXRO()
  */
 int P2Cog::op_POLLXRL()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7578,7 +7590,7 @@ int P2Cog::op_POLLXRL()
  */
 int P2Cog::op_POLLATN()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7592,7 +7604,7 @@ int P2Cog::op_POLLATN()
  */
 int P2Cog::op_POLLQMT()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7608,7 +7620,7 @@ int P2Cog::op_POLLQMT()
  */
 int P2Cog::op_WAITINT()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7624,7 +7636,7 @@ int P2Cog::op_WAITINT()
  */
 int P2Cog::op_WAITCT1()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7640,7 +7652,7 @@ int P2Cog::op_WAITCT1()
  */
 int P2Cog::op_WAITCT2()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7656,7 +7668,7 @@ int P2Cog::op_WAITCT2()
  */
 int P2Cog::op_WAITCT3()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7672,7 +7684,7 @@ int P2Cog::op_WAITCT3()
  */
 int P2Cog::op_WAITSE1()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7688,7 +7700,7 @@ int P2Cog::op_WAITSE1()
  */
 int P2Cog::op_WAITSE2()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7704,7 +7716,7 @@ int P2Cog::op_WAITSE2()
  */
 int P2Cog::op_WAITSE3()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7720,7 +7732,7 @@ int P2Cog::op_WAITSE3()
  */
 int P2Cog::op_WAITSE4()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7736,7 +7748,7 @@ int P2Cog::op_WAITSE4()
  */
 int P2Cog::op_WAITPAT()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7752,7 +7764,7 @@ int P2Cog::op_WAITPAT()
  */
 int P2Cog::op_WAITFBW()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7768,7 +7780,7 @@ int P2Cog::op_WAITFBW()
  */
 int P2Cog::op_WAITXMT()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7784,7 +7796,7 @@ int P2Cog::op_WAITXMT()
  */
 int P2Cog::op_WAITXFI()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7800,7 +7812,7 @@ int P2Cog::op_WAITXFI()
  */
 int P2Cog::op_WAITXRO()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7816,7 +7828,7 @@ int P2Cog::op_WAITXRO()
  */
 int P2Cog::op_WAITXRL()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7832,7 +7844,7 @@ int P2Cog::op_WAITXRL()
  */
 int P2Cog::op_WAITATN()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7846,7 +7858,7 @@ int P2Cog::op_WAITATN()
  */
 int P2Cog::op_ALLOWI()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7860,7 +7872,7 @@ int P2Cog::op_ALLOWI()
  */
 int P2Cog::op_STALLI()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7874,7 +7886,7 @@ int P2Cog::op_STALLI()
  */
 int P2Cog::op_TRGINT1()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7888,7 +7900,7 @@ int P2Cog::op_TRGINT1()
  */
 int P2Cog::op_TRGINT2()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7902,7 +7914,7 @@ int P2Cog::op_TRGINT2()
  */
 int P2Cog::op_TRGINT3()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7916,7 +7928,7 @@ int P2Cog::op_TRGINT3()
  */
 int P2Cog::op_NIXINT1()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7930,7 +7942,7 @@ int P2Cog::op_NIXINT1()
  */
 int P2Cog::op_NIXINT2()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7944,7 +7956,7 @@ int P2Cog::op_NIXINT2()
  */
 int P2Cog::op_NIXINT3()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -7959,7 +7971,7 @@ int P2Cog::op_NIXINT3()
 int P2Cog::op_SETINT1()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -7974,7 +7986,7 @@ int P2Cog::op_SETINT1()
 int P2Cog::op_SETINT2()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -7989,7 +8001,7 @@ int P2Cog::op_SETINT2()
 int P2Cog::op_SETINT3()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8006,7 +8018,7 @@ int P2Cog::op_SETINT3()
 int P2Cog::op_SETQ()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8022,7 +8034,7 @@ int P2Cog::op_SETQ()
 int P2Cog::op_SETQ2()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8037,7 +8049,7 @@ int P2Cog::op_SETQ2()
 int P2Cog::op_PUSH()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8052,7 +8064,7 @@ int P2Cog::op_PUSH()
  */
 int P2Cog::op_POP()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -8070,7 +8082,7 @@ int P2Cog::op_JMP()
     updateC((D >> 31) & 1);
     updateZ((D >> 30) & 1);
     updatePC(D);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8091,7 +8103,7 @@ int P2Cog::op_CALL()
     updateC((result >> 31) & 1);
     updateZ((result >> 30) & 1);
     updatePC(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8110,7 +8122,7 @@ int P2Cog::op_RET()
     updateC((result >> 31) & 1);
     updateZ((result >> 30) & 1);
     updatePC(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8131,7 +8143,7 @@ int P2Cog::op_CALLA()
     updateC((result >> 31) & 1);
     updateZ((result >> 30) & 1);
     updatePC(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8150,7 +8162,7 @@ int P2Cog::op_RETA()
     updateC((result >> 31) & 1);
     updateZ((result >> 30) & 1);
     updatePC(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8171,7 +8183,7 @@ int P2Cog::op_CALLB()
     updateC((result >> 31) & 1);
     updateZ((result >> 30) & 1);
     updatePC(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8190,7 +8202,7 @@ int P2Cog::op_RETB()
     updateC((result >> 31) & 1);
     updateZ((result >> 30) & 1);
     updatePC(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8209,7 +8221,7 @@ int P2Cog::op_JMPREL()
     augmentD(IR.op7.im);
     const p2_LONG result = PC < 0x400 ? PC + D : PC + D * 4;
     updatePC(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8227,7 +8239,7 @@ int P2Cog::op_SKIP()
     augmentD(IR.op7.im);
     const p2_LONG result = D;
     updateSKIP(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8243,7 +8255,7 @@ int P2Cog::op_SKIP()
 int P2Cog::op_SKIPF()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8259,7 +8271,7 @@ int P2Cog::op_SKIPF()
 int P2Cog::op_EXECF()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8275,7 +8287,7 @@ int P2Cog::op_GETPTR()
 {
     const p2_LONG result = FIFO.head_addr;
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8291,7 +8303,7 @@ int P2Cog::op_GETPTR()
  */
 int P2Cog::op_GETBRK()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -8307,7 +8319,7 @@ int P2Cog::op_GETBRK()
 int P2Cog::op_COGBRK()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8323,7 +8335,7 @@ int P2Cog::op_COGBRK()
 int P2Cog::op_BRK()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8338,7 +8350,7 @@ int P2Cog::op_BRK()
 int P2Cog::op_SETLUTS()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8353,7 +8365,7 @@ int P2Cog::op_SETLUTS()
 int P2Cog::op_SETCY()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8368,7 +8380,7 @@ int P2Cog::op_SETCY()
 int P2Cog::op_SETCI()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8383,7 +8395,7 @@ int P2Cog::op_SETCI()
 int P2Cog::op_SETCQ()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8398,7 +8410,7 @@ int P2Cog::op_SETCQ()
 int P2Cog::op_SETCFRQ()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8413,7 +8425,7 @@ int P2Cog::op_SETCFRQ()
 int P2Cog::op_SETCMOD()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8428,7 +8440,7 @@ int P2Cog::op_SETCMOD()
 int P2Cog::op_SETPIV()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8443,7 +8455,7 @@ int P2Cog::op_SETPIV()
 int P2Cog::op_SETPIX()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8458,7 +8470,7 @@ int P2Cog::op_SETPIX()
 int P2Cog::op_COGATN()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8474,7 +8486,7 @@ int P2Cog::op_COGATN()
 int P2Cog::op_TESTP_W()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8490,7 +8502,7 @@ int P2Cog::op_TESTP_W()
 int P2Cog::op_TESTPN_W()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8506,7 +8518,7 @@ int P2Cog::op_TESTPN_W()
 int P2Cog::op_TESTP_AND()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8522,7 +8534,7 @@ int P2Cog::op_TESTP_AND()
 int P2Cog::op_TESTPN_AND()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8538,7 +8550,7 @@ int P2Cog::op_TESTPN_AND()
 int P2Cog::op_TESTP_OR()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8554,7 +8566,7 @@ int P2Cog::op_TESTP_OR()
 int P2Cog::op_TESTPN_OR()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8570,7 +8582,7 @@ int P2Cog::op_TESTPN_OR()
 int P2Cog::op_TESTP_XOR()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8586,7 +8598,7 @@ int P2Cog::op_TESTP_XOR()
 int P2Cog::op_TESTPN_XOR()
 {
     augmentD(IR.op7.im);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8606,7 +8618,7 @@ int P2Cog::op_DIRL()
     updateC(result);
     updateZ(result);
     updateDIR(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8626,7 +8638,7 @@ int P2Cog::op_DIRH()
     updateC(result);
     updateZ(result);
     updateDIR(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8646,7 +8658,7 @@ int P2Cog::op_DIRC()
     updateC(result);
     updateZ(result);
     updateDIR(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8666,7 +8678,7 @@ int P2Cog::op_DIRNC()
     updateC(result);
     updateZ(result);
     updateDIR(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8686,7 +8698,7 @@ int P2Cog::op_DIRZ()
     updateC(result);
     updateZ(result);
     updateDIR(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8706,7 +8718,7 @@ int P2Cog::op_DIRNZ()
     updateC(result);
     updateZ(result);
     updateDIR(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8726,7 +8738,7 @@ int P2Cog::op_DIRRND()
     updateC(result);
     updateZ(result);
     updateDIR(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8746,7 +8758,7 @@ int P2Cog::op_DIRNOT()
     updateC(result);
     updateZ(result);
     updateDIR(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8766,7 +8778,7 @@ int P2Cog::op_OUTL()
     updateC(result);
     updateZ(result);
     updateOUT(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8786,7 +8798,7 @@ int P2Cog::op_OUTH()
     updateC(result);
     updateZ(result);
     updateOUT(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8806,7 +8818,7 @@ int P2Cog::op_OUTC()
     updateC(result);
     updateZ(result);
     updateOUT(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8826,7 +8838,7 @@ int P2Cog::op_OUTNC()
     updateC(result);
     updateZ(result);
     updateOUT(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8846,7 +8858,7 @@ int P2Cog::op_OUTZ()
     updateC(result);
     updateZ(result);
     updateOUT(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8866,7 +8878,7 @@ int P2Cog::op_OUTNZ()
     updateC(result);
     updateZ(result);
     updateOUT(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8886,7 +8898,7 @@ int P2Cog::op_OUTRND()
     updateC(result);
     updateZ(result);
     updateOUT(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8906,7 +8918,7 @@ int P2Cog::op_OUTNOT()
     updateC(result);
     updateZ(result);
     updateDIR(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8928,7 +8940,7 @@ int P2Cog::op_FLTL()
     updateZ(result);
     updateDIR(D, 0);
     updateOUT(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8950,7 +8962,7 @@ int P2Cog::op_FLTH()
     updateZ(result);
     updateDIR(D, 0);
     updateOUT(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8972,7 +8984,7 @@ int P2Cog::op_FLTC()
     updateZ(result);
     updateDIR(D, 0);
     updateOUT(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -8994,7 +9006,7 @@ int P2Cog::op_FLTNC()
     updateZ(result);
     updateDIR(D, 0);
     updateOUT(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9016,7 +9028,7 @@ int P2Cog::op_FLTZ()
     updateZ(result);
     updateDIR(D, 0);
     updateOUT(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9038,7 +9050,7 @@ int P2Cog::op_FLTNZ()
     updateZ(result);
     updateDIR(D, 0);
     updateOUT(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9060,7 +9072,7 @@ int P2Cog::op_FLTRND()
     updateZ(result);
     updateDIR(D, 0);
     updateOUT(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9082,7 +9094,7 @@ int P2Cog::op_FLTNOT()
     updateZ(result);
     updateDIR(D, 0);
     updateOUT(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9104,7 +9116,7 @@ int P2Cog::op_DRVL()
     updateZ(result);
     updateDIR(D, 1);
     updateOUT(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9126,7 +9138,7 @@ int P2Cog::op_DRVH()
     updateZ(result);
     updateDIR(D, 1);
     updateOUT(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9148,7 +9160,7 @@ int P2Cog::op_DRVC()
     updateZ(result);
     updateDIR(D, 1);
     updateOUT(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9170,7 +9182,7 @@ int P2Cog::op_DRVNC()
     updateZ(result);
     updateDIR(D, 1);
     updateOUT(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9192,7 +9204,7 @@ int P2Cog::op_DRVZ()
     updateZ(result);
     updateDIR(D, 1);
     updateOUT(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9214,7 +9226,7 @@ int P2Cog::op_DRVNZ()
     updateZ(result);
     updateDIR(D, 1);
     updateOUT(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9236,7 +9248,7 @@ int P2Cog::op_DRVRND()
     updateZ(result);
     updateDIR(D, 1);
     updateOUT(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9258,7 +9270,7 @@ int P2Cog::op_DRVNOT()
     updateZ(result);
     updateDIR(D, 1);
     updateOUT(D, result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9283,7 +9295,7 @@ int P2Cog::op_SPLITB()
             (((S >> 28) & 1) <<  7) | (((S >> 24) & 1) <<  6) | (((S >> 20) & 1) <<  5) | (((S >> 16) & 1) <<  4) |
             (((S >> 12) & 1) <<  3) | (((S >>  8) & 1) <<  2) | (((S >>  4) & 1) <<  1) | (((S >>  0) & 1) <<  0);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9308,7 +9320,7 @@ int P2Cog::op_MERGEB()
             (((S >> 25) & 1) <<  7) | (((S >> 17) & 1) <<  6) | (((S >>  9) & 1) <<  5) | (((S >>  1) & 1) <<  4) |
             (((S >> 24) & 1) <<  3) | (((S >> 16) & 1) <<  2) | (((S >>  8) & 1) <<  1) | (((S >>  0) & 1) <<  0);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9333,7 +9345,7 @@ int P2Cog::op_SPLITW()
             (((S >> 14) & 1) <<  7) | (((S >> 12) & 1) <<  6) | (((S >> 10) & 1) <<  5) | (((S >>  8) & 1) <<  4) |
             (((S >>  6) & 1) <<  3) | (((S >>  4) & 1) <<  2) | (((S >>  2) & 1) <<  1) | (((S >>  0) & 1) <<  0);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9366,7 +9378,7 @@ int P2Cog::op_MERGEW()
             (((S >> 17) & 1) <<  3) | (((S >>  1) & 1) <<  2) |
             (((S >> 16) & 1) <<  1) | (((S >>  0) & 1) <<  0);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9384,7 +9396,7 @@ int P2Cog::op_SEUSSF()
 {
     const p2_LONG result = P2Util::seuss(S, true);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9402,7 +9414,7 @@ int P2Cog::op_SEUSSR()
 {
     const p2_LONG result = P2Util::seuss(S, false);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9422,7 +9434,7 @@ int P2Cog::op_RGBSQZ()
             (((S >> 18) & 0x3f) <<  5) |
             (((S >> 11) & 0x1f) <<  0);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9445,7 +9457,7 @@ int P2Cog::op_RGBEXP()
             (((S >>  0) & 0x1f) << 11) |
             (((S >>  2) & 0x07) <<  8);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9459,7 +9471,7 @@ int P2Cog::op_RGBEXP()
  */
 int P2Cog::op_XORO32()
 {
-    return 2;
+    return 1;
 }
 
 /**
@@ -9476,7 +9488,7 @@ int P2Cog::op_REV()
 {
     p2_LONG result = P2Util::reverse(D);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9496,7 +9508,7 @@ int P2Cog::op_RCZR()
     updateC((D >> 1) & 1);
     updateZ((D >> 0) & 1);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9516,7 +9528,7 @@ int P2Cog::op_RCZL()
     updateC((D >> 31) & 1);
     updateZ((D >> 30) & 1);
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9533,7 +9545,7 @@ int P2Cog::op_WRC()
 {
     const p2_LONG result = C;
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9550,7 +9562,7 @@ int P2Cog::op_WRNC()
 {
     const p2_LONG result = C ^ 1;
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9567,7 +9579,7 @@ int P2Cog::op_WRZ()
 {
     const p2_LONG result = Z;
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9584,7 +9596,7 @@ int P2Cog::op_WRNZ()
 {
     const p2_LONG result = Z ^ 1;
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9603,7 +9615,7 @@ int P2Cog::op_MODCZ()
     const p2_Cond_e zzzz = static_cast<p2_Cond_e>((IR.op7.dst >> 0) & 15);
     updateC(conditional(cccc));
     updateZ(conditional(zzzz));
-    return 2;
+    return 1;
 }
 
 /**
@@ -9625,7 +9637,7 @@ int P2Cog::op_SETSCP()
 {
     augmentD(IR.op7.im);
     HUB->wr_SCP(D);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9644,7 +9656,7 @@ int P2Cog::op_GETSCP()
 {
     const p2_LONG result = HUB->rd_SCP();
     updateD(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9661,7 +9673,7 @@ int P2Cog::op_JMP_ABS()
 {
     const p2_LONG result = (IR.op5.address + (PC & SXn<p2_LONG,1>(IR.op5.rel))) & A20MASK;
     updatePC(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9680,7 +9692,7 @@ int P2Cog::op_CALL_ABS()
     const p2_LONG result = (IR.op5.address + (PC & SXn<p2_LONG,1>(IR.op5.rel))) & A20MASK;
     pushK(stack);
     updatePC(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9699,7 +9711,7 @@ int P2Cog::op_CALLA_ABS()
     const p2_LONG result = (IR.op5.address + (PC & SXn<p2_LONG,1>(IR.op5.rel))) & A20MASK;
     pushPTRA(stack);
     updatePC(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9718,7 +9730,7 @@ int P2Cog::op_CALLB_ABS()
     const p2_LONG result = (IR.op5.address + (PC & SXn<p2_LONG,1>(IR.op5.rel))) & A20MASK;
     pushPTRB(stack);
     updatePC(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9737,7 +9749,7 @@ int P2Cog::op_CALLD_ABS_PA()
     const p2_LONG result = (IR.op5.address + (PC & SXn<p2_LONG,1>(IR.op5.rel))) & A20MASK;
     pushPA(stack);
     updatePC(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9756,7 +9768,7 @@ int P2Cog::op_CALLD_ABS_PB()
     const p2_LONG result = (IR.op5.address + (PC & SXn<p2_LONG,1>(IR.op5.rel))) & A20MASK;
     pushPB(stack);
     updatePC(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9775,7 +9787,7 @@ int P2Cog::op_CALLD_ABS_PTRA()
     const p2_LONG result = (IR.op5.address + (PC & SXn<p2_LONG,1>(IR.op5.rel))) & A20MASK;
     pushPTRA(stack);
     updatePC(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9794,7 +9806,7 @@ int P2Cog::op_CALLD_ABS_PTRB()
     const p2_LONG result = (IR.op5.address + (PC & SXn<p2_LONG,1>(IR.op5.rel))) & A20MASK;
     pushPTRB(stack);
     updatePC(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9811,7 +9823,7 @@ int P2Cog::op_LOC_PA()
 {
     const p2_LONG result = (IR.op5.address + (PC & SXn<p2_LONG,1>(IR.op5.rel))) & A20MASK;
     updatePA(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9828,7 +9840,7 @@ int P2Cog::op_LOC_PB()
 {
     const p2_LONG result = (IR.op5.address + (PC & SXn<p2_LONG,1>(IR.op5.rel))) & A20MASK;
     updatePB(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9845,7 +9857,7 @@ int P2Cog::op_LOC_PTRA()
 {
     const p2_LONG result = (IR.op5.address + (PC & SXn<p2_LONG,1>(IR.op5.rel))) & A20MASK;
     updatePTRA(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9862,7 +9874,7 @@ int P2Cog::op_LOC_PTRB()
 {
     const p2_LONG result = (IR.op5.address + (PC & SXn<p2_LONG,1>(IR.op5.rel))) & A20MASK;
     updatePTRB(result);
-    return 2;
+    return 1;
 }
 
 /**
@@ -9877,7 +9889,7 @@ int P2Cog::op_LOC_PTRB()
 int P2Cog::op_AUGS()
 {
     S_aug = (IR.opcode << AUG_SHIFT) & AUG_MASK;
-    return 2;
+    return 1;
 }
 
 /**
@@ -9892,5 +9904,5 @@ int P2Cog::op_AUGS()
 int P2Cog::op_AUGD()
 {
     D_aug = (IR.opcode << AUG_SHIFT) & AUG_MASK;
-    return 2;
+    return 1;
 }

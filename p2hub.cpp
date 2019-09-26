@@ -68,10 +68,14 @@ int P2Hub::execute(int run_cycles)
     while (run_cycles > 0) {
         xoro128();
         for (int id = 0; id < nCOGS; id++) {
-            P2Cog* cog = COGS.value(id, nullptr);
-            qDebug("%s: run COG #%x (%d cycles left)", __func__, id, run_cycles);
-            int cycles = cog ? cog->decode() : 2;
-            run_cycles -= cycles;
+            P2Cog* cog = COGS[id];
+            qDebug("%s: COG #%x gox (%d cycles left)", __func__, id, run_cycles);
+            run_cycles -= cog->gox();
+        }
+        for (int id = 0; id < nCOGS; id++) {
+            P2Cog* cog = COGS[id];
+            qDebug("%s: COG #%x get (%d cycles left)", __func__, id, run_cycles);
+            run_cycles -= cog->get();
         }
         CNT++;
     }

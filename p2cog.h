@@ -43,7 +43,8 @@ class P2Cog : public QObject
 public:
     P2Cog(int cog_id = 0, P2Hub* hub = nullptr, QObject* parent = nullptr);
 
-    int decode();
+    int gox();
+    int get();
 
     p2_opcode_u rd_IR() const { return IR; }
     p2_LONG rd_ID() const { return ID; }
@@ -94,6 +95,7 @@ private:
     p2_LONG D;              //!< value of D
     p2_LONG S;              //!< value of S
     p2_LONG Q;              //!< value of Q
+    p2_LONG R;              //!< address of R (result)
     p2_LONG C;              //!< current carry flag
     p2_LONG Z;              //!< current zero flag
     p2_FIFO_t FIFO;         //!< stream FIFO
