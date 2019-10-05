@@ -2472,8 +2472,8 @@ QStringList P2Asm::results_instruction(bool wr_mem)
     // Do we need to generate an AUGD instruction?
     if (m_IR.augd_valid()) {
         p2_LONG value = m_IR.augd_value();
-        P2Opcode IR(p2_AUGD, _cog, _hub, m_hubmode);
-        IR.set_hubmode(m_hubmode);
+        P2Union origin(_cog, _hub, m_hubmode);
+        P2Opcode IR(p2_AUGD, origin);
         IR.set_imm23(value);
 
         if (m_pass > 1) {
@@ -2506,8 +2506,8 @@ QStringList P2Asm::results_instruction(bool wr_mem)
     // Do we need to generate an AUGS instruction?
     if (m_IR.augs_valid()) {
         p2_LONG value = m_IR.augs_value();
-        P2Opcode IR(p2_AUGS, _cog, _hub, m_hubmode);
-        IR.set_hubmode(m_hubmode);
+        P2Union origin(_cog, _hub, m_hubmode);
+        P2Opcode IR(p2_AUGS, origin);
         IR.set_imm23(value);
 
         if (m_pass > 1) {
