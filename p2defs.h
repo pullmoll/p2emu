@@ -392,11 +392,11 @@ class P2MatchMask : public QPair<p2_LONG,p2_LONG>
 {
 public:
     P2MatchMask(p2_LONG match = 0, p2_LONG mask = 0)
-        : QPair<p2_LONG,p2_LONG>(match, mask)
+        : QPair<p2_LONG,p2_LONG>(match, ~mask)
     {}
     p2_LONG match() const { return first; }
-    p2_LONG mask() const { return second; }
-    void set_masked_match(const p2_LONG match) { first = match & second; }
+    p2_LONG mask() const { return ~second; }
+    void set_masked_match(const p2_LONG match) { first = match & ~second; }
 };
 
 typedef enum {

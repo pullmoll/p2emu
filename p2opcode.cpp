@@ -34,7 +34,7 @@
 #include "p2opcode.h"
 #include "p2doc.h"
 
-P2Opcode::P2Opcode(const p2_LONG opcode, P2Union origin)
+P2Opcode::P2Opcode(const p2_LONG opcode, const P2Union& origin)
     : m_u({opcode})
     , m_origin(origin)
     , m_type(type_none)
@@ -50,31 +50,31 @@ P2Opcode::P2Opcode(const p2_LONG opcode, P2Union origin)
 {
 }
 
-P2Opcode::P2Opcode(const p2_LONG opcode, const p2_LONG _cog, const p2_LONG _hub, const bool hubmode)
+P2Opcode::P2Opcode(const p2_LONG opcode, const p2_LONG _cog, const p2_LONG _hub, bool hubmode)
     : P2Opcode(opcode, P2Union(_cog, _hub, hubmode))
 {
 }
 
-P2Opcode::P2Opcode(const p2_INST5_e inst5, const p2_LONG _cog, const p2_LONG _hub, const bool hubmode)
-    : P2Opcode(0, P2Union(_cog, _hub, hubmode))
+P2Opcode::P2Opcode(const p2_INST5_e inst5, const P2Union& origin)
+    : P2Opcode(0, origin)
 {
     set_inst5(inst5);
 }
 
-P2Opcode::P2Opcode(const p2_INST7_e inst7, const p2_LONG _cog, const p2_LONG _hub, const bool hubmode)
-    : P2Opcode(0, P2Union(_cog, _hub, hubmode))
+P2Opcode::P2Opcode(const p2_INST7_e inst7, const P2Union& origin)
+    : P2Opcode(0, origin)
 {
     set_inst7(inst7);
 }
 
-P2Opcode::P2Opcode(const p2_INST8_e inst8, const p2_LONG _cog, const p2_LONG _hub, const bool hubmode)
-    : P2Opcode(0, P2Union(_cog, _hub, hubmode))
+P2Opcode::P2Opcode(const p2_INST8_e inst8, const P2Union& origin)
+    : P2Opcode(0, origin)
 {
     set_inst8(inst8);
 }
 
-P2Opcode::P2Opcode(const p2_INST9_e inst9, const p2_LONG _cog, const p2_LONG _hub, const bool hubmode)
-    : P2Opcode(0, P2Union(_cog, _hub, hubmode))
+P2Opcode::P2Opcode(const p2_INST9_e inst9, const P2Union& origin)
+    : P2Opcode(0, origin)
 {
     set_inst9(inst9);
 }
@@ -518,6 +518,7 @@ void P2Opcode::set_cond(const p2_Cond_e cond)
  */
 void P2Opcode::set_inst5(const p2_INST5_e inst, bool rel, p2_LONG address)
 {
+    m_u.op5.cond = cc_always;
     m_u.op5.inst = static_cast<uint>(inst);
     m_u.op5.rel = rel;
     m_u.op5.address = address;

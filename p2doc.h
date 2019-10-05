@@ -71,6 +71,7 @@ private:
         match_C,
         match_CZ,
         match_CZI,
+        match_Z,
         match_I,
         match_D,
         match_S,
@@ -80,10 +81,8 @@ private:
         match_C_neq_Z,
     };
 
-    QHash<P2MatchMask,P2DocOpcode> m_opcodes;                           //!< hash of P2DocOpcodes for P2MatchMask pairs
-    QMultiHash<p2_LONG,P2MatchMask> m_matches;                          //!< multi hash of P2MatchMask pairs for masks
-    QHash<uchar,P2MatchMask> m_masks;                                   //!< hash of number of 1 bits to match/mask pairs
-    QList<uchar> m_ones;                                                //!< list of number of 1 bits
+    QMultiMap<P2MatchMask,P2DocOpcode> m_opcodes;               //!< multi map of P2DocOpcodes for P2MatchMask pairs
+    QMap<uchar,P2MatchMask> m_masks;                            //!< hash of number of 1 bits to match/mask pairs
 
     static const QString format_pattern(const p2_LONG pattern,
                                         const QChar& zero = QChar('0'),

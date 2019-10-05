@@ -2544,10 +2544,9 @@ QStringList P2Asm::results_instruction(bool wr_mem)
                       .arg(m_IR.opcode(), 8, 16, QChar('0'))
                       .arg(lineptr ? *lineptr : QString());
         } else {
-            output += QString("%1 %2 %3 [%4] %5")
+            output += QString("%1 %2 [%3] %4")
                       .arg(m_lineno, -6)
-                      .arg(_hub, 5, 16, QChar('0'))
-                      .arg(_cog/sz_LONG, 3, 16, QChar('0'))
+                      .arg(hub_cog(m_IR))
                       .arg(m_IR.opcode(), 8, 16, QChar('0'))
                       .arg(lineptr ? *lineptr : QString());
         }
@@ -2629,7 +2628,7 @@ QStringList P2Asm::results_data(bool wr_mem)
         p2_LONG _hub = m_hubaddr;
         p2_LONG advance = 0;
         foreach(const P2TypedValue& tv, u) {
-            P2Opcode IR(0, _cog, _hub);
+            P2Opcode IR(0, _cog, _hub, m_hubmode);
             IR.set_hubmode(m_hubmode);
             switch (tv.type) {
             case ut_Invalid:

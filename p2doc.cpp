@@ -42,9 +42,7 @@ P2Doc Doc;
 
 P2Doc::P2Doc()
     : m_opcodes()
-    , m_matches()
     , m_masks()
-    , m_ones()
 {
     doc_NOP(p2_ROR);
     doc_ROR(p2_ROR);
@@ -546,15 +544,11 @@ P2Doc::P2Doc()
 
     foreach(P2DocOpcode op, m_opcodes) {
         P2MatchMask matchmask = op->matchmask();
-        m_matches.insert(op->mask(), matchmask);
-        uchar ones = P2Util::ones(op->mask());
+        uchar ones = P2Util::ones(~matchmask.mask());
         m_masks.insert(ones, matchmask);
     }
 
-    foreach(uchar ones, m_masks.keys())
-        m_ones.insert(0, ones);
-
-    qDebug("%s: matches = %d", __func__, m_matches.count());
+    qDebug("%s: opcodes = %d", __func__, m_opcodes.count());
     qDebug("%s: masks = %d", __func__, m_masks.count());
 }
 
@@ -593,13 +587,11 @@ const QString P2Doc::format_pattern(const p2_LONG pattern, const QChar& zero, co
 
 const P2DocOpcode P2Doc::opcode_of(const p2_LONG opcode) const
 {
-    foreach(const uchar ones, m_ones) {
-        foreach(P2MatchMask matchmask, m_masks.values(ones)) {
-            matchmask.set_masked_match(opcode);
-            P2DocOpcode op = m_opcodes.value(matchmask);
-            if (!op.isNull() && op->isDefined())
-                return op;
-        }
+    foreach(P2MatchMask matchmask, m_masks.values()) {
+        matchmask.set_masked_match(opcode);
+        P2DocOpcode op = m_opcodes.value(matchmask);
+        if (!op.isNull() && op->isDefined())
+            return op;
     }
     return P2DocOpcode();
 }
@@ -755,40 +747,33 @@ const QStringList P2Doc::html_opcodes() const
     QDomText text;
 
     root = p2_html(doc,"html");
-    head = p2_html(doc,"head");
-    title = p2_html(doc,"title");
+    head = p2_head(doc);
+    title = p2_title(doc);
     text = p2_text(doc, QStringLiteral("Propeller2 opcodes"));
     title.appendChild(text);
     head.appendChild(title);
     root.appendChild(head);
 
-    body = p2_html(doc,"body");
-    table = p2_html(doc,"table");
+    body = p2_body(doc);
+    table = p2_table(doc);
     table.setAttribute(attr_width, attr_95percent);
 
 
-    QMultiMap<p2_LONG,P2MatchMask> opcodes;
-    foreach(P2DocOpcode op, m_opcodes.values()) {
-        opcodes.insert(~(op->mask() & ~op->match()), op->matchmask());
-    }
+    foreach(const P2DocOpcode& op, m_opcodes.values()) {
 
-    foreach(const P2MatchMask matchmask, opcodes.values()) {
-        foreach(P2DocOpcode op, m_opcodes.values(matchmask)) {
+        tr = p2_tr(doc);
+        td = p2_td(doc);
+        hr = p2_hr(doc);
+        // hr.setAttribute(attr_width, attr_95percent);
+        td.appendChild(hr);
+        tr.appendChild(td);
+        table.appendChild(tr);
 
-            tr = p2_html(doc,"tr");
-            td = p2_html(doc,"td");
-            hr = p2_html(doc,"hr");
-            // hr.setAttribute(attr_width, attr_95percent);
-            td.appendChild(hr);
-            tr.appendChild(td);
-            table.appendChild(tr);
-
-            tr = p2_html(doc,"tr");
-            td = p2_html(doc,"td");
-            td.appendChild(doc_opcode(doc, op));
-            tr.appendChild(td);
-            table.appendChild(tr);
-        }
+        tr = p2_tr(doc);
+        td = p2_td(doc);
+        td.appendChild(doc_opcode(doc, op));
+        tr.appendChild(td);
+        table.appendChild(tr);
     }
     body.appendChild(table);
     root.appendChild(body);
@@ -982,9 +967,7 @@ P2DocOpcode P2Doc::make_pattern(const char* _func, p2_LONG opcode, const char* p
 
     // replace non-mask bits with '0's
     for (int bit = 0; bit < 32; bit++) {
-        if (0 == ((mask1 << bit) & MSB))
-            pack[bit] = QChar('0');
-        if (0 != ((mask2 << bit) & MSB))
+        if (0 == ((mask1 << bit) & MSB) && pack[bit] != QChar('1'))
             pack[bit] = QChar('0');
     }
 
@@ -994,12 +977,12 @@ P2DocOpcode P2Doc::make_pattern(const char* _func, p2_LONG opcode, const char* p
         qDebug("mask contains non digits: %s (%s)",
                qPrintable(pack), _func);
     }
-
-    matchmask = P2MatchMask((opcode & mask1) | (opcode & ~match), mask1 | mask2);
+    p2_LONG mask = mask1 | mask2;
+    matchmask = P2MatchMask((opcode | match) & mask, mask);
 
     if (matchmask.match() & ~matchmask.mask()) {
-        QString dbg_instr = QString("%1").arg(opcode | mask1 | mask2, 32, 2, QChar('0'));
-        QString dbg_mask = QString("%1").arg(mask1 | mask2, 32, 2, QChar('0'));
+        QString dbg_instr = QString("%1").arg(opcode | mask, 32, 2, QChar('0'));
+        QString dbg_mask = QString("%1").arg(mask, 32, 2, QChar('0'));
         put_spaces(dbg_instr);
         put_spaces(dbg_mask);
         dbg_instr.replace(QChar('0'), chr_centerdot);
@@ -1011,7 +994,7 @@ P2DocOpcode P2Doc::make_pattern(const char* _func, p2_LONG opcode, const char* p
     }
 
     if (m_opcodes.contains(matchmask)) {
-        P2DocOpcode op = m_opcodes[matchmask];
+        P2DocOpcode op = m_opcodes.value(matchmask);
         QString dbg_match = QString("%1").arg(matchmask.first, 32, 2, QChar('0'));
         QString dbg_mask = QString("%1").arg(matchmask.second, 32, 2, QChar('0'));
         put_spaces(dbg_mask);
@@ -1025,7 +1008,7 @@ P2DocOpcode P2Doc::make_pattern(const char* _func, p2_LONG opcode, const char* p
     P2DocOpcode result = P2DocOpcode(new P2DocOpcodeClass(matchmask, pat, _func));
     m_opcodes.insert(matchmask, result);
 
-    return m_opcodes[matchmask];
+    return result;
 }
 
 /**
@@ -1096,6 +1079,10 @@ P2DocOpcode P2Doc::make_pattern(const char* _func, p2_INST8_e instr, const char*
     case match_C:
         mask2 = p2_mask_C;
         break;
+    case match_Z:
+        mask1 &= ~p2_mask_C;
+        mask2 = p2_mask_CZ;
+        break;
     case match_D:
         mask2 = p2_mask_D;
         break;
@@ -1135,15 +1122,18 @@ P2DocOpcode P2Doc::make_pattern(const char* _func, p2_INST9_e instr, const char*
         mask2 = p2_mask_N;
         break;
     case match_CZI_D_S:
+        mask1 &= ~p2_mask_CZI;
         mask2 = p2_mask_CZI | p2_mask_D | p2_mask_S;
         break;
     case match_I_S:
         mask2 = p2_mask_I | p2_mask_S;
         break;
     case match_C_equ_Z:
+        mask1 &= ~p2_mask_CZ;
         mask2 = p2_mask_CZ;
         break;
     case match_C_neq_Z:
+        mask1 &= ~p2_mask_CZ;
         mask2 = p2_mask_CZ;
         break;
     case match_D:
@@ -1249,11 +1239,9 @@ P2DocOpcode P2Doc::make_pattern(const char* _func, p2_OPSRC_e instr, p2_INST9_e 
 
     switch (flags) {
     case match_C_equ_Z:
-        mask1 |= p2_mask_CZ;
         mask2 |= p2_mask_CZ;
         break;
     case match_C_neq_Z:
-        mask1 |= p2_mask_CZ;
         mask2 |= p2_mask_CZ;
         break;
     default:
@@ -4552,7 +4540,7 @@ void P2Doc::doc_WMLONG(p2_INST9_e instr)
  */
 void P2Doc::doc_RQPIN(p2_INST8_e instr)
 {
-    P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1010100 C0I DDDDDDDDD SSSSSSSSS", match_C);
+    P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1010100 C0I DDDDDDDDD SSSSSSSSS", match_Z);
 
     op->set_token(t_RQPIN);
     op->set_brief("Read smart pin S[5:0] result \"Z\" into D, don't acknowledge smart pin (\"Q\" in RQPIN means \"quiet\").");
@@ -4572,7 +4560,7 @@ void P2Doc::doc_RQPIN(p2_INST8_e instr)
  */
 void P2Doc::doc_RDPIN(p2_INST8_e instr)
 {
-    P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1010100 C1I DDDDDDDDD SSSSSSSSS", match_C);
+    P2DocOpcode op = make_pattern(__func__, instr, "EEEE 1010100 C1I DDDDDDDDD SSSSSSSSS", match_Z);
 
     op->set_token(t_RDPIN);
     op->set_brief("Read smart pin S[5:0] result \"Z\" into D, acknowledge smart pin.");
@@ -9229,6 +9217,7 @@ void P2Doc::doc_SEUSSF(p2_OPSRC_e instr)
 
     op->set_token(t_SEUSSF);
     op->set_brief("Relocate and periodically invert bits from S into D.");
+    op->set_instr("SEUSSF  D");
     op->add_descr("Returns to original value on 32nd iteration.");
     op->add_descr("Forward pattern.");
 }
@@ -9249,6 +9238,7 @@ void P2Doc::doc_SEUSSR(p2_OPSRC_e instr)
 
     op->set_token(t_SEUSSR);
     op->set_brief("Relocate and periodically invert bits from S into D.");
+    op->set_instr("SEUSSR  D");
     op->add_descr("Returns to original value on 32nd iteration.");
     op->add_descr("Reverse pattern.");
 }

@@ -42,12 +42,12 @@
 class P2Opcode
 {
 public:
-    explicit P2Opcode(const p2_LONG opcode, P2Union origin);
-    explicit P2Opcode(const p2_LONG opcode = 0, const p2_LONG _cog = 0, const p2_LONG _hub = 0, const bool hubmode = false);
-    P2Opcode(const p2_INST5_e inst7, const p2_LONG _cog = 0, const p2_LONG _hub = 0, const bool hubmode = false);
-    P2Opcode(const p2_INST7_e inst7, const p2_LONG _cog = 0, const p2_LONG _hub = 0, const bool hubmode = false);
-    P2Opcode(const p2_INST8_e inst8, const p2_LONG _cog = 0, const p2_LONG _hub = 0, const bool hubmode = false);
-    P2Opcode(const p2_INST9_e inst9, const p2_LONG _cog = 0, const p2_LONG _hub = 0, const bool hubmode = false);
+    explicit P2Opcode(const p2_LONG opcode = 0, const P2Union& origin = P2Union());
+    explicit P2Opcode(const p2_LONG opcode, const p2_LONG _cog, const p2_LONG _hub, bool hubmode);
+    explicit P2Opcode(const p2_INST5_e inst7, const P2Union& origin);
+    explicit P2Opcode(const p2_INST7_e inst7, const P2Union& origin);
+    explicit P2Opcode(const p2_INST8_e inst8, const P2Union& origin);
+    explicit P2Opcode(const p2_INST9_e inst9, const P2Union& origin);
 
     enum Type {
         type_none,          //!< type of the contents is unspecified

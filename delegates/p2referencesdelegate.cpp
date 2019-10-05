@@ -142,15 +142,18 @@ void P2ReferencesDelegate::paint(QPainter* painter, const QStyleOptionViewItem& 
     p2_word_hash_t hash = qvariant_cast<p2_word_hash_t>(data);
     QStyleOptionViewItem opt(option);
     QString text;
-    int flags = Qt::AlignRight | Qt::AlignVCenter |
-                Qt::TextSingleLine | Qt::TextDontClip;
+    int flags = static_cast<int>(opt.displayAlignment)
+                | Qt::TextDontClip
+                | Qt::TextSingleLine
+                | Qt::TextExpandTabs
+                ;
 
     if (hash.count() < 1) {
         text = tr("no refs", "Number of references is zero");
     } else {
         text = tr("%n ref(s)", "Number of references", hash.count());
     }
-    painter->drawText(opt.rect, flags, text);
+    painter->drawText(opt.rect.adjusted(5,0,-5,0), flags, text);
 }
 
 void P2ReferencesDelegate::indexChanged(int i) const

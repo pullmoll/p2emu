@@ -515,20 +515,20 @@ QString P2AsmModel::opcodeToolTip(const P2Opcode& IR) const
         column1 += lines;
     }
 
-    QDomElement table = p2_html(doc, "table");
+    QDomElement table = p2_table(doc);
     QDomElement tr, th, td, tt;
     // heading
-    tr = p2_html(doc, "tr");
+    tr = p2_tr(doc);
 
-    th = p2_html(doc, "th");
-    tt = p2_html(doc, "tt");
+    th = p2_th(doc);
+    tt = p2_tt(doc);
     tt.appendChild(p2_text(doc, title1));
     th.appendChild(tt);
     tr.appendChild(th);
 
     if (!title2.isEmpty()) {
-        th = p2_html(doc, "th");
-        tt = p2_html(doc, "tt");
+        th = p2_th(doc);
+        tt = p2_tt(doc);
         tt.appendChild(p2_text(doc, title2));
         th.appendChild(tt);
         tr.appendChild(th);
@@ -539,18 +539,18 @@ QString P2AsmModel::opcodeToolTip(const P2Opcode& IR) const
     // table rows
     for (int i = 0; i < column1.count(); i++) {
         const QString& line = column1[i];
-        tr = p2_html(doc, "tr");
-        td = p2_html(doc, "td");
+        tr = p2_tr(doc);
+        td = p2_td(doc);
         td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
-        tt = p2_html(doc, "tt");
+        tt = p2_tt(doc);
         tt.appendChild(p2_text(doc, line));
         td.appendChild(tt);
         tr.appendChild(td);
 
         if (!column2.isEmpty()) {
-            td = p2_html(doc, "td");
+            td = p2_td(doc);
             td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
-            tt = p2_html(doc, "tt");
+            tt = p2_tt(doc);
             tt.appendChild(p2_text(doc, column2.value(i)));
             td.appendChild(tt);
             tr.appendChild(td);
@@ -572,66 +572,66 @@ QString P2AsmModel::tokenToolTip(const P2Words& words) const
     headings += tr("Len");
     headings += tr("Source code");
 
-    QDomElement table = p2_html(doc, "table");
-    QDomElement tr, th, td, tt;
+    QDomElement e_table = p2_table(doc);
+    QDomElement e_tr, e_th, e_td, e_tt;
 
     // heading
-    tr = p2_html(doc, "tr");
+    e_tr = p2_tr(doc);
 
     foreach(const QString& heading, headings) {
-        th = p2_html(doc, "th");
-        th.setAttribute(attr_style, QString("%1 %2").arg(attr_style_left).arg(attr_style_nowrap));
-        tt = p2_html(doc, "tt");
-        tt.appendChild(p2_text(doc, heading));
-        th.appendChild(tt);
-        tr.appendChild(th);
+        e_th = p2_th(doc);
+        e_th.setAttribute(attr_style, QString("%1 %2").arg(attr_style_left).arg(attr_style_nowrap));
+        e_tt = p2_tt(doc);
+        e_tt.appendChild(p2_text(doc, heading));
+        e_th.appendChild(e_tt);
+        e_tr.appendChild(e_th);
     }
 
-    table.appendChild(tr);
+    e_table.appendChild(e_tr);
 
     // table rows
     for (int i = 0; i < words.count(); i++) {
         const P2Word& word = words[i];
 
-        tr = p2_html(doc, "tr");
-        td = p2_html(doc, "td");
-        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
-        tt = p2_html(doc, "tt");
-        tt.appendChild(p2_text(doc, Token.enum_name(word.tok())));
-        td.appendChild(tt);
-        tr.appendChild(td);
+        e_tr = p2_tr(doc);
+        e_td = p2_td(doc);
+        e_td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
+        e_tt = p2_tt(doc);
+        e_tt.appendChild(p2_text(doc, Token.enum_name(word.tok())));
+        e_td.appendChild(e_tt);
+        e_tr.appendChild(e_td);
 
-        td = p2_html(doc, "td");
-        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
-        tt = p2_html(doc, "tt");
-        tt.appendChild(p2_text(doc, Token.type_names(word.tok()).join(QChar::Space)));
-        td.appendChild(tt);
-        tr.appendChild(td);
+        e_td = p2_td(doc);
+        e_td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
+        e_tt = p2_tt(doc);
+        e_tt.appendChild(p2_text(doc, Token.type_names(word.tok()).join(QChar::Space)));
+        e_td.appendChild(e_tt);
+        e_tr.appendChild(e_td);
 
-        td = p2_html(doc, "td");
-        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
-        tt = p2_html(doc, "tt");
-        tt.appendChild(p2_text(doc, QString("@%1").arg(word.pos())));
-        td.appendChild(tt);
-        tr.appendChild(td);
+        e_td = p2_td(doc);
+        e_td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
+        e_tt = p2_tt(doc);
+        e_tt.appendChild(p2_text(doc, QString("@%1").arg(word.pos())));
+        e_td.appendChild(e_tt);
+        e_tr.appendChild(e_td);
 
-        td = p2_html(doc, "td");
-        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
-        tt = p2_html(doc, "tt");
-        tt.appendChild(p2_text(doc, QString("+%1").arg(word.len())));
-        td.appendChild(tt);
-        tr.appendChild(td);
+        e_td = p2_td(doc);
+        e_td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
+        e_tt = p2_tt(doc);
+        e_tt.appendChild(p2_text(doc, QString("+%1").arg(word.len())));
+        e_td.appendChild(e_tt);
+        e_tr.appendChild(e_td);
 
-        td = p2_html(doc, "td");
-        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
-        tt = p2_html(doc, "tt");
-        tt.appendChild(p2_text(doc, word.str()));
-        td.appendChild(tt);
-        tr.appendChild(td);
+        e_td = p2_td(doc);
+        e_td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
+        e_tt = p2_tt(doc);
+        e_tt.appendChild(p2_text(doc, word.str()));
+        e_td.appendChild(e_tt);
+        e_tr.appendChild(e_td);
 
-        table.appendChild(tr);
+        e_table.appendChild(e_tr);
     }
-    doc.appendChild(table);
+    doc.appendChild(e_table);
     return doc.toString(1);
 }
 
@@ -642,28 +642,27 @@ QString P2AsmModel::symbolsToolTip(const P2SymbolTable& symbols, const QList<P2S
 
     QStringList headers;
     headers += tr("Line #");
-    headers += tr("Section::name");
+    headers += tr("Sect::NAME");
     headers += tr("Type");
     headers += tr("Value");
 
     QDomDocument doc;
-    QDomElement table = p2_html(doc, "table");
-    QDomElement tr, th, td, tt;
-    QDomText text;
+    QDomElement e_table = p2_table(doc);
+    QDomElement e_tr, e_th, e_td, e_tt;
 
     // heading
-    tr = p2_html(doc, "tr");
+    e_tr = p2_tr(doc);
 
     foreach(const QString& header, headers) {
-        th = p2_html(doc, "th");
-        th.setAttribute(attr_style, QString("%1 %2").arg(attr_style_left).arg(attr_style_nowrap));
-        tt = p2_html(doc, "tt");
-        tt.appendChild(p2_text(doc, header));
-        th.appendChild(tt);
-        tr.appendChild(th);
+        e_th = p2_th(doc);
+        e_th.setAttribute(attr_style, QString("%1 %2").arg(attr_style_left).arg(attr_style_nowrap));
+        e_tt = p2_tt(doc);
+        e_tt.appendChild(p2_text(doc, header));
+        e_th.appendChild(e_tt);
+        e_tr.appendChild(e_th);
     }
 
-    table.appendChild(tr);
+    e_table.appendChild(e_tr);
 
     // table rows
     for (int i = 0; i < symrefs.count(); i++) {
@@ -671,39 +670,39 @@ QString P2AsmModel::symbolsToolTip(const P2SymbolTable& symbols, const QList<P2S
         const P2Word& word = symbols->reference(symbol->name());
         const P2Union& value = symbol->value();
 
-        tr = p2_html(doc, "tr");
+        e_tr = p2_tr(doc);
 
-        td = p2_html(doc, "td");
-        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
-        tt = p2_html(doc, "tt");
-        tt.appendChild(p2_text(doc, QString::number(word.lineno())));
-        td.appendChild(tt);
-        tr.appendChild(td);
+        e_td = p2_td(doc);
+        e_td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
+        e_tt = p2_tt(doc);
+        e_tt.appendChild(p2_text(doc, QString::number(word.lineno())));
+        e_td.appendChild(e_tt);
+        e_tr.appendChild(e_td);
 
-        td = p2_html(doc, "td");
-        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
-        tt = p2_html(doc, "tt");
-        tt.appendChild(p2_text(doc, symbol->name()));
-        td.appendChild(tt);
-        tr.appendChild(td);
+        e_td = p2_td(doc);
+        e_td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
+        e_tt = p2_tt(doc);
+        e_tt.appendChild(p2_text(doc, symbol->name()));
+        e_td.appendChild(e_tt);
+        e_tr.appendChild(e_td);
 
-        td = p2_html(doc, "td");
-        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
-        tt = p2_html(doc, "tt");
-        tt.appendChild(p2_text(doc, symbol->type_name()));
-        td.appendChild(tt);
-        tr.appendChild(td);
+        e_td = p2_td(doc);
+        e_td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
+        e_tt = p2_tt(doc);
+        e_tt.appendChild(p2_text(doc, symbol->type_name()));
+        e_td.appendChild(e_tt);
+        e_tr.appendChild(e_td);
 
-        td = p2_html(doc, "td");
-        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
-        tt = p2_html(doc, "tt");
-        tt.appendChild(p2_text(doc, value.str(false, fmt_hex)));
-        td.appendChild(tt);
-        tr.appendChild(td);
+        e_td = p2_td(doc);
+        e_td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
+        e_tt = p2_tt(doc);
+        e_tt.appendChild(p2_text(doc, value.str(false, fmt_hex)));
+        e_td.appendChild(e_tt);
+        e_tr.appendChild(e_td);
 
-        table.appendChild(tr);
+        e_table.appendChild(e_tr);
     }
-    doc.appendChild(table);
+    doc.appendChild(e_table);
     return doc.toString(1);
 }
 
@@ -711,30 +710,30 @@ QString P2AsmModel::errorsToolTip(const QStringList& list) const
 {
     QDomDocument doc;
 
-    QDomElement table = p2_html(doc, "table");
-    QDomElement tr, th, td, tt;
+    QDomElement e_table = p2_table(doc);
+    QDomElement e_tr, e_th, e_td, e_tt;
 
     // heading
-    tr = p2_html(doc, "tr");
-    th = p2_html(doc, "th");
-    th.setAttribute(attr_style, QString("%1 %2").arg(attr_style_left).arg(attr_style_nowrap));
-    tt = p2_html(doc, "tt");
-    tt.appendChild(p2_text(doc, this->tr("Error message")));
-    th.appendChild(tt);
-    tr.appendChild(th);
-    table.appendChild(tr);
+    e_tr = p2_tr(doc);
+    e_th = p2_th(doc);
+    e_th.setAttribute(attr_style, QString("%1 %2").arg(attr_style_left).arg(attr_style_nowrap));
+    e_tt = p2_tt(doc);
+    e_tt.appendChild(p2_text(doc, tr("Error message")));
+    e_th.appendChild(e_tt);
+    e_tr.appendChild(e_th);
+    e_table.appendChild(e_tr);
 
     foreach (const QString& error, list) {
-        tr = p2_html(doc, "tr");
-        td = p2_html(doc, "td");
-        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
-        tt = p2_html(doc, "tt");
-        tt.appendChild(p2_text(doc, error));
-        td.appendChild(tt);
-        tr.appendChild(td);
-        table.appendChild(tr);
+        e_tr = p2_tr(doc);
+        e_td = p2_td(doc);
+        e_td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
+        e_tt = p2_tt(doc);
+        e_tt.appendChild(p2_text(doc, error));
+        e_td.appendChild(e_tt);
+        e_tr.appendChild(e_td);
+        e_table.appendChild(e_tr);
     }
-    doc.appendChild(table);
+    doc.appendChild(e_table);
     return doc.toString(1);
 }
 
@@ -765,74 +764,74 @@ QVariant P2AsmModel::sourceToolTip(const QModelIndex& index, const P2SymbolTable
 
         // Create the tool tip HTML
         QDomDocument doc;
-        QDomElement table = p2_html(doc, "table");
-        QDomElement tr, th, td, tt;
+        QDomElement e_table = p2_table(doc);
+        QDomElement e_tr, e_th, e_td, e_tt;
 
-        tr = p2_html(doc, "tr");
-        td = p2_html(doc, "td");
-        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
-        tt = p2_html(doc, "tt");
-        tt.appendChild(p2_text(doc, word.str()));
-        td.appendChild(tt);
-        tr.appendChild(td);
+        e_tr = p2_tr(doc);
+        e_td = p2_td(doc);
+        e_td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
+        e_tt = p2_tt(doc);
+        e_tt.appendChild(p2_text(doc, word.str()));
+        e_td.appendChild(e_tt);
+        e_tr.appendChild(e_td);
 
-        td = p2_html(doc, "td");
-        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
-        tt = p2_html(doc, "tt");
-        tt.appendChild(p2_text(doc, sym->name()));
-        td.appendChild(tt);
-        tr.appendChild(td);
-        table.appendChild(tr);
+        e_td = p2_td(doc);
+        e_td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
+        e_tt = p2_tt(doc);
+        e_tt.appendChild(p2_text(doc, sym->name()));
+        e_td.appendChild(e_tt);
+        e_tr.appendChild(e_td);
+        e_table.appendChild(e_tr);
 
-        tr = p2_html(doc, "tr");
-        td = p2_html(doc, "td");
-        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
-        tt = p2_html(doc, "tt");
-        tt.appendChild(p2_text(doc, QString("Bin")));
-        td.appendChild(tt);
-        tr.appendChild(td);
+        e_tr = p2_tr(doc);
+        e_td = p2_td(doc);
+        e_td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
+        e_tt = p2_tt(doc);
+        e_tt.appendChild(p2_text(doc, QString("Bin")));
+        e_td.appendChild(e_tt);
+        e_tr.appendChild(e_td);
 
-        td = p2_html(doc, "td");
-        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
-        tt = p2_html(doc, "tt");
-        tt.appendChild(p2_text(doc, sym->value().str(true, fmt_bin)));
-        td.appendChild(tt);
-        tr.appendChild(td);
-        table.appendChild(tr);
+        e_td = p2_td(doc);
+        e_td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
+        e_tt = p2_tt(doc);
+        e_tt.appendChild(p2_text(doc, sym->value().str(true, fmt_bin)));
+        e_td.appendChild(e_tt);
+        e_tr.appendChild(e_td);
+        e_table.appendChild(e_tr);
 
-        tr = p2_html(doc, "tr");
-        td = p2_html(doc, "td");
-        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
-        tt = p2_html(doc, "tt");
-        tt.appendChild(p2_text(doc, QString("Dec")));
-        td.appendChild(tt);
-        tr.appendChild(td);
+        e_tr = p2_tr(doc);
+        e_td = p2_td(doc);
+        e_td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
+        e_tt = p2_tt(doc);
+        e_tt.appendChild(p2_text(doc, QString("Dec")));
+        e_td.appendChild(e_tt);
+        e_tr.appendChild(e_td);
 
-        td = p2_html(doc, "td");
-        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
-        tt = p2_html(doc, "tt");
-        tt.appendChild(p2_text(doc, sym->value().str(true, fmt_dec)));
-        td.appendChild(tt);
-        tr.appendChild(td);
-        table.appendChild(tr);
+        e_td = p2_td(doc);
+        e_td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
+        e_tt = p2_tt(doc);
+        e_tt.appendChild(p2_text(doc, sym->value().str(true, fmt_dec)));
+        e_td.appendChild(e_tt);
+        e_tr.appendChild(e_td);
+        e_table.appendChild(e_tr);
 
-        tr = p2_html(doc, "tr");
-        td = p2_html(doc, "td");
-        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
-        tt = p2_html(doc, "tt");
-        tt.appendChild(p2_text(doc, QString("Hex")));
-        td.appendChild(tt);
-        tr.appendChild(td);
+        e_tr = p2_tr(doc);
+        e_td = p2_td(doc);
+        e_td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
+        e_tt = p2_tt(doc);
+        e_tt.appendChild(p2_text(doc, QString("Hex")));
+        e_td.appendChild(e_tt);
+        e_tr.appendChild(e_td);
 
-        td = p2_html(doc, "td");
-        td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
-        tt = p2_html(doc, "tt");
-        tt.appendChild(p2_text(doc, sym->value().str(true, fmt_hex)));
-        td.appendChild(tt);
-        tr.appendChild(td);
-        table.appendChild(tr);
+        e_td = p2_td(doc);
+        e_td.setAttribute(attr_style, QString("%1 %2").arg(attr_style_padding).arg(attr_style_nowrap));
+        e_tt = p2_tt(doc);
+        e_tt.appendChild(p2_text(doc, sym->value().str(true, fmt_hex)));
+        e_td.appendChild(e_tt);
+        e_tr.appendChild(e_td);
+        e_table.appendChild(e_tr);
 
-        doc.appendChild(table);
+        doc.appendChild(e_table);
         return doc.toString(1);
     }
     return QVariant();

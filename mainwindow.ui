@@ -22,8 +22,8 @@
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <widget class="QTabWidget" name="tabWidget">
-      <property name="currentIndex">
-       <number>0</number>
+      <property name="documentMode">
+       <bool>true</bool>
       </property>
       <widget class="QWidget" name="tabAsm">
        <property name="enabled">
@@ -52,7 +52,7 @@
           </property>
           <widget class="QTableView" name="tvAsm">
            <property name="editTriggers">
-            <set>QAbstractItemView::AnyKeyPressed|QAbstractItemView::DoubleClicked|QAbstractItemView::EditKeyPressed|QAbstractItemView::SelectedClicked</set>
+            <set>QAbstractItemView::AllEditTriggers</set>
            </property>
            <property name="textElideMode">
             <enum>Qt::ElideNone</enum>
@@ -178,8 +178,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>662</width>
-             <height>383</height>
+             <width>666</width>
+             <height>386</height>
             </rect>
            </property>
            <layout class="QGridLayout" name="gridLayout">

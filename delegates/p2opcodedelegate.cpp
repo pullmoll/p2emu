@@ -80,8 +80,10 @@ void P2OpcodeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
         text += QStringLiteral("…");
 
     QRect rect = option.rect;
-    const int flags = static_cast<int>(opt.displayAlignment) |
-                      Qt::TextDontClip | Qt::TextExpandTabs | Qt::TextForceLeftToRight;
+    const int flags = static_cast<int>(opt.displayAlignment)
+                      | Qt::TextDontClip
+                      | Qt::TextExpandTabs
+                      ;
     const bool focus = opt.state.testFlag(QStyle::State_HasFocus);
 
     painter->save();
@@ -120,8 +122,9 @@ void P2OpcodeDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
 QSize P2OpcodeDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
     QStringList lines = opcodeLines(index);
-    const int flags = static_cast<int>(option.displayAlignment) |
-                      Qt::TextDontClip | Qt::TextExpandTabs | Qt::TextForceLeftToRight;
-    QFontMetrics metrics(option.font);
-    return metrics.boundingRect(option.rect, flags, lines.join(QChar::LineFeed)).size();
+    const int flags = static_cast<int>(option.displayAlignment)
+                      | Qt::TextDontClip
+                      | Qt::TextExpandTabs
+                      ;
+    return option.fontMetrics.boundingRect(option.rect, flags, lines.join(QChar::LineFeed)).size();
 }

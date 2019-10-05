@@ -37,10 +37,20 @@
 inline QDomElement p2_html(QDomDocument& doc, const char* element) { return doc.createElement(QString::fromLatin1(element)); }
 inline QDomText p2_text(QDomDocument& doc, const QString& text) { return doc.createTextNode(text); }
 
+inline QDomElement p2_head(QDomDocument& doc) { return p2_html(doc, "head"); }
+inline QDomElement p2_title(QDomDocument& doc) { return p2_html(doc, "title"); }
+inline QDomElement p2_body(QDomDocument& doc) { return p2_html(doc, "body"); }
+inline QDomElement p2_table(QDomDocument& doc) { return p2_html(doc, "table"); }
+inline QDomElement p2_tr(QDomDocument& doc) { return p2_html(doc, "tr"); }
+inline QDomElement p2_th(QDomDocument& doc) { return p2_html(doc, "th"); }
+inline QDomElement p2_td(QDomDocument& doc) { return p2_html(doc, "td"); }
+inline QDomElement p2_tt(QDomDocument& doc) { return p2_html(doc, "tt"); }
+inline QDomElement p2_hr(QDomDocument& doc) { return p2_html(doc, "hr"); }
+
 static const QLatin1String attr_style("style");
 static const QLatin1String attr_style_nowrap("white-space:nowrap;");
 static const QLatin1String attr_style_left("text-align:left;");
-static const QLatin1String attr_style_padding("padding:0px 4px 0px 4px;");
+static const QLatin1String attr_style_padding("padding:0 0.25em 0 0.25em;");
 
 static const QLatin1String attr_width("width");
 static const QLatin1String attr_10percent("10%");

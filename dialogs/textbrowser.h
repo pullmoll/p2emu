@@ -15,7 +15,6 @@ public:
     explicit TextBrowser(QWidget *parent = nullptr);
     ~TextBrowser();
 
-    void set_title(const QString& title);
     void set_list(const QStringList& list);
     void set_html(const QStringList& html);
 

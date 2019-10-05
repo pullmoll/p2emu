@@ -57,23 +57,23 @@ void P2SourceDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
 
     QRect rect = option.rect;
     QVector<QRect> bounding(ll);
-    const int flags = static_cast<int>(opt.displayAlignment) |
-                      Qt::TextSingleLine |
-                      Qt::TextDontClip |
-                      Qt::TextExpandTabs |
-                      Qt::TextForceLeftToRight;
+    const int flags = static_cast<int>(opt.displayAlignment)
+                      | Qt::TextDontClip
+                      | Qt::TextSingleLine
+                      | Qt::TextExpandTabs
+                      | Qt::TextForceLeftToRight
+                      ;
     const int lw = opt.fontMetrics.size(flags, line).width();
     const int x0 = rect.x();
 
 
     painter->save();
-    painter->setClipRect(rect);
+    // painter->setClipRect(rect);
 
     // fill the background
     painter->setBackgroundMode(Qt::OpaqueMode);
     QPalette palette = Colors.palette(p2_pal_source);
-    palette.setCurrentColorGroup(QPalette::Normal);
-    opt.backgroundBrush = palette.base();
+    // opt.backgroundBrush = palette.base();
     painter->fillRect(opt.rect, opt.backgroundBrush);
 
     painter->setFont(opt.font);

@@ -305,11 +305,19 @@ void MainWindow::aboutQt5()
 
 void MainWindow::help_opcodes()
 {
-    QStringList html = Doc.html_opcodes();
-    TextBrowser dlg;
-    dlg.set_title(tr("Propeller2 Opcode Table"));
-    dlg.set_html(html);
-    dlg.exec();
+    static int tab = -1;
+    if (tab >= 0) {
+        ui->tabWidget->removeTab(tab);
+        tab = -1;
+    } else {
+        QStringList html = Doc.html_opcodes();
+        TextBrowser* dlg = new TextBrowser;
+        dlg->set_html(html);
+        dlg->setWindowTitle(tr("Propeller2 Opcode Table"));
+        connect(dlg, SIGNAL(finished(int)), SLOT(help_opcodes()));
+        tab = ui->tabWidget->addTab(dlg, dlg->windowTitle());
+        ui->tabWidget->setCurrentIndex(tab);
+    }
 }
 
 void MainWindow::goto_hex(const QString& address)
